@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 09/05/2014
+% Last Modified: 09/22/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,7 @@
 %
 % Changelog:
 %
+% 09/22/2014 - CIM - Remove blank lines before lex
 % 09/05/2014 - CIM - Created
 %--------------------------------------------------------------------------
 
