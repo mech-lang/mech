@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 09/22/2014
+% Last Modified: 10/12/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,10 @@
 %
 % Changelog:
 %
+% 10/12/2014 - CIM - Added new token for function identifiers
+%                  - Changed token for floats from '@' to '&'
+%                  - Added new rule to lex a urnary operator at the start
+%                    of a line.
 % 09/22/2014 - CIM - Remove blank lines before lex
 % 09/05/2014 - CIM - Created
 %--------------------------------------------------------------------------
