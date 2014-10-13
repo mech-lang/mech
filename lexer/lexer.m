@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 10/12/2014
+% Last Modified: 10/13/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,9 @@
 %
 % Changelog:
 %
+% 10/13/2014 - CIM - Changed rules for lexing brackets. Now each bracket
+%                    class has its own token.
+%                  - Mechanized token replacement
 % 10/12/2014 - CIM - Added new token for function identifiers
 %                  - Changed token for floats from '@' to '&'
 %                  - Added new rule to lex a urnary operator at the start
