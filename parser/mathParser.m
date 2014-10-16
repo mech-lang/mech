@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  10/12/2014
-% Last Modified: 10/12/2014
+% Last Modified: 10/16/2014
 % 
 % Description: 
 %  
@@ -19,6 +19,7 @@
 %
 % Changelog:
 %
+% 10/16/2014 - CIM - Modified so that the full token is added to the tree
 % 10/12/2014 - CIM - Created
 %--------------------------------------------------------------------------
 
