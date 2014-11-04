@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  10/16/2014
-% Last Modified: 10/16/2014
+% Last Modified: 11/04/2014
 % 
 % Description: 
 %  
@@ -22,6 +22,7 @@
 %
 % Changelog:
 % 
+% 11/04/2014 - CIM - Changed call to findIndex to match function return
 % 10/16/2014 - CIM - Created
 %--------------------------------------------------------------------------
 
