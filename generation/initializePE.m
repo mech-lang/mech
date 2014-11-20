@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  10/16/2014
-% Last Modified: 10/16/2014
+% Last Modified: 11/20/2014
 % 
 % Description: 
 %  
@@ -29,6 +29,7 @@
 %
 % Changelog:
 % 
+% 11/20/2014 - CIM - Added array [] to list of operations
 % 10/16/2014 - CIM - Created
 %--------------------------------------------------------------------------
 
