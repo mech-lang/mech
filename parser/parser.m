@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/08/2014
-% Last Modified: 10/12/2014
+% Last Modified: 11/21/2014
 % 
 % Description: 
 %  
@@ -18,6 +18,8 @@
 %
 % Changelog:
 % 
+% 11/21/2014 - CIM - Changed list construction in listExpression() to
+%                    correct the order of elements in the list.
 % 10/12/2014 - CIM - Refactored
 % 09/08/2014 - CIM - Created
 %--------------------------------------------------------------------------
