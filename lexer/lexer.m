@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 11/04/2014
+% Last Modified: 12/04/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,8 @@
 %
 % Changelog:
 %
+% 12/04/2014 - CIM - Added keyword lexing, starting with the function and
+%                    end keywords. Can add more easily later.
 % 11/04/2014 - CIM - Fixed float regexp to include floating points that
 %                    start with a decimal.
 % 10/13/2014 - CIM - Changed rules for lexing brackets. Now each bracket
