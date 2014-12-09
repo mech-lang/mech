@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 12/04/2014
+% Last Modified: 12/09/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,9 @@
 %
 % Changelog:
 %
+% 12/09/2014 - CIM - Changed output to a single stream of tokens
+%                  - Added trailing semicolon after each line to designate
+%                    line breaks.
 % 12/04/2014 - CIM - Added keyword lexing, starting with the function and
 %                    end keywords. Can add more easily later.
 % 11/04/2014 - CIM - Fixed float regexp to include floating points that
