@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/08/2014
-% Last Modified: 11/21/2014
+% Last Modified: 12/09/2014
 % 
 % Description: 
 %  
@@ -18,6 +18,11 @@
 %
 % Changelog:
 % 
+% 12/09/2014 - CIM - Changed program definition to handle functions and new
+%                    lexer output. Should now work fully recursively on a
+%                    stream of tokens. Downside is I lose the ability to
+%                    parse statements in parallel.
+%                  - Added function definition
 % 11/21/2014 - CIM - Changed list construction in listExpression() to
 %                    correct the order of elements in the list.
 % 10/12/2014 - CIM - Refactored
