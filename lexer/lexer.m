@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/05/2014
-% Last Modified: 12/09/2014
+% Last Modified: 12/18/2014
 % 
 % Description: 
 %  
@@ -23,6 +23,8 @@
 %
 % Changelog:
 %
+% 12/18/2014 - CIM - Changed token output format
+%                  - Comments are now removed from source once matched
 % 12/09/2014 - CIM - Changed output to a single stream of tokens
 %                  - Added trailing semicolon after each line to designate
 %                    line breaks.
