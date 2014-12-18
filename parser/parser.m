@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  09/08/2014
-% Last Modified: 12/09/2014
+% Last Modified: 12/18/2014
 % 
 % Description: 
 %  
@@ -18,6 +18,9 @@
 %
 % Changelog:
 % 
+% 12/18/2014 - CIM - Comments are removed at the lexer stage, so all
+%                    comment parsing is unnecessary
+%                  - Added logic expression parsing
 % 12/09/2014 - CIM - Changed program definition to handle functions and new
 %                    lexer output. Should now work fully recursively on a
 %                    stream of tokens. Downside is I lose the ability to

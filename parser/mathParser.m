@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Authors: Corey Montella
 % Date Created:  10/12/2014
-% Last Modified: 11/21/2014
+% Last Modified: 12/18/2014
 % 
 % Description: 
 %  
@@ -19,6 +19,7 @@
 %
 % Changelog:
 %
+% 12/18/2014 - CIM - Changed to accomodate new lexer spec
 % 11/21/2014 - CIM - Added token identification for new / and - tokens
 %                  - Changed urnary operator token to p, to conform to new
 %                    lexer spec
