@@ -1,0 +1,6 @@
+function foo(a,b,c,d) = x
+    where
+        
+        x = 5   
+
+    end
