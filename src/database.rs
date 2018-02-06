@@ -1,7 +1,4 @@
-extern crate time;
-extern crate core;
-use std::collections::{BTreeSet, BTreeMap};
-use std::num::Wrapping;
+use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
 
 #[derive(Clone)]
@@ -56,7 +53,17 @@ pub struct Change {
 }
 
 impl Change {
- 
+  pub fn from_eav(entity: &str, attribute: &str, value: Value) -> Change {  
+    let e = 0;
+    let a = 0;
+    Change {
+      kind: ChangeType::Add,
+      entity: e,
+      attribute: a,
+      value,
+      marked: false,
+    }
+  }
 }
 
 impl fmt::Debug for Change {
@@ -78,7 +85,7 @@ pub struct Transaction {
 impl Transaction {
   pub fn new() -> Transaction {
     Transaction {
-      timestamp: time::precise_time_ns(),
+      timestamp: 0,
       complete: 0,
       epoch: 0,
       round: 0,
@@ -89,7 +96,7 @@ impl Transaction {
 
   pub fn process(&mut self) -> u64 {
     if self.complete == 0 {
-      self.complete = time::precise_time_ns ();
+      self.complete = 0;
     }
     self.complete
   }

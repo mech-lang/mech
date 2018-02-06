@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Corey Montella <cmontella@live.com>"]
 
 [dependencies]
-time = "0.1.36"
+rlibc = "1.0"

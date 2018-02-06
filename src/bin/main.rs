@@ -1,4 +1,3 @@
-extern crate time;
 extern crate core;
 extern crate mech;
 
@@ -72,7 +71,7 @@ pub fn generate_transaction(n: u32) -> Transaction {
 pub fn generate_changes(n: u32) -> Vec<Change> {
     let mut vec: Vec<Change> = Vec::with_capacity(n as usize);
     for i in 0..n {
-        let entity = time::precise_time_ns() as u64; 
+        let entity = 0 as u64; 
         let change = Change {
             kind: ChangeType::Add,
             entity,   
@@ -85,32 +84,36 @@ pub fn generate_changes(n: u32) -> Vec<Change> {
     vec
 }
 
+
 static mut TIC: u64 = 0;
 static mut TOC: u64 = 0;
 
 pub fn tic() -> f64 {
     unsafe {
-        TIC = time::precise_time_ns();
+        //TIC = time::precise_time_ns();
         TIC as f64 / 1_000_000.0
     }
 }
 
 pub fn toc() -> f64 {
     unsafe {
-        TOC = time::precise_time_ns();
+        //TOC = time::precise_time_ns();
         let dt = (TOC - TIC) as f64 / 1_000_000.0;
         //println!("{:?}", dt);
         dt
     }
 }
 
+
 fn rand(rseed:&mut u32) -> u32 {
-    *rseed = ((Wrapping(*rseed) * Wrapping(1103515245) + Wrapping(12345)) & Wrapping(0x7fffffff)).0;
-    return *rseed;
+    //*rseed = ((Wrapping(*rseed) * Wrapping(1103515245) + Wrapping(12345)) & Wrapping(0x7fffffff)).0;
+    //return *rseed;
+    0
 }
 
 fn rand_between(rseed:&mut u32, from:u32, to:u32) -> u32 {
-    rand(rseed);
-    let range = (to - from) + 1;
-    from + *rseed % range
+    //rand(rseed);
+    //let range = (to - from) + 1;
+    //from + *rseed % range
+    0
 }
