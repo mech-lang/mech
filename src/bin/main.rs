@@ -1,16 +1,21 @@
+#![feature(sip_hash_13)]
+
 extern crate mech;
+extern crate core;
 
 use std::collections::{BTreeSet, BTreeMap};
 use std::num::Wrapping;
 use mech::database::{Database, Transaction, Change, ChangeType, Value};
+use core::hash::SipHasher13;
+use std::hash::Hasher;
 
 fn main() {
-    
+
     println!("Starting:");
-    
+
     // Init the DB
     tic();
-    let mut db = Database::new();
+    let mut db = Database::new(1,1);
     db.init();
     toc();
 
