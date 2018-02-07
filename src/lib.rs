@@ -1,8 +1,9 @@
-#![no_std]
+#![cfg_attr(target_os = "none", no_std)]
 #![feature(alloc)]
 
 extern crate rlibc;
 extern crate alloc;
+extern crate core;
 
 use alloc::Vec;
 

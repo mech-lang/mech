@@ -3,6 +3,8 @@
 extern crate test;
 extern crate mech;
 
+use test::Bencher;
+
 #[bench]
 fn index_write(b:&mut Bencher) {
     b.iter(|| {
