@@ -114,15 +114,16 @@ pub struct Interner {
 
 impl Interner {
 
-  pub fn new() -> Interner {
+  pub fn new(capacity: usize) -> Interner {
     Interner {
-      store: Vec::new(),
+      store: Vec::with_capacity(capacity),
     }
   }
 
   pub fn intern_change(&mut self, change: &Change) {
     self.store.push(change.clone());
   }
+  
 }
 
 pub struct Database {
@@ -137,13 +138,13 @@ pub struct Database {
 
 impl Database {
 
-  pub fn new() -> Database {
+  pub fn new(txn_capacity: usize, change_capacity: usize) -> Database {
     Database {
       epoch: 0,
       round: 0,
-      transactions: Vec::with_capacity(1_000_000),
+      transactions: Vec::with_capacity(txn_capacity),
       index: BTreeMap::new(),
-      store: Interner::new(),
+      store: Interner::new(change_capacity),
       scanned: 0,
       txn_pointer: 0,
     }
