@@ -1,4 +1,3 @@
-extern crate core;
 extern crate mech;
 
 use std::collections::{BTreeSet, BTreeMap};

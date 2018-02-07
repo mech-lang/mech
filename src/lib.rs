@@ -3,6 +3,7 @@
 
 extern crate rlibc;
 extern crate alloc;
+#[cfg(not(target_os = "none"))]
 extern crate core;
 
 use alloc::Vec;
