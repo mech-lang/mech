@@ -19,3 +19,4 @@ extern crate core;
 
 pub mod runtime;
 pub mod eav;
+pub mod indexes;
