@@ -3,7 +3,7 @@
 
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
-use eav::Value;
+use eav::{Entity, Attribute, Value};
 
 // ## Change
 
@@ -20,18 +20,18 @@ pub struct Change {
     pub attribute: u64,
     pub value: Value,
     pub marked: bool,
+    pub transaction: u64, 
 }
 
 impl Change {
   pub fn from_eav(entity: &str, attribute: &str, value: Value) -> Change {  
-    let e = 0;
-    let a = 0;
     Change {
       kind: ChangeType::Add,
-      entity: e,
-      attribute: a,
+      entity: 0,
+      attribute: 0,
       value,
       marked: false,
+      transaction: 0,
     }
   }
 }
