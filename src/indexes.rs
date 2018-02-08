@@ -22,11 +22,9 @@ impl Hasher {
 
     }
 
-    
-
     pub fn write(&mut self, string: &str) {
         let intLength = string.len() / 4;
-        let mult = [1, 256, 65536, 16777216, 1768841549, 4294967296];
+        let mult = [1, 256, 65536, 16777216, 1768841549];
         let chunks = CharChunks::new(string, 4);
         for chunk in chunks {
             let byte_string = chunk.as_bytes();
@@ -42,14 +40,10 @@ impl Hasher {
         self.value
     }
 
-
     pub fn reset(&mut self) {
         self.value = 0;
     }
-
 } 
-
-
 
 
 #[derive(Clone, Debug)]
@@ -73,9 +67,7 @@ impl<'a> Iterator for CharChunks<'a> {
         }
         for (i, (j, ch)) in s.char_indices().enumerate() {
             if i + 1 == self.n {
-                // FIXME: Use .split_at() when rust version allows
-                let mid = j + ch.len_utf8();
-                let (part, tail) = (&s[..mid], &s[mid..]);
+                let (part, tail) = s.split_at(self.n);
                 self.s = tail;
                 return Some(part);
             }
