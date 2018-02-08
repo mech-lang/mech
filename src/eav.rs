@@ -10,7 +10,7 @@ pub struct Entity(u64);
 
 // ## Attribute
 
-pub struct Attribute(String);
+pub struct Attribute(u64);
 
 // ## Value
 
