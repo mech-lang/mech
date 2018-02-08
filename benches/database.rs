@@ -15,6 +15,14 @@ fn db_init(b:&mut Bencher) {
 }
 
 #[bench]
+fn db_init_200_000(b:&mut Bencher) {
+    b.iter(|| {
+        let mut db = Database::new(200000,200000);
+        db.init();
+    });
+}
+
+#[bench]
 fn db_register_txn(b: &mut Bencher) {
     let mut db = Database::new(1,1);
     db.init();
@@ -26,10 +34,11 @@ fn db_register_txn(b: &mut Bencher) {
 
 #[bench]
 fn db_register_txn_1000(b: &mut Bencher) {
-    let mut db = Database::new(1000, 1000);
-    db.init();
-    let mut txns = generate_random_transaction(1000, 1);
+    let n = 1_000;
+    let mut txns = generate_random_transaction(n, 1);
     b.iter(|| {
+        let mut db = Database::new(n, n);
+        db.init();
         db.register_transactions(&mut txns);
     });
 }

@@ -123,7 +123,7 @@ impl Interner {
   pub fn intern_change(&mut self, change: &Change) {
     self.store.push(change.clone());
   }
-  
+
 }
 
 pub struct Database {
@@ -133,7 +133,7 @@ pub struct Database {
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
-    txn_pointer: usize,
+    pub txn_pointer: usize,
 }
 
 impl Database {
