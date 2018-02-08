@@ -4,14 +4,14 @@ extern crate mech;
 extern crate core;
 
 use std::collections::{BTreeSet, BTreeMap};
-use std::num::Wrapping;
 use mech::runtime::{Database, Transaction, Change, ChangeType};
 use mech::eav::Value;
-use core::hash::SipHasher13;
-use std::hash::Hasher;
+use mech::indexes::Hasher;
 
 fn main() {
-
+     
+    
+    
     println!("Starting:");
 
     // Init the DB
@@ -49,6 +49,7 @@ fn main() {
     let avg_txn_time = txn_time.into_iter().fold(0.0, |r,x| r + x);
     println!("Insert Time: {:?}", avg_txn_time / n as f64);
     println!("kTxns/s: {:?}", db.transactions.len() as f64 / run_time / 1000.0);
+    
 
 }
 
@@ -83,6 +84,7 @@ pub fn generate_changes(n: u32) -> Vec<Change> {
             attribute: i as u64,
             value: Value::from_int(0),
             marked: false,
+            transaction: 0,
         };
         vec.push(change);
     }
