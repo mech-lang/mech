@@ -36,8 +36,10 @@ impl Hasher {
        }
     }
 
-    pub fn finish(&self) -> u64 {
-        self.value
+    pub fn finish(&mut self) -> u64 {
+        let v = self.value;
+        self.value = 0;
+        v
     }
 
     pub fn reset(&mut self) {
@@ -45,9 +47,13 @@ impl Hasher {
     }
 } 
 
+// ## Utility
+
+// Breaks a string into chunks of size n. This code was lifted from the odds 
+// crate: https://docs.rs/odds/0.3.1/odds/string/struct.CharChunks.html
 
 #[derive(Clone, Debug)]
-pub struct CharChunks<'a> {
+struct CharChunks<'a> {
     s: &'a str,
     n: usize,
 }
