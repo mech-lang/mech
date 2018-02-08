@@ -5,7 +5,8 @@ extern crate core;
 
 use std::collections::{BTreeSet, BTreeMap};
 use std::num::Wrapping;
-use mech::database::{Database, Transaction, Change, ChangeType, Value};
+use mech::runtime::{Database, Transaction, Change, ChangeType};
+use mech::eav::Value;
 use core::hash::SipHasher13;
 use std::hash::Hasher;
 

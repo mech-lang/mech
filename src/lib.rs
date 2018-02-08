@@ -1,3 +1,12 @@
+// # Mech
+
+/*
+Mech is a programming language especially suited for developing reactive 
+systems. 
+*/
+
+// ## Prelude
+
 #![cfg_attr(target_os = "none", no_std)]
 #![feature(alloc)]
 
@@ -6,10 +15,7 @@ extern crate alloc;
 #[cfg(not(target_os = "none"))]
 extern crate core;
 
-use alloc::Vec;
+// ## Modules
 
-pub mod database;
-
-fn foo() {
-    let v: Vec<u8> = Vec::new();
-}
+pub mod runtime;
+pub mod eav;

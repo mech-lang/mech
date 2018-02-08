@@ -1,41 +1,11 @@
+
+// ## Prelude
+
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
+use eav::Value;
 
-#[derive(Clone)]
-pub enum Value {
-  Null,
-  Number(u64),
-  Bool(bool),
-  String(String),
-}
-
-impl Value {
-
-  pub fn from_string(string: String) -> Value {
-    Value::String(string)
-  }
-
-  pub fn from_str(string: &str) -> Value {
-    Value::String(String::from(string))
-  }
-
-  pub fn from_int(int: u64) -> Value {
-    Value::Number(int)
-  }
-
-}
-
-impl fmt::Debug for Value {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      match self {
-        &Value::Number(ref x) => write!(f, "{}", x),
-        &Value::String(ref x) => write!(f, "{}", x),
-        &Value::Bool(ref x) => write!(f, "{}", x),
-        &Value::Null => write!(f, "Null"),
-      }
-    }
-}
+// ## Change
 
 #[derive(Debug, Clone)]
 pub enum ChangeType {
@@ -73,6 +43,8 @@ impl fmt::Debug for Change {
     }
 }
 
+// ## Transaction
+
 pub struct Transaction {
   pub timestamp: u64,
   pub complete: u64,
@@ -107,6 +79,8 @@ impl Transaction {
 
 }
 
+// ## Interner
+
 #[derive(Debug)]
 pub struct Interner {
   pub store: Vec<Change>,
@@ -125,6 +99,8 @@ impl Interner {
   }
 
 }
+
+// ## Database
 
 pub struct Database {
     pub epoch: u64,

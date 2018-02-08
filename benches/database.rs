@@ -4,7 +4,8 @@ extern crate test;
 extern crate mech;
 
 use test::Bencher;
-use mech::database::{Database, Transaction, Change, ChangeType, Value};
+use mech::runtime::{Database, Transaction, Change, ChangeType};
+use mech::eav::{Value};
 
 #[bench]
 fn db_init(b:&mut Bencher) {
