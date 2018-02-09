@@ -4,6 +4,7 @@
 
 use core::fmt;
 use indexes::Hasher;
+use runtime::{Change, ChangeType};
 
 // ## Entity
 
@@ -21,6 +22,10 @@ impl Entity {
     }
   }
 
+  // Transform a vector of raw string/value pairs into
+  // an entity. The entity ID is computed as a hash of the
+  // pairs.
+
   pub fn from_raw(pairs: Vec<(&str, Value)>) -> Entity {
     let mut entity = Entity::new();
     let mut entity_id = Hasher::new();
@@ -34,6 +39,20 @@ impl Entity {
     entity.id = entity_id.finish();
     entity
   }
+
+  // Convert an Entity to a set of changes. These changes
+  // will be appleid to the DB.
+
+  pub fn make_changeset(&self, kind: ChangeType) -> Vec<Change> {
+    let mut changes: Vec<Change> = Vec::with_capacity(self.pairs.len());
+    for &(ref attribute, ref value) in &self.pairs {
+      let change = Change::from_eav(self, attribute, value, kind.clone());
+      changes.push(change);
+    }
+    changes
+  }
+
+
 }
 
 impl fmt::Debug for Entity {
@@ -49,6 +68,7 @@ impl fmt::Debug for Entity {
 
 // ## Attribute
 
+#[derive(Clone)]
 pub struct Attribute {
   pub id: u64,
   pub display: String,
@@ -71,8 +91,6 @@ impl Attribute {
     attribute.display = String::from(string);
     attribute
   }
-
-
 }
 
 impl fmt::Debug for Attribute {
@@ -81,8 +99,6 @@ impl fmt::Debug for Attribute {
       write!(f,"{}", self.display)
     }
 }
-
-
 
 // ## Value
 
