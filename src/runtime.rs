@@ -65,6 +65,17 @@ impl Transaction {
     }
   }
 
+  pub fn from_changeset(changes: Vec<Change>) -> Transaction {
+    let mut txn = Transaction::new();
+    for change in changes {
+      match change.kind {
+        ChangeType::Add => txn.adds.push(change),
+        ChangeType::Remove => txn.removes.push(change),
+      }
+    }
+    txn
+  }
+
   pub fn process(&mut self) -> u64 {
     if self.complete == 0 {
       self.complete = 0;
@@ -75,7 +86,17 @@ impl Transaction {
   pub fn is_complete(&self) -> bool {
     self.complete != 0
   }
+}
 
+impl fmt::Debug for Transaction {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f,"Adds:\n");
+      for ref add in &self.adds {
+        write!(f, "{:?}\n", add);
+      }
+      Ok(())
+    }
 }
 
 // ## Interner
@@ -104,7 +125,8 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
-    pub index: BTreeMap<u64, Change>,
+    pub entity_index: BTreeSet<u64>,
+    pub attribute_index: BTreeMap<u64, Attribute>,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
@@ -118,7 +140,8 @@ impl Database {
       epoch: 0,
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
-      index: BTreeMap::new(),
+      entity_index: BTreeSet::new(),
+      attribute_index: BTreeMap::new(),
       store: Interner::new(change_capacity),
       scanned: 0,
       txn_pointer: 0,
@@ -161,11 +184,12 @@ impl Database {
     for change in self.store.store.iter().skip(self.scanned) {
       match change.kind {
         ChangeType::Add => {
-          self.index.insert(change.entity.clone(), change.clone());          
-          //self.attribute_index.insert(change.attribute.clone(), Attribute::new());
+          self.entity_index.insert(change.entity.clone());          
+          self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
         },
         ChangeType::Remove => {
-          self.index.remove(&change.entity);
+          self.entity_index.remove(&change.entity);
+          self.attribute_index.remove(&change.attribute.id);
         },
       }
     }
