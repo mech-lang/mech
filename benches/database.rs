@@ -71,7 +71,7 @@ pub fn generate_changes(change_count: usize) -> Vec<Change> {
             entity,   
             attribute: 0 as u64,
             value: Value::from_int(0),
-            marked: false,
+            transaction: 0,
         };
         vec.push(change);
     }
