@@ -36,10 +36,22 @@ impl Hasher {
        }
     }
 
+    pub fn write_value(&mut self, value: &Value) {
+        match value {
+            &Value::String(ref string) => self.write(&string),
+            &Value::Number(ref number) => self.write(&format!("{:?}", number)), 
+            &Value::Any => (),
+        }
+    }
+
     pub fn finish(&mut self) -> u64 {
         let v = self.value;
         self.value = 0;
         v
+    }
+
+    pub fn read(&self) -> u64 {
+        self.value
     }
 
     pub fn reset(&mut self) {
