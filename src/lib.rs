@@ -11,6 +11,7 @@ systems.
 #![feature(alloc)]
 
 extern crate rlibc;
+#[macro_use]
 extern crate alloc;
 #[cfg(not(target_os = "none"))]
 extern crate core;

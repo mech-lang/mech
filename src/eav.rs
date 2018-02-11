@@ -5,6 +5,7 @@
 use core::fmt;
 use indexes::Hasher;
 use runtime::{Change, ChangeType};
+use alloc::{Vec,String};
 
 // ## Entity
 
