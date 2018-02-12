@@ -5,3 +5,4 @@ authors = ["Corey Montella <cmontella@live.com>"]
 
 [dependencies]
 rlibc = "1.0"
+hashmap_core = "0.1.2"
