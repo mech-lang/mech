@@ -5,7 +5,7 @@ extern crate mech;
 
 use test::Bencher;
 use mech::runtime::{Database, Transaction, Change, ChangeType};
-use mech::eav::{Value};
+use mech::eav::{Entity, Attribute, Value};
 
 #[bench]
 fn db_init(b:&mut Bencher) {
@@ -27,12 +27,37 @@ fn db_init_200_000(b:&mut Bencher) {
 fn db_register_txn(b: &mut Bencher) {
     let mut db = Database::new(1,1);
     db.init();
-    let mut txns = generate_random_transaction(1, 1);
     b.iter(|| {
-        db.register_transactions(&mut txns)
+        let raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
+                           ("key", Value::from_str("A")),
+                           ("code", Value::from_u64(42))];
+        let key = Entity::from_raw(raw);
+        let changes = key.make_changeset(ChangeType::Add);
+        let txn = Transaction::from_changeset(changes);
+        db.register_transaction(txn);
     });
 }
 
+#[bench]
+fn db_register_txn_1000(b: &mut Bencher) {
+    let mut db = Database::new(1,1);
+    db.init();
+    b.iter(|| {
+        for _ in 1..1000 {
+            let raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
+                            ("key", Value::from_str("A")),
+                            ("code", Value::from_u64(14))];
+            let key = Entity::from_raw(raw);
+            let changes = key.make_changeset(ChangeType::Add);
+            let txn = Transaction::from_changeset(changes);    
+            db.register_transaction(txn);
+        }
+        
+    });
+}
+
+
+/*
 #[bench]
 fn db_register_txn_1000(b: &mut Bencher) {
     let n = 1_000;
@@ -70,10 +95,10 @@ pub fn generate_changes(change_count: usize) -> Vec<Change> {
             kind: ChangeType::Add,
             entity,   
             attribute: 0 as u64,
-            value: Value::from_int(0),
+            value: Value::from_u64(0),
             transaction: 0,
         };
         vec.push(change);
     }
     vec
-}
+}*/
