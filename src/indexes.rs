@@ -3,7 +3,7 @@
 // ## Prelude
 
 use eav::{Entity, Attribute, Value};
-use runtime::{Change};
+use database::{Change};
 use alloc::{fmt, BTreeMap, Vec};
 use hashmap_core::map::HashMap;
 
@@ -19,10 +19,6 @@ impl Hasher {
         Hasher {
             value: 0,
         }
-    }
-
-    pub fn hash_entity(&mut self, entity: Entity) {
-
     }
 
     pub fn write(&mut self, string: &str) {

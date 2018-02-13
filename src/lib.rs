@@ -20,6 +20,7 @@ extern crate rand;
 
 // ## Modules
 
+pub mod database;
 pub mod runtime;
 pub mod eav;
 pub mod indexes;
