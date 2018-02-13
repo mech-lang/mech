@@ -3,7 +3,9 @@
 // ## Prelude
 
 use eav::{Entity, Attribute, Value};
-use alloc::fmt;
+use runtime::{Change};
+use alloc::{fmt, BTreeMap, Vec};
+use hashmap_core::map::HashMap;
 
 // ## Hasher
 
@@ -59,6 +61,47 @@ impl Hasher {
         self.value = 0;
     }
 } 
+
+// ## Entity Index
+
+pub struct EntityIndex {
+    map: HashMap<u64, HashMap<u64, Vec<Value>>>,
+}
+
+impl EntityIndex {
+
+    pub fn new() -> EntityIndex {
+        EntityIndex {
+            map: HashMap::with_capacity(10000),
+        }
+    }
+
+    pub fn insert(&mut self, change: Change) {
+        if self.map.contains_key(&change.entity) {
+            let mut attribute_map = self.map.get_mut(&change.entity);
+            attribute_map.unwrap().insert(change.attribute.id, vec![change.value]);
+        } else {
+            let mut attribute_map = HashMap::new();
+            attribute_map.insert(change.attribute.id, vec![change.value]);
+            self.map.insert(change.entity, attribute_map);
+        }
+    }
+
+    pub fn remove(&mut self, entity: &u64) {
+        self.map.remove(entity);
+    }
+
+}
+
+impl fmt::Debug for EntityIndex {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for (key, value) in self.map.iter() {
+            write!(f, "{:?}:\n  {:?}\n", key, value);
+        }
+        Ok(())
+    }
+}
 
 // ## Utility
 
