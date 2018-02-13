@@ -120,8 +120,8 @@ impl Value {
     Value::String(String::from(string))
   }
 
-  pub fn from_int(int: u64) -> Value {
-    Value::Number(int)
+  pub fn from_u64(num: u64) -> Value {
+    Value::Number(num)
   }
 
 }
