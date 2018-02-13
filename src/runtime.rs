@@ -4,6 +4,7 @@
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
 use eav::{Entity, Attribute, Value};
+use indexes::{EntityIndex};
 
 // ## Change
 
@@ -15,6 +16,7 @@ pub enum ChangeType {
 
 #[derive(Clone)]
 pub struct Change {
+    pub ix: usize,
     pub kind: ChangeType,
     pub entity: u64,
     pub attribute: Attribute,
@@ -26,6 +28,7 @@ impl Change {
 
   pub fn from_eav(entity: &Entity, attribute: &Attribute, value: &Value, change_type: ChangeType) -> Change {  
     Change {
+      ix: 0,
       kind: change_type,
       entity: entity.id.clone(),
       attribute: attribute.clone(),
@@ -41,7 +44,7 @@ impl fmt::Debug for Change {
         write!(f, "{:?}: [{:?} {:?}: {:?}]", self.kind, self.entity, self.attribute, self.value)
     }
 }
-
+  
 // ## Transaction
 
 pub struct Transaction {
@@ -114,8 +117,13 @@ impl Interner {
     }
   }
 
-  pub fn intern_change(&mut self, change: &Change) {
+  pub fn intern_change(&mut self, change: &mut Change) {
+    change.ix = self.store.len();
     self.store.push(change.clone());
+  }
+
+  pub fn len(&self) -> usize {
+    self.store.len()
   }
 
 }
@@ -125,7 +133,7 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
-    pub entity_index: BTreeSet<u64>,
+    pub entity_index: EntityIndex,
     pub attribute_index: BTreeMap<u64, Attribute>,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
@@ -140,7 +148,7 @@ impl Database {
       epoch: 0,
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
-      entity_index: BTreeSet::new(),
+      entity_index: EntityIndex::new(),
       attribute_index: BTreeMap::new(),
       store: Interner::new(change_capacity),
       scanned: 0,
@@ -153,22 +161,30 @@ impl Database {
   }
 
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
+    // Add transactions to the back of the transaction log
     self.transactions.append(transactions);
+    // Process the appended transactions
     self.process_transactions();
+    // Move the transaction pointer to the back of the transaction log
     self.txn_pointer = self.transactions.len();
-    self.update_indices();
+    // Update indices with new changes
+    self.update_indices();    
     self.epoch = self.epoch + 1;
+  }
+
+  pub fn register_transaction(&mut self, transaction: Transaction) {
+    self.register_transactions(&mut vec![transaction]);
   }
 
   fn process_transactions(&mut self) {   
     for txn in self.transactions.iter_mut().skip(self.txn_pointer) {
       if !txn.is_complete() {
         // Handle the adds
-        for add in txn.adds.iter() {
+        for add in txn.adds.iter_mut() {
             self.store.intern_change(add);
         }
         // Handle the removes
-        for remove in txn.removes.iter() {
+        for remove in txn.removes.iter_mut() {
             self.store.intern_change(remove);
         }
         txn.process();
@@ -184,16 +200,16 @@ impl Database {
     for change in self.store.store.iter().skip(self.scanned) {
       match change.kind {
         ChangeType::Add => {
-          self.entity_index.insert(change.entity.clone());          
-          self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
+          self.entity_index.insert(change.clone());          
+          //self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
         },
         ChangeType::Remove => {
           self.entity_index.remove(&change.entity);
-          self.attribute_index.remove(&change.attribute.id);
+          //self.attribute_index.remove(&change.attribute.id);
         },
       }
     }
-    self.scanned = self.store.store.len();
+    self.scanned = self.store.len();
   }
 
 }
