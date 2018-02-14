@@ -39,7 +39,7 @@ impl Hasher {
         match value {
             &Value::String(ref string) => self.write(&string),
             &Value::Number(ref number) => self.write(&format!("{:?}", number)), 
-            &Value::Any => (),
+            _ => (),
         }
     }
 
