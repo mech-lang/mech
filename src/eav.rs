@@ -108,6 +108,7 @@ pub enum Value {
   Any,
   Number(u64),
   String(String),
+  Empty,
 }
 
 impl Value {
@@ -133,6 +134,7 @@ impl fmt::Debug for Value {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "\"{}\"", x),
         &Value::Any => write!(f, "Any"),
+        &Value::Empty => write!(f, "Empty"),
       }
     }
 }
