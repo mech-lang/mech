@@ -21,6 +21,12 @@ impl Hasher {
         }
     }
 
+    pub fn hash_str(string: &str) -> u64 {
+        let mut hasher = Hasher::new();
+        hasher.write(string);
+        hasher.finish()
+    }
+
     pub fn write(&mut self, string: &str) {
         let intLength = string.len() / 4;
         let mult = [1, 256, 65536, 16777216, 1768841549];
