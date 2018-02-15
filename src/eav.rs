@@ -5,7 +5,8 @@
 use core::fmt;
 use indexes::Hasher;
 use database::{Change, ChangeType};
-use alloc::{Vec,String};
+use alloc::{Vec, String};
+use hashmap_core::map::HashMap;
 
 // ## Entity
 
@@ -136,5 +137,76 @@ impl fmt::Debug for Value {
         &Value::Any => write!(f, "Any"),
         &Value::Empty => write!(f, "Empty"),
       }
+    }
+}
+
+// ## Table
+
+// A table starts with a tag, and has a matrix of memory available for data, 
+// where each column represents an attribute, and each row represents a record.
+
+pub struct Table {
+  pub id: u64,
+  pub rows: usize,
+  pub cols: usize,
+  pub data: Vec<Vec<Value>>,
+  pub attributes: HashMap<u64, usize>,
+  pub entities: HashMap<u64, usize>,
+}
+
+impl Table {
+
+  // m x attributes and n x records
+  pub fn new(tag: &str, m: usize, n: usize) -> Table {
+    let id = Hasher::hash_str(tag);
+    Table {
+      id: id,
+      rows: 0,
+      cols: 0,
+      data: vec![vec![Value::Empty; n]; m], 
+      entities: HashMap::with_capacity(n),
+      attributes: HashMap::with_capacity(m),
+    }
+  }
+  
+  pub fn add_value(&mut self, entity: &u64, attribute: &u64, value: Value) {
+
+    // Check if the row
+    let row = if self.entities.contains_key(&entity) {
+      self.entities.get(&entity).unwrap()
+    } else {
+      self.rows = self.rows + 1;
+      self.entities.insert(entity.clone(), self.rows.clone());
+      &self.rows
+    };
+
+    // Get the column
+    let col = if self.attributes.contains_key(&attribute) {
+      self.attributes.get(&attribute).unwrap()
+    } else {
+      self.cols = self.cols + 1;
+      self.attributes.insert(attribute.clone(), self.cols.clone());
+      &self.cols
+    };
+    self.data[*col - 1][*row - 1] = value;
+  }
+
+}
+
+impl fmt::Debug for Table {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f, "---------------------------------------\n");
+      write!(f, "{:?}\n", self.id);
+      write!(f, "{:?} x {:?}\n", self.cols, self.rows);
+      write!(f, "---------------------------------------\n");
+      write!(f, "\n");
+      for m in 0 .. self.rows {
+        for n in 0 .. self.cols {
+          write!(f, "{:?} ", self.data[n][m]);
+        }
+        write!(f, "\n");
+      }
+      Ok(())
     }
 }
