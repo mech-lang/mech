@@ -161,14 +161,8 @@ impl Database {
   }
 
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
-    // Add transactions to the back of the transaction log
+    self.process_transactions(transactions);
     self.transactions.append(transactions);
-    // Process the appended transactions
-    self.process_transactions();
-    // Move the transaction pointer to the back of the transaction log
-    self.txn_pointer = self.transactions.len();
-    // Update indices with new changes
-    self.update_indices();    
     self.epoch = self.epoch + 1;
   }
 
@@ -176,16 +170,18 @@ impl Database {
     self.register_transactions(&mut vec![transaction]);
   }
 
-  fn process_transactions(&mut self) {   
-    for txn in self.transactions.iter_mut().skip(self.txn_pointer) {
+  fn process_transactions(&mut self, transactions: &mut Vec<Transaction>) {   
+    for txn in transactions {
       if !txn.is_complete() {
         // Handle the adds
         for add in txn.adds.iter_mut() {
             self.store.intern_change(add);
+            self.update_indices(add);
         }
         // Handle the removes
         for remove in txn.removes.iter_mut() {
             self.store.intern_change(remove);
+            self.update_indices(remove);
         }
         txn.process();
         txn.epoch = self.epoch;
@@ -196,20 +192,17 @@ impl Database {
     self.round = 0;
   }
 
-  fn update_indices(&mut self) {
-    for change in self.store.store.iter().skip(self.scanned) {
-      match change.kind {
-        ChangeType::Add => {
-          self.entity_index.insert(change.clone());          
-          //self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
-        },
-        ChangeType::Remove => {
-          self.entity_index.remove(&change.entity);
-          //self.attribute_index.remove(&change.attribute.id);
-        },
-      }
+  fn update_indices(&mut self, change: &mut Change) {
+    match change.kind {
+      ChangeType::Add => {
+        self.entity_index.insert(change.clone());          
+        //self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
+      },
+      ChangeType::Remove => {
+        self.entity_index.remove(&change.entity);
+        //self.attribute_index.remove(&change.attribute.id);
+      },
     }
-    self.scanned = self.store.len();
   }
 
 }
