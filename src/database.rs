@@ -3,7 +3,7 @@
 
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
-use eav::{Entity, Attribute, Value};
+use eav::{Entity, Attribute, Value, Table};
 use indexes::{EntityIndex};
 
 // ## Change
@@ -106,6 +106,7 @@ impl fmt::Debug for Transaction {
 
 #[derive(Debug)]
 pub struct Interner {
+  pub tables: Vec<Table>,
   pub store: Vec<Change>,
 }
 
