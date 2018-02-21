@@ -43,7 +43,7 @@ impl Entity {
   }
 
   // Convert an Entity to a set of changes. These changes
-  // will be appleid to the DB.
+  // will be applied to the DB.
 
   pub fn make_changeset(&self, kind: ChangeType) -> Vec<Change> {
     let mut changes: Vec<Change> = Vec::with_capacity(self.pairs.len());
@@ -168,7 +168,7 @@ impl Table {
       attributes: HashMap::with_capacity(m),
     }
   }
-  
+
   pub fn add_value(&mut self, entity: &u64, attribute: &u64, value: Value) {
 
     // Check if the row
