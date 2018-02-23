@@ -33,7 +33,7 @@ pub struct Block {
 
 impl Block {
   
-  pub fn new() -> Block {
+  pub fn new() -> Block { 
     Block {
       ix: 0,
       input_registers: Vec::with_capacity(32),
