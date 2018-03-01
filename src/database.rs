@@ -114,6 +114,7 @@ impl Interner {
 
   pub fn new(capacity: usize) -> Interner {
     Interner {
+      tables: Vec::with_capacity(capacity),
       store: Vec::with_capacity(capacity),
     }
   }
