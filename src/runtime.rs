@@ -8,6 +8,7 @@
 // ## Prelude
 
 use eav::{Entity, Attribute, Value};
+use alloc::{Vec};
 
 // ## Blocks
 
