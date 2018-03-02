@@ -4,7 +4,7 @@
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
 use eav::{Entity, Attribute, Value, Table};
-use indexes::{EntityIndex};
+use indexes::{EntityIndex, TableIndex};
 
 // ## Change
 
@@ -137,6 +137,7 @@ pub struct Database {
     pub round: u64,
     pub entity_index: EntityIndex,
     pub attribute_index: BTreeMap<u64, Attribute>,
+    pub table_index: TableIndex,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
@@ -151,6 +152,7 @@ impl Database {
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
       entity_index: EntityIndex::new(),
+      table_index: TableIndex::new(),
       attribute_index: BTreeMap::new(),
       store: Interner::new(change_capacity),
       scanned: 0,

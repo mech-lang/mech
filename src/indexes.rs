@@ -2,7 +2,7 @@
 
 // ## Prelude
 
-use eav::{Entity, Attribute, Value};
+use eav::{Entity, Attribute, Value, Table};
 use database::{Change};
 use alloc::{fmt, BTreeMap, Vec};
 use hashmap_core::map::HashMap;
@@ -104,6 +104,34 @@ impl fmt::Debug for EntityIndex {
         Ok(())
     }
 }
+
+
+// ## Table Index
+
+pub struct TableIndex {
+    map: HashMap<u64, Table>,
+}
+
+impl TableIndex {
+
+    pub fn new() -> TableIndex {
+        TableIndex {
+            map: HashMap::with_capacity(1000),
+        }
+    }
+
+    pub fn register(&mut self, table: Table) {
+        if !self.map.contains_key(&table.id) {
+            self.map.insert(table.id, table);
+        }
+    }
+
+    pub fn remove(&mut self, table: &u64) {
+        self.map.remove(table);
+    }
+
+}
+
 
 // ## Utility
 
