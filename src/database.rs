@@ -18,18 +18,20 @@ pub enum ChangeType {
 pub struct Change {
     pub ix: usize,
     pub kind: ChangeType,
+    pub table: u64,
     pub entity: u64,
-    pub attribute: Attribute,
+    pub attribute: u64,
     pub value: Value,
     pub transaction: u64, 
 }
 
 impl Change {
 
-  pub fn from_eav(entity: &Entity, attribute: &Attribute, value: &Value, change_type: ChangeType) -> Change {  
+  pub fn new(table: u64, entity: &Entity, attribute: &Attribute, value: &Value, change_type: ChangeType) -> Change {  
     Change {
       ix: 0,
       kind: change_type,
+      table: table,
       entity: entity.id.clone(),
       attribute: attribute.clone(),
       value: value.clone(),
