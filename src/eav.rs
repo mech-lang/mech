@@ -48,12 +48,11 @@ impl Entity {
   pub fn make_changeset(&self, kind: ChangeType) -> Vec<Change> {
     let mut changes: Vec<Change> = Vec::with_capacity(self.pairs.len());
     for &(ref attribute, ref value) in &self.pairs {
-      let change = Change::from_eav(self, attribute, value, kind.clone());
+      let change = Change::new(0, self, attribute, value, kind.clone());
       changes.push(change);
     }
     changes
   }
-
 
 }
 
@@ -106,7 +105,6 @@ impl fmt::Debug for Attribute {
 
 #[derive(Clone)]
 pub enum Value {
-  Any,
   Number(u64),
   String(String),
   Empty,
@@ -134,7 +132,6 @@ impl fmt::Debug for Value {
       match self {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "\"{}\"", x),
-        &Value::Any => write!(f, "Any"),
         &Value::Empty => write!(f, "Empty"),
       }
     }
