@@ -81,10 +81,10 @@ impl EntityIndex {
     pub fn insert(&mut self, change: Change) {
         if self.map.contains_key(&change.entity) {
             let mut attribute_map = self.map.get_mut(&change.entity);
-            attribute_map.unwrap().insert(change.attribute.id, vec![change.value]);
+            attribute_map.unwrap().insert(change.attribute, vec![change.value]);
         } else {
             let mut attribute_map = HashMap::new();
-            attribute_map.insert(change.attribute.id, vec![change.value]);
+            attribute_map.insert(change.attribute, vec![change.value]);
             self.map.insert(change.entity, attribute_map);
         }
     }

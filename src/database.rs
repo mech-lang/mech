@@ -33,7 +33,7 @@ impl Change {
       kind: change_type,
       table: table,
       entity: entity.id.clone(),
-      attribute: attribute.clone(),
+      attribute: attribute.id.clone(),
       value: value.clone(),
       transaction: 0,
     }
