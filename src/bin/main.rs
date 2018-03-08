@@ -9,12 +9,6 @@ use mech::indexes::Hasher;
 
 fn main() {
 
-  let mut vec: Vec<Vec<Value>> = Vec::new();
-  vec.push(vec![Value::Any, Value::from_str("Hello")]);
-  println!("{:?}", vec[0][0]);
-  vec[0][0] = Value::from_str("Set");
-  println!("{:?}", vec[0][0]);
-
   let mut table = Table::new("keyboard/event/keydown", 16, 16);
   
   table.add_value(&0, &0, Value::from_u64(10));
@@ -29,7 +23,12 @@ fn main() {
 
   let mut db = Database::new(1000, 1000);
 
-  let mut raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
+  
+
+
+
+
+  /*let mut raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
                      ("key", Value::from_str("A")),
                      ("code", Value::from_u64(42))];
   let mut key = Entity::from_raw(raw);
@@ -38,7 +37,7 @@ fn main() {
 
   db.register_transaction(txn);
 
-  println!("{:?}", db.entity_index);
+  println!("Entities:\n{:?}", db.entity_index);
 
   //raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
   //               ("key", Value::from_str("A")),
@@ -49,9 +48,9 @@ fn main() {
 
 
 
-  db.register_transaction(txn);
+  db.register_transaction(txn);*/
 
 
-  println!("{:?}", db.entity_index);
+  //println!("Entities:\n{:?}", db.entity_index);
 
 }
