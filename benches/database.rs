@@ -39,6 +39,7 @@ fn db_register_txn(b: &mut Bencher) {
 }
 
 #[bench]
+// Register 1000 txns
 fn db_register_txn_1000(b: &mut Bencher) {
     let mut db = Database::new(1,1);
     db.init();
@@ -52,7 +53,6 @@ fn db_register_txn_1000(b: &mut Bencher) {
             let txn = Transaction::from_changeset(changes);    
             db.register_transaction(txn);
         }
-        
     });
 }
 
