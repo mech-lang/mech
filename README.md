@@ -2,6 +2,12 @@
 
 Mech is a langauge for developing data-driven, reactive systems such as robots and IoT devices.
 
+## Build
+
+```
+cargo build
+```
+
 ## License
 
 Apache 2.0
