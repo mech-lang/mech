@@ -11,14 +11,17 @@ use hashmap_core::map::HashMap;
 // ## Entity
 
 pub struct Entity {
+  pub table: u64,
   pub id: u64,
   pub pairs: Vec<(Attribute, Value)>,
 }
 
 impl Entity {
 
-  pub fn new() -> Entity {
+  pub fn new(table: &str) -> Entity {
+    let table_id = Hasher::hash_str(table);
     Entity {
+      table: table_id,
       id: 0,
       pairs: Vec::new(),
     }
@@ -29,7 +32,7 @@ impl Entity {
   // pairs.
 
   pub fn from_raw(pairs: Vec<(&str, Value)>) -> Entity {
-    let mut entity = Entity::new();
+    let mut entity = Entity::new("");
     let mut entity_id = Hasher::new();
     let mut attribute_id = Hasher::new();
     for (attribute, value) in pairs {
@@ -132,7 +135,7 @@ impl fmt::Debug for Value {
       match self {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "\"{}\"", x),
-        &Value::Empty => write!(f, "Empty"),
+        &Value::Empty => write!(f, ""),
       }
     }
 }
@@ -193,17 +196,19 @@ impl Table {
 impl fmt::Debug for Table {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "---------------------------------------\n");
+      write!(f, "═══════════════════════════════════════\n");
       write!(f, "{:?}\n", self.id);
-      write!(f, "{:?} x {:?}\n", self.cols, self.rows);
-      write!(f, "---------------------------------------\n");
+      write!(f, "{:?} × {:?}\n", self.cols, self.rows);
+      write!(f, "═══════════════════════════════════════\n");
       write!(f, "\n");
+      write!(f, "┌──────┬───┬───┐\n│");
       for m in 0 .. self.rows {
         for n in 0 .. self.cols {
-          write!(f, "{:?} ", self.data[n][m]);
+          write!(f, "{:?} │", self.data[n][m]);
         }
-        write!(f, "\n");
+        write!(f, "\n│");
       }
+      write!(f, "└┴───┴─┴───┘\n");
       Ok(())
     }
 }
