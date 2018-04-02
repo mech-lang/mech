@@ -134,7 +134,7 @@ impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
         &Value::Number(ref x) => write!(f, "{}", x),
-        &Value::String(ref x) => write!(f, "\"{}\"", x),
+        &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
       }
     }
@@ -146,6 +146,7 @@ impl fmt::Debug for Value {
 // where each column represents an attribute, and each row represents a record.
 
 pub struct Table {
+  pub name: String,
   pub id: u64,
   pub rows: usize,
   pub cols: usize,
@@ -156,10 +157,12 @@ pub struct Table {
 
 impl Table {
 
-  // m x attributes and n x records
+  // m x attributes and n x records. nxm is the capacity of the table
+  // while the actual size starts at 0x0 (since it is empty)
   pub fn new(tag: &str, m: usize, n: usize) -> Table {
     let id = Hasher::hash_str(tag);
     Table {
+      name: String::from(tag),
       id: id,
       rows: 0,
       cols: 0,
@@ -169,26 +172,29 @@ impl Table {
     }
   }
 
-  pub fn add_value(&mut self, entity: &u64, attribute: &u64, value: Value) {
+  pub fn add_value(&mut self, entity: u64, attribute: u64, value: Value) {
 
-    // Check if the row
+    // Check if the row is already in the table. If it is, return it.
     let row = if self.entities.contains_key(&entity) {
       self.entities.get(&entity).unwrap()
+    // If the row doesn't exist yet, create it at the end.
     } else {
       self.rows = self.rows + 1;
       self.entities.insert(entity.clone(), self.rows.clone());
       &self.rows
     };
 
-    // Get the column
+    // Get the column indicated by the attribute
     let col = if self.attributes.contains_key(&attribute) {
       self.attributes.get(&attribute).unwrap()
+    // If it doesn't exist yet, create it at the end
     } else {
       self.cols = self.cols + 1;
       self.attributes.insert(attribute.clone(), self.cols.clone());
       &self.cols
     };
-    self.data[*col - 1][*row - 1] = value;
+    // Add the value at the indicated location
+    self.data[*row - 1][*col - 1] = value;
   }
 
 }
@@ -196,19 +202,71 @@ impl Table {
 impl fmt::Debug for Table {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "═══════════════════════════════════════\n");
-      write!(f, "{:?}\n", self.id);
-      write!(f, "{:?} × {:?}\n", self.cols, self.rows);
-      write!(f, "═══════════════════════════════════════\n");
+      let cell_width = 15;
+      write!(f, "╔");
+      print_rep_char("═", (cell_width + 3) * self.cols - 1, f);
+      write!(f, "╗\n");
+      write!(f, "║ #{} ({:?})\n", self.name, self.id);
+      write!(f, "║ {:?} × {:?}\n", self.rows, self.cols);
+      write!(f, "╚");
+      print_rep_char("═", (cell_width + 3) * self.cols - 1, f);
+      write!(f, "╝\n");
       write!(f, "\n");
-      write!(f, "┌──────┬───┬───┐\n│");
+      print_header(self.cols, cell_width, f);
       for m in 0 .. self.rows {
-        for n in 0 .. self.cols {
-          write!(f, "{:?} │", self.data[n][m]);
-        }
-        write!(f, "\n│");
+        print_row(self.data[m].clone(), self.cols, cell_width, f);
       }
-      write!(f, "└┴───┴─┴───┘\n");
+      print_footer(self.cols, cell_width,  f);
+      
       Ok(())
     }
+}
+
+fn print_rep_char(to_print: &str, n: usize, f: &mut fmt::Formatter) {
+  for i in 0..n {
+    write!(f, "{}", to_print);
+  }
+}
+
+fn print_header(n: usize, m: usize, f: &mut fmt::Formatter) {
+  write!(f, "┌");
+  for i in 0 .. n - 1 {
+    write!(f, "─");
+    print_rep_char("─", m, f);
+    write!(f, "─┬");
+  }
+  write!(f, "─");
+  print_rep_char("─", m, f);
+  write!(f, "─┐\n");
+}
+
+fn print_row(row: Vec<Value>, n: usize, cell_size: usize, f: &mut fmt::Formatter) {
+  write!(f, "│");
+  for i in 0 .. n {
+    let mut s = format!("{:?}", row[i]);
+    let mut ell = "";
+    if s.len() > cell_size {
+      s.truncate(cell_size - 3);
+      ell = "..."
+    }
+    
+    write!(f, " {}{}", s.clone(), ell);
+    for j in 0 .. cell_size - (s.len() + ell.len()) {
+      write!(f, " ");
+    }
+    write!(f, " │");
+  }
+  write!(f, "\n");
+}
+
+fn print_footer(n: usize, m: usize, f: &mut fmt::Formatter) {
+  write!(f, "└");
+  for i in 0 .. n - 1 {
+    write!(f, "─");
+    print_rep_char("─", m, f);
+    write!(f, "─┴");
+  }
+  write!(f, "─");
+  print_rep_char("─", m, f);
+  write!(f, "─┘\n");
 }

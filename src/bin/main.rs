@@ -11,44 +11,42 @@ fn main() {
 
   let mut table = Table::new("keyboard/event/keydown", 16, 16);
   
-  table.add_value(&0, &0, Value::from_u64(10));
-  table.add_value(&0, &1, Value::from_u64(11));
-  table.add_value(&1, &0, Value::from_u64(31));
-  table.add_value(&1, &2, Value::from_u64(99));
-  table.add_value(&2, &1, Value::from_u64(75));
-  table.add_value(&1, &1, Value::from_u64(83));
-  table.add_value(&1, &1, Value::from_u64(29));
+  let me: u64 = Hasher::hash_str("This is me");
+  let wife: u64 = Hasher::hash_str("This is my wife");
+  let age: u64 = Hasher::hash_str("age");
+  let first: u64 = Hasher::hash_str("first name");
+  let last: u64 = Hasher::hash_str("last name");
+
+  table.add_value(me, first, Value::from_str("Corey"));
+  table.add_value(wife, first, Value::from_str("Rachel"));
+  table.add_value(me, last, Value::from_str("Montella"));
+  table.add_value(me, age, Value::from_u64(31));
+  table.add_value(wife, age, Value::from_u64(30));
+
 
   println!("{:?}", table);
 
   let mut db = Database::new(1000, 1000);
-
   
+  let mut key = Entity::new("keyboard/event/keydown");
+                //.add_values([("key",Value::from_str("A")),
+                //             ("code", Value::from_u64(42))]);
+  //let mut txn = Transaction::from_changeset(key);
 
+  //db.register_transaction(txn);
 
-
-
-  /*let mut raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
-                     ("key", Value::from_str("A")),
-                     ("code", Value::from_u64(42))];
-  let mut key = Entity::from_raw(raw);
-  let mut changes = key.make_changeset(ChangeType::Add);
-  let mut txn = Transaction::from_changeset(changes);
-
-  db.register_transaction(txn);
-
-  println!("Entities:\n{:?}", db.entity_index);
+  //println!("Entities:\n{:?}", db.entity_index);
 
   //raw = vec![("tag", Value::from_str("keyboard/event/keydown")),
   //               ("key", Value::from_str("A")),
   //               ("code", Value::from_u64(42))];
   //key = Entity::from_raw(raw);
-  changes = key.make_changeset(ChangeType::Remove);
-  txn = Transaction::from_changeset(changes);
+  //changes = key.make_changeset(ChangeType::Remove);
+  //txn = Transaction::from_changeset(changes);
 
 
 
-  db.register_transaction(txn);*/
+  //db.register_transaction(txn);*/
 
 
   //println!("Entities:\n{:?}", db.entity_index);
