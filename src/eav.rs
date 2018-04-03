@@ -197,6 +197,14 @@ impl Table {
     self.data[*row - 1][*col - 1] = value;
   }
 
+  pub fn get_row(&mut self, entity: u64) -> Option<&Vec<Value>> {
+    // Get the index for the given entity
+    match self.entities.get(&entity) {
+      Some(x) => Some(&self.data[x - 1]),
+      None => None,
+    }
+  }
+
 }
 
 impl fmt::Debug for Table {
