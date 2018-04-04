@@ -197,16 +197,21 @@ impl Table {
     self.data[*row - 1][*col - 1] = value;
   }
 
-  pub fn get_rows(&mut self, entities: u64) -> Option<Vec<Value>> {
-    // Get the index for the given entity
-    match self.entities.get(&entities) {
-      Some(x) => {
-        let mut row = self.data[x - 1].clone();
-        row.truncate(self.cols);
-        Some(row)
-      },
-      None => None,
+  // Supply a list of entities (rows), get them back in a vector.
+  pub fn get_rows(&mut self, entities: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+    let mut rows: Vec<Option<Vec<Value>>> = vec![];
+    for entity in entities {
+      // Get the index for the given entity
+      match self.entities.get(&entity) {
+        Some(x) => {
+          let mut row = self.data[x - 1].clone();
+          row.truncate(self.cols);
+          rows.push(Some(row));
+        },
+        None => rows.push(None),
+      };
     }
+    rows
   }
 }
 
