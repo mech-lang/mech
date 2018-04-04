@@ -197,84 +197,106 @@ impl Table {
     self.data[*row - 1][*col - 1] = value;
   }
 
-  pub fn get_row(&mut self, entity: u64) -> Option<&Vec<Value>> {
+  pub fn get_rows(&mut self, entities: u64) -> Option<Vec<Value>> {
     // Get the index for the given entity
-    match self.entities.get(&entity) {
-      Some(x) => Some(&self.data[x - 1]),
+    match self.entities.get(&entities) {
+      Some(x) => {
+        let mut row = self.data[x - 1].clone();
+        row.truncate(self.cols);
+        Some(row)
+      },
       None => None,
     }
   }
-
 }
 
 impl fmt::Debug for Table {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       let cell_width = 15;
+      let table_width = cell_width * self.cols + self.cols * 2;
+
+      // Print table header
       write!(f, "╔");
-      print_rep_char("═", (cell_width + 3) * self.cols - 1, f);
+      print_repeated_char("═", table_width, f);
       write!(f, "╗\n");
-      write!(f, "║ #{} ({:?})\n", self.name, self.id);
-      write!(f, "║ {:?} × {:?}\n", self.rows, self.cols);
+
+      let table_name = format!("#{} ({:?})", self.name, self.id);
+      write!(f, "║");
+      print_cell_contents(table_name, table_width, f);
+      write!(f, "║\n");
+
+      let table_dimensions = format!("{:?} x {:?}", self.rows, self.cols);
+      write!(f, "║");
+      print_cell_contents(table_dimensions, table_width, f);
+      write!(f, "║\n");
+
       write!(f, "╚");
-      print_rep_char("═", (cell_width + 3) * self.cols - 1, f);
+      print_repeated_char("═", table_width, f);
       write!(f, "╝\n");
+
       write!(f, "\n");
-      print_header(self.cols, cell_width, f);
+
+      // Print table body
+      print_top_border(self.cols, cell_width, f);
       for m in 0 .. self.rows {
         print_row(self.data[m].clone(), self.cols, cell_width, f);
       }
-      print_footer(self.cols, cell_width,  f);
+      print_bottom_border(self.cols, cell_width,  f);
       
       Ok(())
     }
 }
 
-fn print_rep_char(to_print: &str, n: usize, f: &mut fmt::Formatter) {
+fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) {
   for i in 0..n {
     write!(f, "{}", to_print);
   }
 }
 
-fn print_header(n: usize, m: usize, f: &mut fmt::Formatter) {
+fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   write!(f, "┌");
   for i in 0 .. n - 1 {
-    write!(f, "─");
-    print_rep_char("─", m, f);
-    write!(f, "─┬");
+    print_repeated_char("─", m, f);
+    write!(f, "┬");
   }
-  write!(f, "─");
-  print_rep_char("─", m, f);
-  write!(f, "─┐\n");
+  print_repeated_char("─", m, f);
+  write!(f, "┐\n");
 }
 
-fn print_row(row: Vec<Value>, n: usize, cell_size: usize, f: &mut fmt::Formatter) {
+fn print_row(row: Vec<Value>, n: usize, cell_width: usize, f: &mut fmt::Formatter) {
   write!(f, "│");
   for i in 0 .. n {
-    let mut s = format!("{:?}", row[i]);
-    let mut ell = "";
-    if s.len() > cell_size {
-      s.truncate(cell_size - 3);
-      ell = "..."
-    }
-    
-    write!(f, " {}{}", s.clone(), ell);
-    for j in 0 .. cell_size - (s.len() + ell.len()) {
-      write!(f, " ");
-    }
-    write!(f, " │");
+    let content_string = format!("{:?}", row[i]);
+    print_cell_contents(content_string, cell_width, f);
+    write!(f, "│");
   }
   write!(f, "\n");
 }
 
-fn print_footer(n: usize, m: usize, f: &mut fmt::Formatter) {
+fn print_cell_contents(content_string: String, cell_width: usize, f: &mut fmt::Formatter) {
+    // If the contents exceed the cell width, truncate it and add ellipsis
+    if content_string.len() > cell_width {
+      let mut truncated_content_string = content_string.clone();
+      let content_width = cell_width - 3; 
+      truncated_content_string.truncate(content_width);
+      truncated_content_string.insert_str(content_width, "...");
+      write!(f, "{}", truncated_content_string.clone());
+    } else {
+      write!(f, "{}", content_string.clone());
+      let cell_padding = cell_width - content_string.len();
+      for _ in 0 .. cell_padding {
+        write!(f, " ");
+      }
+    }
+}
+
+fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   write!(f, "└");
   for i in 0 .. n - 1 {
-    write!(f, "─");
-    print_rep_char("─", m, f);
-    write!(f, "─┴");
+    print_repeated_char("─", m, f);
+    write!(f, "┴");
   }
-  write!(f, "─");
-  print_rep_char("─", m, f);
-  write!(f, "─┘\n");
+  print_repeated_char("─", m, f);
+  write!(f, "┘\n");
 }
