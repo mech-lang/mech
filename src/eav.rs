@@ -220,24 +220,25 @@ impl fmt::Debug for Table {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       let cell_width = 15;
       let table_width = cell_width * self.cols + self.cols * 2;
+      let header_width = table_width - self.cols - 1;
 
       // Print table header
       write!(f, "╔");
-      print_repeated_char("═", table_width, f);
+      print_repeated_char("═", header_width, f);
       write!(f, "╗\n");
 
       let table_name = format!("#{} ({:?})", self.name, self.id);
       write!(f, "║");
-      print_cell_contents(table_name, table_width, f);
+      print_cell_contents(table_name, header_width, f);
       write!(f, "║\n");
 
       let table_dimensions = format!("{:?} x {:?}", self.rows, self.cols);
       write!(f, "║");
-      print_cell_contents(table_dimensions, table_width, f);
+      print_cell_contents(table_dimensions, header_width, f);
       write!(f, "║\n");
 
       write!(f, "╚");
-      print_repeated_char("═", table_width, f);
+      print_repeated_char("═", header_width, f);
       write!(f, "╝\n");
 
       write!(f, "\n");
