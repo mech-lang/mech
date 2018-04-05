@@ -213,6 +213,28 @@ impl Table {
     }
     rows
   }
+
+  // Supply a list of entities (rows), get them back in a vector.
+  pub fn get_cols(&mut self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+    let mut columns: Vec<Option<Vec<Value>>> = vec![];
+    for attribute in attributes {
+      let mut column: Vec<Value> = vec![];
+      // Get the index for the given entity
+      match self.attributes.get(&attribute) {
+        Some(x) => {
+          //get the column from each row
+          for i in 0 .. self.rows {
+            let cell = self.data[i][*x - 1].clone();
+            column.push(cell);
+          }
+          columns.push(Some(column));
+        },
+        None => columns.push(None),
+      };
+    }
+    columns
+  }
+
 }
 
 impl fmt::Debug for Table {
