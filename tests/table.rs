@@ -59,3 +59,31 @@ fn get_multiple_rows() {
                     ];
     assert_eq!(row, answer);
 }
+
+#[test]
+fn get_a_column() {
+    let mut table = make_table();
+    let test1 = Hasher::hash_str("test1");
+    let col = table.get_cols(vec![test1]);
+    let answer = vec![Some(vec![
+                      Value::from_u64(83),
+                      Value::from_u64(99)]),
+                    ];
+    assert_eq!(col, answer);
+}
+
+#[test]
+fn get_multiple_columns() {
+    let mut table = make_table();
+    let test1 = Hasher::hash_str("test1");
+    let test2 = Hasher::hash_str("test2");
+    let col = table.get_cols(vec![test1, test2]);
+    let answer = vec![Some(vec![
+                        Value::from_u64(83),
+                        Value::from_u64(99)]),
+                      Some(vec![
+                        Value::from_u64(76),
+                        Value::from_u64(95)])
+                    ];
+    assert_eq!(col, answer);
+}
