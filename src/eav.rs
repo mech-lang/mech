@@ -106,7 +106,7 @@ impl fmt::Debug for Attribute {
 
 // ## Value
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
   Number(u64),
   String(String),
