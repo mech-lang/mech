@@ -143,7 +143,7 @@ impl fmt::Debug for Value {
 // ## Table
 
 // A table starts with a tag, and has a matrix of memory available for data, 
-// where each column represents an attribute, and each row represents a record.
+// where each column represents an attribute, and each row represents an entity.
 
 pub struct Table {
   pub name: String,
@@ -157,8 +157,8 @@ pub struct Table {
 
 impl Table {
 
-  // m x attributes and n x records. nxm is the capacity of the table
-  // while the actual size starts at 0x0 (since it is empty)
+  // m x attributes and n x entities. n x m is the capacity of the table
+  // while the actual size starts at 0 x 0 (since it is empty)
   pub fn new(tag: &str, m: usize, n: usize) -> Table {
     let id = Hasher::hash_str(tag);
     Table {
@@ -219,10 +219,10 @@ impl Table {
     let mut columns: Vec<Option<Vec<Value>>> = vec![];
     for attribute in attributes {
       let mut column: Vec<Value> = vec![];
-      // Get the index for the given entity
+      // Get the index for the given attribute
       match self.attributes.get(&attribute) {
         Some(x) => {
-          //get the column from each row
+          // get the column from each row
           for i in 0 .. self.rows {
             let cell = self.data[i][*x - 1].clone();
             column.push(cell);
@@ -235,7 +235,22 @@ impl Table {
     columns
   }
 
+  pub fn index(&mut self, entity: u64, attribute: u64) -> Option<Value> {
+    match self.entities.get(&entity) {
+      Some(x) => {
+        match self.attributes.get(&attribute) {
+          Some(y) => Some(self.data[*x - 1][*y - 1].clone()),
+          None => None,
+        }
+      },
+      None => None,
+    }
+    //self.data[entity][attribute]
+  }
+
 }
+
+// ### Pretty Printing Tables
 
 impl fmt::Debug for Table {
     #[inline]

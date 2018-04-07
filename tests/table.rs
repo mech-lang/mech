@@ -26,7 +26,6 @@ fn make_table() -> Table {
   table
 }
 
-
 #[test]
 fn get_a_row() {
     let mut table = make_table();
@@ -87,3 +86,13 @@ fn get_multiple_columns() {
                     ];
     assert_eq!(col, answer);
 }
+
+#[test]
+fn index_into_cell() {
+    let mut table = make_table();
+    let student1 = Hasher::hash_str("Mark");
+    let test1 = Hasher::hash_str("test1");
+    let score = table.index(student1, test1);
+
+    assert_eq!(score, Some(Value::from_u64(83)));
+} 
