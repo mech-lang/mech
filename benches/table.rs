@@ -9,9 +9,30 @@ use mech::table::{Table, Value};
 #[bench]
 fn make_table(b: &mut Bencher) {
     b.iter(|| {
-        /*let raw = vec![("tag", Value::from_str("#keyboard/event/keydown")),
-                        ("key", Value::from_str("A")),
-                        ("code", Value::from_u64(42))];
-        Entity::from_raw(raw)*/
+        let mut table = Table::new("students", 16, 16);
+    });
+}
+
+#[bench]
+fn make_table_100_x_100(b: &mut Bencher) {
+    b.iter(|| {
+        let mut table = Table::new("students", 100, 100);
+    });
+}
+
+#[bench]
+fn set_cell(b: &mut Bencher) {
+    let mut table = Table::new("students", 16, 16);
+    b.iter(|| {
+        table.set(1, 1, Value::from_u64(100));
+    });
+}
+
+#[bench]
+fn set_clear_cell(b: &mut Bencher) {
+    let mut table = Table::new("students", 16, 16);
+    b.iter(|| {
+        table.set(1, 1, Value::from_u64(100));
+        table.clear(1, 1);
     });
 }
