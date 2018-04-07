@@ -110,6 +110,7 @@ impl fmt::Debug for Attribute {
 pub enum Value {
   Number(u64),
   String(String),
+  Array(Vec<Value>),
   Empty,
 }
 
@@ -127,6 +128,10 @@ impl Value {
     Value::Number(num)
   }
 
+  pub fn from_vec(vec: Vec<Value>) -> Value {
+    Value::Array(vec)
+  }
+
 }
 
 impl fmt::Debug for Value {
@@ -136,6 +141,13 @@ impl fmt::Debug for Value {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
+        &Value::Array(ref x) => {
+          write!(f, "[");
+          for value in x {
+            write!(f, "{:?}", x);
+          }
+          write!(f, "]")
+        }
       }
     }
 }
@@ -235,18 +247,27 @@ impl Table {
     columns
   }
 
-  pub fn index(&mut self, entity: u64, attribute: u64) -> Option<Value> {
+  // Index into a cell without having to access the data member directly
+  pub fn index(&mut self, entity: u64, attribute: u64) -> Option<&Value> {
     match self.entities.get(&entity) {
       Some(x) => {
         match self.attributes.get(&attribute) {
-          Some(y) => Some(self.data[*x - 1][*y - 1].clone()),
+          Some(y) => Some(&self.data[*x - 1][*y - 1]),
           None => None,
         }
       },
       None => None,
     }
-    //self.data[entity][attribute]
   }
+
+  // Clear a cell, setting it's value to Value::Empty
+  pub fn clear(&mut self, entity: u64, attribute: u64) {
+    match self.index(entity, attribute) {
+      _ => println!("Woo hoo"),
+    }
+  }
+
+
 
 }
 
