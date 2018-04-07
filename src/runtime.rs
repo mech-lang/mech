@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use eav::{Entity, Attribute, Value};
+use table::{Value};
 use alloc::{Vec};
 
 // ## Blocks
@@ -21,7 +21,7 @@ pub struct Address {
 }
 
 pub struct Register {
-  data: Vec<(Entity, Attribute, Value)>,
+  data: Vec<(u64, u64, Value)>,
 }
 
 pub struct Block {

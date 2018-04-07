@@ -2,7 +2,7 @@
 
 // ## Prelude
 
-use eav::{Entity, Attribute, Value, Table};
+use table::{Value, Table};
 use database::{Change};
 use alloc::{fmt, BTreeMap, Vec};
 use hashmap_core::map::HashMap;
@@ -66,6 +66,7 @@ impl Hasher {
 
 // ## Entity Index
 
+/*
 pub struct EntityIndex {
     map: HashMap<u64, HashMap<u64, Vec<Value>>>,
 }
@@ -103,7 +104,7 @@ impl fmt::Debug for EntityIndex {
         }
         Ok(())
     }
-}
+}*/
 
 
 // ## Table Index

@@ -1,6 +1,6 @@
 extern crate mech;
 
-use mech::eav::{Table, Value};
+use mech::table::{Table, Value};
 use mech::indexes::Hasher;
 
 fn make_table() -> Table {

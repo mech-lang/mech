@@ -3,8 +3,8 @@
 
 use alloc::{BTreeSet, BTreeMap, Vec, String};
 use core::fmt;
-use eav::{Entity, Attribute, Value, Table};
-use indexes::{EntityIndex, TableIndex};
+use table::{Value, Table};
+use indexes::{TableIndex};
 
 // ## Change
 
@@ -27,13 +27,13 @@ pub struct Change {
 
 impl Change {
 
-  pub fn new(table: u64, entity: &Entity, attribute: &Attribute, value: &Value, change_type: ChangeType) -> Change {  
+  pub fn new(table: u64, entity: u64, attribute: u64, value: &Value, change_type: ChangeType) -> Change {  
     Change {
       ix: 0,
       kind: change_type,
       table: table,
-      entity: entity.id.clone(),
-      attribute: attribute.id.clone(),
+      entity: entity,
+      attribute: attribute,
       value: value.clone(),
       transaction: 0,
     }
@@ -137,8 +137,7 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
-    pub entity_index: EntityIndex,
-    pub attribute_index: BTreeMap<u64, Attribute>,
+    pub attribute_index: BTreeMap<u64, u64>,
     pub table_index: TableIndex,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
@@ -153,7 +152,6 @@ impl Database {
       epoch: 0,
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
-      entity_index: EntityIndex::new(),
       table_index: TableIndex::new(),
       attribute_index: BTreeMap::new(),
       store: Interner::new(change_capacity),
@@ -201,11 +199,11 @@ impl Database {
   fn update_indices(&mut self, change: &mut Change) {
     match change.kind {
       ChangeType::Add => {
-        self.entity_index.insert(change.clone());          
+        //self.entity_index.insert(change.clone());          
         //self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
       },
       ChangeType::Remove => {
-        self.entity_index.remove(&change.entity);
+        //self.entity_index.remove(&change.entity);
         //self.attribute_index.remove(&change.attribute.id);
       },
     }

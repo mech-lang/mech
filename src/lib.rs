@@ -22,5 +22,5 @@ extern crate rand;
 
 pub mod database;
 pub mod runtime;
-pub mod eav;
+pub mod table;
 pub mod indexes;
