@@ -110,7 +110,7 @@ impl fmt::Debug for Attribute {
 pub enum Value {
   Number(u64),
   String(String),
-  Array(Vec<Value>),
+  Table(Table),
   Empty,
 }
 
@@ -128,10 +128,6 @@ impl Value {
     Value::Number(num)
   }
 
-  pub fn from_vec(vec: Vec<Value>) -> Value {
-    Value::Array(vec)
-  }
-
 }
 
 impl fmt::Debug for Value {
@@ -141,13 +137,7 @@ impl fmt::Debug for Value {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
-        &Value::Array(ref x) => {
-          write!(f, "[");
-          for value in x {
-            write!(f, "{:?}", x);
-          }
-          write!(f, "]")
-        }
+        &Value::Table(ref x) => write!(f, "#{:?}", x.name),
       }
     }
 }
@@ -157,6 +147,7 @@ impl fmt::Debug for Value {
 // A table starts with a tag, and has a matrix of memory available for data, 
 // where each column represents an attribute, and each row represents an entity.
 
+#[derive(Clone, PartialEq)]
 pub struct Table {
   pub name: String,
   pub id: u64,
@@ -184,7 +175,7 @@ impl Table {
     }
   }
 
-  pub fn add_value(&mut self, entity: u64, attribute: u64, value: Value) {
+  pub fn set(&mut self, entity: u64, attribute: u64, value: Value) {
 
     // Check if the row is already in the table. If it is, return it.
     let row = if self.entities.contains_key(&entity) {
@@ -262,9 +253,15 @@ impl Table {
 
   // Clear a cell, setting it's value to Value::Empty
   pub fn clear(&mut self, entity: u64, attribute: u64) {
-    match self.index(entity, attribute) {
-      _ => println!("Woo hoo"),
-    }
+    match self.entities.get(&entity) {
+      Some(x) => {
+        match self.attributes.get(&attribute) {
+          Some(y) => self.data[*x - 1][*y - 1] = Value::Empty,
+          None => (),
+        }
+      },
+      None => (),
+    };
   }
 
 

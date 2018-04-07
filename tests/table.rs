@@ -13,15 +13,15 @@ fn make_table() -> Table {
   let test1: u64 = Hasher::hash_str("test1");
   let test2: u64 = Hasher::hash_str("test2");
 
-  table.add_value(student1, first, Value::from_str("Mark"));
-  table.add_value(student1, last, Value::from_str("Laughlin"));
-  table.add_value(student1, test1, Value::from_u64(83));
-  table.add_value(student1, test2, Value::from_u64(76));
+  table.set(student1, first, Value::from_str("Mark"));
+  table.set(student1, last, Value::from_str("Laughlin"));
+  table.set(student1, test1, Value::from_u64(83));
+  table.set(student1, test2, Value::from_u64(76));
 
-  table.add_value(student2, first, Value::from_str("Sabra"));
-  table.add_value(student2, last, Value::from_str("Kindar"));
-  table.add_value(student2, test1, Value::from_u64(99));
-  table.add_value(student2, test2, Value::from_u64(95));
+  table.set(student2, first, Value::from_str("Sabra"));
+  table.set(student2, last, Value::from_str("Kindar"));
+  table.set(student2, test1, Value::from_u64(99));
+  table.set(student2, test2, Value::from_u64(95));
 
   table
 }
@@ -94,5 +94,16 @@ fn index_into_cell() {
     let test1 = Hasher::hash_str("test1");
     let score = table.index(student1, test1);
 
-    assert_eq!(score, Some(Value::from_u64(83)));
+    assert_eq!(score, Some(&Value::from_u64(83)));
+} 
+
+#[test]
+fn clear_cell() {
+    let mut table = make_table();
+    let student1 = Hasher::hash_str("Mark");
+    let test1 = Hasher::hash_str("test1");
+    table.clear(student1, test1);
+    let score = table.index(student1, test1);
+
+    assert_eq!(score, Some(&Value::Empty));
 } 
