@@ -7,6 +7,7 @@ use test::Bencher;
 use mech::database::{Database, Transaction, Change, ChangeType};
 use mech::table::{Table, Value};
 
+/*
 #[bench]
 fn db_init(b:&mut Bencher) {
     b.iter(|| {
@@ -54,3 +55,4 @@ fn db_register_txn_1000(b: &mut Bencher) {
         }*/
     });
 }
+*/
