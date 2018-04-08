@@ -27,14 +27,14 @@ pub struct Change {
 
 impl Change {
 
-  pub fn new(table: u64, entity: u64, attribute: u64, value: &Value, change_type: ChangeType) -> Change {  
+  pub fn new(table: u64, entity: u64, attribute: u64, value: Value, change_type: ChangeType) -> Change {  
     Change {
       ix: 0,
       kind: change_type,
       table: table,
       entity: entity,
       attribute: attribute,
-      value: value.clone(),
+      value: value,
       transaction: 0,
     }
   }
@@ -96,9 +96,9 @@ impl Transaction {
 impl fmt::Debug for Transaction {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f,"Adds:\n");
+      write!(f,"Adds:\n").unwrap();
       for ref add in &self.adds {
-        write!(f, "{:?}\n", add);
+        write!(f, "{:?}\n", add).unwrap();
       }
       Ok(())
     }
@@ -114,10 +114,10 @@ pub struct Interner {
 
 impl Interner {
 
-  pub fn new(capacity: usize) -> Interner {
+  pub fn new(change_capacity: usize, table_capacity: usize) -> Interner {
     Interner {
-      tables: Vec::with_capacity(capacity),
-      store: Vec::with_capacity(capacity),
+      tables: Vec::with_capacity(table_capacity),
+      store: Vec::with_capacity(change_capacity),
     }
   }
 
@@ -147,14 +147,14 @@ pub struct Database {
 
 impl Database {
 
-  pub fn new(txn_capacity: usize, change_capacity: usize) -> Database {
+  pub fn new(txn_capacity: usize, change_capacity: usize, table_capacity: usize) -> Database {
     Database {
       epoch: 0,
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
       table_index: TableIndex::new(),
       attribute_index: BTreeMap::new(),
-      store: Interner::new(change_capacity),
+      store: Interner::new(change_capacity, table_capacity),
       scanned: 0,
       txn_pointer: 0,
     }
