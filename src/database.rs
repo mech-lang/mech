@@ -27,14 +27,14 @@ pub struct Change {
 
 impl Change {
 
-  pub fn new(table: u64, entity: u64, attribute: u64, value: &Value, change_type: ChangeType) -> Change {  
+  pub fn new(table: u64, entity: u64, attribute: u64, value: Value, change_type: ChangeType) -> Change {  
     Change {
       ix: 0,
       kind: change_type,
       table: table,
       entity: entity,
       attribute: attribute,
-      value: value.clone(),
+      value: value,
       transaction: 0,
     }
   }
