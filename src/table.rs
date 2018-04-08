@@ -4,7 +4,6 @@
 
 use core::fmt;
 use indexes::Hasher;
-use database::{Change, ChangeType};
 use alloc::{Vec, String};
 use hashmap_core::map::HashMap;
 
@@ -182,25 +181,25 @@ impl fmt::Debug for Table {
       let header_width = table_width - self.cols - 1;
 
       // Print table header
-      write!(f, "╔");
+      write!(f, "╔").unwrap();
       print_repeated_char("═", header_width, f);
-      write!(f, "╗\n");
+      write!(f, "╗\n").unwrap();
 
       let table_name = format!("#{} ({:?})", self.name, self.id);
-      write!(f, "║");
+      write!(f, "║").unwrap();
       print_cell_contents(table_name, header_width, f);
-      write!(f, "║\n");
+      write!(f, "║\n").unwrap();
 
       let table_dimensions = format!("{:?} x {:?}", self.rows, self.cols);
-      write!(f, "║");
+      write!(f, "║").unwrap();
       print_cell_contents(table_dimensions, header_width, f);
-      write!(f, "║\n");
+      write!(f, "║\n").unwrap();
 
-      write!(f, "╚");
+      write!(f, "╚").unwrap();
       print_repeated_char("═", header_width, f);
-      write!(f, "╝\n");
+      write!(f, "╝\n").unwrap();
 
-      write!(f, "\n");
+      write!(f, "\n").unwrap();
 
       // Print table body
       print_top_border(self.cols, cell_width, f);
@@ -214,29 +213,29 @@ impl fmt::Debug for Table {
 }
 
 fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) {
-  for i in 0..n {
-    write!(f, "{}", to_print);
+  for _ in 0..n {
+    write!(f, "{}", to_print).unwrap();
   }
 }
 
 fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) {
-  write!(f, "┌");
-  for i in 0 .. n - 1 {
+  write!(f, "┌").unwrap();
+  for _ in 0 .. n - 1 {
     print_repeated_char("─", m, f);
-    write!(f, "┬");
+    write!(f, "┬").unwrap();
   }
   print_repeated_char("─", m, f);
-  write!(f, "┐\n");
+  write!(f, "┐\n").unwrap();
 }
 
 fn print_row(row: Vec<Value>, n: usize, cell_width: usize, f: &mut fmt::Formatter) {
-  write!(f, "│");
+  write!(f, "│").unwrap();
   for i in 0 .. n {
     let content_string = format!("{:?}", row[i]);
     print_cell_contents(content_string, cell_width, f);
-    write!(f, "│");
+    write!(f, "│").unwrap();
   }
-  write!(f, "\n");
+  write!(f, "\n").unwrap();
 }
 
 fn print_cell_contents(content_string: String, cell_width: usize, f: &mut fmt::Formatter) {
@@ -246,22 +245,22 @@ fn print_cell_contents(content_string: String, cell_width: usize, f: &mut fmt::F
       let content_width = cell_width - 3; 
       truncated_content_string.truncate(content_width);
       truncated_content_string.insert_str(content_width, "...");
-      write!(f, "{}", truncated_content_string.clone());
+      write!(f, "{}", truncated_content_string.clone()).unwrap();
     } else {
-      write!(f, "{}", content_string.clone());
+      write!(f, "{}", content_string.clone()).unwrap();
       let cell_padding = cell_width - content_string.len();
       for _ in 0 .. cell_padding {
-        write!(f, " ");
+        write!(f, " ").unwrap();
       }
     }
 }
 
 fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
-  write!(f, "└");
-  for i in 0 .. n - 1 {
+  write!(f, "└").unwrap();
+  for _ in 0 .. n - 1 {
     print_repeated_char("─", m, f);
-    write!(f, "┴");
+    write!(f, "┴").unwrap();
   }
   print_repeated_char("─", m, f);
-  write!(f, "┘\n");
+  write!(f, "┘\n").unwrap();
 }

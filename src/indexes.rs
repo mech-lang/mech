@@ -28,7 +28,6 @@ impl Hasher {
     }
 
     pub fn write(&mut self, string: &str) {
-        let intLength = string.len() / 4;
         let mult = [1, 256, 65536, 16777216, 1768841549];
         let chunks = CharChunks::new(string, 4);
         for chunk in chunks {
