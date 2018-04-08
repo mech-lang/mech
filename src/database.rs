@@ -1,10 +1,11 @@
 
 // ## Prelude
 
-use alloc::{BTreeSet, BTreeMap, Vec, String};
+use alloc::{Vec};
 use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex};
+use hashmap_core::map::HashMap;
 
 // ## Change
 
@@ -108,7 +109,7 @@ impl fmt::Debug for Transaction {
 
 #[derive(Debug)]
 pub struct Interner {
-  pub tables: Vec<Table>,
+  pub tables: TableIndex,
   pub store: Vec<Change>,
 }
 
@@ -116,7 +117,7 @@ impl Interner {
 
   pub fn new(change_capacity: usize, table_capacity: usize) -> Interner {
     Interner {
-      tables: Vec::with_capacity(table_capacity),
+      tables: TableIndex::new(table_capacity),
       store: Vec::with_capacity(change_capacity),
     }
   }
@@ -137,8 +138,7 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
-    pub attribute_index: BTreeMap<u64, u64>,
-    pub table_index: TableIndex,
+    pub attribute_index: HashMap<u64, u64>,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
@@ -152,8 +152,7 @@ impl Database {
       epoch: 0,
       round: 0,
       transactions: Vec::with_capacity(txn_capacity),
-      table_index: TableIndex::new(),
-      attribute_index: BTreeMap::new(),
+      attribute_index: HashMap::new(),
       store: Interner::new(change_capacity, table_capacity),
       scanned: 0,
       txn_pointer: 0,

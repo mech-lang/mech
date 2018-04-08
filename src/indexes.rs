@@ -3,11 +3,13 @@
 // ## Prelude
 
 use table::{Value, Table};
-use database::{Change};
-use alloc::{fmt, BTreeMap, Vec};
+use alloc::{fmt};
 use hashmap_core::map::HashMap;
 
 // ## Hasher
+
+// Hashes strings by breaking them into chunks and adding their byte 
+// representations together.
 
 pub struct Hasher {
     value: u64,
@@ -95,15 +97,7 @@ impl EntityIndex {
 
 }
 
-impl fmt::Debug for EntityIndex {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for (key, value) in self.map.iter() {
-            write!(f, "{:?}:\n  {:?}\n", key, value);
-        }
-        Ok(())
-    }
-}*/
+*/
 
 
 // ## Table Index
@@ -114,9 +108,9 @@ pub struct TableIndex {
 
 impl TableIndex {
 
-    pub fn new() -> TableIndex {
+    pub fn new(capacity: usize) -> TableIndex {
         TableIndex {
-            map: HashMap::with_capacity(1000),
+            map: HashMap::with_capacity(capacity),
         }
     }
 
@@ -130,6 +124,16 @@ impl TableIndex {
         self.map.remove(table);
     }
 
+}
+
+impl fmt::Debug for TableIndex {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for (key, value) in self.map.iter() {
+            write!(f, "{:?}:\n  {:?}\n", key, value.name).unwrap();
+        }
+        Ok(())
+    }
 }
 
 
@@ -157,7 +161,7 @@ impl<'a> Iterator for CharChunks<'a> {
         if s.is_empty() {
             return None;
         }
-        for (i, (j, ch)) in s.char_indices().enumerate() {
+        for (i, _) in s.char_indices().enumerate() {
             if i + 1 == self.n {
                 let (part, tail) = s.split_at(self.n);
                 self.s = tail;
