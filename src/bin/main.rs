@@ -45,6 +45,6 @@ fn main() {
   //foo = &mut my_value;
   
 
-  let mut db = Database::new(1000, 1000);
+  let mut db = Database::new(1000, 1000, 1000);
 
 }
