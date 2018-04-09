@@ -13,7 +13,7 @@ use hashmap_core::map::HashMap;
 pub enum Value {
   Number(u64),
   String(String),
-  Table(Table),
+  Table(u64),
   Empty,
 }
 
@@ -40,7 +40,7 @@ impl fmt::Debug for Value {
         &Value::Number(ref x) => write!(f, "{}", x),
         &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
-        &Value::Table(ref x) => write!(f, "#{:?}", x.name),
+        &Value::Table(ref x) => write!(f, "{}", x),
       }
     }
 }
@@ -52,7 +52,6 @@ impl fmt::Debug for Value {
 
 #[derive(Clone, PartialEq)]
 pub struct Table {
-  pub name: String,
   pub id: u64,
   pub rows: usize,
   pub cols: usize,
@@ -65,11 +64,9 @@ impl Table {
 
   // m x attributes and n x entities. n x m is the capacity of the table
   // while the actual size starts at 0 x 0 (since it is empty)
-  pub fn new(tag: &str, m: usize, n: usize) -> Table {
-    let id = Hasher::hash_str(tag);
+  pub fn new(tag: u64, m: usize, n: usize) -> Table {
     Table {
-      name: String::from(tag),
-      id: id,
+      id: tag,
       rows: 0,
       cols: 0,
       data: vec![vec![Value::Empty; n]; m], 
@@ -185,7 +182,7 @@ impl fmt::Debug for Table {
       print_repeated_char("═", header_width, f);
       write!(f, "╗\n").unwrap();
 
-      let table_name = format!("#{} ({:?})", self.name, self.id);
+      let table_name = format!("#{:?}", self.id);
       write!(f, "║").unwrap();
       print_cell_contents(table_name, header_width, f);
       write!(f, "║\n").unwrap();

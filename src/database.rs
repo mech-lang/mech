@@ -23,7 +23,7 @@ pub struct Change {
     pub entity: u64,
     pub attribute: u64,
     pub value: Value,
-    pub transaction: u64, 
+    pub transaction: usize, 
 }
 
 impl Change {
@@ -44,7 +44,7 @@ impl Change {
 impl fmt::Debug for Change {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}: [{:?} {:?}: {:?}]", self.kind, self.entity, self.attribute, self.value)
+        write!(f, "{:?}: #{:?} [{:?} {:?}: {:?}]", self.kind, self.table, self.entity, self.attribute, self.value)
     }
 }
   
@@ -52,7 +52,7 @@ impl fmt::Debug for Change {
 
 pub struct Transaction {
   pub timestamp: u64,
-  pub complete: u64,
+  complete: u64,
   pub epoch: u64,
   pub round: u64,
   pub adds: Vec<Change>,
@@ -84,13 +84,13 @@ impl Transaction {
 
   pub fn process(&mut self) -> u64 {
     if self.complete == 0 {
-      self.complete = 0;
+      self.complete = 1;
     }
     self.complete
   }
 
   pub fn is_complete(&self) -> bool {
-    self.complete != 0
+    self.complete == 1
   }
 }
 
@@ -122,9 +122,11 @@ impl Interner {
     }
   }
 
-  pub fn intern_change(&mut self, change: &mut Change) {
-    change.ix = self.store.len();
-    self.store.push(change.clone());
+  pub fn intern_change(&mut self, change: &Change) {
+    let mut interned_change = change.clone();
+    interned_change.ix = self.store.len();
+    self.store.push(interned_change);
+    self.tables.register(change.table);
   }
 
   pub fn len(&self) -> usize {
@@ -138,7 +140,6 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
-    pub attribute_index: HashMap<u64, u64>,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
@@ -147,12 +148,11 @@ pub struct Database {
 
 impl Database {
 
-  pub fn new(txn_capacity: usize, change_capacity: usize, table_capacity: usize) -> Database {
+  pub fn new(transaction_capacity: usize, change_capacity: usize, table_capacity: usize) -> Database {
     Database {
       epoch: 0,
       round: 0,
-      transactions: Vec::with_capacity(txn_capacity),
-      attribute_index: HashMap::new(),
+      transactions: Vec::with_capacity(transaction_capacity),
       store: Interner::new(change_capacity, table_capacity),
       scanned: 0,
       txn_pointer: 0,
@@ -174,38 +174,27 @@ impl Database {
   }
 
   fn process_transactions(&mut self, transactions: &mut Vec<Transaction>) {   
+    let mut txn_id = self.transactions.len();
     for txn in transactions {
       if !txn.is_complete() {
         // Handle the adds
         for add in txn.adds.iter_mut() {
+            add.transaction = txn_id;
             self.store.intern_change(add);
-            self.update_indices(add);
         }
         // Handle the removes
         for remove in txn.removes.iter_mut() {
+            remove.transaction = txn_id;
             self.store.intern_change(remove);
-            self.update_indices(remove);
         }
         txn.process();
         txn.epoch = self.epoch;
         txn.round = self.round;
+        txn_id = txn_id + 1;
         self.round = self.round + 1;
       }
     }
     self.round = 0;
-  }
-
-  fn update_indices(&mut self, change: &mut Change) {
-    match change.kind {
-      ChangeType::Add => {
-        //self.entity_index.insert(change.clone());          
-        //self.attribute_index.insert(change.attribute.id.clone(), change.attribute.clone());
-      },
-      ChangeType::Remove => {
-        //self.entity_index.remove(&change.entity);
-        //self.attribute_index.remove(&change.attribute.id);
-      },
-    }
   }
 
 }
@@ -213,6 +202,6 @@ impl Database {
 impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Database:\n--------------------\nEpoch: {:?}\nTransactions: {:?}\nChanges: {:?}\nScanned: {:?}\n--------------------\n", self.epoch, self.transactions.len(), self.store.store.len(), self.scanned)
+        write!(f, "Database:\n--------------------\nEpoch: {:?}\nTransactions: {:?}\nChanges: {:?}\nTables: {:?}\nScanned: {:?}\n--------------------\n", self.epoch, self.transactions.len(), self.store.store.len(), self.store.tables.len(), self.scanned)
     }
 }

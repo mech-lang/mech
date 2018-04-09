@@ -103,20 +103,26 @@ impl EntityIndex {
 // ## Table Index
 
 pub struct TableIndex {
-    map: HashMap<u64, Table>,
+    name_map: HashMap<u64, String>,
+    map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
 }
 
 impl TableIndex {
 
     pub fn new(capacity: usize) -> TableIndex {
         TableIndex {
+            name_map: HashMap::with_capacity(capacity),
             map: HashMap::with_capacity(capacity),
         }
     }
 
-    pub fn register(&mut self, table: Table) {
-        if !self.map.contains_key(&table.id) {
-            self.map.insert(table.id, table);
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    pub fn register(&mut self, table: u64) {
+        if !self.map.contains_key(&table) {
+            self.map.insert(table, (Table::new(table, 16, 16), Vec::with_capacity(100)));
         }
     }
 
@@ -129,8 +135,8 @@ impl TableIndex {
 impl fmt::Debug for TableIndex {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for (key, value) in self.map.iter() {
-            write!(f, "{:?}:\n  {:?}\n", key, value.name).unwrap();
+        for (table_id, (table, _)) in self.map.iter() {
+            write!(f, "{:?}\n", table_id).unwrap();
         }
         Ok(())
     }
