@@ -4,7 +4,7 @@
 use alloc::{Vec};
 use core::fmt;
 use table::{Value, Table};
-use indexes::{TableIndex};
+use indexes::{TableIndex, Hasher};
 use hashmap_core::map::HashMap;
 
 // ## Change
@@ -13,6 +13,7 @@ use hashmap_core::map::HashMap;
 pub enum Change {
   Add(AddChange),
   Remove(RemoveChange),
+  NewTable(NewTableChange)
 }
 
 #[derive(Clone)]
@@ -72,6 +73,38 @@ impl fmt::Debug for RemoveChange {
         write!(f, "- #{:?} [{:?} {:?}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
 }
+
+#[derive(Clone)]
+pub struct NewTableChange {
+    pub ix: usize,
+    pub tag: String,
+    pub entities: Vec<String>,
+    pub attributes: Vec<String>,
+    pub rows: usize,
+    pub cols: usize,
+}
+
+impl NewTableChange {
+
+  pub fn new(tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize) -> NewTableChange {  
+    NewTableChange {
+      ix: 0,
+      tag,
+      entities,
+      attributes,
+      rows,
+      cols,
+    }
+  }
+}
+
+impl fmt::Debug for NewTableChange {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "+ #{:?} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
+    }
+}
+  
   
 // ## Transaction
 
@@ -80,6 +113,7 @@ pub struct Transaction {
   complete: u64,
   pub epoch: u64,
   pub round: u64,
+  pub tables: Vec<Change>,
   pub adds: Vec<Change>,
   pub removes: Vec<Change>,
 }
@@ -91,6 +125,7 @@ impl Transaction {
       complete: 0,
       epoch: 0,
       round: 0,
+      tables: Vec::new(),
       adds: Vec::new(),
       removes: Vec::new(),
     }
@@ -101,7 +136,8 @@ impl Transaction {
     for change in changes {
       match change {
         Change::Add(_) => txn.adds.push(change),
-        _ => (),
+        Change::Remove(_) => txn.removes.push(change),
+        Change::NewTable(_) => txn.tables.push(change),
       }
     }
     txn
@@ -148,22 +184,28 @@ impl Interner {
   }
 
   pub fn intern_change(&mut self, change: &Change) {
-
     match change {
       Change::Add(add) => {
         self.changes.push(change.clone());
+        match self.tables.get_mut(add.table) {
+          Some(table) => {
+            table.set(add.entity, add.attribute, add.value.clone());
+          },
+          None => (),
+        };
       },
       Change::Remove(remove) => {
         self.changes.push(change.clone());
       }
-      
+      Change::NewTable(new_table) => {
+        let tag = new_table.tag.clone();
+        let table_id = Hasher::hash_string(tag.clone());
+        if !self.tables.name_map.contains_key(&table_id) {
+          self.tables.name_map.insert(table_id, tag);
+          self.tables.register(Table::new(table_id, new_table.rows, new_table.cols));
+        }
+      }  
     }
-
-
-    
-    //interned_change.ix = self.store.len();
-    //self.store.push(interned_change);
-    //self.tables.register(change.table);
   }
 
   pub fn len(&self) -> usize {
@@ -213,6 +255,10 @@ impl Database {
   fn process_transactions(&mut self, transactions: &mut Vec<Transaction>) {   
     for txn in transactions {
       if !txn.is_complete() {
+        // First make any tables
+        for table in txn.tables.iter_mut() {
+          self.store.intern_change(table);
+        }
         // Handle the adds
         for add in txn.adds.iter_mut() {
             self.store.intern_change(add);
@@ -235,6 +281,18 @@ impl Database {
 impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Database:\n--------------------\nEpoch: {:?}\nTransactions: {:?}\nChanges: {:?}\nTables: {:?}\nScanned: {:?}\n--------------------\n", self.epoch, self.transactions.len(), self.store.changes.len(), self.store.tables.len(), self.scanned)
+        write!(f, "──────────────────────\n").unwrap();
+        write!(f, "Database:\n").unwrap();
+        write!(f, "──────────────────────\n").unwrap();
+        write!(f, "Epoch: {:?}\n", self.epoch).unwrap();
+        write!(f, "Transactions: {:?}\n", self.transactions.len()).unwrap();
+        write!(f, "Changes: {:?}\n", self.store.changes.len()).unwrap();
+        write!(f, "Tables: {:?}\n", self.store.tables.len()).unwrap();
+        write!(f, "Scanned: {:?}\n", self.scanned).unwrap();
+        write!(f, "──────────────────────\n").unwrap();
+        for (table, history) in self.store.tables.map.values() {
+          println!("{:?}", table);
+        }
+        Ok(())
     }
 }

@@ -29,6 +29,12 @@ impl Hasher {
         hasher.finish()
     }
 
+    pub fn hash_string(string: String) -> u64 {
+        let mut hasher = Hasher::new();
+        hasher.write(&string.to_owned());
+        hasher.finish()
+    }
+
     pub fn write(&mut self, string: &str) {
         let mult = [1, 256, 65536, 16777216, 1768841549];
         let chunks = CharChunks::new(string, 4);
@@ -68,8 +74,8 @@ impl Hasher {
 // ## Table Index
 
 pub struct TableIndex {
-    name_map: HashMap<u64, String>,
-    map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
+    pub name_map: HashMap<u64, String>,
+    pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
 }
 
 impl TableIndex {
@@ -85,9 +91,18 @@ impl TableIndex {
         self.map.len()
     }
 
-    pub fn register(&mut self, table: u64) {
-        if !self.map.contains_key(&table) {
-            self.map.insert(table, (Table::new(table, 16, 16), Vec::with_capacity(100)));
+    pub fn get_mut(&mut self, table_id: u64) -> Option<&mut Table> {
+        match self.map.get_mut(&table_id) {
+            Some((table, _)) => {
+                Some(table)
+            },
+            None => None,
+        }
+    }
+
+    pub fn register(&mut self, table: Table) {
+        if !self.map.contains_key(&table.id) {
+            self.map.insert(table.id, (table, Vec::with_capacity(100)));
         }
     }
 
@@ -100,7 +115,7 @@ impl TableIndex {
 impl fmt::Debug for TableIndex {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for (table_id, (table, _)) in self.map.iter() {
+        for (table_id, _) in self.map.iter() {
             write!(f, "{:?}\n", table_id).unwrap();
         }
         Ok(())
