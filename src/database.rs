@@ -143,6 +143,16 @@ impl Transaction {
     txn
   }
 
+  pub fn from_change(change: Change) -> Transaction {
+      let mut txn = Transaction::new();
+      match change {
+        Change::Add(_) => txn.adds.push(change),
+        Change::Remove(_) => txn.removes.push(change),
+        Change::NewTable(_) => txn.tables.push(change),
+      }
+      txn
+  }
+
   pub fn process(&mut self) -> u64 {
     if self.complete == 0 {
       self.complete = 1;
@@ -238,10 +248,6 @@ impl Database {
     }
   }
 
-  pub fn init(&self) {
-    
-  }
-
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
     self.process_transactions(transactions);
     self.transactions.append(transactions);
@@ -290,6 +296,9 @@ impl fmt::Debug for Database {
         write!(f, "Tables: {:?}\n", self.store.tables.len()).unwrap();
         write!(f, "Scanned: {:?}\n", self.scanned).unwrap();
         write!(f, "──────────────────────\n").unwrap();
+        /*for change in self.store.changes.iter() {
+          println!("{:?}", change);
+        }*/
         for (table, history) in self.store.tables.map.values() {
           println!("{:?}", table);
         }

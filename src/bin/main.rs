@@ -11,6 +11,7 @@ fn main() {
   
 
   let tag: u64 = Hasher::hash_str("students");  
+  let teachers: u64 = Hasher::hash_str("teachers");
   let student1: u64 = Hasher::hash_str("Mark");
   let student2: u64 = Hasher::hash_str("Sabra");
   let first: u64 = Hasher::hash_str("first name");
@@ -54,17 +55,28 @@ fn main() {
   let c2 = AddChange::new(tag, student1, last, Value::from_str("Laughlin"));
   let c3 = AddChange::new(tag, student1, test1, Value::from_u64(83));
   let c4 = AddChange::new(tag, student1, test1, Value::from_u64(76));
-  let new_table = NewTableChange::new(String::from("students"), vec![], vec![], 10, 10);
+  let c5 = AddChange::new(teachers, student2, first, Value::from_str("Sabra"));
+  let t1= NewTableChange::new(String::from("students"), vec![], vec![], 10, 10);
+  let t2= NewTableChange::new(String::from("teachers"), vec![], vec![], 10, 10);
   let txn = Transaction::from_changeset(vec![
     Change::Add(c1), 
-    Change::NewTable(new_table), 
+    Change::NewTable(t1), 
     Change::Add(c3), 
     Change::Add(c2)]);
   db.register_transaction(txn);
   println!("{:?}", db);
   let txn = Transaction::from_changeset(vec![
-    Change::Add(c4)]);
+    Change::Add(c4),
+    Change::Add(c5),
+    Change::NewTable(t2)]);
   db.register_transaction(txn);
+  println!("{:?}", db);
+  for i in 0 .. 1_000_000 {
+    let c = AddChange::new(tag, student1, test1, Value::from_u64(i as u64));
+    let t = Transaction::from_change(Change::Add(c));
+    db.register_transaction(t);
+  }
+
   println!("{:?}", db);
 
 }
