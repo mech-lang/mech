@@ -187,7 +187,10 @@ impl fmt::Debug for Table {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       let cell_width = 15;
-      let table_width = cell_width * self.cols + self.cols * 2;
+      let mut table_width = cell_width * self.cols + self.cols * 2;
+      if table_width < 20 {
+        table_width = 20;
+      }
       let header_width = table_width - self.cols - 1;
 
       // Print table header
@@ -212,12 +215,13 @@ impl fmt::Debug for Table {
       write!(f, "\n").unwrap();
 
       // Print table body
-      print_top_border(self.cols, cell_width, f);
-      for m in 0 .. self.rows {
-        print_row(self.data[m].clone(), self.cols, cell_width, f);
+      if self.cols > 0 {
+        print_top_border(self.cols, cell_width, f);
+        for m in 0 .. self.rows {
+          print_row(self.data[m].clone(), self.cols, cell_width, f);
+        }
+        print_bottom_border(self.cols, cell_width,  f);
       }
-      print_bottom_border(self.cols, cell_width,  f);
-      
       Ok(())
     }
 }
