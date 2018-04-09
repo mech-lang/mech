@@ -1,7 +1,7 @@
 extern crate mech;
 extern crate core;
 
-use mech::database::{Database, Transaction, Change, ChangeType};
+use mech::database::{Database, Transaction, Change, AddChange};
 use mech::table::{Value, Table};
 use mech::indexes::Hasher;
 
@@ -50,8 +50,8 @@ fn main() {
   
 
   let mut db = Database::new(1000, 1000, 1000);
-  let change = Change::new(tag, student1, first, Value::from_str("Mark"), ChangeType::Add);
-  let transaction = Transaction::from_changeset(vec![change]);
+  let change = AddChange::new(tag, student1, first, Value::from_str("Mark"));
+  let transaction = Transaction::from_changeset(vec![Change::Add(change)]);
   db.register_transaction(transaction);
   println!("{:?}", db.store);
 

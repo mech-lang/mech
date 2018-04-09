@@ -100,6 +100,19 @@ impl Table {
     self.data[*row - 1][*col - 1] = value;
   }
 
+  pub fn add_row(&mut self, entity: u64) {
+    if !self.entities.contains_key(&entity) {
+      self.rows = self.rows + 1;
+      self.entities.insert(entity.clone(), self.rows.clone());
+    };
+  }
+  pub fn add_col(&mut self, attribute: u64) {
+    if !self.attributes.contains_key(&attribute) {
+      self.cols = self.cols + 1;
+      self.attributes.insert(attribute.clone(), self.cols.clone());
+    };
+  }
+
   // Supply a list of entities (rows), get them back in a vector.
   pub fn get_rows(&mut self, entities: Vec<u64>) -> Vec<Option<Vec<Value>>> {
     let mut rows: Vec<Option<Vec<Value>>> = vec![];

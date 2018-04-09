@@ -10,41 +10,66 @@ use hashmap_core::map::HashMap;
 // ## Change
 
 #[derive(Debug, Clone)]
-pub enum ChangeType {
-  Add,
-  Remove,
+pub enum Change {
+  Add(AddChange),
+  Remove(RemoveChange),
 }
 
 #[derive(Clone)]
-pub struct Change {
+pub struct AddChange {
     pub ix: usize,
-    pub kind: ChangeType,
     pub table: u64,
     pub entity: u64,
     pub attribute: u64,
     pub value: Value,
-    pub transaction: usize, 
 }
 
-impl Change {
+impl AddChange {
 
-  pub fn new(table: u64, entity: u64, attribute: u64, value: Value, change_type: ChangeType) -> Change {  
-    Change {
+  pub fn new(table: u64, entity: u64, attribute: u64, value: Value) -> AddChange {  
+    AddChange {
       ix: 0,
-      kind: change_type,
       table: table,
       entity: entity,
       attribute: attribute,
       value: value,
-      transaction: 0,
     }
   }
 }
 
-impl fmt::Debug for Change {
+impl fmt::Debug for AddChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}: #{:?} [{:?} {:?}: {:?}]", self.kind, self.table, self.entity, self.attribute, self.value)
+        write!(f, "+ #{:?} [{:?} {:?}: {:?}]", self.table, self.entity, self.attribute, self.value)
+    }
+}
+
+#[derive(Clone)]
+pub struct RemoveChange {
+    pub ix: usize,
+    pub table: u64,
+    pub entity: u64,
+    pub attribute: u64,
+    pub value: Value,
+}
+
+impl RemoveChange {
+
+  pub fn new(table: u64, entity: u64, attribute: u64, value: Value) -> RemoveChange {  
+    RemoveChange {
+      ix: 0,
+      table: table,
+      entity: entity,
+      attribute: attribute,
+      value: value,
+    }
+  }
+}
+
+impl fmt::Debug for RemoveChange {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "- #{:?} [{:?} {:?}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
 }
   
@@ -74,9 +99,9 @@ impl Transaction {
   pub fn from_changeset(changes: Vec<Change>) -> Transaction {
     let mut txn = Transaction::new();
     for change in changes {
-      match change.kind {
-        ChangeType::Add => txn.adds.push(change),
-        ChangeType::Remove => txn.removes.push(change),
+      match change {
+        Change::Add(_) => txn.adds.push(change),
+        _ => (),
       }
     }
     txn
@@ -110,7 +135,7 @@ impl fmt::Debug for Transaction {
 #[derive(Debug)]
 pub struct Interner {
   pub tables: TableIndex,
-  pub store: Vec<Change>,
+  pub changes: Vec<Change>,
 }
 
 impl Interner {
@@ -118,19 +143,31 @@ impl Interner {
   pub fn new(change_capacity: usize, table_capacity: usize) -> Interner {
     Interner {
       tables: TableIndex::new(table_capacity),
-      store: Vec::with_capacity(change_capacity),
+      changes: Vec::with_capacity(change_capacity),
     }
   }
 
   pub fn intern_change(&mut self, change: &Change) {
-    let mut interned_change = change.clone();
-    interned_change.ix = self.store.len();
-    self.store.push(interned_change);
-    self.tables.register(change.table);
+
+    match change {
+      Change::Add(add) => {
+        self.changes.push(change.clone());
+      },
+      Change::Remove(remove) => {
+        self.changes.push(change.clone());
+      }
+      
+    }
+
+
+    
+    //interned_change.ix = self.store.len();
+    //self.store.push(interned_change);
+    //self.tables.register(change.table);
   }
 
   pub fn len(&self) -> usize {
-    self.store.len()
+    self.changes.len()
   }
 
 }
@@ -174,23 +211,19 @@ impl Database {
   }
 
   fn process_transactions(&mut self, transactions: &mut Vec<Transaction>) {   
-    let mut txn_id = self.transactions.len();
     for txn in transactions {
       if !txn.is_complete() {
         // Handle the adds
         for add in txn.adds.iter_mut() {
-            add.transaction = txn_id;
             self.store.intern_change(add);
         }
         // Handle the removes
         for remove in txn.removes.iter_mut() {
-            remove.transaction = txn_id;
             self.store.intern_change(remove);
         }
         txn.process();
         txn.epoch = self.epoch;
         txn.round = self.round;
-        txn_id = txn_id + 1;
         self.round = self.round + 1;
       }
     }
@@ -202,6 +235,6 @@ impl Database {
 impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Database:\n--------------------\nEpoch: {:?}\nTransactions: {:?}\nChanges: {:?}\nTables: {:?}\nScanned: {:?}\n--------------------\n", self.epoch, self.transactions.len(), self.store.store.len(), self.store.tables.len(), self.scanned)
+        write!(f, "Database:\n--------------------\nEpoch: {:?}\nTransactions: {:?}\nChanges: {:?}\nTables: {:?}\nScanned: {:?}\n--------------------\n", self.epoch, self.transactions.len(), self.store.changes.len(), self.store.tables.len(), self.scanned)
     }
 }
