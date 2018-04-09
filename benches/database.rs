@@ -4,7 +4,7 @@ extern crate test;
 extern crate mech;
 
 use test::Bencher;
-use mech::database::{Database, Transaction, Change, ChangeType};
+use mech::database::{Database, Transaction, Change};
 use mech::table::{Table, Value};
 
 /*

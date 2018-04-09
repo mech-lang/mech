@@ -4,14 +4,17 @@ use mech::table::{Table, Value};
 use mech::indexes::Hasher;
 
 fn make_table() -> Table {
-  let mut table = Table::new("students", 16, 16);
-  
+
+  let tag: u64 = Hasher::hash_str("students");  
+
   let student1: u64 = Hasher::hash_str("Mark");
   let student2: u64 = Hasher::hash_str("Sabra");
   let first: u64 = Hasher::hash_str("first name");
   let last: u64 = Hasher::hash_str("last name");
   let test1: u64 = Hasher::hash_str("test1");
   let test2: u64 = Hasher::hash_str("test2");
+
+  let mut table = Table::new(tag, 16, 16);
 
   table.set(student1, first, Value::from_str("Mark"));
   table.set(student1, last, Value::from_str("Laughlin"));
