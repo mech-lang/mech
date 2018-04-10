@@ -1,3 +1,4 @@
+// # Database
 
 // ## Prelude
 
@@ -7,7 +8,7 @@ use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::map::HashMap;
 
-// ## Change
+// ## Changes
 
 #[derive(Debug, Clone)]
 pub enum Change {
@@ -300,7 +301,7 @@ impl fmt::Debug for Database {
           println!("{:?}", change);
         }*/
         for (table, history) in self.store.tables.map.values() {
-          println!("{:?}", table);
+          write!(f, "{:?}", table).unwrap();
         }
         Ok(())
     }
