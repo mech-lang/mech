@@ -198,7 +198,7 @@ impl fmt::Debug for Table {
       print_repeated_char("═", header_width, f);
       write!(f, "╗\n").unwrap();
 
-      let table_name = format!("#{:?}", self.id);
+      let table_name = format!("#{:X}", self.id);
       write!(f, "║").unwrap();
       print_cell_contents(table_name, header_width, f);
       write!(f, "║\n").unwrap();
@@ -211,8 +211,6 @@ impl fmt::Debug for Table {
       write!(f, "╚").unwrap();
       print_repeated_char("═", header_width, f);
       write!(f, "╝\n").unwrap();
-
-      write!(f, "\n").unwrap();
 
       // Print table body
       if self.cols > 0 {
