@@ -199,8 +199,11 @@ impl Interner {
       Change::Add(add) => {
         match self.tables.get_mut(add.table) {
           Some(table) => {
-            self.changes.push(change.clone());
-            table.set(add.entity, add.attribute, add.value.clone());
+            // Only add change if the new value is different from the old one
+            if table.index(add.entity, add.attribute) != Some(&add.value) {
+              self.changes.push(change.clone());
+              table.set(add.entity, add.attribute, add.value.clone());
+            }
           },
           None => (),
         };
