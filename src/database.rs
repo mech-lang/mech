@@ -291,15 +291,15 @@ impl Database {
 impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "──────────────────────\n").unwrap();
-        write!(f, "Database:\n").unwrap();
-        write!(f, "──────────────────────\n").unwrap();
-        write!(f, "Epoch: {:?}\n", self.epoch).unwrap();
-        write!(f, "Transactions: {:?}\n", self.transactions.len()).unwrap();
-        write!(f, "Changes: {:?}\n", self.store.changes.len()).unwrap();
-        write!(f, "Tables: {:?}\n", self.store.tables.len()).unwrap();
-        write!(f, "Scanned: {:?}\n", self.scanned).unwrap();
-        write!(f, "──────────────────────\n").unwrap();
+        write!(f, "┌────────────────────┐\n").unwrap();
+        write!(f, "│ Database:          │\n").unwrap();
+        write!(f, "├────────────────────┤\n").unwrap();
+        write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
+        write!(f, "│ Transactions: {:?}\n", self.transactions.len()).unwrap();
+        write!(f, "│ Changes: {:?}\n", self.store.changes.len()).unwrap();
+        write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
+        write!(f, "│ Scanned: {:?}\n", self.scanned).unwrap();
+        write!(f, "└────────────────────┘\n").unwrap();
         /*for change in self.store.changes.iter() {
           println!("{:?}", change);
         }*/
