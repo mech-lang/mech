@@ -197,9 +197,9 @@ impl Interner {
   pub fn intern_change(&mut self, change: &Change) {
     match change {
       Change::Add(add) => {
-        self.changes.push(change.clone());
         match self.tables.get_mut(add.table) {
           Some(table) => {
+            self.changes.push(change.clone());
             table.set(add.entity, add.attribute, add.value.clone());
           },
           None => (),
