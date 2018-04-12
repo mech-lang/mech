@@ -255,7 +255,7 @@ impl Database {
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
     self.process_transactions(transactions);
     self.transactions.append(transactions);
-    self.epoch = self.epoch + 1;
+    self.epoch += 1;
   }
 
   pub fn register_transaction(&mut self, transaction: Transaction) {
@@ -280,7 +280,7 @@ impl Database {
         txn.process();
         txn.epoch = self.epoch;
         txn.round = self.round;
-        self.round = self.round + 1;
+        self.round += 1;
       }
     }
     self.round = 0;
