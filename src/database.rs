@@ -7,6 +7,7 @@ use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::map::HashMap;
+use runtime::{Runtime, Block};
 
 // ## Changes
 
@@ -42,7 +43,7 @@ impl AddChange {
 impl fmt::Debug for AddChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "+ #{:?} [{:?} {:?}: {:?}]", self.table, self.entity, self.attribute, self.value)
+        write!(f, "+ #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
 }
 
@@ -71,7 +72,7 @@ impl RemoveChange {
 impl fmt::Debug for RemoveChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "- #{:?} [{:?} {:?}: {:?}]", self.table, self.entity, self.attribute, self.value)
+        write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
 }
 
@@ -102,7 +103,7 @@ impl NewTableChange {
 impl fmt::Debug for NewTableChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "+ #{:?} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
+        write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
     }
 }
   
@@ -169,9 +170,14 @@ impl Transaction {
 impl fmt::Debug for Transaction {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f,"Adds:\n").unwrap();
+      for ref table in &self.tables {
+        write!(f, "{:?}\n", table).unwrap();
+      }
       for ref add in &self.adds {
         write!(f, "{:?}\n", add).unwrap();
+      }
+      for ref remove in &self.removes {
+        write!(f, "{:?}\n", remove).unwrap();
       }
       Ok(())
     }
@@ -215,6 +221,7 @@ impl Interner {
         let tag = new_table.tag.clone();
         let table_id = Hasher::hash_string(tag.clone());
         if !self.tables.name_map.contains_key(&table_id) {
+          self.changes.push(change.clone());
           self.tables.name_map.insert(table_id, tag);
           self.tables.register(Table::new(table_id, new_table.rows, new_table.cols));
         }
@@ -237,6 +244,7 @@ pub struct Database {
     pub transactions: Vec<Transaction>, 
     pub scanned: usize,
     pub txn_pointer: usize,
+    pub runtime: Runtime,
 }
 
 impl Database {
@@ -249,6 +257,7 @@ impl Database {
       store: Interner::new(change_capacity, table_capacity),
       scanned: 0,
       txn_pointer: 0,
+      runtime: Runtime::new(),
     }
   }
 
@@ -284,6 +293,8 @@ impl Database {
       }
     }
     self.round = 0;
+    let mut block = Block::new();
+    self.runtime.register_block(block, &self.store);
   }
 
 }
@@ -300,9 +311,6 @@ impl fmt::Debug for Database {
         write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
         write!(f, "│ Scanned: {:?}\n", self.scanned).unwrap();
         write!(f, "└────────────────────┘\n").unwrap();
-        /*for change in self.store.changes.iter() {
-          println!("{:?}", change);
-        }*/
         for (table, history) in self.store.tables.map.values() {
           write!(f, "{:?}", table).unwrap();
         }
