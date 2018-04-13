@@ -91,6 +91,15 @@ impl TableIndex {
         self.map.len()
     }
 
+    pub fn get(&self, table_id: u64) -> Option<&Table> {
+        match self.map.get(&table_id) {
+            Some((table, _)) => {
+                Some(table)
+            },
+            None => None,
+        }
+    }
+
     pub fn get_mut(&mut self, table_id: u64) -> Option<&mut Table> {
         match self.map.get_mut(&table_id) {
             Some((table, _)) => {
@@ -116,7 +125,7 @@ impl fmt::Debug for TableIndex {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (table_id, _) in self.map.iter() {
-            write!(f, "{:?}\n", table_id).unwrap();
+            write!(f, "{:#x}\n", table_id).unwrap();
         }
         Ok(())
     }
