@@ -114,7 +114,7 @@ impl Table {
   }
 
   // Supply a list of entities (rows), get them back in a vector.
-  pub fn get_rows(&mut self, entities: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+  pub fn get_rows(&self, entities: Vec<u64>) -> Vec<Option<Vec<Value>>> {
     let mut rows: Vec<Option<Vec<Value>>> = vec![];
     for entity in entities {
       // Get the index for the given entity
@@ -131,7 +131,7 @@ impl Table {
   }
 
   // Supply a list of entities (rows), get them back in a vector.
-  pub fn get_cols(&mut self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+  pub fn get_cols(&self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
     let mut columns: Vec<Option<Vec<Value>>> = vec![];
     for attribute in attributes {
       let mut column: Vec<Value> = vec![];
