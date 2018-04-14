@@ -11,21 +11,85 @@
 
 use table::{Value};
 use alloc::{Vec};
+use database::{Interner, Change};
+use hashmap_core::map::HashMap;
+use indexes::Hasher;
+
+// ## Runtime
+
+#[derive(Debug, Clone)]
+pub struct Runtime {
+  pub blocks: Vec<Block>,
+  pub pipes_map: HashMap<(u64, u64), Vec<Address>>,
+}
+
+impl Runtime {
+
+  pub fn new() -> Runtime {
+    Runtime {
+      blocks: Vec::new(),
+      pipes_map: HashMap::new(),
+    }
+  }
+
+  pub fn register_block(&mut self, mut block: Block, store: &Interner) {
+    
+    for constraint in &block.constraints {
+      match constraint {
+        Constraint::Scan{table, attribute} => {
+          self.pipes_map.insert((*table, *attribute), vec![Address{block: self.blocks.len(), register: block.input_registers.len()}]);
+          block.input_registers.push(Register::new());
+        },
+        _ => (),
+      }
+    }
+    block.id = self.blocks.len();
+    self.blocks.push(block.clone());
+  }
+
+  pub fn process_change(&mut self, change: &Change) {
+    match change {
+      Change::Add(x) => {
+        match self.pipes_map.get(&(x.table, x.attribute)) {
+          Some(address) => {
+            println!("React to this! {:?}", change);
+          },
+          _ => (),
+        }
+      },
+      _ => (),
+    }
+  }
+
+}
 
 // ## Blocks
 
+#[derive(Debug, Clone)]
 pub struct Address {
-  pub node: u64,
-  pub block: u64,
-  pub register: u16,
+  pub block: usize,
+  pub register: usize,
 }
 
+#[derive(Debug, Clone)]
 pub struct Register {
-  data: Vec<(u64, u64, Value)>,
+  pub data: Vec<Value>,
 }
 
+impl Register {
+  
+  pub fn new() -> Register { 
+    Register {
+      data: Vec::new(),
+    }
+  }
+
+}
+
+
+#[derive(Debug, Clone)]
 pub struct Block {
-  pub ix: u64,
+  pub id: usize,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -36,7 +100,7 @@ impl Block {
   
   pub fn new() -> Block { 
     Block {
-      ix: 0,
+      id: 0,
       input_registers: Vec::with_capacity(32),
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
@@ -59,10 +123,10 @@ pub struct Pipe {
 
 // Constraints put bounds on the data available for a block to work with. For 
 // example, Scan constraints could bring data into the block, and a Join 
-// constraint could match elements from 
+// constraint could match elements from one table to another.
 
-
+#[derive(Debug, Clone)]
 pub enum Constraint {
-  // A Scan searches for a given 
-  Scan { entity: u64, attribute: u64, value: Value, register: Register },
+  // A Scan monitors a supplied cell
+  Scan { table: u64, attribute: u64 },
 }
