@@ -281,6 +281,7 @@ impl Database {
         // Handle the adds
         for add in txn.adds.iter_mut() {
             self.store.intern_change(add);
+            self.runtime.process_change(add);
         }
         // Handle the removes
         for remove in txn.removes.iter_mut() {
@@ -293,8 +294,6 @@ impl Database {
       }
     }
     self.round = 0;
-    let mut block = Block::new();
-    self.runtime.register_block(block, &self.store);
   }
 
 }
