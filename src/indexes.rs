@@ -3,7 +3,7 @@
 // ## Prelude
 
 use table::{Value, Table};
-use alloc::{fmt};
+use alloc::{fmt, Vec, String};
 use hashmap_core::map::HashMap;
 
 // ## Hasher

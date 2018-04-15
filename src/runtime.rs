@@ -52,7 +52,7 @@ impl Runtime {
       Change::Add(x) => {
         match self.pipes_map.get(&(x.table, x.attribute)) {
           Some(address) => {
-            println!("React to this! {:?}", change);
+            ()
           },
           _ => (),
         }
