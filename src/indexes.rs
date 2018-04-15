@@ -31,7 +31,7 @@ impl Hasher {
 
     pub fn hash_string(string: String) -> u64 {
         let mut hasher = Hasher::new();
-        hasher.write(&string.to_owned());
+        hasher.write(&string.as_str());
         hasher.finish()
     }
 
