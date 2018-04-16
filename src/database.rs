@@ -242,7 +242,6 @@ pub struct Database {
     pub round: u64,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
-    pub scanned: usize,
     pub txn_pointer: usize,
     pub runtime: Runtime,
 }
@@ -255,7 +254,6 @@ impl Database {
       round: 0,
       transactions: Vec::with_capacity(transaction_capacity),
       store: Interner::new(change_capacity, table_capacity),
-      scanned: 0,
       txn_pointer: 0,
       runtime: Runtime::new(),
     }
@@ -308,7 +306,7 @@ impl fmt::Debug for Database {
         write!(f, "│ Transactions: {:?}\n", self.transactions.len()).unwrap();
         write!(f, "│ Changes: {:?}\n", self.store.changes.len()).unwrap();
         write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
-        write!(f, "│ Scanned: {:?}\n", self.scanned).unwrap();
+        write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
         write!(f, "└────────────────────┘\n").unwrap();
         for (table, history) in self.store.tables.map.values() {
           write!(f, "{:?}", table).unwrap();
