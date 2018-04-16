@@ -80,11 +80,19 @@ impl fmt::Debug for Runtime {
 
 // ## Blocks
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Address {
   pub block: usize,
   pub register: usize,
 }
+
+impl fmt::Debug for Address {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "@({:?}, {:?})", self.block, self.register)
+  }
+}
+
 
 #[derive(Clone)]
 pub struct Register {
