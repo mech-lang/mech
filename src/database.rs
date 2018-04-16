@@ -43,7 +43,7 @@ impl AddChange {
 impl fmt::Debug for AddChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "+ #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
+        write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
 }
 
@@ -106,7 +106,6 @@ impl fmt::Debug for NewTableChange {
         write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
     }
 }
-  
   
 // ## Transaction
 
