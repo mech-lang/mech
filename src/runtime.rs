@@ -1,8 +1,8 @@
 // # Mech Runtime
 
 /* 
- The Mech Runtime is the engine that drives computations in Mech. The runtime
- is comprised of "Blocks", interconnected by "Pipes" of records.
+ The Mech Runtime is the engine that drives computations in Mech. The 
+ runtime is comprised of "Blocks", interconnected by "Pipes" of records.
  Blocks can interact with the database, by Scanning for records that 
  match a pattern, or by Projecting computed records into the database.
 */
@@ -19,6 +19,7 @@ use indexes::Hasher;
 
 #[derive(Clone)]
 pub struct Runtime {
+  pub ready_mask: usize,
   pub blocks: Vec<Block>,
   pub pipes_map: HashMap<(u64, u64), Vec<Address>>,
 }
@@ -27,32 +28,34 @@ impl Runtime {
 
   pub fn new() -> Runtime {
     Runtime {
+      ready_mask: 0,
       blocks: Vec::new(),
       pipes_map: HashMap::new(),
     }
   }
 
   pub fn register_block(&mut self, mut block: Block, store: &Interner) {
-    
+    block.id = self.blocks.len() + 1;
     for constraint in &block.constraints {
       match constraint {
         Constraint::Scan{table, attribute} => {
-          self.pipes_map.insert((*table, *attribute), vec![Address{block: self.blocks.len(), register: block.input_registers.len()}]);
+          self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: block.input_registers.len()}]);
           block.input_registers.push(Register::new());
         },
-        _ => (),
+        Constraint::Insert{table, attribute} => {
+          block.output_registers.push(Register::new());
+        },
       }
     }
-    block.id = self.blocks.len();
     self.blocks.push(block.clone());
   } 
 
   pub fn process_change(&mut self, change: &Change) {
     match change {
-      Change::Add(x) => {
-        match self.pipes_map.get(&(x.table, x.attribute)) {
+      Change::Add(add) => {
+        match self.pipes_map.get(&(add.table, add.attribute)) {
           Some(address) => {
-            ()
+            println!("{:?} {:?}", add, address);
           },
           _ => (),
         }
@@ -64,16 +67,15 @@ impl Runtime {
 }
 
 impl fmt::Debug for Runtime {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "Runtime:\n").unwrap();
-      write!(f, " Blocks:\n\n").unwrap();
-      for ref block in &self.blocks {
-        write!(f, "{:?}\n\n", block).unwrap();
-      }
-      
-      Ok(())
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "Runtime:\n").unwrap();
+    write!(f, " Blocks:\n\n").unwrap();
+    for ref block in &self.blocks {
+      write!(f, "{:?}\n\n", block).unwrap();
     }
+    Ok(())
+  }
 }
 
 // ## Blocks
@@ -84,7 +86,7 @@ pub struct Address {
   pub register: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Register {
   pub data: Vec<Value>,
 }
@@ -97,6 +99,14 @@ impl Register {
     }
   }
 
+}
+
+impl fmt::Debug for Register {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f, "{:?}", self.data).unwrap();
+      Ok(())
+    }
 }
 
 
@@ -130,11 +140,20 @@ impl fmt::Debug for Block {
       write!(f, "│ Block #{:?}\n", self.id).unwrap();
       write!(f, "├────────────────────────────────────────┤\n").unwrap();
       write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
+      for register in &self.input_registers {
+        write!(f, "│  > {:?}\n", register).unwrap();
+      }
       write!(f, "│ Intermediate: {:?}\n", self.intermediate_registers.len()).unwrap();
+      for register in &self.intermediate_registers {
+        write!(f, "│  > {:?}\n", register).unwrap();
+      }
       write!(f, "│ Output: {:?}\n", self.output_registers.len()).unwrap();
-      write!(f, "│ Constraints:\n").unwrap();
+      for register in &self.output_registers {
+        write!(f, "│  > {:?}\n", register).unwrap();
+      }
+      write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
       for constraint in &self.constraints {
-        write!(f, "│  {:?}\n", constraint).unwrap();
+        write!(f, "│  > {:?}\n", constraint).unwrap();
       }
       write!(f, "└────────────────────────────────────────┘\n").unwrap();
       Ok(())
@@ -160,6 +179,7 @@ pub struct Pipe {
 pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, attribute: u64 },
+  Insert {table: u64, attribute: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -167,6 +187,7 @@ impl fmt::Debug for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
         Constraint::Scan{table, attribute} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Insert{table, attribute} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
         _ => (),
       }
       Ok(())
