@@ -300,7 +300,7 @@ impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "┌────────────────────┐\n").unwrap();
-        write!(f, "│ Database:          │\n").unwrap();
+        write!(f, "│ Database           │\n").unwrap();
         write!(f, "├────────────────────┤\n").unwrap();
         write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
         write!(f, "│ Transactions: {:?}\n", self.transactions.len()).unwrap();
