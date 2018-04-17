@@ -39,8 +39,18 @@ impl Runtime {
     for constraint in &block.constraints {
       match constraint {
         Constraint::Scan{table, attribute, register_mask} => {
-          self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: block.input_registers.len()}]);
+          let register_id = block.input_registers.len() + 1;
+          self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: register_id}]);
           block.input_registers.push(Register::new());
+          match store.tables.get(*table) {
+            Some(stored_table) => {
+              match stored_table.get_col(*attribute) {
+                Some(col) => block.input_registers[register_id - 1].place_data(&col),
+                None => (),
+              };
+            },
+            None => (),
+          }
         },
         Constraint::Insert{table, attribute, register_mask} => {
           block.output_registers.push(Register::new());
@@ -106,6 +116,11 @@ impl Register {
       data: Vec::new(),
     }
   }
+
+  pub fn place_data(&mut self, data: &Vec<Value>) {
+    self.data = data.clone();
+  }
+
 
 }
 
