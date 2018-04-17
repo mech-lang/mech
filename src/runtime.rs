@@ -194,8 +194,8 @@ impl fmt::Debug for Constraint {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
-        Constraint::Scan{table, attribute, register_mask} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
-        Constraint::Insert{table, attribute, register_mask} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Scan{table, attribute, ..} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Insert{table, attribute, ..} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
         _ => (),
       }
       Ok(())
