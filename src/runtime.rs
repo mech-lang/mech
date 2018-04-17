@@ -201,3 +201,27 @@ impl fmt::Debug for Constraint {
       Ok(())
     }
 }
+
+// ## Bit helpers
+
+// Lifted from Eve v0.4
+
+pub fn check_bits(solved:u64, checking:u64) -> bool {
+    solved & checking == checking
+}
+
+pub fn has_any_bits(solved:u64, checking:u64) -> bool {
+    solved & checking != 0
+}
+
+pub fn set_bit(solved:u64, bit:usize) -> u64 {
+    solved | (1 << bit)
+}
+
+pub fn clear_bit(solved:u64, bit:usize) -> u64 {
+    solved & !(1 << bit)
+}
+
+pub fn check_bit(solved:u64, bit:usize) -> bool {
+    solved & (1 << bit) != 0
+}
