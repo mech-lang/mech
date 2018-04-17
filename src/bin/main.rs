@@ -30,14 +30,15 @@ fn main() {
   
   
   let mut block = Block::new();
-  block.constraints.push(Constraint::Scan {table: students, attribute: test1});
-  block.constraints.push(Constraint::Scan {table: students, attribute: test2});
-  block.constraints.push(Constraint::Insert {table: students, attribute: result});
+  block.constraints.push(Constraint::Scan {table: students, attribute: test1, register_mask: 0});
+  block.constraints.push(Constraint::Scan {table: students, attribute: test2, register_mask: 0});
+  block.constraints.push(Constraint::Insert {table: students, attribute: result, register_mask: 0});
   db.runtime.register_block(block.clone(), &db.store);
-
+  db.register_transaction(txn);
+  
   println!("{:?}", db);
   println!("{:?}", db.runtime);
 
-  db.register_transaction(txn);
+  
 
 }

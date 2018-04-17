@@ -38,11 +38,11 @@ impl Runtime {
     block.id = self.blocks.len() + 1;
     for constraint in &block.constraints {
       match constraint {
-        Constraint::Scan{table, attribute} => {
+        Constraint::Scan{table, attribute, register_mask} => {
           self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: block.input_registers.len()}]);
           block.input_registers.push(Register::new());
         },
-        Constraint::Insert{table, attribute} => {
+        Constraint::Insert{table, attribute, register_mask} => {
           block.output_registers.push(Register::new());
         },
       }
@@ -186,16 +186,16 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   // A Scan monitors a supplied cell
-  Scan { table: u64, attribute: u64 },
-  Insert {table: u64, attribute: u64},
+  Scan { table: u64, attribute: u64, register_mask: u64 },
+  Insert {table: u64, attribute: u64, register_mask: u64},
 }
 
 impl fmt::Debug for Constraint {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
-        Constraint::Scan{table, attribute} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
-        Constraint::Insert{table, attribute} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Scan{table, attribute, register_mask} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Insert{table, attribute, register_mask} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
         _ => (),
       }
       Ok(())
