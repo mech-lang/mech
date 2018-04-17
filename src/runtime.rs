@@ -65,7 +65,7 @@ impl Runtime {
       Change::Add(add) => {
         match self.pipes_map.get(&(add.table, add.attribute)) {
           Some(address) => {
-            println!("{:?} {:?}", add, address);
+            //println!("{:?} {:?}", add, address);
           },
           _ => (),
         }
