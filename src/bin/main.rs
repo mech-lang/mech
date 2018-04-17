@@ -18,7 +18,7 @@ fn main() {
 
   let c1 = AddChange::new(students, student1, test1, Value::from_u64(83));
   let c2 = AddChange::new(students, student1, test2, Value::from_u64(76));
-  let c3 = AddChange::new(students, student2, test1, Value::from_u64(100));
+  let c3 = AddChange::new(students, student2, test1, Value::from_u64(99));
   let c4 = AddChange::new(students, student2, test2, Value::from_u64(88));
   let t1= NewTableChange::new(String::from("students"), vec![], vec![], 10, 10);
   let txn = Transaction::from_changeset(vec![
@@ -26,19 +26,17 @@ fn main() {
     Change::NewTable(t1), 
     Change::Add(c2),
     Change::Add(c3),
-    Change::Add(c4)]);
-  
+    Change::Add(c4)
+  ]);
   
   let mut block = Block::new();
   block.constraints.push(Constraint::Scan {table: students, attribute: test1, register_mask: 0});
   block.constraints.push(Constraint::Scan {table: students, attribute: test2, register_mask: 0});
   block.constraints.push(Constraint::Insert {table: students, attribute: result, register_mask: 0});
-  db.runtime.register_block(block.clone(), &db.store);
   db.register_transaction(txn);
+  db.runtime.register_block(block.clone(), &db.store);
   
   println!("{:?}", db);
   println!("{:?}", db.runtime);
-
-  
 
 }
