@@ -47,7 +47,11 @@ impl Runtime {
           block.input_registers.push(Register::new());
           // Put associated values on the registers if we have them in the DB already
           match store.get_col(*table, *attribute) {
-            Some(col) => block.input_registers[register_id - 1].place_data(&col),
+            Some(col) => {
+              // Set the data and mark the register as ready
+              block.input_registers[register_id - 1].place_data(&col);
+              block.ready = set_bit(block.ready, register_id - 1);
+            },
             None => (),
           }
         },
@@ -155,7 +159,6 @@ impl Block {
       constraints: Vec::with_capacity(32),
     }
   }
-
 }
 
 impl fmt::Debug for Block {
@@ -164,6 +167,7 @@ impl fmt::Debug for Block {
       write!(f, "┌────────────────────────────────────────┐\n").unwrap();
       write!(f, "│ Block #{:?}\n", self.id).unwrap();
       write!(f, "├────────────────────────────────────────┤\n").unwrap();
+      write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
       write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
       for register in &self.input_registers {
         write!(f, "│  > {:?}\n", register).unwrap();
