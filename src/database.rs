@@ -228,6 +228,18 @@ impl Interner {
     }
   }
 
+  pub fn get_col(&self, table: u64, attribute: u64) -> Option<Vec<Value>> {
+    match self.tables.get(table) {
+      Some(stored_table) => {
+        match stored_table.get_col(attribute) {
+          Some(col) => Some(col),
+          None => None,
+        }
+      },
+      None => None,
+    }
+  }
+
   pub fn len(&self) -> usize {
     self.changes.len()
   }

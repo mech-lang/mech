@@ -34,24 +34,24 @@ impl Runtime {
     }
   }
 
+  // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &Interner) {
+    // @TODO better block ID
     block.id = self.blocks.len() + 1;
     for constraint in &block.constraints {
       match constraint {
+        // SCAN
         Constraint::Scan{table, attribute, register_mask} => {
           let register_id = block.input_registers.len() + 1;
           self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: register_id}]);
           block.input_registers.push(Register::new());
-          match store.tables.get(*table) {
-            Some(stored_table) => {
-              match stored_table.get_col(*attribute) {
-                Some(col) => block.input_registers[register_id - 1].place_data(&col),
-                None => (),
-              };
-            },
+          // Put associated values on the registers if we have them in the DB already
+          match store.get_col(*table, *attribute) {
+            Some(col) => block.input_registers[register_id - 1].place_data(&col),
             None => (),
           }
         },
+        // INSERT
         Constraint::Insert{table, attribute, register_mask} => {
           block.output_registers.push(Register::new());
         },
@@ -136,6 +136,7 @@ impl fmt::Debug for Register {
 #[derive(Clone)]
 pub struct Block {
   pub id: usize,
+  pub ready: u64,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -147,6 +148,7 @@ impl Block {
   pub fn new() -> Block { 
     Block {
       id: 0,
+      ready: 0,
       input_registers: Vec::with_capacity(32),
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
@@ -221,22 +223,22 @@ impl fmt::Debug for Constraint {
 
 // Lifted from Eve v0.4
 
-pub fn check_bits(solved:u64, checking:u64) -> bool {
+pub fn check_bits(solved: u64, checking:u64) -> bool {
     solved & checking == checking
 }
 
-pub fn has_any_bits(solved:u64, checking:u64) -> bool {
+pub fn has_any_bits(solved: u64, checking: u64) -> bool {
     solved & checking != 0
 }
 
-pub fn set_bit(solved:u64, bit:usize) -> u64 {
+pub fn set_bit(solved: u64, bit: usize) -> u64 {
     solved | (1 << bit)
 }
 
-pub fn clear_bit(solved:u64, bit:usize) -> u64 {
+pub fn clear_bit(solved: u64, bit: usize) -> u64 {
     solved & !(1 << bit)
 }
 
-pub fn check_bit(solved:u64, bit:usize) -> bool {
+pub fn check_bit(solved: u64, bit: usize) -> bool {
     solved & (1 << bit) != 0
 }
