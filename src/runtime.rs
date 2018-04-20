@@ -48,7 +48,7 @@ impl Runtime {
           // Put associated values on the registers if we have them in the DB already
           match store.get_col(*table, *attribute) {
             Some(col) => {
-              // Set the data and mark the register as ready
+              // Set the data on the register and mark it as ready
               block.input_registers[register_id - 1].place_data(&col);
               block.ready = set_bit(block.ready, register_id - 1);
             },
@@ -76,6 +76,10 @@ impl Runtime {
       },
       _ => (),
     }
+  }
+
+  pub fn run_network(&self) {
+    
   }
 
 }
@@ -159,6 +163,14 @@ impl Block {
       constraints: Vec::with_capacity(32),
     }
   }
+
+  pub fn is_ready(&self) -> bool {
+    let input_registers_count = self.input_registers.len();
+    // TODO why does the exponent have to be u32?
+    self.ready == 2_u64.pow(input_registers_count as u32) - 1
+  }
+
+
 }
 
 impl fmt::Debug for Block {

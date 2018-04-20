@@ -26,7 +26,7 @@ fn main() {
     Change::NewTable(t1), 
     Change::Add(c2),
     Change::Add(c3),
-    Change::Add(c4)
+    //Change::Add(c4)
   ]);
   
   let mut block = Block::new();
