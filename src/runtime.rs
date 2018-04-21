@@ -59,6 +59,7 @@ impl Runtime {
         Constraint::Insert{table, attribute, register_mask} => {
           block.output_registers.push(Register::new());
         },
+        _ => (),
       }
     }
     self.blocks.push(block.clone());
@@ -221,6 +222,7 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, attribute: u64, register_mask: u64 },
   Insert {table: u64, attribute: u64, register_mask: u64},
+  Function {op: u64, parameter_mask: u64, output_mask: u64},
 }
 
 impl fmt::Debug for Constraint {
