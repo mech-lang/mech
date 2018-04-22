@@ -26,13 +26,13 @@ fn main() {
     Change::NewTable(t1), 
     Change::Add(c2),
     Change::Add(c3),
-    //Change::Add(c4)
+    Change::Add(c4)
   ]);
   
   let mut block = Block::new();
-  block.constraints.push(Constraint::Scan {table: students, attribute: test1, register_mask: 0});
-  block.constraints.push(Constraint::Scan {table: students, attribute: test2, register_mask: 0});
-  block.constraints.push(Constraint::Insert {table: students, attribute: result, register_mask: 0});
+  block.constraints.push(Constraint::Scan {table: students, attribute: test1, register_mask: 0b01});
+  block.constraints.push(Constraint::Scan {table: students, attribute: test2, register_mask: 0b10});
+  block.constraints.push(Constraint::Insert {table: students, attribute: result, register_mask: 0b01});
   db.register_transaction(txn);
   db.runtime.register_block(block.clone(), &db.store);
   
