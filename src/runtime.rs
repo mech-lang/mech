@@ -174,6 +174,9 @@ impl Block {
           self.output_registers.push(Register::new());
         }
       },
+      Constraint::Function{op, ..} => {
+        self.intermediate_registers.push(Register::new());
+      },
       _ => (),
     }
     self.constraints.push(constraint);
