@@ -136,6 +136,7 @@ impl fmt::Debug for Register {
 pub struct Block {
   pub id: usize,
   pub ready: u64,
+  pub pipes: HashMap<(u64, u64), Vec<Address>>,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -148,6 +149,7 @@ impl Block {
     Block {
       id: 0,
       ready: 0,
+      pipes: HashMap::new(),
       input_registers: Vec::with_capacity(32),
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
@@ -157,12 +159,18 @@ impl Block {
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
     match constraint {
-      Constraint::Scan{table, attribute, register_mask} => {
-        let register_id = self.input_registers.len() + 1;
-        self.input_registers.push(Register::new());
+      Constraint::Scan{table, attribute, register} => {
+        let register_id: usize = register as usize - 1;
+        // Allocate registers
+        while register_id >= 0 && self.input_registers.len() <= register_id {
+          self.input_registers.push(Register::new());
+        }
       },
-      Constraint::Insert{table, attribute, register_mask} => {
-        self.output_registers.push(Register::new());
+      Constraint::Insert{table, attribute, register} => {
+        let register_id: usize = register as usize - 1;
+        while register_id >= 0 && self.output_registers.len() <= register_id {
+          self.output_registers.push(Register::new());
+        }
       },
       _ => (),
     }
@@ -224,9 +232,9 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   // A Scan monitors a supplied cell
-  Scan { table: u64, attribute: u64, register_mask: u64 },
-  Insert {table: u64, attribute: u64, register_mask: u64},
-  Function {op: u64, parameter_masks: Vec<u64>, output_masks: Vec<u64>},
+  Scan { table: u64, attribute: u64, register: u64 },
+  Insert {table: u64, attribute: u64, register: u64},
+  Function {op: u64, parameters: Vec<u64>, output: Vec<u64>},
 }
 
 impl fmt::Debug for Constraint {
@@ -235,7 +243,7 @@ impl fmt::Debug for Constraint {
       match self {
         Constraint::Scan{table, attribute, ..} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
         Constraint::Insert{table, attribute, ..} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
-        Constraint::Function{op, parameter_masks, output_masks} => write!(f, "Function({:?})", op).unwrap(),
+        Constraint::Function{op, parameters, output} => write!(f, "Function({:?})", op).unwrap(),
         _ => (),
       }
       Ok(())

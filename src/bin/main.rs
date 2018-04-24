@@ -30,10 +30,10 @@ fn main() {
   ]);
   
   let mut block = Block::new();
-  block.add_constraint(Constraint::Scan {table: students, attribute: test1, register_mask: 0b001});
-  block.add_constraint(Constraint::Scan {table: students, attribute: test2, register_mask: 0b010});
-  block.add_constraint(Constraint::Insert {table: students, attribute: result, register_mask: 0b001});
-  block.add_constraint(Constraint::Function {op: 1, parameter_masks: vec![0b001, 0b010], output_masks: vec![0b100]});
+  block.add_constraint(Constraint::Scan {table: students, attribute: test1, register: 2});
+  block.add_constraint(Constraint::Scan {table: students, attribute: test2, register: 1});
+  block.add_constraint(Constraint::Insert {table: students, attribute: result, register: 1});
+  block.add_constraint(Constraint::Function {op: 1, parameters: vec![1, 2], output: vec![3]});
   db.register_transaction(txn);
   db.runtime.register_block(block.clone(), &db.store);
   
