@@ -39,28 +39,18 @@ impl Runtime {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
     for constraint in &block.constraints {
-      match constraint {
-        // SCAN
-        Constraint::Scan{table, attribute, register_mask} => {
-          let register_id = block.input_registers.len() + 1;
-          self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: register_id}]);
-          block.input_registers.push(Register::new());
-          // Put associated values on the registers if we have them in the DB already
-          match store.get_col(*table, *attribute) {
-            Some(col) => {
-              // Set the data on the register and mark it as ready
-              block.input_registers[register_id - 1].place_data(&col);
-              block.ready = set_bit(block.ready, register_id - 1);
-            },
-            None => (),
-          }
-        },
-        // INSERT
-        Constraint::Insert{table, attribute, register_mask} => {
-          block.output_registers.push(Register::new());
-        },
-        _ => (),
-      }
+      // self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: register_id}]);
+      /*
+        // Put associated values on the registers if we have them in the DB already
+        match store.get_col(*table, *attribute) {
+          Some(col) => {
+            // Set the data on the register and mark it as ready
+            block.input_registers[register_id - 1].place_data(&col);
+            block.ready = set_bit(block.ready, register_id - 1);
+          },
+          None => (),
+        }
+      */
     }
     self.blocks.push(block.clone());
   } 
@@ -165,6 +155,20 @@ impl Block {
     }
   }
 
+  pub fn add_constraint(&mut self, constraint: Constraint) {
+    match constraint {
+      Constraint::Scan{table, attribute, register_mask} => {
+        let register_id = self.input_registers.len() + 1;
+        self.input_registers.push(Register::new());
+      },
+      Constraint::Insert{table, attribute, register_mask} => {
+        self.output_registers.push(Register::new());
+      },
+      _ => (),
+    }
+    self.constraints.push(constraint);
+  }
+
   pub fn is_ready(&self) -> bool {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
@@ -175,31 +179,31 @@ impl Block {
 }
 
 impl fmt::Debug for Block {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "┌────────────────────────────────────────┐\n").unwrap();
-      write!(f, "│ Block #{:?}\n", self.id).unwrap();
-      write!(f, "├────────────────────────────────────────┤\n").unwrap();
-      write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
-      write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
-      for register in &self.input_registers {
-        write!(f, "│  > {:?}\n", register).unwrap();
-      }
-      write!(f, "│ Intermediate: {:?}\n", self.intermediate_registers.len()).unwrap();
-      for register in &self.intermediate_registers {
-        write!(f, "│  > {:?}\n", register).unwrap();
-      }
-      write!(f, "│ Output: {:?}\n", self.output_registers.len()).unwrap();
-      for register in &self.output_registers {
-        write!(f, "│  > {:?}\n", register).unwrap();
-      }
-      write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
-      for constraint in &self.constraints {
-        write!(f, "│  > {:?}\n", constraint).unwrap();
-      }
-      write!(f, "└────────────────────────────────────────┘\n").unwrap();
-      Ok(())
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "┌────────────────────────────────────────┐\n").unwrap();
+    write!(f, "│ Block #{:?}\n", self.id).unwrap();
+    write!(f, "├────────────────────────────────────────┤\n").unwrap();
+    write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
+    write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
+    for register in &self.input_registers {
+      write!(f, "│  > {:?}\n", register).unwrap();
     }
+    write!(f, "│ Intermediate: {:?}\n", self.intermediate_registers.len()).unwrap();
+    for register in &self.intermediate_registers {
+      write!(f, "│  > {:?}\n", register).unwrap();
+    }
+    write!(f, "│ Output: {:?}\n", self.output_registers.len()).unwrap();
+    for register in &self.output_registers {
+      write!(f, "│  > {:?}\n", register).unwrap();
+    }
+    write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
+    for constraint in &self.constraints {
+      write!(f, "│  > {:?}\n", constraint).unwrap();
+    }
+    write!(f, "└────────────────────────────────────────┘\n").unwrap();
+    Ok(())
+  }
 }
 
 // ## Pipe
@@ -222,7 +226,7 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, attribute: u64, register_mask: u64 },
   Insert {table: u64, attribute: u64, register_mask: u64},
-  Function {op: u64, parameter_mask: u64, output_mask: u64},
+  Function {op: u64, parameter_masks: Vec<u64>, output_masks: Vec<u64>},
 }
 
 impl fmt::Debug for Constraint {
@@ -231,6 +235,7 @@ impl fmt::Debug for Constraint {
       match self {
         Constraint::Scan{table, attribute, ..} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
         Constraint::Insert{table, attribute, ..} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
+        Constraint::Function{op, parameter_masks, output_masks} => write!(f, "Function({:?})", op).unwrap(),
         _ => (),
       }
       Ok(())
@@ -241,7 +246,7 @@ impl fmt::Debug for Constraint {
 
 // Lifted from Eve v0.4
 
-pub fn check_bits(solved: u64, checking:u64) -> bool {
+pub fn check_bits(solved: u64, checking: u64) -> bool {
     solved & checking == checking
 }
 
