@@ -1,12 +1,15 @@
 extern crate mech;
 extern crate core;
 
+use std::time::SystemTime;
 use mech::database::{Database, Transaction, Change, AddChange, NewTableChange};
 use mech::table::{Value, Table};
 use mech::indexes::Hasher;
 use mech::runtime::{Runtime, Block, Constraint, Register};
 
 fn main() {
+
+  
 
   let mut db = Database::new(1000, 1000, 1000);
   let students: u64 = Hasher::hash_str("students");  
@@ -28,16 +31,24 @@ fn main() {
     Change::Add(c3),
     Change::Add(c4)
   ]);
-  
+
+
   let mut block = Block::new();
-  block.add_constraint(Constraint::Scan {table: students, attribute: test1, register: 2});
-  block.add_constraint(Constraint::Scan {table: students, attribute: test2, register: 1});
+  block.add_constraint(Constraint::Scan {table: students, attribute: test1, register: 1});
+  block.add_constraint(Constraint::Scan {table: students, attribute: test2, register: 2});
   block.add_constraint(Constraint::Insert {table: students, attribute: result, register: 1});
-  block.add_constraint(Constraint::Function {op: 1, parameters: vec![1, 2], output: vec![3]});
+  block.add_constraint(Constraint::Function {op: 1, parameters: vec![1, 2], output: vec![1]});
+  
+  
+  let begin = SystemTime::now();
   db.register_transaction(txn);
   db.runtime.register_block(block.clone(), &db.store);
-  
+
+  let end = SystemTime::now();
+  let delta = end.duration_since(begin);
+
   println!("{:?}", db);
   println!("{:?}", db.runtime);
+  println!("{:?}", delta);
 
 }

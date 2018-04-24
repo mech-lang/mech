@@ -38,19 +38,20 @@ impl Runtime {
   pub fn register_block(&mut self, mut block: Block, store: &Interner) {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
-    for constraint in &block.constraints {
-      // self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: register_id}]);
-      /*
-        // Put associated values on the registers if we have them in the DB already
-        match store.get_col(*table, *attribute) {
-          Some(col) => {
-            // Set the data on the register and mark it as ready
-            block.input_registers[register_id - 1].place_data(&col);
-            block.ready = set_bit(block.ready, register_id - 1);
-          },
-          None => (),
-        }
-      */
+    for ((table, attribute), register) in &block.pipes {
+      let register_id = *register as usize - 1;
+      println!("{:?} {:?} {:?}", table, attribute, register);
+      self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: *register as usize}]);
+      // Put associated values on the registers if we have them in the DB already
+      match store.get_col(*table, *attribute) {
+        Some(col) => {
+          // Set the data on the register and mark it as ready
+          block.input_registers[register_id].place_data(&col);
+          block.ready = set_bit(block.ready, register_id);
+        },
+        None => (),
+      }
+      
     }
     self.blocks.push(block.clone());
   } 
@@ -136,7 +137,7 @@ impl fmt::Debug for Register {
 pub struct Block {
   pub id: usize,
   pub ready: u64,
-  pub pipes: HashMap<(u64, u64), Vec<Address>>,
+  pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -165,6 +166,7 @@ impl Block {
         while register_id >= 0 && self.input_registers.len() <= register_id {
           self.input_registers.push(Register::new());
         }
+        self.pipes.insert((table, attribute), register);
       },
       Constraint::Insert{table, attribute, register} => {
         let register_id: usize = register as usize - 1;
