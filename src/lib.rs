@@ -24,3 +24,4 @@ pub mod database;
 pub mod runtime;
 pub mod table;
 pub mod indexes;
+pub mod operations;

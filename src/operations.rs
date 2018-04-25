@@ -15,6 +15,18 @@ The operations are:
 
 */
 
+// ## Functions
+
+#[repr(u8)]
+#[derive(Debug, Clone)]
+pub enum Function {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Power,
+}
+
 struct Plan {
     operations: Vec<Operation>,
 }
@@ -39,12 +51,5 @@ enum Operation {
 
 
 impl Operation {
-
-    pub fn make_scan() -> Operation::Scan {
-
-    }
-
-
-
 
 }

@@ -14,6 +14,7 @@ use alloc::{fmt, Vec};
 use database::{Interner, Change};
 use hashmap_core::map::HashMap;
 use indexes::Hasher;
+use operations;
 
 // ## Runtime
 
@@ -68,14 +69,8 @@ impl Runtime {
     }
   }
 
-  pub fn run_network(&self) {
-    println!("Ready blocks:");
-    for block in &self.blocks {
-      if block.is_ready() {
-        println!("Block is ready!");
-        println!("{:?}", block);
-      }
-    }
+  pub fn run_network(&mut self) {
+
   }
 
 }
@@ -178,7 +173,7 @@ impl Block {
           self.output_registers.push(Register::new());
         }
       },
-      Constraint::Function{op, ..} => {
+      Constraint::Function{ref operation, ..} => {
         self.intermediate_registers.push(Register::new());
       },
       _ => (),
@@ -207,16 +202,16 @@ impl fmt::Debug for Block {
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
-    for register in &self.input_registers {
-      write!(f, "│  > {:?}\n", register).unwrap();
+    for (ix, register) in self.input_registers.iter().enumerate() {
+      write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Intermediate: {:?}\n", self.intermediate_registers.len()).unwrap();
-    for register in &self.intermediate_registers {
-      write!(f, "│  > {:?}\n", register).unwrap();
+    for (ix, register) in self.intermediate_registers.iter().enumerate() {
+      write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Output: {:?}\n", self.output_registers.len()).unwrap();
-    for register in &self.output_registers {
-      write!(f, "│  > {:?}\n", register).unwrap();
+    for (ix, register) in self.output_registers.iter().enumerate() {
+      write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
     for constraint in &self.constraints {
@@ -247,19 +242,17 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, attribute: u64, register: u64 },
   Insert {table: u64, attribute: u64, register: u64},
-  Function {op: u64, parameters: Vec<u64>, output: Vec<u64>},
+  Function {operation: operations::Function, parameters: Vec<u64>, output: Vec<u64>},
 }
 
 impl fmt::Debug for Constraint {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
-        Constraint::Scan{table, attribute, ..} => write!(f, "Scan({:#x}, {:#x})", table, attribute).unwrap(),
-        Constraint::Insert{table, attribute, ..} => write!(f, "Insert({:#x}, {:#x})", table, attribute).unwrap(),
-        Constraint::Function{op, parameters, output} => write!(f, "Function({:?})", op).unwrap(),
-        _ => (),
+        Constraint::Scan{table, attribute, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, attribute, register),
+        Constraint::Insert{table, attribute, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, attribute, register),
+        Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       }
-      Ok(())
     }
 }
 
