@@ -51,6 +51,7 @@ impl Runtime {
       
     }
     self.blocks.push(block.clone());
+    self.run_network();
   } 
 
   pub fn process_change(&mut self, change: &Change) {
@@ -68,7 +69,13 @@ impl Runtime {
   }
 
   pub fn run_network(&self) {
-    
+    println!("Ready blocks:");
+    for block in &self.blocks {
+      if block.is_ready() {
+        println!("Block is ready!");
+        println!("{:?}", block);
+      }
+    }
   }
 
 }
@@ -182,7 +189,11 @@ impl Block {
   pub fn is_ready(&self) -> bool {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
-    self.ready == 2_u64.pow(input_registers_count as u32) - 1
+    if input_registers_count > 0 {
+      self.ready == 2_u64.pow(input_registers_count as u32) - 1
+    } else {
+      false
+    }
   }
 
 
