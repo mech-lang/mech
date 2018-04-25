@@ -1,5 +1,9 @@
 // # Operations
 
+// ## Prelude
+
+use alloc::{String, Vec};
+
 /*
 Queries are compiled down to a Plan, which is a sequence of operations that 
 map to database operations.
@@ -11,7 +15,6 @@ The operations are:
 - Filter
 - Function
 - Project
-
 
 */
 
