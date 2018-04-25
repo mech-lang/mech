@@ -19,7 +19,6 @@ use indexes::Hasher;
 
 #[derive(Clone)]
 pub struct Runtime {
-  pub ready_mask: usize,
   pub blocks: Vec<Block>,
   pub pipes_map: HashMap<(u64, u64), Vec<Address>>,
 }
@@ -28,7 +27,6 @@ impl Runtime {
 
   pub fn new() -> Runtime {
     Runtime {
-      ready_mask: 0,
       blocks: Vec::new(),
       pipes_map: HashMap::new(),
     }
