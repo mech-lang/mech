@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use mech::database::{Database, Transaction, Change, AddChange, NewTableChange};
 use mech::table::{Value, Table};
 use mech::indexes::Hasher;
-use mech::operations::Function;
+use mech::operations::{Function, Plan, Operation};
 use mech::runtime::{Runtime, Block, Constraint, Register};
 
 fn main() {
@@ -43,22 +43,21 @@ fn main() {
   let mut block2 = Block::new();
   
   let begin = SystemTime::now();
-  
+
+  db.register_transaction(txn);  
   db.runtime.register_block(block.clone(), &db.store);
   db.runtime.register_block(block2.clone(), &db.store);
 
   println!("{:?}", db);
   println!("{:?}", db.runtime);
 
-  db.register_transaction(txn);
+
 
 
   let end = SystemTime::now();
   let delta = end.duration_since(begin);
 
   
-  println!("{:?}", db);
-  println!("{:?}", db.runtime);
   println!("{:?}", delta);
 
 }

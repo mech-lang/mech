@@ -38,8 +38,9 @@ pub enum Comparators {
 
 // Plans are an ordered list of operations.
 
-struct Plan {
-  operations: Vec<Operation>,
+#[derive(Debug, Clone)]
+pub struct Plan {
+  pub operations: Vec<Operation>,
 }
 
 impl Plan {
@@ -54,11 +55,11 @@ impl Plan {
 
 // Operations are the core of Mech. They define what the language can do with data.
 
-enum Operation {
+#[derive(Debug, Clone)]
+pub enum Operation {
   Filter,
   Function,
 }
-
 
 impl Operation {
 

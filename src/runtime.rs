@@ -70,7 +70,11 @@ impl Runtime {
   }
 
   pub fn run_network(&mut self) {
-
+    for block in &mut self.blocks {
+      if block.is_ready() {
+        block.ready = 0;
+      }
+    }
   }
 
 }
@@ -162,14 +166,14 @@ impl Block {
       Constraint::Scan{table, attribute, register} => {
         let register_id: usize = register as usize - 1;
         // Allocate registers
-        while register_id >= 0 && self.input_registers.len() <= register_id {
+        while self.input_registers.len() <= register_id {
           self.input_registers.push(Register::new());
         }
         self.pipes.insert((table, attribute), register);
       },
       Constraint::Insert{table, attribute, register} => {
         let register_id: usize = register as usize - 1;
-        while register_id >= 0 && self.output_registers.len() <= register_id {
+        while self.output_registers.len() <= register_id {
           self.output_registers.push(Register::new());
         }
       },
