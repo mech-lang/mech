@@ -15,6 +15,7 @@ use database::{Interner, Change};
 use hashmap_core::map::HashMap;
 use indexes::Hasher;
 use operations;
+use operations::Function;
 
 // ## Runtime
 
@@ -72,7 +73,7 @@ impl Runtime {
   pub fn run_network(&mut self) {
     for block in &mut self.blocks {
       if block.is_ready() {
-        block.ready = 0;
+        block.solve();
       }
     }
   }
@@ -193,6 +194,19 @@ impl Block {
     } else {
       false
     }
+  }
+
+  pub fn solve(&mut self) {
+    self.ready = 0;
+    // Execute Function
+    let c1 = Constraint::Function { operation: Function::Add, parameters: vec![1, 2], output: vec![1]};
+    let lhs = &self.input_registers[0];
+    let rhs = &self.input_registers[1];
+    let result = operations::math_add(lhs, rhs);
+    self.intermediate_registers[0].place_data(&result);
+    // Execute Insert
+    self.output_registers[0].place_data(&result);
+    // Insert(0xd7e9e2d8, 0x7573d9de) -> 1
   }
 
 
