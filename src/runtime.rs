@@ -40,7 +40,6 @@ impl Runtime {
     block.id = self.blocks.len() + 1;
     for ((table, attribute), register) in &block.pipes {
       let register_id = *register as usize - 1;
-      println!("{:?} {:?} {:?}", table, attribute, register);
       self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: *register as usize}]);
       // Put associated values on the registers if we have them in the DB already
       match store.get_col(*table, *attribute) {
