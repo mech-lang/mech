@@ -3,6 +3,8 @@
 // ## Prelude
 
 use alloc::{String, Vec};
+use runtime::{Constraint, Register};
+use table::Value;
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -20,6 +22,19 @@ pub enum Function {
   Divide,
   Power,
 }
+
+pub fn math_add(lhs: &Register, rhs: &Register) -> Vec<Value> {
+    lhs.data.iter().zip(rhs.data.iter()).map(|(x,y)| { 
+        match x {
+            Value::Number(lhs_val) => match y {
+                Value::Number(rhs_val) => Value::from_u64(lhs_val + rhs_val),
+                _ => Value::Empty,
+            }
+            _ => Value::Empty,
+        }
+    }).collect()
+}
+
 
 // ## Comparators
 
@@ -40,27 +55,13 @@ pub enum Comparators {
 
 #[derive(Debug, Clone)]
 pub struct Plan {
-  pub operations: Vec<Operation>,
+  pub constraints: Vec<Constraint>,
 }
 
 impl Plan {
   pub fn new() -> Plan {
     Plan {
-      operations: Vec::new(),
+      constraints: Vec::new(),
     }
   }
-}
-
-// Operations
-
-// Operations are the core of Mech. They define what the language can do with data.
-
-#[derive(Debug, Clone)]
-pub enum Operation {
-  Filter,
-  Function,
-}
-
-impl Operation {
-
 }
