@@ -11,7 +11,7 @@
 
 use table::{Value};
 use alloc::{fmt, Vec};
-use database::{Interner, Change};
+use database::{Interner, Change, AddChange};
 use hashmap_core::map::HashMap;
 use indexes::Hasher;
 use operations;
@@ -35,7 +35,7 @@ impl Runtime {
   }
 
   // Register a new block with the runtime
-  pub fn register_block(&mut self, mut block: Block, store: &Interner) {
+  pub fn register_block(&mut self, mut block: Block, store: &Interner) -> Vec<Change> {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
     for ((table, attribute), register) in &block.pipes {
@@ -53,7 +53,7 @@ impl Runtime {
       
     }
     self.blocks.push(block.clone());
-    self.run_network();
+    self.run_network()
   } 
 
   pub fn process_change(&mut self, change: &Change) {
@@ -70,12 +70,15 @@ impl Runtime {
     }
   }
 
-  pub fn run_network(&mut self) {
+  pub fn run_network(&mut self) -> Vec<Change> {
+    let mut changes = Vec::new();
     for block in &mut self.blocks {
       if block.is_ready() {
-        block.solve();
+        let mut block_changes = block.solve();
+        changes.append(&mut block_changes);
       }
     }
+    changes
   }
 
 }
@@ -141,6 +144,7 @@ impl fmt::Debug for Register {
 pub struct Block {
   pub id: usize,
   pub ready: u64,
+  pub plan: Vec<Constraint>,
   pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
@@ -155,6 +159,7 @@ impl Block {
       id: 0,
       ready: 0,
       pipes: HashMap::new(),
+      plan: Vec::new(),
       input_registers: Vec::with_capacity(32),
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
@@ -196,7 +201,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self) {
+  pub fn solve(&mut self) -> Vec<Change> {
     self.ready = 0;
     // Execute Function
     let c1 = Constraint::Function { operation: Function::Add, parameters: vec![1, 2], output: vec![1]};
@@ -207,6 +212,7 @@ impl Block {
     // Execute Insert
     self.output_registers[0].place_data(&result);
     // Insert(0xd7e9e2d8, 0x7573d9de) -> 1
+    vec![Change::Add(AddChange::new(0xd7e9e2d8, 0x6b72614d, 3, Value::from_u64(159)))]
   }
 
 
@@ -234,6 +240,10 @@ impl fmt::Debug for Block {
     write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
     for constraint in &self.constraints {
       write!(f, "│  > {:?}\n", constraint).unwrap();
+    }
+    write!(f, "│ Plan: {:?}\n", self.plan.len()).unwrap();
+    for (ix, step) in self.plan.iter().enumerate() {
+      write!(f, "│  {:?}. {:?}\n", ix + 1, step).unwrap();
     }
     write!(f, "└────────────────────────────────────────┘\n").unwrap();
     Ok(())
