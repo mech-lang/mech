@@ -15,7 +15,7 @@ use runtime::{Runtime, Block};
 pub enum Change {
   Add{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
   Remove{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
-  NewTable(NewTableChange)
+  NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize},
 }
 
 /*
@@ -24,39 +24,9 @@ impl fmt::Debug for AddChange {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
         write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
-    }
-}*/
-
-#[derive(Clone)]
-pub struct NewTableChange {
-    pub ix: usize,
-    pub tag: String,
-    pub entities: Vec<String>,
-    pub attributes: Vec<String>,
-    pub rows: usize,
-    pub cols: usize,
-}
-
-impl NewTableChange {
-
-  pub fn new(tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize) -> NewTableChange {  
-    NewTableChange {
-      ix: 0,
-      tag,
-      entities,
-      attributes,
-      rows,
-      cols,
-    }
-  }
-}
-
-impl fmt::Debug for NewTableChange {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
     }
-}
+}*/
   
 // ## Transaction
 
@@ -89,7 +59,7 @@ impl Transaction {
       match change {
         Change::Add{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
-        Change::NewTable(_) => txn.tables.push(change),
+        Change::NewTable{..} => txn.tables.push(change),
       }
     }
     txn
@@ -100,7 +70,7 @@ impl Transaction {
       match change {
         Change::Add{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
-        Change::NewTable(_) => txn.tables.push(change),
+        Change::NewTable{..} => txn.tables.push(change),
       }
       txn
   }
@@ -168,13 +138,12 @@ impl Interner {
       Change::Remove{..} => {
         self.changes.push(change.clone());
       }
-      Change::NewTable(new_table) => {
-        let tag = new_table.tag.clone();
+      Change::NewTable{tag, entities, attributes, rows, cols } => {
         let table_id = Hasher::hash_string(tag.clone());
         if !self.tables.name_map.contains_key(&table_id) {
           self.changes.push(change.clone());
-          self.tables.name_map.insert(table_id, tag);
-          self.tables.register(Table::new(table_id, new_table.rows, new_table.cols));
+          self.tables.name_map.insert(table_id, tag.to_string());
+          self.tables.register(Table::new(table_id, *rows, *cols));
         }
       }  
     }
