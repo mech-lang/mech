@@ -17,22 +17,29 @@ work on the supplied data.
 #[derive(Debug, Clone)]
 pub enum Function {
   Add,
-  Subtract,
-  Multiply,
-  Divide,
-  Power,
+  //Subtract,
+  //Multiply,
+  //Divide,
+  //Power,
 }
 
-pub fn math_add(lhs: &Register, rhs: &Register) -> Vec<Value> {
-    lhs.data.iter().zip(rhs.data.iter()).map(|(x,y)| { 
-        match x {
-            Value::Number(lhs_val) => match y {
-                Value::Number(rhs_val) => Value::from_u64(lhs_val + rhs_val),
-                _ => Value::Empty,
-            }
-            _ => Value::Empty,
+pub fn math_add(parameters: Vec<&Register>) -> Vec<Vec<Value>> {
+  let mut output: Vec<Vec<Value>> = vec![];
+  if parameters.len() == 2 {
+    let lhs = parameters[0];
+    let rhs = parameters[1];
+    let result: Vec<Value> = lhs.data.iter().zip(rhs.data.iter()).map(|(x, y)| { 
+      match x {
+        Value::Number(lhs_val) => match y {
+          Value::Number(rhs_val) => Value::from_u64(lhs_val + rhs_val),
+          _ => Value::Empty,
         }
-    }).collect()
+        _ => Value::Empty,
+      }
+    }).collect();
+    output.push(result);
+  }
+  output
 }
 
 

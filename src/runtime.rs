@@ -203,16 +203,43 @@ impl Block {
 
   pub fn solve(&mut self) -> Vec<Change> {
     self.ready = 0;
+    
+
+    for step in &self.plan {
+      match step {
+        Constraint::Function{operation, parameters, output} => {
+          // Gather references to the indicated registers as a vector
+          let mut parameter_registers = Vec::new();
+          for register in parameters {
+            parameter_registers.push(&self.input_registers[*register as usize - 1]);
+          }
+          // Pass the parameters to the appropriate function
+          let op_fun = match operation {
+            Function::Add => operations::math_add,
+          };
+          // Execute the function. This is where the magic happens!
+          let results = op_fun(parameter_registers);
+          // Set the result on the intended register
+          for (result, register) in results.iter().zip(output.iter()) {
+            self.intermediate_registers[0].place_data(&result);
+          }
+        },
+        _ => (),
+      }
+      
+    }
+
+
     // Execute Function
-    let c1 = Constraint::Function { operation: Function::Add, parameters: vec![1, 2], output: vec![1]};
-    let lhs = &self.input_registers[0];
-    let rhs = &self.input_registers[1];
-    let result = operations::math_add(lhs, rhs);
-    self.intermediate_registers[0].place_data(&result);
+    //let lhs = &self.input_registers[0];
+    //let rhs = &self.input_registers[1];
+    //let result = operations::math_add(lhs, rhs);
+    //self.intermediate_registers[0].place_data(&result);
     // Execute Insert
-    self.output_registers[0].place_data(&result);
+    //self.output_registers[0].place_data(&result);
     // Insert(0xd7e9e2d8, 0x7573d9de) -> 1
-    vec![Change::Add(AddChange::new(0xd7e9e2d8, 0x6b72614d, 3, Value::from_u64(159)))]
+    //vec![Change::Add(AddChange::new(0xd7e9e2d8, 0x6b72614d, 3, Value::from_u64(159)))]
+    vec![]
   }
 
 
