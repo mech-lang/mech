@@ -39,7 +39,11 @@ fn main() {
   block.add_constraint(Constraint::Scan {table: students, attribute: test2, register: 2});
   block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: vec![1]});
   block.add_constraint(Constraint::Insert {table: students, attribute: result, register: 1});
-  
+  let plan = vec![
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: vec![1]},
+    Constraint::Insert {table: students, attribute: result, register: 1}
+  ];
+  block.plan = plan;
   let mut block2 = Block::new();
   
   let begin = SystemTime::now();
@@ -48,9 +52,11 @@ fn main() {
   println!("{:?}", txn);
 
   db.register_transaction(txn);  
-  db.runtime.register_block(block.clone(), &db.store);
-  db.runtime.register_block(block2.clone(), &db.store);
+  let foo = db.runtime.register_block(block.clone(), &db.store);
+  let foo2 = db.runtime.register_block(block2.clone(), &db.store);
 
+  let txn2 = Transaction::from_changeset(foo);
+  db.register_transaction(txn2);
   
   println!("{:?}", db);
   println!("{:?}", db.runtime);
