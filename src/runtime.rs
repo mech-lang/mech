@@ -204,7 +204,7 @@ impl Block {
   pub fn solve(&mut self) -> Vec<Change> {
     self.ready = 0;
     
-
+    let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -224,22 +224,21 @@ impl Block {
             self.intermediate_registers[0].place_data(&result);
           }
         },
+        Constraint::Insert{table, attribute, register} => {
+          let column = &self.intermediate_registers[*register as usize - 1].data;
+          for (row, cell) in column.iter().enumerate() {
+            output.push(Change::Add(AddChange::new(*table, row as u64, *attribute, cell.clone())));
+          }
+        },
         _ => (),
-      }
-      
+      } 
     }
 
-
-    // Execute Function
-    //let lhs = &self.input_registers[0];
-    //let rhs = &self.input_registers[1];
-    //let result = operations::math_add(lhs, rhs);
-    //self.intermediate_registers[0].place_data(&result);
     // Execute Insert
-    //self.output_registers[0].place_data(&result);
+    //
     // Insert(0xd7e9e2d8, 0x7573d9de) -> 1
     //vec![Change::Add(AddChange::new(0xd7e9e2d8, 0x6b72614d, 3, Value::from_u64(159)))]
-    vec![]
+    output
   }
 
 
