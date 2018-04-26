@@ -4,7 +4,7 @@
 
 use alloc::{String, Vec};
 use core::fmt;
-use table::{Value, Table};
+use table::{Value, Table, Row};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::map::HashMap;
 use runtime::{Runtime, Block};
@@ -13,7 +13,7 @@ use runtime::{Runtime, Block};
 
 #[derive(Debug, Clone)]
 pub enum Change {
-  Add{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
+  Add{ix: usize, table: u64, row: Row, attribute: u64, value: Value},
   Remove{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
   NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize},
 }
@@ -122,13 +122,13 @@ impl Interner {
 
   pub fn intern_change(&mut self, change: &Change) {
     match change {
-      Change::Add{ix, table, entity, attribute, value} => {
+      Change::Add{ix, table, row, attribute, value} => {
         match self.tables.get_mut(*table) {
           Some(table) => {
             // Only add change if the new value is different from the old one
-            if table.index(*entity, *attribute) != Some(&value) {
+            if table.index(row, *attribute) != Some(&value) {
               self.changes.push(change.clone());
-              table.set(*entity, *attribute, value.clone());
+              table.set(row, *attribute, value.clone());
             }
           },
           None => (),

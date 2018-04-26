@@ -7,6 +7,14 @@ use indexes::Hasher;
 use alloc::{Vec, String};
 use hashmap_core::map::HashMap;
 
+// ## Row 
+
+#[derive(Debug, Clone)]
+pub enum Row {
+  Entity(u64),
+  Index(u64),
+}
+
 // ## Value
 
 #[derive(Clone, PartialEq)]
@@ -75,17 +83,23 @@ impl Table {
     }
   }
 
-  pub fn set(&mut self, entity: u64, attribute: u64, value: Value) {
+  pub fn set(&mut self, row: &Row, attribute: u64, value: Value) {
 
     // Check if the row is already in the table. If it is, return it.
-    let row = if self.entities.contains_key(&entity) {
-      self.entities.get(&entity).unwrap()
-    // If the row doesn't exist yet, create it at the end.
-    } else {
-      self.rows = self.rows + 1;
-      self.entities.insert(entity.clone(), self.rows.clone());
-      &self.rows
-    };
+    let row_ix: u64 = match row {
+      Row::Entity(entity) => {
+        let q: &usize = if self.entities.contains_key(&entity) {
+          self.entities.get(&entity).unwrap()
+        // If the row doesn't exist yet, create it at the end.
+        } else {
+          self.rows = self.rows + 1;
+          self.entities.insert(entity.clone(), self.rows.clone());
+          &self.rows
+        };
+        *q as u64
+      },
+      Row::Index(ix) => *ix,
+    } - 1;
 
     // Get the column indicated by the attribute
     let col = if self.attributes.contains_key(&attribute) {
@@ -97,7 +111,7 @@ impl Table {
       &self.cols
     };
     // Add the value at the indicated location
-    self.data[*row - 1][*col - 1] = value;
+    self.data[row_ix as usize][*col - 1] = value;
   }
 
   pub fn add_row(&mut self, entity: u64) {
@@ -170,15 +184,22 @@ impl Table {
   }
 
   // Index into a cell without having to access the data member directly
-  pub fn index(&mut self, entity: u64, attribute: u64) -> Option<&Value> {
-    match self.entities.get(&entity) {
-      Some(x) => {
-        match self.attributes.get(&attribute) {
-          Some(y) => Some(&self.data[*x - 1][*y - 1]),
+  pub fn index(&mut self, row: &Row, attribute: u64) -> Option<&Value> {
+    match row {
+      Row::Entity(entity) => {
+        match self.entities.get(&entity) {
+          Some(x) => {
+            match self.attributes.get(&attribute) {
+              Some(y) => Some(&self.data[*x - 1][*y - 1]),
+              None => None,
+            }
+          },
           None => None,
         }
       },
-      None => None,
+      Row::Index(ix) => {
+        None
+      },
     }
   }
 

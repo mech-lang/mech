@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use table::{Value};
+use table::{Value, Row};
 use alloc::{fmt, Vec};
 use database::{Interner, Change};
 use hashmap_core::map::HashMap;
@@ -58,7 +58,7 @@ impl Runtime {
 
   pub fn process_change(&mut self, change: &Change) {
     match change {
-      Change::Add{ix, table, entity, attribute, value} => {
+      Change::Add{ix, table, row, attribute, value} => {
         match self.pipes_map.get(&(*table, *attribute)) {
           Some(address) => {
             //println!("{:?} {:?}", add, address);
@@ -226,8 +226,8 @@ impl Block {
         },
         Constraint::Insert{table, attribute, register} => {
           let column = &self.intermediate_registers[*register as usize - 1].data;
-          for (row, cell) in column.iter().enumerate() {
-            output.push(Change::Add{ix: 0, table: *table, entity: row as u64, attribute: *attribute, value: cell.clone()});
+          for (row_ix, cell) in column.iter().enumerate() {
+            output.push(Change::Add{ix: 0, table: *table, row: Row::Index(row_ix as u64 + 1), attribute: *attribute, value: cell.clone()});
           }
         },
         _ => (),
