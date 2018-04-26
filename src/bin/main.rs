@@ -2,7 +2,7 @@ extern crate mech;
 extern crate core;
 
 use std::time::SystemTime;
-use mech::database::{Database, Transaction, Change, AddChange, NewTableChange};
+use mech::database::{Database, Transaction, Change, NewTableChange};
 use mech::table::{Value, Table};
 use mech::indexes::Hasher;
 use mech::operations::{Function, Plan};
@@ -20,17 +20,16 @@ fn main() {
   let test2: u64 = Hasher::hash_str("test2");
   let result: u64 = Hasher::hash_str("result");
 
-  let c1 = AddChange::new(students, student1, test1, Value::from_u64(83));
-  let c2 = AddChange::new(students, student1, test2, Value::from_u64(76));
-  let c3 = AddChange::new(students, student2, test1, Value::from_u64(99));
-  let c4 = AddChange::new(students, student2, test2, Value::from_u64(88));
+//  let c2 = AddChange::new(students, student1, test2, Value::from_u64(76));
+//  let c3 = AddChange::new(students, student2, test1, Value::from_u64(99));
+//  let c4 = AddChange::new(students, student2, test2, Value::from_u64(88));
   let t1= NewTableChange::new(String::from("students"), vec![], vec![], 10, 10);
   let txn = Transaction::from_changeset(vec![
-    Change::Add(c1), 
+    Change::Add{ix: 0, table: students, entity: student1, attribute: test1, value: Value::from_u64(83)}, 
     Change::NewTable(t1), 
-    Change::Add(c2),
-    Change::Add(c3),
-    Change::Add(c4)
+    //Change::Add(c2),
+    //Change::Add(c3),
+    //Change::Add(c4)
   ]);
 
 
@@ -69,5 +68,5 @@ fn main() {
 
   
   println!("{:?}", delta);
-
+  loop{}
 }

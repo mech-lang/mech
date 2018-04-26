@@ -13,39 +13,18 @@ use runtime::{Runtime, Block};
 
 #[derive(Debug, Clone)]
 pub enum Change {
-  Add(AddChange),
+  Add{ ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
   Remove(RemoveChange),
   NewTable(NewTableChange)
 }
 
-#[derive(Clone)]
-pub struct AddChange {
-    pub ix: usize,
-    pub table: u64,
-    pub entity: u64,
-    pub attribute: u64,
-    pub value: Value,
-}
-
-impl AddChange {
-
-  pub fn new(table: u64, entity: u64, attribute: u64, value: Value) -> AddChange {  
-    AddChange {
-      ix: 0,
-      table: table,
-      entity: entity,
-      attribute: attribute,
-      value: value,
-    }
-  }
-}
-
+/*
 impl fmt::Debug for AddChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
-}
+}*/
 
 #[derive(Clone)]
 pub struct RemoveChange {
@@ -136,7 +115,7 @@ impl Transaction {
     let mut txn = Transaction::new();
     for change in changes {
       match change {
-        Change::Add(_) => txn.adds.push(change),
+        Change::Add{..} => txn.adds.push(change),
         Change::Remove(_) => txn.removes.push(change),
         Change::NewTable(_) => txn.tables.push(change),
       }
@@ -147,7 +126,7 @@ impl Transaction {
   pub fn from_change(change: Change) -> Transaction {
       let mut txn = Transaction::new();
       match change {
-        Change::Add(_) => txn.adds.push(change),
+        Change::Add{..} => txn.adds.push(change),
         Change::Remove(_) => txn.removes.push(change),
         Change::NewTable(_) => txn.tables.push(change),
       }
@@ -201,13 +180,13 @@ impl Interner {
 
   pub fn intern_change(&mut self, change: &Change) {
     match change {
-      Change::Add(add) => {
-        match self.tables.get_mut(add.table) {
+      Change::Add{ix, table, entity, attribute, value} => {
+        match self.tables.get_mut(*table) {
           Some(table) => {
             // Only add change if the new value is different from the old one
-            if table.index(add.entity, add.attribute) != Some(&add.value) {
+            if table.index(*entity, *attribute) != Some(&value) {
               self.changes.push(change.clone());
-              table.set(add.entity, add.attribute, add.value.clone());
+              table.set(*entity, *attribute, value.clone());
             }
           },
           None => (),
