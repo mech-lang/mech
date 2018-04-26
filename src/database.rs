@@ -13,8 +13,8 @@ use runtime::{Runtime, Block};
 
 #[derive(Debug, Clone)]
 pub enum Change {
-  Add{ ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
-  Remove(RemoveChange),
+  Add{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
+  Remove{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
   NewTable(NewTableChange)
 }
 
@@ -23,37 +23,9 @@ impl fmt::Debug for AddChange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
-    }
-}*/
-
-#[derive(Clone)]
-pub struct RemoveChange {
-    pub ix: usize,
-    pub table: u64,
-    pub entity: u64,
-    pub attribute: u64,
-    pub value: Value,
-}
-
-impl RemoveChange {
-
-  pub fn new(table: u64, entity: u64, attribute: u64, value: Value) -> RemoveChange {  
-    RemoveChange {
-      ix: 0,
-      table: table,
-      entity: entity,
-      attribute: attribute,
-      value: value,
-    }
-  }
-}
-
-impl fmt::Debug for RemoveChange {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
     }
-}
+}*/
 
 #[derive(Clone)]
 pub struct NewTableChange {
@@ -116,7 +88,7 @@ impl Transaction {
     for change in changes {
       match change {
         Change::Add{..} => txn.adds.push(change),
-        Change::Remove(_) => txn.removes.push(change),
+        Change::Remove{..} => txn.removes.push(change),
         Change::NewTable(_) => txn.tables.push(change),
       }
     }
@@ -127,7 +99,7 @@ impl Transaction {
       let mut txn = Transaction::new();
       match change {
         Change::Add{..} => txn.adds.push(change),
-        Change::Remove(_) => txn.removes.push(change),
+        Change::Remove{..} => txn.removes.push(change),
         Change::NewTable(_) => txn.tables.push(change),
       }
       txn
@@ -192,7 +164,8 @@ impl Interner {
           None => (),
         };
       },
-      Change::Remove(remove) => {
+      // TODO Implement removes
+      Change::Remove{..} => {
         self.changes.push(change.clone());
       }
       Change::NewTable(new_table) => {
