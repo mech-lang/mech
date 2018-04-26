@@ -10,8 +10,6 @@ use mech::runtime::{Runtime, Block, Constraint, Register};
 
 fn main() {
 
-  
-
   let mut db = Database::new(1000, 1000, 1000);
   let students: u64 = Hasher::hash_str("students");  
   let student1: u64 = Hasher::hash_str("Mark");
@@ -20,17 +18,13 @@ fn main() {
   let test2: u64 = Hasher::hash_str("test2");
   let result: u64 = Hasher::hash_str("result");
 
-//  let c2 = AddChange::new(students, student1, test2, Value::from_u64(76));
-//  let c3 = AddChange::new(students, student2, test1, Value::from_u64(99));
-//  let c4 = AddChange::new(students, student2, test2, Value::from_u64(88));
   let txn = Transaction::from_changeset(vec![
     Change::Add{ix: 0, table: students, entity: student1, attribute: test1, value: Value::from_u64(83)}, 
     Change::NewTable{tag: String::from("students"), entities: vec![], attributes: vec![], rows: 10, cols: 10}, 
-    //Change::Add(c2),
-    //Change::Add(c3),
-    //Change::Add(c4)
+    Change::Add{ix: 0, table: students, entity: student1, attribute: test2, value: Value::from_u64(76)},
+    Change::Add{ix: 0, table: students, entity: student2, attribute: test1, value: Value::from_u64(99)},
+    Change::Add{ix: 0, table: students, entity: student2, attribute: test2, value: Value::from_u64(88)},
   ]);
-
 
   let mut block = Block::new();
   block.add_constraint(Constraint::Scan {table: students, attribute: test1, register: 1});
@@ -58,9 +52,6 @@ fn main() {
   
   println!("{:?}", db);
   println!("{:?}", db.runtime);
-
-
-
 
   let end = SystemTime::now();
   let delta = end.duration_since(begin);
