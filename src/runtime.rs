@@ -57,18 +57,28 @@ impl Runtime {
   } 
 
   pub fn process_change(&mut self, change: &Change) {
-    /*match change {
+    match change {
       Change::Add{ix, table, row, column, value} => {
-        let column_ix = column.unwrap();
-        match self.pipes_map.get(&(*table, *column_ix)) {
-          Some(address) => {
-            println!("{:?} {:?}", change, address);
+        match self.pipes_map.get(&(*table, *column)) {
+          Some(addresses) => {
+            for address in addresses {
+              let register_ix = address.register - 1;
+              let block_id = address.block - 1;
+              if block_id < self.blocks.len() {
+                let block = &mut self.blocks[block_id];
+                if register_ix < block.input_registers.len() {
+                  let register = &mut block.input_registers[register_ix];
+                  register.data.push(value.clone());
+                  block.ready = set_bit(block.ready, register_ix);
+                }
+              }
+            }
           },
           _ => (),
         }
       },
       _ => (),
-    }*/
+    }
   }
 
   pub fn run_network(&mut self) -> Vec<Change> {

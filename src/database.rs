@@ -33,7 +33,7 @@ impl fmt::Debug for Change {
 
 pub struct Transaction {
   pub timestamp: u64,
-  complete: u64,
+  complete: bool,
   pub epoch: u64,
   pub round: u64,
   pub tables: Vec<Change>,
@@ -45,7 +45,7 @@ impl Transaction {
   pub fn new() -> Transaction {
     Transaction {
       timestamp: 0,
-      complete: 0,
+      complete: false,
       epoch: 0,
       round: 0,
       tables: Vec::new(),
@@ -76,15 +76,8 @@ impl Transaction {
       txn
   }
 
-  pub fn process(&mut self) -> u64 {
-    if self.complete == 0 {
-      self.complete = 1;
-    }
-    self.complete
-  }
-
   pub fn is_complete(&self) -> bool {
-    self.complete == 1
+    self.complete == true
   }
 }
 
@@ -217,11 +210,12 @@ impl Database {
       for remove in txn.removes.iter_mut() {
           self.store.intern_change(remove);
       }
-      txn.process();
+      txn.complete = true;
       txn.epoch = self.epoch;
       txn.round = self.round;
       self.round += 1;
     }
+    self.runtime.run_network();
     self.processed = self.transactions.len();
     self.round = 0;
   }
