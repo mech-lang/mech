@@ -83,7 +83,7 @@ impl Table {
     self.attributes.get(&attribute)
   }
 
-  pub fn set(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
+  pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
     if row_ix <= self.rows && column_ix <= self.columns {
       self.data[row_ix - 1][column_ix - 1] = value;
       Ok(())
@@ -92,11 +92,10 @@ impl Table {
     }
   }
 
-  pub fn add_row(&mut self, entity: u64) {
-    if !self.entities.contains_key(&entity) {
-      self.rows = self.rows + 1;
-      self.entities.insert(entity.clone(), self.rows.clone());
-    };
+  pub fn add_row(&mut self) {
+    let rows = self.rows + 1;
+    let cols = self.columns;
+    self.grow_to_fit(rows, cols);
   }
 
   pub fn add_column(&mut self, attribute: u64) {
@@ -123,8 +122,26 @@ impl Table {
     rows
   }
 
+  pub fn grow_to_fit(&mut self, rows: usize, columns: usize) {
+    if rows > self.rows {
+      // The new row is larger than the underlying row structure
+      if rows > self.data.len() {
+        self.data.resize(rows, Vec::new());
+      }
+      self.rows = rows;
+    }
 
-
+    if columns > self.columns {
+      // The new row is larger than the underlying row structure
+      if columns > self.data[0].len() {
+        for row in &mut self.data {
+          row.resize(columns, Value::Empty);
+        }
+      }
+      self.columns = columns;
+    }    
+  }
+  
   // Supply a list of entities (rows), get them back in a vector.
   pub fn get_columns(&self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
     vec![None]
@@ -171,30 +188,12 @@ impl Table {
   }
 
   // Index into a cell without having to access the data member directly
-  pub fn index(&mut self, row: u64, column: u64) -> Option<&Value> {
-    None
-    //match (row, column) {
-      //(Row::Entity(entity), Column::Attribute(attribute)) => {
-//
-  //    },
-    //  _ => (),
-    //};
-    //None
-      /*Row::Entity(entity) => {
-        match self.entities.get(&entity) {
-          Some(x) => {
-            match self.attributes.get(&attribute) {
-              Some(y) => Some(&self.data[*x - 1][*y - 1]),
-              None => None,
-            }
-          },
-          None => None,
-        }
-      },
-      Row::Index(ix) => {
-        None
-      },
-    }*/
+  pub fn index(&mut self, row: usize, column: usize) -> Option<&Value> {
+    if row < self.rows && column < self.columns {
+      Some(&self.data[row - 1][column - 1])
+    } else {
+      None
+    }
   }
 
   // Clear a cell, setting it's value to Value::Empty

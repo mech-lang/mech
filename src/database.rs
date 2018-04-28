@@ -126,12 +126,10 @@ impl Interner {
       Change::Add{ix, table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table) => {
-            // Only add change if the new value is different from the old one
-            if table.index(*row, *column) != Some(&value) {
-              self.changes.push(change.clone());
-              table.set(*row as usize, *column as usize, value.clone());
-            }
-          },
+            table.grow_to_fit(*row as usize, *column as usize);
+            table.set_cell(*row as usize, *column as usize, value.clone());
+            self.changes.push(change.clone());
+          }
           None => (),
         };
       },
