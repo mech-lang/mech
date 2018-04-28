@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use table::{Value, Row};
+use table::{Value};
 use alloc::{fmt, Vec};
 use database::{Interner, Change};
 use hashmap_core::map::HashMap;
@@ -38,11 +38,11 @@ impl Runtime {
   pub fn register_block(&mut self, mut block: Block, store: &Interner) -> Vec<Change> {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
-    for ((table, attribute), register) in &block.pipes {
+    for ((table, column), register) in &block.pipes {
       let register_id = *register as usize - 1;
-      self.pipes_map.insert((*table, *attribute), vec![Address{block: block.id, register: *register as usize}]);
+      self.pipes_map.insert((*table, *column), vec![Address{block: block.id, register: *register as usize}]);
       // Put associated values on the registers if we have them in the DB already
-      match store.get_col(*table, *attribute) {
+      match store.get_col(*table, *column) {
         Some(col) => {
           // Set the data on the register and mark it as ready
           block.input_registers[register_id].place_data(&col);
@@ -57,17 +57,18 @@ impl Runtime {
   } 
 
   pub fn process_change(&mut self, change: &Change) {
-    match change {
-      Change::Add{ix, table, row, attribute, value} => {
-        match self.pipes_map.get(&(*table, *attribute)) {
+    /*match change {
+      Change::Add{ix, table, row, column, value} => {
+        let column_ix = column.unwrap();
+        match self.pipes_map.get(&(*table, *column_ix)) {
           Some(address) => {
-            //println!("{:?} {:?}", add, address);
+            println!("{:?} {:?}", change, address);
           },
           _ => (),
         }
       },
       _ => (),
-    }
+    }*/
   }
 
   pub fn run_network(&mut self) -> Vec<Change> {
@@ -106,7 +107,7 @@ pub struct Address {
 impl fmt::Debug for Address {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "@({:?}, {:?})", self.block, self.register)
+    write!(f, "@(block: {:?}, register: {:?})", self.block, self.register)
   }
 }
 
@@ -169,15 +170,15 @@ impl Block {
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
     match constraint {
-      Constraint::Scan{table, attribute, register} => {
+      Constraint::Scan{table, column, register} => {
         let register_id: usize = register as usize - 1;
         // Allocate registers
         while self.input_registers.len() <= register_id {
           self.input_registers.push(Register::new());
         }
-        self.pipes.insert((table, attribute), register);
+        self.pipes.insert((table, column), register);
       },
-      Constraint::Insert{table, attribute, register} => {
+      Constraint::Insert{table, column, register} => {
         let register_id: usize = register as usize - 1;
         while self.output_registers.len() <= register_id {
           self.output_registers.push(Register::new());
@@ -224,10 +225,10 @@ impl Block {
             self.intermediate_registers[0].place_data(&result);
           }
         },
-        Constraint::Insert{table, attribute, register} => {
-          let column = &self.intermediate_registers[*register as usize - 1].data;
-          for (row_ix, cell) in column.iter().enumerate() {
-            output.push(Change::Add{ix: 0, table: *table, row: Row::Index(row_ix as u64 + 1), attribute: *attribute, value: cell.clone()});
+        Constraint::Insert{table, column, register} => {
+          let column_data = &self.intermediate_registers[*register as usize - 1].data;
+          for (row_ix, cell) in column_data.iter().enumerate() {
+            output.push(Change::Add{ix: 0, table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()});
           }
         },
         _ => (),
@@ -294,8 +295,8 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   // A Scan monitors a supplied cell
-  Scan { table: u64, attribute: u64, register: u64 },
-  Insert {table: u64, attribute: u64, register: u64},
+  Scan { table: u64, column: u64, register: u64 },
+  Insert {table: u64, column: u64, register: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: Vec<u64>},
 }
 
@@ -303,9 +304,10 @@ impl fmt::Debug for Constraint {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
-        Constraint::Scan{table, attribute, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, attribute, register),
-        Constraint::Insert{table, attribute, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, attribute, register),
+        Constraint::Scan{table, column, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, column, register),
+        Constraint::Insert{table, column, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, column, register),
         Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
+        _ => Ok(()),
       }
     }
 }

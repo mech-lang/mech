@@ -7,15 +7,7 @@ use indexes::Hasher;
 use alloc::{Vec, String};
 use hashmap_core::map::HashMap;
 
-// ## Row 
-
-#[derive(Debug, Clone)]
-pub enum Row {
-  Entity(u64),
-  Index(u64),
-}
-
-// ## Value
+// ## Row and Column
 
 #[derive(Clone, PartialEq)]
 pub enum Value {
@@ -62,7 +54,7 @@ impl fmt::Debug for Value {
 pub struct Table {
   pub id: u64,
   pub rows: usize,
-  pub cols: usize,
+  pub columns: usize,
   pub data: Vec<Vec<Value>>,
   pub attributes: HashMap<u64, usize>,
   pub entities: HashMap<u64, usize>,
@@ -76,42 +68,28 @@ impl Table {
     Table {
       id: tag,
       rows: 0,
-      cols: 0,
+      columns: 0,
       data: vec![vec![Value::Empty; n]; m], 
       entities: HashMap::with_capacity(n),
       attributes: HashMap::with_capacity(m),
     }
   }
 
-  pub fn set(&mut self, row: &Row, attribute: u64, value: Value) {
+  pub fn get_row_index(&mut self, entity: u64) -> Option<&usize> {
+    self.entities.get(&entity)
+  }
 
-    // Check if the row is already in the table. If it is, return it.
-    let row_ix: u64 = match row {
-      Row::Entity(entity) => {
-        let q: &usize = if self.entities.contains_key(&entity) {
-          self.entities.get(&entity).unwrap()
-        // If the row doesn't exist yet, create it at the end.
-        } else {
-          self.rows = self.rows + 1;
-          self.entities.insert(entity.clone(), self.rows.clone());
-          &self.rows
-        };
-        *q as u64
-      },
-      Row::Index(ix) => *ix,
-    } - 1;
+  pub fn get_column_index(&mut self, attribute: u64) -> Option<&usize> {
+    self.attributes.get(&attribute)
+  }
 
-    // Get the column indicated by the attribute
-    let col = if self.attributes.contains_key(&attribute) {
-      self.attributes.get(&attribute).unwrap()
-    // If it doesn't exist yet, create it at the end
+  pub fn set(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
+    if row_ix <= self.rows && column_ix <= self.columns {
+      self.data[row_ix - 1][column_ix - 1] = value;
+      Ok(())
     } else {
-      self.cols = self.cols + 1;
-      self.attributes.insert(attribute.clone(), self.cols.clone());
-      &self.cols
-    };
-    // Add the value at the indicated location
-    self.data[row_ix as usize][*col - 1] = value;
+      Err("Index out of table bounds.")
+    }
   }
 
   pub fn add_row(&mut self, entity: u64) {
@@ -120,10 +98,11 @@ impl Table {
       self.entities.insert(entity.clone(), self.rows.clone());
     };
   }
-  pub fn add_col(&mut self, attribute: u64) {
+
+  pub fn add_column(&mut self, attribute: u64) {
     if !self.attributes.contains_key(&attribute) {
-      self.cols = self.cols + 1;
-      self.attributes.insert(attribute.clone(), self.cols.clone());
+      self.columns = self.columns + 1;
+      self.attributes.insert(attribute.clone(), self.columns.clone());
     };
   }
 
@@ -135,7 +114,7 @@ impl Table {
       match self.entities.get(&entity) {
         Some(x) => {
           let mut row = self.data[x - 1].clone();
-          row.truncate(self.cols);
+          row.truncate(self.columns);
           rows.push(Some(row));
         },
         None => rows.push(None),
@@ -144,8 +123,12 @@ impl Table {
     rows
   }
 
+
+
   // Supply a list of entities (rows), get them back in a vector.
-  pub fn get_cols(&self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+  pub fn get_columns(&self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+    vec![None]
+    /*
     let mut columns: Vec<Option<Vec<Value>>> = vec![];
     for attribute in attributes {
       let mut column: Vec<Value> = vec![];
@@ -163,30 +146,41 @@ impl Table {
       };
     }
     columns
+    */
   }
 
+
   pub fn get_col(&self, attribute: u64) -> Option<Vec<Value>> {
-
-      let mut column: Vec<Value> = vec![];
-      // Get the index for the given attribute
-      match self.attributes.get(&attribute) {
-        Some(x) => {
-          // get the column from each row
-          for i in 0 .. self.rows {
-            let cell = self.data[i][*x - 1].clone();
-            column.push(cell);
-          }
-          Some(column)
-        },
-        None => None,
-      }
-
+    
+    None
+    /*
+    let mut column: Vec<Value> = vec![];
+    // Get the index for the given attribute
+    match self.attributes.get(&attribute) {
+      Some(x) => {
+        // get the column from each row
+        for i in 0 .. self.rows {
+          let cell = self.data[i][*x - 1].clone();
+          column.push(cell);
+        }
+        Some(column)
+      },
+      None => None,
+    }
+    */
   }
 
   // Index into a cell without having to access the data member directly
-  pub fn index(&mut self, row: &Row, attribute: u64) -> Option<&Value> {
-    match row {
-      Row::Entity(entity) => {
+  pub fn index(&mut self, row: u64, column: u64) -> Option<&Value> {
+    None
+    //match (row, column) {
+      //(Row::Entity(entity), Column::Attribute(attribute)) => {
+//
+  //    },
+    //  _ => (),
+    //};
+    //None
+      /*Row::Entity(entity) => {
         match self.entities.get(&entity) {
           Some(x) => {
             match self.attributes.get(&attribute) {
@@ -200,20 +194,17 @@ impl Table {
       Row::Index(ix) => {
         None
       },
-    }
+    }*/
   }
 
   // Clear a cell, setting it's value to Value::Empty
-  pub fn clear(&mut self, entity: u64, attribute: u64) {
-    match self.entities.get(&entity) {
-      Some(x) => {
-        match self.attributes.get(&attribute) {
-          Some(y) => self.data[*x - 1][*y - 1] = Value::Empty,
-          None => (),
-        }
-      },
-      None => (),
-    };
+  pub fn clear(&mut self, row: usize, column: usize) -> Result<(), &str> {
+    if row < self.rows && column < self.columns {
+      self.data[row - 1][column - 1] = Value::Empty;
+      Ok(())
+    } else {
+      Err("Index out of table bounds.")
+    }
   }
 
 
@@ -226,11 +217,11 @@ impl fmt::Debug for Table {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       let cell_width = 15;
-      let mut table_width = cell_width * self.cols + self.cols * 2;
+      let mut table_width = cell_width * self.columns + self.columns * 2;
       if table_width < 20 {
         table_width = 20;
       }
-      let header_width = table_width - self.cols - 1;
+      let header_width = table_width - self.columns - 1;
 
       // Print table header
       write!(f, "╔").unwrap();
@@ -242,7 +233,7 @@ impl fmt::Debug for Table {
       print_cell_contents(table_name, header_width, f);
       write!(f, "║\n").unwrap();
 
-      let table_dimensions = format!("{:?} x {:?}", self.rows, self.cols);
+      let table_dimensions = format!("{:?} x {:?}", self.rows, self.columns);
       write!(f, "║").unwrap();
       print_cell_contents(table_dimensions, header_width, f);
       write!(f, "║\n").unwrap();
@@ -252,12 +243,12 @@ impl fmt::Debug for Table {
       write!(f, "╝\n").unwrap();
 
       // Print table body
-      if self.cols > 0 {
-        print_top_border(self.cols, cell_width, f);
+      if self.columns > 0 {
+        print_top_border(self.columns, cell_width, f);
         for m in 0 .. self.rows {
-          print_row(self.data[m].clone(), self.cols, cell_width, f);
+          print_row(self.data[m].clone(), self.columns, cell_width, f);
         }
-        print_bottom_border(self.cols, cell_width,  f);
+        print_bottom_border(self.columns, cell_width,  f);
       }
       Ok(())
     }

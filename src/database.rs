@@ -4,29 +4,30 @@
 
 use alloc::{String, Vec};
 use core::fmt;
-use table::{Value, Table, Row};
+use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::map::HashMap;
 use runtime::{Runtime, Block};
 
 // ## Changes
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Change {
-  Add{ix: usize, table: u64, row: Row, attribute: u64, value: Value},
-  Remove{ix: usize, table: u64, entity: u64, attribute: u64, value: Value},
+  Add{ix: usize, table: u64, row: u64, column: u64, value: Value},
+  Remove{ix: usize, table: u64, row: u64, column: u64, value: Value},
   NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize},
 }
 
-/*
-impl fmt::Debug for AddChange {
+impl fmt::Debug for Change {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
-        write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", self.table, self.entity, self.attribute, self.value)
-        write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", self.tag, self.entities, self.attributes, self.rows, self.cols)
+      match self {
+        Change::Add{ix, table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+        Change::Remove{ix, table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+        Change::NewTable{tag, entities, attributes, rows, cols} => write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", tag, entities, attributes, rows, cols),
+      }
     }
-}*/
+}
   
 // ## Transaction
 
@@ -122,13 +123,13 @@ impl Interner {
 
   pub fn intern_change(&mut self, change: &Change) {
     match change {
-      Change::Add{ix, table, row, attribute, value} => {
+      Change::Add{ix, table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table) => {
             // Only add change if the new value is different from the old one
-            if table.index(row, *attribute) != Some(&value) {
+            if table.index(*row, *column) != Some(&value) {
               self.changes.push(change.clone());
-              table.set(row, *attribute, value.clone());
+              table.set(*row as usize, *column as usize, value.clone());
             }
           },
           None => (),
