@@ -148,10 +148,10 @@ impl Interner {
     }
   }
 
-  pub fn get_col(&self, table: u64, attribute: u64) -> Option<Vec<Value>> {
+  pub fn get_col(&self, table: u64, column: usize) -> Option<Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
-        match stored_table.get_col(attribute) {
+        match stored_table.get_col(column) {
           Some(col) => Some(col),
           None => None,
         }

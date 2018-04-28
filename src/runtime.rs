@@ -42,8 +42,10 @@ impl Runtime {
       let register_id = *register as usize - 1;
       self.pipes_map.insert((*table, *column), vec![Address{block: block.id, register: *register as usize}]);
       // Put associated values on the registers if we have them in the DB already
-      match store.get_col(*table, *column) {
+      println!("{:?} {:?}", table, column);
+      match store.get_col(*table, *column as usize) {
         Some(col) => {
+          println!("{:?}", col);
           // Set the data on the register and mark it as ready
           block.input_registers[register_id].place_data(&col);
           block.ready = set_bit(block.ready, register_id);
@@ -111,7 +113,6 @@ impl fmt::Debug for Address {
   }
 }
 
-
 #[derive(Clone)]
 pub struct Register {
   pub data: Vec<Value>,
@@ -129,15 +130,14 @@ impl Register {
     self.data = data.clone();
   }
 
-
 }
 
 impl fmt::Debug for Register {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "{:?}", self.data).unwrap();
-      Ok(())
-    }
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self.data).unwrap();
+    Ok(())
+  }
 }
 
 
@@ -204,7 +204,6 @@ impl Block {
 
   pub fn solve(&mut self) -> Vec<Change> {
     self.ready = 0;
-    
     let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
       match step {
@@ -234,14 +233,8 @@ impl Block {
         _ => (),
       } 
     }
-
-    // Execute Insert
-    //
-    // Insert(0xd7e9e2d8, 0x7573d9de) -> 1
-    //vec![Change::Add(AddChange::new(0xd7e9e2d8, 0x6b72614d, 3, Value::from_u64(159)))]
     output
   }
-
 
 }
 

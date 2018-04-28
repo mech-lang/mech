@@ -166,25 +166,18 @@ impl Table {
     */
   }
 
-
-  pub fn get_col(&self, attribute: u64) -> Option<Vec<Value>> {
-    
-    None
-    /*
-    let mut column: Vec<Value> = vec![];
-    // Get the index for the given attribute
-    match self.attributes.get(&attribute) {
-      Some(x) => {
-        // get the column from each row
-        for i in 0 .. self.rows {
-          let cell = self.data[i][*x - 1].clone();
-          column.push(cell);
-        }
-        Some(column)
-      },
-      None => None,
+  pub fn get_col(&self, column_ix: usize) -> Option<Vec<Value>> {
+    if column_ix - 1 < self.columns {
+      let mut column: Vec<Value> = vec![];
+      // Get the index for the given attribute
+      for row in 0 .. self.rows {
+        let cell = self.data[row][column_ix - 1].clone();
+        column.push(cell);
+      }
+      Some(column)
+    } else {
+      None
     }
-    */
   }
 
   // Index into a cell without having to access the data member directly
