@@ -217,6 +217,7 @@ impl Database {
     }
     let changes = self.runtime.run_network();
     self.round = 0;
+    self.processed = self.transactions.len();
     changes
   }
 

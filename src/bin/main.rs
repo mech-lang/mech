@@ -42,8 +42,10 @@ fn main() {
   db.register_transaction(txn);  
   for i in 0..200 {
     let changes = db.process_transactions();
-    let txn2 = Transaction::from_changeset(changes);
-    db.register_transaction(txn2);
+    if changes.len() > 0 {
+      let txn2 = Transaction::from_changeset(changes);
+      db.register_transaction(txn2);
+    }
   }
 
   let end = SystemTime::now();
