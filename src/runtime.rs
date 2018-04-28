@@ -68,7 +68,7 @@ impl Runtime {
                 let block = &mut self.blocks[block_id];
                 if register_ix < block.input_registers.len() {
                   let register = &mut block.input_registers[register_ix];
-                  register.data.push(value.clone());
+                  register.set_row(*row as usize, value.clone());
                   block.ready = set_bit(block.ready, register_ix);
                 }
               }
@@ -136,6 +136,15 @@ impl Register {
 
   pub fn place_data(&mut self, data: &Vec<Value>) {
     self.data = data.clone();
+  }
+
+  pub fn set_row(&mut self, row: usize, value: Value) {
+    if row <= self.data.len() {
+      self.data[row - 1] = value;
+    } else {
+      self.data.resize(row, Value::Empty);
+      self.data[row - 1] = value;
+    }
   }
 
 }

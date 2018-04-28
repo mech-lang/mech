@@ -191,7 +191,7 @@ impl Database {
     self.register_transactions(&mut vec![transaction]);
   }
 
-  pub fn process_transactions(&mut self) { 
+  pub fn process_transactions(&mut self) -> Vec<Change> { 
     self.epoch += 1;
     for i in self.processed .. self.transactions.len() {
       
@@ -215,9 +215,9 @@ impl Database {
       txn.round = self.round;
       self.round += 1;
     }
-    self.runtime.run_network();
-    self.processed = self.transactions.len();
+    let changes = self.runtime.run_network();
     self.round = 0;
+    changes
   }
 
 }
