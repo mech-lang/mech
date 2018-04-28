@@ -43,7 +43,7 @@ impl Runtime {
       self.pipes_map.insert((*table, *column), vec![Address{block: block.id, register: *register as usize}]);
       // Put associated values on the registers if we have them in the DB already
       println!("{:?} {:?}", table, column);
-      match store.get_col(*table, *column as usize) {
+      match store.get_column(*table, *column as usize) {
         Some(col) => {
           println!("{:?}", col);
           // Set the data on the register and mark it as ready

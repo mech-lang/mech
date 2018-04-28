@@ -14,7 +14,7 @@ fn main() {
   let table_id = Hasher::hash_str("students");
   let txn = Transaction::from_changeset(vec![
     Change::Add{ix: 0, table: table_id, row: 1, column: 1, value: Value::from_u64(83)}, 
-    Change::NewTable{tag: String::from("students"), entities: vec![], attributes: vec![], rows: 10, cols: 10}, 
+    Change::NewTable{tag: String::from("students"), entities: vec![], attributes: vec![], rows: 10, columns: 10}, 
     Change::Add{ix: 0, table: table_id, row: 1, column: 2, value: Value::from_u64(76)},
     Change::Add{ix: 0, table: table_id, row: 2, column: 1, value: Value::from_u64(99)},
     Change::Add{ix: 0, table: table_id, row: 2, column: 2, value: Value::from_u64(88)},

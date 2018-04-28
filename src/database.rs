@@ -15,7 +15,7 @@ use runtime::{Runtime, Block};
 pub enum Change {
   Add{ix: usize, table: u64, row: u64, column: u64, value: Value},
   Remove{ix: usize, table: u64, row: u64, column: u64, value: Value},
-  NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, cols: usize},
+  NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, columns: usize},
 }
 
 impl fmt::Debug for Change {
@@ -24,7 +24,7 @@ impl fmt::Debug for Change {
       match self {
         Change::Add{ix, table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
         Change::Remove{ix, table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-        Change::NewTable{tag, entities, attributes, rows, cols} => write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", tag, entities, attributes, rows, cols),
+        Change::NewTable{tag, entities, attributes, rows, columns} => write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", tag, entities, attributes, rows, columns),
       }
     }
 }
@@ -137,22 +137,22 @@ impl Interner {
       Change::Remove{..} => {
         self.changes.push(change.clone());
       }
-      Change::NewTable{tag, entities, attributes, rows, cols } => {
+      Change::NewTable{tag, entities, attributes, rows, columns } => {
         let table_id = Hasher::hash_string(tag.clone());
         if !self.tables.name_map.contains_key(&table_id) {
           self.changes.push(change.clone());
           self.tables.name_map.insert(table_id, tag.to_string());
-          self.tables.register(Table::new(table_id, *rows, *cols));
+          self.tables.register(Table::new(table_id, *rows, *columns));
         }
       }  
     }
   }
 
-  pub fn get_col(&self, table: u64, column: usize) -> Option<Vec<Value>> {
+  pub fn get_column(&self, table: u64, column_ix: usize) -> Option<Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
-        match stored_table.get_col(column) {
-          Some(col) => Some(col),
+        match stored_table.get_column(column_ix) {
+          Some(column) => Some(column),
           None => None,
         }
       },

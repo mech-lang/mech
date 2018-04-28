@@ -105,21 +105,23 @@ impl Table {
     };
   }
 
-  // Supply a list of entities (rows), get them back in a vector.
-  pub fn get_rows(&self, entities: Vec<u64>) -> Vec<Option<Vec<Value>>> {
+  pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
     let mut rows: Vec<Option<Vec<Value>>> = vec![];
-    for entity in entities {
-      // Get the index for the given entity
-      match self.entities.get(&entity) {
-        Some(x) => {
-          let mut row = self.data[x - 1].clone();
-          row.truncate(self.columns);
-          rows.push(Some(row));
-        },
-        None => rows.push(None),
-      };
+    for ix in row_ixes{
+      let row = self.get_row(ix);
+      rows.push(row);
     }
     rows
+  }
+
+  pub fn get_row(&self, row_ix: usize) -> Option<Vec<Value>> {
+    if row_ix - 1 < self.rows {
+      let mut row = self.data[row_ix - 1].clone();      
+      row.truncate(self.columns);
+      Some(row)
+    } else {
+      None
+    }
   }
 
   pub fn grow_to_fit(&mut self, rows: usize, columns: usize) {
@@ -142,31 +144,16 @@ impl Table {
     }    
   }
   
-  // Supply a list of entities (rows), get them back in a vector.
-  pub fn get_columns(&self, attributes: Vec<u64>) -> Vec<Option<Vec<Value>>> {
-    vec![None]
-    /*
+  pub fn get_columns(&self, column_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
     let mut columns: Vec<Option<Vec<Value>>> = vec![];
-    for attribute in attributes {
-      let mut column: Vec<Value> = vec![];
-      // Get the index for the given attribute
-      match self.attributes.get(&attribute) {
-        Some(x) => {
-          // get the column from each row
-          for i in 0 .. self.rows {
-            let cell = self.data[i][*x - 1].clone();
-            column.push(cell);
-          }
-          columns.push(Some(column));
-        },
-        None => columns.push(None),
-      };
+    for ix in column_ixes {
+      let column = self.get_column(ix);
+      columns.push(column);
     }
     columns
-    */
   }
 
-  pub fn get_col(&self, column_ix: usize) -> Option<Vec<Value>> {
+  pub fn get_column(&self, column_ix: usize) -> Option<Vec<Value>> {
     if column_ix - 1 < self.columns {
       let mut column: Vec<Value> = vec![];
       // Get the index for the given attribute
