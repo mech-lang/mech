@@ -171,9 +171,9 @@ impl Interner {
 pub struct Database {
     pub epoch: u64,
     pub round: u64,
+    pub processed: usize,
     pub store: Interner,
     pub transactions: Vec<Transaction>, 
-    pub txn_pointer: usize,
     pub runtime: Runtime,
 }
 
@@ -183,45 +183,46 @@ impl Database {
     Database {
       epoch: 0,
       round: 0,
+      processed: 0,
       transactions: Vec::with_capacity(transaction_capacity),
       store: Interner::new(change_capacity, table_capacity),
-      txn_pointer: 0,
       runtime: Runtime::new(),
     }
   }
 
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
-    self.process_transactions(transactions);
     self.transactions.append(transactions);
-    self.epoch += 1;
   }
 
   pub fn register_transaction(&mut self, transaction: Transaction) {
     self.register_transactions(&mut vec![transaction]);
   }
 
-  fn process_transactions(&mut self, transactions: &mut Vec<Transaction>) {   
-    for txn in transactions {
-      if !txn.is_complete() {
-        // First make any tables
-        for table in txn.tables.iter_mut() {
-          self.store.intern_change(table);
-        }
-        // Handle the adds
-        for add in txn.adds.iter_mut() {
-            self.store.intern_change(add);
-            self.runtime.process_change(add);
-        }
-        // Handle the removes
-        for remove in txn.removes.iter_mut() {
-            self.store.intern_change(remove);
-        }
-        txn.process();
-        txn.epoch = self.epoch;
-        txn.round = self.round;
-        self.round += 1;
+  pub fn process_transactions(&mut self) { 
+    self.epoch += 1;
+    for i in self.processed .. self.transactions.len() {
+      
+      let mut txn = &mut self.transactions[i];
+      
+      // First make any tables
+      for table in txn.tables.iter_mut() {
+        self.store.intern_change(table);
       }
+      // Handle the adds
+      for add in txn.adds.iter_mut() {
+          self.store.intern_change(add);
+          let changes = self.runtime.process_change(add);
+      }
+      // Handle the removes
+      for remove in txn.removes.iter_mut() {
+          self.store.intern_change(remove);
+      }
+      txn.process();
+      txn.epoch = self.epoch;
+      txn.round = self.round;
+      self.round += 1;
     }
+    self.processed = self.transactions.len();
     self.round = 0;
   }
 

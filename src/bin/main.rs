@@ -32,27 +32,26 @@ fn main() {
   block.plan = plan;
   let mut block2 = Block::new();
   
-  
 
 
-  println!("{:?}", txn);
 
   let begin = SystemTime::now();
-  db.register_transaction(txn);  
+  
   let foo = db.runtime.register_block(block.clone(), &db.store);
   let foo2 = db.runtime.register_block(block2.clone(), &db.store);
-  
-
+  db.register_transaction(txn);  
+  db.process_transactions();
   let txn2 = Transaction::from_changeset(foo);
   db.register_transaction(txn2);
   let end = SystemTime::now();
 
-  println!("{:?}", db);
-  println!("{:?}", db.runtime);
-
+  
+  //println!("q");
   
   let delta = end.duration_since(begin);
 
+  println!("{:?}", db);
+  println!("{:?}", db.runtime);
   
   println!("{:?}", delta);
   //loop{}
