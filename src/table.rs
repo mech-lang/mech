@@ -62,16 +62,14 @@ pub struct Table {
 
 impl Table {
 
-  // m x attributes and n x entities. n x m is the capacity of the table
-  // while the actual size starts at 0 x 0 (since it is empty)
-  pub fn new(tag: u64, m: usize, n: usize) -> Table {
+  pub fn new(tag: u64, rows: usize, columns: usize) -> Table {
     Table {
       id: tag,
       rows: 0,
       columns: 0,
-      data: vec![vec![Value::Empty; n]; m], 
-      entities: HashMap::with_capacity(n),
-      attributes: HashMap::with_capacity(m),
+      data: vec![vec![Value::Empty; rows]; columns], 
+      entities: HashMap::with_capacity(rows),
+      attributes: HashMap::with_capacity(columns),
     }
   }
 
@@ -85,13 +83,14 @@ impl Table {
 
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
     if row_ix <= self.rows && column_ix <= self.columns {
-      self.data[row_ix - 1][column_ix - 1] = value;
+      self.data[column_ix - 1][row_ix - 1] = value;
       Ok(())
     } else {
       Err("Index out of table bounds.")
     }
   }
 
+  /*
   pub fn add_row(&mut self) {
     let rows = self.rows + 1;
     let cols = self.columns;
@@ -103,50 +102,11 @@ impl Table {
       self.columns = self.columns + 1;
       self.attributes.insert(attribute.clone(), self.columns.clone());
     };
-  }
+  }*/
 
-  pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
-    let mut rows: Vec<Option<Vec<Value>>> = vec![];
-    for ix in row_ixes{
-      let row = self.get_row(ix);
-      rows.push(row);
-    }
-    rows
-  }
-
-  pub fn get_row(&self, row_ix: usize) -> Option<Vec<Value>> {
-    if row_ix - 1 < self.rows {
-      let mut row = self.data[row_ix - 1].clone();      
-      row.truncate(self.columns);
-      Some(row)
-    } else {
-      None
-    }
-  }
-
-  pub fn grow_to_fit(&mut self, rows: usize, columns: usize) {
-    if rows > self.rows {
-      // The new row is larger than the underlying row structure
-      if rows > self.data.len() {
-        self.data.resize(rows, Vec::new());
-      }
-      self.rows = rows;
-    }
-
-    if columns > self.columns {
-      // The new row is larger than the underlying row structure
-      if columns > self.data[0].len() {
-        for row in &mut self.data {
-          row.resize(columns, Value::Empty);
-        }
-      }
-      self.columns = columns;
-    }    
-  }
-  
   pub fn get_columns(&self, column_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
     let mut columns: Vec<Option<Vec<Value>>> = vec![];
-    for ix in column_ixes {
+    for ix in column_ixes{
       let column = self.get_column(ix);
       columns.push(column);
     }
@@ -155,35 +115,69 @@ impl Table {
 
   pub fn get_column(&self, column_ix: usize) -> Option<Vec<Value>> {
     if column_ix - 1 < self.columns {
-      let mut column: Vec<Value> = vec![];
-      // Get the index for the given attribute
-      for row in 0 .. self.rows {
-        let cell = self.data[row][column_ix - 1].clone();
-        column.push(cell);
-      }
+      let mut column = self.data[column_ix - 1].clone();      
+      column.truncate(self.rows);
       Some(column)
     } else {
       None
     }
   }
 
+  pub fn grow_to_fit(&mut self, rows: usize, columns: usize) {
+    if columns > self.columns {
+      // The new row is larger than the underlying column structure
+      if columns > self.data.len() {
+        self.data.resize(columns, Vec::new());
+      }
+      self.columns = columns;
+    }
+
+    if rows > self.rows {
+      // The new row is larger than the underlying row structure
+      if rows > self.data[0].len() {
+        for column in &mut self.data {
+          column.resize(rows, Value::Empty);
+        }
+      }
+      self.rows = rows;
+    }    
+  }
+  
+  pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
+    let mut rows: Vec<Option<Vec<Value>>> = vec![];
+    for ix in row_ixes {
+      let row = self.get_row(ix);
+      rows.push(row);
+    }
+    rows
+  }
+
+  pub fn get_row(&self, row_ix: usize) -> Option<Vec<Value>> {
+    if row_ix - 1 < self.rows {
+      let mut row: Vec<Value> = vec![];
+      // Get the index for the given attribute
+      for column_ix in 0 .. self.columns {
+        let cell = self.data[column_ix][row_ix - 1].clone();
+        row.push(cell);
+      }
+      Some(row)
+    } else {
+      None
+    }
+  }
+
   // Index into a cell without having to access the data member directly
-  pub fn index(&mut self, row: usize, column: usize) -> Option<&Value> {
-    if row < self.rows && column < self.columns {
-      Some(&self.data[row - 1][column - 1])
+  pub fn index(&mut self, row_ix: usize, column_ix: usize) -> Option<&Value> {
+    if column_ix < self.columns && row_ix < self.rows {
+      Some(&self.data[column_ix - 1][row_ix - 1])
     } else {
       None
     }
   }
 
   // Clear a cell, setting it's value to Value::Empty
-  pub fn clear(&mut self, row: usize, column: usize) -> Result<(), &str> {
-    if row < self.rows && column < self.columns {
-      self.data[row - 1][column - 1] = Value::Empty;
-      Ok(())
-    } else {
-      Err("Index out of table bounds.")
-    }
+  pub fn clear_cell(&mut self, row_ix: usize, column_ix: usize) -> Result<(), &str> {
+    self.set_cell(row_ix, column_ix, Value::Empty)
   }
 
 
@@ -229,8 +223,8 @@ impl fmt::Debug for Table {
         } else {
           self.rows
         };
-        for m in 0 .. max_rows {
-          print_row(self.data[m].clone(), self.columns, cell_width, f);
+        for m in 1 .. max_rows + 1 {
+          print_row(self.get_row(m).unwrap(), self.columns, cell_width, f);
         }
         print_bottom_border(self.columns, cell_width,  f);
       }
