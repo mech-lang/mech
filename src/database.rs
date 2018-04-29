@@ -31,6 +31,7 @@ impl fmt::Debug for Change {
   
 // ## Transaction
 
+#[derive(Clone)]
 pub struct Transaction {
   pub timestamp: u64,
   complete: bool,
