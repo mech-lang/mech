@@ -152,7 +152,7 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self.data).unwrap();
+    write!(f, "[x{:?}]", self.data.len()).unwrap();
     Ok(())
   }
 }
@@ -220,7 +220,7 @@ impl Block {
   }
 
   pub fn solve(&mut self) -> Vec<Change> {
-    self.ready = 0;
+    //self.ready = 0;
     let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
       match step {
