@@ -1,5 +1,7 @@
 extern crate mech;
 extern crate core;
+extern crate time;
+extern crate rand;
 
 use std::time::SystemTime;
 use mech::database::{Database, Transaction, Change};
@@ -7,9 +9,31 @@ use mech::table::{Value, Table};
 use mech::indexes::Hasher;
 use mech::operations::{Function, Plan};
 use mech::runtime::{Runtime, Block, Constraint, Register};
+use std::thread::{self};
+use std::time::*;
+use rand::{Rng, thread_rng};
+
+fn make_ball(row2: usize) -> Vec<Change> {
+  let row = row2 as u64;
+  let mut rng = thread_rng();
+  let x = rng.gen_range(1, 100);
+  let y = rng.gen_range(1, 100);
+  let dx = rng.gen_range(1, 10);
+  let dy = rng.gen_range(1, 10);
+  let ball = Hasher::hash_str("ball");
+  vec![
+    Change::Add{ix: 0, table: ball, row, column: 1, value: Value::from_u64(x)},
+    Change::Add{ix: 0, table: ball, row, column: 2, value: Value::from_u64(y)},
+    Change::Add{ix: 0, table: ball, row, column: 3, value: Value::from_u64(dx)},
+    Change::Add{ix: 0, table: ball, row, column: 4, value: Value::from_u64(dy)},
+    Change::Add{ix: 0, table: ball, row, column: 5, value: Value::from_u64(16)},
+  ]
+}
+
 
 fn main() {
 
+  /*
   let mut db = Database::new(1000, 1000, 1000);
   let table_id = Hasher::hash_str("students");
   let txn = Transaction::from_changeset(vec![
@@ -60,4 +84,96 @@ fn main() {
   
   println!("{:?}", delta);
   //loop{}
+  */
+
+  let mut db = Database::new(100_000, 1_000_000, 2);
+  let system_timer_change = Hasher::hash_str("system/timer/change");
+  let ball = Hasher::hash_str("ball");
+  let mut balls: Vec<Change> = vec![];
+  let n: usize = 20000;
+  for i in 1 .. n {
+    let mut ball_changes = make_ball(i);
+    balls.append(&mut ball_changes);
+  }
+  let mut table_changes = vec![
+    Change::NewTable{tag: String::from("system/timer/change"), entities: vec![], attributes: vec![], rows: 1, columns: 4}, 
+    Change::NewTable{tag: String::from("ball"), entities: vec![], attributes: vec![], rows: n, columns: 5}, 
+  ];
+  table_changes.append(&mut balls);
+  let txn = Transaction::from_changeset(table_changes);
+  
+  db.register_transaction(txn);
+  db.process_transactions();
+
+  let mut block = Block::new();
+  block.add_constraint(Constraint::Scan {table: system_timer_change, column: 4, register: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, register: 2});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, register: 3});
+  block.add_constraint(Constraint::Scan {table: ball, column: 3, register: 4});
+  block.add_constraint(Constraint::Scan {table: ball, column: 4, register: 5});
+  block.add_constraint(Constraint::Scan {table: ball, column: 5, register: 6});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: vec![1]});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: vec![2]});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: vec![3]});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});
+  block.add_constraint(Constraint::Insert {table: ball, column: 2, register: 2});
+  block.add_constraint(Constraint::Insert {table: ball, column: 4, register: 3});
+  let plan = vec![
+    Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: vec![1]},
+    Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: vec![2]},
+    Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: vec![3]},
+    Constraint::Insert {table: ball, column: 1, register: 1},
+    Constraint::Insert {table: ball, column: 2, register: 2},
+    Constraint::Insert {table: ball, column: 4, register: 3},
+  ];
+  block.plan = plan;
+  db.runtime.register_block(block.clone(), &db.store);
+
+  thread::spawn(move || {
+    let mut i = 1;
+    loop {
+      let begin = SystemTime::now();
+      //thread::sleep(Duration::from_millis(10));
+   //for i in 0 .. 2000 {
+      let cur_time = time::now();
+      let timer_id = 1;
+      let txn = Transaction::from_changeset(vec![
+        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
+        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
+        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
+        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
+      ]);
+      db.register_transaction(txn);
+      let changes = db.process_transactions();
+      let txn2 = Transaction::from_changeset(changes);
+      db.register_transaction(txn2);
+      db.process_transactions();
+      //println!("{:?}", db);
+      //println!("{:?}", db.runtime);
+      let end = SystemTime::now();
+      let duration = end.duration_since(begin).unwrap();
+      let delta = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+      println!("{:?}", 1.0/delta);
+  }
+  });
+
+  loop{}
+
+  
+  println!("{:?}", db);
+  //println!("{:?}", db.runtime);
+  
+  
+ //     i += 1;
+ //   }
+ // });
+
+
+
+  //loop{}
+
+
+
+
+
 }
