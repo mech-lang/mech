@@ -236,9 +236,9 @@ impl Block {
           };
           // Execute the function. This is where the magic happens!
           let results = op_fun(parameter_registers);
-          // Set the result on the intended register
+          // Set the result on the intended register          
           for (result, register) in results.iter().zip(output.iter()) {
-            self.intermediate_registers[0].place_data(&result);
+            self.intermediate_registers[*register as usize - 1].place_data(&result);
           }
         },
         Constraint::Insert{table, column, register} => {
