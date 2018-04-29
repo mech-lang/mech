@@ -17,6 +17,7 @@ extern crate alloc;
 extern crate core;
 extern crate hashmap_core;
 extern crate rand;
+extern crate time;
 
 // ## Modules
 
