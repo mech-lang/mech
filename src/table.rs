@@ -224,7 +224,12 @@ impl fmt::Debug for Table {
       // Print table body
       if self.columns > 0 {
         print_top_border(self.columns, cell_width, f);
-        for m in 0 .. self.rows {
+        let max_rows = if self.rows > 10 {
+          10
+        } else {
+          self.rows
+        };
+        for m in 0 .. max_rows {
           print_row(self.data[m].clone(), self.columns, cell_width, f);
         }
         print_bottom_border(self.columns, cell_width,  f);
