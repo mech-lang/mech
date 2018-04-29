@@ -88,7 +88,7 @@ fn index_into_cell() {
 #[test]
 fn clear_cell() {
     let mut table = make_table();
-    table.clear(1, 3);
+    table.clear_cell(1, 3);
     let score = table.index(1, 3);
     assert_eq!(score, Some(&Value::Empty));
 } 
