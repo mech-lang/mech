@@ -134,6 +134,18 @@ impl Register {
     }
   }
 
+  pub fn get(&self, ix: usize) -> Option<&Value> {
+    if ix - 1 < self.len() {
+      Some(&self.data[ix - 1])
+    } else {
+      None
+    }
+  }
+
+  pub fn len(&self) -> usize {
+    self.data.len()
+  }
+
   pub fn place_data(&mut self, data: &Vec<Value>) {
     self.data = data.clone();
   }
