@@ -164,7 +164,11 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "[x{:?}]", self.data.len()).unwrap();
+    if self.data.len() > 10 {
+      write!(f, "[x{:?}]", self.data.len()).unwrap();
+    } else {
+      write!(f, "[{:?}]", self.data).unwrap();
+    }
     Ok(())
   }
 }
@@ -247,11 +251,12 @@ impl Block {
             Function::Add => operations::math_add,
           };
           // Execute the function. This is where the magic happens!
-          let results = op_fun(parameter_registers);
+          op_fun(parameter_registers, &mut self.intermediate_registers[*output as usize - 1].data);
+          
           // Set the result on the intended register          
-          for (result, register) in results.iter().zip(output.iter()) {
-            self.intermediate_registers[*register as usize - 1].place_data(&result);
-          }
+          /*for (result, register) in vec![result].iter().zip(output.iter()) {
+            self.intermediate_registers[0].place_data(&result);              
+          }*/
         },
         Constraint::Insert{table, column, register} => {
           let column_data = &self.intermediate_registers[*register as usize - 1].data;
@@ -319,7 +324,7 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, column: u64, register: u64 },
   Insert {table: u64, column: u64, register: u64},
-  Function {operation: operations::Function, parameters: Vec<u64>, output: Vec<u64>},
+  Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
 }
 
 impl fmt::Debug for Constraint {

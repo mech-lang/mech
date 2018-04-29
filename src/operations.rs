@@ -23,23 +23,21 @@ pub enum Function {
   //Power,
 }
 
-pub fn math_add(parameters: Vec<&Register>) -> Vec<Vec<Value>> {
-  let mut output: Vec<Vec<Value>> = vec![];
-  if parameters.len() == 2 {
+pub fn math_add(parameters: Vec<&Register>, output: &mut Vec<Value>) {
+  //if parameters.len() == 2 {
     let lhs = parameters[0];
     let rhs = parameters[1];
-    let result: Vec<Value> = lhs.data.iter().zip(rhs.data.iter()).map(|(x, y)| { 
-      match x {
-        Value::Number(lhs_val) => match y {
-          Value::Number(rhs_val) => Value::from_u64(lhs_val + rhs_val),
-          _ => Value::Empty,
-        }
-        _ => Value::Empty,
-      }
-    }).collect();
-    output.push(result);
-  }
-  output
+    let mut result: Vec<Value> = Vec::with_capacity(lhs.len());
+    output.resize(lhs.len(), Value::Empty);
+    for i in 1 .. lhs.len() + 1 {     
+      match (lhs.get(i), rhs.get(i)) {
+        (Some(Value::Number(x)), Some(Value::Number(y))) => {
+          let a = Value::from_u64(x + y);
+          output[i - 1] = a;
+        },
+        _ => (),
+      }   
+    }
 }
 
 
