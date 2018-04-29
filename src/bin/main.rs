@@ -33,59 +33,6 @@ fn make_ball(row2: usize) -> Vec<Change> {
 
 fn main() {
 
-  /*
-  let mut db = Database::new(1000, 1000, 1000);
-  let table_id = Hasher::hash_str("students");
-  let txn = Transaction::from_changeset(vec![
-    Change::Add{ix: 0, table: table_id, row: 1, column: 2, value: Value::from_u64(76)},
-    Change::Add{ix: 0, table: table_id, row: 2, column: 2, value: Value::from_u64(88)},
-    Change::Add{ix: 0, table: table_id, row: 2, column: 1, value: Value::from_u64(99)},
-    Change::Add{ix: 0, table: table_id, row: 1, column: 1, value: Value::from_u64(83)}, 
-    Change::NewTable{tag: String::from("students"), entities: vec![], attributes: vec![], rows: 10, columns: 10}, 
-  ]);
-
-  let mut block = Block::new();
-  block.add_constraint(Constraint::Scan {table: table_id, column: 1, register: 1});
-  block.add_constraint(Constraint::Scan {table: table_id, column: 2, register: 2});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: vec![1]});
-  block.add_constraint(Constraint::Insert {table: table_id, column: 3, register: 1});
-  let plan = vec![
-    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: vec![1]},
-    Constraint::Insert {table: table_id, column: 3, register: 1}
-  ];
-  block.plan = plan;
-  let mut block2 = Block::new();
-  
-
-
-
-  let begin = SystemTime::now();
-  
-  let foo = db.runtime.register_block(block.clone(), &db.store);
-  let foo2 = db.runtime.register_block(block2.clone(), &db.store);
-  db.register_transaction(txn);  
-  for i in 0..200 {
-    let changes = db.process_transactions();
-    if changes.len() > 0 {
-      let txn2 = Transaction::from_changeset(changes);
-      db.register_transaction(txn2);
-    }
-  }
-
-  let end = SystemTime::now();
-
-  
-  //println!("q");
-  
-  let delta = end.duration_since(begin);
-
-  println!("{:?}", db);
-  println!("{:?}", db.runtime);
-  
-  println!("{:?}", delta);
-  //loop{}
-  */
-
   let mut db = Database::new(100_000, 1_000_000, 2);
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
@@ -134,62 +81,30 @@ fn main() {
   let mut v2 = vec![25; 1_000_000];
   let mut v3 = vec![25; 1_000_000];
 
-  //thread::spawn(move || {
-  //  let mut i = 1;
   for q in 0 .. 1000 {
-      let start_ns = time::precise_time_ns();
-      //thread::sleep(Duration::from_millis(10));
-   
-      /*for i in 0 .. v1.len() {
-        v3[i] = v1[i] + v2[i];
-      }*/
-
-
-      
-      let cur_time = time::now();
-      let timer_id = 1;
-      let txn = Transaction::from_changeset(vec![
-        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
-        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
-        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
-        Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
-      ]);     
-      db.register_transaction(txn);
-      let changes = db.process_transactions();
-      let txn2 = Transaction::from_changeset(changes);
-db.register_transaction(txn2);
-
-      db.process_transactions();
-      
- 
-      
-      //println!("{:?}", db);
-      //println!("{:?}", db.runtime);
-      
-
-      let end_ns = time::precise_time_ns();
-      let delta = end_ns - start_ns;
-      let delta_sec = delta as f64 / 1.0e9;
-      println!("{:?}", 1.0 / delta_sec);
+    let start_ns = time::precise_time_ns();      
+    let cur_time = time::now();
+    let timer_id = 1;
+    let txn = Transaction::from_changeset(vec![
+      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
+      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
+      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
+      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
+    ]);     
+    db.register_transaction(txn);
+    let changes = db.process_transactions();
+    let txn2 = Transaction::from_changeset(changes);
+    db.register_transaction(txn2);
+    db.process_transactions();
+    //println!("{:?}", db);
+    //println!("{:?}", db.runtime);
+    let end_ns = time::precise_time_ns();
+    let delta = end_ns - start_ns;
+    let delta_sec = delta as f64 / 1.0e9;
+    println!("{:?}", 1.0 / delta_sec);
   }
-  //});
 
-
-  
   println!("{:?}", db);
-  //println!("{:?}", db.runtime);
-  
-  
- //     i += 1;
- //   }
- // });
-
-
-
-  //loop{}
-
-
-
-
+  println!("{:?}", db.runtime);
 
 }
