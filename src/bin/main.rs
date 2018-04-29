@@ -90,7 +90,7 @@ fn main() {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let mut balls: Vec<Change> = vec![];
-  let n: usize = 20000;
+  let n: usize = 10_000;
   for i in 1 .. n {
     let mut ball_changes = make_ball(i);
     balls.append(&mut ball_changes);
@@ -112,16 +112,16 @@ fn main() {
   block.add_constraint(Constraint::Scan {table: ball, column: 3, register: 4});
   block.add_constraint(Constraint::Scan {table: ball, column: 4, register: 5});
   block.add_constraint(Constraint::Scan {table: ball, column: 5, register: 6});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: vec![1]});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: vec![2]});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: vec![3]});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: 1});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: 2});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: 3});
   block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});
   block.add_constraint(Constraint::Insert {table: ball, column: 2, register: 2});
   block.add_constraint(Constraint::Insert {table: ball, column: 4, register: 3});
   let plan = vec![
-    Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: vec![1]},
-    Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: vec![2]},
-    Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: vec![3]},
+    Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: 1},
+    Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: 2},
+    Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: 3},
     Constraint::Insert {table: ball, column: 1, register: 1},
     Constraint::Insert {table: ball, column: 2, register: 2},
     Constraint::Insert {table: ball, column: 4, register: 3},
@@ -129,12 +129,23 @@ fn main() {
   block.plan = plan;
   db.runtime.register_block(block.clone(), &db.store);
 
-  thread::spawn(move || {
-    let mut i = 1;
-    loop {
-      let begin = SystemTime::now();
+  
+  let mut v1 = vec![10; 1_000_000];
+  let mut v2 = vec![25; 1_000_000];
+  let mut v3 = vec![25; 1_000_000];
+
+  //thread::spawn(move || {
+  //  let mut i = 1;
+  for q in 0 .. 1000 {
+      let start_ns = time::precise_time_ns();
       //thread::sleep(Duration::from_millis(10));
-   //for i in 0 .. 2000 {
+   
+      /*for i in 0 .. v1.len() {
+        v3[i] = v1[i] + v2[i];
+      }*/
+
+
+      
       let cur_time = time::now();
       let timer_id = 1;
       let txn = Transaction::from_changeset(vec![
@@ -142,22 +153,27 @@ fn main() {
         Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
         Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
         Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
-      ]);
+      ]);     
       db.register_transaction(txn);
       let changes = db.process_transactions();
       let txn2 = Transaction::from_changeset(changes);
-      db.register_transaction(txn2);
+db.register_transaction(txn2);
+
       db.process_transactions();
+      
+ 
+      
       //println!("{:?}", db);
       //println!("{:?}", db.runtime);
-      let end = SystemTime::now();
-      let duration = end.duration_since(begin).unwrap();
-      let delta = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
-      println!("{:?}", 1.0/delta);
-  }
-  });
+      
 
-  loop{}
+      let end_ns = time::precise_time_ns();
+      let delta = end_ns - start_ns;
+      let delta_sec = delta as f64 / 1.0e9;
+      println!("{:?}", 1.0 / delta_sec);
+  }
+  //});
+
 
   
   println!("{:?}", db);
