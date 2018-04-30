@@ -35,6 +35,6 @@ fn set_clear_cell(b: &mut Bencher) {
     table.grow_to_fit(1, 1);
     b.iter(|| {
         table.set_cell(1, 1, Value::from_u64(100));
-        table.clear(1, 1);
+        table.clear_cell(1, 1);
     });
 }
