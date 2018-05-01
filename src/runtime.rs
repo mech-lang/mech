@@ -164,7 +164,7 @@ pub struct Block {
   pub plan: Vec<Constraint>,
   pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
-  pub intermediate_registers: Vec<Register>,
+  pub intermediate_registers: Vec<Vec<Value>>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
 }
@@ -201,7 +201,7 @@ impl Block {
         }
       },
       Constraint::Function{ref operation, ..} => {
-        self.intermediate_registers.push(Register::new());
+        self.intermediate_registers.push(Vec::new());
       },
       _ => (),
     }
@@ -225,23 +225,21 @@ impl Block {
       match step {
         Constraint::Function{operation, parameters, output} => {
           // Gather references to the indicated registers as a vector
-          //println!("{:?}", parameters);
           let mut columns = Vec::new();
           for register in parameters {
             let register = &self.input_registers[*register as usize - 1];
-            let column = store.get_column(register.table, register.column as usize).unwrap();
-            columns.push(column);
+            match store.get_column(register.table, register.column as usize) {
+              Some(column) => columns.push(column),
+              None => (),
+            }
           }
-          //println!("{:?}", parameter_registers);
-
-
-
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
           };
-          // Execute the function. This is where the magic happens!
-          op_fun(columns);
+          // Execute the function. This is where the magic happens! Results are placed on the
+          // intermediate registers
+          op_fun(&columns, &mut self.intermediate_registers[*output as usize - 1]);
           
           // Set the result on the intended register          
           /*for (result, register) in vec![result].iter().zip(output.iter()) {
@@ -249,10 +247,10 @@ impl Block {
           }*/
         },
         Constraint::Insert{table, column, register} => {
-          //let column_data = &self.intermediate_registers[*register as usize - 1].data;
-          /*for (row_ix, cell) in column_data.iter().enumerate() {
+          let column_data = &self.intermediate_registers[*register as usize - 1];
+          for (row_ix, cell) in column_data.iter().enumerate() {
             output.push(Change::Add{ix: 0, table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()});
-          }*/
+          }
         },
         _ => (),
       } 
