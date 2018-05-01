@@ -42,18 +42,11 @@ impl Runtime {
       let register_id = *register as usize - 1;
       self.pipes_map.insert((*table, *column), vec![Address{block: block.id, register: *register as usize}]);
       // Put associated values on the registers if we have them in the DB already
-      match store.get_column(*table, *column as usize) {
-        Some(col) => {
-          // Set the data on the register and mark it as ready
-          block.input_registers[register_id].place_data(&col);
-          block.ready = set_bit(block.ready, register_id);
-        },
-        None => (),
-      }
-      
+      block.input_registers[register_id].set(&(*table, *column));
+      block.ready = set_bit(block.ready, register_id);      
     }
     self.blocks.push(block.clone());
-    self.run_network()
+    self.run_network(store)
   } 
 
   pub fn process_change(&mut self, change: &Change) {
@@ -68,7 +61,7 @@ impl Runtime {
                 let block = &mut self.blocks[block_id];
                 if register_ix < block.input_registers.len() {
                   let register = &mut block.input_registers[register_ix];
-                  register.set_row(*row as usize, value.clone());
+                  //register.set_row(*row as usize, value.clone());
                   block.ready = set_bit(block.ready, register_ix);
                 }
               }
@@ -81,12 +74,12 @@ impl Runtime {
     }
   }
 
-  pub fn run_network(&mut self) -> Vec<Change> {
+  pub fn run_network(&mut self, store: &Interner) -> Vec<Change> {
     let mut changes = Vec::new();
     for block in &mut self.blocks {
       if block.is_ready() {
-        let mut block_changes = block.solve();
-        changes.append(&mut block_changes);
+        let mut block_changes = block.solve(store);
+        //changes.append(&mut block_changes);
       }
     }
     changes
@@ -123,40 +116,35 @@ impl fmt::Debug for Address {
 
 #[derive(Clone)]
 pub struct Register {
-  pub data: Vec<Value>,
+  pub table: u64,
+  pub column: u64,
 }
 
 impl Register {
   
   pub fn new() -> Register { 
     Register {
-      data: Vec::new(),
+      table: 0,
+      column: 0,
     }
   }
 
-  pub fn get(&self, ix: usize) -> Option<&Value> {
-    if ix - 1 < self.len() {
-      Some(&self.data[ix - 1])
-    } else {
-      None
-    }
+  pub fn get(&self) -> (u64, u64) {
+    (self.table, self.column)
   }
 
-  pub fn len(&self) -> usize {
-    self.data.len()
+  pub fn set(&mut self, index: &(u64, u64)) {
+    let (table, column) = index;
+    self.table = *table;
+    self.column = *column;
   }
 
-  pub fn place_data(&mut self, data: &Vec<Value>) {
-    self.data = data.clone();
+  pub fn table(&self) -> u64 {
+    self.table
   }
 
-  pub fn set_row(&mut self, row: usize, value: Value) {
-    if row <= self.data.len() {
-      self.data[row - 1] = value;
-    } else {
-      self.data.resize(row, Value::Empty);
-      self.data[row - 1] = value;
-    }
+  pub fn column(&self) -> u64 {
+    self.column
   }
 
 }
@@ -164,12 +152,7 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    if self.data.len() > 10 {
-      write!(f, "[x{:?}]", self.data.len()).unwrap();
-    } else {
-      write!(f, "[{:?}]", self.data).unwrap();
-    }
-    Ok(())
+    write!(f, "[{:?}]", self.get())
   }
 }
 
@@ -235,23 +218,30 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self) -> Vec<Change> {
+  pub fn solve(&mut self, store: &Interner) -> Vec<Change> {
     //self.ready = 0;
     let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
           // Gather references to the indicated registers as a vector
-          let mut parameter_registers = Vec::new();
+          //println!("{:?}", parameters);
+          let mut columns = Vec::new();
           for register in parameters {
-            parameter_registers.push(&self.input_registers[*register as usize - 1]);
+            let register = &self.input_registers[*register as usize - 1];
+            let column = store.get_column(register.table, register.column as usize).unwrap();
+            columns.push(column);
           }
+          //println!("{:?}", parameter_registers);
+
+
+
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
           };
           // Execute the function. This is where the magic happens!
-          op_fun(parameter_registers, &mut self.intermediate_registers[*output as usize - 1].data);
+          op_fun(columns);
           
           // Set the result on the intended register          
           /*for (result, register) in vec![result].iter().zip(output.iter()) {
@@ -259,10 +249,10 @@ impl Block {
           }*/
         },
         Constraint::Insert{table, column, register} => {
-          let column_data = &self.intermediate_registers[*register as usize - 1].data;
-          for (row_ix, cell) in column_data.iter().enumerate() {
+          //let column_data = &self.intermediate_registers[*register as usize - 1].data;
+          /*for (row_ix, cell) in column_data.iter().enumerate() {
             output.push(Change::Add{ix: 0, table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()});
-          }
+          }*/
         },
         _ => (),
       } 

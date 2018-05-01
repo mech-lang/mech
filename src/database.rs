@@ -142,7 +142,7 @@ impl Interner {
     }
   }
 
-  pub fn get_column(&self, table: u64, column_ix: usize) -> Option<Vec<Value>> {
+  pub fn get_column(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
         match stored_table.get_column(column_ix) {
@@ -203,7 +203,7 @@ impl Database {
       // Handle the adds
       for add in txn.adds.iter() {
         self.store.intern_change(add);
-        self.runtime.process_change(add);
+        //self.runtime.process_change(add);
       }
       // Handle the removes
       for remove in txn.removes.iter() {
@@ -214,7 +214,7 @@ impl Database {
       //txn.round = self.round;
     //  self.round += 1;
     //}
-    let changes = self.runtime.run_network();
+    let changes = self.runtime.run_network(&self.store);
     //self.round = 0;
     //self.processed = self.transactions.len();
     changes

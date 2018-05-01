@@ -104,8 +104,8 @@ impl Table {
     };
   }*/
 
-  pub fn get_columns(&self, column_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
-    let mut columns: Vec<Option<Vec<Value>>> = vec![];
+  pub fn get_columns(&self, column_ixes: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
+    let mut columns: Vec<Option<&Vec<Value>>> = vec![];
     for ix in column_ixes{
       let column = self.get_column(ix);
       columns.push(column);
@@ -113,10 +113,10 @@ impl Table {
     columns
   }
 
-  pub fn get_column(&self, column_ix: usize) -> Option<Vec<Value>> {
+  pub fn get_column(&self, column_ix: usize) -> Option<&Vec<Value>> {
     if column_ix - 1 < self.columns {
-      let mut column = self.data[column_ix - 1].clone();      
-      column.truncate(self.rows);
+      let mut column = &self.data[column_ix - 1];      
+      //column.truncate(self.rows);
       Some(column)
     } else {
       None
