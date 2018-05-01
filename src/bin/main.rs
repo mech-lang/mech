@@ -37,8 +37,8 @@ fn main() {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let mut balls: Vec<Change> = vec![];
-  let n: usize = 10_000;
-  for i in 1 .. n {
+  let n: usize = 10;
+  for i in 1 .. n + 1 {
     let mut ball_changes = make_ball(i);
     balls.append(&mut ball_changes);
   }
@@ -49,8 +49,8 @@ fn main() {
   table_changes.append(&mut balls);
   let txn = Transaction::from_changeset(table_changes);
   
-  db.register_transaction(txn);
-  db.process_transactions();
+  //db.register_transaction(txn);
+  db.process_transaction(&txn);
 
   let mut block = Block::new();
   block.add_constraint(Constraint::Scan {table: system_timer_change, column: 4, register: 1});
@@ -75,14 +75,15 @@ fn main() {
   ];
   block.plan = plan;
   db.runtime.register_block(block.clone(), &db.store);
-
   
   let mut v1 = vec![10; 1_000_000];
   let mut v2 = vec![25; 1_000_000];
   let mut v3 = vec![25; 1_000_000];
 
-  for q in 0 .. 1000 {
-    let start_ns = time::precise_time_ns();      
+  let mut mean = 0.0;
+  let n = 100;
+  for q in 0 .. n {
+    
     let cur_time = time::now();
     let timer_id = 1;
     let txn = Transaction::from_changeset(vec![
@@ -91,20 +92,24 @@ fn main() {
       Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
       Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
     ]);     
-    db.register_transaction(txn);
-    let changes = db.process_transactions();
+    let start_ns = time::precise_time_ns();      
+    let changes = db.process_transaction(&txn);
     let txn2 = Transaction::from_changeset(changes);
-    db.register_transaction(txn2);
-    db.process_transactions();
+    db.process_transaction(&txn2);
     //println!("{:?}", db);
     //println!("{:?}", db.runtime);
     let end_ns = time::precise_time_ns();
     let delta = end_ns - start_ns;
     let delta_sec = delta as f64 / 1.0e9;
-    println!("{:?}", 1.0 / delta_sec);
+    let scaled = 0.001 / delta_sec;
+    if q > 1 {
+      mean += scaled as f64;
+    }
+    //println!("{:?}", scaled * 1000.0);
   }
 
   println!("{:?}", db);
   println!("{:?}", db.runtime);
+  println!("Mean Round Frequency: {:0.3} KHz", mean as f64 / (n as f64 - 1.0));
 
 }
