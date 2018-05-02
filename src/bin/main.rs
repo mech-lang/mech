@@ -37,7 +37,7 @@ fn main() {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let mut balls: Vec<Change> = vec![];
-  let n: usize = 10;
+  let n: usize = 100000;
   for i in 1 .. n + 1 {
     let mut ball_changes = make_ball(i);
     balls.append(&mut ball_changes);
@@ -74,8 +74,9 @@ fn main() {
     Constraint::Insert {table: ball, column: 4, register: 3},
   ];
   block.plan = plan;
-  db.runtime.register_block(block.clone(), &db.store);
   
+  db.runtime.register_block(block.clone(), &db.store);
+
   let mut v1 = vec![10; 1_000_000];
   let mut v2 = vec![25; 1_000_000];
   let mut v3 = vec![25; 1_000_000];
@@ -94,8 +95,8 @@ fn main() {
     ]);     
     let start_ns = time::precise_time_ns();      
     let changes = db.process_transaction(&txn);
-    let txn2 = Transaction::from_changeset(changes);
-    db.process_transaction(&txn2);
+    //let txn2 = Transaction::from_changeset(changes);
+    //db.process_transaction(&txn2);
     //println!("{:?}", db);
     //println!("{:?}", db.runtime);
     let end_ns = time::precise_time_ns();
@@ -109,7 +110,7 @@ fn main() {
   }
 
   println!("{:?}", db);
-  println!("{:?}", db.runtime);
-  println!("Mean Round Frequency: {:0.3} KHz", mean as f64 / (n as f64 - 1.0));
+  //println!("{:?}", db.runtime);
+  println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (n as f64 - 1.0));
 
 }
