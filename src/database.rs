@@ -231,6 +231,11 @@ impl Database {
     changes
   }
 
+  pub fn capacity(&self) -> f64 {
+     100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)
+  }
+
+
 }
 
 impl fmt::Debug for Database {
