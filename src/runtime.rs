@@ -61,7 +61,6 @@ impl Runtime {
                 let block = &mut self.blocks[block_id];
                 if register_ix < block.input_registers.len() {
                   let register = &mut block.input_registers[register_ix];
-                  //register.set_row(*row as usize, value.clone());
                   block.ready = set_bit(block.ready, register_ix);
                 }
               }
@@ -149,7 +148,7 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "[{:?}]", self.get())
+    write!(f, "({:#x}, {:#x})", self.table, self.column)
   }
 }
 
