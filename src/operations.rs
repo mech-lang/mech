@@ -80,18 +80,29 @@ pub enum Comparator {
   NotEqual
 }
 
-pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>) -> Vec<bool> {
+pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>, register: &mut Vec<Value>) {
   for i in 0 .. lhs.len() {
     let x = &lhs[i];
     let y = &rhs[i];
     match (x, y) {
-      (Value::Number(a), Value::Number(b)) => {
-      
+      (Value::Number(lhs_val), Value::Number(rhs_val)) => {
+        let truth = match comparator {
+          Comparator::LessThan => Value::Bool(lhs_val < rhs_val),
+          Comparator::GreaterThan => Value::Bool(lhs_val > rhs_val),
+          Comparator::LessThanOrEqual => Value::Bool(lhs_val <= rhs_val),
+          Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
+          Comparator::Equal => Value::Bool(lhs_val = rhs_val),
+          Comparator::NotEqual => Value::Bool(lhs_val != rhs_val),
+        };
+        if register.len() <= i {
+          register.push(truth);
+        } else {
+          register[i] = truth;
+        }
       }, 
       _ => (),
     }
   }
-  vec![true]
 }
 
 impl fmt::Debug for Comparator {
