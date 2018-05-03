@@ -17,7 +17,7 @@ work on the supplied data.
 #[derive(Debug, Clone)]
 pub enum Function {
   Add,
-  //Subtract,
+  Subtract,
   //Multiply,
   //Divide,
   //Power,
@@ -45,6 +45,27 @@ pub fn math_add(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec
   output
 }
 
+pub fn math_subtract(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec<Value> {
+  let mut output = Vec::new();
+  if parameters.len() == 2 {
+    let lhs = &parameters[0];
+    let rhs = &parameters[1];
+    for i in 0 .. lhs.len() {     
+      match (&lhs[i], &rhs[i]) {
+        (Value::Number(x), Value::Number(y)) => {
+          let a = Value::from_i64(x - y);
+          if register.len() <= i {
+            register.push(a);
+          } else {
+            register[i] = a;
+          }
+        },
+        _ => (),
+      } 
+    }
+  }
+  output
+}
 
 // ## Comparators
 

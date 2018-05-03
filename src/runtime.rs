@@ -236,6 +236,7 @@ impl Block {
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
+            Function::Subtract => operations::math_subtract,
           };
           // Execute the function. This is where the magic happens! Results are placed on the
           // intermediate registers
