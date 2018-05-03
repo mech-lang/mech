@@ -22,10 +22,10 @@ fn make_ball(row2: usize) -> Vec<Change> {
   let dy = rng.gen_range(1, 10);
   let ball = Hasher::hash_str("ball");
   vec![
-    Change::Add{table: ball, row, column: 1, value: Value::from_u64(1)},
-    Change::Add{table: ball, row, column: 2, value: Value::from_u64(2)},
-    Change::Add{table: ball, row, column: 3, value: Value::from_u64(3)},
-    Change::Add{table: ball, row, column: 4, value: Value::from_u64(4)},
+    Change::Add{table: ball, row, column: 1, value: Value::from_u64(x)},
+    Change::Add{table: ball, row, column: 2, value: Value::from_u64(y)},
+    Change::Add{table: ball, row, column: 3, value: Value::from_u64(dx)},
+    Change::Add{table: ball, row, column: 4, value: Value::from_u64(dy)},
     Change::Add{table: ball, row, column: 5, value: Value::from_u64(16)},
   ]
 }
@@ -37,7 +37,7 @@ fn main() {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let mut balls: Vec<Change> = vec![];
-  let n: usize = 1000;
+  let n: usize = 100_000;
   for i in 1 .. n + 1 {
     let mut ball_changes = make_ball(i);
     balls.append(&mut ball_changes);
@@ -82,35 +82,41 @@ fn main() {
   let mut v3 = vec![25; 1_000_000];
 
   let mut mean = 0.0;
-  let n = 20000;
-  for q in 0 .. n {
-    
-    let cur_time = time::now();
-    let timer_id = 1;
-    let txn = Transaction::from_changeset(vec![
-      Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
-      Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
-      Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
-      Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
-    ]);     
-    let start_ns = time::precise_time_ns();      
-    let changes = db.process_transaction(&txn);
-    //let txn2 = Transaction::from_changeset(changes);
-    //db.process_transaction(&txn2);
-    //println!("{:?}", db);
-    //println!("{:?}", db.runtime);
-    let end_ns = time::precise_time_ns();
-    let delta = end_ns - start_ns;
-    let delta_sec = delta as f64 / 1.0e9;
-    let scaled = 0.001 / delta_sec;
-    if q > 1 {
-      mean += scaled as f64;
+  let n = 1000;
+  thread::spawn(move || {
+    let mut i = 1;
+    loop {   
+      let cur_time = time::now();
+      thread::sleep(Duration::from_millis(16));
+      let timer_id = 1;
+      let txn = Transaction::from_changeset(vec![
+        Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
+        Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
+        Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
+        Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
+      ]);     
+      let start_ns = time::precise_time_ns();      
+      let changes = db.process_transaction(&txn);
+      //let txn2 = Transaction::from_changeset(changes);
+      //db.process_transaction(&txn2);
+      //println!("{:?}", db);
+      //println!("{:?}", db.runtime);
+      let end_ns = time::precise_time_ns();
+      let delta = end_ns - start_ns;
+      let delta_sec = delta as f64 / 1.0e9;
+      let scaled = 0.001 / delta_sec;
+      if i > 1 {
+        mean += scaled as f64;
+      }
+      println!("{:?}", db);
+      println!("{:?}", scaled * 1000.0);
     }
-    //println!("{:?}", scaled * 1000.0);
-  }
+    
+  });
 
-  println!("{:?}", db);
+
+  //println!("{:?}", db);
   //println!("{:?}", db.runtime);
-  println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (n as f64 - 1.0));
+  //println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (n as f64 - 1.0));
   loop{}
 }
