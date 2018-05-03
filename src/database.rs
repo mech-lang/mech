@@ -178,50 +178,46 @@ pub struct Database {
     pub round: u64,
     pub processed: usize,
     pub store: Interner,
-    pub transactions: Vec<Transaction>, 
     pub runtime: Runtime,
 }
 
 impl Database {
 
-  pub fn new(transaction_capacity: usize, change_capacity: usize, table_capacity: usize) -> Database {
+  pub fn new(change_capacity: usize, table_capacity: usize) -> Database {
     Database {
       epoch: 0,
       round: 0,
       processed: 0,
-      transactions: Vec::with_capacity(transaction_capacity),
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
     }
   }
 
+/*
   pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
     self.transactions.append(transactions);
   }
 
   pub fn register_transaction(&mut self, transaction: Transaction) {
     self.register_transactions(&mut vec![transaction]);
-  }
+  }*/
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Vec<Change> {
-
+  pub fn process_transaction(&mut self, txn: &Transaction) {
     // First make any tables
     for table in txn.tables.iter() {
       self.store.intern_change(table);
     }
-
     // Handle the adds
     for add in txn.adds.iter() {
       self.store.intern_change(add);
       //self.runtime.process_change(add);
     }
-
     // Handle the removes
     for remove in txn.removes.iter() {
       self.store.intern_change(remove);
     }
-    let changes = self.runtime.run_network(&mut self.store);
-    changes
+    self.epoch += 1;
+    self.runtime.run_network(&mut self.store);
   }
 
   pub fn capacity(&self) -> f64 {
@@ -238,7 +234,6 @@ impl fmt::Debug for Database {
         write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
         write!(f, "├────────────────────┤\n").unwrap();
         write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
-        write!(f, "│ Transactions: {:?}\n", self.transactions.len()).unwrap();
         write!(f, "│ Changes: {:?}\n", self.store.len()).unwrap();
         write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
         write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
