@@ -31,7 +31,7 @@ pub fn math_add(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec
     for i in 0 .. lhs.len() {     
       match (&lhs[i], &rhs[i]) {
         (Value::Number(x), Value::Number(y)) => {
-          let a = Value::from_u64(x + y);
+          let a = Value::from_i64(x + y);
           if register.len() <= i {
             register.push(a);
           } else {
