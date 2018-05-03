@@ -91,7 +91,7 @@ pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>, regi
           Comparator::GreaterThan => Value::Bool(lhs_val > rhs_val),
           Comparator::LessThanOrEqual => Value::Bool(lhs_val <= rhs_val),
           Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
-          Comparator::Equal => Value::Bool(lhs_val = rhs_val),
+          Comparator::Equal => Value::Bool(lhs_val == rhs_val),
           Comparator::NotEqual => Value::Bool(lhs_val != rhs_val),
         };
         if register.len() <= i {
