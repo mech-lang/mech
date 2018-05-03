@@ -22,29 +22,29 @@ fn make_ball(row2: usize) -> Vec<Change> {
   let dy = rng.gen_range(1, 10);
   let ball = Hasher::hash_str("ball");
   vec![
-    Change::Add{ix: 0, table: ball, row, column: 1, value: Value::from_u64(x)},
-    Change::Add{ix: 0, table: ball, row, column: 2, value: Value::from_u64(y)},
-    Change::Add{ix: 0, table: ball, row, column: 3, value: Value::from_u64(dx)},
-    Change::Add{ix: 0, table: ball, row, column: 4, value: Value::from_u64(dy)},
-    Change::Add{ix: 0, table: ball, row, column: 5, value: Value::from_u64(16)},
+    Change::Add{table: ball, row, column: 1, value: Value::from_u64(1)},
+    Change::Add{table: ball, row, column: 2, value: Value::from_u64(2)},
+    Change::Add{table: ball, row, column: 3, value: Value::from_u64(3)},
+    Change::Add{table: ball, row, column: 4, value: Value::from_u64(4)},
+    Change::Add{table: ball, row, column: 5, value: Value::from_u64(16)},
   ]
 }
 
 
 fn main() {
 
-  let mut db = Database::new(100_000, 1_000_000, 2);
+  let mut db = Database::new(1, 20000000, 2);
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let mut balls: Vec<Change> = vec![];
-  let n: usize = 100000;
+  let n: usize = 1000;
   for i in 1 .. n + 1 {
     let mut ball_changes = make_ball(i);
     balls.append(&mut ball_changes);
   }
   let mut table_changes = vec![
-    Change::NewTable{tag: String::from("system/timer/change"), entities: vec![], attributes: vec![], rows: 1, columns: 4}, 
-    Change::NewTable{tag: String::from("ball"), entities: vec![], attributes: vec![], rows: n, columns: 5}, 
+    Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
+    Change::NewTable{tag: ball, rows: n, columns: 5}, 
   ];
   table_changes.append(&mut balls);
   let txn = Transaction::from_changeset(table_changes);
@@ -75,23 +75,23 @@ fn main() {
   ];
   block.plan = plan;
   
-  db.runtime.register_block(block.clone(), &db.store);
+  db.runtime.register_block(block.clone(), &mut db.store);
 
   let mut v1 = vec![10; 1_000_000];
   let mut v2 = vec![25; 1_000_000];
   let mut v3 = vec![25; 1_000_000];
 
   let mut mean = 0.0;
-  let n = 100;
+  let n = 20000;
   for q in 0 .. n {
     
     let cur_time = time::now();
     let timer_id = 1;
     let txn = Transaction::from_changeset(vec![
-      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
-      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
-      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
-      Change::Add{ix: 0, table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
+      Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
+      Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
+      Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
+      Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
     ]);     
     let start_ns = time::precise_time_ns();      
     let changes = db.process_transaction(&txn);
@@ -112,5 +112,5 @@ fn main() {
   println!("{:?}", db);
   //println!("{:?}", db.runtime);
   println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (n as f64 - 1.0));
-
+  loop{}
 }
