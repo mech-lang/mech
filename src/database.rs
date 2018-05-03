@@ -204,30 +204,23 @@ impl Database {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Vec<Change> {
-    //self.epoch += 1;
 
-            
-      // First make any tables
-      for table in txn.tables.iter() {
-        self.store.intern_change(table);
-      }
-      // Handle the adds
-      for add in txn.adds.iter() {
-        self.store.intern_change(add);
-        //self.runtime.process_change(add);
-      }
-      // Handle the removes
-      for remove in txn.removes.iter() {
-        self.store.intern_change(remove);
-      }
-      //txn.complete = true;
-      //txn.epoch = self.epoch;
-      //txn.round = self.round;
-    //  self.round += 1;
-    //}
+    // First make any tables
+    for table in txn.tables.iter() {
+      self.store.intern_change(table);
+    }
+
+    // Handle the adds
+    for add in txn.adds.iter() {
+      self.store.intern_change(add);
+      //self.runtime.process_change(add);
+    }
+
+    // Handle the removes
+    for remove in txn.removes.iter() {
+      self.store.intern_change(remove);
+    }
     let changes = self.runtime.run_network(&mut self.store);
-    //self.round = 0;
-    //self.processed = self.transactions.len();
     changes
   }
 
