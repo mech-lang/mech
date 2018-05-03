@@ -7,7 +7,7 @@ use std::time::SystemTime;
 use mech::database::{Database, Transaction, Change};
 use mech::table::{Value, Table};
 use mech::indexes::Hasher;
-use mech::operations::{Function, Plan};
+use mech::operations::{Function, Plan, Comparator};
 use mech::runtime::{Runtime, Block, Constraint, Register};
 use std::thread::{self};
 use std::time::*;
@@ -29,12 +29,13 @@ fn make_balls(n: u64) -> Vec<Change> {
     v.push(Change::Add{table: ball, row: i, column: 3, value: Value::from_u64(dx)});
     v.push(Change::Add{table: ball, row: i, column: 4, value: Value::from_u64(dy)});
     v.push(Change::Add{table: ball, row: i, column: 5, value: Value::from_u64(16)});
+    v.push(Change::Add{table: ball, row: i, column: 6, value: Value::from_u64(500)});
   
   }
   v
 }
 
-fn make_block() -> Block {
+fn position_update() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
   let system_timer_change = Hasher::hash_str("system/timer/change");
@@ -52,7 +53,7 @@ fn make_block() -> Block {
   block.add_constraint(Constraint::Insert {table: ball, column: 4, register: 3});
   let plan = vec![
     Constraint::Function {operation: Function::Add, parameters: vec![2, 4], output: 1},
-    Constraint::Function {operation: Function::Add, parameters: vec![3, 5], output: 2},
+    Constraint::Function {operation: Function::Subtract, parameters: vec![3, 5], output: 2},
     Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: 3},
     Constraint::Insert {table: ball, column: 1, register: 1},
     Constraint::Insert {table: ball, column: 2, register: 2},
@@ -61,6 +62,21 @@ fn make_block() -> Block {
   block.plan = plan;
   block
 }
+
+fn boundary_check() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, register: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
+  block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});
+  let plan = vec![
+    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1}
+  ];
+  block.plan = plan;
+  block
+}
+
 
 
 fn step_db(db: &mut Database) {
@@ -77,15 +93,17 @@ fn step_db(db: &mut Database) {
 }
 
 fn make_db(n: u64) -> Database {
-  let mut db = Database::new(1, 10000, 2);
+  let mut db = Database::new(1, 100, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
-  let block = make_block();
-  db.runtime.register_block(block, &mut db.store);
+  let block1 = position_update();
+  db.runtime.register_block(block1, &mut db.store);
+  let block2 = boundary_check();
+  db.runtime.register_block(block2, &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
-    Change::NewTable{tag: ball, rows: n as usize, columns: 5}, 
+    Change::NewTable{tag: ball, rows: n as usize, columns: 6}, 
   ];
   table_changes.append(&mut balls);
   let txn = Transaction::from_changeset(table_changes);
