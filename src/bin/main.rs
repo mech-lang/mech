@@ -77,7 +77,7 @@ fn step_db(db: &mut Database) {
 }
 
 fn make_db(n: u64) -> Database {
-  let mut db = Database::new(1, 20000000, 2);
+  let mut db = Database::new(1, 10000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let block = make_block();
@@ -96,16 +96,16 @@ fn make_db(n: u64) -> Database {
 
 fn main() {
 
-  let mut db = make_db(1000);
+  let mut db = make_db(10);
   
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let mut mean = 0.0;
 
   thread::spawn(move || {
-    let mut i = 1;
+    let mut i = 1;    
     loop {   
       let cur_time = time::now();
-      thread::sleep(Duration::from_millis(16));
+      
       let timer_id = 1;
 
       let txn = Transaction::from_changeset(vec![
@@ -115,7 +115,9 @@ fn main() {
         Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
       ]);     
 
-      let start_ns = time::precise_time_ns();      
+      thread::sleep(Duration::from_millis(10));    
+
+      let start_ns = time::precise_time_ns();  
       db.process_transaction(&txn);
       let end_ns = time::precise_time_ns();
       
@@ -126,7 +128,9 @@ fn main() {
         mean += scaled as f64;
       }
       println!("{:?}", db);
-      println!("{:?}", scaled * 1000.0);
+      println!("{:?}", db.runtime);
+      println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (i as f64 - 1.0));
+      i += 1;
     }
     
   });
@@ -134,6 +138,5 @@ fn main() {
 
   //println!("{:?}", db);
   //println!("{:?}", db.runtime);
-  //println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (n as f64 - 1.0));
   loop{}
 }
