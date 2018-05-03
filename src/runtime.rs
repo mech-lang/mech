@@ -35,7 +35,7 @@ impl Runtime {
   }
 
   // Register a new block with the runtime
-  pub fn register_block(&mut self, mut block: Block, store: &mut Interner) -> Vec<Change> {
+  pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
     for ((table, column), register) in &block.pipes {
@@ -74,15 +74,12 @@ impl Runtime {
     }
   }
 
-  pub fn run_network(&mut self, store: &mut Interner) -> Vec<Change> {
-    let mut changes = Vec::new();
+  pub fn run_network(&mut self, store: &mut Interner) {
     for block in &mut self.blocks {
       if block.is_ready() {
-        let mut block_changes = block.solve(store);
-        //changes.append(&mut block_changes);
+        block.solve(store);
       }
     }
-    changes
   }
 
 }
@@ -221,8 +218,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self, store: &mut Interner) -> Vec<Change> {
-    let mut output: Vec<Change> = Vec::new();
+  pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -269,7 +265,6 @@ impl Block {
         _ => (),
       } 
     }
-    output
   }
 
 }
