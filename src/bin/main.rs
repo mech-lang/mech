@@ -93,7 +93,7 @@ fn step_db(db: &mut Database) {
 }
 
 fn make_db(n: u64) -> Database {
-  let mut db = Database::new(1, 100, 2);
+  let mut db = Database::new(100, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let block1 = position_update();
