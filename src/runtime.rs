@@ -203,6 +203,9 @@ impl Block {
       Constraint::Function{ref operation, ..} => {
         self.intermediate_registers.push(Vec::new());
       },
+      Constraint::Filter{..} => {
+        self.intermediate_registers.push(Vec::new());
+      }
       _ => (),
     }
     self.constraints.push(constraint);
@@ -219,7 +222,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) -> Vec<Change> {
-    //self.ready = 0;
     let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
       match step {
@@ -241,11 +243,6 @@ impl Block {
           // Execute the function. This is where the magic happens! Results are placed on the
           // intermediate registers
           op_fun(&columns, &mut self.intermediate_registers[*output as usize - 1]);
-          
-          // Set the result on the intended register          
-          /*for (result, register) in vec![result].iter().zip(output.iter()) {
-            self.intermediate_registers[0].place_data(&result);              
-          }*/
         },
         Constraint::Insert{table, column, register} => {
           let column_data = &self.intermediate_registers[*register as usize - 1];
@@ -253,7 +250,19 @@ impl Block {
             store.intern_change(
               &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
             );
-            //output.push();
+          }
+        },
+        Constraint::Filter{comparator, lhs, rhs, register} => {
+          
+          let lhs_register = &self.input_registers[*lhs as usize - 1];
+          let rhs_register = &self.input_registers[*rhs as usize - 1];
+          let lhs_data = store.get_column(lhs_register.table, lhs_register.column as usize);
+          let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
+          match (lhs_data, rhs_data) {
+            (Some(x), Some(y)) => {
+              let mask = operations::compare(comparator, x, y);
+            },
+            _ => (),
           }
         },
         _ => (),
@@ -316,19 +325,21 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan { table: u64, column: u64, register: u64 },
   Insert {table: u64, column: u64, register: u64},
+  Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, register: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
 }
 
 impl fmt::Debug for Constraint {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      match self {
-        Constraint::Scan{table, column, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, column, register),
-        Constraint::Insert{table, column, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, column, register),
-        Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-        _ => Ok(()),
-      }
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      Constraint::Scan{table, column, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, column, register),
+      Constraint::Insert{table, column, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, column, register),
+      Constraint::Filter{comparator, lhs, rhs, register} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, register),
+      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
+      _ => Ok(()),
     }
+  }
 }
 
 // ## Bit helpers
