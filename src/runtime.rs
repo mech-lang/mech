@@ -228,8 +228,8 @@ impl Block {
         Constraint::Function{operation, parameters, output} => {
           // Gather references to the indicated registers as a vector
           let mut columns = Vec::new();
-          for register in parameters {
-            let register = &self.input_registers[*register as usize - 1];
+          for register_ix in parameters {
+            let register = &self.input_registers[*register_ix as usize - 1];
             match store.get_column(register.table, register.column as usize) {
               Some(column) => columns.push(column),
               None => (),
@@ -260,7 +260,8 @@ impl Block {
           let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
           match (lhs_data, rhs_data) {
             (Some(x), Some(y)) => {
-              let mask = operations::compare(comparator, x, y);
+              let register_ref = &mut self.intermediate_registers[*register as usize - 1];
+              operations::compare(comparator, x, y, register_ref);
             },
             _ => (),
           }
