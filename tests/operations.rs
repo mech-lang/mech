@@ -30,7 +30,7 @@ fn make_ball(row2: usize) -> Vec<Change> {
 fn make_db() -> Database {
 
   let ball = Hasher::hash_str("ball");
-  let mut db = Database::new(1,1,1);
+  let mut db = Database::new(1,1);
 
   let txn = Transaction::from_changeset(vec![
     Change::NewTable{tag: ball, rows: 1, columns: 5}, 
@@ -53,9 +53,7 @@ fn make_db() -> Database {
   block.plan = plan;
 
   db.runtime.register_block(block.clone(), &mut db.store);
-  let changes = db.process_transaction(&txn);
-  let txn2 = Transaction::from_changeset(changes);
-  db.process_transaction(&txn2);
+  db.process_transaction(&txn);
   db
 
 }
