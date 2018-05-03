@@ -13,18 +13,18 @@ use runtime::{Runtime, Block};
 
 #[derive(Clone)]
 pub enum Change {
-  Add{ix: usize, table: u64, row: u64, column: u64, value: Value},
-  Remove{ix: usize, table: u64, row: u64, column: u64, value: Value},
-  NewTable{tag: String, entities: Vec<String>, attributes: Vec<String>, rows: usize, columns: usize},
+  Add{table: u64, row: u64, column: u64, value: Value},
+  Remove{table: u64, row: u64, column: u64, value: Value},
+  NewTable{tag: u64, rows: usize, columns: usize},
 }
 
 impl fmt::Debug for Change {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
-        Change::Add{ix, table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-        Change::Remove{ix, table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-        Change::NewTable{tag, entities, attributes, rows, columns} => write!(f, "+ #{} [{:?} {:?} {:?} x {:?}]", tag, entities, attributes, rows, columns),
+        Change::Add{table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+        Change::Remove{table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+        Change::NewTable{tag, rows, columns} => write!(f, "+ #{:#x} [{:?} x {:?}]", tag, rows, columns),
       }
     }
 }
@@ -104,6 +104,7 @@ impl fmt::Debug for Transaction {
 pub struct Interner {
   pub tables: TableIndex,
   pub changes: Vec<Change>,
+  changes_count: usize,
 }
 
 impl Interner {
@@ -112,34 +113,44 @@ impl Interner {
     Interner {
       tables: TableIndex::new(table_capacity),
       changes: Vec::with_capacity(change_capacity),
+      changes_count: 0,
     }
   }
 
   pub fn intern_change(&mut self, change: &Change) {
     match change {
-      Change::Add{ix, table, row, column, value} => {
+      Change::Add{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table) => {
             table.grow_to_fit(*row as usize, *column as usize);
             table.set_cell(*row as usize, *column as usize, value.clone());
-            self.changes.push(change.clone());
           }
           None => (),
         };
       },
       // TODO Implement removes
       Change::Remove{..} => {
-        self.changes.push(change.clone());
+
       }
-      Change::NewTable{tag, entities, attributes, rows, columns } => {
-        let table_id = Hasher::hash_string(tag.clone());
-        if !self.tables.name_map.contains_key(&table_id) {
-          self.changes.push(change.clone());
-          self.tables.name_map.insert(table_id, tag.to_string());
-          self.tables.register(Table::new(table_id, *rows, *columns));
+      Change::NewTable{tag, rows, columns } => {
+        if !self.tables.name_map.contains_key(&tag) {
+          self.tables.name_map.insert(*tag, 0);
+          self.tables.register(Table::new(*tag, *rows, *columns));
         }
-      }  
+      }
     }
+    // Intern the change. If there's enough room in memory, keep it there. 
+    // If not, evict some old change and throw it on disk. For now, we'll 
+    // make the policy that the oldest record get evicted first.
+    if self.changes.len() < self.changes.capacity() {
+      self.changes.push(change.clone());
+    } else {
+      // @TODO Save the old change to disk! Maybe throw it in a buffer
+      let old_change = self.changes.pop();
+      // Overwrite the old change
+      self.changes.push(change.clone());
+    }  
+    self.changes_count += 1;
   }
 
   pub fn get_column(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
@@ -155,7 +166,7 @@ impl Interner {
   }
 
   pub fn len(&self) -> usize {
-    self.changes.len()
+    self.changes_count as usize
   }
 
 }
@@ -214,7 +225,7 @@ impl Database {
       //txn.round = self.round;
     //  self.round += 1;
     //}
-    let changes = self.runtime.run_network(&self.store);
+    let changes = self.runtime.run_network(&mut self.store);
     //self.round = 0;
     //self.processed = self.transactions.len();
     changes
@@ -226,11 +237,12 @@ impl fmt::Debug for Database {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "┌────────────────────┐\n").unwrap();
-        write!(f, "│ Database           │\n").unwrap();
+        write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
         write!(f, "├────────────────────┤\n").unwrap();
         write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
         write!(f, "│ Transactions: {:?}\n", self.transactions.len()).unwrap();
-        write!(f, "│ Changes: {:?}\n", self.store.changes.len()).unwrap();
+        write!(f, "│ Changes: {:?}\n", self.store.len()).unwrap();
+        write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
         write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
         write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
         write!(f, "└────────────────────┘\n").unwrap();
