@@ -93,7 +93,7 @@ fn step_db(db: &mut Database) {
 }
 
 fn make_db(n: u64) -> Database {
-  let mut db = Database::new(100, 2);
+  let mut db = Database::new(1000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let block1 = position_update();
@@ -142,13 +142,14 @@ fn main() {
       let delta = end_ns - start_ns;
       let delta_sec = delta as f64 / 1.0e9;
       let scaled = 0.001 / delta_sec;
-      if i > 1 {
+      if db.capacity() >= 100.0 {
         mean += scaled as f64;
+        i += 1;
       }
       println!("{:?}", db);
       println!("{:?}", db.runtime);
       println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (i as f64 - 1.0));
-      i += 1;
+      println!("Capacity: {:0.2}%", db.capacity());
     }
     
   });
