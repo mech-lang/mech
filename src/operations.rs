@@ -2,7 +2,7 @@
 
 // ## Prelude
 
-use alloc::{String, Vec};
+use alloc::{String, Vec, fmt};
 use runtime::{Constraint, Register};
 use table::Value;
 
@@ -70,14 +70,43 @@ pub fn math_subtract(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -
 // ## Comparators
 
 #[repr(u8)]
-#[derive(Debug, Clone)]
-pub enum Comparators {
+#[derive(Clone)]
+pub enum Comparator {
   LessThan,
   GreaterThan,
   LessThanOrEqual,
   GreaterThanOrEqual,
   Equal,
   NotEqual
+}
+
+pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>) -> Vec<bool> {
+  for i in 0 .. lhs.len() {
+    let x = &lhs[i];
+    let y = &rhs[i];
+    match (x, y) {
+      (Value::Number(a), Value::Number(b)) => {
+      
+      }, 
+      _ => (),
+    }
+  }
+  vec![true]
+}
+
+impl fmt::Debug for Comparator {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      GreaterThan => write!(f, ">"),
+      LessThan => write!(f, "<"),
+      LessThanOrEqual => write!(f, "<="),
+      GreaterThanOrEqual => write!(f, ">="),
+      Equal => write!(f, "="),
+      NotEqual => write!(f, "!="),
+      _ => Ok(()),
+    }
+  }
 }
 
 // ## Plans
