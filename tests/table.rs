@@ -87,3 +87,11 @@ fn clear_cell() {
     let score = table.index(1, 3);
     assert_eq!(score, Some(&Value::Empty));
 } 
+
+
+#[test]
+fn handle_set_zero() {
+    let mut table = make_table();
+    let result = table.set_cell(0, 1, Value::from_str("Mark"));
+    assert_ne!(result, Ok(()));
+} 

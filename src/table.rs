@@ -82,7 +82,9 @@ impl Table {
   }
 
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
-    if row_ix <= self.rows && column_ix <= self.columns {
+    if row_ix > 0 && column_ix > 0 &&
+       self.rows > 0 && row_ix <= self.rows &&
+       self.columns > 0 && column_ix <= self.columns {
       self.data[column_ix - 1][row_ix - 1] = value;
       Ok(())
     } else {
