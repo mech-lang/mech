@@ -74,7 +74,7 @@ impl Hasher {
 // ## Table Index
 
 pub struct TableIndex {
-    pub name_map: HashMap<u64, String>,
+    pub name_map: HashMap<u64, u64>,
     pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
 }
 
