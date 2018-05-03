@@ -81,6 +81,36 @@ fn boundary_check() -> Block {
 fn boundary_check2() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, register: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
+  block.add_constraint(Constraint::Filter {comparator: Comparator::LessThan, lhs: 1, rhs: 2, register: 1});
+  block.add_constraint(Constraint::Constant {value: 0, register: 3});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});  
+  let plan = vec![
+    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1}
+  ];
+  block.plan = plan;
+  block
+}
+
+fn boundary_check3() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, register: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
+  block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1});
+  block.add_constraint(Constraint::Constant {value: 500, register: 3});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});  
+  let plan = vec![
+    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1}
+  ];
+  block.plan = plan;
+  block
+}
+
+fn boundary_check4() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
   block.add_constraint(Constraint::Scan {table: ball, column: 2, register: 1});
   block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
   block.add_constraint(Constraint::Filter {comparator: Comparator::LessThan, lhs: 1, rhs: 2, register: 1});
@@ -112,7 +142,7 @@ fn make_db(n: u64) -> Database {
   let mut db = Database::new(1000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
-  db.runtime.register_blocks(vec![position_update(), boundary_check(), boundary_check2()], &mut db.store);
+  db.runtime.register_blocks(vec![position_update(), boundary_check(), boundary_check2(), boundary_check3(), boundary_check4()], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
@@ -159,14 +189,14 @@ fn main() {
         mean += scaled as f64;
         i += 1;
       }
-      println!("{:?}", db);
+      
       println!("{:?}", db.runtime);
-      println!("Mean Round Frequency: {:0.6} KHz", mean as f64 / (i as f64 - 1.0));
+      println!("{:?}", db);
+      println!("Mean Steady State Round Frequency: {:0.6} KHz", mean as f64 / (i as f64 - 1.0));
       println!("Capacity: {:0.2}%", db.capacity());
     }
     
   });
-  
 
   //println!("{:?}", db);
   //println!("{:?}", db.runtime);
