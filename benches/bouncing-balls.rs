@@ -17,7 +17,7 @@ use rand::{Rng, thread_rng};
 
 fn make_balls(n: u64) -> Vec<Change> {
   let mut v = Vec::new();
-  for i in 0 .. n {
+  for i in 0 .. n + 1 {
 
     let mut rng = thread_rng();
     let x = rng.gen_range(1, 100);
@@ -68,8 +68,6 @@ fn make_block() -> Block {
 fn step_db(db: &mut Database) {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let cur_time = time::now();
-  let block = make_block();
-  db.runtime.register_block(block, &mut db.store);
   let timer_id = 1;      
   let txn = Transaction::from_changeset(vec![
     Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
@@ -80,13 +78,27 @@ fn step_db(db: &mut Database) {
   db.process_transaction(&txn);
 }
 
+fn make_db(n: u64) -> Database {
+  let mut db = Database::new(1, 20000000, 2);
+    let system_timer_change = Hasher::hash_str("system/timer/change");
+  let ball = Hasher::hash_str("ball");
+  let block = make_block();
+  db.runtime.register_block(block, &mut db.store);
+  let mut balls = make_balls(n);
+  let mut table_changes = vec![
+    Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
+    Change::NewTable{tag: ball, rows: n as usize, columns: 5}, 
+  ];
+  table_changes.append(&mut balls);
+  let txn = Transaction::from_changeset(table_changes);
+  db.process_transaction(&txn);
+  db
+}
+
 
 #[bench]
 fn balls_10(b:&mut Bencher) {
-  let mut db = Database::new(1, 20000000, 2);
-  let mut delta_balls = make_balls(10);
-  let txn = Transaction::from_changeset(delta_balls);
-  db.process_transaction(&txn);
+  let mut db = make_db(10);
   b.iter(|| {
     step_db(&mut db);
   });
@@ -94,32 +106,32 @@ fn balls_10(b:&mut Bencher) {
 
 #[bench]
 fn balls_100(b:&mut Bencher) {
-  let mut db = Database::new(1, 20000000, 2);
-  let delta_balls = make_balls(100);
-  let txn = Transaction::from_changeset(delta_balls);
-  db.process_transaction(&txn);
+  let mut db = make_db(100);
   b.iter(|| {
     step_db(&mut db);
   });
 }
 
 #[bench]
-fn balls_1000(b:&mut Bencher) {
-  let mut db = Database::new(1, 20000000, 2);
-  let delta_balls = make_balls(1000);
-  let txn = Transaction::from_changeset(delta_balls);
-  db.process_transaction(&txn);  
+fn balls_1_000(b:&mut Bencher) {
+  let mut db = make_db(1000);
   b.iter(|| {
     step_db(&mut db);
   });
 }
 
 #[bench]
-fn balls_10000(b:&mut Bencher) {
-  let mut db = Database::new(1, 20000000, 2);
-  let delta_balls = make_balls(10000);
-  let txn = Transaction::from_changeset(delta_balls);
-  db.process_transaction(&txn);  
+fn balls_10_000(b:&mut Bencher) {
+  let mut db = make_db(10000);
+  b.iter(|| {
+    step_db(&mut db);
+  });
+}
+
+
+#[bench]
+fn balls_100_000(b:&mut Bencher) {
+  let mut db = make_db(100000);
   b.iter(|| {
     step_db(&mut db);
   });
