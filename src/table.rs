@@ -11,7 +11,7 @@ use hashmap_core::map::HashMap;
 
 #[derive(Clone, PartialEq)]
 pub enum Value {
-  Number(u64),
+  Number(i64),
   String(String),
   Table(u64),
   Empty,
@@ -28,8 +28,13 @@ impl Value {
   }
 
   pub fn from_u64(num: u64) -> Value {
+    Value::Number(num as i64)
+  }
+
+  pub fn from_i64(num: i64) -> Value {
     Value::Number(num)
   }
+
 
 }
 
