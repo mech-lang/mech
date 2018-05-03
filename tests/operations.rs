@@ -11,18 +11,19 @@ fn math_add() {
     let ball = Hasher::hash_str("ball");
     let db = make_db();
     let col = db.store.get_column(ball, 5);
-    assert_eq!(col, Some(vec![Value::from_u64(3)]));
+    let val = vec![Value::from_u64(3)];
+    assert_eq!(col, Some(&val));
 }
 
 fn make_ball(row2: usize) -> Vec<Change> {
   let row = row2 as u64;
   let ball = Hasher::hash_str("ball");
   vec![
-    Change::Add{ix: 0, table: ball, row, column: 1, value: Value::from_u64(1)},
-    Change::Add{ix: 0, table: ball, row, column: 2, value: Value::from_u64(2)},
-    Change::Add{ix: 0, table: ball, row, column: 3, value: Value::from_u64(3)},
-    Change::Add{ix: 0, table: ball, row, column: 4, value: Value::from_u64(4)},
-    Change::Add{ix: 0, table: ball, row, column: 5, value: Value::from_u64(16)},
+    Change::Add{table: ball, row, column: 1, value: Value::from_u64(1)},
+    Change::Add{table: ball, row, column: 2, value: Value::from_u64(2)},
+    Change::Add{table: ball, row, column: 3, value: Value::from_u64(3)},
+    Change::Add{table: ball, row, column: 4, value: Value::from_u64(4)},
+    Change::Add{table: ball, row, column: 5, value: Value::from_u64(16)},
   ]
 }
 
@@ -32,11 +33,11 @@ fn make_db() -> Database {
   let mut db = Database::new(1,1,1);
 
   let txn = Transaction::from_changeset(vec![
-    Change::NewTable{tag: String::from("ball"), entities: vec![], attributes: vec![], rows: 1, columns: 5}, 
-    Change::Add{ix: 0, table: ball, row: 1, column: 1, value: Value::from_u64(1)},
-    Change::Add{ix: 0, table: ball, row: 1, column: 2, value: Value::from_u64(2)},
-    Change::Add{ix: 0, table: ball, row: 1, column: 3, value: Value::from_u64(3)},
-    Change::Add{ix: 0, table: ball, row: 1, column: 4, value: Value::from_u64(4)},
+    Change::NewTable{tag: ball, rows: 1, columns: 5}, 
+    Change::Add{table: ball, row: 1, column: 1, value: Value::from_u64(1)},
+    Change::Add{table: ball, row: 1, column: 2, value: Value::from_u64(2)},
+    Change::Add{table: ball, row: 1, column: 3, value: Value::from_u64(3)},
+    Change::Add{table: ball, row: 1, column: 4, value: Value::from_u64(4)},
   ]); 
  
   // Make a block
@@ -51,7 +52,7 @@ fn make_db() -> Database {
   ];
   block.plan = plan;
 
-  db.runtime.register_block(block.clone(), &db.store);
+  db.runtime.register_block(block.clone(), &mut db.store);
   let changes = db.process_transaction(&txn);
   let txn2 = Transaction::from_changeset(changes);
   db.process_transaction(&txn2);

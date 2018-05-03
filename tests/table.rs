@@ -7,7 +7,7 @@ fn make_table() -> Table {
 
   let tag: u64 = Hasher::hash_str("students");  
 
-  let mut table = Table::new(tag, 16, 16);
+  let mut table = Table::new(tag, 2, 16);
 
   table.grow_to_fit(2, 4);
 
