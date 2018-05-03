@@ -49,6 +49,12 @@ impl Runtime {
     self.run_network(store)
   } 
 
+  pub fn register_blocks(&mut self, blocks: Vec<Block>, store: &mut Interner) {
+    for block in blocks {
+      self.register_block(block, store);
+    }
+  }
+
   pub fn process_change(&mut self, change: &Change) {
     match change {
       Change::Add{table, row, column, value} => {
@@ -202,6 +208,9 @@ impl Block {
       Constraint::Filter{..} => {
         self.intermediate_registers.push(Vec::new());
       }
+      Constraint::Constant{value, register} => {
+        self.intermediate_registers.push(vec![Value::from_i64(value)]);
+      }
       _ => (),
     }
     self.constraints.push(constraint);
@@ -322,6 +331,7 @@ pub enum Constraint {
   Insert {table: u64, column: u64, register: u64},
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, register: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
+  Constant {value: i64, register: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -332,6 +342,7 @@ impl fmt::Debug for Constraint {
       Constraint::Insert{table, column, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, column, register),
       Constraint::Filter{comparator, lhs, rhs, register} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, register),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
+      Constraint::Constant{value, register} => write!(f, "Constant({:?}) -> {:?}", value, register),
       _ => Ok(()),
     }
   }

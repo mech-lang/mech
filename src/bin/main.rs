@@ -69,7 +69,23 @@ fn boundary_check() -> Block {
   block.add_constraint(Constraint::Scan {table: ball, column: 1, register: 1});
   block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
   block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1});
-  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});
+  block.add_constraint(Constraint::Constant {value: 500, register: 3});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});  
+  let plan = vec![
+    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1}
+  ];
+  block.plan = plan;
+  block
+}
+
+fn boundary_check2() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, register: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 6, register: 2});
+  block.add_constraint(Constraint::Filter {comparator: Comparator::LessThan, lhs: 1, rhs: 2, register: 1});
+  block.add_constraint(Constraint::Constant {value: 0, register: 3});
+  block.add_constraint(Constraint::Insert {table: ball, column: 1, register: 1});  
   let plan = vec![
     Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, register: 1}
   ];
@@ -96,10 +112,7 @@ fn make_db(n: u64) -> Database {
   let mut db = Database::new(1000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
-  let block1 = position_update();
-  db.runtime.register_block(block1, &mut db.store);
-  let block2 = boundary_check();
-  db.runtime.register_block(block2, &mut db.store);
+  db.runtime.register_blocks(vec![position_update(), boundary_check(), boundary_check2()], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
