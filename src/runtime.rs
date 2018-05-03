@@ -35,7 +35,7 @@ impl Runtime {
   }
 
   // Register a new block with the runtime
-  pub fn register_block(&mut self, mut block: Block, store: &Interner) -> Vec<Change> {
+  pub fn register_block(&mut self, mut block: Block, store: &mut Interner) -> Vec<Change> {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
     for ((table, column), register) in &block.pipes {
@@ -51,7 +51,7 @@ impl Runtime {
 
   pub fn process_change(&mut self, change: &Change) {
     match change {
-      Change::Add{ix, table, row, column, value} => {
+      Change::Add{table, row, column, value} => {
         match self.pipes_map.get(&(*table, *column)) {
           Some(addresses) => {
             for address in addresses {
@@ -74,7 +74,7 @@ impl Runtime {
     }
   }
 
-  pub fn run_network(&mut self, store: &Interner) -> Vec<Change> {
+  pub fn run_network(&mut self, store: &mut Interner) -> Vec<Change> {
     let mut changes = Vec::new();
     for block in &mut self.blocks {
       if block.is_ready() {
@@ -218,7 +218,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self, store: &Interner) -> Vec<Change> {
+  pub fn solve(&mut self, store: &mut Interner) -> Vec<Change> {
     //self.ready = 0;
     let mut output: Vec<Change> = Vec::new();
     for step in &self.plan {
@@ -249,7 +249,10 @@ impl Block {
         Constraint::Insert{table, column, register} => {
           let column_data = &self.intermediate_registers[*register as usize - 1];
           for (row_ix, cell) in column_data.iter().enumerate() {
-            output.push(Change::Add{ix: 0, table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()});
+            store.intern_change(
+              &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
+            );
+            //output.push();
           }
         },
         _ => (),
