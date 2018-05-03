@@ -14,6 +14,7 @@ pub enum Value {
   Number(i64),
   String(String),
   Table(u64),
+  Bool(bool),
   Empty,
 }
 
@@ -46,6 +47,7 @@ impl fmt::Debug for Value {
         &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
         &Value::Table(ref x) => write!(f, "{}", x),
+        &Value::Bool(ref b) => write!(f, "{}", b),
       }
     }
 }
