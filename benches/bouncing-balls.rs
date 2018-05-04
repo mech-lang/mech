@@ -11,24 +11,19 @@ use mech::table::{Value, Table};
 use mech::indexes::Hasher;
 use mech::operations::{Function, Plan, Comparator};
 use mech::runtime::{Runtime, Block, Constraint, Register};
-use rand::{Rng, thread_rng};
+use rand::{Rng};
 
 
 fn make_balls(n: u64) -> Vec<Change> {
   let mut v = Vec::new();
   for i in 0 .. n + 1 {
 
-    let mut rng = thread_rng();
-    let x = rng.gen_range(1, 100);
-    let y = rng.gen_range(1, 100);
-    let dx = rng.gen_range(1, 10);
-    let dy = rng.gen_range(1, 10);
     let ball = Hasher::hash_str("ball");
   
-    v.push(Change::Add{table: ball, row: i, column: 1, value: Value::from_u64(x)});
-    v.push(Change::Add{table: ball, row: i, column: 2, value: Value::from_u64(y)});
-    v.push(Change::Add{table: ball, row: i, column: 3, value: Value::from_u64(dx)});
-    v.push(Change::Add{table: ball, row: i, column: 4, value: Value::from_u64(dy)});
+    v.push(Change::Add{table: ball, row: i, column: 1, value: Value::from_u64(1)});
+    v.push(Change::Add{table: ball, row: i, column: 2, value: Value::from_u64(2)});
+    v.push(Change::Add{table: ball, row: i, column: 3, value: Value::from_u64(3)});
+    v.push(Change::Add{table: ball, row: i, column: 4, value: Value::from_u64(4)});
     v.push(Change::Add{table: ball, row: i, column: 5, value: Value::from_u64(16)});
     v.push(Change::Add{table: ball, row: i, column: 6, value: Value::from_u64(500)});
   
