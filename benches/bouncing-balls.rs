@@ -3,7 +3,6 @@
 extern crate test;
 extern crate mech;
 extern crate core;
-extern crate time;
 extern crate rand;
 
 use test::Bencher;
@@ -129,13 +128,12 @@ fn boundary_check4() -> Block {
 
 fn step_db(db: &mut Database) {
   let system_timer_change = Hasher::hash_str("system/timer/change");
-  let cur_time = time::now();
   let timer_id = 1;      
   let txn = Transaction::from_changeset(vec![
-    Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(cur_time.tm_hour as u64)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(cur_time.tm_min as u64)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(cur_time.tm_sec as u64)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(cur_time.tm_nsec as u64)},
+    Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(1)},
+    Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(2)},
+    Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(3)},
+    Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(4)},
   ]);     
   db.process_transaction(&txn);
 }
