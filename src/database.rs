@@ -224,11 +224,6 @@ impl Database {
       self.store.intern_change(remove);
     }
     self.runtime.run_network(&mut self.store);
-    // Reset the watcher flags
-    for val in self.watched_index.values_mut() {
-      *val = false;
-    }
-
     self.epoch += 1;
   }
 
