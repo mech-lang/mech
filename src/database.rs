@@ -6,7 +6,7 @@ use alloc::{String, Vec};
 use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
-use hashmap_core::map::HashMap;
+use hashmap_core::set::{HashSet};
 use runtime::{Runtime, Block};
 
 // ## Changes
@@ -174,11 +174,12 @@ impl Interner {
 // ## Database
 
 pub struct Database {
-    pub epoch: u64,
-    pub round: u64,
-    pub processed: usize,
-    pub store: Interner,
-    pub runtime: Runtime,
+  pub epoch: u64,
+  pub round: u64,
+  pub processed: usize,
+  pub store: Interner,
+  pub runtime: Runtime,
+  pub watcher_index: HashSet<u64>,
 }
 
 impl Database {
@@ -190,17 +191,13 @@ impl Database {
       processed: 0,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
+      watcher_index: HashSet::new(),
     }
   }
 
-/*
-  pub fn register_transactions(&mut self, transactions: &mut Vec<Transaction>) {
-    self.transactions.append(transactions);
+  pub fn register_watcher(&mut self, table: u64) {
+    self.watcher_index.insert(table);
   }
-
-  pub fn register_transaction(&mut self, transaction: Transaction) {
-    self.register_transactions(&mut vec![transaction]);
-  }*/
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
     // First make any tables
@@ -216,15 +213,13 @@ impl Database {
     for remove in txn.removes.iter() {
       self.store.intern_change(remove);
     }
-    self.epoch += 1;
     self.runtime.run_network(&mut self.store);
+    self.epoch += 1;
   }
 
   pub fn capacity(&self) -> f64 {
-     100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)
+    100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)
   }
-
-
 }
 
 impl fmt::Debug for Database {
