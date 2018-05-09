@@ -197,7 +197,7 @@ impl Database {
   }
 
   pub fn register_watcher(&mut self, table: u64) {
-    self.watched_index.insert(table, true);
+    self.watched_index.insert(table, false);
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
