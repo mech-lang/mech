@@ -177,7 +177,7 @@ impl Table {
 
   // Index into a cell without having to access the data member directly
   pub fn index(&self, row_ix: usize, column_ix: usize) -> Option<&Value> {
-    if column_ix < self.columns && row_ix < self.rows {
+    if column_ix <= self.columns && row_ix <= self.rows {
       Some(&self.data[column_ix - 1][row_ix - 1])
     } else {
       None
