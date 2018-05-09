@@ -7,6 +7,7 @@ use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::set::{HashSet};
+use hashmap_core::map::{HashMap};
 use runtime::{Runtime, Block};
 
 // ## Changes
@@ -179,7 +180,7 @@ pub struct Database {
   pub processed: usize,
   pub store: Interner,
   pub runtime: Runtime,
-  pub watcher_index: HashSet<u64>,
+  pub watched_index: HashMap<u64, bool>,
 }
 
 impl Database {
@@ -191,12 +192,12 @@ impl Database {
       processed: 0,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
-      watcher_index: HashSet::new(),
+      watched_index: HashMap::new(),
     }
   }
 
   pub fn register_watcher(&mut self, table: u64) {
-    self.watcher_index.insert(table);
+    self.watched_index.insert(table, true);
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
@@ -206,6 +207,15 @@ impl Database {
     }
     // Handle the adds
     for add in txn.adds.iter() {
+      match add {
+        Change::Add{table, ..} => {
+          match self.watched_index.get_mut(table) {
+            Some(dirty) => *dirty = true,
+            _ => (),
+          };
+        }, 
+        _ => (),
+      }
       self.store.intern_change(add);
       //self.runtime.process_change(add);
     }
@@ -214,6 +224,11 @@ impl Database {
       self.store.intern_change(remove);
     }
     self.runtime.run_network(&mut self.store);
+    // Reset the watcher flags
+    for val in self.watched_index.values_mut() {
+      *val = false;
+    }
+
     self.epoch += 1;
   }
 
