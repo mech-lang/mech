@@ -166,6 +166,15 @@ impl Interner {
     }
   }
 
+  pub fn get_cell(&self, table: u64, row_ix: usize, column_ix: usize) -> Option<&Value> {
+    match self.tables.get(table) {
+      Some(stored_table) => {
+        stored_table.index(row_ix, column_ix)
+      },
+      None => None,
+    }
+  }
+
   pub fn len(&self) -> usize {
     self.changes_count as usize
   }
