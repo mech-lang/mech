@@ -217,15 +217,6 @@ impl Database {
     }
     // Handle the adds
     for add in txn.adds.iter() {
-      match add {
-        Change::Add{table, ..} => {
-          match self.watched_index.get_mut(table) {
-            Some(dirty) => *dirty = true,
-            _ => (),
-          };
-        }, 
-        _ => (),
-      }
       self.store.intern_change(add);
       //self.runtime.process_change(add);
     }
@@ -234,6 +225,13 @@ impl Database {
       self.store.intern_change(remove);
     }
     self.runtime.run_network(&mut self.store);
+    // Mark watched tables as changed
+    for touched in self.store.tables.changed.drain() {
+      match self.watched_index.get_mut(&touched) {
+        Some(q) => *q = true,
+        _ => (),
+      }
+    }
     self.epoch += 1;
   }
 
