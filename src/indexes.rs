@@ -5,6 +5,7 @@
 use table::{Value, Table};
 use alloc::{fmt, Vec, String};
 use hashmap_core::map::HashMap;
+use hashmap_core::set::HashSet;
 
 // ## Hasher
 
@@ -76,6 +77,7 @@ impl Hasher {
 pub struct TableIndex {
     pub name_map: HashMap<u64, u64>,
     pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
+    pub changed: HashSet<u64>,
 }
 
 impl TableIndex {
@@ -84,6 +86,7 @@ impl TableIndex {
         TableIndex {
             name_map: HashMap::with_capacity(capacity),
             map: HashMap::with_capacity(capacity),
+            changed: HashSet::with_capacity(capacity),
         }
     }
 

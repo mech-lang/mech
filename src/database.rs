@@ -122,12 +122,13 @@ impl Interner {
     match change {
       Change::Add{table, row, column, value} => {
         match self.tables.get_mut(*table) {
-          Some(table) => {
-            table.grow_to_fit(*row as usize, *column as usize);
-            table.set_cell(*row as usize, *column as usize, value.clone());
+          Some(table_ref) => {
+            table_ref.grow_to_fit(*row as usize, *column as usize);
+            table_ref.set_cell(*row as usize, *column as usize, value.clone());
           }
           None => (),
         };
+        self.tables.changed.insert(*table);
       },
       // TODO Implement removes
       Change::Remove{..} => {
