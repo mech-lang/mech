@@ -152,6 +152,7 @@ impl Interner {
       self.changes.push(change.clone());
     } else if self.change_pointer == self.changes.capacity() {
       self.change_pointer = 0;
+      self.rollover += 1;
       self.changes[self.change_pointer] = change.clone();
     } else {
       self.changes[self.change_pointer] = change.clone();
@@ -237,7 +238,7 @@ impl Database {
         _ => (),
       }
     }
-    self.epoch += 1;
+    self.epoch = self.store.rollover;
   }
 
   pub fn capacity(&self) -> f64 {
