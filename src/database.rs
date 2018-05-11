@@ -238,7 +238,7 @@ impl Database {
         _ => (),
       }
     }
-    self.epoch = self.store.rollover;
+    self.epoch = self.store.rollover as u64;
   }
 
   pub fn capacity(&self) -> f64 {
