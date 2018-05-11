@@ -106,6 +106,8 @@ pub struct Interner {
   pub tables: TableIndex,
   pub changes: Vec<Change>,
   changes_count: usize,
+  change_pointer: usize,
+  rollover: usize,
 }
 
 impl Interner {
@@ -115,6 +117,8 @@ impl Interner {
       tables: TableIndex::new(table_capacity),
       changes: Vec::with_capacity(change_capacity),
       changes_count: 0,
+      change_pointer: 0,
+      rollover: 0,
     }
   }
 
@@ -141,17 +145,18 @@ impl Interner {
         }
       }
     }
-    // Intern the change. If there's enough room in memory, keep it there. 
-    // If not, evict some old change and throw it on disk. For now, we'll 
-    // make the policy that the oldest record get evicted first.
+    // Intern the change. If there's enough room in memory, store it there. 
+    // If not, make room by evicting some old change and throw that on disk. 
+    // For now, we'll make the policy that the oldest record get evicted first.
     if self.changes.len() < self.changes.capacity() {
       self.changes.push(change.clone());
+    } else if self.change_pointer == self.changes.capacity() {
+      self.change_pointer = 0;
+      self.changes[self.change_pointer] = change.clone();
     } else {
-      // @TODO Save the old change to disk! Maybe throw it in a buffer
-      let old_change = self.changes.pop();
-      // Overwrite the old change
-      self.changes.push(change.clone());
-    }  
+      self.changes[self.change_pointer] = change.clone();
+    }
+    self.change_pointer += 1;
     self.changes_count += 1;
   }
 
