@@ -42,13 +42,13 @@ fn make_db() -> Database {
  
   // Make a block
   let mut block = Block::new();
-  block.add_constraint(Constraint::Scan {table: ball, column: 1, register: 1});
-  block.add_constraint(Constraint::Scan {table: ball, column: 2, register: 2});
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 2});
   block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 1});
-  block.add_constraint(Constraint::Insert {table: ball, column: 3, register: 1});
+  block.add_constraint(Constraint::Insert {table: ball, column: 3, output: 1});
   let plan = vec![
     Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 1},
-    Constraint::Insert {table: ball, column: 5, register: 1},
+    Constraint::Insert {table: ball, column: 5, output: 1},
   ];
   block.plan = plan;
 
