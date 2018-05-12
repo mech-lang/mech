@@ -36,6 +36,13 @@ impl Value {
     Value::Number(num)
   }
 
+  pub fn as_u64(&self) -> u64 {
+    match self {
+      Value::Number(n) => *n as u64,
+      _ => 0,
+    }
+  }
+
 
 }
 
