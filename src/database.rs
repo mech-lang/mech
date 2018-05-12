@@ -220,7 +220,6 @@ impl Database {
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
-    println!("{:?}", self.last_transaction);
     // First make any tables
     for table in txn.tables.iter() {
       self.store.intern_change(table);
@@ -243,7 +242,6 @@ impl Database {
       }
     }
     self.epoch = self.store.rollover as u64;
-    println!("{:?}", self.store.change_pointer);
   }
 
   pub fn capacity(&self) -> f64 {
