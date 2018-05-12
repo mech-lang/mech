@@ -188,16 +188,16 @@ impl Block {
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
     match constraint {
-      Constraint::Scan{table, column, register} => {
-        let register_id: usize = register as usize - 1;
+      Constraint::Scan{table, column, input} => {
+        let register_id: usize = input as usize - 1;
         // Allocate registers
         while self.input_registers.len() <= register_id {
           self.input_registers.push(Register::new());
         }
-        self.pipes.insert((table, column), register);
+        self.pipes.insert((table, column), input);
       },
-      Constraint::Insert{table, column, register} => {
-        let register_id: usize = register as usize - 1;
+      Constraint::Insert{output, table, column} => {
+        let register_id: usize = output as usize - 1;
         while self.output_registers.len() <= register_id {
           self.output_registers.push(Register::new());
         }
@@ -208,7 +208,7 @@ impl Block {
       Constraint::Filter{..} => {
         self.intermediate_registers.push(Vec::new());
       }
-      Constraint::Constant{value, register} => {
+      Constraint::Constant{value, input} => {
         self.intermediate_registers.push(vec![Value::from_i64(value)]);
       }
       _ => (),
@@ -248,15 +248,15 @@ impl Block {
           // intermediate registers
           op_fun(&columns, &mut self.intermediate_registers[*output as usize - 1]);
         },
-        Constraint::Insert{table, column, register} => {
-          let column_data = &self.intermediate_registers[*register as usize - 1];
+        Constraint::Insert{output, table, column} => {
+          let column_data = &self.intermediate_registers[*output as usize - 1];
           for (row_ix, cell) in column_data.iter().enumerate() {
             store.intern_change(
               &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
             );
           }
         },
-        Constraint::Filter{comparator, lhs, rhs, register} => {
+        Constraint::Filter{comparator, lhs, rhs, intermediate} => {
           
           let lhs_register = &self.input_registers[*lhs as usize - 1];
           let rhs_register = &self.input_registers[*rhs as usize - 1];
@@ -264,7 +264,7 @@ impl Block {
           let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
           match (lhs_data, rhs_data) {
             (Some(x), Some(y)) => {
-              let register_ref = &mut self.intermediate_registers[*register as usize - 1];
+              let register_ref = &mut self.intermediate_registers[*intermediate as usize - 1];
               operations::compare(comparator, x, y, register_ref);
             },
             _ => (),
@@ -327,22 +327,24 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   // A Scan monitors a supplied cell
-  Scan { table: u64, column: u64, register: u64 },
-  Insert {table: u64, column: u64, register: u64},
-  Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, register: u64},
+  Scan {table: u64, column: u64, input: u64},
+  Insert {output: u64, table: u64, column: u64},
+  Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, intermediate: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
-  Constant {value: i64, register: u64},
+  Constant {value: i64, input: u64},
+  Identity {source: u64, sink: u64}
 }
 
 impl fmt::Debug for Constraint {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Constraint::Scan{table, column, register} => write!(f, "Scan({:#x}, {:#x}) -> {:?}", table, column, register),
-      Constraint::Insert{table, column, register} => write!(f, "Insert({:#x}, {:#x}) -> {:?}", table, column, register),
-      Constraint::Filter{comparator, lhs, rhs, register} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, register),
+      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x})) -> I{:?}", table, column, input),
+      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})", table, column, output),
+      Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-      Constraint::Constant{value, register} => write!(f, "Constant({:?}) -> {:?}", value, register),
+      Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:?}", value, input),
+      Constraint::Identity{source, sink} => write!(f, "Identity({:?}) -> {:?}", source, sink),
       _ => Ok(()),
     }
   }
