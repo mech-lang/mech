@@ -23,8 +23,7 @@ pub enum Function {
   //Power,
 }
 
-pub fn math_add(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec<Value> {
-  let mut output = Vec::new();
+pub fn math_add(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) {
   if parameters.len() == 2 {
     let lhs = &parameters[0];
     let rhs = &parameters[1];
@@ -42,11 +41,9 @@ pub fn math_add(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec
       } 
     }
   }
-  output
 }
 
-pub fn math_subtract(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -> Vec<Value> {
-  let mut output = Vec::new();
+pub fn math_subtract(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) {
   if parameters.len() == 2 {
     let lhs = &parameters[0];
     let rhs = &parameters[1];
@@ -64,7 +61,6 @@ pub fn math_subtract(parameters: &Vec<&Vec<Value>>, register: &mut Vec<Value>) -
       } 
     }
   }
-  output
 }
 
 // ## Comparators
