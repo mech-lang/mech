@@ -106,7 +106,7 @@ pub struct Interner {
   pub tables: TableIndex,
   pub changes: Vec<Change>,
   changes_count: usize,
-  change_pointer: usize,
+  pub change_pointer: usize,
   rollover: usize,
 }
 
