@@ -20,14 +20,14 @@ pub enum Change {
 }
 
 impl fmt::Debug for Change {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      match self {
-        Change::Add{table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-        Change::Remove{table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-        Change::NewTable{tag, rows, columns} => write!(f, "+ #{:#x} [{:?} x {:?}]", tag, rows, columns),
-      }
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      Change::Add{table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::Remove{table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::NewTable{tag, rows, columns} => write!(f, "+ #{:#x} [{:?} x {:?}]", tag, rows, columns),
     }
+  }
 }
   
 // ## Transaction
@@ -69,13 +69,13 @@ impl Transaction {
   }
 
   pub fn from_change(change: Change) -> Transaction {
-      let mut txn = Transaction::new();
-      match change {
-        Change::Add{..} => txn.adds.push(change),
-        Change::Remove{..} => txn.removes.push(change),
-        Change::NewTable{..} => txn.tables.push(change),
-      }
-      txn
+    let mut txn = Transaction::new();
+    match change {
+      Change::Add{..} => txn.adds.push(change),
+      Change::Remove{..} => txn.removes.push(change),
+      Change::NewTable{..} => txn.tables.push(change),
+    }
+    txn
   }
 
   pub fn is_complete(&self) -> bool {
@@ -84,19 +84,19 @@ impl Transaction {
 }
 
 impl fmt::Debug for Transaction {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      for ref table in &self.tables {
-        write!(f, "{:?}\n", table).unwrap();
-      }
-      for ref add in &self.adds {
-        write!(f, "{:?}\n", add).unwrap();
-      }
-      for ref remove in &self.removes {
-        write!(f, "{:?}\n", remove).unwrap();
-      }
-      Ok(())
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for ref table in &self.tables {
+      write!(f, "{:?}\n", table).unwrap();
     }
+    for ref add in &self.adds {
+      write!(f, "{:?}\n", add).unwrap();
+    }
+    for ref remove in &self.removes {
+      write!(f, "{:?}\n", remove).unwrap();
+    }
+    Ok(())
+  }
 }
 
 // ## Interner
@@ -197,6 +197,7 @@ pub struct Database {
   pub store: Interner,
   pub runtime: Runtime,
   pub watched_index: HashMap<u64, bool>,
+  pub last_transaction: usize,
 }
 
 impl Database {
@@ -209,6 +210,7 @@ impl Database {
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
       watched_index: HashMap::new(),
+      last_transaction: 0,
     }
   }
 
@@ -217,6 +219,8 @@ impl Database {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
+    self.last_transaction = self.store.change_pointer;
+    println!("{:?}", self.last_transaction);
     // First make any tables
     for table in txn.tables.iter() {
       self.store.intern_change(table);
@@ -239,6 +243,7 @@ impl Database {
       }
     }
     self.epoch = self.store.rollover as u64;
+    println!("{:?}", self.store.change_pointer);
   }
 
   pub fn capacity(&self) -> f64 {
@@ -247,20 +252,20 @@ impl Database {
 }
 
 impl fmt::Debug for Database {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "┌────────────────────┐\n").unwrap();
-        write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
-        write!(f, "├────────────────────┤\n").unwrap();
-        write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
-        write!(f, "│ Changes: {:?}\n", self.store.len()).unwrap();
-        write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
-        write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
-        write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
-        write!(f, "└────────────────────┘\n").unwrap();
-        for (table, history) in self.store.tables.map.values() {
-          write!(f, "{:?}", table).unwrap();
-        }
-        Ok(())
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "┌────────────────────┐\n").unwrap();
+    write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
+    write!(f, "├────────────────────┤\n").unwrap();
+    write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
+    write!(f, "│ Changes: {:?}\n", self.store.len()).unwrap();
+    write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
+    write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
+    write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
+    write!(f, "└────────────────────┘\n").unwrap();
+    for (table, history) in self.store.tables.map.values() {
+      write!(f, "{:?}", table).unwrap();
     }
+    Ok(())
+  }
 }
