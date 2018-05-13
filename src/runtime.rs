@@ -46,7 +46,7 @@ impl Runtime {
       block.ready = set_bit(block.ready, register_id);      
     }
     self.blocks.push(block.clone());
-    self.run_network(store)
+    self.run_network(store);
   } 
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>, store: &mut Interner) {
@@ -131,6 +131,20 @@ impl Register {
     }
   }
 
+  pub fn input(t: u64, n: u64) -> Register {
+    Register {
+      table: t,
+      column: n,
+    }
+  }
+
+  pub fn intermediate(n: u64) -> Register {
+    Register {
+      table: 0,
+      column: n,
+    }
+  }
+
   pub fn get(&self) -> (u64, u64) {
     (self.table, self.column)
   }
@@ -166,9 +180,10 @@ pub struct Block {
   pub plan: Vec<Constraint>,
   pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
-  pub intermediate_registers: Vec<Vec<Value>>,
+  pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
+  memory: Vec<Vec<Value>>,
 }
 
 impl Block {
@@ -183,33 +198,30 @@ impl Block {
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
       constraints: Vec::with_capacity(32),
+      memory: Vec::with_capacity(32),
     }
   }
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
     match constraint {
       Constraint::Scan{table, column, input} => {
-        let register_id: usize = input as usize - 1;
-        // Allocate registers
-        while self.input_registers.len() <= register_id {
-          self.input_registers.push(Register::new());
-        }
+        self.input_registers.push(Register::input(table, column));
         self.pipes.insert((table, column), input);
       },
       Constraint::Insert{output, table, column} => {
-        let register_id: usize = output as usize - 1;
-        while self.output_registers.len() <= register_id {
-          self.output_registers.push(Register::new());
-        }
+        self.output_registers.push(Register::new());
       },
-      Constraint::Function{ref operation, ..} => {
-        self.intermediate_registers.push(Vec::new());
+      Constraint::Function{ref operation, ref parameters, output} => {
+        self.intermediate_registers.push(Register::intermediate(output));
+        self.memory.push(Vec::new());
       },
-      Constraint::Filter{..} => {
-        self.intermediate_registers.push(Vec::new());
+      Constraint::Filter{ref comparator, lhs, rhs, intermediate} => {
+        self.intermediate_registers.push(Register::intermediate(intermediate));
+        self.memory.push(Vec::new());
       }
       Constraint::Constant{value, input} => {
-        self.intermediate_registers.push(vec![Value::from_i64(value)]);
+        self.intermediate_registers.push(Register::intermediate(input));
+        self.memory.push(vec![Value::from_i64(value)]);
       }
       _ => (),
     }
@@ -246,10 +258,12 @@ impl Block {
           };
           // Execute the function. This is where the magic happens! Results are placed on the
           // intermediate registers
-          op_fun(&columns, &mut self.intermediate_registers[*output as usize - 1]);
+          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
+          op_fun(&columns, &mut self.memory[output_memory_ix as usize - 1]);
         },
         Constraint::Insert{output, table, column} => {
-          let column_data = &self.intermediate_registers[*output as usize - 1];
+          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
+          let column_data = &mut self.memory[output_memory_ix as usize - 1];
           for (row_ix, cell) in column_data.iter().enumerate() {
             store.intern_change(
               &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
@@ -257,19 +271,22 @@ impl Block {
           }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
-          
           let lhs_register = &self.input_registers[*lhs as usize - 1];
           let rhs_register = &self.input_registers[*rhs as usize - 1];
           let lhs_data = store.get_column(lhs_register.table, lhs_register.column as usize);
           let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
           match (lhs_data, rhs_data) {
             (Some(x), Some(y)) => {
-              let register_ref = &mut self.intermediate_registers[*intermediate as usize - 1];
-              operations::compare(comparator, x, y, register_ref);
+              let output_memory_ix = self.intermediate_registers[*intermediate as usize - 1].column;
+              let output_column = &mut self.memory[output_memory_ix as usize - 1];
+              operations::compare(comparator, x, y, output_column);
             },
             _ => (),
           }
         },
+        Constraint::Identity{source, sink} => {
+          self.intermediate_registers[*sink as usize - 1] = self.input_registers[*source as usize - 1].clone();
+        }
         _ => (),
       } 
     }
