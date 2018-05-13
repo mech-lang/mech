@@ -223,6 +223,9 @@ impl Block {
         self.intermediate_registers.push(Register::intermediate(input));
         self.memory.push(vec![Value::from_i64(value)]);
       }
+      Constraint::Identity{source, sink} => {
+        self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
+      }
       _ => (),
     }
     self.constraints.push(constraint);
@@ -243,12 +246,17 @@ impl Block {
       match step {
         Constraint::Function{operation, parameters, output} => {
           // Gather references to the indicated registers as a vector
-          let mut columns = Vec::new();
+          let mut columns: Vec<&Vec<Value>> = Vec::new();
           for register_ix in parameters {
-            let register = &self.input_registers[*register_ix as usize - 1];
-            match store.get_column(register.table, register.column as usize) {
-              Some(column) => columns.push(column),
-              None => (),
+            let register = &self.intermediate_registers[*register_ix as usize - 1];
+            if register.table == 0 {
+              //let column = self.memory[register.column as usize - 1];
+              //columns.push(column);
+            } else {
+              match store.get_column(register.table, register.column as usize) {
+                Some(column) => columns.push(column),
+                None => (),
+              }
             }
           }
           // Pass the parameters to the appropriate function
@@ -271,8 +279,8 @@ impl Block {
           }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
-          let lhs_register = &self.input_registers[*lhs as usize - 1];
-          let rhs_register = &self.input_registers[*rhs as usize - 1];
+          let lhs_register = &self.intermediate_registers[*lhs as usize - 1];
+          let rhs_register = &self.intermediate_registers[*rhs as usize - 1];
           let lhs_data = store.get_column(lhs_register.table, lhs_register.column as usize);
           let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
           match (lhs_data, rhs_data) {
@@ -284,9 +292,6 @@ impl Block {
             _ => (),
           }
         },
-        Constraint::Identity{source, sink} => {
-          self.intermediate_registers[*sink as usize - 1] = self.input_registers[*source as usize - 1].clone();
-        }
         _ => (),
       } 
     }
@@ -357,7 +362,7 @@ impl fmt::Debug for Constraint {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x})) -> I{:?}", table, column, input),
-      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})", table, column, output),
+      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
       Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:?}", value, input),
