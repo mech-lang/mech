@@ -225,8 +225,8 @@ impl Block {
       }
       Constraint::Identity{source, sink} => {
         self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
+        self.memory.push(Vec::new());
       }
-      _ => (),
     }
     self.constraints.push(constraint);
   }
@@ -292,6 +292,10 @@ impl Block {
             _ => (),
           }
         },
+        Constraint::Identity{source, sink} => {
+          let register = &self.intermediate_registers[*sink as usize - 1];
+          println!("{:?}", register);
+        },
         _ => (),
       } 
     }
@@ -354,7 +358,7 @@ pub enum Constraint {
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, intermediate: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
   Constant {value: i64, input: u64},
-  Identity {source: u64, sink: u64}
+  Identity {source: u64, sink: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -367,7 +371,6 @@ impl fmt::Debug for Constraint {
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:?}", value, input),
       Constraint::Identity{source, sink} => write!(f, "Identity({:?}) -> {:?}", source, sink),
-      _ => Ok(()),
     }
   }
 }
