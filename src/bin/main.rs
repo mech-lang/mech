@@ -61,6 +61,25 @@ fn position_update() -> Block {
   block
 }
 
+fn export_ball() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  let websocket = Hasher::hash_str("client/websocket");
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 1});
+  //block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 2});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  //block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Insert {output: 1, table: websocket, column: 1});
+  //block.add_constraint(Constraint::Insert {output: 2, table: websocket, column: 2});
+  let plan = vec![
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Insert {output: 1, table: websocket, column: 1 },
+    //Constraint::Insert {output: 2, table: websocket, column: 2 },
+  ];
+  block.plan = plan;
+  block
+}
+
 fn boundary_check() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
@@ -144,7 +163,7 @@ fn make_db(n: u64) -> Database {
   let mut db = Database::new(10000000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
-  db.runtime.register_blocks(vec![position_update(), boundary_check(), boundary_check2(), boundary_check3(), boundary_check4()], &mut db.store);
+  db.runtime.register_blocks(vec![export_ball()], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
