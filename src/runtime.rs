@@ -294,7 +294,6 @@ impl Block {
         },
         Constraint::Identity{source, sink} => {
           let register = &self.intermediate_registers[*sink as usize - 1];
-          println!("{:?}", register);
         },
         _ => (),
       } 
