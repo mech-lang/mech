@@ -154,7 +154,7 @@ fn step_db(db: &mut Database) {
     Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(4)},
   ]);     
   db.process_transaction(&txn);
-  for i in 1 .. 1000000 {
+  for i in 1 .. 4000000 {
 
   }
 }
