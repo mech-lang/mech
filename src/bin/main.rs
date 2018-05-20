@@ -66,15 +66,16 @@ fn export_ball() -> Block {
   let ball = Hasher::hash_str("ball");
   let websocket = Hasher::hash_str("client/websocket");
   block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 1});
-  //block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 2});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 2});
   block.add_constraint(Constraint::Identity {source: 1, sink: 1});
-  //block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
   block.add_constraint(Constraint::Insert {output: 1, table: websocket, column: 1});
-  //block.add_constraint(Constraint::Insert {output: 2, table: websocket, column: 2});
+  block.add_constraint(Constraint::Insert {output: 2, table: websocket, column: 2});
   let plan = vec![
     Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
     Constraint::Insert {output: 1, table: websocket, column: 1 },
-    //Constraint::Insert {output: 2, table: websocket, column: 2 },
+    Constraint::Insert {output: 2, table: websocket, column: 2 },
   ];
   block.plan = plan;
   block
@@ -163,11 +164,13 @@ fn make_db(n: u64) -> Database {
   let mut db = Database::new(10000000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
+  let ws = Hasher::hash_str("client/websocket");
   db.runtime.register_blocks(vec![export_ball()], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
     Change::NewTable{tag: ball, rows: n as usize, columns: 6}, 
+    Change::NewTable{tag: ws, rows: n as usize, columns: 2}, 
   ];
   table_changes.append(&mut balls);
   let txn = Transaction::from_changeset(table_changes);
