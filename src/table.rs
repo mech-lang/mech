@@ -106,19 +106,20 @@ impl Table {
     }
   }
 
-  /*
   pub fn add_row(&mut self) {
     let rows = self.rows + 1;
-    let cols = self.columns;
-    self.grow_to_fit(rows, cols);
+    let columns = self.columns;
+    self.grow_to_fit(rows, columns);
   }
 
   pub fn add_column(&mut self, attribute: u64) {
     if !self.attributes.contains_key(&attribute) {
-      self.columns = self.columns + 1;
-      self.attributes.insert(attribute.clone(), self.columns.clone());
+      let columns = self.columns + 1;
+      let rows = self.rows;
+      self.grow_to_fit(rows, columns);
+      self.attributes.insert(attribute.clone(), columns);
     };
-  }*/
+  }
 
   pub fn get_columns(&self, column_ixes: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
     let mut columns: Vec<Option<&Vec<Value>>> = vec![];
@@ -132,8 +133,15 @@ impl Table {
   pub fn get_column(&self, column_ix: usize) -> Option<&Vec<Value>> {
     if column_ix - 1 < self.columns {
       let mut column = &self.data[column_ix - 1];      
-      //column.truncate(self.rows);
       Some(column)
+    } else {
+      None
+    }
+  }
+
+  pub fn get_column_mut(&mut self, column_ix: usize) -> Option<&mut Vec<Value>> {
+    if column_ix - 1 < self.columns {
+      Some(&mut self.data[column_ix - 1])
     } else {
       None
     }
