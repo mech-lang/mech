@@ -4,7 +4,7 @@
 
 use alloc::{String, Vec, fmt};
 use runtime::{Constraint, Register};
-use table::Value;
+use table::{Table, Value};
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -113,6 +113,15 @@ impl fmt::Debug for Comparator {
       NotEqual => write!(f, "!="),
       _ => Ok(()),
     }
+  }
+}
+
+// ## Internal Functions
+
+pub fn identity(source: &Vec<Value>, sink: u64, store: &mut Table) {
+  store.grow_to_fit(source.len(), 0);
+  for i in 1 .. source.len() + 1 {     
+    store.set_cell(i, sink as usize, source[i - 1].clone());
   }
 }
 
