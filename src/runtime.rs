@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use table::{Value};
+use table::{Table, Value};
 use alloc::{fmt, Vec};
 use database::{Interner, Change};
 use hashmap_core::map::HashMap;
@@ -183,7 +183,7 @@ pub struct Block {
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
-  memory: Vec<Vec<Value>>,
+  memory: Table,
 }
 
 impl Block {
@@ -198,11 +198,12 @@ impl Block {
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
       constraints: Vec::with_capacity(32),
-      memory: Vec::with_capacity(32),
+      memory: Table::new(0, 1, 1),
     }
   }
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
+    let new_column_ix = (self.memory.columns + 1) as u64;
     match constraint {
       Constraint::Scan{table, column, input} => {
         self.input_registers.push(Register::input(table, column));
@@ -213,19 +214,21 @@ impl Block {
       },
       Constraint::Function{ref operation, ref parameters, output} => {
         self.intermediate_registers.push(Register::intermediate(output));
-        self.memory.push(Vec::new());
+        
+        self.memory.add_column(new_column_ix);
       },
       Constraint::Filter{ref comparator, lhs, rhs, intermediate} => {
         self.intermediate_registers.push(Register::intermediate(intermediate));
-        self.memory.push(Vec::new());
+        self.memory.add_column(new_column_ix);
       }
       Constraint::Constant{value, input} => {
         self.intermediate_registers.push(Register::intermediate(input));
-        self.memory.push(vec![Value::from_i64(value)]);
+        self.memory.add_column(new_column_ix);
+        self.memory.set_cell(1, input as usize, Value::from_i64(value));
       }
       Constraint::Identity{source, sink} => {
         self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
-        self.memory.push(Vec::new());
+        self.memory.add_column(new_column_ix);
       }
     }
     self.constraints.push(constraint);
@@ -266,12 +269,12 @@ impl Block {
           };
           // Execute the function. This is where the magic happens! Results are placed on the
           // intermediate registers
-          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
-          op_fun(&columns, &mut self.memory[output_memory_ix as usize - 1]);
+          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column as usize;
+          op_fun(&columns, &mut self.memory.get_column_mut(output_memory_ix).unwrap());
         },
         Constraint::Insert{output, table, column} => {
           let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
-          let column_data = &mut self.memory[output_memory_ix as usize - 1];
+          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
           for (row_ix, cell) in column_data.iter().enumerate() {
             store.intern_change(
               &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
@@ -286,7 +289,7 @@ impl Block {
           match (lhs_data, rhs_data) {
             (Some(x), Some(y)) => {
               let output_memory_ix = self.intermediate_registers[*intermediate as usize - 1].column;
-              let output_column = &mut self.memory[output_memory_ix as usize - 1];
+              let output_column = &mut self.memory.get_column_mut(output_memory_ix as usize).unwrap();
               operations::compare(comparator, x, y, output_column);
             },
             _ => (),
@@ -294,6 +297,12 @@ impl Block {
         },
         Constraint::Identity{source, sink} => {
           let register = &self.intermediate_registers[*sink as usize - 1];
+          match store.get_column(register.table, register.column as usize) {
+            Some(column) => {
+              operations::identity(column, *sink, &mut self.memory);
+            },
+            None => (),
+          }
         },
         _ => (),
       } 
