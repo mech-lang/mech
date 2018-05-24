@@ -38,24 +38,28 @@ fn position_update() -> Block {
   block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 3});
   block.add_constraint(Constraint::Scan {table: ball, column: 3, input: 4});
   block.add_constraint(Constraint::Scan {table: ball, column: 4, input: 5});  
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: 1}); 
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![7, 8], output: 2});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![8, 4], output: 3});
-  block.add_constraint(Constraint::Constant {value: 16, input: 4});
-  block.add_constraint(Constraint::Identity {source: 2, sink: 5});
-  block.add_constraint(Constraint::Identity {source: 4, sink: 6});
-  block.add_constraint(Constraint::Identity {source: 3, sink: 7});
-  block.add_constraint(Constraint::Identity {source: 5, sink: 8});
-  block.add_constraint(Constraint::Insert {output: 1, table: ball, column: 1});
-  block.add_constraint(Constraint::Insert {output: 2, table: ball, column: 2});
-  block.add_constraint(Constraint::Insert {output: 3, table: ball, column: 4});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 4, sink: 2});
+  block.add_constraint(Constraint::Identity {source: 3, sink: 3});
+  block.add_constraint(Constraint::Identity {source: 5, sink: 4});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 5}); 
+  //block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![7, 8], output: 2});
+  //block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![8, 4], output: 3});
+  
+  //block.add_constraint(Constraint::Insert {output: 1, table: ball, column: 1});
+  //block.add_constraint(Constraint::Insert {output: 2, table: ball, column: 2});
+  //block.add_constraint(Constraint::Insert {output: 3, table: ball, column: 4});
   let plan = vec![
-    Constraint::Function {operation: Function::Add, parameters: vec![5, 6], output: 1},
-    Constraint::Function {operation: Function::Add, parameters: vec![7, 8], output: 2},
-    Constraint::Function {operation: Function::Add, parameters: vec![8, 4], output: 3},
-    Constraint::Insert {output: 1, table: ball, column: 1},
-    Constraint::Insert {output: 2, table: ball, column: 2},
-    Constraint::Insert {output: 3, table: ball, column: 4},
+    Constraint::Identity {source: 2, sink: 1},
+    Constraint::Identity {source: 4, sink: 2},
+    Constraint::Identity {source: 3, sink: 3},
+    Constraint::Identity {source: 5, sink: 4},
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 5},
+    //Constraint::Function {operation: Function::Add, parameters: vec![7, 8], output: 2},
+    //Constraint::Function {operation: Function::Add, parameters: vec![8, 4], output: 3},
+    //Constraint::Insert {output: 1, table: ball, column: 1},
+    //Constraint::Insert {output: 2, table: ball, column: 2},
+    //Constraint::Insert {output: 3, table: ball, column: 4},
   ];
   block.plan = plan;
   block
@@ -165,7 +169,7 @@ fn make_db(n: u64) -> Database {
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   let ws = Hasher::hash_str("client/websocket");
-  db.runtime.register_blocks(vec![export_ball()], &mut db.store);
+  db.runtime.register_blocks(vec![position_update()], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
