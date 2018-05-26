@@ -245,23 +245,11 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("{:?}",self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
-          // Gather references to the indicated registers as a vector
-          let mut columns: Vec<&Vec<Value>> = Vec::new();
-          for register_ix in parameters {
-            let register = &self.intermediate_registers[*register_ix as usize - 1];
-            if register.table == 0 {
-              //let column = self.memory[register.column as usize - 1];
-              //columns.push(column);
-            } else {
-              match store.get_column(register.table, register.column as usize) {
-                Some(column) => columns.push(column),
-                None => (),
-              }
-            }
-          }
+          println!("IN HERE: {:?}", parameters);
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
@@ -269,8 +257,7 @@ impl Block {
           };
           // Execute the function. This is where the magic happens! Results are placed on the
           // intermediate registers
-          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column as usize;
-          op_fun(&columns, &mut self.memory.get_column_mut(output_memory_ix).unwrap());
+          op_fun(parameters, &vec![*output], &mut self.memory);
         },
         Constraint::Insert{output, table, column} => {
           let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
