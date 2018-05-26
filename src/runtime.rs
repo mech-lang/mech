@@ -245,11 +245,9 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("{:?}",self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
-          println!("IN HERE: {:?}", parameters);
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
