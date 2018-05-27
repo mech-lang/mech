@@ -155,16 +155,12 @@ impl Table {
       }
       self.columns = columns;
     }
-
     if rows > self.rows {
-      // The new row is larger than the underlying row structure
-      if rows > self.data[0].len() {
-        for column in &mut self.data {
-          column.resize(rows, Value::Empty);
-        }
+      for column in &mut self.data {
+        column.resize(rows, Value::Empty);
       }
       self.rows = rows;
-    }    
+    }        
   }
   
   pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
