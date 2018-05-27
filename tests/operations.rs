@@ -30,12 +30,14 @@ fn make_db() -> Database {
   let mut block = Block::new();
   block.add_constraint(Constraint::Scan {table: math, column: 1, input: 1});
   block.add_constraint(Constraint::Scan {table: math, column: 2, input: 2});
-  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![2, 3], output: 1});
-  block.add_constraint(Constraint::Identity {source: 1, sink:2});
-  block.add_constraint(Constraint::Identity {source: 2, sink:3});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3});
   block.add_constraint(Constraint::Insert {output: 1, table: math, column: 3});
   let plan = vec![
-    Constraint::Function {operation: Function::Add, parameters: vec![2, 3], output: 1},
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 1},
     Constraint::Insert {output: 1, table: math, column: 3},
   ];
   block.plan = plan;
