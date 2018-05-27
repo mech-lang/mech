@@ -266,18 +266,7 @@ impl Block {
           }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
-          let lhs_register = &self.intermediate_registers[*lhs as usize - 1];
-          let rhs_register = &self.intermediate_registers[*rhs as usize - 1];
-          let lhs_data = store.get_column(lhs_register.table, lhs_register.column as usize);
-          let rhs_data = store.get_column(rhs_register.table, rhs_register.column as usize);
-          match (lhs_data, rhs_data) {
-            (Some(x), Some(y)) => {
-              let output_memory_ix = self.intermediate_registers[*intermediate as usize - 1].column;
-              let output_column = &mut self.memory.get_column_mut(output_memory_ix as usize).unwrap();
-              operations::compare(comparator, x, y, output_column);
-            },
-            _ => (),
-          }
+          operations::compare(comparator, *lhs as usize, *rhs as usize, *intermediate as usize, &mut self.memory);
         },
         Constraint::Identity{source, sink} => {
           let register = &self.intermediate_registers[*sink as usize - 1];

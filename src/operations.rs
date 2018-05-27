@@ -80,12 +80,10 @@ pub enum Comparator {
   NotEqual
 }
 
-pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>, register: &mut Vec<Value>) {
-  for i in 0 .. lhs.len() {
-    let x = &lhs[i];
-    let y = &rhs[i];
-    match (x, y) {
-      (Value::Number(lhs_val), Value::Number(rhs_val)) => {
+pub fn compare(comparator: &Comparator, lhs: usize, rhs: usize, output: usize, store: &mut Table) {
+  for i in 1 .. store.rows + 1 {
+    match (store.index(i, lhs), store.index(i, rhs)) {
+      (Some(&Value::Number(lhs_val)), Some(&Value::Number(rhs_val))) => {
         let truth = match comparator {
           Comparator::LessThan           => Value::Bool(lhs_val < rhs_val),
           Comparator::GreaterThan        => Value::Bool(lhs_val > rhs_val),
@@ -94,11 +92,7 @@ pub fn compare(comparator: &Comparator, lhs: &Vec<Value>, rhs: &Vec<Value>, regi
           Comparator::Equal              => Value::Bool(lhs_val == rhs_val),
           Comparator::NotEqual           => Value::Bool(lhs_val != rhs_val),
         };
-        if register.len() <= i {
-          register.push(truth);
-        } else {
-          register[i] = truth;
-        }
+        store.set_cell(i, output, truth);
       }, 
       _ => (),
     }
