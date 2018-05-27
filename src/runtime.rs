@@ -257,6 +257,7 @@ impl Block {
             Function::Add => operations::math_add,
             Function::Subtract => operations::math_subtract,
             Function::Multiply => operations::math_multiply,
+            Function::Divide => operations::math_divide,
           };
           // Execute the function. Results are placed on the intermediate registers
           op_fun(parameters, &vec![*output], &mut self.memory);
