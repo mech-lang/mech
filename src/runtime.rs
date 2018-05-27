@@ -245,6 +245,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("{:?}", self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -252,6 +253,7 @@ impl Block {
           let op_fun = match operation {
             Function::Add => operations::math_add,
             Function::Subtract => operations::math_subtract,
+            Function::Multiply => operations::math_multiply,
           };
           // Execute the function. Results are placed on the intermediate registers
           op_fun(parameters, &vec![*output], &mut self.memory);

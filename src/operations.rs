@@ -18,7 +18,7 @@ work on the supplied data.
 pub enum Function {
   Add,
   Subtract,
-  //Multiply,
+  Multiply,
   //Divide,
   //Power,
 }
@@ -48,6 +48,22 @@ pub fn math_subtract(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Tabl
       match (store.index(i, lhs), store.index(i, rhs)) {
         (Some(Value::Number(x)), Some(Value::Number(y))) => {
           store.set_cell(i, out, Value::from_i64(*x as i64 - *y as i64)); 
+        },
+        _ => (),
+      } 
+    }
+  }
+}
+
+pub fn math_multiply(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table) {
+  if parameters.len() == 2 && output.len() == 1 {
+    let lhs = parameters[0] as usize;
+    let rhs = parameters[1] as usize;
+    let out = output[0] as usize;
+    for i in 1 .. store.rows + 1 {     
+      match (store.index(i, lhs), store.index(i, rhs)) {
+        (Some(Value::Number(x)), Some(Value::Number(y))) => {
+          store.set_cell(i, out, Value::from_i64(*x as i64 * *y as i64)); 
         },
         _ => (),
       } 
