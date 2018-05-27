@@ -214,7 +214,6 @@ impl Block {
       },
       Constraint::Function{ref operation, ref parameters, output} => {
         self.intermediate_registers.push(Register::intermediate(output));
-        
         self.memory.add_column(new_column_ix);
       },
       Constraint::Filter{ref comparator, lhs, rhs, intermediate} => {
@@ -223,7 +222,7 @@ impl Block {
       }
       Constraint::Constant{value, input} => {
         self.intermediate_registers.push(Register::intermediate(input));
-        self.memory.add_column(new_column_ix);
+        self.memory.grow_to_fit(1, new_column_ix as usize);
         self.memory.set_cell(1, input as usize, Value::from_i64(value));
       }
       Constraint::Identity{source, sink} => {
@@ -232,6 +231,7 @@ impl Block {
       }
     }
     self.constraints.push(constraint);
+
   }
 
   pub fn is_ready(&self) -> bool {
@@ -245,6 +245,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("{:?}", self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -253,8 +254,7 @@ impl Block {
             Function::Add => operations::math_add,
             Function::Subtract => operations::math_subtract,
           };
-          // Execute the function. This is where the magic happens! Results are placed on the
-          // intermediate registers
+          // Execute the function. Results are placed on the intermediate registers
           op_fun(parameters, &vec![*output], &mut self.memory);
         },
         Constraint::Insert{output, table, column} => {
@@ -289,6 +289,11 @@ impl Block {
             None => (),
           }
         },
+        Constraint::Constant{value, input} => {
+          for i in 1 .. self.memory.rows + 1 {
+            self.memory.set_cell(i, *input as usize, Value::from_i64(*value));
+          }
+        }
         _ => (),
       } 
     }
