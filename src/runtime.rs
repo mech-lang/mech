@@ -245,7 +245,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("{:?}", self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
