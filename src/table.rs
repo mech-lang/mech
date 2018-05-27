@@ -151,7 +151,8 @@ impl Table {
     if columns > self.columns {
       // The new row is larger than the underlying column structure
       if columns > self.data.len() {
-        self.data.resize(columns, Vec::new());
+        let new_column = vec![Value::Empty; self.rows];
+        self.data.resize(columns, new_column);
       }
       self.columns = columns;
     }
@@ -160,7 +161,8 @@ impl Table {
         column.resize(rows, Value::Empty);
       }
       self.rows = rows;
-    }        
+    }    
+
   }
   
   pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
