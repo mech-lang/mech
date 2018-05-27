@@ -28,15 +28,20 @@ pub fn math_add(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table) {
     let lhs = parameters[0] as usize;
     let rhs = parameters[1] as usize;
     let out = output[0] as usize;
-    let elements: usize = store.get_column(lhs).unwrap().len();
-    for i in 1 .. elements + 1 {     
-      match (store.index(i, lhs), store.index(i, rhs)) {
-        (Some(Value::Number(x)), Some(Value::Number(y))) => {
-          store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
-        },
-        _ => (),
-      } 
+    let lhs_count: usize = store.get_column(lhs).unwrap().len();
+    let rhs_count: usize = store.get_column(rhs).unwrap().len();
+
+    if lhs_count == rhs_count {
+      for i in 1 .. lhs_count + 1 {     
+        match (store.index(i, lhs), store.index(i, rhs)) {
+          (Some(Value::Number(x)), Some(Value::Number(y))) => {
+            store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
+          },
+          _ => (),
+        } 
+      }
     }
+
   }
 }
 
