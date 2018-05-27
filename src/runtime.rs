@@ -229,6 +229,10 @@ impl Block {
         self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
         self.memory.add_column(new_column_ix);
       }
+      Constraint::Condition{truth, result, default, output} => {
+        self.intermediate_registers.push(Register::intermediate(output));
+        self.memory.add_column(new_column_ix);
+      }
     }
     self.constraints.push(constraint);
 
@@ -245,7 +249,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("{:?}", self.memory);
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -283,6 +286,21 @@ impl Block {
           for i in 1 .. self.memory.rows + 1 {
             self.memory.set_cell(i, *input as usize, Value::from_i64(*value));
           }
+        },
+        Constraint::Condition{truth, result, default, output} => {
+          for i in 1 .. self.memory.rows + 1 {
+            match self.memory.index(i, *truth as usize) {
+              Some(Value::Bool(true)) => {
+                let value = self.memory.index(i, *result as usize).unwrap().clone();
+                self.memory.set_cell(i, *output as usize, value);
+              },
+              Some(Value::Bool(false)) => {
+                let value = self.memory.index(i, *default as usize).unwrap().clone();
+                self.memory.set_cell(i, *output as usize, value);
+              },
+              _ => (),
+            };
+          }
         }
         _ => (),
       } 
@@ -319,6 +337,7 @@ impl fmt::Debug for Block {
       write!(f, "│  {:?}. {:?}\n", ix + 1, step).unwrap();
     }
     write!(f, "└────────────────────────────────────────┘\n").unwrap();
+    write!(f, "{:?}\n", self.memory).unwrap();
     Ok(())
   }
 }
@@ -347,6 +366,7 @@ pub enum Constraint {
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
   Constant {value: i64, input: u64},
   Identity {source: u64, sink: u64},
+  Condition {truth: u64, result: u64, default: u64, output: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -359,6 +379,7 @@ impl fmt::Debug for Constraint {
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:?}", value, input),
       Constraint::Identity{source, sink} => write!(f, "Identity({:?}) -> {:?}", source, sink),
+      Constraint::Condition{truth, result, default, output} => write!(f, "Condition({:?} ? {:?} | {:?}) -> {:?}", truth, result, default, output),
     }
   }
 }
