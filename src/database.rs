@@ -235,14 +235,14 @@ impl Database {
     for table in txn.tables.iter() {
       self.store.intern_change(table);
     }
-    // Handle the adds
-    for add in txn.adds.iter() {
-      self.store.intern_change(add);
-      //self.runtime.process_change(add);
-    }
     // Handle the removes
     for remove in txn.removes.iter() {
       self.store.intern_change(remove);
+    }
+    // Handle the adds
+    for add in txn.adds.iter() {
+      self.store.intern_change(add);
+      self.runtime.process_change(add);
     }
     self.runtime.run_network(&mut self.store);
     // Mark watched tables as changed
