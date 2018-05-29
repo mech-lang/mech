@@ -242,12 +242,11 @@ impl Database {
     // Handle the adds
     for add in txn.adds.iter() {
       self.store.intern_change(add);
-      self.runtime.process_change(add);
     }
     self.runtime.run_network(&mut self.store);
     // Mark watched tables as changed
-    for touched in self.store.tables.changed.drain() {
-      match self.watched_index.get_mut(&touched) {
+    for changed_tables in self.store.tables.changed.drain() {
+      match self.watched_index.get_mut(&changed_tables) {
         Some(q) => *q = true,
         _ => (),
       }

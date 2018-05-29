@@ -55,6 +55,7 @@ impl Runtime {
     }
   }
 
+  // Here we have to notify a block if it is listening on a particular table column
   pub fn process_change(&mut self, change: &Change) {
     match change {
       Change::Add{table, row, column, value} => {
@@ -65,6 +66,7 @@ impl Runtime {
               let block_id = address.block - 1;
               if block_id < self.blocks.len() {
                 let block = &mut self.blocks[block_id];
+                block.changed = true;
                 if register_ix < block.input_registers.len() {
                   let register = &mut block.input_registers[register_ix];
                   block.ready = set_bit(block.ready, register_ix);
@@ -80,8 +82,17 @@ impl Runtime {
   }
 
   pub fn run_network(&mut self, store: &mut Interner) {
+    // Set blocks that have changed as such
+    for ((table_id, column_id), listening_blocks) in &self.pipes_map {
+      if store.tables.contains_table(*table_id) {
+        for address in listening_blocks {
+          self.blocks[address.block - 1].changed = true;
+        }
+      }      
+    }
+    // Solved ready blocks
     for block in &mut self.blocks {
-      if block.is_ready() {
+      if block.is_ready(store) {
         block.solve(store);
       }
     }
@@ -177,6 +188,7 @@ impl fmt::Debug for Register {
 pub struct Block {
   pub id: usize,
   pub ready: u64,
+  pub changed: bool,
   pub plan: Vec<Constraint>,
   pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
@@ -192,6 +204,7 @@ impl Block {
     Block {
       id: 0,
       ready: 0,
+      changed: false,
       pipes: HashMap::new(),
       plan: Vec::new(),
       input_registers: Vec::with_capacity(32),
@@ -238,11 +251,11 @@ impl Block {
 
   }
 
-  pub fn is_ready(&self) -> bool {
+  pub fn is_ready(&self, store: &mut Interner) -> bool {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
     if input_registers_count > 0 {
-      self.ready == 2_u64.pow(input_registers_count as u32) - 1
+      self.ready == 2_u64.pow(input_registers_count as u32) - 1 && self.changed
     } else {
       false
     }
@@ -306,6 +319,7 @@ impl Block {
         _ => (),
       } 
     }
+    self.changed = false;
   }
 
 }
@@ -317,6 +331,7 @@ impl fmt::Debug for Block {
     write!(f, "│ Block #{:?}\n", self.id).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
+    write!(f, "│ Changed: {:?}\n", self.changed).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
       write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
