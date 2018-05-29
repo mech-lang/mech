@@ -78,13 +78,13 @@ impl Transaction {
     txn
   }
 
-  pub fn from_adds_removes(adds: Vec<Vec<u64>>, removes: Vec<Vec<u64>>) -> Transaction {
+  pub fn from_adds_removes(adds: Vec<(u64, u64, u64, u64)>, removes: Vec<(u64, u64, u64, u64)>) -> Transaction {
     let mut txn = Transaction::new();
-    for add in adds {
-      txn.adds.push(Change::Add{table: add[0], row: add[1], column: add[2], value: Value::from_u64(add[3])});
+    for (table, row,column, value) in adds {
+      txn.adds.push(Change::Add{table, row, column, value: Value::from_u64(value)});
     }
-    for remove in removes {
-      txn.removes.push(Change::Remove{table: remove[0], row: remove[1], column: remove[2], value: Value::from_u64(remove[3])});
+    for (table, row,column, value) in removes {
+      txn.adds.push(Change::Remove{table, row, column, value: Value::from_u64(value)});
     }
     txn    
   }
