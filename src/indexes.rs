@@ -118,6 +118,10 @@ impl TableIndex {
         }
     }
 
+    pub fn contains_table(&mut self, table: u64) -> bool {
+        self.map.contains_key(&table)
+    }
+
     pub fn remove(&mut self, table: &u64) {
         self.map.remove(table);
     }
