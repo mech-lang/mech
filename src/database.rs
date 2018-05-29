@@ -78,6 +78,17 @@ impl Transaction {
     txn
   }
 
+  pub fn from_adds_removes(adds: Vec<Vec<u64>>, removes: Vec<Vec<u64>>) -> Transaction {
+    let mut txn = Transaction::new();
+    for add in adds {
+      txn.adds.push(Change::Add{table: add[0], row: add[1], column: add[2], value: Value::from_u64(add[3])});
+    }
+    for remove in removes {
+      txn.removes.push(Change::Remove{table: remove[0], row: remove[1], column: remove[2], value: Value::from_u64(remove[3])});
+    }
+    txn    
+  }
+
   pub fn is_complete(&self) -> bool {
     self.complete == true
   }
