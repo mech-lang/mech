@@ -54,33 +54,7 @@ impl Runtime {
       self.register_block(block, store);
     }
   }
-
-  // Here we have to notify a block if it is listening on a particular table column
-  pub fn process_change(&mut self, change: &Change) {
-    match change {
-      Change::Add{table, row, column, value} => {
-        match self.pipes_map.get(&(*table, *column)) {
-          Some(addresses) => {
-            for address in addresses {
-              let register_ix = address.register - 1;
-              let block_id = address.block - 1;
-              if block_id < self.blocks.len() {
-                let block = &mut self.blocks[block_id];
-                block.changed = true;
-                if register_ix < block.input_registers.len() {
-                  let register = &mut block.input_registers[register_ix];
-                  block.ready = set_bit(block.ready, register_ix);
-                }
-              }
-            }
-          },
-          _ => (),
-        }
-      },
-      _ => (),
-    }
-  }
-
+  
   pub fn run_network(&mut self, store: &mut Interner) {
     // Set blocks that have changed as such
     for ((table_id, column_id), listening_blocks) in &self.pipes_map {
