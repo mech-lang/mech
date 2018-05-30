@@ -84,7 +84,7 @@ impl Runtime {
   pub fn run_network(&mut self, store: &mut Interner) {
     // Set blocks that have changed as such
     for ((table_id, column_id), listening_blocks) in &self.pipes_map {
-      if store.tables.contains_table(*table_id) {
+      if store.tables.changed.contains(table_id) {
         for address in listening_blocks {
           self.blocks[address.block - 1].changed = true;
         }
