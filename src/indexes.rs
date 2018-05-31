@@ -19,56 +19,56 @@ pub struct Hasher {
 impl Hasher {
 
     pub fn new() -> Hasher {
-        Hasher {
-            value: 0,
-        }
+      Hasher {
+        value: 0,
+      }
     }
 
     pub fn hash_str(string: &str) -> u64 {
-        let mut hasher = Hasher::new();
-        hasher.write(string);
-        hasher.finish()
+      let mut hasher = Hasher::new();
+      hasher.write(string);
+      hasher.finish()
     }
 
     pub fn hash_string(string: String) -> u64 {
-        let mut hasher = Hasher::new();
-        hasher.write(&string.as_str());
-        hasher.finish()
+      let mut hasher = Hasher::new();
+      hasher.write(&string.as_str());
+      hasher.finish()
     }
 
     pub fn write(&mut self, string: &str) {
-        let mult = [1, 256, 65536, 16777216, 1768841549];
-        let chunks = CharChunks::new(string, 4);
-        for chunk in chunks {
-            let byte_string = chunk.as_bytes();
-            let mut ix = 0;
-            for byte in byte_string {
-                self.value = self.value + byte.clone() as u64 * mult[ix];
-                ix = ix + 1;
-            } 
-       }
+      let mult = [1, 256, 65536, 16777216, 1768841549];
+      let chunks = CharChunks::new(string, 4);
+      for chunk in chunks {
+        let byte_string = chunk.as_bytes();
+        let mut ix = 0;
+        for byte in byte_string {
+          self.value = self.value + byte.clone() as u64 * mult[ix];
+          ix = ix + 1;
+        } 
+      }
     }
 
     pub fn write_value(&mut self, value: &Value) {
-        match value {
-            &Value::String(ref string) => self.write(&string),
-            &Value::Number(ref number) => self.write(&format!("{:?}", number)), 
-            _ => (),
-        }
+      match value {
+        &Value::String(ref string) => self.write(&string),
+        &Value::Number(ref number) => self.write(&format!("{:?}", number)), 
+        _ => (),
+      }
     }
 
     pub fn finish(&mut self) -> u64 {
-        let v = self.value;
-        self.value = 0;
-        v
+      let v = self.value;
+      self.value = 0;
+      v
     }
 
     pub fn read(&self) -> u64 {
-        self.value
+      self.value
     }
 
     pub fn reset(&mut self) {
-        self.value = 0;
+      self.value = 0;
     }
 } 
 
