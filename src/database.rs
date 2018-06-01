@@ -245,6 +245,7 @@ impl Database {
     }
     
     self.runtime.run_network(&mut self.store);
+    
     // Mark watched tables as changed
     for (table_id, _) in self.store.tables.changed.drain() {
       match self.watched_index.get_mut(&(table_id as u64)) {
@@ -252,6 +253,8 @@ impl Database {
         _ => (),
       }
     }
+
+
     self.epoch = self.store.rollover as u64;
   }
 
