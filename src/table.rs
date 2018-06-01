@@ -43,6 +43,13 @@ impl Value {
     }
   }
 
+  pub fn as_i64(&self) -> i64 {
+    match self {
+      Value::Number(n) => *n,
+      _ => 0,
+    }
+  }
+
 
 }
 
