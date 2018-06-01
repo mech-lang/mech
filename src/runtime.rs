@@ -93,7 +93,12 @@ impl Runtime {
         match self.pipes_map.get(&table_address) {
           Some(register_addresses) => {
             for register_address in register_addresses {
-
+              let block_ix = register_address.block - 1;
+              let mut block = &mut self.blocks[block_ix];
+              block.ready = set_bit(block.ready, register_address.register - 1);
+              if block.is_ready() {
+                self.ready_blocks.insert(register_address.block);
+              }
             }
           },
           _ => (),
