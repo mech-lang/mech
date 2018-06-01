@@ -49,7 +49,11 @@ impl Runtime {
 
       // Put associated values on the registers if we have them in the DB already
       block.input_registers[register_id].set(&(*table, *column));
-      block.ready = set_bit(block.ready, register_id);      
+      match store.get_column(*table, *column as usize) {
+        Some(column) => block.ready = set_bit(block.ready, register_id),
+        None => (),
+      }
+      
     }
     self.blocks.push(block.clone());
     self.run_network(store);
@@ -68,7 +72,12 @@ impl Runtime {
       match self.pipes_map.get(&table_address) {
         Some(register_addresses) => {
           for register_address in register_addresses {
-            self.ready_blocks.insert(register_address.block);
+            let block_ix = register_address.block - 1;
+            let mut block = &mut self.blocks[block_ix];
+            block.ready = set_bit(block.ready, register_address.register - 1);
+            if block.is_ready() {
+              self.ready_blocks.insert(register_address.block);
+            }
           }
         },
         _ => (),
@@ -84,9 +93,7 @@ impl Runtime {
         match self.pipes_map.get(&table_address) {
           Some(register_addresses) => {
             for register_address in register_addresses {
-              if self.blocks[register_address.block - 1].is_ready() {
-                self.ready_blocks.insert(register_address.block);
-              }
+
             }
           },
           _ => (),
