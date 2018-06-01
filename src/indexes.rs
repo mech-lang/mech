@@ -51,7 +51,7 @@ impl Hasher {
 
   pub fn write_value(&mut self, value: &Value) {
     match value {
-      &Value::String(ref string) => self.write(&string),
+      &Value::String(ref string) => self.write(&format!("{:?}", string)),
       &Value::Number(ref number) => self.write(&format!("{:?}", number)), 
       _ => (),
     }
