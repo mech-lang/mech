@@ -333,7 +333,7 @@ impl fmt::Debug for Block {
     write!(f, "│ Block #{:?}\n", self.id).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
-    write!(f, "│ Changed: {:?}\n", self.changed).unwrap();
+    write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
       write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
