@@ -36,17 +36,17 @@ impl Value {
     Value::Number(num)
   }
 
-  pub fn as_u64(&self) -> u64 {
+  pub fn as_u64(&self) -> Option<u64> {
     match self {
-      Value::Number(n) => *n as u64,
-      _ => 0,
+      Value::Number(n) => Some(*n as u64),
+      _ => None,
     }
   }
 
-  pub fn as_i64(&self) -> i64 {
+  pub fn as_i64(&self) -> Option<i64> {
     match self {
-      Value::Number(n) => *n,
-      _ => 0,
+      Value::Number(n) => Some(*n),
+      _ => None,
     }
   }
 
