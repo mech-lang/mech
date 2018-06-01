@@ -77,7 +77,7 @@ impl Hasher {
 pub struct TableIndex {
   pub name_map: HashMap<u64, u64>,
   pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
-  pub changed: HashSet<u64>,
+  pub changed: HashSet<(usize, usize)>,
 }
 
 impl TableIndex {
@@ -110,7 +110,7 @@ impl TableIndex {
 
   pub fn register(&mut self, table: Table) {
     if !self.map.contains_key(&table.id) {
-        self.map.insert(table.id, (table, Vec::with_capacity(100)));
+      self.map.insert(table.id, (table, Vec::with_capacity(100)));
     }
   }
 
@@ -127,10 +127,10 @@ impl TableIndex {
 impl fmt::Debug for TableIndex {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      for (table_id, _) in self.map.iter() {
-          write!(f, "{:#x}\n", table_id).unwrap();
-      }
-      Ok(())
+    for (table_id, _) in self.map.iter() {
+      write!(f, "{:#x}\n", table_id).unwrap();
+    }
+    Ok(())
   }
 }
 
