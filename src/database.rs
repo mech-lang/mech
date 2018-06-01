@@ -133,7 +133,7 @@ impl Interner {
     }
   }
 
-  pub fn intern_change(&mut self, change: &Change) {
+  pub fn intern_change(&mut self, change: &Change) {  
     match change {
       Change::Add{table, row, column, value} => {
         match self.tables.get_mut(*table) {
@@ -143,7 +143,7 @@ impl Interner {
           }
           None => (),
         };
-        self.tables.changed.insert(*table);
+        self.tables.changed.insert((*table as usize, *column as usize));
       },
       // TODO Implement removes
       Change::Remove{..} => {
@@ -243,10 +243,11 @@ impl Database {
     for add in txn.adds.iter() {
       self.store.intern_change(add);
     }
+    
     self.runtime.run_network(&mut self.store);
     // Mark watched tables as changed
-    for changed_tables in self.store.tables.changed.drain() {
-      match self.watched_index.get_mut(&changed_tables) {
+    for (table_id, _) in self.store.tables.changed.drain() {
+      match self.watched_index.get_mut(&(table_id as u64)) {
         Some(q) => *q = true,
         _ => (),
       }

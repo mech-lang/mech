@@ -13,6 +13,7 @@ use table::{Table, Value};
 use alloc::{fmt, Vec};
 use database::{Interner, Change};
 use hashmap_core::map::HashMap;
+use hashmap_core::set::HashSet;
 use indexes::Hasher;
 use operations;
 use operations::Function;
@@ -22,7 +23,8 @@ use operations::Function;
 #[derive(Clone)]
 pub struct Runtime {
   pub blocks: Vec<Block>,
-  pub pipes_map: HashMap<(u64, u64), Vec<Address>>,
+  pub pipes_map: HashMap<(usize, usize), Vec<Address>>,
+  pub ready_blocks: HashSet<usize>,
 }
 
 impl Runtime {
@@ -30,6 +32,7 @@ impl Runtime {
   pub fn new() -> Runtime {
     Runtime {
       blocks: Vec::new(),
+      ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
     }
   }
@@ -41,8 +44,9 @@ impl Runtime {
     for ((table, column), register) in &block.pipes {
       let register_id = *register as usize - 1;
       let new_address = Address{block: block.id, register: *register as usize};
-      let mut listeners = self.pipes_map.entry((*table, *column)).or_insert(vec![]);
+      let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
       listeners.push(new_address);
+
       // Put associated values on the registers if we have them in the DB already
       block.input_registers[register_id].set(&(*table, *column));
       block.ready = set_bit(block.ready, register_id);      
@@ -57,20 +61,39 @@ impl Runtime {
     }
   }
 
+  // We've just interned some changes, and now we react to them by running the block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
-    // Set blocks that have changed as such
-    for ((table_id, column_id), listening_blocks) in &self.pipes_map {
-      if store.tables.changed.contains(table_id) {
-        for address in listening_blocks {
-          self.blocks[address.block - 1].changed = true;
-        }
-      }      
-    }
-    // Solved ready blocks
-    for block in &mut self.blocks {
-      if block.is_ready() {
-        block.solve(store);
+    // First, we queue up the blocks that have been 
+    for table_address in store.tables.changed.drain() {
+      match self.pipes_map.get(&table_address) {
+        Some(register_addresses) => {
+          for register_address in register_addresses {
+            self.ready_blocks.insert(register_address.block);
+          }
+        },
+        _ => (),
       }
+    }
+    // Now, we run the compute graph until it reaches a steady state.
+    while !self.ready_blocks.is_empty() {
+      for block_id in self.ready_blocks.drain() {
+        self.blocks[block_id - 1].solve(store);
+        //self.queue_ready_blocks(store);
+      }
+      for table_address in store.tables.changed.drain() {
+        match self.pipes_map.get(&table_address) {
+          Some(register_addresses) => {
+            for register_address in register_addresses {
+              self.ready_blocks.insert(register_address.block);
+            }
+          },
+          _ => (),
+        }
+      }
+    }
+    // Reset blocks
+    for mut block in &mut self.blocks {
+      block.updated = false;
     }
   }
 
@@ -164,7 +187,7 @@ impl fmt::Debug for Register {
 pub struct Block {
   pub id: usize,
   pub ready: u64,
-  pub changed: bool,
+  pub updated: bool,
   pub plan: Vec<Constraint>,
   pub pipes: HashMap<(u64, u64), u64>,
   pub input_registers: Vec<Register>,
@@ -180,7 +203,7 @@ impl Block {
     Block {
       id: 0,
       ready: 0,
-      changed: false,
+      updated: false,
       pipes: HashMap::new(),
       plan: Vec::new(),
       input_registers: Vec::with_capacity(32),
@@ -231,13 +254,16 @@ impl Block {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
     if input_registers_count > 0 {
-      self.ready == 2_u64.pow(input_registers_count as u32) - 1 && self.changed
+      self.ready == 2_u64.pow(input_registers_count as u32) - 1 && !self.updated
     } else {
       false
     }
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    if !self.is_ready() {
+      return
+    }
     for step in &self.plan {
       match step {
         Constraint::Function{operation, parameters, output} => {
@@ -295,7 +321,7 @@ impl Block {
         _ => (),
       } 
     }
-    self.changed = false;
+    self.updated = true;
   }
 
 }
