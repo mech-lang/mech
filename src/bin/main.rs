@@ -32,7 +32,7 @@ fn make_balls(n: u64) -> Vec<Change> {
 fn position_update() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
-  let system_timer_change = Hasher::hash_str("system/timer/change");
+  let system_timer_change = Hasher::hash_str("system/timer");
   block.add_constraint(Constraint::Scan {table: system_timer_change, column: 4, input: 1});
   block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 2});
   block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 3});
@@ -118,11 +118,9 @@ fn boundary_check() -> Block {
 }
 
 fn step_db(db: &mut Database, n: u64) {
-  let system_timer_change = Hasher::hash_str("system/timer/change");
+  let system_timer_change = Hasher::hash_str("system/timer");
   let timer_id = 1;      
-  let txn = Transaction::from_changeset(vec![
-    Change::Add{table: system_timer_change, row: 1, column: 4, value: Value::from_u64(n)},
-  ]);     
+  let txn = Transaction::from_change(Change::Add{table: system_timer_change, row: 1, column: 4, value: Value::from_u64(n)});     
   db.process_transaction(&txn);
   let mut q = 0;
   for i in 1 .. 4000000 {
@@ -156,22 +154,98 @@ fn block2() -> Block {
   block
 }
 
+fn reset_balls() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  let click = Hasher::hash_str("html/event/click");
+  block.add_constraint(Constraint::Scan {table: click, column: 1, input: 1});
+  block.add_constraint(Constraint::Scan {table: click, column: 2, input: 2});
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 3});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 4});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Identity {source: 3, sink: 3});
+  block.add_constraint(Constraint::Identity {source: 4, sink: 4});
+  block.add_constraint(Constraint::Constant {value: 0, input: 5});
+  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![3, 5], output: 6});
+  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 7});
+  block.add_constraint(Constraint::Insert {output: 6, table: ball, column: 1});
+  block.add_constraint(Constraint::Insert {output: 7, table: ball, column: 2});
+  let plan = vec![
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::Identity {source: 3, sink: 3},
+    Constraint::Identity {source: 4, sink: 4},
+    Constraint::Constant {value: 0, input: 5},
+    Constraint::Function {operation: Function::Multiply, parameters: vec![3, 5], output: 6},
+    Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 7},
+    Constraint::Insert {output: 6, table: ball, column: 1 },
+    Constraint::Insert {output: 7, table: ball, column: 2 },
+  ];
+  block.plan = plan;
+  block
+}
 
+fn position_update_1d() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  let system_timer_change = Hasher::hash_str("system/timer");
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 2});
+  block.add_constraint(Constraint::ChangeScan {table: system_timer_change, column: 4, input: 3});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3}); 
+  block.add_constraint(Constraint::Insert {output: 3, table: ball, column: 1});
+  let plan = vec![
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::ChangeScan {table: system_timer_change, column: 4, input: 3},
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3},
+    Constraint::Insert {output: 3, table: ball, column: 1},
+  ];
+  block.plan = plan;
+  block
+}
+
+fn position_update_1d2() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  let system_timer_change = Hasher::hash_str("system/timer");
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 1});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 2});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3}); 
+  block.add_constraint(Constraint::Insert {output: 3, table: ball, column: 3});
+  let plan = vec![
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3},
+    Constraint::Insert {output: 3, table: ball, column: 3},
+  ];
+  block.plan = plan;
+  block
+}
 
 fn make_db(n: u64) -> Database {
   let mut db = Database::new(10000000, 2);
-  let system_timer_change = Hasher::hash_str("system/timer/change");
+  let system_timer_change = Hasher::hash_str("system/timer");
   let ball = Hasher::hash_str("ball");
   let ws = Hasher::hash_str("client/websocket");
+  let click = Hasher::hash_str("html/event/click");
   db.runtime.register_blocks(vec![
-    position_update(), 
-    boundary_check()
+    position_update_1d(), 
+    position_update_1d2(), 
+    //reset_balls(),
+    //boundary_check()
   ], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
     //Change::NewTable{tag: 1, rows: 1, columns: 1}, 
     //Change::NewTable{tag: 2, rows: 1, columns: 1}, 
     //Change::NewTable{tag: 3, rows: 1, columns: 1}, 
+    Change::NewTable{tag: click, rows: 1, columns: 2},
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
     Change::NewTable{tag: ball, rows: n as usize, columns: 6}, 
     //Change::NewTable{tag: ws, rows: n as usize, columns: 2}, 
@@ -188,7 +262,7 @@ fn main() {
   let mut i: u64 = 0;
   loop {
     println!("{:?}", db);
-    println!("{:?}", db.runtime);
+    //println!("{:?}", db.runtime);
     //println!("{:?}", i);
     step_db(&mut db, i);
     
