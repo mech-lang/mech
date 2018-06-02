@@ -41,19 +41,20 @@ impl Runtime {
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
     // @TODO better block ID
     block.id = self.blocks.len() + 1;
-    for ((table, column), register) in &block.pipes {
-      let register_id = *register as usize - 1;
-      let new_address = Address{block: block.id, register: *register as usize};
-      let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
-      listeners.push(new_address);
+    for ((table, column), registers) in &block.pipes {
+      for register in registers {
+        let register_id = *register as usize - 1;
+        let new_address = Address{block: block.id, register: *register as usize};
+        let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
+        listeners.push(new_address);
 
-      // Put associated values on the registers if we have them in the DB already
-      block.input_registers[register_id].set(&(*table, *column));
-      match store.get_column(*table, *column as usize) {
-        Some(column) => block.ready = set_bit(block.ready, register_id),
-        None => (),
-      }
-      
+        // Put associated values on the registers if we have them in the DB already
+        block.input_registers[register_id].set(&(*table, *column));
+        match store.get_column(*table, *column as usize) {
+          Some(column) => block.ready = set_bit(block.ready, register_id),
+          None => (),
+        }
+      }      
     }
     self.blocks.push(block.clone());
     self.run_network(store);
@@ -67,6 +68,7 @@ impl Runtime {
 
   // We've just interned some changes, and now we react to them by running the block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
+    println!("{:?}", self.pipes_map);
     // First, we queue up the blocks that have been 
     for table_address in store.tables.changed.iter() {
       match self.pipes_map.get(&table_address) {
@@ -83,11 +85,16 @@ impl Runtime {
         _ => (),
       }
     }
+    println!("FOO");
     // Now, we run the compute graph until it reaches a steady state.
     while !self.ready_blocks.is_empty() {
+      println!("Looping");
+      println!("{:?}", self.ready_blocks);
       for block_id in self.ready_blocks.drain() {
         self.blocks[block_id - 1].solve(store);
       }
+      println!("{:?}", store.tables.changed.iter());
+      /*
       // Queue up the next blocks
       for table_address in store.tables.changed.iter() {
         match self.pipes_map.get(&table_address) {
@@ -103,8 +110,9 @@ impl Runtime {
           },
           _ => (),
         }
-      }
+      }*/
     }
+    
     // Reset blocks updated status
     for mut block in &mut self.blocks {
       block.updated = false;
@@ -203,7 +211,7 @@ pub struct Block {
   pub ready: u64,
   pub updated: bool,
   pub plan: Vec<Constraint>,
-  pub pipes: HashMap<(u64, u64), u64>,
+  pub pipes: HashMap<(u64, u64), Vec<u64>>,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -233,7 +241,13 @@ impl Block {
     match constraint {
       Constraint::Scan{table, column, input} => {
         self.input_registers.push(Register::input(table, column));
-        self.pipes.insert((table, column), input);
+        let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
+        listeners.push(input);
+      },
+      Constraint::ChangeScan{table, column, input} => {
+        self.input_registers.push(Register::input(table, column));
+        let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
+        listeners.push(input);
       },
       Constraint::Insert{output, table, column} => {
         self.output_registers.push(Register::new());
@@ -268,7 +282,7 @@ impl Block {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
     if input_registers_count > 0 {
-      self.ready == 2_u64.pow(input_registers_count as u32) - 1 && !self.updated
+      self.ready == 2_u64.pow(input_registers_count as u32) - 1
     } else {
       false
     }
@@ -280,6 +294,9 @@ impl Block {
     }
     for step in &self.plan {
       match step {
+        Constraint::ChangeScan{table, column, input} => {
+          self.ready = clear_bit(self.ready, *input as usize - 1);
+        }
         Constraint::Function{operation, parameters, output} => {
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
@@ -393,6 +410,7 @@ pub struct Pipe {
 pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan {table: u64, column: u64, input: u64},
+  ChangeScan {table: u64, column: u64, input: u64},
   Insert {output: u64, table: u64, column: u64},
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, intermediate: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
@@ -406,6 +424,7 @@ impl fmt::Debug for Constraint {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x})) -> I{:?}", table, column, input),
+      Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x})) -> I{:?}", table, column, input),
       Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
       Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
