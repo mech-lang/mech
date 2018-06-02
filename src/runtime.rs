@@ -68,30 +68,15 @@ impl Runtime {
 
   // We've just interned some changes, and now we react to them by running the block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
-    // First, we queue up the blocks that have been 
-    for table_address in store.tables.changed.iter() {
-      match self.pipes_map.get(&table_address) {
-        Some(register_addresses) => {
-          for register_address in register_addresses {
-            let block_ix = register_address.block - 1;
-            let mut block = &mut self.blocks[block_ix];
-            block.ready = set_bit(block.ready, register_address.register - 1);
-            if block.is_ready() {
-              self.ready_blocks.insert(register_address.block);
-            }
-          }
-        },
-        _ => (),
-      }
-    }
-    // Now, we run the compute graph until it reaches a steady state.
-    while !self.ready_blocks.is_empty() {
+
+    // Run the compute graph until it reaches a steady state.
+    while {
       for block_id in self.ready_blocks.drain() {
-        self.blocks[block_id - 1].solve(store);
+        let mut block = &mut self.blocks[block_id - 1];
+        block.solve(store);
       }
-      /*
       // Queue up the next blocks
-      for table_address in store.tables.changed.iter() {
+      for table_address in store.tables.changed_this_round.drain() {
         match self.pipes_map.get(&table_address) {
           Some(register_addresses) => {
             for register_address in register_addresses {
@@ -105,9 +90,9 @@ impl Runtime {
           },
           _ => (),
         }
-      }*/
-    }
-    
+      }
+      !self.ready_blocks.is_empty()
+    } {}
     // Reset blocks updated status
     for mut block in &mut self.blocks {
       block.updated = false;
