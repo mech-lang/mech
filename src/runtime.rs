@@ -68,7 +68,6 @@ impl Runtime {
 
   // We've just interned some changes, and now we react to them by running the block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
-    println!("{:?}", self.pipes_map);
     // First, we queue up the blocks that have been 
     for table_address in store.tables.changed.iter() {
       match self.pipes_map.get(&table_address) {
@@ -85,15 +84,11 @@ impl Runtime {
         _ => (),
       }
     }
-    println!("FOO");
     // Now, we run the compute graph until it reaches a steady state.
     while !self.ready_blocks.is_empty() {
-      println!("Looping");
-      println!("{:?}", self.ready_blocks);
       for block_id in self.ready_blocks.drain() {
         self.blocks[block_id - 1].solve(store);
       }
-      println!("{:?}", store.tables.changed.iter());
       /*
       // Queue up the next blocks
       for table_address in store.tables.changed.iter() {
