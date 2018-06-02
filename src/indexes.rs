@@ -78,6 +78,7 @@ pub struct TableIndex {
   pub name_map: HashMap<u64, u64>,
   pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
   pub changed: HashSet<(usize, usize)>,
+  pub changed_this_round: HashSet<(usize, usize)>,
 }
 
 impl TableIndex {
@@ -87,6 +88,7 @@ impl TableIndex {
       name_map: HashMap::with_capacity(capacity),
       map: HashMap::with_capacity(capacity),
       changed: HashSet::with_capacity(capacity),
+      changed_this_round: HashSet::with_capacity(capacity),
     }
   }
 
