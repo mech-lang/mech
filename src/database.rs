@@ -119,6 +119,7 @@ pub struct Interner {
   changes_count: usize,
   pub change_pointer: usize,
   rollover: usize,
+  pub last_round: usize,
 }
 
 impl Interner {
@@ -130,6 +131,7 @@ impl Interner {
       changes_count: 0,
       change_pointer: 0,
       rollover: 0,
+      last_round: 0,
     }
   }
 
@@ -144,6 +146,7 @@ impl Interner {
           None => (),
         };
         self.tables.changed.insert((*table as usize, *column as usize));
+        self.tables.changed_this_round.insert((*table as usize, *column as usize));
       },
       // TODO Implement removes
       Change::Remove{..} => {
@@ -202,9 +205,9 @@ impl Interner {
 // ## Database
 
 pub struct Database {
-  pub epoch: u64,
+  pub epoch: usize,
+  pub changes: usize,
   pub round: u64,
-  pub processed: usize,
   pub store: Interner,
   pub runtime: Runtime,
   pub watched_index: HashMap<u64, bool>,
@@ -216,8 +219,8 @@ impl Database {
   pub fn new(change_capacity: usize, table_capacity: usize) -> Database {
     Database {
       epoch: 0,
+      changes: 0,
       round: 0,
-      processed: 0,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
       watched_index: HashMap::new(),
@@ -254,8 +257,8 @@ impl Database {
       }
     }
 
-
-    self.epoch = self.store.rollover as u64;
+    self.changes = self.store.changes_count;
+    self.epoch = self.store.rollover;
   }
 
   pub fn capacity(&self) -> f64 {
@@ -270,7 +273,7 @@ impl fmt::Debug for Database {
     write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
     write!(f, "├────────────────────┤\n").unwrap();
     write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
-    write!(f, "│ Changes: {:?}\n", self.store.len()).unwrap();
+    write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
     write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
