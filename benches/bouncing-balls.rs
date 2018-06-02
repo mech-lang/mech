@@ -35,7 +35,7 @@ fn position_update() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
   let system_timer_change = Hasher::hash_str("system/timer/change");
-  block.add_constraint(Constraint::Scan {table: system_timer_change, column: 4, input: 1});
+  block.add_constraint(Constraint::ChangeScan {table: system_timer_change, column: 4, input: 1});
   block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 2});
   block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 3});
   block.add_constraint(Constraint::Scan {table: ball, column: 3, input: 4});
@@ -52,6 +52,7 @@ fn position_update() -> Block {
   block.add_constraint(Constraint::Insert {output: 6, table: ball, column: 2});
   block.add_constraint(Constraint::Insert {output: 7, table: ball, column: 4});
   let plan = vec![
+    Constraint::ChangeScan {table: system_timer_change, column: 4, input: 1},
     Constraint::Identity {source: 2, sink: 1},
     Constraint::Identity {source: 4, sink: 2},
     Constraint::Identity {source: 3, sink: 3},
