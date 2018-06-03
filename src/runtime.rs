@@ -70,6 +70,8 @@ impl Runtime {
   pub fn run_network(&mut self, store: &mut Interner) {
 
     // Run the compute graph until it reaches a steady state.
+    let max_iterations = 100000;
+    let mut n = 0;
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks[block_id - 1];
@@ -90,6 +92,12 @@ impl Runtime {
           },
           _ => (),
         }
+      }
+      //println!("{:?}", self);
+      // Halt iterating if we've exceeded the maximum number of allowed iterations.
+      n += 1;
+      if n > max_iterations {
+        self.ready_blocks.clear();        
       }
       !self.ready_blocks.is_empty()
     } {}
