@@ -1,0 +1,13 @@
+# Bouncing Balls
+
+block
+  [#ball x y vx vy]
+  x := x + vx
+  y := y + vy
+  vy := vy + 9.8 m/s
+end
+
+block
+  [#ball y > 5000, vy]
+  vy := -vy
+end
