@@ -33,7 +33,7 @@ pub fn math_add(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table) {
         (Some(Value::Number(x)), Some(Value::Number(y))) => {
           store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
         },
-        _ => (),
+        _ => {store.set_cell(i, out, Value::Empty);},
       } 
     }
   }
@@ -49,7 +49,7 @@ pub fn math_subtract(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Tabl
         (Some(Value::Number(x)), Some(Value::Number(y))) => {
           store.set_cell(i, out, Value::from_i64(*x as i64 - *y as i64)); 
         },
-        _ => (),
+        _ => {store.set_cell(i, out, Value::Empty);},
       } 
     }
   }
@@ -65,7 +65,7 @@ pub fn math_multiply(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Tabl
         (Some(Value::Number(x)), Some(Value::Number(y))) => {
           store.set_cell(i, out, Value::from_i64(*x as i64 * *y as i64)); 
         },
-        _ => (),
+        _ => {store.set_cell(i, out, Value::Empty);},
       } 
     }
   }
@@ -81,7 +81,7 @@ pub fn math_divide(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table)
         (Some(Value::Number(x)), Some(Value::Number(y))) => {
           store.set_cell(i, out, Value::from_i64(*x as i64 / *y as i64)); 
         },
-        _ => (),
+        _ => {store.set_cell(i, out, Value::Empty);},
       } 
     }
   }
