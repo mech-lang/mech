@@ -260,6 +260,10 @@ impl Block {
         self.intermediate_registers.push(Register::intermediate(output));
         self.memory.add_column(new_column_ix);
       }
+      Constraint::IndexMask{source, truth, intermediate} => {
+        self.intermediate_registers.push(Register::intermediate(intermediate));
+        self.memory.add_column(new_column_ix);
+      }
     }
     self.constraints.push(constraint);
 
@@ -299,9 +303,14 @@ impl Block {
           let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
           let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
           for (row_ix, cell) in column_data.iter().enumerate() {
-            store.intern_change(
-              &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
-            );
+            match cell {
+              Value::Empty => (),
+              _ => {
+                store.intern_change(
+                  &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
+                );
+              }
+            }
           }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
@@ -331,6 +340,21 @@ impl Block {
               Some(Value::Bool(false)) => {
                 let value = self.memory.index(i, *default as usize).unwrap().clone();
                 self.memory.set_cell(i, *output as usize, value);
+              },
+              _ => (),
+            };
+          }
+        }
+        Constraint::IndexMask{source, truth, intermediate} => {
+          for i in 1 .. self.memory.rows + 1 {
+            match self.memory.index(i, *truth as usize) {
+              Some(Value::Bool(true)) => {
+                let value = self.memory.index(i, *source as usize).unwrap().clone();
+                self.memory.set_cell(i, *intermediate as usize, value);
+              },
+              Some(Value::Bool(false)) => {
+                let value = self.memory.index(i, *source as usize).unwrap().clone();
+                self.memory.set_cell(i, *intermediate as usize, Value::Empty);
               },
               _ => (),
             };
@@ -404,6 +428,7 @@ pub enum Constraint {
   Constant {value: i64, input: u64},
   Identity {source: u64, sink: u64},
   Condition {truth: u64, result: u64, default: u64, output: u64},
+  IndexMask {source: u64, truth: u64, intermediate: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -414,10 +439,11 @@ impl fmt::Debug for Constraint {
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x})) -> I{:?}", table, column, input),
       Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
       Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
-      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-      Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:?}", value, input),
-      Constraint::Identity{source, sink} => write!(f, "Identity({:?}) -> {:?}", source, sink),
+      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:#x}", operation, parameters, output),
+      Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:#x}", value, input),
+      Constraint::Identity{source, sink} => write!(f, "Identity({:#x}) -> {:#x}", source, sink),
       Constraint::Condition{truth, result, default, output} => write!(f, "Condition({:?} ? {:?} | {:?}) -> {:?}", truth, result, default, output),
+      Constraint::IndexMask{source, truth, intermediate} => write!(f, "IndexMask({:#x}, {:#x} -> {:#x})", source, truth, intermediate),
     }
   }
 }
