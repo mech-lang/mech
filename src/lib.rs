@@ -25,3 +25,4 @@ pub mod runtime;
 pub mod table;
 pub mod indexes;
 pub mod operations;
+pub mod syntax;
