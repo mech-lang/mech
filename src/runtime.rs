@@ -388,7 +388,6 @@ impl Block {
               store.intern_change(
                 &Change::Add{table: *table, row: i, column: *column, value: column_data[0].clone()}
               );
-              println!("{:?}",column_data);
             } else if output_length == target_rows {
               // TODO
             }
