@@ -198,6 +198,7 @@ pub struct Block {
   pub ready: u64,
   pub updated: bool,
   pub plan: Vec<Constraint>,
+  pub column_lengths: Vec<u64>,
   pub pipes: HashMap<(u64, u64), Vec<u64>>,
   pub input_registers: Vec<Register>,
   pub intermediate_registers: Vec<Register>,
@@ -215,6 +216,7 @@ impl Block {
       updated: false,
       pipes: HashMap::new(),
       plan: Vec::new(),
+      column_lengths: Vec::new(),
       input_registers: Vec::with_capacity(32),
       intermediate_registers: Vec::with_capacity(32),
       output_registers: Vec::with_capacity(32),
@@ -242,27 +244,33 @@ impl Block {
       Constraint::Function{ref operation, ref parameters, output} => {
         self.intermediate_registers.push(Register::intermediate(output));
         self.memory.add_column(new_column_ix);
+        self.column_lengths.push(0);
       },
       Constraint::Filter{ref comparator, lhs, rhs, intermediate} => {
         self.intermediate_registers.push(Register::intermediate(intermediate));
         self.memory.add_column(new_column_ix);
+        self.column_lengths.push(0);
       }
       Constraint::Constant{value, input} => {
         self.intermediate_registers.push(Register::intermediate(input));
-        self.memory.grow_to_fit(1, new_column_ix as usize);
+        self.memory.add_column(new_column_ix);
         self.memory.set_cell(1, input as usize, Value::from_i64(value));
+        self.column_lengths.push(1);
       }
       Constraint::Identity{source, sink} => {
         self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
         self.memory.add_column(new_column_ix);
+        self.column_lengths.push(0);
       }
       Constraint::Condition{truth, result, default, output} => {
         self.intermediate_registers.push(Register::intermediate(output));
         self.memory.add_column(new_column_ix);
+        self.column_lengths.push(0);
       }
       Constraint::IndexMask{source, truth, intermediate} => {
         self.intermediate_registers.push(Register::intermediate(intermediate));
         self.memory.add_column(new_column_ix);
+        self.column_lengths.push(0);
       }
     }
     self.constraints.push(constraint);
@@ -297,7 +305,7 @@ impl Block {
             Function::Divide => operations::math_divide,
           };
           // Execute the function. Results are placed on the intermediate registers
-          op_fun(parameters, &vec![*output], &mut self.memory);
+          op_fun(parameters, &vec![*output], &mut self.memory, &mut self.column_lengths);
         },
         Constraint::Insert{output, table, column} => {
           let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
@@ -320,15 +328,14 @@ impl Block {
           let register = &self.intermediate_registers[*sink as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
+              self.column_lengths[*sink as usize - 1] = column.len() as u64;
               operations::identity(column, *sink, &mut self.memory);
             },
             None => (),
           }
         },
         Constraint::Constant{value, input} => {
-          for i in 1 .. self.memory.rows + 1 {
-            self.memory.set_cell(i, *input as usize, Value::from_i64(*value));
-          }
+          self.memory.set_cell(1, *input as usize, Value::from_i64(*value));
         },
         Constraint::Condition{truth, result, default, output} => {
           for i in 1 .. self.memory.rows + 1 {
@@ -397,6 +404,7 @@ impl fmt::Debug for Block {
       write!(f, "│  {:?}. {:?}\n", ix + 1, step).unwrap();
     }
     write!(f, "└────────────────────────────────────────┘\n").unwrap();
+    write!(f, "{:?}\n", self.column_lengths).unwrap();
     write!(f, "{:?}\n", self.memory).unwrap();
     Ok(())
   }
