@@ -238,9 +238,6 @@ impl Block {
         let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
         listeners.push(input);
       },
-      Constraint::Insert{output, table, column} => {
-        self.output_registers.push(Register::new());
-      },
       Constraint::Function{ref operation, ref parameters, output} => {
         self.intermediate_registers.push(Register::intermediate(output));
         self.memory.add_column(new_column_ix);
@@ -271,7 +268,13 @@ impl Block {
         self.intermediate_registers.push(Register::intermediate(intermediate));
         self.memory.add_column(new_column_ix);
         self.column_lengths.push(0);
-      }
+      },
+      Constraint::Insert{output, table, column} => {
+        self.output_registers.push(Register::new());
+      },
+      Constraint::Set{output, table, column} => {
+        self.output_registers.push(Register::new());
+      },
     }
     self.constraints.push(constraint);
 
@@ -306,20 +309,6 @@ impl Block {
           };
           // Execute the function. Results are placed on the intermediate registers
           op_fun(parameters, &vec![*output], &mut self.memory, &mut self.column_lengths);
-        },
-        Constraint::Insert{output, table, column} => {
-          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
-          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
-          for (row_ix, cell) in column_data.iter().enumerate() {
-            match cell {
-              Value::Empty => (),
-              _ => {
-                store.intern_change(
-                  &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
-                );
-              }
-            }
-          }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *intermediate as usize, &mut self.memory, &mut self.column_lengths);
@@ -370,7 +359,41 @@ impl Block {
             };
           }
           self.column_lengths[intermediate_ix - 1] = source_length as u64;
-        }
+        },
+        Constraint::Insert{output, table, column} => {
+          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
+          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
+          for (row_ix, cell) in column_data.iter().enumerate() {
+            match cell {
+              Value::Empty => (),
+              _ => {
+                store.intern_change(
+                  &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
+                );
+              }
+            }
+          }
+        },
+        Constraint::Set{output, table, column} => {
+          let target_rows;
+          {
+            let table_ref = store.tables.get(*table).unwrap();
+            target_rows = table_ref.rows as u64;
+          }
+          let output_length = self.column_lengths[*output as usize - 1];
+          let output_memory_ix = self.intermediate_registers[*output as usize - 1].column;
+          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
+          for i in 1 .. target_rows + 1 {
+            if output_length == 1 {
+              store.intern_change(
+                &Change::Add{table: *table, row: i, column: *column, value: column_data[0].clone()}
+              );
+              println!("{:?}",column_data);
+            } else if output_length == target_rows {
+              // TODO
+            }
+          }
+        },
         _ => (),
       } 
     }
@@ -434,13 +457,14 @@ pub enum Constraint {
   // A Scan monitors a supplied cell
   Scan {table: u64, column: u64, input: u64},
   ChangeScan {table: u64, column: u64, input: u64},
-  Insert {output: u64, table: u64, column: u64},
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, intermediate: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
   Constant {value: i64, input: u64},
   Identity {source: u64, sink: u64},
   Condition {truth: u64, result: u64, default: u64, output: u64},
   IndexMask {source: u64, truth: u64, intermediate: u64},
+  Insert {output: u64, table: u64, column: u64},
+  Set{output: u64, table: u64, column: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -449,13 +473,14 @@ impl fmt::Debug for Constraint {
     match self {
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x})) -> I{:?}", table, column, input),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x})) -> I{:?}", table, column, input),
-      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
       Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:#x}", operation, parameters, output),
       Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:#x}", value, input),
       Constraint::Identity{source, sink} => write!(f, "Identity({:#x}) -> {:#x}", source, sink),
       Constraint::Condition{truth, result, default, output} => write!(f, "Condition({:?} ? {:?} | {:?}) -> {:?}", truth, result, default, output),
       Constraint::IndexMask{source, truth, intermediate} => write!(f, "IndexMask({:#x}, {:#x} -> {:#x})", source, truth, intermediate),
+      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
+      Constraint::Set{output, table, column} => write!(f, "Set({:?}) -> #{:#x}({:#x})",  output, table, column),
     }
   }
 }
