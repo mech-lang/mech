@@ -21,7 +21,7 @@ fn make_balls(n: u64) -> Vec<Change> {
     let ball = Hasher::hash_str("ball");
   
     v.push(Change::Add{table: ball, row: i, column: 1, value: Value::from_u64(1)});
-    v.push(Change::Add{table: ball, row: i, column: 2, value: Value::from_u64(2)});
+    v.push(Change::Add{table: ball, row: i, column: 2, value: Value::from_u64(2 + i * 150)});
     v.push(Change::Add{table: ball, row: i, column: 3, value: Value::from_u64(3)});
     v.push(Change::Add{table: ball, row: i, column: 4, value: Value::from_u64(4)});
   
@@ -33,7 +33,7 @@ fn position_update() -> Block {
   let mut block = Block::new();
   let ball = Hasher::hash_str("ball");
   let system_timer_change = Hasher::hash_str("system/timer");
-  block.add_constraint(Constraint::Scan {table: system_timer_change, column: 4, input: 1});
+  block.add_constraint(Constraint::ChangeScan {table: system_timer_change, column: 4, input: 1});
   block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 2});
   block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 3});
   block.add_constraint(Constraint::Scan {table: ball, column: 3, input: 4});
@@ -50,6 +50,7 @@ fn position_update() -> Block {
   block.add_constraint(Constraint::Insert {output: 6, table: ball, column: 2});
   block.add_constraint(Constraint::Insert {output: 7, table: ball, column: 4});
   let plan = vec![
+    Constraint::ChangeScan {table: system_timer_change, column: 4, input: 1},
     Constraint::Identity {source: 2, sink: 1},
     Constraint::Identity {source: 4, sink: 2},
     Constraint::Identity {source: 3, sink: 3},
@@ -81,37 +82,6 @@ fn export_ball() -> Block {
     Constraint::Identity {source: 2, sink: 2},
     Constraint::Insert {output: 1, table: websocket, column: 1 },
     Constraint::Insert {output: 2, table: websocket, column: 2 },
-  ];
-  block.plan = plan;
-  block
-}
-
-fn boundary_check() -> Block {
-  let mut block = Block::new();
-  let ball = Hasher::hash_str("ball");
-  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 1});
-  block.add_constraint(Constraint::Scan {table: ball, column: 4, input: 2});
-  block.add_constraint(Constraint::Identity {source: 1, sink: 1});  
-  block.add_constraint(Constraint::Constant {value: 5000, input: 2});
-  block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3});
-  block.add_constraint(Constraint::Identity {source: 2, sink: 4});  
-  block.add_constraint(Constraint::Constant {value: -1, input: 5});
-  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 6});
-  block.add_constraint(Constraint::Constant {value: 1, input: 7});
-  block.add_constraint(Constraint::Function {operation: Function::Divide, parameters: vec![6, 7], output: 8});
-  block.add_constraint(Constraint::Condition {truth: 3, result: 8, default: 5, output: 9});
-  block.add_constraint(Constraint::Insert {output: 9, table: ball, column: 4});
-  let plan = vec![
-    Constraint::Identity {source: 1, sink: 1},
-    Constraint::Identity {source: 2, sink: 4},
-    Constraint::Constant {value: 5000, input: 2},
-    Constraint::Constant {value: -9, input: 5},
-    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3},
-    Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 6},
-    Constraint::Constant {value: 10, input: 7},
-    Constraint::Function {operation: Function::Divide, parameters: vec![6, 7], output: 8},
-    Constraint::Condition {truth: 3, result: 8, default: 4, output: 9},
-    Constraint::Insert {output: 9, table: ball, column: 4}
   ];
   block.plan = plan;
   block
@@ -149,38 +119,6 @@ fn block2() -> Block {
   block.add_constraint(Constraint::Identity {source: 1, sink: 1});
   let plan = vec![
     Constraint::Identity {source: 1, sink: 1},
-  ];
-  block.plan = plan;
-  block
-}
-
-fn reset_balls() -> Block {
-  let mut block = Block::new();
-  let ball = Hasher::hash_str("ball");
-  let click = Hasher::hash_str("html/event/click");
-  block.add_constraint(Constraint::Scan {table: click, column: 1, input: 1});
-  block.add_constraint(Constraint::Scan {table: click, column: 2, input: 2});
-  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 3});
-  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 4});
-  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
-  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
-  block.add_constraint(Constraint::Identity {source: 3, sink: 3});
-  block.add_constraint(Constraint::Identity {source: 4, sink: 4});
-  block.add_constraint(Constraint::Constant {value: 0, input: 5});
-  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![3, 5], output: 6});
-  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 7});
-  block.add_constraint(Constraint::Insert {output: 6, table: ball, column: 1});
-  block.add_constraint(Constraint::Insert {output: 7, table: ball, column: 2});
-  let plan = vec![
-    Constraint::Identity {source: 1, sink: 1},
-    Constraint::Identity {source: 2, sink: 2},
-    Constraint::Identity {source: 3, sink: 3},
-    Constraint::Identity {source: 4, sink: 4},
-    Constraint::Constant {value: 0, input: 5},
-    Constraint::Function {operation: Function::Multiply, parameters: vec![3, 5], output: 6},
-    Constraint::Function {operation: Function::Multiply, parameters: vec![4, 5], output: 7},
-    Constraint::Insert {output: 6, table: ball, column: 1 },
-    Constraint::Insert {output: 7, table: ball, column: 2 },
   ];
   block.plan = plan;
   block
@@ -228,6 +166,62 @@ fn position_update_1d2() -> Block {
   block
 }
 
+
+fn boundary_check() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  block.add_constraint(Constraint::ChangeScan {table: ball, column: 2, input: 1});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});  
+  block.add_constraint(Constraint::Constant {value: 2000, input: 2});
+  block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3});
+  block.add_constraint(Constraint::Scan {table: ball, column: 4, input: 2});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 4});     
+  block.add_constraint(Constraint::IndexMask{ source: 4, truth: 3, intermediate: 5});
+  block.add_constraint(Constraint::Constant {value: -9, input: 6});
+  block.add_constraint(Constraint::Function {operation: Function::Multiply, parameters: vec![5, 6], output: 7});
+  block.add_constraint(Constraint::Constant {value: 10, input: 8});
+  block.add_constraint(Constraint::Function {operation: Function::Divide, parameters: vec![7, 8], output: 9});
+  block.add_constraint(Constraint::Insert {output: 9, table: ball, column: 4});
+  let plan = vec![
+    Constraint::ChangeScan {table: ball, column: 2, input: 1},
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Constant {value: 2000, input: 2},
+    Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3},
+    Constraint::Identity {source: 2, sink: 4},
+    Constraint::IndexMask{ source: 4, truth: 3, intermediate: 5},
+    
+    Constraint::Constant {value: -9, input: 6},
+    Constraint::Function {operation: Function::Multiply, parameters: vec![5, 6], output: 7},
+    Constraint::Constant {value: 10, input: 8},
+    Constraint::Function {operation: Function::Divide, parameters: vec![7, 8], output: 9},
+    Constraint::Insert {output: 9, table: ball, column: 4}
+  ];
+  block.plan = plan;
+  block
+}
+
+fn reset_balls() -> Block {
+  let mut block = Block::new();
+  let ball = Hasher::hash_str("ball");
+  let click = Hasher::hash_str("html/event/click");
+  block.add_constraint(Constraint::Scan {table: click, column: 1, input: 1});
+  block.add_constraint(Constraint::Scan {table: click, column: 2, input: 2});
+  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 3});
+  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 4});
+  block.add_constraint(Constraint::Identity {source: 1, sink: 1});
+  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
+  block.add_constraint(Constraint::Identity {source: 3, sink: 3});
+  block.add_constraint(Constraint::Identity {source: 4, sink: 4});
+  let plan = vec![
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::Identity {source: 3, sink: 3},
+    Constraint::Identity {source: 4, sink: 4},
+  ];
+  block.plan = plan;
+  block
+}
+
 fn make_db(n: u64) -> Database {
   let mut db = Database::new(10000000, 2);
   let system_timer_change = Hasher::hash_str("system/timer");
@@ -235,10 +229,9 @@ fn make_db(n: u64) -> Database {
   let ws = Hasher::hash_str("client/websocket");
   let click = Hasher::hash_str("html/event/click");
   db.runtime.register_blocks(vec![
-    position_update_1d(), 
-    position_update_1d2(), 
+    position_update(), 
     //reset_balls(),
-    //boundary_check()
+    boundary_check()
   ], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
@@ -249,6 +242,8 @@ fn make_db(n: u64) -> Database {
     Change::NewTable{tag: system_timer_change, rows: 1, columns: 4}, 
     Change::NewTable{tag: ball, rows: n as usize, columns: 6}, 
     //Change::NewTable{tag: ws, rows: n as usize, columns: 2}, 
+    Change::Add{table: click, row: 1, column: 1, value: Value::from_u64(123)},
+    Change::Add{table: click, row: 1, column: 2, value: Value::from_u64(456)},
   ];
   table_changes.append(&mut balls);
   let txn = Transaction::from_changeset(table_changes);
@@ -262,7 +257,7 @@ fn main() {
   let mut i: u64 = 0;
   loop {
     println!("{:?}", db);
-    //println!("{:?}", db.runtime);
+    println!("{:?}", db.runtime);
     //println!("{:?}", i);
     step_db(&mut db, i);
     
