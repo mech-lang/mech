@@ -322,7 +322,7 @@ impl Block {
           }
         },
         Constraint::Filter{comparator, lhs, rhs, intermediate} => {
-          operations::compare(comparator, *lhs as usize, *rhs as usize, *intermediate as usize, &mut self.memory);
+          operations::compare(comparator, *lhs as usize, *rhs as usize, *intermediate as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::Identity{source, sink} => {
           let register = &self.intermediate_registers[*sink as usize - 1];
@@ -353,19 +353,23 @@ impl Block {
           }
         }
         Constraint::IndexMask{source, truth, intermediate} => {
-          for i in 1 .. self.memory.rows + 1 {
+          let source_ix = *source as usize;
+          let intermediate_ix = *intermediate as usize;
+          let source_length = self.column_lengths[source_ix - 1] as usize;
+          for i in 1 .. source_length + 1 {
             match self.memory.index(i, *truth as usize) {
               Some(Value::Bool(true)) => {
-                let value = self.memory.index(i, *source as usize).unwrap().clone();
-                self.memory.set_cell(i, *intermediate as usize, value);
+                let value = self.memory.index(i, source_ix).unwrap().clone();
+                self.memory.set_cell(i, intermediate_ix, value);
               },
               Some(Value::Bool(false)) => {
-                let value = self.memory.index(i, *source as usize).unwrap().clone();
-                self.memory.set_cell(i, *intermediate as usize, Value::Empty);
+                let value = self.memory.index(i, source_ix).unwrap().clone();
+                self.memory.set_cell(i, intermediate_ix, Value::Empty);
               },
               _ => (),
             };
           }
+          self.column_lengths[intermediate_ix - 1] = source_length as u64;
         }
         _ => (),
       } 

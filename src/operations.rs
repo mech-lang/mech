@@ -222,23 +222,68 @@ pub enum Comparator {
   NotEqual
 }
 
-pub fn compare(comparator: &Comparator, lhs: usize, rhs: usize, output: usize, store: &mut Table) {
-  for i in 1 .. store.rows + 1 {
-    match (store.index(i, lhs), store.index(i, rhs)) {
-      (Some(&Value::Number(lhs_val)), Some(&Value::Number(rhs_val))) => {
-        let truth = match comparator {
-          Comparator::LessThan           => Value::Bool(lhs_val < rhs_val),
-          Comparator::GreaterThan        => Value::Bool(lhs_val > rhs_val),
-          Comparator::LessThanOrEqual    => Value::Bool(lhs_val <= rhs_val),
-          Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
-          Comparator::Equal              => Value::Bool(lhs_val == rhs_val),
-          Comparator::NotEqual           => Value::Bool(lhs_val != rhs_val),
-        };
-        store.set_cell(i, output, truth);
-      }, 
-      _ => (),
+pub fn compare(comparator: &Comparator, lhs: usize, rhs: usize, output: usize, store: &mut Table, lengths: &mut Vec<u64>) {
+  let lhs_length = lengths[lhs - 1] as usize;
+  let rhs_length = lengths[rhs - 1] as usize;
+  let out = output as usize;
+  let mut out_length = 0;
+  if lhs_length == rhs_length {
+    for i in 1 .. lhs_length + 1 {     
+      match (store.index(i, lhs), store.index(i, rhs)) {
+        (Some(&Value::Number(lhs_val)), Some(&Value::Number(rhs_val))) => {
+          let truth = match comparator {
+            Comparator::LessThan           => Value::Bool(lhs_val < rhs_val),
+            Comparator::GreaterThan        => Value::Bool(lhs_val > rhs_val),
+            Comparator::LessThanOrEqual    => Value::Bool(lhs_val <= rhs_val),
+            Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
+            Comparator::Equal              => Value::Bool(lhs_val == rhs_val),
+            Comparator::NotEqual           => Value::Bool(lhs_val != rhs_val),
+          };
+          store.set_cell(i, output, truth);
+        }, 
+        _ => {store.set_cell(i, out, Value::Empty);},
+      } 
+      out_length = lhs_length;
+    }
+  // Add vector to scalar  
+  } else if lhs_length == 1 && rhs_length > 1 {
+    for i in 1 .. rhs_length + 1 {     
+      match (store.index(1, lhs), store.index(i, rhs)) {
+        (Some(&Value::Number(lhs_val)), Some(&Value::Number(rhs_val))) => {
+          let truth = match comparator {
+            Comparator::LessThan           => Value::Bool(lhs_val < rhs_val),
+            Comparator::GreaterThan        => Value::Bool(lhs_val > rhs_val),
+            Comparator::LessThanOrEqual    => Value::Bool(lhs_val <= rhs_val),
+            Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
+            Comparator::Equal              => Value::Bool(lhs_val == rhs_val),
+            Comparator::NotEqual           => Value::Bool(lhs_val != rhs_val),
+          };
+          store.set_cell(i, output, truth);
+        }, 
+        _ => {store.set_cell(i, out, Value::Empty);},
+      } 
+      out_length = rhs_length;
+    }
+  } else if lhs_length > 1 && rhs_length == 1 {
+    for i in 1 .. lhs_length + 1 {     
+      match (store.index(i, lhs), store.index(1, rhs)) {
+        (Some(&Value::Number(lhs_val)), Some(&Value::Number(rhs_val))) => {
+          let truth = match comparator {
+            Comparator::LessThan           => Value::Bool(lhs_val < rhs_val),
+            Comparator::GreaterThan        => Value::Bool(lhs_val > rhs_val),
+            Comparator::LessThanOrEqual    => Value::Bool(lhs_val <= rhs_val),
+            Comparator::GreaterThanOrEqual => Value::Bool(lhs_val >= rhs_val),
+            Comparator::Equal              => Value::Bool(lhs_val == rhs_val),
+            Comparator::NotEqual           => Value::Bool(lhs_val != rhs_val),
+          };
+          store.set_cell(i, output, truth);
+        }, 
+        _ => {store.set_cell(i, out, Value::Empty);},
+      }
+      out_length = lhs_length; 
     }
   }
+  lengths[out - 1] = out_length as u64;
 }
 
 impl fmt::Debug for Comparator {
