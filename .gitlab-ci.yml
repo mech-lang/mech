@@ -1,0 +1,10 @@
+image: "rust:latest"
+
+test:cargo:
+  script:
+  - rustup default nightly-2018-04-06
+  - rustup show
+  - rustc --version && cargo --version
+  - rustup component add rust-src
+  - cargo test --all
+  - cargo bench --all
