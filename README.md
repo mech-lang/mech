@@ -1,6 +1,8 @@
 <center>
-  <img src="https://mechlang.net/img/logo.png" />
+  <img width="40%" src="https://mechlang.net/img/logo.png" />
 </center>
+
+--
 
 Mech is a langauge for developing data-driven, reactive systems such as robots and IoT devices.
 
