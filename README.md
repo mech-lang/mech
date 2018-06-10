@@ -1,6 +1,6 @@
-<div id="container">
+<p align="center">
   <img width="40%" src="https://mechlang.net/img/logo.png" />
-</div>
+</p>
 
 ---
 
@@ -37,13 +37,3 @@ cargo build
 ## License
 
 Apache 2.0
-
-#container {
-  height:100px;
-  line-height:100px;
-}
-
-#container img {
-  vertical-align:middle;
-  max-height:100%;
-}
