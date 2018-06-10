@@ -1,8 +1,8 @@
-<center>
+<div id="container">
   <img width="40%" src="https://mechlang.net/img/logo.png" />
-</center>
+</div>
 
---
+---
 
 Mech is a langauge for developing data-driven, reactive systems such as robots and IoT devices.
 
@@ -37,3 +37,13 @@ cargo build
 ## License
 
 Apache 2.0
+
+#container {
+  height:100px;
+  line-height:100px;
+}
+
+#container img {
+  vertical-align:middle;
+  max-height:100%;
+}
