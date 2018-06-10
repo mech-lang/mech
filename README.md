@@ -1,8 +1,4 @@
-<div dir="auto" style="display:flex;flex-direction:row;">
-  <div style="flex-grow:1"></div>
-  <img width="40%" height="40%" src="https://mechlang.net/img/logo.png" class="js-lazy-loaded" height="40%">
-  <div style="flex-grow:1"></div>
-</div>
+<img width="40%" height="40%" src="https://mechlang.net/img/logo.png">
 
 ---
 
