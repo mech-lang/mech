@@ -33,7 +33,7 @@ let mut txn = Transaction::from_changeset(vec![
 // Apply the transaction
 core.process_transaction(&txn);
 
-// Table 1 should look like this now:
+// Table 1:
 // ┌───┬───┬───┐
 // │ 1 │ 2 │   │
 // └───┴───┴───┘
@@ -58,7 +58,7 @@ block.plan = plan;
 // Register the block with the runtime
 core.runtime.register_blocks(vec![block]);
 
-// Table 1 should look like this now:
+// Table 1:
 // ┌───┬───┬───┐
 // │ 1 │ 2 │ 3 │
 // └───┴───┴───┘
@@ -66,15 +66,14 @@ core.runtime.register_blocks(vec![block]);
 // Check that the numbers were added together
 assert_eq!(core.store.get_cell(1, 1, 3), Some(Value::from_u64(3)));
 
-// We can add another row
-// Create a new table, and add two values to it
+// We can add another row to Table 1
 let mut txn2 = Transaction::from_changeset(vec![
   Change::Add{table: 1, row: 2, column: 1, value: Value::from_u64(3)},
   Change::Add{table: 1, row: 2, column: 2, value: Value::from_u64(4)},
 });
 core.process_transaction(&txn2);
 
-// Table 1 should look like this now:
+// Table 1:
 // ┌───┬───┬───┐
 // │ 1 │ 2 │ 3 │
 // │ 3 │ 4 │ 7 │
