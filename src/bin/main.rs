@@ -172,7 +172,7 @@ fn boundary_check() -> Block {
   let ball = Hasher::hash_str("ball");
   block.add_constraint(Constraint::ChangeScan {table: ball, column: 2, input: 1});
   block.add_constraint(Constraint::Identity {source: 1, sink: 1});  
-  block.add_constraint(Constraint::Constant {value: 2000, input: 2});
+  block.add_constraint(Constraint::Constant {value: 5000, input: 2});
   block.add_constraint(Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3});
   block.add_constraint(Constraint::Scan {table: ball, column: 4, input: 2});
   block.add_constraint(Constraint::Identity {source: 2, sink: 4});     
@@ -185,7 +185,7 @@ fn boundary_check() -> Block {
   let plan = vec![
     Constraint::ChangeScan {table: ball, column: 2, input: 1},
     Constraint::Identity {source: 1, sink: 1},
-    Constraint::Constant {value: 2000, input: 2},
+    Constraint::Constant {value: 5000, input: 2},
     Constraint::Filter {comparator: Comparator::GreaterThan, lhs: 1, rhs: 2, intermediate: 3},
     Constraint::Identity {source: 2, sink: 4},
     Constraint::IndexMask{ source: 4, truth: 3, intermediate: 5},
@@ -206,17 +206,15 @@ fn reset_balls() -> Block {
   let click = Hasher::hash_str("html/event/click");
   block.add_constraint(Constraint::Scan {table: click, column: 1, input: 1});
   block.add_constraint(Constraint::Scan {table: click, column: 2, input: 2});
-  block.add_constraint(Constraint::Scan {table: ball, column: 1, input: 3});
-  block.add_constraint(Constraint::Scan {table: ball, column: 2, input: 4});
   block.add_constraint(Constraint::Identity {source: 1, sink: 1});
   block.add_constraint(Constraint::Identity {source: 2, sink: 2});
-  block.add_constraint(Constraint::Identity {source: 3, sink: 3});
-  block.add_constraint(Constraint::Identity {source: 4, sink: 4});
+  block.add_constraint(Constraint::Set {output: 1, table: ball, column: 1});
+  block.add_constraint(Constraint::Set {output: 2, table: ball, column: 2});
   let plan = vec![
     Constraint::Identity {source: 1, sink: 1},
     Constraint::Identity {source: 2, sink: 2},
-    Constraint::Identity {source: 3, sink: 3},
-    Constraint::Identity {source: 4, sink: 4},
+    Constraint::Set {output: 1, table: ball, column: 1},
+    Constraint::Set {output: 2, table: ball, column: 2},
   ];
   block.plan = plan;
   block
@@ -230,8 +228,8 @@ fn make_db(n: u64) -> Database {
   let click = Hasher::hash_str("html/event/click");
   db.runtime.register_blocks(vec![
     position_update(), 
-    //reset_balls(),
-    boundary_check()
+    boundary_check(),
+    reset_balls(),
   ], &mut db.store);
   let mut balls = make_balls(n);
   let mut table_changes = vec![
