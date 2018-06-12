@@ -26,9 +26,10 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 // In your Cargo.toml file, you'll want to include Mech as a dependency:
 // mech = {git = "https://gitlab.com/cmontella/mech.git"}
 extern crate mech;
+use mech::{Core, Transaction, Block, Value};
 
 // Create a new mech core
-let mut core = mech::Core::new(change_capacity, table_capacity);
+let mut core = Core::new(change_capacity, table_capacity);
 
 // Create a new table, and add two values to it
 let mut txn = Transaction::from_text("#add += [1 2]");
@@ -41,8 +42,7 @@ core.process_transaction(&txn);
 // │ 5 │ 3 │   │
 // └───┴───┴───┘
 
-// Create a block that adds two numbers. You can either compile blocks by hand or with
-// the mech-syntax compiler.
+// Create a block that adds two numbers.
 let mut block = Block::new("#add[3] = #add[1] + #add[2]");
 
 // Register the block with the runtime
@@ -54,7 +54,7 @@ core.runtime.register_blocks(vec![block]);
 // └───┴───┴───┘
 
 // Check that the numbers were added together
-assert_eq!(core.store.get_cell("add", 1, 3), Some(Value::from_u64(8)));
+assert_eq!(core.get_cell("add", 1, 3), Some(Value::from_u64(8)));
 
 // We can add another row to Table 1
 let mut txn2 = Transaction::from_text("#add += [3 4]");
@@ -67,7 +67,7 @@ core.process_transaction(&txn2);
 // └───┴───┴───┘
 
 // Notice the second row was automatically added
-assert_eq!(core.store.get_cell("add", 2, 3), Some(Value::from_u64(7)));
+assert_eq!(core.get_cell("add", 2, 3), Some(Value::from_u64(7)));
 ```
 
 ## License
