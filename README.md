@@ -22,7 +22,7 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 
 ## Usage
 
-You can use Mech core in your a Rust project:
+You can use Mech core in your Rust project:
 
 ```rust
 // In Cargo.toml, include Mech as a dependency:
