@@ -4,7 +4,7 @@
 
 Mech is a language for developing data-driven, reactive systems such as robots and IoT devices. This repository hosts the core of Mech, a small dataflow engine that accepts transactions of changes, and applies them to a compute network. This module is mostly used internally, with user-facing interfaces exposed in the [mech-server](https://gitlab.com/cmontella/mech-server) module.
 
-This module does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems. This also means a Mech core doesn't rely on any operating system calls like threads, so computations within a core are deterministic.
+This module does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems. This also means Mech cores are single-threaded and deterministic.
 
 ## Contents
 
