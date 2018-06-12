@@ -9,8 +9,11 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
   Table { name: Vec<u8> },
+  Digit { value: u8 },
   LeftBracket,
   RightBracket,
+  Comma,
+  Space
 }
 
 
@@ -19,6 +22,7 @@ pub enum Token {
 #[derive(Debug, Clone)]
 pub struct Lexer {
   pub string: String,
+  pub tokens: Vec<Token>,
   last_token: usize,
   pub position: usize,
 }
@@ -28,6 +32,7 @@ impl Lexer {
   pub fn new() -> Lexer {
     Lexer {
       string: String::from(""),
+      tokens: Vec::new(),
       last_token: 0,
       position: 0,
     }
@@ -41,30 +46,31 @@ impl Lexer {
     self.string.push_str(&string);
   }
 
-  pub fn advance_token(&mut self) {
+  pub fn push_token(&mut self, token: Token) {
+    self.tokens.push(token);
     self.last_token = self.position;
   }
 
-  pub fn get_tokens(&mut self) -> Vec<Token>{
-    let mut tokens = Vec::new();
+  pub fn get_tokens(&mut self) -> &Vec<Token> {
     let bytes = self.string.clone().into_bytes();
     while self.position < self.string.len() {
       if match_table(&bytes, self) {
         self.last_token += 1;
-        tokens.push(Token::Table{name: extract_bytes(&bytes, self)});
-        self.advance_token();
-      } else if match_left_bracket(&bytes, self) {
-        tokens.push(Token::LeftBracket);
-        self.advance_token();
-      } else if match_right_bracket(&bytes, self) {
-        tokens.push(Token::RightBracket);
-        self.advance_token();
+        let extracted = extract_bytes(&bytes, self);
+        self.push_token(Token::Table{name: extracted});
+      } else if match_digit(&bytes, self) {
+        let extracted = extract_bytes(&bytes, self)[0];
+        self.push_token(Token::Digit{value: extracted})
+      } else if match_char(&bytes, '[', self) { self.push_token(Token::LeftBracket);
+      } else if match_char(&bytes, ']', self) { self.push_token(Token::RightBracket);
+      } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma); 
+      } else if match_char(&bytes, ' ', self) { self.push_token(Token::Space); 
       } else {
-        println!("Unknown Byte Sequence {:?}", self);
+        println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
         break;
       }
     }
-    tokens
+    &self.tokens
   }
 
 }
@@ -88,14 +94,14 @@ pub fn match_alpha(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
   test_match((byte >= 'a' as u8 && byte <= 'z' as u8) || (byte >= 'A' as u8 && byte <= 'Z' as u8), lexer)
 }
 
-pub fn match_left_bracket(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
+pub fn match_digit(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
   let byte = bytes[lexer.position];
-  test_match(byte == '[' as u8, lexer)
+  test_match((byte >= '0' as u8 && byte <= '9' as u8), lexer)
 }
 
-pub fn match_right_bracket(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
+pub fn match_char(bytes: &Vec<u8>, character: char, lexer: &mut Lexer) -> bool {
   let byte = bytes[lexer.position];
-  test_match(byte == ']' as u8, lexer)
+  test_match(byte == character as u8, lexer)
 }
 
 pub fn test_match(test: bool, lexer: &mut Lexer) -> bool {
