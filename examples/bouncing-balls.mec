@@ -1,5 +1,7 @@
 # Bouncing Balls
 
+## Update Condition
+
 block
   [#ball x y vx vy]
   x := x + vx
@@ -7,7 +9,38 @@ block
   vy := vy + 9.8 m/s
 end
 
+## Boundary Conditions
+
 block
   [#ball y > 5000, vy]
   vy := -vy
+end
+
+block
+  [#ball x > 5000, vx]
+  vx := -.9 * vx
+end
+
+block
+  [#ball x, vx]
+  x < 0
+  vx := -.9 * vx
+end
+
+## Export balls
+
+block
+  [#ball x y]
+  ws = #[client/websocket]
+  ws.send += x
+  ws.send += y
+end
+
+## Reset on click
+
+block
+  click = [#html/event/click/change]
+  [#ball x y]
+  x := click.x
+  y := click.y 
 end
