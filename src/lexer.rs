@@ -8,14 +8,16 @@
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
-  Table { name: Vec<u8> },
   Digit { value: u8 },
+  Identifier{ name: Vec<u8> },
+  HashTag,
   LeftBracket,
   RightBracket,
   Comma,
   Space,
   Plus,
   Equal,
+  Period,
 }
 
 
@@ -56,19 +58,20 @@ impl Lexer {
   pub fn get_tokens(&mut self) -> &Vec<Token> {
     let bytes = self.string.clone().into_bytes();
     while self.position < self.string.len() {
-      if match_table(&bytes, self) {
-        self.last_token += 1;
-        let extracted = extract_bytes(&bytes, self);
-        self.push_token(Token::Table{name: extracted});
-      } else if match_digit(&bytes, self) {
+      if match_digit(&bytes, self) {
         let extracted = extract_bytes(&bytes, self)[0];
         self.push_token(Token::Digit{value: extracted})
+      } else if match_identifier(&bytes, self) { 
+        let extracted = extract_bytes(&bytes, self);
+        self.push_token(Token::Identifier{name: extracted});
+      } else if match_char(&bytes, '#', self) { self.push_token(Token::HashTag);
       } else if match_char(&bytes, '[', self) { self.push_token(Token::LeftBracket);
       } else if match_char(&bytes, ']', self) { self.push_token(Token::RightBracket);
       } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma); 
       } else if match_char(&bytes, ' ', self) { self.push_token(Token::Space); 
       } else if match_char(&bytes, '+', self) { self.push_token(Token::Plus); 
       } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
+      } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else {
         println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
         break;
@@ -81,16 +84,22 @@ impl Lexer {
 
 pub fn match_table(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
   let byte = bytes[lexer.position];
-  if test_match(bytes[lexer.position] == '#' as u8, lexer) {
-    while match_alpha(&bytes, lexer){
-      if lexer.position >= bytes.len() {
-        break;
-      }
-    }
-    true
+  if test_match(byte == '#' as u8, lexer) {
+    match_identifier(&bytes, lexer)
   } else {
     false
   }
+}
+
+pub fn match_identifier(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
+  let mut matched = false;
+  while match_alpha(&bytes, lexer) {
+    matched = true;
+    if lexer.position >= bytes.len() {
+      break;
+    }
+  }
+  matched
 }
 
 pub fn match_alpha(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
