@@ -15,10 +15,10 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 ## Contents
 
 - table - defines a `Table`, the core data structure of Mech. Also defines a `Value`, which unifies the various data types (Number, String, Bool, Table).
-- database - defines a database of `Tables`. Accepts a `Transaction`, which is a set of `Changes` to the database.
-- indexes - defines the various indexes used to quickly look up information in the database.
-- runtime - defines `Blocks`, which comprise the compute network.
-- operations - defines the primitive operations available to the compute network.
+- database - defines a `Database` of tables. Databases accept `Transactions`, which is are sets of `Changes` to the database.
+- indexes - defines the various indexes used to quickly look up information in the database
+- runtime - defines `Blocks`, which comprise the compute network of each core.
+- operations - defines the primitive operations that can be performed by nodes in the compute network.
 
 ## Usage
 
