@@ -1,8 +1,6 @@
 <img width="40%" height="40%" src="https://mechlang.net/img/logo.png">
 
-## Core
-
----
+# Core
 
 Mech is a language for developing data-driven, reactive systems like animations, games, and robots. It makes composing, transforming, and distributing data easy, allowing you to focus on the essential complexity of your problem.
 
