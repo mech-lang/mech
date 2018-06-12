@@ -6,7 +6,7 @@
 
 // ## Tokens
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Token {
   Table { name: Vec<u8> },
   LeftBracket,
@@ -61,7 +61,7 @@ impl Lexer {
         self.advance_token();
       } else {
         println!("Unknown Byte Sequence {:?}", self);
-        self.position = self.string.len();
+        break;
       }
     }
     tokens
@@ -73,6 +73,9 @@ pub fn match_table(bytes: &Vec<u8>, lexer: &mut Lexer) -> bool {
   let byte = bytes[lexer.position];
   if test_match(bytes[lexer.position] == '#' as u8, lexer) {
     while match_alpha(&bytes, lexer){
+      if lexer.position >= bytes.len() {
+        break;
+      }
     }
     true
   } else {
