@@ -22,8 +22,10 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 
 ## Usage
 
+You can use Mech core in your a Rust project:
+
 ```rust
-// In your Cargo.toml file, you'll want to include Mech as a dependency:
+// In Cargo.toml, include Mech as a dependency:
 // mech = {git = "https://gitlab.com/cmontella/mech.git"}
 extern crate mech;
 use mech::{Core, Transaction, Block, Value};
@@ -32,7 +34,7 @@ use mech::{Core, Transaction, Block, Value};
 let mut core = Core::new(change_capacity, table_capacity);
 
 // Create a new table, and add two values to it
-let mut txn = Transaction::from_text("#add += [1 2]");
+let mut txn = Transaction::from_text("#add += [5 3]");
 
 // Apply the transaction
 core.process_transaction(&txn);
