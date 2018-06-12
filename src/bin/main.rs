@@ -1,14 +1,24 @@
 extern crate core;
 extern crate time;
 extern crate rand;
+extern crate mech_syntax;
 
 use std::time::SystemTime;
 use std::thread::{self};
 use std::time::*;
 use rand::{Rng, thread_rng};
+use mech_syntax::lexer::Lexer;
 
 fn main() {
-  println!("{:?}");
+  
+  let mut lexer = Lexer::new();
+  lexer.add_string(String::from("#abc"));
+  lexer.add_string(String::from(" [1,"));
+  lexer.add_string(String::from("2]"));
+  let tokens = lexer.get_tokens();
+  println!("{:?}", tokens);
+
+
   /*
   let mut db = make_db(10);
   
