@@ -13,7 +13,9 @@ pub enum Token {
   LeftBracket,
   RightBracket,
   Comma,
-  Space
+  Space,
+  Plus,
+  Equal,
 }
 
 
@@ -65,6 +67,8 @@ impl Lexer {
       } else if match_char(&bytes, ']', self) { self.push_token(Token::RightBracket);
       } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma); 
       } else if match_char(&bytes, ' ', self) { self.push_token(Token::Space); 
+      } else if match_char(&bytes, '+', self) { self.push_token(Token::Plus); 
+      } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
       } else {
         println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
         break;
