@@ -2,9 +2,15 @@
 
 ---
 
-Mech is a language for developing data-driven, reactive systems such as robots and IoT devices. This repository hosts the core of Mech, a small dataflow engine that accepts transactions of changes, and applies them to a compute network. This module is mostly used internally, with user-facing interfaces exposed in the [mech-server](https://gitlab.com/cmontella/mech-server) module.
+Mech is a language for developing data-driven, reactive systems like animations, games, and robots. It makes composing, transforming, and distributing data easy, allowing you to focus on the essential complexity of your problem.
 
-This module does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems.
+There are three components to Mech:
+
+1. Core (this repository) - A small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
+2. [Server](https://gitlab.com/cmontella/mech-server) - Hosts Mech cores for connected clients. 
+3. [Notebook](https://gitlab.com/cmontella/mech-notebook) - A graphical interface that connects to a Mech server.
+
+Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hvemind) for an example of this).
 
 ## Contents
 
@@ -20,67 +26,48 @@ This module does not rely on the Rust standard library, so it can be compiled an
 // In your Cargo.toml file, you'll want to include Mech as a dependency:
 // mech = {git = "https://gitlab.com/cmontella/mech.git"}
 extern crate mech;
+
 // Create a new mech core
-let mut core = mech::database::Database::new(change_capacity, table_capcity);
+let mut core = mech::Core::new(change_capacity, table_capacity);
 
 // Create a new table, and add two values to it
-let mut txn = Transaction::from_changeset(vec![
-  Change::NewTable{tag: 1, rows: 1, columns: 3},
-  Change::Add{table: 1, row: 1, column: 1, value: Value::from_u64(1)},
-  Change::Add{table: 1, row: 1, column: 2, value: Value::from_u64(2)},
-});
+let mut txn = Transaction::from_text("#add += [1 2]");
 
 // Apply the transaction
 core.process_transaction(&txn);
 
-// Table 1:
+// #add:
 // ┌───┬───┬───┐
-// │ 1 │ 2 │   │
+// │ 5 │ 3 │   │
 // └───┴───┴───┘
 
 // Create a block that adds two numbers. You can either compile blocks by hand or with
 // the mech-syntax compiler.
-let mut block = Block::new();
-block.add_constraint(Constraint::Scan {table: 1, column: 1, input: 1});
-block.add_constraint(Constraint::Scan {table: 1, column: 2, input: 2});
-block.add_constraint(Constraint::Identity {source: 1, sink: 1});
-  block.add_constraint(Constraint::Identity {source: 2, sink: 2});
-block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3});
-block.add_constraint(Constraint::Insert {output: 3, table: 1, column: 3});
-let plan = vec![
-  Constraint::Identity {source: 1, sink: 1},
-  Constraint::Identity {source: 2, sink: 2},
-  Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3},
-  Constraint::Insert {output: 3, table: 1, column: 3}
-];
-block.plan = plan;
+let mut block = Block::new("#add[3] = #add[1] + #add[2]");
 
 // Register the block with the runtime
 core.runtime.register_blocks(vec![block]);
 
-// Table 1:
+// #add:
 // ┌───┬───┬───┐
-// │ 1 │ 2 │ 3 │
+// │ 5 │ 3 │ 8 │
 // └───┴───┴───┘
 
 // Check that the numbers were added together
-assert_eq!(core.store.get_cell(1, 1, 3), Some(Value::from_u64(3)));
+assert_eq!(core.store.get_cell("add", 1, 3), Some(Value::from_u64(8)));
 
 // We can add another row to Table 1
-let mut txn2 = Transaction::from_changeset(vec![
-  Change::Add{table: 1, row: 2, column: 1, value: Value::from_u64(3)},
-  Change::Add{table: 1, row: 2, column: 2, value: Value::from_u64(4)},
-});
+let mut txn2 = Transaction::from_text("#add += [3 4]");
 core.process_transaction(&txn2);
 
-// Table 1:
+// #add:
 // ┌───┬───┬───┐
-// │ 1 │ 2 │ 3 │
+// │ 5 │ 3 │ 8 │
 // │ 3 │ 4 │ 7 │
 // └───┴───┴───┘
 
 // Notice the second row was automatically added
-assert_eq!(core.store.get_cell(1, 2, 3), Some(Value::from_u64(7)));
+assert_eq!(core.store.get_cell("add", 2, 3), Some(Value::from_u64(7)));
 ```
 
 ## License
