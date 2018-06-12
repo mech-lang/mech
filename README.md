@@ -8,7 +8,7 @@ This module does not rely on the Rust standard library, so it can be compiled an
 
 ## Contents
 
-- table - defines a `Table`, the fundamental datatype of Mech. Also defines a `Value`, the 
+- table - defines a `Table`, the core data structure of Mech. Also defines a `Value`, which unifies the various data types (Number, String, Bool, Table).
 - database - defines a database of `Tables`. Accepts a `Transaction`, which is a set of `Changes` to the database.
 - indexes - defines the various indexes used to quickly look up information in the database.
 - runtime - defines `Blocks`, which comprise the compute network.
@@ -79,6 +79,7 @@ core.process_transaction(&txn2);
 // │ 3 │ 4 │ 7 │
 // └───┴───┴───┘
 
+// Notice the second row was automatically added
 assert_eq!(core.store.get_cell(1, 2, 3), Some(Value::from_u64(7)));
 ```
 
