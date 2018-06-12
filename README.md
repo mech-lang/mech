@@ -7,8 +7,8 @@ Mech is a language for developing data-driven, reactive systems like animations,
 There are three components to Mech:
 
 1. Core (this repository) - A small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
-2. [Server](https://gitlab.com/cmontella/mech-server) - Hosts Mech cores for connected clients. 
-3. [Notebook](https://gitlab.com/cmontella/mech-notebook) - A graphical interface that connects to a Mech server.
+2. [Server](https://gitlab.com/mech-lang/server) - Hosts Mech cores for connected clients. 
+3. [Notebook](https://gitlab.com/mech-lang/notebook) - A graphical interface that connects to a Mech server.
 
 Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hvemind) for an example of this).
 
@@ -17,7 +17,7 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 - table - defines a `Table`, the core data structure of Mech. Also defines a `Value`, which unifies the various data types (Number, String, Bool, Table).
 - database - defines a `Database` of tables. Databases accept `Transactions`, which is are sets of `Changes` to the database.
 - indexes - defines the various indexes used to quickly look up information in the database
-- runtime - defines `Blocks`, which comprise the compute network of each core.
+- runtime - defines a `Runtime`, which orchestrates the compute graph; and `Blocks`, which comprise the compute graph.
 - operations - defines the primitive operations that can be performed by nodes in the compute network.
 
 ## Usage
