@@ -1,7 +1,7 @@
 [package]
 name = "mech"
 version = "0.0.1"
-authors = ["Corey Montella <cmontella@live.com>"]
+authors = ["Corey Montella <corey@mechlang.net>"]
 
 [dependencies]
 rlibc = "1.0"
