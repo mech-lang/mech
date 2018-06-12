@@ -20,6 +20,7 @@ This module does not rely on the Rust standard library, so it can be compiled an
 // In your Cargo.toml file, you'll want to include Mech as a dependency:
 // mech = {git = "https://gitlab.com/cmontella/mech.git"}
 extern crate mech;
+
 // Create a new mech core
 let mut core = mech::database::Database::new(change_capacity, table_capcity);
 
