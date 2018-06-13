@@ -36,6 +36,12 @@ impl Hasher {
     hasher.finish()
   }
 
+  pub fn byte_string(bytes: Vec<u8>) -> u64 {
+    let mut hasher = Hasher::new();
+    hasher.write(&format!("{:?}", bytes));
+    hasher.finish()
+  }
+
   pub fn write(&mut self, string: &str) {
     let mult = [1, 256, 65536, 16777216, 1768841549];
     let chunks = CharChunks::new(string, 4);
