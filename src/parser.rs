@@ -84,21 +84,33 @@ pub enum Node {
 // ## Parser
 
 #[derive(Debug, Clone)]
+pub enum ParseStatus {
+  Waiting,
+  Parsing,
+  Error,
+  Complete,
+}
+
+#[derive(Debug, Clone)]
 pub struct Parser {
+  pub parse_status: ParseStatus,
   pub tokens: Vec<Token>,
   last_match: usize,
   pub position: usize,
   pub committed: usize,
+  pub len: usize,
 }
 
 impl Parser {
 
   pub fn new() -> Parser {
     Parser {
+      parse_status: ParseStatus::Waiting,
       tokens: Vec::new(),
       last_match: 0,
       position: 0,
       committed: 0,
+      len: 0,
     }
   }
 
@@ -109,18 +121,26 @@ impl Parser {
 
   pub fn add_tokens(&mut self, tokens: &mut Vec<Token>) {
     self.tokens.append(tokens);
+    self.len = self.tokens.len();
   }
 
   pub fn build_ast(&mut self) {
-    //self.match_table();
-    //self.match_left_bracket();
-    //while {
+    self.parse_status = ParseStatus::Parsing;
+    'parse_loop: while {
       let result = or_combinator!{
         self.expression()
       };
       self.committed = self.last_match;
-      println!("{:?}", result);
-    //} { };
+      if self.position == self.tokens.len() {
+        self.parse_status = ParseStatus::Complete;
+        break 'parse_loop
+      }
+      result
+    } { };
+    match self.parse_status {
+      ParseStatus::Complete => (), 
+      _ => self.parse_status = ParseStatus::Waiting,
+    }
   }
 
   pub fn expression(&mut self) -> bool {
