@@ -111,6 +111,7 @@ impl Parser {
       let result = or_combinator!{
         self.index(),
         self.dot_select()
+        
       };
       println!("{:?}", result);
     //} { };
@@ -123,15 +124,38 @@ impl Parser {
 
   // #student.grade
   pub fn dot_select(&mut self) -> bool {
-    and_combinator!(self.table(), self.period(), self.identifier())
+    let last_match = self.last_match;
+    let old_position = self.position;
+    match and_combinator!(self.table(), self.period(), self.identifier()) {
+      true => {
+        self.position += 1;
+        self.last_match = self.position;
+        true
+      },
+      false => {
+        self.last_match = last_match;
+        self.position = old_position;
+        false
+      },
+    }
   }
 
   // #student[1]
   pub fn index(&mut self) -> bool {
-    //println!("{:?}",self);
-    //and_combinator!(self.table());
-    //println!("{:?}",self);
-    false
+    let last_match = self.last_match;
+    let old_position = self.position;
+    match and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket()) {
+      true => {
+        self.position += 1;
+        self.last_match = self.position;
+        true
+      },
+      false => {
+        self.last_match = last_match;
+        self.position = old_position;
+        false
+      },
+    }
   }
 
   production_rule!{period, Period}
