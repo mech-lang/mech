@@ -53,15 +53,12 @@ macro_rules! and_combinator {
 
 // Creates a function that tests for a token
 #[macro_export]
-macro_rules! create_function {
-  // This macro takes an argument of designator `ident` and
-  // creates a function named `$func_name`.
-  // The `ident` designator is used for variable/function names.
+macro_rules! production_rule {
   ($func_name:ident, $token:ident) => (
     fn $func_name(&mut self) -> bool {
       let token = &self.tokens[self.position];
       match token {
-        &$token => {
+        &$token{..} => {
           self.position += 1;
           self.last_match = self.position;
           true
@@ -131,41 +128,13 @@ impl Parser {
     and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket())
   }
 
-  // .
-  create_function!{period, Period}
-  create_function!{left_bracket, LeftBracket}
-  create_function!{right_bracket, RightBracket}
-  create_function!{hash_tag, HashTag}
-    
-  pub fn identifier(&mut self) -> bool {
-    let token = &self.tokens[self.position];
-    match token {
-      &Identifier{ref name} => {
-        self.position += 1;
-        self.last_match = self.position;
-        true
-      },
-      _ => {
-        self.position = self.last_match;
-        false
-      },
-    }
-  }
+  production_rule!{period, Period}
+  production_rule!{left_bracket, LeftBracket}
+  production_rule!{right_bracket, RightBracket}
+  production_rule!{hash_tag, HashTag}
+  production_rule!{identifier, Identifier}
+  production_rule!{digit, Digit}
 
-  pub fn digit(&mut self) -> bool {
-    let token = &self.tokens[self.position];
-    match token {
-      &Digit{ref value} => {
-        self.position += 1;
-        self.last_match = self.position;
-        true
-      },
-      _ => {
-        self.position = self.last_match;
-        false
-      },
-    }
-  }
 
 }
 
