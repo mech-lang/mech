@@ -38,7 +38,11 @@ impl Hasher {
 
   pub fn hash_byte_vector(bytes: &Vec<u8>) -> u64 {
     let mut hasher = Hasher::new();
-    hasher.write(&format!("{:?}", bytes));
+    let mut string;
+    unsafe {
+      string = String::from_utf8_unchecked(bytes.to_vec());
+    }
+    hasher.write(&string.as_str());
     hasher.finish()
   }
 
