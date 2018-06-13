@@ -9,6 +9,7 @@ use lexer::Token::{HashTag, Identifier};
 // ### Some utility macros
 
 // Returns true if *any* of the supplied matches evaluate to true
+#[macro_export]
 macro_rules! or_combinator {
   ($e:expr) => {{
     {
@@ -29,6 +30,7 @@ macro_rules! or_combinator {
 }
 
 // Returns true if *every* supplied match evaluates to true
+#[macro_export]
 macro_rules! and_combinator {
   ($e:expr) => {{
     {
@@ -49,13 +51,7 @@ macro_rules! and_combinator {
   }};
 }
 
-pub fn _true() -> bool {
-  true
-}
 
-pub fn _false() -> bool {
-  false
-}
 
 // ## Node
 
@@ -83,10 +79,6 @@ impl Parser {
   }
 
   pub fn build_ast(&mut self) {
-    let result = and_combinator! {
-      _true(), _true(), _true()
-    };
-    println!("{:?}", result);
     while {
       if self.match_table(2) {
         true
