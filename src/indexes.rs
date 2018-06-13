@@ -36,7 +36,7 @@ impl Hasher {
     hasher.finish()
   }
 
-  pub fn hash_byte_vector(bytes: Vec<u8>) -> u64 {
+  pub fn hash_byte_vector(bytes: &Vec<u8>) -> u64 {
     let mut hasher = Hasher::new();
     hasher.write(&format!("{:?}", bytes));
     hasher.finish()
