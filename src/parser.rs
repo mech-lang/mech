@@ -57,6 +57,8 @@ macro_rules! production_rule {
   ($func_name:ident, $token:ident) => (
     fn $func_name(&mut self) -> bool {
       let token = &self.tokens[self.position];
+      let last_match = self.last_match;
+      let old_position = self.position;
       match token {
         &$token{..} => {
           self.position += 1;
@@ -64,7 +66,8 @@ macro_rules! production_rule {
           true
         },
         _ => {
-          self.position = self.last_match;
+          self.last_match = last_match;
+          self.position = old_position;
           false
         },
       }
@@ -125,7 +128,10 @@ impl Parser {
 
   // #student[1]
   pub fn index(&mut self) -> bool {
-    and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket())
+    //println!("{:?}",self);
+    //and_combinator!(self.table());
+    //println!("{:?}",self);
+    false
   }
 
   production_rule!{period, Period}
