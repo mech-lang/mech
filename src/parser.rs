@@ -87,7 +87,8 @@ pub enum Node {
 pub struct Parser {
   pub tokens: Vec<Token>,
   last_match: usize,
-  pub position: usize
+  pub position: usize,
+  pub committed: usize,
 }
 
 impl Parser {
@@ -97,7 +98,13 @@ impl Parser {
       tokens: Vec::new(),
       last_match: 0,
       position: 0,
+      committed: 0,
     }
+  }
+
+  pub fn reset(&mut self) {
+    self.last_match = self.committed;
+    self.position = self.committed;
   }
 
   pub fn add_tokens(&mut self, tokens: &mut Vec<Token>) {
@@ -109,53 +116,38 @@ impl Parser {
     //self.match_left_bracket();
     //while {
       let result = or_combinator!{
-        self.index(),
-        self.dot_select()
-        
+        self.expression()
       };
+      self.committed = self.last_match;
       println!("{:?}", result);
     //} { };
   }
 
+  pub fn expression(&mut self) -> bool {
+    let result = or_combinator!(self.index(),self.dot_select());
+    if !result { self.reset(); }
+    result
+  }
+
   // #student
   pub fn table(&mut self) -> bool {
-    and_combinator!(self.hash_tag(), self.identifier())
+    let result = and_combinator!(self.hash_tag(), self.identifier());
+    if !result { self.reset(); }
+    result
   }
 
   // #student.grade
   pub fn dot_select(&mut self) -> bool {
-    let last_match = self.last_match;
-    let old_position = self.position;
-    match and_combinator!(self.table(), self.period(), self.identifier()) {
-      true => {
-        self.position += 1;
-        self.last_match = self.position;
-        true
-      },
-      false => {
-        self.last_match = last_match;
-        self.position = old_position;
-        false
-      },
-    }
+    let result = and_combinator!(self.table(), self.period(), self.identifier());
+    if !result { self.reset(); }
+    result
   }
 
   // #student[1]
   pub fn index(&mut self) -> bool {
-    let last_match = self.last_match;
-    let old_position = self.position;
-    match and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket()) {
-      true => {
-        self.position += 1;
-        self.last_match = self.position;
-        true
-      },
-      false => {
-        self.last_match = last_match;
-        self.position = old_position;
-        false
-      },
-    }
+    let result = and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket());
+    if !result { self.reset(); }
+    result
   }
 
   production_rule!{period, Period}
