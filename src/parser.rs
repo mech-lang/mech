@@ -3,7 +3,7 @@
 // ## Prelude
 
 use lexer::Token;
-use lexer::Token::{HashTag, Identifier};
+use lexer::Token::{HashTag, Identifier, Period, LeftBracket, RightBracket, Digit};
 
 
 // ### Some utility macros
@@ -40,7 +40,7 @@ macro_rules! and_combinator {
   }};
   ($e:expr, $($es:expr),+) => {{
     let mut result = true;
-    let result = if !and_combinator! { $e } {
+    result = if !and_combinator! { $e } {
       false
     } else if !and_combinator! { $($es), + } {
       false
@@ -51,9 +51,35 @@ macro_rules! and_combinator {
   }};
 }
 
-
+// Creates a function that tests for a token
+#[macro_export]
+macro_rules! create_function {
+  // This macro takes an argument of designator `ident` and
+  // creates a function named `$func_name`.
+  // The `ident` designator is used for variable/function names.
+  ($func_name:ident, $token:ident) => (
+    fn $func_name(&mut self) -> bool {
+      let token = &self.tokens[self.position];
+      match token {
+        &$token => {
+          self.position += 1;
+          self.last_match = self.position;
+          true
+        },
+        _ => {
+          self.position = self.last_match;
+          false
+        },
+      }
+    }
+  )
+}
 
 // ## Node
+
+pub enum Node {
+  Select
+}
 
 // ## Parser
 
@@ -79,30 +105,65 @@ impl Parser {
   }
 
   pub fn build_ast(&mut self) {
-    while {
-      if self.match_table(2) {
-        true
-      } else {
-        false
-      }
-    } { };
+    //self.match_table();
+    //self.match_left_bracket();
+    //while {
+      let result = or_combinator!{
+        self.index(),
+        self.dot_select()
+      };
+      println!("{:?}", result);
+    //} { };
   }
 
-  
-  pub fn match_alpha(&mut self, size: usize) -> bool {
-    false
+  // #student
+  pub fn table(&mut self) -> bool {
+    and_combinator!(self.hash_tag(), self.identifier())
   }
 
+  // #student.grade
+  pub fn dot_select(&mut self) -> bool {
+    and_combinator!(self.table(), self.period(), self.identifier())
+  }
 
-  pub fn match_table(&mut self, size: usize) -> bool {
-    let hash = &self.tokens[self.position];
-    let identifier = &self.tokens[self.position + 1];
-    match (hash, identifier) {
-      (&HashTag, &Identifier{ref name}) => {
-        self.position += size;
+  // #student[1]
+  pub fn index(&mut self) -> bool {
+    and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket())
+  }
+
+  // .
+  create_function!{period, Period}
+  create_function!{left_bracket, LeftBracket}
+  create_function!{right_bracket, RightBracket}
+  create_function!{hash_tag, HashTag}
+    
+  pub fn identifier(&mut self) -> bool {
+    let token = &self.tokens[self.position];
+    match token {
+      &Identifier{ref name} => {
+        self.position += 1;
+        self.last_match = self.position;
         true
       },
-      _ => false,
+      _ => {
+        self.position = self.last_match;
+        false
+      },
+    }
+  }
+
+  pub fn digit(&mut self) -> bool {
+    let token = &self.tokens[self.position];
+    match token {
+      &Digit{ref value} => {
+        self.position += 1;
+        self.last_match = self.position;
+        true
+      },
+      _ => {
+        self.position = self.last_match;
+        false
+      },
     }
   }
 
