@@ -35,7 +35,6 @@ macro_rules! or_combinator {
 macro_rules! and_combinator {
   ($e:expr) => {{
     {
-      println!("evaluate");
       let val: bool = $e;
       val
     }
@@ -43,13 +42,10 @@ macro_rules! and_combinator {
   ($e:expr, $($es:expr),+) => {{
     let mut result = true;
     result = if !and_combinator! { $e } {
-      println!("and - false1");
       false
     } else if !and_combinator! { $($es), + } {
-      println!("and - false2");
       false
     } else {
-      println!("and - true");
       true
     };
     result
@@ -61,14 +57,11 @@ macro_rules! and_combinator {
 macro_rules! production_rule {
   ($func_name:ident, $token:ident) => (
     fn $func_name(&mut self) -> bool {
-      println!("HERE IN TOKEN  {:?}", self.position >= self.tokens.len());
       let token = if self.position < self.tokens.len() {
         &self.tokens[self.position]
       } else { 
-        println!("End Of Stream");
         &EndOfStream 
       };
-      println!("The token is {:?}", token);
       let last_match = self.last_match;
       let old_position = self.position;
       match token {
@@ -96,7 +89,8 @@ pub enum Node {
   ColumnDefine { parts: Vec<Node> },
   Table { id: u64, children: Vec<Node>, token: Token },
   Number { value: u64, token: Token },
-  MathExpression { operation: Token, parameters: Vec<Node> },
+  MathExpression { parameters: Vec<Node> },
+  InfixOperation {token: Token},
 }
 
 impl fmt::Debug for Node {
@@ -108,6 +102,7 @@ impl fmt::Debug for Node {
       Node::Table{..} => write!(f, "Table").unwrap(),
       Node::Number{..} => write!(f, "Number").unwrap(),
       Node::ColumnDefine{..} => write!(f, "ColumnDefine").unwrap(),
+      Node::InfixOperation{token} => write!(f, "Infix({:?})", token).unwrap(),
     }   
     Ok(())
   }
@@ -160,7 +155,6 @@ impl Parser {
   pub fn build_ast(&mut self) {
     self.parse_status = ParseStatus::Parsing;
     'parse_loop: while {
-      println!("move");
       let result = and_combinator!{
         self.expression()
         //,self.select()
@@ -190,12 +184,11 @@ impl Parser {
 
 
   pub fn expression(&mut self) -> bool {
-    println!("Expression");
+    //println!("Expression");
     let result = and_combinator!(
       self.column_define()
       //,self.dot_select()
     );
-    println!("HERE2");
     if !result { self.reset(); }
     result
   }
@@ -213,7 +206,6 @@ impl Parser {
     else { 
       let math_expression = self.node_stack.pop().unwrap();
       let sink = self.node_stack.pop().unwrap();
-      println!("sstack {:?}", sink);
       self.node_stack.push(Node::ColumnDefine{ parts: vec![sink, math_expression] })
     }
     result
@@ -224,15 +216,32 @@ impl Parser {
     let result = and_combinator!(
       self.select(), 
       self.space(), 
-      self.plus(), 
+      self.infix_operator(), 
       self.space(), 
       self.select()
     );
     if !result { self.reset(); }
     else { 
-      let left = self.node_stack.pop().unwrap();
       let right = self.node_stack.pop().unwrap();
-      self.node_stack.push(Node::MathExpression{operation: Token::Plus, parameters: vec![left, right] })
+      let op = self.node_stack.pop().unwrap();
+      let left = self.node_stack.pop().unwrap();
+      self.node_stack.push(Node::MathExpression{parameters: vec![left, op, right] })
+    }
+    result
+  }
+
+
+  pub fn infix_operator(&mut self) -> bool {
+    let result = or_combinator!(
+      self.plus(),
+      self.dash(), 
+      self.asterisk(),
+      self.backslash()
+    );
+    if !result { self.reset(); }
+    else { 
+      let token = self.token_stack.pop().unwrap();
+      self.node_stack.push(Node::InfixOperation{token});
     }
     result
   }
@@ -270,12 +279,9 @@ impl Parser {
   pub fn bracket_index(&mut self) -> bool {
     println!("Index");
     let result = and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket());
-    println!("The result of index was {:?}", result);
     if !result { self.reset(); }
     else {
-      println!("{:?}", self.token_stack);
       self.token_stack.pop().unwrap();
-      println!("{:?}", self.token_stack);
       let digit = self.token_stack.pop().unwrap();
       let ix = self.node_stack.len() - 1;
       

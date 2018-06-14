@@ -25,7 +25,6 @@ impl Compiler {
     
     let mut constraints = Vec::new();
     for root in roots {
-      self.walk_tree(&root,0);
       match root {
         // SELECT
         Node::Select{children} => {
@@ -43,10 +42,16 @@ impl Compiler {
           constraints.append(&mut self.compile(parts));
           //constraints.push(Constraint::Function {operation: Function::Add, parameters: vec![0, 0], output: 0}); 
         },
-        Node::MathExpression{operation, parameters} => {
+        Node::MathExpression{parameters} => {
           let left = &parameters[0].clone();
-          let right = &parameters[0].clone();
-          let op: Function = match operation {
+          let operator = &parameters[1].clone();
+          let right = &parameters[2].clone();
+          let mut function = self.compile(vec![operator.clone()]);
+          println!("Left: {:?}\n Right {:?}", left, right);
+          constraints.push(function.pop().unwrap()); 
+        },
+        Node::InfixOperation{token} => {
+          let op: Function = match token {
             Token::Plus => Some(Function::Add),
             Token::Dash => Some(Function::Subtract),
             Token::Asterisk => Some(Function::Multiply),
@@ -54,35 +59,12 @@ impl Compiler {
             _ => None,
           }.unwrap();
           constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: 0}); 
-        },
+        }
         _ => (),
       }
     }
     self.constraints = constraints.clone();
     constraints
-  }
-
-  pub fn walk_tree(&mut self, node: &Node, depth: usize) {
-    space(depth + 1);
-    println!("{:?}", node);
-    match node {
-      Node::Table{id, token, children} => {
-        for child in children {
-          self.walk_tree(child, depth + 1)
-        }
-      },
-      Node::Select{children} => {
-        for child in children {
-          self.walk_tree(child, depth + 1)
-        }
-      },
-      Node::ColumnDefine{parts} => {
-        for child in parts {
-          self.walk_tree(child, depth + 1)
-        }
-      },
-      _ => (),
-    }
   }
 
 }
@@ -106,11 +88,5 @@ fn get_value(node: &Node) -> Option<&u64> {
   match node {
     Node::Number{value, token} => Some(value),
     _ => None,
-  }
-}
-
-fn space(n: usize) {
-  for _ in 0..n {
-    print!(" ");
   }
 }
