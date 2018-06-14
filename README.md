@@ -26,7 +26,7 @@ You can use Mech core in your Rust project:
 
 ```rust
 // In Cargo.toml, include Mech as a dependency:
-// mech = {git = "https://gitlab.com/cmontella/mech.git"}
+// mech = {git = "https://gitlab.com/mech-lang/core.git"}
 extern crate mech;
 use mech::{Core, Transaction, Block, Value};
 
@@ -34,7 +34,7 @@ use mech::{Core, Transaction, Block, Value};
 let mut core = Core::new(change_capacity, table_capacity);
 
 // Create a new table, and add two values to it
-let mut txn = Transaction::from_text("#add += [5 3]");
+let txn = Transaction::from_text("#add += [5 3]");
 
 // Apply the transaction
 core.process_transaction(&txn);
@@ -47,8 +47,8 @@ core.process_transaction(&txn);
 // Create a block that adds two numbers.
 let mut block = Block::new("#add[3] = #add[1] + #add[2]");
 
-// Register the block with the runtime
-core.runtime.register_blocks(vec![block]);
+// Register the block with the core
+core.register_blocks(vec![block]);
 
 // #add:
 // ┌───┬───┬───┐
@@ -59,7 +59,7 @@ core.runtime.register_blocks(vec![block]);
 assert_eq!(core.get_cell("add", 1, 3), Some(Value::from_u64(8)));
 
 // We can add another row to Table 1
-let mut txn2 = Transaction::from_text("#add += [3 4]");
+let txn2 = Transaction::from_text("#add += [3 4]");
 core.process_transaction(&txn2);
 
 // #add:
