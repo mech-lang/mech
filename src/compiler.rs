@@ -4,12 +4,13 @@ use parser::Node;
 use lexer::Token;
 use mech::indexes::Hasher;
 
-
-
-
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
+  pub depth: usize,
+  pub input_registers: usize,
+  pub intermediate_registers: usize,
+  pub output_registers: usize,
 }
 
 impl Compiler {
@@ -18,12 +19,17 @@ impl Compiler {
     Compiler {
       blocks: Vec::new(),
       constraints: Vec::new(),
+      depth: 0,
+      input_registers: 1,
+      intermediate_registers: 1,
+      output_registers: 1,
     }
   }
 
   pub fn compile(&mut self, roots: Vec<Node>) -> Vec<Constraint> {
     
     let mut constraints = Vec::new();
+    self.depth += 1;
     for root in roots {
       match root {
         // SELECT
@@ -32,24 +38,40 @@ impl Compiler {
           let id = get_id(table).unwrap();
           let columns = get_children(table).unwrap();
           for column in columns {
-            let column_ix = get_value(column).unwrap();
-            constraints.push(Constraint::Scan{table: id, column: *column_ix, input: 0});
-            constraints.push(Constraint::Identity{source: 0, sink: 0});
+            let input = self.input_registers as u64;
+            let intermediate = self.intermediate_registers as u64;
+            let column_ix = byte_to_digit(*get_value(column).unwrap() as u8).unwrap();
+            constraints.push(Constraint::Scan{table: id, column: column_ix as u64, input: input});
+            constraints.push(Constraint::Identity{source: input, sink: intermediate});
+            self.input_registers += 1;
+            self.intermediate_registers += 1;
           }
         },
+        // COLUMN
         Node::ColumnDefine{parts} => {
           let sink = &parts[0].clone();
           constraints.append(&mut self.compile(parts));
-          //constraints.push(Constraint::Function {operation: Function::Add, parameters: vec![0, 0], output: 0}); 
         },
+        // MATH
         Node::MathExpression{parameters} => {
-          let left = &parameters[0].clone();
-          let operator = &parameters[1].clone();
-          let right = &parameters[2].clone();
-          let mut function = self.compile(vec![operator.clone()]);
-          println!("Left: {:?}\n Right {:?}", left, right);
-          constraints.push(function.pop().unwrap()); 
+          let mut new_constraints = self.compile(parameters);
+          let lhs = get_destination_register(&new_constraints[1]).unwrap() as u64;
+          let rhs = get_destination_register(&new_constraints[4]).unwrap() as u64;
+          for constraint in new_constraints {
+            match constraint {
+              Constraint::Function{operation, parameters, output} => {
+                let modified_constraint = Constraint::Function{
+                  operation, 
+                  parameters: vec![lhs, rhs], 
+                  output}
+                ;
+                constraints.push(modified_constraint);
+              },
+              _ => constraints.push(constraint),
+            }
+          }          
         },
+        // INFIX
         Node::InfixOperation{token} => {
           let op: Function = match token {
             Token::Plus => Some(Function::Add),
@@ -58,7 +80,9 @@ impl Compiler {
             Token::Backslash => Some(Function::Divide),
             _ => None,
           }.unwrap();
-          constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: 0}); 
+          let intermediate = self.intermediate_registers as u64;
+          constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: intermediate});
+          self.intermediate_registers += 1;
         }
         _ => (),
       }
@@ -69,6 +93,41 @@ impl Compiler {
 
 }
 
+fn get_destination_register(constraint: &Constraint) -> Option<usize> {
+  match constraint {
+    Constraint::Identity{source, sink} => Some(*sink as usize),
+    _ => None,
+  }
+}
+
+
+fn byte_to_digit(byte: u8) -> Option<usize> {
+  match byte {
+    48 => Some(0),
+    49 => Some(1),
+    50 => Some(2),
+    51 => Some(3),
+    52 => Some(4),
+    53 => Some(5),
+    54 => Some(6),
+    55 => Some(7),
+    56 => Some(8),
+    57 => Some(9),
+    _ => None,
+  }
+}
+
+fn get_number_from_select(node: &Node) -> u8 {
+  *get_value(&get_first_child(get_first_child(node).unwrap()).unwrap()).unwrap() as u8
+}
+
+fn get_first_child(node: &Node) -> Option<&Node> {
+  match node {
+    Node::Table{id, token, children} => Some(&children[0]),
+    Node::Select{children} => Some(&children[0]),
+    _ => None,
+  }
+}
 
 fn get_children(node: &Node) -> Option<&Vec<Node>> {
   match node {
