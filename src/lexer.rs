@@ -18,6 +18,7 @@ pub enum Token {
   Plus,
   Equal,
   Period,
+  EndOfStream,
 }
 
 
