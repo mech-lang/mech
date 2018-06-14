@@ -3,9 +3,8 @@
 // ## Prelude
 
 use lexer::Token;
-use lexer::Token::{HashTag, Identifier, Period, LeftBracket, RightBracket, Digit, Space, Equal, Plus, EndOfStream};
+use lexer::Token::{HashTag, Identifier, Period, LeftBracket, RightBracket, Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
 use mech::indexes::Hasher;
-use mech::operations::Function;
 use alloc::{String, Vec, fmt};
 
 // ### Some utility macros
@@ -97,7 +96,7 @@ pub enum Node {
   ColumnDefine { parts: Vec<Node> },
   Table { id: u64, children: Vec<Node>, token: Token },
   Number { value: u64, token: Token },
-  MathExpression { operation: Function, arguments: Vec<Node> },
+  MathExpression { operation: Token, parameters: Vec<Node> },
 }
 
 impl fmt::Debug for Node {
@@ -233,7 +232,7 @@ impl Parser {
     else { 
       let left = self.node_stack.pop().unwrap();
       let right = self.node_stack.pop().unwrap();
-      self.node_stack.push(Node::MathExpression{operation: Function::Add, arguments: vec![left, right] })
+      self.node_stack.push(Node::MathExpression{operation: Token::Plus, parameters: vec![left, right] })
     }
     result
   }
@@ -292,6 +291,9 @@ impl Parser {
   }
 
   production_rule!{plus, Plus}
+  production_rule!{dash, Dash}
+  production_rule!{asterisk, Asterisk}
+  production_rule!{backslash, Backslash}
   production_rule!{equal, Equal}
   production_rule!{space, Space}
   production_rule!{period, Period}
