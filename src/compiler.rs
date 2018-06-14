@@ -1,6 +1,7 @@
 use mech::runtime::{Block, Constraint};
 use mech::operations::{Function, Plan, Comparator};
 use parser::Node;
+use lexer::Token;
 use mech::indexes::Hasher;
 
 
@@ -38,14 +39,21 @@ impl Compiler {
           }
         },
         Node::ColumnDefine{parts} => {
-          //let sink = &parts[0].clone();
-          //let left = &parts[1].clone();
-          //let right = &parts[2].clone();
-          //constraints.append(&mut self.compile(parts));
+          let sink = &parts[0].clone();
+          constraints.append(&mut self.compile(parts));
           //constraints.push(Constraint::Function {operation: Function::Add, parameters: vec![0, 0], output: 0}); 
         },
-        Node::MathExpression{operation, arguments} => {
-
+        Node::MathExpression{operation, parameters} => {
+          let left = &parameters[0].clone();
+          let right = &parameters[0].clone();
+          let op: Function = match operation {
+            Token::Plus => Some(Function::Add),
+            Token::Dash => Some(Function::Subtract),
+            Token::Asterisk => Some(Function::Multiply),
+            Token::Backslash => Some(Function::Divide),
+            _ => None,
+          }.unwrap();
+          constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: 0}); 
         },
         _ => (),
       }
