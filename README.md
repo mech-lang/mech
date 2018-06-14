@@ -48,7 +48,7 @@ core.process_transaction(&txn);
 let mut block = Block::new("#add[3] = #add[1] + #add[2]");
 
 // Register the block with the core
-core.register_blocks(vec![block]);
+core.register_block(block);
 
 // #add:
 // ┌───┬───┬───┐
