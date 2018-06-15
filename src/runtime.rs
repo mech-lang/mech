@@ -280,6 +280,12 @@ impl Block {
 
   }
 
+  pub fn add_constraints(&mut self, constraints: Vec<Constraint>) {
+    for constraint in constraints {
+      self.add_constraint(constraint)
+    }
+  }
+
   pub fn is_ready(&self) -> bool {
     let input_registers_count = self.input_registers.len();
     // TODO why does the exponent have to be u32?
