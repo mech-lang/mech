@@ -195,6 +195,7 @@ impl fmt::Debug for Register {
 #[derive(Clone)]
 pub struct Block {
   pub id: usize,
+  pub text: String,
   pub ready: u64,
   pub updated: bool,
   pub plan: Vec<Constraint>,
@@ -212,6 +213,7 @@ impl Block {
   pub fn new() -> Block { 
     Block {
       id: 0,
+      text: String::from(""),
       ready: 0,
       updated: false,
       pipes: HashMap::new(),
@@ -437,6 +439,8 @@ impl fmt::Debug for Block {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "┌────────────────────────────────────────┐\n").unwrap();
     write!(f, "│ Block #{:?}\n", self.id).unwrap();
+    write!(f, "├────────────────────────────────────────┤\n").unwrap();
+    write!(f, "│ {}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
