@@ -6,11 +6,11 @@ extern crate core;
 extern crate rand;
 
 use test::Bencher;
-use mech::database::{Database, Transaction, Change};
-use mech::table::{Value, Table};
-use mech::indexes::Hasher;
-use mech::operations::{Function, Plan, Comparator};
-use mech::runtime::{Runtime, Block, Constraint, Register};
+use mech::{Core, Transaction, Change};
+use mech::{Value, Table};
+use mech::Hasher;
+use mech::{Function, Plan, Comparator};
+use mech::{Runtime, Block, Constraint, Register};
 use rand::{Rng};
 
 
@@ -87,7 +87,7 @@ fn export_ball() -> Block {
   block
 }
 
-fn step_db(db: &mut Database, n: u64) {
+fn step_db(db: &mut Core, n: u64) {
   let system_timer_change = Hasher::hash_str("system/timer");
   let timer_id = 1;      
   let txn = Transaction::from_change(Change::Add{table: system_timer_change, row: 1, column: 4, value: Value::from_u64(n)});     
@@ -136,11 +136,7 @@ fn position_update_1d() -> Block {
   block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3}); 
   block.add_constraint(Constraint::Insert {output: 3, table: ball, column: 1});
   let plan = vec![
-    Constraint::Identity {source: 1, sink: 1},
-    Constraint::Identity {source: 2, sink: 2},
-    Constraint::ChangeScan {table: system_timer_change, column: 4, input: 3},
-    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3},
-    Constraint::Insert {output: 3, table: ball, column: 1},
+
   ];
   block.plan = plan;
   block
@@ -220,8 +216,8 @@ fn reset_balls() -> Block {
   block
 }
 
-fn make_db(n: u64) -> Database {
-  let mut db = Database::new(10000000, 2);
+fn make_db(n: u64) -> Core {
+  let mut db = Core::new(10000000, 2);
   let system_timer_change = Hasher::hash_str("system/timer");
   let ball = Hasher::hash_str("ball");
   let ws = Hasher::hash_str("client/websocket");
@@ -251,6 +247,12 @@ fn make_db(n: u64) -> Database {
 }
 
 fn main() {
+  let mut block = position_update_1d();
+  let input = String::from("#add.3 = #add.1 + #add.2");
+  block.plan();
+  block.text= input;
+  println!("{:?}", block);
+  /*
   let mut db = make_db(10);
   let mut i: u64 = 0;
   loop {
@@ -260,5 +262,14 @@ fn main() {
     step_db(&mut db, i);
     
     i += 1;
-  }
+  }*/
 }
+
+
+/*
+    Constraint::Identity {source: 1, sink: 1},
+    Constraint::Identity {source: 2, sink: 2},
+    Constraint::ChangeScan {table: system_timer_change, column: 4, input: 3},
+    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3},
+    Constraint::Insert {output: 3, table: ball, column: 1},
+    */
