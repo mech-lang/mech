@@ -12,7 +12,7 @@ use hashmap_core::map::HashMap;
 #[derive(Clone, PartialEq)]
 pub enum Value {
   Number(i64),
-  String(u64),
+  String(String),
   Table(u64),
   Bool(bool),
   Empty,
@@ -21,11 +21,11 @@ pub enum Value {
 impl Value {
 
   pub fn from_string(string: String) -> Value {
-    Value::String(Hasher::hash_str(&string))
+    Value::String(string)
   }
 
   pub fn from_str(string: &str) -> Value {
-    Value::String(Hasher::hash_str(string))
+    Value::String(String::from(string))
   }
 
   pub fn from_u64(num: u64) -> Value {
