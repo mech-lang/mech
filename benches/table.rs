@@ -4,7 +4,7 @@ extern crate test;
 extern crate mech;
 
 use test::Bencher;
-use mech::table::{Table, Value};
+use mech::{Table, Value};
 
 #[bench]
 fn make_table(b: &mut Bencher) {

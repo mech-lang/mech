@@ -6,11 +6,11 @@ extern crate core;
 extern crate rand;
 
 use test::Bencher;
-use mech::database::{Database, Transaction, Change};
-use mech::table::{Value, Table};
-use mech::indexes::Hasher;
-use mech::operations::{Function, Plan, Comparator};
-use mech::runtime::{Runtime, Block, Constraint, Register};
+use mech::{Core, Transaction, Change};
+use mech::{Value, Table};
+use mech::Hasher;
+use mech::{Function, Plan, Comparator};
+use mech::{Runtime, Block, Constraint, Register};
 use rand::{Rng};
 
 
@@ -133,7 +133,7 @@ fn boundary_check4() -> Block {
   block
 }
 
-fn step_db(db: &mut Database) {
+fn step_db(db: &mut Core) {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let timer_id = 1;      
   let txn = Transaction::from_changeset(vec![
@@ -145,8 +145,8 @@ fn step_db(db: &mut Database) {
   db.process_transaction(&txn);
 }
 
-fn make_db(n: u64) -> Database {
-  let mut db = Database::new(1000, 2);
+fn make_db(n: u64) -> Core {
+  let mut db = Core::new(1000, 2);
     let system_timer_change = Hasher::hash_str("system/timer/change");
   let ball = Hasher::hash_str("ball");
   db.runtime.register_blocks(vec![position_update(), boundary_check(), boundary_check2(), boundary_check3(), boundary_check4()], &mut db.store);

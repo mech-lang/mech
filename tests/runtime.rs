@@ -1,8 +1,8 @@
 extern crate mech;
 
-use mech::indexes::Hasher;
-use mech::database::{Database, Transaction, Change};
-use mech::runtime::{Runtime};
+use mech::Hasher;
+use mech::{Core, Transaction, Change};
+use mech::{Runtime};
 
 
 #[test]

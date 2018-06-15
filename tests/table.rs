@@ -1,7 +1,7 @@
 extern crate mech;
 
-use mech::table::{Table, Value};
-use mech::indexes::Hasher;
+use mech::{Table, Value};
+use mech::Hasher;
 
 fn make_table() -> Table {
 

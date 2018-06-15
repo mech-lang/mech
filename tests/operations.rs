@@ -1,10 +1,10 @@
 extern crate mech;
 
-use mech::indexes::Hasher;
-use mech::database::{Database, Transaction, Change};
-use mech::runtime::{Block, Constraint};
-use mech::operations::{Function};
-use mech::table::{Value};
+use mech::Hasher;
+use mech::{Core, Transaction, Change};
+use mech::{Block, Constraint};
+use mech::{Function};
+use mech::{Value};
 
 #[test]
 fn math_add() {
@@ -15,10 +15,10 @@ fn math_add() {
     assert_eq!(col, Some(&val));
 }
 
-fn make_db() -> Database {
+fn make_db() -> Core {
 
   let math = Hasher::hash_str("math");
-  let mut db = Database::new(1,1);
+  let mut db = Core::new(1,1);
 
   let txn = Transaction::from_changeset(vec![
     Change::NewTable{tag: math, rows: 1, columns: 3}, 
