@@ -26,68 +26,87 @@ impl Compiler {
     }
   }
 
-  pub fn compile(&mut self, roots: Vec<Node>) -> Vec<Constraint> {
-    
+  pub fn compile(&mut self, ast: Node) -> Vec<Constraint> {
     let mut constraints = Vec::new();
     self.depth += 1;
-    for root in roots {
-      match root {
-        // SELECT
-        Node::Select{children} => {
-          let table = &children[0];
-          let id = get_id(table).unwrap();
-          let columns = get_children(table).unwrap();
-          for column in columns {
-            let input = self.input_registers as u64;
-            let intermediate = self.intermediate_registers as u64;
-            let column_ix = byte_to_digit(*get_value(column).unwrap() as u8).unwrap();
-            constraints.push(Constraint::Scan{table: id, column: column_ix as u64, input: input});
-            constraints.push(Constraint::Identity{source: input, sink: intermediate});
-            self.input_registers += 1;
-            self.intermediate_registers += 1;
-          }
-        },
-        // COLUMN
-        Node::ColumnDefine{parts} => {
-          let sink = &parts[0].clone();
-          constraints.append(&mut self.compile(parts));
-        },
-        // MATH
-        Node::MathExpression{parameters} => {
-          let mut new_constraints = self.compile(parameters);
-          let lhs = get_destination_register(&new_constraints[1]).unwrap() as u64;
-          let rhs = get_destination_register(&new_constraints[4]).unwrap() as u64;
-          for constraint in new_constraints {
-            match constraint {
-              Constraint::Function{operation, parameters, output} => {
-                let modified_constraint = Constraint::Function{
-                  operation, 
-                  parameters: vec![lhs, rhs], 
-                  output}
-                ;
-                constraints.push(modified_constraint);
-              },
-              _ => constraints.push(constraint),
-            }
-          }          
-        },
-        // INFIX
-        Node::InfixOperation{token} => {
-          let op: Function = match token {
-            Token::Plus => Some(Function::Add),
-            Token::Dash => Some(Function::Subtract),
-            Token::Asterisk => Some(Function::Multiply),
-            Token::Backslash => Some(Function::Divide),
-            _ => None,
-          }.unwrap();
+    match ast {
+      // ROOT
+      Node::Root{children} => {
+        constraints.append(&mut self.compile_nodes(children));
+      },
+      // BLOCK
+      Node::Block{children} => {
+        constraints.append(&mut self.compile_nodes(children));
+      },
+      // CONSTRAINT
+      Node::Constraint{children} => {
+        constraints.append(&mut self.compile_nodes(children));
+      },
+      // SELECT
+      Node::Select{children} => {
+        let table = &children[0];
+        let id = get_id(table).unwrap();
+        let columns = get_children(table).unwrap();
+        for column in columns {
+          let input = self.input_registers as u64;
           let intermediate = self.intermediate_registers as u64;
-          constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: intermediate});
+          let column_ix = byte_to_digit(*get_value(column).unwrap() as u8).unwrap();
+          constraints.push(Constraint::Scan{table: id, column: column_ix as u64, input: input});
+          constraints.push(Constraint::Identity{source: input, sink: intermediate});
+          self.input_registers += 1;
           self.intermediate_registers += 1;
         }
-        _ => (),
+      },
+      // COLUMN
+      Node::ColumnDefine{parts} => {
+        let sink = &parts[0].clone();
+        println!("{:?}", get_id(sink));
+        constraints.append(&mut self.compile_nodes(parts));
+      },
+      // MATH
+      Node::MathExpression{parameters} => {
+        let mut new_constraints = self.compile_nodes(parameters);
+        let lhs = get_destination_register(&new_constraints[1]).unwrap() as u64;
+        let rhs = get_destination_register(&new_constraints[4]).unwrap() as u64;
+        for constraint in new_constraints {
+          match constraint {
+            Constraint::Function{operation, parameters, output} => {
+              let modified_constraint = Constraint::Function{
+                operation, 
+                parameters: vec![lhs, rhs], 
+                output}
+              ;
+              constraints.push(modified_constraint);
+            },
+            _ => constraints.push(constraint),
+          }
+        }          
+      },
+      // INFIX
+      Node::InfixOperation{token} => {
+        let op: Function = match token {
+          Token::Plus => Some(Function::Add),
+          Token::Dash => Some(Function::Subtract),
+          Token::Asterisk => Some(Function::Multiply),
+          Token::Backslash => Some(Function::Divide),
+          _ => None,
+        }.unwrap();
+        let intermediate = self.intermediate_registers as u64;
+        constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: intermediate});
+        self.intermediate_registers += 1;
       }
+      _ => (),
     }
+    
     self.constraints = constraints.clone();
+    constraints
+  }
+
+  pub fn compile_nodes(&mut self, nodes: Vec<Node>) -> Vec<Constraint> {
+    let mut constraints = Vec::new();
+    for node in nodes {
+      constraints.append(&mut self.compile(node));
+    }
     constraints
   }
 
@@ -125,6 +144,8 @@ fn get_first_child(node: &Node) -> Option<&Node> {
   match node {
     Node::Table{id, token, children} => Some(&children[0]),
     Node::Select{children} => Some(&children[0]),
+    Node::Block{children} => Some(&children[0]),
+    Node::Root{children} => Some(&children[0]),
     _ => None,
   }
 }
@@ -132,6 +153,8 @@ fn get_first_child(node: &Node) -> Option<&Node> {
 fn get_children(node: &Node) -> Option<&Vec<Node>> {
   match node {
     Node::Table{id, token, children} => Some(children),
+    Node::Block{children} => Some(children),
+    Node::Root{children} => Some(children),
     _ => None,
   }
 }

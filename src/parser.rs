@@ -57,6 +57,7 @@ macro_rules! and_combinator {
 macro_rules! production_rule {
   ($func_name:ident, $token:ident) => (
     fn $func_name(&mut self) -> bool {
+      println!("Leaf");
       let token = if self.position < self.tokens.len() {
         &self.tokens[self.position]
       } else { 
@@ -85,6 +86,9 @@ macro_rules! production_rule {
 
 #[derive(Clone)]
 pub enum Node {
+  Root{ children: Vec<Node> },
+  Block{ children: Vec<Node> },
+  Constraint{ children: Vec<Node> },
   Select { children: Vec<Node> },
   ColumnDefine { parts: Vec<Node> },
   Table { id: u64, children: Vec<Node>, token: Token },
@@ -97,6 +101,9 @@ impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
+      Node::Root{..} => write!(f, "Root").unwrap(),
+      Node::Block{..} => write!(f, "Block").unwrap(),
+      Node::Constraint{..} => write!(f, "Constraint").unwrap(),
       Node::Select{..} => write!(f, "Select").unwrap(),
       Node::MathExpression{..} => write!(f, "Math").unwrap(),
       Node::Table{..} => write!(f, "Table").unwrap(),
@@ -127,6 +134,7 @@ pub struct Parser {
   last_match: usize,
   pub position: usize,
   pub committed: usize,
+  pub ast: Node,
 }
 
 impl Parser {
@@ -140,6 +148,7 @@ impl Parser {
       last_match: 0,
       position: 0,
       committed: 0,
+      ast: Node::Root{ children: Vec::new()  },
     }
   }
 
@@ -156,10 +165,10 @@ impl Parser {
     self.parse_status = ParseStatus::Parsing;
     'parse_loop: while {
       let result = and_combinator!{
-        self.expression()
-        //,self.select()
+        self.block()
       };
       self.committed = self.last_match;
+      // We're at the end of the tokens
       if self.position == self.tokens.len() {
         self.parse_status = ParseStatus::Complete;
         break 'parse_loop
@@ -170,10 +179,44 @@ impl Parser {
       ParseStatus::Complete => (), 
       _ => self.parse_status = ParseStatus::Waiting,
     }
+    // Put each node left on the stack onto a single root node
+    match self.ast {
+      Node::Root{ref mut children} => {
+        children.append(&mut self.node_stack);
+      },
+      _ => (),
+    }
+  }
+
+  pub fn block(&mut self) -> bool {
+    println!("Block");
+    let result = or_combinator!(
+      self.constraint()
+    );
+    if !result { self.reset(); }
+    else {
+      let constraint = self.node_stack.pop().unwrap();
+      self.node_stack.push(Node::Block{children: vec![constraint]})
+    }
+    result
+  }
+
+  pub fn constraint(&mut self) -> bool {
+    println!("Constraint");
+    let result = or_combinator!(
+      self.column_define()
+    );
+    if !result { self.reset(); }
+    else {
+      let constraint = self.node_stack.pop().unwrap();
+      self.node_stack.push(Node::Constraint{children: vec![constraint]})
+    }
+    result
   }
 
   pub fn select(&mut self) -> bool {
-    let result = or_combinator!(self.bracket_index());
+    println!("Select");
+    let result = or_combinator!(self.index());
     if !result { self.reset(); }
     else {
       let table = self.node_stack.pop().unwrap();
@@ -182,9 +225,8 @@ impl Parser {
     result
   }
 
-
-  pub fn expression(&mut self) -> bool {
-    //println!("Expression");
+  pub fn insert(&mut self) -> bool {
+    println!("Insert");
     let result = and_combinator!(
       self.column_define()
       //,self.dot_select()
@@ -193,14 +235,26 @@ impl Parser {
     result
   }
 
+
+  pub fn expression(&mut self) -> bool {
+    println!("Expression");
+    let result = and_combinator!(
+      self.math_expression()
+      //,self.dot_select()
+    );
+    if !result { self.reset(); }
+    result
+  }
+
   // #add[3] = #add[1] + #add[2]
   pub fn column_define(&mut self) -> bool {
+    println!("Column Define");
     let result = and_combinator!(
-      self.bracket_index(),
+      self.index(),
       self.space(), 
       self.equal(), 
       self.space(), 
-      self.math_expression()   
+      self.expression()   
     );
     if !result { self.reset(); }
     else { 
@@ -213,6 +267,7 @@ impl Parser {
 
   // #add[1] + #add[2]
   pub fn math_expression(&mut self) -> bool {
+    println!("Math Expression");
     let result = and_combinator!(
       self.select(), 
       self.space(), 
@@ -232,6 +287,7 @@ impl Parser {
 
 
   pub fn infix_operator(&mut self) -> bool {
+    println!("Infix");
     let result = or_combinator!(
       self.plus(),
       self.dash(), 
@@ -269,22 +325,47 @@ impl Parser {
   }
 
   // #student.grade
-  pub fn dot_index(&mut self) -> bool {
-    let result = and_combinator!(self.table(), self.period(), self.identifier());
+  pub fn index(&mut self) -> bool {
+    println!("Index");
+    let result = or_combinator!(
+      self.dot_index(), 
+      self.bracket_index()
+    );
     if !result { self.reset(); }
+    result
+  }
+
+
+  // #student.grade
+  pub fn dot_index(&mut self) -> bool {
+    println!("Dot Index");
+    let result = and_combinator!(self.table(), self.period(), or_combinator!(self.identifier(), self.digit()));
+    if !result { self.reset(); }
+    else {
+      let digit = self.token_stack.pop().unwrap();
+      let value = get_value(&digit).unwrap();
+      let ix = self.node_stack.len() - 1;
+      match self.node_stack[ix] {
+        Node::Table{ref id, ref token,ref mut children} => {
+          let value = get_value(&digit).unwrap();
+          children.push(Node::Number{value, token: digit.clone()})
+        },
+        _ => (),
+      }
+      
+    }
     result
   }
 
   // #student[1]
   pub fn bracket_index(&mut self) -> bool {
-    println!("Index");
+    println!("Bracket Index");
     let result = and_combinator!(self.table(), self.left_bracket(), self.digit(), self.right_bracket());
     if !result { self.reset(); }
     else {
       self.token_stack.pop().unwrap();
       let digit = self.token_stack.pop().unwrap();
       let ix = self.node_stack.len() - 1;
-      
       match self.node_stack[ix] {
         Node::Table{ref id, ref token,ref mut children} => {
           let value = get_value(&digit).unwrap();
@@ -308,8 +389,6 @@ impl Parser {
   production_rule!{hash_tag, HashTag}
   production_rule!{identifier, Identifier}
   production_rule!{digit, Digit}
-
-
 
 }
 
