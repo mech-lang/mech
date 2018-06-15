@@ -84,7 +84,7 @@ impl Transaction {
       txn.adds.push(Change::Add{table, row, column, value: Value::from_string(value)});
     }
     for (table, row,column, value) in removes {
-      txn.adds.push(Change::Remove{table, row, column, value: Value::from_string(value)});
+      txn.removes.push(Change::Remove{table, row, column, value: Value::from_string(value)});
     }
     txn    
   }
