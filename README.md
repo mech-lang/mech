@@ -58,7 +58,7 @@ core.register_block(block);
 // Check that the numbers were added together
 assert_eq!(core.get_cell("add", 1, 3), Some(Value::from_u64(8)));
 
-// We can add another row to Table 1
+// We can add another row to the #add table
 let txn2 = Transaction::from_text("#add += [3 4]");
 core.process_transaction(&txn2);
 
