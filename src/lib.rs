@@ -18,10 +18,107 @@ extern crate core;
 extern crate hashmap_core;
 extern crate rand;
 
+use alloc::{String, Vec};
+use core::fmt;
+use hashmap_core::set::{HashSet};
+use hashmap_core::map::{HashMap};
+
+
 // ## Modules
 
-pub mod database;
-pub mod runtime;
-pub mod table;
-pub mod indexes;
-pub mod operations;
+mod database;
+mod runtime;
+mod table;
+mod indexes;
+mod operations;
+
+// ## Exported Modules
+
+pub use self::database::{Transaction, Change, Interner};
+pub use self::table::{Value, Table};
+pub use self::indexes::{TableIndex, Hasher};
+pub use self::operations::{Function, Plan, Comparator};
+pub use self::runtime::{Runtime, Block, Constraint, Register};
+
+// ## Database
+
+pub struct Core {
+  pub epoch: usize,
+  pub changes: usize,
+  pub round: u64,
+  pub store: Interner,
+  pub runtime: Runtime,
+  pub watched_index: HashMap<u64, bool>,
+  pub last_transaction: usize,
+}
+
+impl Core {
+
+  pub fn new(change_capacity: usize, table_capacity: usize) -> Core {
+    Core {
+      epoch: 0,
+      changes: 0,
+      round: 0,
+      store: Interner::new(change_capacity, table_capacity),
+      runtime: Runtime::new(),
+      watched_index: HashMap::new(),
+      last_transaction: 0,
+    }
+  }
+
+  pub fn register_watcher(&mut self, table: u64) {
+    self.watched_index.insert(table, false);
+  }
+
+  pub fn process_transaction(&mut self, txn: &Transaction) {
+    self.last_transaction = self.store.change_pointer;
+    // First make any tables
+    for table in txn.tables.iter() {
+      self.store.intern_change(table);
+    }
+    // Handle the removes
+    for remove in txn.removes.iter() {
+      self.store.intern_change(remove);
+    }
+    // Handle the adds
+    for add in txn.adds.iter() {
+      self.store.intern_change(add);
+    }
+    
+    self.runtime.run_network(&mut self.store);
+    
+    // Mark watched tables as changed
+    for (table_id, _) in self.store.tables.changed.drain() {
+      match self.watched_index.get_mut(&(table_id as u64)) {
+        Some(q) => *q = true,
+        _ => (),
+      }
+    }
+
+    self.changes = self.store.changes_count;
+    self.epoch = self.store.rollover;
+  }
+
+  pub fn capacity(&self) -> f64 {
+    100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)
+  }
+}
+
+impl fmt::Debug for Core {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "┌────────────────────┐\n").unwrap();
+    write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
+    write!(f, "├────────────────────┤\n").unwrap();
+    write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
+    write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
+    write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
+    write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
+    write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
+    write!(f, "└────────────────────┘\n").unwrap();
+    for (table, history) in self.store.tables.map.values() {
+      write!(f, "{:?}", table).unwrap();
+    }
+    Ok(())
+  }
+}
