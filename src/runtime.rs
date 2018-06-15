@@ -405,6 +405,31 @@ impl Block {
     self.updated = true;
   }
 
+  // Right now, the planner works just by giving the constraint an order to execute.
+  // This is accomplished with a weighted sort. First scans, then transforms, then
+  // inserts.
+  // This could be an entire thing all by itself, so let's just keep it simple at first.
+  pub fn plan(&mut self) {
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::Identity{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::Function{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::Insert{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+  }
+
 }
 
 impl fmt::Debug for Block {
