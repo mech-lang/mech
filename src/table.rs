@@ -50,6 +50,13 @@ impl Value {
     }
   }
 
+  pub fn as_string(&self) -> Option<&String> {
+    match self {
+      Value::String(n) => Some(n),
+      _ => None,
+    }
+  }
+
 
 }
 
