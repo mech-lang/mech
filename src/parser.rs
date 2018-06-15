@@ -4,7 +4,7 @@
 
 use lexer::Token;
 use lexer::Token::{HashTag, Identifier, Period, LeftBracket, RightBracket, Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
-use mech::indexes::Hasher;
+use mech::Hasher;
 use alloc::{String, Vec, fmt};
 
 // ### Some utility macros

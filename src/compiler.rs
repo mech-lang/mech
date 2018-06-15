@@ -1,8 +1,8 @@
-use mech::runtime::{Block, Constraint};
-use mech::operations::{Function, Plan, Comparator};
+use mech::{Block, Constraint};
+use mech::{Function, Plan, Comparator};
+use mech::Hasher;
 use parser::Node;
 use lexer::Token;
-use mech::indexes::Hasher;
 
 pub struct Compiler {
   pub blocks: Vec<Block>,
