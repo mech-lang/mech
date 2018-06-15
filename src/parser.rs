@@ -90,6 +90,7 @@ pub enum Node {
   Block{ children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Select { children: Vec<Node> },
+  Insert { children: Vec<Node> },
   ColumnDefine { parts: Vec<Node> },
   Table { id: u64, children: Vec<Node>, token: Token },
   Number { value: u64, token: Token },
@@ -105,6 +106,7 @@ impl fmt::Debug for Node {
       Node::Block{..} => write!(f, "Block").unwrap(),
       Node::Constraint{..} => write!(f, "Constraint").unwrap(),
       Node::Select{..} => write!(f, "Select").unwrap(),
+      Node::Insert{..} => write!(f, "Insert").unwrap(),
       Node::MathExpression{..} => write!(f, "Math").unwrap(),
       Node::Table{..} => write!(f, "Table").unwrap(),
       Node::Number{..} => write!(f, "Number").unwrap(),
@@ -227,11 +229,14 @@ impl Parser {
 
   pub fn insert(&mut self) -> bool {
     println!("Insert");
-    let result = and_combinator!(
-      self.column_define()
-      //,self.dot_select()
+    let result = or_combinator!(
+      self.index()
     );
     if !result { self.reset(); }
+    else { 
+      let index = self.node_stack.pop().unwrap();
+      self.node_stack.push(Node::Insert{ children: vec![index] })
+    }
     result
   }
 
@@ -250,7 +255,7 @@ impl Parser {
   pub fn column_define(&mut self) -> bool {
     println!("Column Define");
     let result = and_combinator!(
-      self.index(),
+      self.insert(),
       self.space(), 
       self.equal(), 
       self.space(), 

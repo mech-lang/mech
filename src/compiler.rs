@@ -57,11 +57,29 @@ impl Compiler {
           self.intermediate_registers += 1;
         }
       },
+      // INSERT
+      Node::Insert{children} => {
+        let table = &children[0];
+        let id = get_id(table).unwrap();
+        let column = byte_to_digit(*get_value(get_first_child(table).unwrap()).unwrap() as u8).unwrap() as u64;
+        constraints.push(Constraint::Insert{output: 0, table: id, column});
+        constraints.append(&mut self.compile_nodes(children.clone()));
+      },
       // COLUMN
       Node::ColumnDefine{parts} => {
-        let sink = &parts[0].clone();
-        println!("{:?}", get_id(sink));
-        constraints.append(&mut self.compile_nodes(parts));
+        let new_constraints = &mut self.compile_nodes(parts);
+        let insert = &new_constraints[0].clone();
+        let function = &new_constraints[3].clone();
+        let wired_insert = match (insert, function) {
+          (Constraint::Insert{table, column, ..}, Constraint::Function{output,..}) => {
+            Some(Constraint::Insert{table: *table, column: *column, output: *output})
+          },
+          x => {
+            None
+          },
+        };
+        new_constraints[0] = wired_insert.unwrap();
+        constraints.append(new_constraints);
       },
       // MATH
       Node::MathExpression{parameters} => {
