@@ -69,7 +69,8 @@ impl Runtime {
   // We've just interned some changes, and now we react to them by running the block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
     // Run the compute graph until it reaches a steady state.
-    let max_iterations = 10000;
+    // TODO Make this a parameter
+    let max_iterations = 10_000;
     let mut n = 0;
     while {
       for block_id in self.ready_blocks.drain() {
