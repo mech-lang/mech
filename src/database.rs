@@ -23,9 +23,9 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Change::Add{table, row, column, value} => write!(f, "+>> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::Remove{table, row, column, value} => write!(f, "- #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::NewTable{tag, rows, columns} => write!(f, "+ #{:#x} [{:?} x {:?}]", tag, rows, columns),
+      Change::Add{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::NewTable{tag, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", tag, rows, columns),
     }
   }
 }
