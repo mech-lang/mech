@@ -16,198 +16,65 @@ work on the supplied data.
 #[repr(u8)]
 #[derive(Debug, Clone)]
 pub enum Function {
-  Add,
-  Subtract,
-  Multiply,
-  Divide,
+  Add, Subtract, Multiply, Divide,
   //Power,
 }
 
-// TODO: Abstract this.... this is quick and dirty now just so I can get it working.
-
-pub fn math_add(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table, lengths: &mut Vec<u64>) {
-  if parameters.len() == 2 && output.len() == 1 {
-    // Extract parameters
-    let lhs = parameters[0] as usize;
-    let rhs = parameters[1] as usize;
-    let out = output[0] as usize;
-    let lhs_length = lengths[lhs - 1] as usize;
-    let rhs_length = lengths[rhs - 1] as usize;
-    let mut out_length = 0;
-    // Operate element wise
-    if lhs_length == rhs_length {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = lhs_length;
-      }
-    // Add vector to scalar  
-    } else if lhs_length == 1 && rhs_length > 1 {
-      for i in 1 .. rhs_length + 1 {     
-        match (store.index(1, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = rhs_length;
-      }
-    } else if lhs_length > 1 && rhs_length == 1 {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(1, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 + *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
+#[macro_export]
+macro_rules! binary_math {
+  ($func_name:ident, $op:tt) => (
+    pub fn $func_name(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table, lengths: &mut Vec<u64>) {
+      if parameters.len() == 2 && output.len() == 1 {
+        // Extract parameters
+        let lhs = parameters[0] as usize;
+        let rhs = parameters[1] as usize;
+        let out = output[0] as usize;
+        let lhs_length = lengths[lhs - 1] as usize;
+        let rhs_length = lengths[rhs - 1] as usize;
+        let mut out_length = 0;
+        // Operate element wise
+        if lhs_length == rhs_length {
+          for i in 1 .. lhs_length + 1 {     
+            match (store.index(i, lhs), store.index(i, rhs)) {
+              (Some(Value::Number(x)), Some(Value::Number(y))) => {
+                store.set_cell(i, out, Value::from_i64(*x as i64 $op *y as i64)); 
+              },
+              _ => {store.set_cell(i, out, Value::Empty);},
+            } 
+            out_length = lhs_length;
+          }
+        // Add vector to scalar  
+        } else if lhs_length == 1 && rhs_length > 1 {
+          for i in 1 .. rhs_length + 1 {     
+            match (store.index(1, lhs), store.index(i, rhs)) {
+              (Some(Value::Number(x)), Some(Value::Number(y))) => {
+                store.set_cell(i, out, Value::from_i64(*x as i64 $op *y as i64)); 
+              },
+              _ => {store.set_cell(i, out, Value::Empty);},
+            } 
+            out_length = rhs_length;
+          }
+        } else if lhs_length > 1 && rhs_length == 1 {
+          for i in 1 .. lhs_length + 1 {     
+            match (store.index(i, lhs), store.index(1, rhs)) {
+              (Some(Value::Number(x)), Some(Value::Number(y))) => {
+                store.set_cell(i, out, Value::from_i64(*x as i64 $op *y as i64)); 
+              },
+              _ => {store.set_cell(i, out, Value::Empty);},
+            }
+            out_length = lhs_length; 
+          }
         }
-        out_length = lhs_length; 
+        lengths[out - 1] = out_length as u64;
       }
     }
-    lengths[out - 1] = out_length as u64;
-  }
+  )
 }
 
-pub fn math_subtract(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table, lengths: &mut Vec<u64>) {
-  if parameters.len() == 2 && output.len() == 1 {
-    // Extract parameters
-    let lhs = parameters[0] as usize;
-    let rhs = parameters[1] as usize;
-    let out = output[0] as usize;
-    let lhs_length = lengths[lhs - 1] as usize;
-    let rhs_length = lengths[rhs - 1] as usize;
-    let mut out_length = 0;
-    // Operate element wise
-    if lhs_length == rhs_length {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 - *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = lhs_length;
-      }
-    // Add vector to scalar  
-    } else if lhs_length == 1 && rhs_length > 1 {
-      for i in 1 .. rhs_length + 1 {     
-        match (store.index(1, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 - *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = rhs_length;
-      }
-    } else if lhs_length > 1 && rhs_length == 1 {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(1, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 - *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        }
-        out_length = lhs_length; 
-      }
-    }
-    lengths[out - 1] = out_length as u64;
-  }
-}
-
-pub fn math_multiply(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table, lengths: &mut Vec<u64>) {
-  if parameters.len() == 2 && output.len() == 1 {
-    // Extract parameters
-    let lhs = parameters[0] as usize;
-    let rhs = parameters[1] as usize;
-    let out = output[0] as usize;
-    let lhs_length = lengths[lhs - 1] as usize;
-    let rhs_length = lengths[rhs - 1] as usize;
-    let mut out_length = 0;
-    // Operate element wise
-    if lhs_length == rhs_length {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 * *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = lhs_length;
-      }
-    // Add vector to scalar  
-    } else if lhs_length == 1 && rhs_length > 1 {
-      for i in 1 .. rhs_length + 1 {     
-        match (store.index(1, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 * *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = rhs_length;
-      }
-    } else if lhs_length > 1 && rhs_length == 1 {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(1, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 * *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        }
-        out_length = lhs_length; 
-      }
-    }
-    lengths[out - 1] = out_length as u64;
-  }
-}
-
-pub fn math_divide(parameters: &Vec<u64>, output: & Vec<u64>, store: &mut Table, lengths: &mut Vec<u64>) {
-  if parameters.len() == 2 && output.len() == 1 {
-    // Extract parameters
-    let lhs = parameters[0] as usize;
-    let rhs = parameters[1] as usize;
-    let out = output[0] as usize;
-    let lhs_length = lengths[lhs - 1] as usize;
-    let rhs_length = lengths[rhs - 1] as usize;
-    let mut out_length = 0;
-    // Operate element wise
-    if lhs_length == rhs_length {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 / *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = lhs_length;
-      }
-    // Add vector to scalar  
-    } else if lhs_length == 1 && rhs_length > 1 {
-      for i in 1 .. rhs_length + 1 {     
-        match (store.index(1, lhs), store.index(i, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 / *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        } 
-        out_length = rhs_length;
-      }
-    } else if lhs_length > 1 && rhs_length == 1 {
-      for i in 1 .. lhs_length + 1 {     
-        match (store.index(i, lhs), store.index(1, rhs)) {
-          (Some(Value::Number(x)), Some(Value::Number(y))) => {
-            store.set_cell(i, out, Value::from_i64(*x as i64 / *y as i64)); 
-          },
-          _ => {store.set_cell(i, out, Value::Empty);},
-        }
-        out_length = lhs_length; 
-      }
-    }
-    lengths[out - 1] = out_length as u64;
-  }
-}
+binary_math!{math_add, +}
+binary_math!{math_subtract, -}
+binary_math!{math_multiply, *}
+binary_math!{math_divide, /}
 
 // ## Comparators
 
