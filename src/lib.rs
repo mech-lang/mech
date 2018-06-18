@@ -40,9 +40,10 @@ pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Plan, Comparator};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
 
-// ## Database
+// ## Core
 
 pub struct Core {
+  pub id: u64,
   pub epoch: usize,
   pub changes: usize,
   pub round: u64,
@@ -56,6 +57,7 @@ impl Core {
 
   pub fn new(change_capacity: usize, table_capacity: usize) -> Core {
     Core {
+      id: 0,
       epoch: 0,
       changes: 0,
       round: 0,
@@ -108,7 +110,7 @@ impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "┌────────────────────┐\n").unwrap();
-    write!(f, "│ Database ({:?})\n", self.store.changes.capacity()).unwrap();
+    write!(f, "│ Mech Core #{:0x}\n", self.id).unwrap();
     write!(f, "├────────────────────┤\n").unwrap();
     write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
     write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
