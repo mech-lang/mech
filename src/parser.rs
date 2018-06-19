@@ -61,11 +61,12 @@ pub enum Node {
   Constraint{ children: Vec<Node> },
   Select { children: Vec<Node> },
   Insert { children: Vec<Node> },
-  ColumnDefine { parts: Vec<Node> },
-  Table { id: u64, children: Vec<Node>, token: Token },
-  Number { value: u64, token: Token },
-  MathExpression { parameters: Vec<Node> },
-  InfixOperation {token: Token},
+  ColumnDefine { children: Vec<Node> },
+  Table { id: u64, children: Vec<Node> },
+  Number { value: u64, children: Vec<Node> },
+  MathExpression { children: Vec<Node> },
+  InfixOperation {children: Vec<Node>},
+  Token{token: Token},
 }
 
 impl fmt::Debug for Node {
@@ -114,7 +115,6 @@ pub struct ParserError {
   pub line: usize,
   pub token: Token,
   pub code: u64,
-  pub reason: String,
 }
 
 #[derive(Clone)]
@@ -149,7 +149,7 @@ impl Parser {
     };
     s.token_stack.append(&mut self.tokens);
     or_combinator!(optional(table(&mut s)));
-
+  }
    
 }
 
@@ -189,6 +189,11 @@ pub fn table(s: &mut ParseState) -> &mut ParseState {
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   println!("Token: {:?} {:?}", token, s.token_stack[s.position]);
   println!("test? {:?}", s.token_stack[s.position] == token);
+  if s.token_stack[s.position] == token {
+
+  } else {
+    s.status = ParseStatus::Error;
+  }
   s
 }
 
@@ -273,7 +278,7 @@ macro_rules! production_rule {
       },
       _ => (),
     }*/
-  }
+  
 
 
 /*
