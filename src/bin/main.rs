@@ -25,11 +25,11 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(100,10);
 
-  let input = String::from("#add.3 = #add.1 + #add.2");
+  let input = String::from("add.3 = #add.1 + #add.2;");
   let add = Hasher::hash_str("add");
-  println!("{:?}", input);
+  //println!("{:?}", input);
 
-  lexer.add_string(input);
+  lexer.add_string(input.clone());
   let tokens = lexer.get_tokens();
   println!("{:?}", tokens);
   
@@ -42,11 +42,12 @@ fn main() {
   walk_tree(&parser.ast, 0);
   let constraints = compiler.compile(parser.ast);
   let mut block = Block::new();
+  block.text = input.clone();
   block.add_constraints(constraints);
   block.plan();
   core.runtime.register_blocks(vec![block], &mut core.store);
-  println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  //println!("{:?}", core);
+  //println!("{:?}", core.runtime);
   let txn = Transaction::from_changeset(vec![
     Change::NewTable{tag: add, rows: 4, columns: 3},
     Change::Add{table: add, row: 1, column: 1, value: Value::from_u64(1)},
@@ -56,9 +57,9 @@ fn main() {
     Change::Add{table: add, row: 3, column: 1, value: Value::from_u64(5)},
     Change::Add{table: add, row: 3, column: 2, value: Value::from_u64(6)}
   ]);
-  core.process_transaction(&txn);
-  println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  //core.process_transaction(&txn);
+  //println!("{:?}", core);
+  //println!("{:?}", core.runtime);
 }
  
 pub fn walk_tree(node: &Node, depth: usize) {
