@@ -150,7 +150,105 @@ impl Parser {
     s.token_stack.append(&mut self.tokens);
     or_combinator!(optional(table(&mut s)));
 
-    /*
+   
+}
+
+impl fmt::Debug for Parser {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    
+    write!(f, "┌───────────────────────────────────────┐\n").unwrap();
+    write!(f, "│ Parser\n").unwrap();
+    write!(f, "│ Status: {:?}\n", self.parse_status).unwrap();
+    write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
+    write!(f, "├───────────────────────────────────────┤\n").unwrap();
+    for (ix, token) in self.tokens.iter().enumerate() {
+      let c1 = " ";//if self.position == ix + 1 { ">" } else { " " };
+      let c2 = " ";//if self.last_match == ix + 1 { ">" } else { " " };
+      write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
+    }
+    write!(f, "└───────────────────────────────────────┘\n").unwrap();
+    Ok(())
+  }
+}
+
+
+pub fn optional(s: &mut ParseState) -> &mut ParseState {
+  println!("Optional");
+  s.status = ParseStatus::Parsing;
+  s
+}
+
+pub fn table(s: &mut ParseState) -> &mut ParseState {
+  println!("Table");
+  let result = token(s, Alpha);
+  println!("{:?}", &result);
+  result
+}
+
+pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
+  println!("Token: {:?} {:?}", token, s.token_stack[s.position]);
+  println!("test? {:?}", s.token_stack[s.position] == token);
+  s
+}
+
+
+
+/*
+// #student
+pub fn table(&mut self) -> bool {
+  println!("Table");
+  let result = and_combinator!(self.hash_tag(), self.identifier());
+  if !result { self.reset(); }
+  else { 
+    let token = self.token_stack.pop().unwrap();
+    match token {
+      Identifier{ref name} =>  {
+        let id = Hasher::hash_byte_vector(name);
+        self.node_stack.push(Node::Table{id, children: vec![], token: token.clone()})
+      },
+      _ => (),
+    }
+
+  }
+  result
+}*/
+
+
+
+/*
+// Creates a function that tests for a token
+#[macro_export]
+macro_rules! production_rule {
+  ($func_name:ident, $token:ident) => (
+    fn $func_name(&mut s: ParseState) -> ParseState {
+      println!("Leaf");
+      let token = if s.position < s.tokens.len() {
+        &s.tokens[s.position]
+      } else { 
+        &EndOfStream 
+      };
+      let last_match = s.last_match;
+      let old_position = s.position;
+      match token {
+        &$token{..} => {
+          s.token_stack.push(token.clone());
+          s.position += 1;
+          s.last_match = s.position;
+          true
+        },
+        _ => {
+          s.last_match = last_match;
+          s.position = old_position;
+          false
+        },
+      }
+    }
+  )
+}*/
+
+
+ /*
     self.parse_status = ParseStatus::Parsing;
     'parse_loop: while {
       let result = and_combinator!{
@@ -368,100 +466,3 @@ impl Parser {
   production_rule!{identifier, Identifier}
   production_rule!{digit, Digit}
 */
-}
-
-impl fmt::Debug for Parser {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    
-    write!(f, "┌───────────────────────────────────────┐\n").unwrap();
-    write!(f, "│ Parser\n").unwrap();
-    write!(f, "│ Status: {:?}\n", self.parse_status).unwrap();
-    write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
-    write!(f, "├───────────────────────────────────────┤\n").unwrap();
-    for (ix, token) in self.tokens.iter().enumerate() {
-      let c1 = " ";//if self.position == ix + 1 { ">" } else { " " };
-      let c2 = " ";//if self.last_match == ix + 1 { ">" } else { " " };
-      write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
-    }
-    write!(f, "└───────────────────────────────────────┘\n").unwrap();
-    Ok(())
-  }
-}
-
-
-pub fn optional(s: &mut ParseState) -> &mut ParseState {
-  println!("Optional");
-  s.status = ParseStatus::Parsing;
-  s
-}
-
-pub fn table(s: &mut ParseState) -> &mut ParseState {
-  println!("Table");
-  let result = token(s, Alpha);
-  println!("{:?}", &result);
-  result
-}
-
-pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
-  println!("Token: {:?} {:?}", token, s.token_stack[s.position]);
-  println!("test? {:?}", s.token_stack[s.position] == token);
-  s
-}
-
-
-
-/*
-// #student
-pub fn table(&mut self) -> bool {
-  println!("Table");
-  let result = and_combinator!(self.hash_tag(), self.identifier());
-  if !result { self.reset(); }
-  else { 
-    let token = self.token_stack.pop().unwrap();
-    match token {
-      Identifier{ref name} =>  {
-        let id = Hasher::hash_byte_vector(name);
-        self.node_stack.push(Node::Table{id, children: vec![], token: token.clone()})
-      },
-      _ => (),
-    }
-
-  }
-  result
-}*/
-
-
-
-/*
-// Creates a function that tests for a token
-#[macro_export]
-macro_rules! production_rule {
-  ($func_name:ident, $token:ident) => (
-    fn $func_name(&mut s: ParseState) -> ParseState {
-      println!("Leaf");
-      let token = if s.position < s.tokens.len() {
-        &s.tokens[s.position]
-      } else { 
-        &EndOfStream 
-      };
-      let last_match = s.last_match;
-      let old_position = s.position;
-      match token {
-        &$token{..} => {
-          s.token_stack.push(token.clone());
-          s.position += 1;
-          s.last_match = s.position;
-          true
-        },
-        _ => {
-          s.last_match = last_match;
-          s.position = old_position;
-          false
-        },
-      }
-    }
-  )
-}*/
-
-
