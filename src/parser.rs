@@ -38,7 +38,7 @@ impl fmt::Debug for Node {
 pub fn print_recurse(node: &Node, level: usize) {
   spacer(level);
   let children: Option<&Vec<Node>> = match node {
-    Node::Root{children} => {print!("\nRoot\n"); Some(children)},
+    Node::Root{children} => {print!("Root\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Select{children} => {print!("Select\n"); Some(children)},
@@ -64,8 +64,13 @@ pub fn print_recurse(node: &Node, level: usize) {
 }
 
 pub fn spacer(width: usize) {
-  for _ in 1..width {
-    print!(" ");
+  if width == 0 {
+    print!(" ┌");
+  } else {
+    print!(" ├");
+  }
+  for _ in 0..width {
+    print!("─");
   }
 }
 
@@ -73,7 +78,7 @@ pub fn spacer(width: usize) {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParseStatus {
-  Waiting,
+  Ready,
   Parsing,
   Error(ParseError),
   Complete,
@@ -129,7 +134,7 @@ pub struct ParseError {
 
 #[derive(Clone)]
 pub struct Parser {
-  pub parse_status: ParseStatus,
+  pub status: ParseStatus,
   pub tokens: Vec<Token>,
   pub ast: Node,
 }
@@ -138,7 +143,7 @@ impl Parser {
 
   pub fn new() -> Parser {
     Parser {
-      parse_status: ParseStatus::Waiting,
+      status: ParseStatus::Ready,
       tokens: Vec::new(),
       ast: Node::Root{ children: Vec::new()  },
     }
@@ -151,8 +156,13 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    table(&mut s).and(end);
-    println!("The Result: {:?}", s.node_stack.pop().unwrap())
+    let result = table(&mut s).and(end);
+    if result.ok() {
+      self.status = ParseStatus::Ready;
+      self.ast = result.node_stack.pop().unwrap();
+    } else {
+      self.status = result.status.clone();
+    }
   }
    
 }
@@ -163,7 +173,7 @@ impl fmt::Debug for Parser {
     
     write!(f, "┌───────────────────────────────────────┐\n").unwrap();
     write!(f, "│ Parser\n").unwrap();
-    write!(f, "│ Status: {:?}\n", self.parse_status).unwrap();
+    write!(f, "│ Status: {:?}\n", self.status).unwrap();
     write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
     write!(f, "├───────────────────────────────────────┤\n").unwrap();
     for (ix, token) in self.tokens.iter().enumerate() {
@@ -171,6 +181,8 @@ impl fmt::Debug for Parser {
       let c2 = " "; //if self.last_match == ix + 1 { ">" } else { " " };
       write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
     }
+    write!(f, "├───────────────────────────────────────┤\n").unwrap();
+    write!(f, "{:?}", self.ast);
     write!(f, "└───────────────────────────────────────┘\n").unwrap();
     Ok(())
   }
@@ -243,7 +255,6 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
     let node = Node::Root{children: result.node_stack.drain(..).collect()};
     result.node_stack.push(node);
   }
-  
   result
 }
 
@@ -330,7 +341,7 @@ macro_rules! production_rule {
     } { };
     match self.parse_status {
       ParseStatus::Complete => (), 
-      _ => self.parse_status = ParseStatus::Waiting,
+      _ => self.parse_status = ParseStatus::Ready,
     }
     // Put each node left on the stack onto a single root node
     match self.ast {
