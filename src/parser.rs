@@ -9,7 +9,7 @@ use alloc::{String, Vec, fmt};
 
 // ## Node
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Node {
   Root{ children: Vec<Node> },
   Block{ children: Vec<Node> },
@@ -24,6 +24,8 @@ pub enum Node {
   Repeat{ children: Vec<Node> },
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
+  DotIndex{ children: Vec<Node> },
+  Index{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -50,6 +52,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
+    Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
+    Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -67,10 +71,10 @@ pub fn spacer(width: usize) {
   if width == 0 {
     print!(" ┌");
   } else {
-    print!(" ├");
+    print!(" ");
   }
   for _ in 0..width {
-    print!("─");
+    print!("│");
   }
 }
 
@@ -130,6 +134,7 @@ pub struct ParseError {
   pub position: usize,
   pub token: Token,
   pub code: u64,
+  pub node_stack: Vec<Node>,
 }
 
 #[derive(Clone)]
@@ -156,7 +161,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = table(&mut s).and(end);
+    let result = select(&mut s).and(end);
     if result.ok() {
       self.status = ParseStatus::Ready;
       self.ast = result.node_stack.pop().unwrap();
@@ -195,15 +200,50 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
   s
 }
 
+pub fn select(s: &mut ParseState) -> &mut ParseState {
+  println!("Select");
+  let previous = s.last_match.clone();
+  let result = table(s).and(index);
+  if result.ok() {
+    let node = Node::Select{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn index(s: &mut ParseState) -> &mut ParseState {
+  println!("Index");
+  let previous = s.last_match.clone();
+  let result = dot_index(s);
+  if result.ok() {
+    let node = Node::Index{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn dot_index(s: &mut ParseState) -> &mut ParseState {
+  println!("Dot Index");
+  let previous = s.last_match.clone();
+  let result = period(s).and(digit);
+  if result.ok() {
+    let node = Node::DotIndex{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
 
 pub fn table(s: &mut ParseState) -> &mut ParseState {
   println!("Table");
-  let previous = s.position.clone();
+  let previous = s.last_match.clone();
   let result =  hashtag(s).and(identifier);
   if result.ok() {
-    println!("THE RESULTW AS {:?}", result);
     let node = Node::Table{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
   }
   result
 }
@@ -222,7 +262,7 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
 {
   let mut once = false;
   let mut result = s;
-  let start_pos = result.position.clone();
+  let start_pos = result.last_match.clone();
   while result.ok() {
     let result = production(result);
     once = true;
@@ -231,6 +271,7 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
     result.status = ParseStatus::Parsing;
     let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
     result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
   }
   result
 }
@@ -247,6 +288,18 @@ pub fn hashtag(s: &mut ParseState) -> &mut ParseState {
   result
 }
 
+pub fn period(s: &mut ParseState) -> &mut ParseState {
+  println!(".");
+  let result = token(s, Token::Period);
+  result
+}
+
+pub fn digit(s: &mut ParseState) -> &mut ParseState {
+  println!("Digit");
+  let result = token(s, Token::Digit);
+  result
+}
+ 
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   println!("End");
   let result = token(s, Token::EndOfStream);
@@ -262,9 +315,10 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   println!("Token: {:?} = {:?}?", token, s.token_stack[s.position]);
   if s.token_stack[s.position] == token {
     s.position += 1;
+    s.last_match += 1;
     s.node_stack.push(Node::Token{token});
   } else {
-    s.status = ParseStatus::Error(ParseError{code: 0, position: s.position, token: s.token_stack[s.position].clone() });
+    s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
   }
   s
 }
