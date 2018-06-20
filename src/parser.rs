@@ -4,53 +4,8 @@
 
 use lexer::Token;
 use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
-use mech::Hasher;
+use mech::{Hasher, Function};
 use alloc::{String, Vec, fmt};
-
-// ### Some utility macros
-
-// Returns true if *any* of the supplied matches evaluate to true
-#[macro_export]
-macro_rules! or_combinator {
-  ($e:expr) => {{
-    {
-      let val: &mut ParseState = $e;
-      val
-    }
-  }};
-  ($e:expr, $($es:expr), +) => {{
-    let result: ParseState = if or_combinator!{ $e } {
-      true
-    } else if or_combinator!{ $($es), + } {
-      true
-    } else {
-      false
-    };
-    result
-  }};
-}
-
-// Returns true if *every* supplied match evaluates to true
-#[macro_export]
-macro_rules! and_combinator {
-  ($e:expr) => {{
-    {
-      let val: &mut ParseState = $e;
-      val
-    }
-  }};
-  ($e:expr, $($es:expr),+) => {{
-    let mut result = true;
-    result = if !and_combinator! { $e } {
-      false
-    } else if !and_combinator! { $($es), + } {
-      false
-    } else {
-      true
-    };
-    result
-  }};
-}
 
 // ## Node
 
@@ -62,10 +17,13 @@ pub enum Node {
   Select { children: Vec<Node> },
   Insert { children: Vec<Node> },
   ColumnDefine { children: Vec<Node> },
-  Table { id: u64, children: Vec<Node> },
-  Number { value: u64, children: Vec<Node> },
+  Table { children: Vec<Node> },
+  Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
-  InfixOperation {children: Vec<Node>},
+  InfixOperation { children: Vec<Node>},
+  Repeat{ children: Vec<Node> },
+  Identifier{ children: Vec<Node> },
+  Alpha{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -82,7 +40,11 @@ impl fmt::Debug for Node {
       Node::Table{..} => write!(f, "Table").unwrap(),
       Node::Number{..} => write!(f, "Number").unwrap(),
       Node::ColumnDefine{..} => write!(f, "ColumnDefine").unwrap(),
-      Node::InfixOperation{token} => write!(f, "Infix({:?})", token).unwrap(),
+      Node::InfixOperation{..} => write!(f, "Infix").unwrap(),
+      Node::Repeat{..} => write!(f, "Repeat").unwrap(),
+      Node::Identifier{..} => write!(f, "Identifier").unwrap(),
+      Node::Token{token} => write!(f, "Token({:?})", token).unwrap(),
+      _ => write!(f, "Unhandled Node").unwrap(),
     }   
     Ok(())
   }
@@ -90,13 +52,11 @@ impl fmt::Debug for Node {
 
 // ## Parser
 
-
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseStatus {
   Waiting,
   Parsing,
-  Error,
+  Error(ParseError),
   Complete,
 }
 
@@ -110,8 +70,50 @@ pub struct ParseState {
   pub committed: usize,
 }
 
-#[derive(Debug, Clone)]
-pub struct ParserError {
+impl ParseState {
+  pub fn new() -> ParseState {
+    ParseState {
+      status: ParseStatus::Parsing,
+      node_stack: Vec::new(), 
+      token_stack: Vec::new(),
+      last_match: 0,
+      position: 0,
+      committed: 0,
+    }
+  }
+
+  //pub fn and<F>(&mut self, production: F) -> &mut ParseState
+    //where F: Fn(&mut ParseState) -> &mut ParseState {
+  pub fn and<F>(&mut self, production: F) -> &mut ParseState
+    where F: Fn(&mut ParseState) -> &mut ParseState {
+    production(self);
+    &mut ParseState::new()    
+  }
+
+}
+
+/*
+
+pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
+  where F: Fn(&mut ParseState) -> &mut ParseState
+{
+  let mut once = false;
+  let mut result = s;
+  while result.status == ParseStatus::Parsing {
+    let result = production(result);
+    once = true;
+  }
+  if once {
+    result.status = ParseStatus::Parsing;
+    let node = Node::Repeat{ children: result.node_stack.drain(..).collect() };
+    
+  }
+  result
+}*/
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParseError {
   pub line: usize,
   pub token: Token,
   pub code: u64,
@@ -139,16 +141,10 @@ impl Parser {
   }
 
   pub fn build_ast(&mut self) {
-    let mut s = ParseState {
-      status: ParseStatus::Parsing,
-      node_stack: Vec::new(), 
-      token_stack: Vec::new(),
-      last_match: 0,
-      position: 0,
-      committed: 0,
-    };
+    let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    or_combinator!(optional(table(&mut s)));
+    table(&mut s);
+    println!("The Result: {:?}", s)
   }
    
 }
@@ -163,8 +159,8 @@ impl fmt::Debug for Parser {
     write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
     write!(f, "├───────────────────────────────────────┤\n").unwrap();
     for (ix, token) in self.tokens.iter().enumerate() {
-      let c1 = " ";//if self.position == ix + 1 { ">" } else { " " };
-      let c2 = " ";//if self.last_match == ix + 1 { ">" } else { " " };
+      let c1 = " "; //if self.position == ix + 1 { ">" } else { " " };
+      let c2 = " "; //if self.last_match == ix + 1 { ">" } else { " " };
       write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
     }
     write!(f, "└───────────────────────────────────────┘\n").unwrap();
@@ -179,20 +175,70 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
   s
 }
 
+
 pub fn table(s: &mut ParseState) -> &mut ParseState {
   println!("Table");
-  let result = token(s, Alpha);
-  println!("{:?}", &result);
+  let result =  hashtag(s).and(identifier);
+  if result.status == ParseStatus::Parsing {
+    //let node = Node::Identifier{ children: result.node_stack.drain(..).collect() };
+    //result.node_stack.push(node);
+  }
+  result
+}
+
+pub fn identifier(s: &mut ParseState) -> &mut ParseState {
+  println!("Identifier");
+  let result = repeat(alpha, s);
+  if result.status == ParseStatus::Parsing {
+    let node = Node::Identifier{ children: result.node_stack.drain(..).collect() };
+    result.node_stack.push(node);
+  }
+  result
+}
+
+pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
+  where F: Fn(&mut ParseState) -> &mut ParseState
+{
+  let mut once = false;
+  let mut result = s;
+  while result.status == ParseStatus::Parsing {
+    let result = production(result);
+    once = true;
+  }
+  if once {
+    result.status = ParseStatus::Parsing;
+    let node = Node::Repeat{ children: result.node_stack.drain(..).collect() };
+    
+  }
+  result
+}
+
+pub fn alpha(s: &mut ParseState) -> &mut ParseState {
+  println!("Alpha");
+  let result = token(s, Token::Alpha);
+  result
+}
+
+pub fn hashtag(s: &mut ParseState) -> &mut ParseState {
+  println!("#");
+  let result = token(s, Token::HashTag);
+  result
+}
+
+pub fn end(s: &mut ParseState) -> &mut ParseState {
+  println!("End");
+  let result = token(s, Token::EndOfStream);
+  result.node_stack.pop();
   result
 }
 
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
-  println!("Token: {:?} {:?}", token, s.token_stack[s.position]);
-  println!("test? {:?}", s.token_stack[s.position] == token);
+  println!("Token: {:?} = {:?}?", token, s.token_stack[s.position]);
   if s.token_stack[s.position] == token {
-
+    s.position += 1;
+    s.node_stack.push(Node::Token{token});
   } else {
-    s.status = ParseStatus::Error;
+    s.status = ParseStatus::Error(ParseError{code: 0, line: s.position, token });
   }
   s
 }
