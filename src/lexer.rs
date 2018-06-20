@@ -82,6 +82,7 @@ impl Lexer {
         break;
       }
     }
+    self.push_token(Token::EndOfStream);
     &self.tokens
   }
 
