@@ -30,23 +30,42 @@ pub enum Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      Node::Root{..} => write!(f, "Root").unwrap(),
-      Node::Block{..} => write!(f, "Block").unwrap(),
-      Node::Constraint{..} => write!(f, "Constraint").unwrap(),
-      Node::Select{..} => write!(f, "Select").unwrap(),
-      Node::Insert{..} => write!(f, "Insert").unwrap(),
-      Node::MathExpression{..} => write!(f, "Math").unwrap(),
-      Node::Table{..} => write!(f, "Table").unwrap(),
-      Node::Number{..} => write!(f, "Number").unwrap(),
-      Node::ColumnDefine{..} => write!(f, "ColumnDefine").unwrap(),
-      Node::InfixOperation{..} => write!(f, "Infix").unwrap(),
-      Node::Repeat{..} => write!(f, "Repeat").unwrap(),
-      Node::Identifier{..} => write!(f, "Identifier").unwrap(),
-      Node::Token{token} => write!(f, "Token({:?})", token).unwrap(),
-      _ => write!(f, "Unhandled Node").unwrap(),
-    }   
+    print_recurse(self, 0);
     Ok(())
+  }
+}
+
+pub fn print_recurse(node: &Node, level: usize) {
+  spacer(level);
+  let children: Option<&Vec<Node>> = match node {
+    Node::Root{children} => {print!("\nRoot\n"); Some(children)},
+    Node::Block{children} => {print!("Block\n"); Some(children)},
+    Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
+    Node::Select{children} => {print!("Select\n"); Some(children)},
+    Node::Insert{children} => {print!("Insert\n"); Some(children)},
+    Node::MathExpression{children} => {print!("Math\n"); Some(children)},
+    Node::Table{children} => {print!("Table\n"); Some(children)},
+    Node::Number{children} => {print!("Number\n"); Some(children)},
+    Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
+    Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
+    Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
+    Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
+    Node::Token{token} => {print!("Token({:?})\n", token); None},
+    _ => {print!("Unhandled Node"); None},
+  };  
+  match children {
+    Some(childs) => {
+      for child in childs {
+        print_recurse(child, level + 1)
+      }
+    },
+    _ => (),
+  }    
+}
+
+pub fn spacer(width: usize) {
+  for _ in 1..width {
+    print!(" ");
   }
 }
 
@@ -82,35 +101,24 @@ impl ParseState {
     }
   }
 
-  //pub fn and<F>(&mut self, production: F) -> &mut ParseState
-    //where F: Fn(&mut ParseState) -> &mut ParseState {
+  pub fn ok(&self) -> bool {
+    if self.status == ParseStatus::Parsing {
+      true
+    } else {
+      false
+    }
+  }
+
   pub fn and<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
-    production(self);
-    &mut ParseState::new()    
+    if self.status != ParseStatus::Parsing {
+      self
+    } else {
+      production(self)
+    }
   }
 
 }
-
-/*
-
-pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
-  where F: Fn(&mut ParseState) -> &mut ParseState
-{
-  let mut once = false;
-  let mut result = s;
-  while result.status == ParseStatus::Parsing {
-    let result = production(result);
-    once = true;
-  }
-  if once {
-    result.status = ParseStatus::Parsing;
-    let node = Node::Repeat{ children: result.node_stack.drain(..).collect() };
-    
-  }
-  result
-}*/
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseError {
@@ -143,8 +151,8 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    table(&mut s);
-    println!("The Result: {:?}", s)
+    table(&mut s).and(end);
+    println!("The Result: {:?}", s.node_stack.pop().unwrap())
   }
    
 }
@@ -178,19 +186,20 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
 
 pub fn table(s: &mut ParseState) -> &mut ParseState {
   println!("Table");
+  let previous = s.position.clone();
   let result =  hashtag(s).and(identifier);
-  if result.status == ParseStatus::Parsing {
-    //let node = Node::Identifier{ children: result.node_stack.drain(..).collect() };
-    //result.node_stack.push(node);
+  if result.ok() {
+    println!("THE RESULTW AS {:?}", result);
+    let node = Node::Table{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
   }
   result
 }
 
 pub fn identifier(s: &mut ParseState) -> &mut ParseState {
-  println!("Identifier");
   let result = repeat(alpha, s);
-  if result.status == ParseStatus::Parsing {
-    let node = Node::Identifier{ children: result.node_stack.drain(..).collect() };
+  if result.ok() {
+    let node = Node::Identifier{ children: vec![result.node_stack.pop().unwrap()] };
     result.node_stack.push(node);
   }
   result
@@ -201,14 +210,15 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
 {
   let mut once = false;
   let mut result = s;
-  while result.status == ParseStatus::Parsing {
+  let start_pos = result.position.clone();
+  while result.ok() {
     let result = production(result);
     once = true;
   }
   if once {
     result.status = ParseStatus::Parsing;
-    let node = Node::Repeat{ children: result.node_stack.drain(..).collect() };
-    
+    let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
+    result.node_stack.push(node);
   }
   result
 }
@@ -228,7 +238,12 @@ pub fn hashtag(s: &mut ParseState) -> &mut ParseState {
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   println!("End");
   let result = token(s, Token::EndOfStream);
-  result.node_stack.pop();
+  if result.ok() {
+    result.node_stack.pop();
+    let node = Node::Root{children: result.node_stack.drain(..).collect()};
+    result.node_stack.push(node);
+  }
+  
   result
 }
 
