@@ -116,7 +116,7 @@ impl ParseState {
 
   pub fn and<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
-    if self.status != ParseStatus::Parsing {
+    if !self.ok() {
       self
     } else {
       production(self)
@@ -127,7 +127,7 @@ impl ParseState {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseError {
-  pub line: usize,
+  pub position: usize,
   pub token: Token,
   pub code: u64,
 }
@@ -264,7 +264,7 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
     s.position += 1;
     s.node_stack.push(Node::Token{token});
   } else {
-    s.status = ParseStatus::Error(ParseError{code: 0, line: s.position, token });
+    s.status = ParseStatus::Error(ParseError{code: 0, position: s.position, token: s.token_stack[s.position].clone() });
   }
   s
 }
