@@ -132,6 +132,7 @@ impl ParseState {
 
   pub fn or<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
+      println!("{:?}", self);
     if self.ok() {
       self
     } else {
@@ -216,16 +217,13 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
 pub fn data(s: &mut ParseState) -> &mut ParseState {
   println!("Data");
   let previous = s.last_match.clone();
-  let result = table(s).and(index);
-  println!("{:?}", result);
-  let result2 = result.or(identifier);
-  println!("{:?}", result2);
-  if result2.ok() {
-    let node = Node::Data{ children: result2.node_stack.drain(previous..).collect() };
-    result2.node_stack.push(node);
-    result2.last_match = result2.node_stack.len();
+  let result = table(s).or(identifier);
+  if result.ok() {
+    let node = Node::Data{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
   }
-  result2
+  result
 }
 
 pub fn index(s: &mut ParseState) -> &mut ParseState {
