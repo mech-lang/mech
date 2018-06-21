@@ -26,6 +26,7 @@ pub enum Node {
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
   Index{ children: Vec<Node> },
+  Data{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -54,6 +55,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
+    Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -128,6 +130,16 @@ impl ParseState {
     }
   }
 
+  pub fn or<F>(&mut self, production: F) -> &mut ParseState
+    where F: Fn(&mut ParseState) -> &mut ParseState {
+    if self.ok() {
+      self
+    } else {
+      self.status = ParseStatus::Parsing;
+      production(self)
+    }
+  }
+
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -162,7 +174,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = select(&mut s).and(end);
+    let result = data(&mut s).and(end);
     if result.ok() {
       self.status = ParseStatus::Ready;
       self.ast = result.node_stack.pop().unwrap();
@@ -201,16 +213,19 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
   s
 }
 
-pub fn select(s: &mut ParseState) -> &mut ParseState {
-  println!("Select");
+pub fn data(s: &mut ParseState) -> &mut ParseState {
+  println!("Data");
   let previous = s.last_match.clone();
   let result = table(s).and(index);
-  if result.ok() {
-    let node = Node::Select{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
+  println!("{:?}", result);
+  let result2 = result.or(identifier);
+  println!("{:?}", result2);
+  if result2.ok() {
+    let node = Node::Data{ children: result2.node_stack.drain(previous..).collect() };
+    result2.node_stack.push(node);
+    result2.last_match = result2.node_stack.len();
   }
-  result
+  result2
 }
 
 pub fn index(s: &mut ParseState) -> &mut ParseState {
