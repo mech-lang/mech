@@ -28,6 +28,10 @@ pub enum Node {
   BracketIndex{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
+  Equality{ children: Vec<Node> },
+  Expression{ children: Vec<Node> },
+  Constant{ children: Vec<Node> },
+  Infix{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -57,7 +61,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::BracketIndex{children} => {print!("BracketIndex\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
+    Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::Infix{children} => {print!("Infix\n"); Some(children)},
+    Node::Expression{children} => {print!("Expression\n"); Some(children)},
+    Node::Constant{children} => {print!("Constant\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -191,7 +199,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = data(&mut s).and(end);
+    let result = equality(&mut s).and(end);
     if result.ok() {
       self.status = ParseStatus::Ready;
       self.ast = result.node_stack.pop().unwrap();
@@ -223,11 +231,64 @@ impl fmt::Debug for Parser {
   }
 }
 
+pub fn constant(s: &mut ParseState) -> &mut ParseState {
+  println!("Constant");
+  let previous = s.last_match.clone();
+  let result = digit(s);
+  if result.ok() {
+    let node = Node::Constant{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
 
-pub fn optional(s: &mut ParseState) -> &mut ParseState {
-  println!("Optional");
-  s.status = ParseStatus::Parsing;
-  s
+pub fn infix(s: &mut ParseState) -> &mut ParseState {
+  println!("Infix");
+  let previous = s.last_match.clone();
+  let result = plus(s).or(dash).or(asterisk).or(backslash);
+  if result.ok() {
+    let node = Node::Infix{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn math_expression(s: &mut ParseState) -> &mut ParseState {
+  println!("Math Expression");
+  let previous = s.last_match.clone();
+  let result = data(s).and(space).and(infix).and(space).and(data);
+  if result.ok() {
+    let node = Node::MathExpression{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn expression(s: &mut ParseState) -> &mut ParseState {
+  println!("Expression");
+  let previous = s.last_match.clone();
+  let result = math_expression(s).or(data).or(constant);
+  if result.ok() {
+    let node = Node::Expression{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn equality(s: &mut ParseState) -> &mut ParseState {
+  println!("Equality");
+  let previous = s.last_match.clone();
+  let result = data(s).and(space).and(equal).and(space).and(expression);
+  if result.ok() {
+    let node = Node::Equality{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
 }
 
 pub fn data(s: &mut ParseState) -> &mut ParseState {
@@ -307,7 +368,9 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
   let start_pos = result.last_match.clone();
   while result.ok() {
     let result = production(result);
-    once = true;
+    if result.ok() {
+      once = true;
+    }
   }
   if once {
     result.status = ParseStatus::Parsing;
@@ -345,6 +408,42 @@ pub fn left_bracket(s: &mut ParseState) -> &mut ParseState {
 pub fn right_bracket(s: &mut ParseState) -> &mut ParseState {
   println!("]");
   let result = token(s, Token::RightBracket);
+  result
+}
+
+pub fn equal(s: &mut ParseState) -> &mut ParseState {
+  println!("=");
+  let result = token(s, Token::Equal);
+  result
+}
+
+pub fn plus(s: &mut ParseState) -> &mut ParseState {
+  println!("+");
+  let result = token(s, Token::Plus);
+  result
+}
+
+pub fn dash(s: &mut ParseState) -> &mut ParseState {
+  println!("-");
+  let result = token(s, Token::Dash);
+  result
+}
+
+pub fn asterisk(s: &mut ParseState) -> &mut ParseState {
+  println!("*");
+  let result = token(s, Token::Asterisk);
+  result
+}
+
+pub fn backslash(s: &mut ParseState) -> &mut ParseState {
+  println!("/");
+  let result = token(s, Token::Backslash);
+  result
+}
+
+pub fn space(s: &mut ParseState) -> &mut ParseState {
+  println!("SPACE");
+  let result = token(s, Token::Space);
   result
 }
 
