@@ -3,7 +3,7 @@ use mech::{Function, Plan, Comparator};
 use mech::Hasher;
 use parser::Node;
 use lexer::Token;
-
+/*
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
@@ -190,3 +190,4 @@ fn get_value(node: &Node) -> Option<&u64> {
     _ => None,
   }
 }
+*/

@@ -23,7 +23,7 @@ fn main() {
   let mut lexer = Lexer::new();
   let mut parser = Parser::new();
   //let mut compiler = Compiler::new();
-  let mut core = Core::new(100,10);
+  let mut core = Core::new(100, 10);
 
   let input = String::from("#add");
   let add = Hasher::hash_str("add");
