@@ -25,6 +25,7 @@ pub enum Node {
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
+  BracketIndex{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   Token{token: Token},
@@ -54,6 +55,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
+    Node::BracketIndex{children} => {print!("BracketIndex\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
@@ -243,9 +245,21 @@ pub fn data(s: &mut ParseState) -> &mut ParseState {
 pub fn index(s: &mut ParseState) -> &mut ParseState {
   println!("Index");
   let previous = s.last_match.clone();
-  let result = dot_index(s);
+  let result = dot_index(s).or(bracket_index);
   if result.ok() {
     let node = Node::Index{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
+pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
+  println!("Bracket Index");
+  let previous = s.last_match.clone();
+  let result = left_bracket(s).and(digit).and(right_bracket);
+  if result.ok() {
+    let node = Node::BracketIndex{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
   }
@@ -319,6 +333,18 @@ pub fn hashtag(s: &mut ParseState) -> &mut ParseState {
 pub fn period(s: &mut ParseState) -> &mut ParseState {
   println!(".");
   let result = token(s, Token::Period);
+  result
+}
+
+pub fn left_bracket(s: &mut ParseState) -> &mut ParseState {
+  println!("[");
+  let result = token(s, Token::LeftBracket);
+  result
+}
+
+pub fn right_bracket(s: &mut ParseState) -> &mut ParseState {
+  println!("]");
+  let result = token(s, Token::RightBracket);
   result
 }
 
