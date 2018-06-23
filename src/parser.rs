@@ -132,7 +132,6 @@ impl ParseState {
 
   pub fn or<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
-      println!("{:?}", self);
     if self.ok() {
       self
     } else {
