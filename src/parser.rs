@@ -140,6 +140,21 @@ impl ParseState {
     }
   }
 
+  pub fn optional<F>(&mut self, production: F) -> &mut ParseState
+    where F: Fn(&mut ParseState) -> &mut ParseState {
+    if self.ok() {
+      let result = production(self);
+      if result.ok() {
+        return result
+      } else {
+        result.status = ParseStatus::Parsing;
+        return result
+      }
+    } else {
+      return self
+    }
+  }
+
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -216,7 +231,7 @@ pub fn optional(s: &mut ParseState) -> &mut ParseState {
 pub fn data(s: &mut ParseState) -> &mut ParseState {
   println!("Data");
   let previous = s.last_match.clone();
-  let result = table(s).or(identifier);
+  let result = table(s).or(identifier).optional(index);
   if result.ok() {
     let node = Node::Data{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
