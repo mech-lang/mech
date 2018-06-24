@@ -9,6 +9,7 @@ systems.
 
 #![cfg_attr(target_os = "none", no_std)]
 #![feature(alloc)]
+#![feature(nll)]
 
 extern crate rlibc;
 #[macro_use]
