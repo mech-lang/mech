@@ -3,7 +3,8 @@
 // ## Prelude
 
 use lexer::Token;
-use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
+use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Newline,
+                   Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
 use mech::{Hasher, Function};
 use alloc::{String, Vec, fmt};
 
@@ -68,6 +69,10 @@ pub enum Node {
   Expression{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
   Infix{ children: Vec<Node> },
+  Program{ children: Vec<Node> },
+  Title{ children: Vec<Node> },
+  Body{ children: Vec<Node> },
+  Section{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -102,6 +107,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Infix{children} => {print!("Infix\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Constant{children} => {print!("Constant\n"); Some(children)},
+    Node::Program{children} => {print!("Program\n"); Some(children)},
+    Node::Title{children} => {print!("Title\n"); Some(children)},
+    Node::Section{children} => {print!("Section\n"); Some(children)},
+    Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -170,7 +179,8 @@ impl ParseState {
   }
 
   pub fn and<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState {
+    where F: Fn(&mut ParseState) -> &mut ParseState 
+  {
     if !self.ok() {
       self
     } else {
@@ -183,7 +193,8 @@ impl ParseState {
   }
 
   pub fn or<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState {
+    where F: Fn(&mut ParseState) -> &mut ParseState 
+  {
     if self.ok() {
       self
     } else {
@@ -200,7 +211,8 @@ impl ParseState {
   }
 
   pub fn optional<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState {
+    where F: Fn(&mut ParseState) -> &mut ParseState 
+  {
     let before_depth = self.depth;
     self.depth += 1;
     spacer(self.depth); println!("Optional");
@@ -218,6 +230,30 @@ impl ParseState {
       return self
     }
   }
+
+pub fn repeat<F>(&mut self, production: F) -> &mut ParseState 
+  where F: Fn(&mut ParseState) -> &mut ParseState
+{
+  self.depth += 1; 
+  spacer(self.depth); println!("Repeat");
+  let mut once = false;
+  let mut result = self;
+  let start_pos = result.last_match.clone();
+  while result.ok() {
+    let result = production(result);
+    if result.ok() {
+      result.depth -= 1;
+      once = true;
+    }
+  }
+  if once {
+    result.status = ParseStatus::Parsing;
+    let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
 
 }
 
@@ -253,7 +289,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = expression(&mut s).and(end);
+    let result = program(&mut s).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -286,6 +322,11 @@ impl fmt::Debug for Parser {
   }
 }
 
+
+node!{program, Program, |s|{ title(s).and(body) }, "Program"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).repeat(newline) }, "Title"}
+node!{body, Body, |s|{ repeat(section, s) }, "Body"}
+node!{section, Section, |s|{   }, "Section"}
 node!{constraint, Constraint, |s|{ equality(s) }, "Constraint"}
 node!{constant, Constant, |s|{ digit(s) }, "Constant"}
 node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
@@ -335,6 +376,7 @@ leaf!{asterisk, Token::Asterisk}
 leaf!{backslash, Token::Backslash}
 leaf!{space, Token::Space}
 leaf!{digit, Token::Digit}
+leaf!{newline, Token::Newline}
  
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   let old_depth = s.depth;
