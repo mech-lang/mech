@@ -7,6 +7,17 @@ use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Digit, Spa
 use mech::{Hasher, Function};
 use alloc::{String, Vec, fmt};
 
+// ## Helper Macros
+
+macro_rules! leaf {
+  ($func:ident, $token:expr) => (
+    pub fn $func(s: &mut ParseState) -> &mut ParseState {
+      let result = token(s, $token);
+      result
+    }
+  )
+}
+
 // ## Node
 
 #[derive(Clone, PartialEq)]
@@ -109,6 +120,7 @@ pub struct ParseState {
   last_match: usize,
   pub position: usize,
   pub committed: usize,
+  depth: usize,
 }
 
 impl ParseState {
@@ -120,6 +132,7 @@ impl ParseState {
       last_match: 0,
       position: 0,
       committed: 0,
+      depth: 0,
     }
   }
 
@@ -136,6 +149,7 @@ impl ParseState {
     if !self.ok() {
       self
     } else {
+      println!("And");
       production(self)
     }
   }
@@ -145,13 +159,23 @@ impl ParseState {
     if self.ok() {
       self
     } else {
+      println!("OR");
+      let mut before = self.clone();
+      //println!("Before: {:?}", &before);
       self.status = ParseStatus::Parsing;
-      production(self)
+      let result = production(self);
+      //println!("Result: {:?}", &before);
+      if result.ok() {
+        result
+      } else {
+        result
+      }
     }
   }
 
   pub fn optional<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
+    println!("Optional");
     if self.ok() {
       let result = production(self);
       if result.ok() {
@@ -199,7 +223,8 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = equality(&mut s).and(end);
+    let result = expression(&mut s).and(end);
+    println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
       self.ast = result.node_stack.pop().unwrap();
@@ -231,8 +256,20 @@ impl fmt::Debug for Parser {
   }
 }
 
+pub fn constraint(s: &mut ParseState) -> &mut ParseState {
+  s.depth += 1; spacer(s.depth); println!("Constraint");
+  let previous = s.last_match.clone();
+  let result = equality(s);
+  if result.ok() {
+    let node = Node::Constraint{ children: result.node_stack.drain(previous..).collect() };
+    result.node_stack.push(node);
+    result.last_match = result.node_stack.len();
+  }
+  result
+}
+
 pub fn constant(s: &mut ParseState) -> &mut ParseState {
-  println!("Constant");
+  s.depth += 1; spacer(s.depth); println!("Constant");
   let previous = s.last_match.clone();
   let result = digit(s);
   if result.ok() {
@@ -244,7 +281,7 @@ pub fn constant(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn infix(s: &mut ParseState) -> &mut ParseState {
-  println!("Infix");
+  s.depth += 1; spacer(s.depth); println!("Infix");
   let previous = s.last_match.clone();
   let result = plus(s).or(dash).or(asterisk).or(backslash);
   if result.ok() {
@@ -256,7 +293,7 @@ pub fn infix(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn math_expression(s: &mut ParseState) -> &mut ParseState {
-  println!("Math Expression");
+  s.depth += 1; spacer(s.depth); println!("Math Expression");
   let previous = s.last_match.clone();
   let result = data(s).and(space).and(infix).and(space).and(data);
   if result.ok() {
@@ -268,7 +305,7 @@ pub fn math_expression(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn expression(s: &mut ParseState) -> &mut ParseState {
-  println!("Expression");
+  s.depth += 1; spacer(s.depth); println!("Expression");
   let previous = s.last_match.clone();
   let result = math_expression(s).or(data).or(constant);
   if result.ok() {
@@ -292,7 +329,7 @@ pub fn equality(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn data(s: &mut ParseState) -> &mut ParseState {
-  println!("Data");
+  s.depth += 1; spacer(s.depth); println!("Data");
   let previous = s.last_match.clone();
   let result = table(s).or(identifier).optional(index);
   if result.ok() {
@@ -304,7 +341,7 @@ pub fn data(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn index(s: &mut ParseState) -> &mut ParseState {
-  println!("Index");
+  s.depth += 1; spacer(s.depth); println!("Index");
   let previous = s.last_match.clone();
   let result = dot_index(s).or(bracket_index);
   if result.ok() {
@@ -316,7 +353,7 @@ pub fn index(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
-  println!("Bracket Index");
+  s.depth += 1; spacer(s.depth); println!("Bracket Index");
   let previous = s.last_match.clone();
   let result = left_bracket(s).and(digit).and(right_bracket);
   if result.ok() {
@@ -328,7 +365,7 @@ pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn dot_index(s: &mut ParseState) -> &mut ParseState {
-  println!("Dot Index");
+  s.depth += 1; spacer(s.depth); println!("Dot Index");
   let previous = s.last_match.clone();
   let result = period(s).and(digit);
   if result.ok() {
@@ -340,7 +377,7 @@ pub fn dot_index(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn table(s: &mut ParseState) -> &mut ParseState {
-  println!("Table");
+  s.depth += 1; spacer(s.depth); println!("Table");
   let previous = s.last_match.clone();
   let result =  hashtag(s).and(identifier);
   if result.ok() {
@@ -352,6 +389,7 @@ pub fn table(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn identifier(s: &mut ParseState) -> &mut ParseState {
+  s.depth += 1; spacer(s.depth); println!("Identifier");
   let result = repeat(alpha, s);
   if result.ok() {
     let node = Node::Identifier{ children: vec![result.node_stack.pop().unwrap()] };
@@ -363,6 +401,7 @@ pub fn identifier(s: &mut ParseState) -> &mut ParseState {
 pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
   where F: Fn(&mut ParseState) -> &mut ParseState
 {
+  s.depth += 1; spacer(s.depth); println!("Repeat");
   let mut once = false;
   let mut result = s;
   let start_pos = result.last_match.clone();
@@ -381,80 +420,29 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
   result
 }
 
-pub fn alpha(s: &mut ParseState) -> &mut ParseState {
-  println!("Alpha");
-  let result = token(s, Token::Alpha);
-  result
-}
-
-pub fn hashtag(s: &mut ParseState) -> &mut ParseState {
-  println!("#");
-  let result = token(s, Token::HashTag);
-  result
-}
-
-pub fn period(s: &mut ParseState) -> &mut ParseState {
-  println!(".");
-  let result = token(s, Token::Period);
-  result
-}
-
-pub fn left_bracket(s: &mut ParseState) -> &mut ParseState {
-  println!("[");
-  let result = token(s, Token::LeftBracket);
-  result
-}
-
-pub fn right_bracket(s: &mut ParseState) -> &mut ParseState {
-  println!("]");
-  let result = token(s, Token::RightBracket);
-  result
-}
-
-pub fn equal(s: &mut ParseState) -> &mut ParseState {
-  println!("=");
-  let result = token(s, Token::Equal);
-  result
-}
-
-pub fn plus(s: &mut ParseState) -> &mut ParseState {
-  println!("+");
-  let result = token(s, Token::Plus);
-  result
-}
-
-pub fn dash(s: &mut ParseState) -> &mut ParseState {
-  println!("-");
-  let result = token(s, Token::Dash);
-  result
-}
-
-pub fn asterisk(s: &mut ParseState) -> &mut ParseState {
-  println!("*");
-  let result = token(s, Token::Asterisk);
-  result
-}
-
-pub fn backslash(s: &mut ParseState) -> &mut ParseState {
-  println!("/");
-  let result = token(s, Token::Backslash);
-  result
-}
-
-pub fn space(s: &mut ParseState) -> &mut ParseState {
-  println!("SPACE");
-  let result = token(s, Token::Space);
-  result
-}
-
-pub fn digit(s: &mut ParseState) -> &mut ParseState {
-  println!("Digit");
-  let result = token(s, Token::Digit);
-  result
-}
+leaf!{alpha, Token::Alpha}
+leaf!{hashtag, Token::HashTag}
+leaf!{period, Token::Period}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{right_bracket, Token::RightBracket}
+leaf!{equal, Token::Equal}
+leaf!{plus, Token::Plus}
+leaf!{dash, Token::Dash}
+leaf!{asterisk, Token::Asterisk}
+leaf!{backslash, Token::Backslash}
+leaf!{space, Token::Space}
+leaf!{digit, Token::Digit}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
+leaf!{left_bracket, Token::LeftBracket}
  
 pub fn end(s: &mut ParseState) -> &mut ParseState {
-  println!("End");
+  s.depth += 1; spacer(s.depth); println!("End");
   let result = token(s, Token::EndOfStream);
   if result.ok() {
     result.node_stack.pop();
@@ -465,13 +453,15 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
-  println!("Token: {:?} = {:?}?", token, s.token_stack[s.position]);
+  s.depth += 1; spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
   if s.token_stack[s.position] == token {
     s.position += 1;
     s.last_match += 1;
     s.node_stack.push(Node::Token{token});
+    println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
+    println!(" X");
   }
   s
 }
