@@ -18,6 +18,27 @@ macro_rules! leaf {
   )
 }
 
+macro_rules! node {
+  ($func:ident, $node:tt, $production:expr, $label: expr) => (
+    pub fn $func(s: &mut ParseState) -> &mut ParseState {
+      let old_depth = s.depth.clone();
+      s.depth += 1; spacer(s.depth); println!($label);
+      let previous = s.last_match.clone();
+      let result = $production(s);
+      let node = Node::$node{ children: result.node_stack.drain(previous..).collect() };
+      if result.ok() {
+        result.node_stack.push(node);
+        result.last_match = result.node_stack.len();
+        spacer(old_depth + 1); print!($label); println!(" √");
+      } else { 
+        spacer(old_depth + 1); print!($label); println!(" X");
+      }
+      result.depth = old_depth;
+      result
+    }
+  )
+}
+
 // ## Node
 
 #[derive(Clone, PartialEq)]
@@ -262,169 +283,18 @@ impl fmt::Debug for Parser {
   }
 }
 
-pub fn constraint(s: &mut ParseState) -> &mut ParseState {
-  s.depth += 1; spacer(s.depth); println!("Constraint");
-  let previous = s.last_match.clone();
-  let result = equality(s);
-  if result.ok() {
-    let node = Node::Constraint{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn constant(s: &mut ParseState) -> &mut ParseState {
-  s.depth += 1; spacer(s.depth); println!("Constant");
-  let previous = s.last_match.clone();
-  let result = digit(s);
-  if result.ok() {
-    let node = Node::Constant{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn infix(s: &mut ParseState) -> &mut ParseState {
-  s.depth += 1; spacer(s.depth); println!("Infix");
-  let previous = s.last_match.clone();
-  let result = plus(s).or(dash).or(asterisk).or(backslash);
-  if result.ok() {
-    let node = Node::Infix{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn math_expression(s: &mut ParseState) -> &mut ParseState {
-  s.depth += 1; spacer(s.depth); println!("Math Expression");
-  let previous = s.last_match.clone();
-  let result = data(s).and(space).and(infix).and(space).and(data);
-  if result.ok() {
-    let node = Node::MathExpression{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn expression(s: &mut ParseState) -> &mut ParseState {
-  s.depth += 1; spacer(s.depth); println!("Expression");
-  let previous = s.last_match.clone();
-  let result = math_expression(s).or(data).or(constant);
-  if result.ok() {
-    let node = Node::Expression{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn equality(s: &mut ParseState) -> &mut ParseState {
-  println!("Equality");
-  let previous = s.last_match.clone();
-  let result = data(s).and(space).and(equal).and(space).and(expression);
-  if result.ok() {
-    let node = Node::Equality{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
-
-pub fn data(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Data");
-  let previous = s.last_match.clone();
-  let result = table(s).or(digit).or(identifier).optional(index);
-  if result.ok() {
-    let node = Node::Data{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result.depth = old_depth;
-  result
-}
-
-pub fn index(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Index");
-  let previous = s.last_match.clone();
-  let result = dot_index(s).or(bracket_index);
-  if result.ok() {
-    let node = Node::Index{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-    spacer(old_depth + 1); println!("Index √");
-  }
-  result.depth = old_depth;
-  result
-}
-
-pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Bracket Index");
-  let previous = s.last_match.clone();
-  let result = left_bracket(s).and(digit).and(right_bracket);
-  if result.ok() {
-    let node = Node::BracketIndex{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-    spacer(old_depth + 1); println!("Bracket Index √");
-  }
-  result.depth = old_depth;
-  result
-}
-
-pub fn dot_index(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Dot Index");
-  let previous = s.last_match.clone();
-  let old_stack = s.node_stack.clone();
-  let result = period(s).and(digit);
-  if result.ok() {
-    let node = Node::DotIndex{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  } else {
-    spacer(old_depth + 1); println!("Dot Index X");
-    result.node_stack = old_stack;
-  }
-  result.depth = old_depth;
-  result
-}
-
-pub fn table(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Table");
-  let previous = s.last_match.clone();
-  let old_stack = s.node_stack.clone();
-  let result =  hashtag(s).and(identifier);
-  if result.ok() {
-    let node = Node::Table{ children: result.node_stack.drain(previous..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  } else {
-    spacer(old_depth + 1); println!("Table X");
-    result.node_stack = old_stack;
-  }
-  result.depth = old_depth;
-  result
-}
-
-pub fn identifier(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth.clone();
-  s.depth += 1; spacer(s.depth); println!("Identifier");
-  let result = repeat(alpha, s);
-  if result.ok() {
-    let node = Node::Identifier{ children: vec![result.node_stack.pop().unwrap()] };
-    result.node_stack.push(node);
-  }
-  result.depth = old_depth;
-  result
-}
+node!{constraint, Constraint, |s|{ equality(s) }, "Constraint"}
+node!{constant, Constant, |s|{ digit(s) }, "Constant"}
+node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
+node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
+node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}
+node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
+node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
+node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
+node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
+node!{dot_index, DotIndex, |s| { period(s).and(digit) }, "Dot Index"}
+node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
+node!{identifier, Identifier, |s| { repeat(alpha, s) }, "Identifier"}
 
 pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
   where F: Fn(&mut ParseState) -> &mut ParseState
