@@ -149,8 +149,11 @@ impl ParseState {
     if !self.ok() {
       self
     } else {
-      println!("And");
-      production(self)
+      let mut before = self.clone();
+      spacer(self.depth); println!("And");
+      let result = production(self);
+      result.depth = before.depth;
+      result
     }
   }
 
@@ -159,32 +162,35 @@ impl ParseState {
     if self.ok() {
       self
     } else {
-      println!("OR");
       let mut before = self.clone();
+      self.depth += 1;
+      spacer(self.depth); println!("OR");
       //println!("Before: {:?}", &before);
       self.status = ParseStatus::Parsing;
       let result = production(self);
       //println!("Result: {:?}", &before);
-      if result.ok() {
-        result
-      } else {
-        result
-      }
+      result.depth = before.depth;
+      result
     }
   }
 
   pub fn optional<F>(&mut self, production: F) -> &mut ParseState
     where F: Fn(&mut ParseState) -> &mut ParseState {
-    println!("Optional");
+    let before_depth = self.depth;
+    self.depth += 1;
+    spacer(self.depth); println!("Optional");
     if self.ok() {
       let result = production(self);
       if result.ok() {
         return result
       } else {
+        println!("----------------------------->");
         result.status = ParseStatus::Parsing;
+        result.depth = before_depth;
         return result
       }
     } else {
+      self.depth = before_depth;
       return self
     }
   }
@@ -223,7 +229,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = expression(&mut s).and(end);
+    let result = data(&mut s).and(end);
     println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -329,18 +335,21 @@ pub fn equality(s: &mut ParseState) -> &mut ParseState {
 }
 
 pub fn data(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Data");
   let previous = s.last_match.clone();
-  let result = table(s).or(identifier).optional(index);
+  let result = table(s).or(digit).or(identifier).optional(index);
   if result.ok() {
     let node = Node::Data{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
   }
+  result.depth = old_depth;
   result
 }
 
 pub fn index(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Index");
   let previous = s.last_match.clone();
   let result = dot_index(s).or(bracket_index);
@@ -348,11 +357,14 @@ pub fn index(s: &mut ParseState) -> &mut ParseState {
     let node = Node::Index{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
+    spacer(old_depth + 1); println!("Index √");
   }
+  result.depth = old_depth;
   result
 }
 
 pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Bracket Index");
   let previous = s.last_match.clone();
   let result = left_bracket(s).and(digit).and(right_bracket);
@@ -360,41 +372,57 @@ pub fn bracket_index(s: &mut ParseState) -> &mut ParseState {
     let node = Node::BracketIndex{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
+    spacer(old_depth + 1); println!("Bracket Index √");
   }
+  result.depth = old_depth;
   result
 }
 
 pub fn dot_index(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Dot Index");
   let previous = s.last_match.clone();
+  let old_stack = s.node_stack.clone();
   let result = period(s).and(digit);
   if result.ok() {
     let node = Node::DotIndex{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
+  } else {
+    spacer(old_depth + 1); println!("Dot Index X");
+    result.node_stack = old_stack;
   }
+  result.depth = old_depth;
   result
 }
 
 pub fn table(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Table");
   let previous = s.last_match.clone();
+  let old_stack = s.node_stack.clone();
   let result =  hashtag(s).and(identifier);
   if result.ok() {
     let node = Node::Table{ children: result.node_stack.drain(previous..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
+  } else {
+    spacer(old_depth + 1); println!("Table X");
+    result.node_stack = old_stack;
   }
+  result.depth = old_depth;
   result
 }
 
 pub fn identifier(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth.clone();
   s.depth += 1; spacer(s.depth); println!("Identifier");
   let result = repeat(alpha, s);
   if result.ok() {
     let node = Node::Identifier{ children: vec![result.node_stack.pop().unwrap()] };
     result.node_stack.push(node);
   }
+  result.depth = old_depth;
   result
 }
 
@@ -408,6 +436,7 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
   while result.ok() {
     let result = production(result);
     if result.ok() {
+      result.depth -= 1;
       once = true;
     }
   }
@@ -434,6 +463,7 @@ leaf!{space, Token::Space}
 leaf!{digit, Token::Digit}
  
 pub fn end(s: &mut ParseState) -> &mut ParseState {
+  let old_depth = s.depth;
   s.depth += 1; spacer(s.depth); println!("End");
   let result = token(s, Token::EndOfStream);
   if result.ok() {
@@ -441,6 +471,7 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
     let node = Node::Root{children: result.node_stack.drain(..).collect()};
     result.node_stack.push(node);
   }
+  result.depth = old_depth;
   result
 }
 
