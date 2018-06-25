@@ -22,16 +22,20 @@ macro_rules! node {
   ($func:ident, $node:tt, $production:expr, $label: expr) => (
     pub fn $func(s: &mut ParseState) -> &mut ParseState {
       let old_depth = s.depth.clone();
-      //s.depth += 1; spacer(s.depth); println!($label);
+      s.depth += 1; 
+      spacer(s.depth); println!($label);
       let previous = s.last_match.clone();
+      let old_position = s.position;
       let result = $production(s);
       let node = Node::$node{ children: result.node_stack.drain(previous..).collect() };
       if result.ok() {
         result.node_stack.push(node);
         result.last_match = result.node_stack.len();
-        //spacer(old_depth + 1); print!($label); println!(" √");
+        spacer(old_depth + 1); print!($label); println!(" √");
       } else { 
-        //spacer(old_depth + 1); print!($label); println!(" X");
+        spacer(old_depth + 1); print!($label); println!(" X");
+        result.position = old_position;
+        result.last_match = previous;
       }
       result.depth = old_depth;
       result
@@ -171,7 +175,7 @@ impl ParseState {
       self
     } else {
       let mut before = self.clone();
-      //spacer(self.depth); println!("And");
+      spacer(self.depth); println!("And");
       let result = production(self);
       result.depth = before.depth;
       result
@@ -185,7 +189,7 @@ impl ParseState {
     } else {
       let mut before = self.clone();
       self.depth += 1;
-      //spacer(self.depth); println!("OR");
+      spacer(self.depth); println!("OR");
       //println!("Before: {:?}", &before);
       self.status = ParseStatus::Parsing;
       let result = production(self);
@@ -199,7 +203,7 @@ impl ParseState {
     where F: Fn(&mut ParseState) -> &mut ParseState {
     let before_depth = self.depth;
     self.depth += 1;
-    //spacer(self.depth); println!("Optional");
+    spacer(self.depth); println!("Optional");
     if self.ok() {
       let result = production(self);
       if result.ok() {
@@ -249,7 +253,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = data(&mut s).and(end);
+    let result = expression(&mut s).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -288,7 +292,7 @@ node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
-node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
+node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(digit) }, "Dot Index"}
@@ -299,7 +303,7 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
   where F: Fn(&mut ParseState) -> &mut ParseState
 {
   s.depth += 1; 
-  //spacer(s.depth); println!("Repeat");
+  spacer(s.depth); println!("Repeat");
   let mut once = false;
   let mut result = s;
   let start_pos = result.last_match.clone();
@@ -335,7 +339,7 @@ leaf!{digit, Token::Digit}
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   let old_depth = s.depth;
   s.depth += 1; 
-  //spacer(s.depth); println!("End");
+  spacer(s.depth); println!("End");
   let result = token(s, Token::EndOfStream);
   if result.ok() {
     result.node_stack.pop();
@@ -348,15 +352,15 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
 
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
-  //spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
+  spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
   if s.token_stack[s.position] == token {
     s.position += 1;
     s.last_match += 1;
     s.node_stack.push(Node::Token{token});
-    //println!(" √");
+    println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
-    //println!(" X");
+    println!(" X");
   }
   s
 }
