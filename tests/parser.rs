@@ -23,6 +23,10 @@ macro_rules! parse_string {
 //parse_string!(equal_constant, "x = 1");
 //parse_string!(add_columns, "#add.3 = #add.1 + #add.2");
 
+// ## Constant
+
+parse_string!(constant_digit, "1");
+
 // ## Table
 
 parse_string!(table, "#table");
