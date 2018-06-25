@@ -50,3 +50,12 @@ parse_string!(math_add_variable, "x + y");
 parse_string!(math_add_tables, "#x + #y");
 parse_string!(math_add_constant, "x + 1");
 parse_string!(math_add_index, "#x[1] + #y.1");
+
+// ## Programs
+
+
+parse_string!(program_basic, "# Title
+## Subtitle
+  1 + 1
+
+");

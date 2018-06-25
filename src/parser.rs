@@ -71,7 +71,9 @@ pub enum Node {
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
   Title{ children: Vec<Node> },
+  Subtitle{ children: Vec<Node> },
   Body{ children: Vec<Node> },
+  Node{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Token{token: Token},
 }
@@ -109,8 +111,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Constant{children} => {print!("Constant\n"); Some(children)},
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Title{children} => {print!("Title\n"); Some(children)},
+    Node::Subtitle{children} => {print!("Subtitle\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
+    Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -289,7 +293,7 @@ impl Parser {
   pub fn build_ast(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = program(&mut s).and(end);
+    let result = node(&mut s).and(expression).or(program).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -323,11 +327,13 @@ impl fmt::Debug for Parser {
 }
 
 
-node!{program, Program, |s|{ title(s).and(body) }, "Program"}
-node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).repeat(newline) }, "Title"}
+node!{program, Program, |s|{ node(s).optional(title).and(body) }, "Program"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).and(newline) }, "Title"}
+node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier).and(newline) }, "Subtitle"}
 node!{body, Body, |s|{ repeat(section, s) }, "Body"}
-node!{section, Section, |s|{   }, "Section"}
-node!{constraint, Constraint, |s|{ equality(s) }, "Constraint"}
+node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}
+node!{block, Block, |s|{ node(s).repeat(constraint).and(newline) }, "Block"}
+node!{constraint, Constraint, |s|{ node(s).and(space).and(space).repeat(expression).and(newline) }, "Constraint"}
 node!{constant, Constant, |s|{ digit(s) }, "Constant"}
 node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
@@ -378,6 +384,10 @@ leaf!{space, Token::Space}
 leaf!{digit, Token::Digit}
 leaf!{newline, Token::Newline}
  
+pub fn node(s: &mut ParseState) -> &mut ParseState {
+  s
+}
+
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   let old_depth = s.depth;
   s.depth += 1; 

@@ -25,7 +25,11 @@ fn main() {
   //let mut compiler = Compiler::new();
   let mut core = Core::new(100, 10);
 
-  let input = String::from("#add");
+  let input = String::from("# Title
+## Subtitle
+  1 + 1
+
+");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
 
