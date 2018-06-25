@@ -432,14 +432,6 @@ leaf!{asterisk, Token::Asterisk}
 leaf!{backslash, Token::Backslash}
 leaf!{space, Token::Space}
 leaf!{digit, Token::Digit}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{left_bracket, Token::LeftBracket}
  
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   s.depth += 1; spacer(s.depth); println!("End");
