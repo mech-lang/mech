@@ -22,9 +22,15 @@ macro_rules! parse_string {
 
 //parse_string!(equal_constant, "x = 1");
 //parse_string!(add_columns, "#add.3 = #add.1 + #add.2");
+
+// ## Table
+
 parse_string!(table, "#table");
+parse_string!(table_index_dot_index, "#table.1");
+parse_string!(table_index_bracket_index, "#table[1]");
+
+// ## Variable
+
 parse_string!(variable, "variable");
-parse_string!(index_dot_index, "var.1");
-parse_string!(index_bracket_index, "var[1]");
-parse_string!(index_dot_index_table, "#table.1");
-parse_string!(index_bracket_index_table, "#table[1]");
+parse_string!(variable_index_dot, "var.1");
+parse_string!(variable_index_bracket, "var[1]");
