@@ -24,3 +24,7 @@ macro_rules! parse_string {
 //parse_string!(add_columns, "#add.3 = #add.1 + #add.2");
 parse_string!(table, "#table");
 parse_string!(variable, "variable");
+parse_string!(index_dot_index, "var.1");
+parse_string!(index_bracket_index, "var[1]");
+parse_string!(index_dot_index_table, "#table.1");
+parse_string!(index_bracket_index_table, "#table[1]");
