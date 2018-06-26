@@ -32,8 +32,13 @@ fn main() {
 Paragraph this is some text
 
 And I can have more than one
-  1
-");
+  #ball = 0
+
+  #gravity = 9
+  
+And this is another paragraph
+
+  #scene = #add.1");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
 

@@ -89,6 +89,26 @@ This is the bouncing ball program
 Set up the environment
 
   #ball = 1"); 
+parse_string!(program_constraints, "# Bouncing Balls
+ 
+## Section
 
+Paragraph this is some text
 
+And I can have more than one
+  #ball = 0
+  #gravity = 9"); 
+parse_string!(program_blocks, "# Bouncing Balls
+ 
+## Section
 
+Paragraph this is some text
+
+And I can have more than one
+  #ball = 0
+
+  #gravity = 9
+  
+And this is another paragraph
+
+  #scene = #add.1");

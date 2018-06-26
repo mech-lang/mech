@@ -393,15 +393,17 @@ node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
 node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
 
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
-node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).optional_repeat(paragraph).and(block)}, "Section"}
+node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).repeat(prose_or_code)}, "Section"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
+
+node!{prose_or_code, ProseOrCode, |s|{ block(s).or(text).optional_repeat(whitespace) }, "ProseOrCode"}
 
 
 
 
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional_repeat(newline) }, "Constraint"}
+node!{constraint, Constraint, |s|{ node(s).and(space).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ data(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
