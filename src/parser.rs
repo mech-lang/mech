@@ -82,7 +82,7 @@ pub enum Node {
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
-  SpaceOrNewline{ children: Vec<Node> },
+  Text{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -129,8 +129,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
+    Node::Text{children} => {print!("Text\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
-    Node::SpaceOrNewline{children} => {print!("SpaceOrNewline\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -267,6 +267,7 @@ impl ParseState {
     where F: Fn(&mut ParseState) -> &mut ParseState
   {
     self.depth += 1; 
+    let before_depth = self.depth;
     spacer(self.depth); println!("Repeat");
     let mut once = false;
     let mut result = self;
@@ -274,7 +275,7 @@ impl ParseState {
     while result.ok() {
       let result = production(result);
       if result.ok() {
-        result.depth -= 1;
+        result.depth = before_depth;
         once = true;
       }
     }
@@ -379,20 +380,23 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
-node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
-node!{space_or_newline, SpaceOrNewline, |s|{ space(s).or(newline) }, "SpaceOrNewline"}
-node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
-node!{head, Head, |s|{ node(s).and(title).and(newline).optional_repeat(whitespace) }, "Head"}
-node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
+node!{program, Program, |s|{ node(s).optional(head).optional(body) }, "Program"}
+node!{head, Head, |s|{ node(s).and(title).repeat(whitespace) }, "Head"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(text) }, "Title"}
+node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
+node!{text, Text, |s|{ word(s).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
-node!{paragraph, Paragraph, |s|{ word(s).optional(space).optional(paragraph) }, "Paragraph"}
+node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
+node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
 
-
-
-node!{title, Title, |s|{ hashtag(s).and(space).and(paragraph) }, "Title"}
-node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(paragraph).and(newline) }, "Subtitle"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
-node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).optional(paragraph).optional_repeat(whitespace).repeat(block) }, "Section"}
+node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).optional_repeat(paragraph).and(block)}, "Section"}
+node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
+
+
+
+
+
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}

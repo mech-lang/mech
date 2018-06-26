@@ -20,6 +20,8 @@ macro_rules! parse_string {
   )
 }
 
+parse_string!(empty, "");
+
 // ## Constant
 
 parse_string!(constant_digit, "1");
@@ -80,3 +82,13 @@ parse_string!(program_paragraph, "# Title
 
 A block title
   1"); 
+parse_string!(program_paragraph_repeat, "# Bouncing Balls
+## Subtitle
+This is the bouncing ball program
+
+Set up the environment
+
+  #ball = 1"); 
+
+
+

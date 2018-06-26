@@ -23,13 +23,15 @@ fn main() {
   let mut lexer = Lexer::new();
   let mut parser = Parser::new();
   //let mut compiler = Compiler::new();
-  let mut core = Core::new(100, 10);
+  let mut core = Core::new(1112, 10);
 
-  let input = String::from("# Bouncing Balls Motherucker
+  let input = String::from("# Title
+   
 
-## Subtitle Foo Bar
+     
 
-A block title
+
+## Subtitle
   1");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
