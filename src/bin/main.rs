@@ -25,14 +25,15 @@ fn main() {
   //let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("# Title
-   
+ let input = String::from("# Bouncing Balls
+ 
+## Section
 
-     
+Paragraph this is some text
 
-
-## Subtitle
-  1");
+And I can have more than one
+  1
+");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
 

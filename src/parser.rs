@@ -81,6 +81,7 @@ pub enum Node {
   Paragraph{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
+  ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   Text{ children: Vec<Node> },
   Token{token: Token},
@@ -130,6 +131,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
+    Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
@@ -292,6 +294,7 @@ impl ParseState {
     where F: Fn(&mut ParseState) -> &mut ParseState
   {
     self.depth += 1; 
+    let before_status = self.status.clone();
     let before_depth = self.depth;
     spacer(self.depth); println!("Optional Repeat");
     let mut result = self;
@@ -302,8 +305,8 @@ impl ParseState {
         result.depth = before_depth;
       }
     }
-    result.status = ParseStatus::Parsing;
     let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
+    result.status = before_status;
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
     result
@@ -381,8 +384,8 @@ impl fmt::Debug for Parser {
 // These nodes represent interior connections in the parse tree.
 
 node!{program, Program, |s|{ node(s).optional(head).optional(body) }, "Program"}
-node!{head, Head, |s|{ node(s).and(title).repeat(whitespace) }, "Head"}
-node!{title, Title, |s|{ hashtag(s).and(space).and(text) }, "Title"}
+node!{head, Head, |s|{ node(s).and(title) }, "Head"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
 node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
 node!{text, Text, |s|{ word(s).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
@@ -398,7 +401,7 @@ node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repe
 
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional(newline) }, "Constraint"}
+node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ data(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
