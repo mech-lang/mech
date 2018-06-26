@@ -11,9 +11,9 @@ A toolchain for compiling textual syntax into Mech blocks.
 ## Contents
 
 - lexer - converts raw text into tokens
-- parser - converts tokens into a Concrete Syntax Tree (CST) and then an abstract syntax tree (AST)
-- compiler - converts the AST into blocks
-- formatter - converts an CST into text
+- parser - converts tokens into a parse tree
+- compiler - converts the parse tree into a syntax tree
+- formatter - converts a parse tree into text
 
 ## License
 
