@@ -73,6 +73,8 @@ pub enum Node {
   Title{ children: Vec<Node> },
   Subtitle{ children: Vec<Node> },
   Body{ children: Vec<Node> },
+  Statement{ children: Vec<Node> },
+  StatementOrExpression{ children: Vec<Node> },
   Node{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Token{token: Token},
@@ -113,6 +115,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Title{children} => {print!("Title\n"); Some(children)},
     Node::Subtitle{children} => {print!("Subtitle\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
+    Node::Statement{children} => {print!("Statement\n"); Some(children)},
+    Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
@@ -336,7 +340,10 @@ node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier
 node!{body, Body, |s|{ repeat(section, s) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}
 node!{block, Block, |s|{ node(s).repeat(constraint).and(newline) }, "Block"}
-node!{constraint, Constraint, |s|{ node(s).and(space).and(space).repeat(expression).and(newline) }, "Constraint"}
+node!{constraint, Constraint, |s|{ node(s).and(space).and(space).repeat(statement_or_expression).and(newline) }, "Constraint"}
+node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
+node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
+node!{column_define, ColumnDefine, |s|{ data(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
 node!{constant, Constant, |s|{ digit(s) }, "Constant"}
 node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}

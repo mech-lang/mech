@@ -27,7 +27,7 @@ fn main() {
 
   let input = String::from("# Title
 ## Subtitle
-  1 + 1
+  #app.1 = 1 + 2
 
 ");
   let add = Hasher::hash_str("add");
