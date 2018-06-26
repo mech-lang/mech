@@ -390,9 +390,9 @@ node!{paragraph, Paragraph, |s|{ word(s).optional(space).optional(paragraph) }, 
 
 
 node!{title, Title, |s|{ hashtag(s).and(space).and(paragraph) }, "Title"}
-node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier).and(newline) }, "Subtitle"}
+node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(paragraph).and(newline) }, "Subtitle"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
-node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}
+node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).optional(paragraph).optional_repeat(whitespace).repeat(block) }, "Section"}
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}

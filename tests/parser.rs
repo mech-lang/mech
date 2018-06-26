@@ -74,3 +74,9 @@ parse_string!(program_arbitrary_whitespace, "# Title
    
 ## Subtitle
   1");
+parse_string!(program_paragraph, "# Title
+
+## Subtitle
+
+A block title
+  1"); 
