@@ -77,6 +77,9 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   StatementOrExpression{ children: Vec<Node> },
   Node{ children: Vec<Node> },
+  Alphanumeric{ children: Vec<Node> },
+  Paragraph{ children: Vec<Node> },
+  Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   SpaceOrNewline{ children: Vec<Node> },
@@ -102,6 +105,9 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::MathExpression{children} => {print!("Math\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
+    Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
+    Node::Word{children} => {print!("Word\n"); Some(children)},
+    Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
@@ -377,10 +383,13 @@ node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }
 node!{space_or_newline, SpaceOrNewline, |s|{ space(s).or(newline) }, "SpaceOrNewline"}
 node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
 node!{head, Head, |s|{ node(s).and(title).and(newline).optional_repeat(whitespace) }, "Head"}
+node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
+node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
+node!{paragraph, Paragraph, |s|{ word(s).optional(space).optional(paragraph) }, "Paragraph"}
 
 
 
-node!{title, Title, |s|{ hashtag(s).and(space).and(identifier) }, "Title"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(paragraph) }, "Title"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier).and(newline) }, "Subtitle"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}

@@ -59,6 +59,8 @@ parse_string!(statement_column_define_add, "#add.3 = #add.2 + 3");
 parse_string!(program_simplest_block, "  1");
 parse_string!(program_title_section, "# Title
   1");
+parse_string!(program_title_longer, "# Two Words Title
+  1");
 parse_string!(program_title_subtitle, "# Title
 ## Subtitle
   1");
