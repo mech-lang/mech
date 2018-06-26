@@ -20,9 +20,6 @@ macro_rules! parse_string {
   )
 }
 
-//parse_string!(equal_constant, "x = 1");
-//parse_string!(add_columns, "#add.3 = #add.1 + #add.2");
-
 // ## Constant
 
 parse_string!(constant_digit, "1");
@@ -40,7 +37,7 @@ parse_string!(variable, "variable");
 parse_string!(variable_index_dot, "var.1");
 parse_string!(variable_index_bracket, "var[1]");
 
-// ## Match
+// ## Math
 
 parse_string!(math_add, "1 + 1");
 parse_string!(math_subtract, "1 - 1");
@@ -51,11 +48,17 @@ parse_string!(math_add_tables, "#x + #y");
 parse_string!(math_add_constant, "x + 1");
 parse_string!(math_add_index, "#x[1] + #y.1");
 
+// ## Statement
+
+parse_string!(statement_variable_define, "x = 1");
+parse_string!(statement_column_define, "#add.1 = 1");
+parse_string!(statement_column_define_add, "#add.3 = #add.2 + 3");
+
 // ## Programs
 
-
-parse_string!(program_basic, "# Title
+parse_string!(program_simplest_block, "  1");
+parse_string!(program_title_section, "# Title
+  1");
+parse_string!(program_title_subtitle, "# Title
 ## Subtitle
-  1 + 1
-
-");
+  1");

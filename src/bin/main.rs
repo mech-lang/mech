@@ -25,11 +25,7 @@ fn main() {
   //let mut compiler = Compiler::new();
   let mut core = Core::new(100, 10);
 
-  let input = String::from("# Title
-## Subtitle
-  #app.1 = 1 + 2
-
-");
+  let input = String::from("x = 1");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
 

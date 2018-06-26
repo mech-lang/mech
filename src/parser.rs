@@ -77,6 +77,8 @@ pub enum Node {
   StatementOrExpression{ children: Vec<Node> },
   Node{ children: Vec<Node> },
   Section{ children: Vec<Node> },
+  Whitespace{ children: Vec<Node> },
+  SpaceOrNewline{ children: Vec<Node> },
   Token{token: Token},
 }
 
@@ -119,6 +121,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
+    Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
+    Node::SpaceOrNewline{children} => {print!("SpaceOrNewline\n"); Some(children)},
     Node::Token{token} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -297,7 +301,7 @@ impl Parser {
   pub fn build_parse_tree(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
-    let result = node(&mut s).and(expression).or(program).and(end);
+    let result = node(&mut s).and(statement_or_expression).or(program).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -334,13 +338,18 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
+node!{whitespace, Whitespace, |s|{ node(s).repeat(space_or_newline) }, "Whitespace"}
+node!{space_or_newline, SpaceOrNewline, |s|{ space(s).or(newline) }, "SpaceOrNewline"}
 node!{program, Program, |s|{ node(s).optional(title).and(body) }, "Program"}
+
+
+
 node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).and(newline) }, "Title"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier).and(newline) }, "Subtitle"}
-node!{body, Body, |s|{ repeat(section, s) }, "Body"}
+node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}
-node!{block, Block, |s|{ node(s).repeat(constraint).and(newline) }, "Block"}
-node!{constraint, Constraint, |s|{ node(s).and(space).and(space).repeat(statement_or_expression).and(newline) }, "Constraint"}
+node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
+node!{constraint, Constraint, |s|{ node(s).and(space).and(space).and(statement_or_expression).optional(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ data(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
@@ -354,31 +363,7 @@ node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(digit).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
-node!{identifier, Identifier, |s| { repeat(alpha, s) }, "Identifier"}
-
-pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState 
-  where F: Fn(&mut ParseState) -> &mut ParseState
-{
-  s.depth += 1; 
-  spacer(s.depth); println!("Repeat");
-  let mut once = false;
-  let mut result = s;
-  let start_pos = result.last_match.clone();
-  while result.ok() {
-    let result = production(result);
-    if result.ok() {
-      result.depth -= 1;
-      once = true;
-    }
-  }
-  if once {
-    result.status = ParseStatus::Parsing;
-    let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-  }
-  result
-}
+node!{identifier, Identifier, |s| { node(s).repeat(alpha) }, "Identifier"}
 
 // ## Parse Leaves
 
