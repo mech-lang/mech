@@ -38,7 +38,7 @@ fn main() {
   println!("{:?}", tokens);
   
   parser.add_tokens(&mut tokens.clone());
-  parser.build_ast();
+  parser.build_parse_tree();
   
   println!("{:?}", parser);
   //println!("--------------------------------------------");

@@ -14,7 +14,7 @@ macro_rules! parse_string {
       lexer.add_string(String::from($test));
       let tokens = lexer.get_tokens();
       parser.add_tokens(&mut tokens.clone());
-      parser.build_ast();
+      parser.build_parse_tree();
       assert_eq!(parser.status, ParseStatus::Ready);
     }
   )

@@ -273,7 +273,7 @@ pub struct ParseError {
 pub struct Parser {
   pub status: ParseStatus,
   pub tokens: Vec<Token>,
-  pub ast: Node,
+  pub parse_tree: Node,
 }
 
 impl Parser {
@@ -282,7 +282,7 @@ impl Parser {
     Parser {
       status: ParseStatus::Ready,
       tokens: Vec::new(),
-      ast: Node::Root{ children: Vec::new()  },
+      parse_tree: Node::Root{ children: Vec::new()  },
     }
   }
 
@@ -290,14 +290,14 @@ impl Parser {
     self.tokens.append(tokens);
   }
 
-  pub fn build_ast(&mut self) {
+  pub fn build_parse_tree(&mut self) {
     let mut s = ParseState::new();
     s.token_stack.append(&mut self.tokens);
     let result = node(&mut s).and(expression).or(program).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
-      self.ast = result.node_stack.pop().unwrap();
+      self.parse_tree = result.node_stack.pop().unwrap();
     } else {
       self.status = result.status.clone();
     }
@@ -320,12 +320,15 @@ impl fmt::Debug for Parser {
       write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
     }
     write!(f, "├───────────────────────────────────────┤\n").unwrap();
-    write!(f, "{:?}", self.ast);
+    write!(f, "{:?}", self.parse_tree);
     write!(f, "└───────────────────────────────────────┘\n").unwrap();
     Ok(())
   }
 }
 
+// ## Parse Nodes
+
+// These nodes represent interior connections in the parse tree.
 
 node!{program, Program, |s|{ node(s).optional(title).and(body) }, "Program"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).and(newline) }, "Title"}
@@ -370,7 +373,10 @@ pub fn repeat<F>(production: F, s: &mut ParseState) -> &mut ParseState
   result
 }
 
+// ## Parse Leaves
+
 leaf!{alpha, Token::Alpha}
+leaf!{digit, Token::Digit}
 leaf!{hashtag, Token::HashTag}
 leaf!{period, Token::Period}
 leaf!{left_bracket, Token::LeftBracket}
@@ -381,13 +387,14 @@ leaf!{dash, Token::Dash}
 leaf!{asterisk, Token::Asterisk}
 leaf!{backslash, Token::Backslash}
 leaf!{space, Token::Space}
-leaf!{digit, Token::Digit}
 leaf!{newline, Token::Newline}
  
+// A dummy node that returns itself.
 pub fn node(s: &mut ParseState) -> &mut ParseState {
   s
 }
 
+// Matches the end of stream token
 pub fn end(s: &mut ParseState) -> &mut ParseState {
   let old_depth = s.depth;
   s.depth += 1; 
@@ -402,6 +409,7 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
   result
 }
 
+// Matches and token from the lexer step.
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
   spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
