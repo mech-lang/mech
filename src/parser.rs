@@ -72,6 +72,7 @@ pub enum Node {
   Program{ children: Vec<Node> },
   Title{ children: Vec<Node> },
   Subtitle{ children: Vec<Node> },
+  Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
   StatementOrExpression{ children: Vec<Node> },
@@ -120,6 +121,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
+    Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::SpaceOrNewline{children} => {print!("SpaceOrNewline\n"); Some(children)},
@@ -211,13 +213,25 @@ impl ParseState {
       self
     } else {
       let mut before = self.clone();
+      let old_depth = self.depth.clone();
+      let previous = self.last_match.clone();
+      let old_position = self.position;
+
+
       self.depth += 1;
       spacer(self.depth); println!("OR");
-      //println!("Before: {:?}", &before);
       self.status = ParseStatus::Parsing;
       let result = production(self);
-      //println!("Result: {:?}", &before);
-      result.depth = before.depth;
+
+      if result.ok() {
+        result.last_match = result.node_stack.len();
+      } else { 
+        result.position = old_position;
+        result.last_match = previous;
+      }      
+
+
+
       result
     }
   }
@@ -243,29 +257,50 @@ impl ParseState {
     }
   }
 
-pub fn repeat<F>(&mut self, production: F) -> &mut ParseState 
-  where F: Fn(&mut ParseState) -> &mut ParseState
-{
-  self.depth += 1; 
-  spacer(self.depth); println!("Repeat");
-  let mut once = false;
-  let mut result = self;
-  let start_pos = result.last_match.clone();
-  while result.ok() {
-    let result = production(result);
-    if result.ok() {
-      result.depth -= 1;
-      once = true;
+  pub fn repeat<F>(&mut self, production: F) -> &mut ParseState 
+    where F: Fn(&mut ParseState) -> &mut ParseState
+  {
+    self.depth += 1; 
+    spacer(self.depth); println!("Repeat");
+    let mut once = false;
+    let mut result = self;
+    let start_pos = result.last_match.clone();
+    while result.ok() {
+      let result = production(result);
+      if result.ok() {
+        result.depth -= 1;
+        once = true;
+      }
     }
+    if once {
+      result.status = ParseStatus::Parsing;
+      let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
+      result.node_stack.push(node);
+      result.last_match = result.node_stack.len();
+    }
+    result
   }
-  if once {
+
+  pub fn optional_repeat<F>(&mut self, production: F) -> &mut ParseState 
+    where F: Fn(&mut ParseState) -> &mut ParseState
+  {
+    self.depth += 1; 
+    let before_depth = self.depth;
+    spacer(self.depth); println!("Optional Repeat");
+    let mut result = self;
+    let start_pos = result.last_match.clone();
+    while result.ok() {
+      let result = production(result);
+      if result.ok() {
+        result.depth = before_depth;
+      }
+    }
     result.status = ParseStatus::Parsing;
     let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
     result.node_stack.push(node);
     result.last_match = result.node_stack.len();
+    result
   }
-  result
-}
 
 }
 
@@ -338,13 +373,14 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
-node!{whitespace, Whitespace, |s|{ node(s).repeat(space_or_newline) }, "Whitespace"}
+node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
 node!{space_or_newline, SpaceOrNewline, |s|{ space(s).or(newline) }, "SpaceOrNewline"}
-node!{program, Program, |s|{ node(s).optional(title).and(body) }, "Program"}
+node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
+node!{head, Head, |s|{ node(s).and(title).and(newline).optional_repeat(whitespace) }, "Head"}
 
 
 
-node!{title, Title, |s|{ hashtag(s).and(space).and(identifier).and(newline) }, "Title"}
+node!{title, Title, |s|{ hashtag(s).and(space).and(identifier) }, "Title"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(identifier).and(newline) }, "Subtitle"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).repeat(block) }, "Section"}

@@ -62,3 +62,13 @@ parse_string!(program_title_section, "# Title
 parse_string!(program_title_subtitle, "# Title
 ## Subtitle
   1");
+parse_string!(program_arbitrary_whitespace, "# Title
+   
+
+     
+
+
+
+   
+## Subtitle
+  1");
