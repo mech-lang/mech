@@ -401,7 +401,7 @@ node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).repeat(prose_or_code)}, "Section"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
 
-node!{prose_or_code, ProseOrCode, |s|{ block(s).or(text).optional_repeat(whitespace) }, "ProseOrCode"}
+node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
 
 
