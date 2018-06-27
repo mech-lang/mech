@@ -77,6 +77,10 @@ impl Core {
     self.watched_index.insert(table, false);
   }
 
+  pub fn run_network(&mut self) {
+    self.runtime.run_network(&mut self.store);
+  }
+
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
     // First make any tables
