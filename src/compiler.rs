@@ -101,9 +101,31 @@ impl Compiler {
     }
   }
 
-  pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
-    let blocks: Vec<Block> = Vec::new();
+  pub fn compile_block(&mut self, node: Node) -> Vec<Block> {
+    let mut blocks: Vec<Block> = Vec::new();
+    match node {
+      Node::Block{..} => {
+        let block = Block::new();
+        blocks.push(block);
+      },
+      Node::Root{children} => {
+        let result = self.compile_blocks(children);
+        self.blocks = result;
+      },
+      Node::Program{children} => {blocks.append(&mut self.compile_blocks(children));},
+      Node::Body{children} => {blocks.append(&mut self.compile_blocks(children));},
+      Node::Section{children} => {blocks.append(&mut self.compile_blocks(children));},
+      _ => (),
+    }
     blocks
+  }
+
+  pub fn compile_blocks(&mut self, nodes: Vec<Node>) -> Vec<Block> {
+    let mut compiled = Vec::new();
+    for node in nodes {
+      compiled.append(&mut self.compile_block(node));
+    }
+    compiled
   }
 
   pub fn build_syntax_tree(&mut self, node: parser::Node) -> Vec<Node> {

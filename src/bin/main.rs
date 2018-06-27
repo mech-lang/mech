@@ -58,6 +58,9 @@ And this is another paragraph
   println!("--------------------------------------------");
   println!("{:?}", parser.parse_tree);
   compiler.build_syntax_tree(parser.parse_tree);
+  let ast = compiler.syntax_tree.clone();
+  compiler.compile_block(ast);
   println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.blocks);
   
 }
