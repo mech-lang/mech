@@ -8,7 +8,14 @@ use alloc::{String, Vec, fmt};
 #[derive(Clone, PartialEq)]
 pub enum Node {
   Root{ children: Vec<Node> },
+  Program{ children: Vec<Node> },
+  Head{ children: Vec<Node> },
+  Body{ children: Vec<Node> },
+  Section{ children: Vec<Node> },
+  Block{ children: Vec<Node> },
+  Constraint{ children: Vec<Node> },
   Title{ text: String },
+  Paragraph{ text: String },
   String{ text: String },
   Token{ token: Token, byte: u8 },
   Null,
@@ -26,10 +33,17 @@ pub fn print_recurse(node: &Node, level: usize) {
   spacer(level);
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
-    Node::Root{children} => {print!("Root\n"); Some(children)},
+    Node::Program{children} => {print!("Program\n"); Some(children)},
+    Node::Head{children} => {print!("Head\n"); Some(children)},
+    Node::Body{children} => {print!("Body\n"); Some(children)},
+    Node::Section{children} => {print!("Section\n"); Some(children)},
+    Node::Block{children} => {print!("Block\n"); Some(children)},
+    Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
+    Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
+    Node::Null => {print!("Null\n"); None},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
@@ -86,17 +100,73 @@ impl Compiler {
     self.depth += 1;
     match node {
       parser::Node::Root{children} => {
-        compiled.append(&mut self.compile_nodes(children));
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Root{children: result});
       },
       parser::Node::Program{children} => {
-        compiled.append(&mut self.compile_nodes(children));
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Program{children: result});
       },
       parser::Node::Head{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Head{children: result});
+      },
+      parser::Node::Body{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Body{children: result});
+      },
+      parser::Node::Section{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Section{children: result});
+      },
+      parser::Node::Block{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Block{children: result});
+      },
+      parser::Node::Constraint{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Constraint{children: result});
+      },
+      parser::Node::ProseOrCode{children} => {
         compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::StatementOrExpression{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Statement{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::ColumnDefine{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Data{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Table{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Table{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Paragraph{children} => {
+        let mut result = self.compile_nodes(children);
+        let node = match &result[0] {
+          Node::String{text} => Node::Paragraph{text: text.clone()},
+          _ => Node::Null,
+        };
+        compiled.push(node);
       },
       parser::Node::Title{children} => {
         let mut result = self.compile_nodes(children);
         let node = match &result[2] {
+          Node::String{text} => Node::Title{text: text.clone()},
+          _ => Node::Null,
+        };
+        compiled.push(node);
+      },
+      parser::Node::Subtitle{children} => {
+        let mut result = self.compile_nodes(children);
+        let node = match &result[3] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
         };
