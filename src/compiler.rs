@@ -84,6 +84,8 @@ pub struct Compiler {
   pub output_registers: usize,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
+  pub section: usize,
+  pub block: usize,
 }
 
 impl Compiler {
@@ -94,6 +96,8 @@ impl Compiler {
       constraints: Vec::new(),
       node_stack: Vec::new(),
       depth: 0,
+      section: 1,
+      block: 1,
       input_registers: 1,
       intermediate_registers: 1,
       output_registers: 1,
@@ -104,8 +108,14 @@ impl Compiler {
   pub fn compile_block(&mut self, node: Node) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
     match node {
-      Node::Block{..} => {
-        let block = Block::new();
+      Node::Block{children} => {
+        let mut block = Block::new();
+        block.name = format!("{:?},{:?}", self.section, self.block);
+        block.id = Hasher::hash_string(block.name.clone()) as usize;
+        self.block += 1;
+        let constraints = self.compile_constraints(children);
+        block.add_constraints(constraints);
+        block.plan();
         blocks.push(block);
       },
       Node::Root{children} => {
@@ -114,7 +124,11 @@ impl Compiler {
       },
       Node::Program{children} => {blocks.append(&mut self.compile_blocks(children));},
       Node::Body{children} => {blocks.append(&mut self.compile_blocks(children));},
-      Node::Section{children} => {blocks.append(&mut self.compile_blocks(children));},
+      Node::Section{children} => {
+        blocks.append(&mut self.compile_blocks(children));
+        self.section += 1;
+        self.block = 1;
+      },
       _ => (),
     }
     blocks
@@ -124,6 +138,27 @@ impl Compiler {
     let mut compiled = Vec::new();
     for node in nodes {
       compiled.append(&mut self.compile_block(node));
+    }
+    compiled
+  }
+
+  pub fn compile_constraint(&mut self, node: Node) -> Vec<Constraint> {
+    let mut constraints: Vec<Constraint> = Vec::new();
+    match node {
+      Node::ColumnDefine{children} => {constraints.append(&mut self.compile_constraints(children));},
+      Node::Constant{value} => {
+        constraints.push(Constraint::Constant{value: value as i64, input: self.intermediate_registers as u64});
+        self.intermediate_registers += 1;
+      },
+      _ => (),
+    }
+    constraints
+  }
+
+  pub fn compile_constraints(&mut self, nodes: Vec<Node>) -> Vec<Constraint> {
+    let mut compiled = Vec::new();
+    for node in nodes {
+      compiled.append(&mut self.compile_constraint(node));
     }
     compiled
   }
@@ -161,7 +196,7 @@ impl Compiler {
         let constraint = result[2].clone();
         match constraint {
           Node::Token{..} => (),
-          _ => compiled.push(Node::Constraint{children: vec![constraint]}),
+          _ => compiled.push(constraint),
         }
       },
       parser::Node::ProseOrCode{children} => {
