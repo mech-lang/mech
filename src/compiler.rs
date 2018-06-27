@@ -101,13 +101,18 @@ impl Compiler {
     }
   }
 
-  pub fn compile(&mut self, node: parser::Node) -> Vec<Node> {
+  pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
+    let blocks: Vec<Block> = Vec::new();
+    blocks
+  }
+
+  pub fn build_syntax_tree(&mut self, node: parser::Node) -> Vec<Node> {
     let mut compiled = Vec::new();
     self.depth += 1;
     match node {
       parser::Node::Root{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Root{children: result});
+        self.syntax_tree = Node::Root{children: result};        
       },
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
@@ -267,7 +272,7 @@ impl Compiler {
   pub fn compile_nodes(&mut self, nodes: Vec<parser::Node>) -> Vec<Node> {
     let mut compiled = Vec::new();
     for node in nodes {
-      compiled.append(&mut self.compile(node));
+      compiled.append(&mut self.build_syntax_tree(node));
     }
     compiled
   }

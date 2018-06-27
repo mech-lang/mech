@@ -10,7 +10,7 @@ use std::time::*;
 use rand::{Rng, thread_rng};
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
-//use mech_syntax::compiler::Compiler;
+use mech_syntax::compiler::Compiler;
 use mech::Block;
 use mech::{Change, Transaction};
 use mech::{Value};
@@ -22,22 +22,27 @@ fn main() {
   
   let mut lexer = Lexer::new();
   let mut parser = Parser::new();
-  //let mut compiler = Compiler::new();
+  let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
  let input = String::from("# Bouncing Balls
- 
-## Section
 
-Paragraph this is some text
+## Section One
 
-And I can have more than one
-  #ball = 0
+This is an intro paragraph
 
-  #gravity = 9
-  
+## Section Two
+
+  #x = 1
+  #y = 2
+
+And another block in section two
+
+  x = #x
+
+## Section Three
+
 And this is another paragraph
-
   #scene = #add.1");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
@@ -46,9 +51,13 @@ And this is another paragraph
   let tokens = lexer.get_tokens();
   println!("{:?}", tokens);
   
+  parser.text = input;
   parser.add_tokens(&mut tokens.clone());
   parser.build_parse_tree();
+
+  println!("--------------------------------------------");
+  println!("{:?}", parser.parse_tree);
+  compiler.build_syntax_tree(parser.parse_tree);
+  println!("{:?}", compiler.syntax_tree);
   
-  println!("{:?}", parser);
-  //println!("--------------------------------------------");
 }
