@@ -84,7 +84,7 @@ pub enum Node {
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   Text{ children: Vec<Node> },
-  Token{token: Token},
+  Token{token: Token, byte: u8},
 }
 
 impl fmt::Debug for Node {
@@ -133,7 +133,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Text{children} => {print!("Text\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
-    Node::Token{token} => {print!("Token({:?})\n", token); None},
+    Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
@@ -171,6 +171,7 @@ pub enum ParseStatus {
 #[derive(Debug, Clone)]
 pub struct ParseState {
   pub status: ParseStatus,
+  pub text: String,
   pub token_stack: Vec<Token>,
   pub node_stack: Vec<Node>,
   last_match: usize,
@@ -183,6 +184,7 @@ impl ParseState {
   pub fn new() -> ParseState {
     ParseState {
       status: ParseStatus::Parsing,
+      text: String::from(""),
       node_stack: Vec::new(), 
       token_stack: Vec::new(),
       last_match: 0,
@@ -327,6 +329,7 @@ pub struct Parser {
   pub status: ParseStatus,
   pub tokens: Vec<Token>,
   pub parse_tree: Node,
+  pub text: String,
 }
 
 impl Parser {
@@ -334,6 +337,7 @@ impl Parser {
   pub fn new() -> Parser {
     Parser {
       status: ParseStatus::Ready,
+      text: String::from(""),
       tokens: Vec::new(),
       parse_tree: Node::Root{ children: Vec::new()  },
     }
@@ -345,6 +349,7 @@ impl Parser {
 
   pub fn build_parse_tree(&mut self) {
     let mut s = ParseState::new();
+    s.text = self.text.clone();
     s.token_stack.append(&mut self.tokens);
     let result = node(&mut s).and(statement_or_expression).or(program).and(end);
     //println!("{:?}",result);
@@ -460,9 +465,14 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
   spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
   if s.token_stack[s.position] == token {
+    let byte = if s.position < s.text.len() {
+      s.text.as_bytes()[s.position]
+    } else {
+      0
+    };
     s.position += 1;
     s.last_match += 1;
-    s.node_stack.push(Node::Token{token});
+    s.node_stack.push(Node::Token{token, byte});
     println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
