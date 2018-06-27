@@ -69,6 +69,10 @@ impl Core {
     }
   }
 
+  pub fn register_blocks(&mut self, blocks: Vec<Block>) {
+    self.runtime.register_blocks(blocks, &mut self.store);
+  }
+
   pub fn register_watcher(&mut self, table: u64) {
     self.watched_index.insert(table, false);
   }
