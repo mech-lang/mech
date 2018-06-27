@@ -13,9 +13,12 @@ pub enum Node {
   Body{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Block{ children: Vec<Node> },
+  ColumnDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
+  Table{ name: String, id: u64 },
   Paragraph{ text: String },
+  Constant {value: u64},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   Null,
@@ -36,12 +39,15 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
+    Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
+    Node::Constant{value} => {print!("Constant({:?})\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
+    Node::Table{name,id} => {print!("#{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     Node::Null => {print!("Null\n"); None},
     _ => {print!("Unhandled Node"); None},
@@ -125,7 +131,11 @@ impl Compiler {
       },
       parser::Node::Constraint{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Constraint{children: result});
+        let constraint = result[2].clone();
+        match constraint {
+          Node::Token{..} => (),
+          _ => compiled.push(Node::Constraint{children: vec![constraint]}),
+        }
       },
       parser::Node::ProseOrCode{children} => {
         compiled.append(&mut self.compile_nodes(children));
@@ -137,16 +147,42 @@ impl Compiler {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::ColumnDefine{children} => {
-        compiled.append(&mut self.compile_nodes(children));
+        let result = self.compile_nodes(children);
+        let sink = result[0].clone();
+        let source = result[4].clone();
+        compiled.push(Node::ColumnDefine{children: vec![sink, source]});
       },
       parser::Node::Data{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Table{children} => {
+        let result = self.compile_nodes(children);
+        let table_name = match &result[1] {
+          Node::String{text} => text.clone(),
+          _ => String::from(""),
+        };
+        let id = Hasher::hash_string(table_name.clone());
+        compiled.push(Node::Table{name: table_name, id});
+      },
+      parser::Node::Expression{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
-      parser::Node::Table{children} => {
+      parser::Node::Data{children} => {
         compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Constant{children} => {
+        let mut value = 0;
+        let mut result = self.compile_nodes(children);
+        for node in result {
+          match node {
+            Node::Token{token, byte} => {
+              let digit = byte_to_digit(byte).unwrap();
+              value += digit;
+            },
+            _ => (),
+          }
+        }
+        compiled.push(Node::Constant{value});
       },
       parser::Node::Paragraph{children} => {
         let mut result = self.compile_nodes(children);
@@ -182,7 +218,7 @@ impl Compiler {
             _ => (),
           }
         }
-        compiled.append(&mut vec![Node::String{text: text_node}]);
+        compiled.push(Node::String{text: text_node});
       },
       parser::Node::Word{children} => {
         let mut word = String::new();
@@ -196,7 +232,21 @@ impl Compiler {
             _ => (),
           }
         }
-        compiled.append(&mut vec![Node::String{text: word}]);
+        compiled.push(Node::String{text: word});
+      },
+      parser::Node::Identifier{children} => {
+        let mut word = String::new();
+        let mut result = self.compile_nodes(children);
+        for node in result {
+          match node {
+            Node::Token{token, byte} => {
+              let character = byte_to_alpha(byte).unwrap();
+              word.push(character);
+            },
+            _ => (),
+          }
+        }
+        compiled.push(Node::String{text: word});
       },
       parser::Node::Repeat{children} => {
         compiled.append(&mut self.compile_nodes(children));
@@ -232,7 +282,7 @@ fn get_destination_register(constraint: &Constraint) -> Option<usize> {
 }
 
 
-fn byte_to_digit(byte: u8) -> Option<usize> {
+fn byte_to_digit(byte: u8) -> Option<u64> {
   match byte {
     48 => Some(0),
     49 => Some(1),
