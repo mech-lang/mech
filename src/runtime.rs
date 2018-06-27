@@ -418,6 +418,12 @@ impl Block {
   pub fn plan(&mut self) {
     for constraint in &self.constraints {
       match constraint {
+        Constraint::Constant{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
         Constraint::Identity{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
