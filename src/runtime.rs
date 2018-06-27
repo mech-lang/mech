@@ -196,6 +196,7 @@ impl fmt::Debug for Register {
 #[derive(Clone)]
 pub struct Block {
   pub id: usize,
+  pub name: String,
   pub text: String,
   pub ready: u64,
   pub updated: bool,
@@ -214,6 +215,7 @@ impl Block {
   pub fn new() -> Block { 
     Block {
       id: 0,
+      name: String::from(""),
       text: String::from(""),
       ready: 0,
       updated: false,
