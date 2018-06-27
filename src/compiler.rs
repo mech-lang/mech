@@ -1,9 +1,60 @@
 use mech::{Block, Constraint};
 use mech::{Function, Plan, Comparator};
 use mech::Hasher;
-use parser::Node;
+use parser;
 use lexer::Token;
-/*
+use alloc::{String, Vec, fmt};
+
+#[derive(Clone, PartialEq)]
+pub enum Node {
+  Root{ children: Vec<Node> },
+  Title{ text: String },
+  String{ text: String },
+  Token{ token: Token, byte: u8 },
+  Null,
+}
+
+impl fmt::Debug for Node {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    print_recurse(self, 0);
+    Ok(())
+  }
+}
+
+pub fn print_recurse(node: &Node, level: usize) {
+  spacer(level);
+  let children: Option<&Vec<Node>> = match node {
+    Node::Root{children} => {print!("Root\n"); Some(children)},
+    Node::Root{children} => {print!("Root\n"); Some(children)},
+    Node::String{text} => {print!("String({:?})\n", text); None},
+    Node::Title{text} => {print!("Title({:?})\n", text); None},
+    Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
+    _ => {print!("Unhandled Node"); None},
+  };  
+  match children {
+    Some(childs) => {
+      for child in childs {
+        print_recurse(child, level + 1)
+      }
+    },
+    _ => (),
+  }    
+}
+
+pub fn spacer(width: usize) {
+  let limit = if width > 0 {
+    width - 1
+  } else {
+    width
+  };
+  for _ in 0..limit {
+    print!("│");
+  }
+  print!("├");
+}
+
+
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
@@ -11,6 +62,8 @@ pub struct Compiler {
   pub input_registers: usize,
   pub intermediate_registers: usize,
   pub output_registers: usize,
+  pub syntax_tree: Node,
+  pub node_stack: Vec<Node>, 
 }
 
 impl Compiler {
@@ -19,113 +72,84 @@ impl Compiler {
     Compiler {
       blocks: Vec::new(),
       constraints: Vec::new(),
+      node_stack: Vec::new(),
       depth: 0,
       input_registers: 1,
       intermediate_registers: 1,
       output_registers: 1,
+      syntax_tree: Node::Root{ children: Vec::new() },
     }
   }
 
-  pub fn compile(&mut self, ast: Node) -> Vec<Constraint> {
-    let mut constraints = Vec::new();
+  pub fn compile(&mut self, node: parser::Node) -> Vec<Node> {
+    let mut compiled = Vec::new();
     self.depth += 1;
-    match ast {
-      // ROOT
-      Node::Root{children} => {
-        constraints.append(&mut self.compile_nodes(children));
+    match node {
+      parser::Node::Root{children} => {
+        compiled.append(&mut self.compile_nodes(children));
       },
-      // BLOCK
-      Node::Block{children} => {
-        constraints.append(&mut self.compile_nodes(children));
+      parser::Node::Program{children} => {
+        compiled.append(&mut self.compile_nodes(children));
       },
-      // CONSTRAINT
-      Node::Constraint{children} => {
-        constraints.append(&mut self.compile_nodes(children));
+      parser::Node::Head{children} => {
+        compiled.append(&mut self.compile_nodes(children));
       },
-      // SELECT
-      Node::Select{children} => {
-        let table = &children[0];
-        let id = get_id(table).unwrap();
-        let columns = get_children(table).unwrap();
-        for column in columns {
-          let input = self.input_registers as u64;
-          let intermediate = self.intermediate_registers as u64;
-          let column_ix = byte_to_digit(*get_value(column).unwrap() as u8).unwrap();
-          constraints.push(Constraint::Scan{table: id, column: column_ix as u64, input: input});
-          constraints.push(Constraint::Identity{source: input, sink: intermediate});
-          self.input_registers += 1;
-          self.intermediate_registers += 1;
-        }
-      },
-      // INSERT
-      Node::Insert{children} => {
-        let table = &children[0];
-        let id = get_id(table).unwrap();
-        let column = byte_to_digit(*get_value(get_first_child(table).unwrap()).unwrap() as u8).unwrap() as u64;
-        constraints.push(Constraint::Insert{output: 0, table: id, column});
-        constraints.append(&mut self.compile_nodes(children.clone()));
-      },
-      // COLUMN
-      Node::ColumnDefine{parts} => {
-        let new_constraints = &mut self.compile_nodes(parts);
-        let insert = &new_constraints[0].clone();
-        let function = &new_constraints[3].clone();
-        let wired_insert = match (insert, function) {
-          (Constraint::Insert{table, column, ..}, Constraint::Function{output,..}) => {
-            Some(Constraint::Insert{table: *table, column: *column, output: *output})
-          },
-          x => {
-            None
-          },
+      parser::Node::Title{children} => {
+        let mut result = self.compile_nodes(children);
+        let node = match &result[2] {
+          Node::String{text} => Node::Title{text: text.clone()},
+          _ => Node::Null,
         };
-        new_constraints[0] = wired_insert.unwrap();
-        constraints.append(new_constraints);
+        compiled.push(node);
       },
-      // MATH
-      Node::MathExpression{parameters} => {
-        let mut new_constraints = self.compile_nodes(parameters);
-        let lhs = get_destination_register(&new_constraints[1]).unwrap() as u64;
-        let rhs = get_destination_register(&new_constraints[4]).unwrap() as u64;
-        for constraint in new_constraints {
-          match constraint {
-            Constraint::Function{operation, parameters, output} => {
-              let modified_constraint = Constraint::Function{
-                operation, 
-                parameters: vec![lhs, rhs], 
-                output}
-              ;
-              constraints.push(modified_constraint);
-            },
-            _ => constraints.push(constraint),
+      parser::Node::Text{children} => {
+        let mut result = self.compile_nodes(children);
+        let mut text_node = String::new();
+        for node in result {
+          match node {
+            Node::String{text} => text_node.push_str(&text),
+            Node::Token{token: Token::Space, ..} => text_node.push(' '),
+            _ => (),
           }
-        }          
+        }
+        compiled.append(&mut vec![Node::String{text: text_node}]);
       },
-      // INFIX
-      Node::InfixOperation{token} => {
-        let op: Function = match token {
-          Token::Plus => Some(Function::Add),
-          Token::Dash => Some(Function::Subtract),
-          Token::Asterisk => Some(Function::Multiply),
-          Token::Backslash => Some(Function::Divide),
-          _ => None,
-        }.unwrap();
-        let intermediate = self.intermediate_registers as u64;
-        constraints.push(Constraint::Function {operation: op, parameters: vec![0, 0], output: intermediate});
-        self.intermediate_registers += 1;
-      }
+      parser::Node::Word{children} => {
+        let mut word = String::new();
+        let mut result = self.compile_nodes(children);
+        for node in result {
+          match node {
+            Node::Token{token, byte} => {
+              let character = byte_to_alpha(byte).unwrap();
+              word.push(character);
+            },
+            _ => (),
+          }
+        }
+        compiled.append(&mut vec![Node::String{text: word}]);
+      },
+      parser::Node::Repeat{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Alphanumeric{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Token{token, byte} => {
+        compiled.push(Node::Token{token, byte});
+      },
       _ => (),
     }
     
-    self.constraints = constraints.clone();
-    constraints
+    //self.constraints = constraints.clone();
+    compiled
   }
 
-  pub fn compile_nodes(&mut self, nodes: Vec<Node>) -> Vec<Constraint> {
-    let mut constraints = Vec::new();
+  pub fn compile_nodes(&mut self, nodes: Vec<parser::Node>) -> Vec<Node> {
+    let mut compiled = Vec::new();
     for node in nodes {
-      constraints.append(&mut self.compile(node));
+      compiled.append(&mut self.compile(node));
     }
-    constraints
+    compiled
   }
 
 }
@@ -154,40 +178,60 @@ fn byte_to_digit(byte: u8) -> Option<usize> {
   }
 }
 
-fn get_number_from_select(node: &Node) -> u8 {
-  *get_value(&get_first_child(get_first_child(node).unwrap()).unwrap()).unwrap() as u8
-}
-
-fn get_first_child(node: &Node) -> Option<&Node> {
-  match node {
-    Node::Table{id, token, children} => Some(&children[0]),
-    Node::Select{children} => Some(&children[0]),
-    Node::Block{children} => Some(&children[0]),
-    Node::Root{children} => Some(&children[0]),
+fn byte_to_alpha(byte: u8) -> Option<char> {
+  match byte {
+    97 => Some('a'),
+    98 => Some('b'),
+    99 => Some('c'),
+    100 => Some('d'),
+    101 => Some('e'),
+    102 => Some('f'),
+    103 => Some('g'),
+    104 => Some('h'),
+    105 => Some('i'),
+    106 => Some('j'),
+    107 => Some('k'),
+    108 => Some('l'),
+    109 => Some('m'),
+    110 => Some('n'),
+    111 => Some('o'),
+    112 => Some('p'),
+    113 => Some('q'),
+    114 => Some('r'),
+    115 => Some('s'),
+    116 => Some('t'),
+    117 => Some('u'),
+    118 => Some('v'),
+    119 => Some('w'),
+    120 => Some('x'),
+    121 => Some('y'),    
+    122 => Some('z'),
+    65 => Some('A'),
+    66 => Some('B'),
+    67 => Some('C'),
+    68 => Some('D'),
+    69 => Some('E'),
+    70 => Some('F'),
+    71 => Some('G'),
+    72 => Some('H'),
+    73 => Some('I'),
+    74 => Some('J'),
+    75 => Some('K'),
+    76 => Some('L'),
+    77 => Some('M'),
+    78 => Some('N'),
+    79 => Some('O'),
+    80 => Some('P'),
+    81 => Some('Q'),
+    82 => Some('R'),
+    83 => Some('S'),
+    84 => Some('T'),
+    85 => Some('U'),
+    86 => Some('V'),
+    87 => Some('W'),
+    88 => Some('X'),
+    89 => Some('Y'),
+    90 => Some('Z'),
     _ => None,
   }
 }
-
-fn get_children(node: &Node) -> Option<&Vec<Node>> {
-  match node {
-    Node::Table{id, token, children} => Some(children),
-    Node::Block{children} => Some(children),
-    Node::Root{children} => Some(children),
-    _ => None,
-  }
-}
-
-fn get_id(node: &Node) -> Option<u64> {
-  match node {
-    Node::Table{id, token, children} => Some(*id),
-    _ => None,
-  }
-}
-
-fn get_value(node: &Node) -> Option<&u64> {
-  match node {
-    Node::Number{value, token} => Some(value),
-    _ => None,
-  }
-}
-*/
