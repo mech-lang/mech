@@ -39,8 +39,9 @@ impl Runtime {
 
   // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
-    // @TODO better block ID
-    block.id = self.blocks.len() + 1;
+    if block.id == 0 {
+      block.id = self.blocks.len() + 1;
+    }
     for ((table, column), registers) in &block.pipes {
       for register in registers {
         let register_id = *register as usize - 1;
