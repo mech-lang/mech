@@ -441,7 +441,7 @@ impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "┌────────────────────────────────────────┐\n").unwrap();
-    write!(f, "│ Block #{:?}\n", self.id).unwrap();
+    write!(f, "│ Block {:?} ({:?})\n", self.name, self.id).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ {}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
