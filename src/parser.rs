@@ -81,6 +81,8 @@ pub enum Node {
   Paragraph{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
+  LHS{ children: Vec<Node> },
+  RHS{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   Text{ children: Vec<Node> },
@@ -131,6 +133,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
+    Node::RHS{children} => {print!("RHS\n"); Some(children)},
+    Node::LHS{children} => {print!("LHS\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
@@ -411,8 +415,13 @@ node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ node(s).and(space).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
-node!{column_define, ColumnDefine, |s|{ data(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
+node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
 node!{constant, Constant, |s|{ digit(s) }, "Constant"}
+node!{lhs, LHS, |s|{ data(s) }, "LHS"}
+node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
+
+
+
 node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}

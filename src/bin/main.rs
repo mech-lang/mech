@@ -27,23 +27,10 @@ fn main() {
 
  let input = String::from("# Bouncing Balls
 
-## Section One
-
-This is an intro paragraph
-
 ## Section Two
 
   #x = 1
-  #y = 2
-
-And another block in section two
-
-  x = #x
-
-## Section Three
-
-And this is another paragraph
-  #scene = #add.1");
+  #y = 2");
   let add = Hasher::hash_str("add");
   println!("{:?}", input);
 
