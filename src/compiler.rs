@@ -207,12 +207,14 @@ impl Compiler {
       },
       parser::Node::Constraint{children} => {
         let result = self.compile_nodes(children);
-        println!("Constraint: {:?}", result);
-        //let constraint = result[2].clone();
-        //match constraint {
-        //  Node::Token{..} => (),
-        //  _ => compiled.push(constraint),
-        // }
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Constraint{children});
       },
       parser::Node::ProseOrCode{children} => {
         compiled.append(&mut self.compile_nodes(children));
@@ -225,31 +227,15 @@ impl Compiler {
       },
       parser::Node::ColumnDefine{children} => {
         let result = self.compile_nodes(children);
-        println!("{:?}", result);
+        let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::LHS{children} => {
-              for n in children {
-                match n {
-                  Node::Table{name, id} => {
-                    println!("#{} {:?}", name, id);
-                    self.constraints.push(Constraint::Insert{table: id, column: 1, output: 1})
-                  },
-                  _ => println!("{:?}",n),
-                }  
-              }
-              
-            },
-            Node::RHS{children} => {
-              for n in children {
-                match n {
-                  _ => println!("{:?}",n),
-                }  
-              }
-            },
+            Node::LHS{..} => children.push(node),
+            Node::RHS{..} => children.push(node),
             _ => (),
           }
         }
+        compiled.push(Node::ColumnDefine{children});
       },
       parser::Node::Data{children} => {
         compiled.append(&mut self.compile_nodes(children));
@@ -454,32 +440,3 @@ fn byte_to_alpha(byte: u8) -> Option<char> {
     _ => None,
   }
 }
-
-/*
-
-# Core
-
-As the name suggests, Mech Core is the innermost element of the language. It's where all the computation in the mech langeuage occurs, and defines the semantics of the language. Let's take a look at the current design of Mech Core.
-
-## Tables
-
-Core stores data in a set of tables, which can be thought of comprising a database. Each table is a 2D array of cells, which can be Empty, or hold a Value. Values can be one of Number, String, Bool, or Table (so tables can hold tables).
-
-Additionally, tables have a name, which is a global identifier used to reference the specific table. For example, a table of data about people might be called `#people`. Then, you have a global address to any piece of data in the system: `#people[2,5]` refers to row 2, column 5 in the `#people` table. This takes away some of the friction with naming; if you don't know what to name a variable, at least you always have an address for it.
-
-[img]
-
-If you would like to use names instead of addresses, Tables handle that as well. You can map any column or row to a name, and use that in code. Going back to the people example, if a column is supposed to represent an age of a person, you can label that column `age`. If a row is supposed to represent a specific person, you can label thqat row with their name. For example: `#people[corey, age]`. Labels for rows, columns, and tables follow [identifier naming rules]().
-
-We can also slice and dice tables, by using indexing notation to select row and column ranges.
-
-## Transactions and Changes
-
-To add/remove data to/from a table, we bundle all the changes we want to make in a "transaction", in the database sense. We use a transaction model because evetually we would like to answer questions like "Who made this change?" or "When was this change made?" We would also like to be able to roll back changes we don't like, and avoid inconsistent states by rolling back partially applied transactions. 
-
-Changes can apply to a specific cell, a range of cells, or to a whole table.
-
-## Watchers
-
-
-*/
