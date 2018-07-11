@@ -43,11 +43,25 @@ fn main() {
   parser.build_parse_tree();
 
   println!("--------------------------------------------");
-  println!("{:?}", parser.parse_tree);
+  //println!("{:?}", parser.parse_tree);
   compiler.build_syntax_tree(parser.parse_tree);
   let ast = compiler.syntax_tree.clone();
-  //compiler.compile_block(ast);
- // println!("{:?}", compiler.syntax_tree);
+  compiler.compile_blocks(ast);
+  //println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", compiler.blocks);
+
+
+  let mut core = Core::new(100, 100);
+  core.register_blocks(compiler.blocks);
+  let mut table_changes = vec![
+    Change::NewTable{tag: 0x78, rows: 1, columns: 1}, 
+    Change::NewTable{tag: 0x79, rows: 1, columns: 1}, 
+  ];
+  let txn = Transaction::from_changeset(table_changes);
+  core.process_transaction(&txn);
+  core.runtime.run_network(&mut core.store);
+  println!("{:?}", core);
+  println!("{:?}", core.runtime);
+
   
 }
