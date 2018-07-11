@@ -111,7 +111,7 @@ impl Compiler {
     }
   }
 
-  pub fn compile_block(&mut self, node: Node) -> Vec<Block> {
+  pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
     match node {
       Node::Block{children} => {
@@ -119,19 +119,19 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        let constraints = self.compile_constraints(children);
+        let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
       },
       Node::Root{children} => {
-        let result = self.compile_blocks(children);
+        let result = self.compile_children(children);
         self.blocks = result;
       },
-      Node::Program{children} => {blocks.append(&mut self.compile_blocks(children));},
-      Node::Body{children} => {blocks.append(&mut self.compile_blocks(children));},
+      Node::Program{children} => {blocks.append(&mut self.compile_children(children));},
+      Node::Body{children} => {blocks.append(&mut self.compile_children(children));},
       Node::Section{children} => {
-        blocks.append(&mut self.compile_blocks(children));
+        blocks.append(&mut self.compile_children(children));
         self.section += 1;
         self.block = 1;
       },
@@ -140,20 +140,54 @@ impl Compiler {
     blocks
   }
 
-  pub fn compile_blocks(&mut self, nodes: Vec<Node>) -> Vec<Block> {
+  pub fn compile_children(&mut self, nodes: Vec<Node>) -> Vec<Block> {
     let mut compiled = Vec::new();
     for node in nodes {
-      compiled.append(&mut self.compile_block(node));
+      compiled.append(&mut self.compile_blocks(node));
     }
     compiled
   }
 
-  pub fn compile_constraint(&mut self, node: Node) -> Vec<Constraint> {
+  pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
-      Node::ColumnDefine{children} => {constraints.append(&mut self.compile_constraints(children));},
+      Node::Constraint{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::ColumnDefine{children} => {
+        let mut result = self.compile_constraints(children);
+        constraints.append(&mut result);
+      },
+      Node::LHS{children} => {
+        let mut row = 1;
+        let mut column = 1;
+        let mut table = 0;
+        for node in children {
+          match node {
+            Node::Table{name, id} => {
+              table = *id;
+            },
+            _ => (), 
+          }
+          constraints.push(Constraint::Insert{table, column, output: self.intermediate_registers as u64})
+        }
+      },
+      Node::RHS{children} => {
+        let mut row = 1;
+        let mut column = 1;
+        let mut table = 0;
+        for node in children {
+          match node {
+            Node::Constant{value} => {
+              constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
+              self.intermediate_registers += 1;
+            },
+            _ => (), 
+          }
+        }
+      },
       Node::Constant{value} => {
-        constraints.push(Constraint::Constant{value: value as i64, input: self.intermediate_registers as u64});
+        constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
         self.intermediate_registers += 1;
       },
       _ => (),
@@ -161,7 +195,7 @@ impl Compiler {
     constraints
   }
 
-  pub fn compile_constraints(&mut self, nodes: Vec<Node>) -> Vec<Constraint> {
+  pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
     let mut compiled = Vec::new();
     for node in nodes {
       compiled.append(&mut self.compile_constraint(node));
@@ -210,7 +244,8 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (),
+            // Ignore irrelevant nodes like spaces and operators
+            Node::Token{..} => (), 
             _ => children.push(node),
           }
         }
