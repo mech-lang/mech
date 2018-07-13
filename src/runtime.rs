@@ -22,7 +22,7 @@ use operations::Function;
 
 #[derive(Clone)]
 pub struct Runtime {
-  pub blocks: Vec<Block>,
+  pub blocks: HashMap<usize, Block>,
   pub pipes_map: HashMap<(usize, usize), Vec<Address>>,
   pub ready_blocks: HashSet<usize>,
 }
@@ -31,7 +31,7 @@ impl Runtime {
 
   pub fn new() -> Runtime {
     Runtime {
-      blocks: Vec::new(),
+      blocks: HashMap::new(),
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
     }
@@ -57,7 +57,10 @@ impl Runtime {
         }
       }      
     }
-    self.blocks.push(block.clone());
+    if block.updated && block.input_registers.len() == 0 {
+      self.ready_blocks.insert(block.id);
+    }
+    self.blocks.insert(block.id, block.clone());
     self.run_network(store);
   } 
 
@@ -71,14 +74,13 @@ impl Runtime {
   pub fn run_network(&mut self, store: &mut Interner) {
     // Run the compute graph until it reaches a steady state.
     // TODO Make this a parameter
+    println!("Running Netowrk {:?}", self.ready_blocks);
     let max_iterations = 10_000;
     let mut n = 0;
     while {
       for block_id in self.ready_blocks.drain() {
-        let mut block = &mut self.blocks[block_id - 1];
-        if block.is_ready() {
-          block.solve(store);
-        }
+        let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+        block.solve(store);
       }
       // Queue up the next blocks
       for table_address in store.tables.changed_this_round.drain() {
@@ -86,7 +88,7 @@ impl Runtime {
           Some(register_addresses) => {
             for register_address in register_addresses {
               let block_ix = register_address.block - 1;
-              let mut block = &mut self.blocks[block_ix];
+              let mut block = &mut self.blocks.get_mut(&block_ix).unwrap();
               block.ready = set_bit(block.ready, register_address.register - 1);
               if block.is_ready() {
                 self.ready_blocks.insert(register_address.block);
@@ -105,7 +107,7 @@ impl Runtime {
       !self.ready_blocks.is_empty()
     } {}
     // Reset blocks updated status
-    for mut block in &mut self.blocks {
+    for mut block in &mut self.blocks.values_mut() {
       block.updated = false;
     }
   }
@@ -259,8 +261,12 @@ impl Block {
       Constraint::Constant{value, input} => {
         self.intermediate_registers.push(Register::intermediate(input));
         self.memory.add_column(new_column_ix);
+        if self.memory.rows == 0 {
+          self.memory.add_row();
+        }
         self.memory.set_cell(1, input as usize, Value::from_i64(value));
         self.column_lengths.push(1);
+        self.updated = true;
       }
       Constraint::Identity{source, sink} => {
         self.intermediate_registers.push(self.input_registers[source as usize - 1].clone());
@@ -333,9 +339,6 @@ impl Block {
             },
             None => (),
           }
-        },
-        Constraint::Constant{value, input} => {
-          self.memory.set_cell(1, *input as usize, Value::from_i64(*value));
         },
         Constraint::Condition{truth, result, default, output} => {
           for i in 1 .. self.memory.rows + 1 {
@@ -415,12 +418,6 @@ impl Block {
   // inserts.
   // This could be an entire thing all by itself, so let's just keep it simple at first.
   pub fn plan(&mut self) {
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::Constant{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
     for constraint in &self.constraints {
       match constraint {
         Constraint::Identity{..} => self.plan.push(constraint.clone()),
