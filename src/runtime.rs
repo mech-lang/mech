@@ -76,7 +76,9 @@ impl Runtime {
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks[block_id - 1];
-        block.solve(store);
+        if block.is_ready() {
+          block.solve(store);
+        }
       }
       // Queue up the next blocks
       for table_address in store.tables.changed_this_round.drain() {
@@ -303,9 +305,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    if !self.is_ready() {
-      return
-    }
     for step in &self.plan {
       match step {
         Constraint::ChangeScan{table, column, input} => {
