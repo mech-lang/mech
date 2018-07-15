@@ -290,9 +290,6 @@ impl Compiler {
       parser::Node::Expression{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
-      parser::Node::Data{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
       parser::Node::Constant{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
