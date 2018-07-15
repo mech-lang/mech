@@ -25,43 +25,56 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
- let input = String::from("# Bouncing Balls
+  let input = String::from("# Title
 
-## Section Two
+## Subtitle
 
-  #x = 1
-  #y = 2");
-  let add = Hasher::hash_str("add");
-  println!("{:?}", input);
+A block title
+  157
+  
+A second block
+  9");
 
+  let mut lexer = Lexer::new();
+  let mut parser = Parser::new();
+  let mut compiler = Compiler::new();
   lexer.add_string(input.clone());
   let tokens = lexer.get_tokens();
-  println!("{:?}", tokens);
-  
   parser.text = input;
   parser.add_tokens(&mut tokens.clone());
   parser.build_parse_tree();
 
-  println!("--------------------------------------------");
-  //println!("{:?}", parser.parse_tree);
+  println!("--------");
+  println!("{:?}", parser.parse_tree);
+
   compiler.build_syntax_tree(parser.parse_tree);
   let ast = compiler.syntax_tree.clone();
   compiler.compile_blocks(ast);
-  //println!("{:?}", compiler.syntax_tree);
-  //println!("{:?}", compiler.blocks);
 
 
-  let mut core = Core::new(100, 100);
-  core.register_blocks(compiler.blocks);
+
+  println!("--------");
+  println!("{:?}", compiler.syntax_tree);
+  println!("--------");
+  println!("{:?}", compiler.blocks);
+
+  println!("--------");
+
   let mut table_changes = vec![
     Change::NewTable{tag: 0x78, rows: 1, columns: 1}, 
-    Change::NewTable{tag: 0x79, rows: 1, columns: 1}, 
+    Change::NewTable{tag: 0xe7e7d0c6, rows: 1, columns: 1}, 
   ];
   let txn = Transaction::from_changeset(table_changes);
   core.process_transaction(&txn);
+  core.register_blocks(compiler.blocks);
   core.runtime.run_network(&mut core.store);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
+  println!("{:?}", core.store.changes);
+
+
+  //assert_eq!(parser.status, ParseStatus::Ready);
+
 
   
 }
