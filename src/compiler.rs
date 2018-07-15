@@ -1,9 +1,15 @@
+// # Mech Syntax Compiler
+
+// ## Preamble
+
 use mech::{Block, Constraint};
 use mech::{Function, Plan, Comparator};
 use mech::Hasher;
 use parser;
 use lexer::Token;
 use alloc::{String, Vec, fmt};
+
+// ## Compiler Nodes
 
 #[derive(Clone, PartialEq)]
 pub enum Node {
@@ -80,6 +86,7 @@ pub fn spacer(width: usize) {
   print!("├");
 }
 
+// ## Compiler
 
 pub struct Compiler {
   pub blocks: Vec<Block>,
@@ -407,6 +414,9 @@ fn get_destination_register(constraint: &Constraint) -> Option<usize> {
   }
 }
 
+// ## Appendix 
+
+// ### Encodings
 
 fn byte_to_digit(byte: u8) -> Option<u64> {
   match byte {
@@ -481,6 +491,8 @@ fn byte_to_alpha(byte: u8) -> Option<char> {
     _ => None,
   }
 }
+
+// ### Utility Functions
 
 fn magnitude(n: usize) -> u64 {
   let mut m = 1;
