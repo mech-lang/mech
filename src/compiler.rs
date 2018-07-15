@@ -294,13 +294,19 @@ impl Compiler {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Constant{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Number{children} => {
         let mut value = 0;
         let mut result = self.compile_nodes(children);
+        let mut place = result.len();
         for node in result {
           match node {
             Node::Token{token, byte} => {
               let digit = byte_to_digit(byte).unwrap();
-              value += digit;
+              let q = digit * magnitude(place);
+              place -= 1;
+              value += q;
             },
             _ => (),
           }
@@ -477,4 +483,12 @@ fn byte_to_alpha(byte: u8) -> Option<char> {
     90 => Some('Z'),
     _ => None,
   }
+}
+
+fn magnitude(n: usize) -> u64 {
+  let mut m = 1;
+  for i in 1 .. n {
+    m = m * 10;
+  }
+  m
 }
