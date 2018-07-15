@@ -26,7 +26,6 @@ pub enum Token {
   EndOfStream,
 }
 
-
 // ## Lexer
 
 #[derive(Debug, Clone)]

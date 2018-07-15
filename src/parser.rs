@@ -76,6 +76,7 @@ pub enum Node {
   Body{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
   StatementOrExpression{ children: Vec<Node> },
+  Fragment{ children: Vec<Node> },
   Node{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
@@ -129,6 +130,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
+    Node::Fragment{children} => {print!("Fragment\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
@@ -355,7 +357,7 @@ impl Parser {
     let mut s = ParseState::new();
     s.text = self.text.clone();
     s.token_stack.append(&mut self.tokens);
-    let result = node(&mut s).and(statement_or_expression).or(program).and(end);
+    let result = fragment(&mut s).or(program).and(end);
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -407,20 +409,16 @@ node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repe
 
 node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
-
-
-
-
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ node(s).and(space).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
+node!{fragment, Fragment, |s|{ statement_or_expression(s) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
-node!{constant, Constant, |s|{ digit(s) }, "Constant"}
+node!{constant, Constant, |s|{ number(s) }, "Constant"}
+node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
-
-
 
 node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
