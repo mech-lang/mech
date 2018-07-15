@@ -29,6 +29,17 @@ macro_rules! compile_string {
 
 compile_string!(empty, "");
 
+// ## Constant
+
+compile_string!(constant_digit, "1");
+
+// ## Table
+
+compile_string!(table, "#table");
+//compile_string!(table_index_dot_index, "#table.1");
+//compile_string!(table_index_bracket_index, "#table[1]");
+//compile_string!(table_index_dot_index_name, "#table.field");
+
 
 compile_string!(column_define, "# A Working Program
 
