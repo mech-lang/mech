@@ -25,15 +25,7 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("# Title
-
-## Subtitle
-
-A block title
-  157
-  
-A second block
-  9");
+  let input = String::from("#table");
 
   let mut lexer = Lexer::new();
   let mut parser = Parser::new();
@@ -62,14 +54,13 @@ A second block
 
   let mut table_changes = vec![
     Change::NewTable{tag: 0x78, rows: 1, columns: 1}, 
-    Change::NewTable{tag: 0xe7e7d0c6, rows: 1, columns: 1}, 
+    Change::NewTable{tag: 0x79, rows: 1, columns: 1}, 
   ];
   let txn = Transaction::from_changeset(table_changes);
   core.process_transaction(&txn);
   core.register_blocks(compiler.blocks);
   core.runtime.run_network(&mut core.store);
   println!("{:?}", core);
-  println!("{:?}", core.runtime);
   println!("{:?}", core.store.changes);
 
 
