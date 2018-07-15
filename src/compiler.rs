@@ -15,7 +15,6 @@ pub enum Node {
   Block{ children: Vec<Node> },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
-  Expression{ children: Vec<Node> },
   Define { name: String, id: u64},
   ColumnDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
@@ -45,7 +44,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::LHS{children} => {print!("LHS\n"); Some(children)},
     Node::RHS{children} => {print!("RHS\n"); Some(children)},
-    Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
@@ -121,6 +119,9 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
+        self.input_registers = 1;
+        self.intermediate_registers = 1;
+        self.output_registers = 1;
         let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
         block.plan();
@@ -287,8 +288,7 @@ impl Compiler {
         compiled.push(Node::Table{name: table_name, id});
       },
       parser::Node::Expression{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Expression{children: result});
+        compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Data{children} => {
         compiled.append(&mut self.compile_nodes(children));
