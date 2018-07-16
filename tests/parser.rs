@@ -20,18 +20,8 @@ macro_rules! parse_string {
   )
 }
 
-parse_string!(empty, "");
 
-// ## Constant
 
-parse_string!(constant_digit, "1");
-
-// ## Table
-
-parse_string!(table, "#table");
-parse_string!(table_index_dot_index, "#table.1");
-parse_string!(table_index_bracket_index, "#table[1]");
-parse_string!(table_index_dot_index_name, "#table.field");
 
 // ## Variable
 
