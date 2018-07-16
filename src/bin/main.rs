@@ -25,7 +25,15 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("#table");
+  let input = String::from("# Title
+
+## Subtitle
+
+A block title
+  #x = 42
+  
+A second block
+  #y = 94");
 
   let mut lexer = Lexer::new();
   let mut parser = Parser::new();
