@@ -20,38 +20,11 @@ use mech::Core;
 
 fn main() {
   
-  let mut lexer = Lexer::new();
-  let mut parser = Parser::new();
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("# Title
-
-## Subtitle
-
-A block title
-  #x = 42
-  
-A second block
-  #y = 94");
-
-  let mut lexer = Lexer::new();
-  let mut parser = Parser::new();
-  let mut compiler = Compiler::new();
-  lexer.add_string(input.clone());
-  let tokens = lexer.get_tokens();
-  parser.text = input;
-  parser.add_tokens(&mut tokens.clone());
-  parser.build_parse_tree();
-
-  println!("--------");
-  println!("{:?}", parser.parse_tree);
-
-  compiler.build_syntax_tree(parser.parse_tree);
-  let ast = compiler.syntax_tree.clone();
-  compiler.compile_blocks(ast);
-
-
+  let input = String::from("  #x = 1");
+  compiler.compile_string(input);
 
   println!("--------");
   println!("{:?}", compiler.syntax_tree);
