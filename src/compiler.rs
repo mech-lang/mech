@@ -6,6 +6,8 @@ use mech::{Block, Constraint};
 use mech::{Function, Plan, Comparator};
 use mech::Hasher;
 use parser;
+use lexer::Lexer;
+use parser::{Parser, ParseStatus};
 use lexer::Token;
 use alloc::{String, Vec, fmt};
 
@@ -116,6 +118,20 @@ impl Compiler {
       output_registers: 1,
       syntax_tree: Node::Root{ children: Vec::new() },
     }
+  }
+
+  pub fn compile_string(&mut self, input: String) -> &Vec<Block> {
+    let mut lexer = Lexer::new();
+    let mut parser = Parser::new();
+    lexer.add_string(input.clone());
+    let tokens = lexer.get_tokens();
+    parser.text = input;
+    parser.add_tokens(&mut tokens.clone());
+    parser.build_parse_tree();
+    self.build_syntax_tree(parser.parse_tree);
+    let ast = self.syntax_tree.clone();
+    self.compile_blocks(ast);
+    &self.blocks
   }
 
   pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
