@@ -16,11 +16,16 @@ use alloc::{String, Vec, fmt};
 #[derive(Clone, PartialEq)]
 pub enum Node {
   Root{ children: Vec<Node> },
+  Fragment{ children: Vec<Node> },
   Program{ children: Vec<Node> },
   Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   Block{ children: Vec<Node> },
+  Statement{ children: Vec<Node> },
+  Expression{ children: Vec<Node> },
+  Math{ children: Vec<Node> },
+  Function{ children: Vec<Node> },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
   Define { name: String, id: u64},
@@ -47,6 +52,7 @@ pub fn print_recurse(node: &Node, level: usize) {
   spacer(level);
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
+    Node::Fragment{children} => {print!("Fragment\n"); Some(children)},
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
@@ -55,6 +61,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
+    Node::Statement{children} => {print!("Statement\n"); Some(children)},
+    Node::Expression{children} => {print!("Expression\n"); Some(children)},
+    Node::Function{children} => {print!("Function\n"); Some(children)},
+    Node::Math{children} => {print!("Math\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
@@ -97,6 +107,7 @@ pub struct Compiler {
   pub input_registers: usize,
   pub intermediate_registers: usize,
   pub output_registers: usize,
+  pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
   pub section: usize,
@@ -116,6 +127,7 @@ impl Compiler {
       input_registers: 1,
       intermediate_registers: 1,
       output_registers: 1,
+      parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
     }
   }
@@ -128,6 +140,7 @@ impl Compiler {
     parser.text = input;
     parser.add_tokens(&mut tokens.clone());
     parser.build_parse_tree();
+    self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
     self.compile_blocks(ast);
@@ -237,6 +250,10 @@ impl Compiler {
         let result = self.compile_nodes(children);
         self.syntax_tree = Node::Root{children: result};        
       },
+      parser::Node::Fragment{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Fragment{children: result});
+      },
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Program{children: result});
@@ -284,7 +301,28 @@ impl Compiler {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Statement{children} => {
-        compiled.append(&mut self.compile_nodes(children));
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Statement{children: result});
+      },
+      parser::Node::Expression{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Expression{children: result});
+      },
+      parser::Node::MathExpression{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            // Ignore irrelevant nodes like spaces and operators
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Math{children});
+      },
+      parser::Node::Infix{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Function{children: result});
       },
       parser::Node::ColumnDefine{children} => {
         let result = self.compile_nodes(children);
@@ -309,10 +347,7 @@ impl Compiler {
         };
         let id = Hasher::hash_string(table_name.clone());
         compiled.push(Node::Table{name: table_name, id});
-      },
-      parser::Node::Expression{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
+      },  
       parser::Node::Constant{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
