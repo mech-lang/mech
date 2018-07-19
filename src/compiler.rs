@@ -30,6 +30,7 @@ pub enum Node {
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
   Define { name: String, id: u64},
+  Index { rows: Vec<Node>, columns: Vec<Node>},
   ColumnDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
@@ -65,6 +66,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{children} => {print!("Function\n"); Some(children)},
     Node::Math{children} => {print!("Math\n"); Some(children)},
@@ -72,7 +74,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value} => {print!("Constant({:?})\n", value); None},
+    Node::Constant{value} => {print!("{:?}\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Table{name,id} => {print!("#{}({:?})\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
@@ -346,6 +348,31 @@ impl Compiler {
       },
       parser::Node::Data{children} => {
         compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::Index{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::DotIndex{children} => {
+        let result = self.compile_nodes(children);
+        let mut columns: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{token, byte} => (),
+            _ => columns.push(node),
+          };
+        }
+        compiled.push(Node::Index{rows: vec![], columns});
+      },
+      parser::Node::BracketIndex{children} => {
+        let result = self.compile_nodes(children);
+        let mut columns: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{token, byte} => (),
+            _ => columns.push(node),
+          };
+        }
+        compiled.push(Node::Index{rows: vec![], columns});
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);

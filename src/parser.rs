@@ -428,8 +428,8 @@ node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
-node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
-node!{dot_index, DotIndex, |s| { period(s).and(digit).or(identifier) }, "Dot Index"}
+node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_bracket) }, "Bracket Index"}
+node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
 node!{identifier, Identifier, |s| { alpha(s).repeat(identifier_character) }, "Identifier"}
