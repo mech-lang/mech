@@ -33,7 +33,7 @@ pub enum Node {
   ColumnDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
-  Identifier{ text: String },
+  Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
   Constant {value: u64},
@@ -69,7 +69,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Function{children} => {print!("Function\n"); Some(children)},
     Node::Math{children} => {print!("Math\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
-    Node::Identifier{text} => {print!("Identifier({:?})\n", text); None},
+    Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::Constant{value} => {print!("Constant({:?})\n", value); None},
@@ -349,12 +349,10 @@ impl Compiler {
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
-        let table_name = match &result[1] {
-          Node::Identifier{text} => text.clone(),
-          _ => String::from(""),
+        match &result[1] {
+          Node::Identifier{name, id} => compiled.push(Node::Table{name: name.to_string(), id: *id}),
+          _ => (),
         };
-        let id = Hasher::hash_string(table_name.clone());
-        compiled.push(Node::Table{name: table_name, id});
       },  
       parser::Node::Constant{children} => {
         compiled.append(&mut self.compile_nodes(children));
@@ -438,7 +436,8 @@ impl Compiler {
             _ => (),
           }
         }
-        compiled.push(Node::Identifier{text: word});
+        let id = Hasher::hash_string(word.clone());
+        compiled.push(Node::Identifier{name: word, id});
       },
       parser::Node::Repeat{children} => {
         compiled.append(&mut self.compile_nodes(children));
