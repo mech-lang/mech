@@ -350,7 +350,7 @@ impl Compiler {
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
         let table_name = match &result[1] {
-          Node::String{text} => text.clone(),
+          Node::Identifier{text} => text.clone(),
           _ => String::from(""),
         };
         let id = Hasher::hash_string(table_name.clone());
