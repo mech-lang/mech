@@ -4,7 +4,7 @@
 
 use lexer::Token;
 use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Newline,
-                   Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Backslash};
+                   Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Slash};
 use mech::{Hasher, Function};
 use alloc::{String, Vec, fmt};
 
@@ -76,6 +76,7 @@ pub enum Node {
   Body{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
   StatementOrExpression{ children: Vec<Node> },
+  IdentifierCharacter{ children: Vec<Node> },
   Fragment{ children: Vec<Node> },
   Node{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
@@ -125,6 +126,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Constant{children} => {print!("Constant\n"); Some(children)},
     Node::Program{children} => {print!("Program\n"); Some(children)},
+    Node::IdentifierCharacter{children} => {print!("IdentifierCharacter\n"); Some(children)},
     Node::Title{children} => {print!("Title\n"); Some(children)},
     Node::Subtitle{children} => {print!("Subtitle\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
@@ -420,7 +422,7 @@ node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 
-node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(backslash) }, "Infix"}
+node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(slash) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
@@ -429,7 +431,8 @@ node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(digit).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
-node!{identifier, Identifier, |s| { node(s).repeat(alpha) }, "Identifier"}
+node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(alphanumeric) }, "IdentifierCharacter"}
+node!{identifier, Identifier, |s| { alpha(s).repeat(alphanumeric) }, "Identifier"}
 
 // ## Parse Leaves
 
@@ -443,7 +446,7 @@ leaf!{equal, Token::Equal}
 leaf!{plus, Token::Plus}
 leaf!{dash, Token::Dash}
 leaf!{asterisk, Token::Asterisk}
-leaf!{backslash, Token::Backslash}
+leaf!{slash, Token::Slash}
 leaf!{space, Token::Space}
 leaf!{newline, Token::Newline}
  
