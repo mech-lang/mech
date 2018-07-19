@@ -19,7 +19,7 @@ pub enum Token {
   Plus,
   Dash,
   Asterisk,
-  Backslash,
+  Slash,
   Equal,
   Period,
   Newline,
@@ -73,7 +73,7 @@ impl Lexer {
       } else if match_char(&bytes, '+', self) { self.push_token(Token::Plus); 
       } else if match_char(&bytes, '-', self) { self.push_token(Token::Dash); 
       } else if match_char(&bytes, '*', self) { self.push_token(Token::Asterisk); 
-      } else if match_char(&bytes, '/', self) { self.push_token(Token::Backslash); 
+      } else if match_char(&bytes, '/', self) { self.push_token(Token::Slash); 
       } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
