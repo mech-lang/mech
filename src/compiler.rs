@@ -26,7 +26,7 @@ pub enum Node {
   Expression{ children: Vec<Node> },
   Math{ children: Vec<Node> },
   Data{ children: Vec<Node> },
-  Function{ children: Vec<Node> },
+  Function{ name: String },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
   Define { name: String, id: u64},
@@ -68,7 +68,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
-    Node::Function{children} => {print!("Function\n"); Some(children)},
+    Node::Function{name} => {print!("Function({:?})\n", name); None},
     Node::Math{children} => {print!("Math\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
@@ -332,7 +332,12 @@ impl Compiler {
       },
       parser::Node::Infix{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Function{children: result});
+        let operator = &result[0];
+        let name: String = match operator {
+          Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
+          _ => String::from(""),
+        };
+        compiled.push(Node::Function{name});
       },
       parser::Node::ColumnDefine{children} => {
         let result = self.compile_nodes(children);
