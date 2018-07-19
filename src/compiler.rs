@@ -25,6 +25,7 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   Math{ children: Vec<Node> },
+  Data{ children: Vec<Node> },
   Function{ children: Vec<Node> },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
@@ -32,6 +33,7 @@ pub enum Node {
   ColumnDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
+  Identifier{ text: String },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
   Constant {value: u64},
@@ -62,10 +64,12 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
+    Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{children} => {print!("Function\n"); Some(children)},
     Node::Math{children} => {print!("Math\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
+    Node::Identifier{text} => {print!("Identifier({:?})\n", text); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::Constant{value} => {print!("Constant({:?})\n", value); None},
@@ -274,6 +278,10 @@ impl Compiler {
         let result = self.compile_nodes(children);
         compiled.push(Node::Block{children: result});
       },
+      parser::Node::Data{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Data{children: result});
+      },
       parser::Node::LHS{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::LHS{children: result});
@@ -410,7 +418,7 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{token, byte} => {
-              let character = byte_to_alpha(byte).unwrap();
+              let character = byte_to_char(byte).unwrap();
               word.push(character);
             },
             _ => (),
@@ -424,18 +432,21 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{token, byte} => {
-              let character = byte_to_alpha(byte).unwrap();
+              let character = byte_to_char(byte).unwrap();
               word.push(character);
             },
             _ => (),
           }
         }
-        compiled.push(Node::String{text: word});
+        compiled.push(Node::Identifier{text: word});
       },
       parser::Node::Repeat{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Alphanumeric{children} => {
+        compiled.append(&mut self.compile_nodes(children));
+      },
+      parser::Node::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Token{token, byte} => {
@@ -485,8 +496,20 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
   }
 }
 
-fn byte_to_alpha(byte: u8) -> Option<char> {
+fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
+    45 => Some('-'),
+    47 => Some('/'),
+    48 => Some('0'),
+    49 => Some('1'),
+    50 => Some('2'),
+    51 => Some('3'),
+    52 => Some('4'),
+    53 => Some('5'),
+    54 => Some('6'),
+    55 => Some('7'),
+    56 => Some('8'),
+    57 => Some('9'),
     97 => Some('a'),
     98 => Some('b'),
     99 => Some('c'),
@@ -539,7 +562,10 @@ fn byte_to_alpha(byte: u8) -> Option<char> {
     88 => Some('X'),
     89 => Some('Y'),
     90 => Some('Z'),
-    _ => None,
+    _ => {
+      println!("Unhandled Byte {:?}", byte);
+      None
+    },
   }
 }
 
