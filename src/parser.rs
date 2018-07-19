@@ -431,8 +431,8 @@ node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(digit).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(digit).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
-node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(alphanumeric) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).repeat(alphanumeric) }, "Identifier"}
+node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
+node!{identifier, Identifier, |s| { alpha(s).repeat(identifier_character) }, "Identifier"}
 
 // ## Parse Leaves
 
