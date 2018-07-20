@@ -432,7 +432,7 @@ node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_b
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).repeat(identifier_character) }, "Identifier"}
+node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character) }, "Identifier"}
 
 // ## Parse Leaves
 
@@ -470,7 +470,7 @@ pub fn end(s: &mut ParseState) -> &mut ParseState {
   result
 }
 
-// Matches and token from the lexer step.
+// Matches a token from the lexer step.
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
   spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
