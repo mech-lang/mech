@@ -13,6 +13,9 @@ pub enum Token {
   HashTag,
   LeftBracket,
   RightBracket,
+  LeftParenthesis,
+  RightParenthesis,
+  Caret,
   Comma,
   Semicolon,
   Space,
@@ -68,12 +71,15 @@ impl Lexer {
       } else if match_char(&bytes, '#', self) { self.push_token(Token::HashTag);
       } else if match_char(&bytes, '[', self) { self.push_token(Token::LeftBracket);
       } else if match_char(&bytes, ']', self) { self.push_token(Token::RightBracket);
+      } else if match_char(&bytes, '(', self) { self.push_token(Token::LeftParenthesis);
+      } else if match_char(&bytes, ')', self) { self.push_token(Token::RightParenthesis);
       } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma); 
       } else if match_char(&bytes, ' ', self) { self.push_token(Token::Space); 
       } else if match_char(&bytes, '+', self) { self.push_token(Token::Plus); 
       } else if match_char(&bytes, '-', self) { self.push_token(Token::Dash); 
       } else if match_char(&bytes, '*', self) { self.push_token(Token::Asterisk); 
       } else if match_char(&bytes, '/', self) { self.push_token(Token::Slash); 
+      } else if match_char(&bytes, '^', self) { self.push_token(Token::Caret); 
       } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
