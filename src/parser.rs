@@ -88,6 +88,13 @@ pub enum Node {
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   Text{ children: Vec<Node> },
+  L1Infix{ children: Vec<Node> },
+  L2Infix{ children: Vec<Node> },
+  L3Infix{ children: Vec<Node> },
+  L1{ children: Vec<Node> },
+  L2{ children: Vec<Node> },
+  L3{ children: Vec<Node> },
+  L4{ children: Vec<Node> },
   Token{token: Token, byte: u8},
 }
 
@@ -138,7 +145,14 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
     Node::RHS{children} => {print!("RHS\n"); Some(children)},
-    Node::LHS{children} => {print!("LHS\n"); Some(children)},
+    Node::LHS{children} => {print!("LHS\n"); Some(children)},    
+    Node::L1Infix{children} => {print!("L1Infix\n"); Some(children)},
+    Node::L2Infix{children} => {print!("L2Infix\n"); Some(children)},
+    Node::L3Infix{children} => {print!("L3Infix\n"); Some(children)},
+    Node::L1{children} => {print!("L1\n"); Some(children)},
+    Node::L2{children} => {print!("L2\n"); Some(children)},
+    Node::L3{children} => {print!("L3\n"); Some(children)},
+    Node::L4{children} => {print!("L4\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
@@ -422,9 +436,20 @@ node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 
-node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(slash).or(caret) }, "Infix"}
-node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
-node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}
+
+
+
+node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
+node!{l2_infix, L2Infix, |s|{ space(s).and(asterisk).or(slash).and(space).and(l3) }, "L2Infix"}
+node!{l3_infix, L3Infix, |s|{ caret(s).and(l4) }, "L3Infix"}
+
+node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
+node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
+node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
+node!{l4, L4, |s|{ data(s) }, "L4"}
+
+node!{math_expression, MathExpression, |s|{ node(s).optional(left_parenthesis).and(l1).optional(right_parenthesis) }, "Math Expression"}
+node!{expression, Expression, |s|{ data(s).or(constant).or(math_expression) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
