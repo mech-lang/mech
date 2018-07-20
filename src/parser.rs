@@ -422,7 +422,7 @@ node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 
-node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(slash) }, "Infix"}
+node!{infix, Infix, |s|{ plus(s).or(dash).or(asterisk).or(slash).or(caret) }, "Infix"}
 node!{math_expression, MathExpression, |s|{ data(s).and(space).and(infix).and(space).and(data) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data).or(constant) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
@@ -442,11 +442,14 @@ leaf!{hashtag, Token::HashTag}
 leaf!{period, Token::Period}
 leaf!{left_bracket, Token::LeftBracket}
 leaf!{right_bracket, Token::RightBracket}
+leaf!{left_parenthesis, Token::LeftParenthesis}
+leaf!{right_parenthesis, Token::RightParenthesis}
 leaf!{equal, Token::Equal}
 leaf!{plus, Token::Plus}
 leaf!{dash, Token::Dash}
 leaf!{asterisk, Token::Asterisk}
 leaf!{slash, Token::Slash}
+leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{newline, Token::Newline}
  
