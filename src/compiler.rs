@@ -529,6 +529,8 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
 
 fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
+    42 => Some('*'),
+    43 => Some('+'),
     45 => Some('-'),
     47 => Some('/'),
     48 => Some('0'),
@@ -593,6 +595,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     88 => Some('X'),
     89 => Some('Y'),
     90 => Some('Z'),
+    94 => Some('^'),
     _ => {
       println!("Unhandled Byte {:?}", byte);
       None
