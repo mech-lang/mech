@@ -23,9 +23,11 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("  #x = 1");
+  let input = String::from("x = (9 - 1 ^ 2 * 2 + 3)");
   compiler.compile_string(input);
 
+  println!("--------");
+  println!("{:?}", compiler.parse_tree);
   println!("--------");
   println!("{:?}", compiler.syntax_tree);
   println!("--------");

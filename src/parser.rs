@@ -441,7 +441,7 @@ node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 
 node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
 node!{l2_infix, L2Infix, |s|{ space(s).and(asterisk).or(slash).and(space).and(l3) }, "L2Infix"}
-node!{l3_infix, L3Infix, |s|{ caret(s).and(l4) }, "L3Infix"}
+node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix"}
 
 node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
