@@ -16,7 +16,7 @@ fn math_add() {
 }
 
 fn make_db() -> Core {
-
+  
   let math = Hasher::hash_str("math");
   let mut db = Core::new(1,1);
 
@@ -34,14 +34,7 @@ fn make_db() -> Core {
   block.add_constraint(Constraint::Identity {source: 2, sink: 2});
   block.add_constraint(Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 3});
   block.add_constraint(Constraint::Insert {output: 1, table: math, column: 3});
-  let plan = vec![
-    Constraint::Identity {source: 1, sink: 1},
-    Constraint::Identity {source: 2, sink: 2},
-    Constraint::Function {operation: Function::Add, parameters: vec![1, 2], output: 1},
-    Constraint::Insert {output: 1, table: math, column: 3},
-  ];
-  block.plan = plan;
-
+  block.plan();
   db.runtime.register_block(block.clone(), &mut db.store);
   db.process_transaction(&txn);
   db
