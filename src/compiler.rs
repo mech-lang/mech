@@ -246,6 +246,7 @@ impl Compiler {
         constraints.append(&mut result);
       },
       Node::Function{name, children} => {
+        let p1 = self.intermediate_registers as u64;
         let operation = match name.as_ref() {
           "+" => Function::Add,
           "-" => Function::Subtract,
@@ -254,7 +255,6 @@ impl Compiler {
           _ => Function::Add,
         };
         constraints.append(&mut self.compile_constraints(children));
-        let p1 = self.intermediate_registers as u64 - 2;
         let p2 = self.intermediate_registers as u64 - 1;
         let o1 = self.intermediate_registers as u64;
         constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], output: o1});
