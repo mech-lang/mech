@@ -209,7 +209,15 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Data{children} => {
-        constraints.append(&mut self.compile_constraints(children));
+        let mut row = 1;
+        let mut column = 1;
+        let mut table = 0;
+        for child in children {
+          match child {
+            Node::Table{name, id} => constraints.push(Constraint::Data{table: *id, column}),
+            _ => constraints.append(&mut self.compile_constraints(children)),
+          }
+        };
       },
       Node::ColumnDefine{children} => {
         let mut result = self.compile_constraints(children);
@@ -219,10 +227,12 @@ impl Compiler {
         let mut row = 1;
         let mut column = 1;
         let mut table = 0;
-        for node in children {
-          match node {
-            Node::Table{name, id} => {
-              table = *id;
+        let mut result = self.compile_constraints(children);
+        for constraint in result {
+          match constraint {
+            Constraint::Data{table: t, column: c} => {
+              table = t;
+              column = c;
             },
             _ => (), 
           }
@@ -233,6 +243,9 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         println!("REsult  {:?}", result);
         constraints.append(&mut result);
+      },
+      Node::Function{name, children} => {
+        constraints.append(&mut self.compile_constraints(children));
       },
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
