@@ -289,6 +289,7 @@ impl Block {
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
       },
+      Constraint::Data{table, column} => (),
     }
     self.constraints.push(constraint);
 
@@ -495,7 +496,9 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   // A Scan monitors a supplied cell
+  Data {table: u64, column: u64},
   Scan {table: u64, column: u64, input: u64},
+  Insert {output: u64, table: u64, column: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, intermediate: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, output: u64},
@@ -503,7 +506,6 @@ pub enum Constraint {
   Identity {source: u64, sink: u64},
   Condition {truth: u64, result: u64, default: u64, output: u64},
   IndexMask {source: u64, truth: u64, intermediate: u64},
-  Insert {output: u64, table: u64, column: u64},
   Set{output: u64, table: u64, column: u64},
 }
 
@@ -511,16 +513,17 @@ impl fmt::Debug for Constraint {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x})) -> I{:?}", table, column, input),
-      Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x})) -> I{:?}", table, column, input),
-      Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x}) -> {:?}", lhs, comparator, rhs, intermediate),
-      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:#x}", operation, parameters, output),
-      Constraint::Constant{value, input} => write!(f, "Constant({:?}) -> {:#x}", value, input),
-      Constraint::Identity{source, sink} => write!(f, "Identity({:#x}) -> {:#x}", source, sink),
-      Constraint::Condition{truth, result, default, output} => write!(f, "Condition({:?} ? {:?} | {:?}) -> {:?}", truth, result, default, output),
-      Constraint::IndexMask{source, truth, intermediate} => write!(f, "IndexMask({:#x}, {:#x} -> {:#x})", source, truth, intermediate),
-      Constraint::Insert{output, table, column} => write!(f, "Insert({:?}) -> #{:#x}({:#x})",  output, table, column),
-      Constraint::Set{output, table, column} => write!(f, "Set({:?}) -> #{:#x}({:#x})",  output, table, column),
+      Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
+      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:?})", table, column, input),
+      Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
+      Constraint::Filter{comparator, lhs, rhs, intermediate} => write!(f, "Filter({:#x} {:?} {:#x} -> I{:?})", lhs, comparator, rhs, intermediate),
+      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> I{:#x}", operation, parameters, output),
+      Constraint::Constant{value, input} => write!(f, "Constant({:?} -> I{:#x})", value, input),
+      Constraint::Identity{source, sink} => write!(f, "Identity(N{:#x} -> I{:#x})", source, sink),
+      Constraint::Condition{truth, result, default, output} => write!(f, "Condition({:?} ? {:?} | {:?} -> I{:?})", truth, result, default, output),
+      Constraint::IndexMask{source, truth, intermediate} => write!(f, "IndexMask({:#x}, {:#x} -> I{:#x})", source, truth, intermediate),
+      Constraint::Insert{output, table, column} => write!(f, "Insert(I{:?} -> #{:#x}({:#x}))",  output, table, column),
+      Constraint::Set{output, table, column} => write!(f, "Set(I{:?} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
 }
