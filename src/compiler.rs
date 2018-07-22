@@ -220,7 +220,9 @@ impl Compiler {
         };
       },
       Node::ColumnDefine{children} => {
-        let mut result = self.compile_constraints(children);
+        let mut c = children.clone();
+        c.reverse();
+        let mut result = self.compile_constraints(&c);
         constraints.append(&mut result);
       },
       Node::LHS{children} => {
@@ -236,16 +238,27 @@ impl Compiler {
             },
             _ => (), 
           }
-          constraints.push(Constraint::Insert{table, column, output: self.intermediate_registers as u64})
+          constraints.push(Constraint::Insert{table, column, output: self.intermediate_registers as u64 - 1})
         }
       },
       Node::RHS{children} => {
         let mut result = self.compile_constraints(children);
-        println!("REsult  {:?}", result);
         constraints.append(&mut result);
       },
       Node::Function{name, children} => {
+        let operation = match name.as_ref() {
+          "+" => Function::Add,
+          "-" => Function::Subtract,
+          "*" => Function::Multiply,
+          "/" => Function::Divide,
+          _ => Function::Add,
+        };
         constraints.append(&mut self.compile_constraints(children));
+        let p1 = self.intermediate_registers as u64 - 2;
+        let p2 = self.intermediate_registers as u64 - 1;
+        let o1 = self.intermediate_registers as u64;
+        constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], output: o1});
+        self.intermediate_registers += 1;
       },
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
