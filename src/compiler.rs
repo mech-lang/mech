@@ -199,6 +199,18 @@ impl Compiler {
       Node::Constraint{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
+      Node::Statement{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Expression{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Math{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Data{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
       Node::ColumnDefine{children} => {
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
@@ -218,18 +230,9 @@ impl Compiler {
         }
       },
       Node::RHS{children} => {
-        let mut row = 1;
-        let mut column = 1;
-        let mut table = 0;
-        for node in children {
-          match node {
-            Node::Constant{value} => {
-              constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
-              self.intermediate_registers += 1;
-            },
-            _ => (), 
-          }
-        }
+        let mut result = self.compile_constraints(children);
+        println!("REsult  {:?}", result);
+        constraints.append(&mut result);
       },
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});

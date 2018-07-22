@@ -449,7 +449,7 @@ node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ data(s) }, "L4"}
 
 node!{math_expression, MathExpression, |s|{ node(s).optional(left_parenthesis).and(l1).optional(right_parenthesis) }, "Math Expression"}
-node!{expression, Expression, |s|{ data(s).or(constant).or(math_expression) }, "Expression"}
+node!{expression, Expression, |s|{ math_expression(s).or(data) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
