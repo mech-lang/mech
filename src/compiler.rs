@@ -238,15 +238,14 @@ impl Compiler {
             },
             _ => (), 
           }
-          constraints.push(Constraint::Insert{table, column, output: self.intermediate_registers as u64 - 1})
+          constraints.push(Constraint::Insert{table, column, output: 1})
         }
       },
       Node::RHS{children} => {
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
       },
-      Node::Function{name, children} => {
-        let p1 = self.intermediate_registers as u64;
+      Node::Function{name, children} => {       
         let operation = match name.as_ref() {
           "+" => Function::Add,
           "-" => Function::Subtract,
@@ -254,11 +253,17 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
-        constraints.append(&mut self.compile_constraints(children));
-        let p2 = self.intermediate_registers as u64 - 1;
         let o1 = self.intermediate_registers as u64;
-        constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], output: o1});
         self.intermediate_registers += 1;
+        let p1 = self.intermediate_registers as u64;
+        let mut result = self.compile_constraints(children);
+        if result.len() >= 2 {
+          println!("CONSTRAINTS {:?}", result);
+        }
+        let p2 = self.intermediate_registers as u64 - 1;
+        
+        constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], output: o1});
+        constraints.append(&mut result);
       },
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
