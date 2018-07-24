@@ -111,7 +111,7 @@ pub struct Compiler {
   pub constraints: Vec<Constraint>,
   pub depth: usize,
   pub input_registers: usize,
-  pub intermediate_registers: usize,
+  pub memory_registers: usize,
   pub output_registers: usize,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
@@ -131,7 +131,7 @@ impl Compiler {
       section: 1,
       block: 1,
       input_registers: 1,
-      intermediate_registers: 1,
+      memory_registers: 1,
       output_registers: 1,
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
@@ -162,7 +162,7 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         self.input_registers = 1;
-        self.intermediate_registers = 1;
+        self.memory_registers = 1;
         self.output_registers = 1;
         let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
@@ -253,28 +253,24 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
-        let o1 = self.intermediate_registers as u64;
-        self.intermediate_registers += 1;
+        let o1 = self.memory_registers as u64;
+        self.memory_registers += 1;
+        let p1 = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
         if result.len() >= 2 {
-          let p1 = match &result[0] {
+          let p2 = match &result[result.len() - 1] {
             Constraint::Function{operation, parameters, memory} => *memory,
             Constraint::Constant{value, memory} => *memory,
             _ => 0,
           };
-          let p2 = match &result[1] {
-            Constraint::Function{operation, parameters, memory} => *memory,
-            Constraint::Constant{value, memory} => *memory,
-            _ => 0,
-          };
-          println!("CONSTRAINTS {:?}", result);
-          constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
           constraints.append(&mut result);
+          constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
+          println!("CONSTRAINTS {:?}", constraints);
         }
       },
       Node::Constant{value} => {
-        constraints.push(Constraint::Constant{value: *value as i64, memory: self.intermediate_registers as u64});
-        self.intermediate_registers += 1;
+        constraints.push(Constraint::Constant{value: *value as i64, memory: self.memory_registers as u64});
+        self.memory_registers += 1;
       },
       _ => (),
     }
