@@ -255,18 +255,25 @@ impl Compiler {
         };
         let o1 = self.intermediate_registers as u64;
         self.intermediate_registers += 1;
-        let p1 = self.intermediate_registers as u64;
         let mut result = self.compile_constraints(children);
         if result.len() >= 2 {
+          let p1 = match &result[0] {
+            Constraint::Function{operation, parameters, memory} => *memory,
+            Constraint::Constant{value, memory} => *memory,
+            _ => 0,
+          };
+          let p2 = match &result[1] {
+            Constraint::Function{operation, parameters, memory} => *memory,
+            Constraint::Constant{value, memory} => *memory,
+            _ => 0,
+          };
           println!("CONSTRAINTS {:?}", result);
+          constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
+          constraints.append(&mut result);
         }
-        let p2 = self.intermediate_registers as u64 - 1;
-        
-        constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], output: o1});
-        constraints.append(&mut result);
       },
       Node::Constant{value} => {
-        constraints.push(Constraint::Constant{value: *value as i64, input: self.intermediate_registers as u64});
+        constraints.push(Constraint::Constant{value: *value as i64, memory: self.intermediate_registers as u64});
         self.intermediate_registers += 1;
       },
       _ => (),
@@ -642,7 +649,7 @@ impl Compiler {
 
 fn get_destination_register(constraint: &Constraint) -> Option<usize> {
   match constraint {
-    Constraint::Identity{source, sink} => Some(*sink as usize),
+    Constraint::CopyInput{input, memory} => Some(*memory as usize),
     _ => None,
   }
 }
