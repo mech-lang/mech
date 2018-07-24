@@ -170,6 +170,13 @@ impl Register {
     }
   }
 
+  pub fn output(n: u64) -> Register {
+    Register {
+      table: 0,
+      column: n,
+    }
+  }
+
   pub fn get(&self) -> (u64, u64) {
     (self.table, self.column)
   }
@@ -250,8 +257,11 @@ impl Block {
       },
       Constraint::Function{ref operation, ref parameters, memory} => {
         self.memory_registers.push(Register::memory(memory));
-        self.memory.add_column(new_column_ix);
-        self.column_lengths.push(0);
+        self.memory.grow_to_fit(1, memory as usize);
+       if self.column_lengths.len() < memory as usize {
+          self.column_lengths.resize(memory as usize, 0);
+        }
+        self.column_lengths[memory as usize - 1] = 0;
       },
       Constraint::Filter{ref comparator, lhs, rhs, memory} => {
         self.memory_registers.push(Register::memory(memory));
@@ -260,12 +270,12 @@ impl Block {
       }
       Constraint::Constant{value, memory} => {
         self.memory_registers.push(Register::memory(memory));
-        self.memory.add_column(new_column_ix);
-        if self.memory.rows == 0 {
-          self.memory.add_row();
+        self.memory.grow_to_fit(1, memory as usize);
+        let result = self.memory.set_cell(1, memory as usize, Value::from_i64(value));
+        if self.column_lengths.len() < memory as usize {
+          self.column_lengths.resize(memory as usize, 0);
         }
-        self.memory.set_cell(1, memory as usize, Value::from_i64(value));
-        self.column_lengths.push(1);
+        self.column_lengths[memory as usize - 1] = 1;
         self.updated = true;
       }
       Constraint::CopyInput{input, memory} => {
@@ -289,7 +299,7 @@ impl Block {
         self.column_lengths.push(0);
       },
       Constraint::Insert{output, table, column} => {
-        self.output_registers.push(Register::new());
+        self.output_registers.push(Register::output(output));
       },
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
@@ -381,7 +391,7 @@ impl Block {
           self.column_lengths[memory_ix - 1] = source_length as u64;
         },
         Constraint::Insert{output, table, column} => {
-          let output_memory_ix = self.memory_registers[*output as usize - 1].column;
+          let output_memory_ix = self.output_registers[*output as usize - 1].column;
           let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
           for (row_ix, cell) in column_data.iter().enumerate() {
             match cell {
