@@ -23,7 +23,7 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("x = (9 - 1 ^ 2 * 2 + 3)");
+  let input = String::from("  #x = 2 + 3 * 4 + 9");
   compiler.compile_string(input);
 
   println!("--------");
@@ -45,6 +45,7 @@ fn main() {
   core.runtime.run_network(&mut core.store);
   println!("{:?}", core);
   println!("{:?}", core.store.changes);
+  println!("{:?}", core.runtime);
 
 
   //assert_eq!(parser.status, ParseStatus::Ready);
