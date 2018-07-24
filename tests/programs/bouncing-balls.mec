@@ -8,7 +8,7 @@ Set up the environment
 
 ## Update Condition
 
-The positions of the balls updates on every tick
+The positions of the balls update on every tick
   on #timer.tick
   [#ball x y vx vy]
   x := x + vx
