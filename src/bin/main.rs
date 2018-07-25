@@ -23,7 +23,11 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(1112, 10);
 
-  let input = String::from("  #x = 2 + 3 * 4 + 9");
+  let input = String::from("# Program
+  
+This is a program
+  #x = 1 + 2
+  #y = 2 * 3");
   compiler.compile_string(input);
 
   println!("--------");
