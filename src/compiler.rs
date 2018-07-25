@@ -221,7 +221,6 @@ impl Compiler {
       },
       Node::ColumnDefine{children} => {
         let mut c = children.clone();
-        c.reverse();
         let mut result = self.compile_constraints(&c);
         constraints.append(&mut result);
       },
@@ -229,6 +228,7 @@ impl Compiler {
         let mut row = 1;
         let mut column = 1;
         let mut table = 0;
+        let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
         for constraint in result {
           match constraint {
@@ -238,7 +238,8 @@ impl Compiler {
             },
             _ => (), 
           }
-          constraints.push(Constraint::Insert{table, column, output: 1})
+          constraints.push(Constraint::Insert{table, column, output: self.output_registers as u64, memory: m});
+          self.output_registers += 1;
         }
       },
       Node::RHS{children} => {
