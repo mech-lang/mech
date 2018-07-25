@@ -298,8 +298,8 @@ impl Block {
         self.memory.add_column(new_column_ix);
         self.column_lengths.push(0);
       },
-      Constraint::Insert{output, table, column} => {
-        self.output_registers.push(Register::output(output));
+      Constraint::Insert{memory, output, table, column} => {
+        self.output_registers.push(Register::output(memory));
       },
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
@@ -390,7 +390,7 @@ impl Block {
           }
           self.column_lengths[memory_ix - 1] = source_length as u64;
         },
-        Constraint::Insert{output, table, column} => {
+        Constraint::Insert{memory, output, table, column} => {
           let output_memory_ix = self.output_registers[*output as usize - 1].column;
           let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
           for (row_ix, cell) in column_data.iter().enumerate() {
@@ -398,7 +398,7 @@ impl Block {
               Value::Empty => (),
               _ => {
                 store.intern_change(
-                  &Change::Add{table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone()}
+                  &Change::Add{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() }
                 );
               }
             }
@@ -524,7 +524,7 @@ pub enum Constraint {
   CopyInput {input: u64, memory: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
-  Insert {output: u64, table: u64, column: u64},
+  Insert {memory: u64, output: u64, table: u64, column: u64},
   Set{output: u64, table: u64, column: u64},
 }
 
@@ -542,7 +542,7 @@ impl fmt::Debug for Constraint {
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
-      Constraint::Insert{output, table, column} => write!(f, "Insert(O{:?} -> #{:#x}({:#x}))",  output, table, column),
+      Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:?} -> #{:#x}({:#x}))",  output, table, column),
       Constraint::Set{output, table, column} => write!(f, "Set(O{:?} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
