@@ -33,6 +33,7 @@ pub enum Node {
   Define { name: String, id: u64},
   Index { rows: Vec<Node>, columns: Vec<Node>},
   ColumnDefine {children: Vec<Node> },
+  TableDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
   Identifier{ name: String, id: u64 },
@@ -63,6 +64,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::LHS{children} => {print!("LHS\n"); Some(children)},
     Node::RHS{children} => {print!("RHS\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
+    Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
@@ -225,6 +227,26 @@ impl Compiler {
         let mut c = children.clone();
         let mut result = self.compile_constraints(&c);
         constraints.append(&mut result);
+      },
+      Node::TableDefine{children} => {
+        let mut table_id = 0;
+        let mut column = 1;
+        let m = self.memory_registers as u64;
+        let mut result = self.compile_constraints(children);
+        result.reverse();
+        let table = result.pop();
+        result.reverse();
+        constraints.append(&mut result);
+        match table {
+          Some(Constraint::Data{table: t, column: c}) => {
+            table_id = t;
+            column = c;
+          },
+          _ => (), 
+        }
+        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns: column});
+        constraints.push(Constraint::Insert{table: table_id, column, output: self.output_registers as u64, memory: m});
+        self.output_registers += 1;
       },
       Node::LHS{children} => {
         let mut row = 1;
@@ -412,6 +434,18 @@ impl Compiler {
           }
         }
         compiled.push(Node::ColumnDefine{children});
+      },
+      parser::Node::TableDefine{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Table{..} => children.push(node),
+            Node::RHS{..} => children.push(node),
+            _ => (),
+          }
+        }
+        compiled.push(Node::TableDefine{children});
       },
       parser::Node::Index{children} => {
         compiled.append(&mut self.compile_nodes(children));
