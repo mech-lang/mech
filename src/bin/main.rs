@@ -17,7 +17,6 @@ use mech::{Value};
 use mech::Hasher;
 use mech::Core;
 
-
 fn main() {
   
   let mut compiler = Compiler::new();
@@ -35,9 +34,9 @@ This is a second block
   println!("--------");
   //println!("{:?}", compiler.parse_tree);
   println!("--------");
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.syntax_tree);
   println!("--------");
-  println!("{:?}", compiler.blocks);
+  //println!("{:?}", compiler.blocks);
 
   println!("--------");
 
@@ -48,9 +47,11 @@ This is a second block
   let txn = Transaction::from_changeset(table_changes);
   core.process_transaction(&txn);
   core.register_blocks(compiler.blocks);
-  core.runtime.run_network(&mut core.store);
+  core.step();
+  //core.runtime.run_network(&mut core.store);
+  //println!("{:?}", core);
+  //println!("{:?}", core.store.changes);
   println!("{:?}", core);
-  println!("{:?}", core.store.changes);
   println!("{:?}", core.runtime);
   
 
