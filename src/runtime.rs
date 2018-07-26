@@ -61,7 +61,6 @@ impl Runtime {
       self.ready_blocks.insert(block.id);
     }
     self.blocks.insert(block.id, block.clone());
-    self.run_network(store);
   } 
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>, store: &mut Interner) {
@@ -75,11 +74,14 @@ impl Runtime {
     // Run the compute graph until it reaches a steady state.
     // TODO Make this a parameter
     let max_iterations = 10_000;
-    let mut n = 0;
+    let mut n = 0;    
+    println!("RUNNING THE NETWORK: {:?}", self.ready_blocks);
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+        println!("{:?}", block);
         block.solve(store);
+        println!("{:?}", block);
       }
       // Queue up the next blocks
       for table_address in store.tables.changed_this_round.drain() {
@@ -326,6 +328,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("SOLVING {:?}", self.plan);
     for step in &self.plan {
       match step {
         Constraint::ChangeScan{table, column, input} => {
@@ -346,6 +349,7 @@ impl Block {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::CopyInput{input, memory} => {
+          println!("COPYINPUT");
           let register = &self.memory_registers[*input as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
