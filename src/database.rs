@@ -16,7 +16,7 @@ use runtime::{Runtime, Block};
 pub enum Change {
   Add{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
-  NewTable{tag: u64, rows: usize, columns: usize},
+  NewTable{id: u64, rows: usize, columns: usize},
 }
 
 impl fmt::Debug for Change {
@@ -25,7 +25,7 @@ impl fmt::Debug for Change {
     match self {
       Change::Add{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::NewTable{tag, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", tag, rows, columns),
+      Change::NewTable{id, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
   }
 }
@@ -152,10 +152,10 @@ impl Interner {
       Change::Remove{..} => {
 
       }
-      Change::NewTable{tag, rows, columns } => {
-        if !self.tables.name_map.contains_key(&tag) {
-          self.tables.name_map.insert(*tag, 0);
-          self.tables.register(Table::new(*tag, *rows, *columns));
+      Change::NewTable{id, rows, columns } => {
+        if !self.tables.name_map.contains_key(&id) {
+          self.tables.name_map.insert(*id, 0);
+          self.tables.register(Table::new(*id, *rows, *columns));
         }
       }
     }
