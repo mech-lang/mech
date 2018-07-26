@@ -54,6 +54,7 @@ pub enum Node {
   Select { children: Vec<Node> },
   Insert { children: Vec<Node> },
   ColumnDefine { children: Vec<Node> },
+  TableDefine { children: Vec<Node> },
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
@@ -122,6 +123,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
+    Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
@@ -431,8 +433,9 @@ node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ node(s).and(space).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{statement, Statement, |s|{ column_define(s) }, "Statement"}
+node!{statement, Statement, |s|{ table_define(s).or(column_define) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
+node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(rhs) }, "TableDefine"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
