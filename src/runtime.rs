@@ -325,7 +325,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("SOLVING {:?}", self.plan);
     for step in &self.plan {
       match step {
         Constraint::ChangeScan{table, column, input} => {
@@ -346,7 +345,6 @@ impl Block {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::CopyInput{input, memory} => {
-          println!("COPYINPUT");
           let register = &self.memory_registers[*input as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
