@@ -67,7 +67,7 @@ compile_string!(table_define, "# A Working Program
 
   #gravity = 9");
 
-test_math!(math_constant,"  #test = 10", 10);
-test_math!(math_add,"  #test = 1 + 1", 2);
-test_math!(math_multiply,"  #test = 2 * 2", 4);
-test_math!(math_divide,"  #test = 4 / 2", 2);
+test_math!(math_constant,"#test = 10", 10);
+test_math!(math_add,"#test = 1 + 1", 2);
+test_math!(math_multiply,"#test = 2 * 2", 4);
+test_math!(math_divide,"#test = 4 / 2", 2);
