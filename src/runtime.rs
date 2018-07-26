@@ -302,7 +302,8 @@ impl Block {
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
       },
-      Constraint::Data{table, column} => (),
+      Constraint::Data{..} => (),
+      Constraint::NewTable{..} => (),
     }
     self.constraints.push(constraint);
 
@@ -402,6 +403,11 @@ impl Block {
             }
           }
         },
+        Constraint::NewTable{id, rows, columns} => {
+          store.intern_change(
+            &Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize}
+          );
+        },
         Constraint::Set{output, table, column} => {
           let target_rows;
           {
@@ -432,6 +438,12 @@ impl Block {
   // inserts.
   // This could be an entire thing all by itself, so let's just keep it simple at first.
   pub fn plan(&mut self) {
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
     for constraint in &self.constraints {
       match constraint {
         Constraint::CopyInput{..} => self.plan.push(constraint.clone()),
@@ -509,6 +521,7 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   Data {table: u64, column: u64},
+  NewTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Scan {table: u64, column: u64, input: u64},
   ChangeScan {table: u64, column: u64, input: u64},
@@ -531,6 +544,7 @@ impl fmt::Debug for Constraint {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
+      Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:#x})", table, column, input),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
