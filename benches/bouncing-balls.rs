@@ -13,7 +13,7 @@ use mech::{Function, Plan, Comparator};
 use mech::{Runtime, Block, Constraint, Register};
 use rand::{Rng};
 
-
+/*
 fn make_balls(n: u64) -> Vec<Change> {
   let mut v = Vec::new();
   for i in 0 .. n + 1 {
@@ -200,4 +200,4 @@ fn balls_100_000(b:&mut Bencher) {
   b.iter(|| {
     step_db(&mut db);
   });
-}
+}*/
