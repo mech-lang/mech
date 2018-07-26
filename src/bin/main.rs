@@ -18,46 +18,21 @@ use mech::Hasher;
 use mech::Core;
 
 fn main() {
-  
   let mut compiler = Compiler::new();
-  let mut core = Core::new(1112, 10);
-
+  let mut core = Core::new(10, 10);
   let input = String::from("# Program
   
 This is the first block
-  #x = 1 + 7
+  #x = 4 + 5
 
 This is a second block
-  #y = #x * 3");
+  #test = 2 * #x");
   compiler.compile_string(input);
-
-  println!("--------");
-  //println!("{:?}", compiler.parse_tree);
-  println!("--------");
-  //println!("{:?}", compiler.syntax_tree);
-  println!("--------");
-  //println!("{:?}", compiler.blocks);
-
-  println!("--------");
-
-  let mut table_changes = vec![
-    Change::NewTable{tag: 0x78, rows: 1, columns: 1}, 
-    Change::NewTable{tag: 0x79, rows: 1, columns: 1}, 
-  ];
-  let txn = Transaction::from_changeset(table_changes);
-  core.process_transaction(&txn);
   core.register_blocks(compiler.blocks);
   core.step();
-  //core.runtime.run_network(&mut core.store);
-  //println!("{:?}", core);
-  //println!("{:?}", core.store.changes);
-  println!("{:?}", core);
-  println!("{:?}", core.runtime);
-  
-
-
-  //assert_eq!(parser.status, ParseStatus::Ready);
-
-
-  
+  let table = Hasher::hash_str("test");
+  let row = 1;
+  let column = 1;
+  let test = 18;
+  assert_eq!(core.index(table,row,column).unwrap().as_u64().unwrap(),test);
 }
