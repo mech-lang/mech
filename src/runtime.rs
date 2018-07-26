@@ -533,7 +533,7 @@ impl fmt::Debug for Constraint {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
-      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:?})", table, column, input),
+      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:#x})", table, column, input),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, memory} => write!(f, "Fxn::{:?}{:?} -> M{:#x}", operation, parameters, memory),
@@ -542,8 +542,8 @@ impl fmt::Debug for Constraint {
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
-      Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:?} -> #{:#x}({:#x}))",  output, table, column),
-      Constraint::Set{output, table, column} => write!(f, "Set(O{:?} -> #{:#x}({:#x}))",  output, table, column),
+      Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
+      Constraint::Set{output, table, column} => write!(f, "Set(O{:#x} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
 }
