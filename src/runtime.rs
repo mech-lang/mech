@@ -74,7 +74,6 @@ impl Runtime {
   pub fn run_network(&mut self, store: &mut Interner) {
     // Run the compute graph until it reaches a steady state.
     // TODO Make this a parameter
-    println!("Running Netowrk {:?}", self.ready_blocks);
     let max_iterations = 10_000;
     let mut n = 0;
     while {
