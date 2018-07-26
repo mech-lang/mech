@@ -24,7 +24,6 @@ use core::fmt;
 use hashmap_core::set::{HashSet};
 use hashmap_core::map::{HashMap};
 
-
 // ## Modules
 
 mod database;
@@ -77,7 +76,7 @@ impl Core {
     self.watched_index.insert(table, false);
   }
 
-  pub fn run_network(&mut self) {
+  pub fn step(&mut self) {
     self.runtime.run_network(&mut self.store);
   }
 
