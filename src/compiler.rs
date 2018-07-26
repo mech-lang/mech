@@ -26,6 +26,7 @@ pub enum Node {
   Expression{ children: Vec<Node> },
   Math{ children: Vec<Node> },
   Data{ children: Vec<Node> },
+  SelectData{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
@@ -66,6 +67,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
     Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
@@ -243,8 +245,7 @@ impl Compiler {
         }
       },
       Node::RHS{children} => {
-        let mut result = self.compile_constraints(children);
-        constraints.append(&mut result);
+        constraints.append(&mut self.compile_constraints(children));
       },
       Node::Function{name, children} => {       
         let operation = match name.as_ref() {
@@ -262,12 +263,31 @@ impl Compiler {
           let p2 = match &result[result.len() - 1] {
             Constraint::Function{operation, parameters, memory} => *memory,
             Constraint::Constant{value, memory} => *memory,
+            Constraint::CopyInput{input, memory} => *memory,
             _ => 0,
           };
           constraints.append(&mut result);
           constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
-          println!("CONSTRAINTS {:?}", constraints);
         }
+      },
+      Node::SelectData{children} => {
+        let mut result = self.compile_constraints(children);
+        for constraint in result {
+          match constraint {
+            Constraint::Data{table, column} => {
+              let input = self.input_registers as u64;
+              let memory = self.memory_registers as u64;
+              self.input_registers += 1;
+              self.memory_registers += 1;
+              constraints.push(Constraint::Scan{table, column, input});
+              constraints.push(Constraint::CopyInput{input, memory});
+            },
+            _ => constraints.push(constraint),
+          }
+        }
+      },
+      Node::Table{name, id} => {
+        constraints.push(Constraint::Data{table: *id, column: 1});
       },
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{value: *value as i64, memory: self.memory_registers as u64});
@@ -321,6 +341,10 @@ impl Compiler {
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Data{children: result});
+      },
+      parser::Node::SelectData{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::SelectData{children: result});
       },
       parser::Node::LHS{children} => {
         let result = self.compile_nodes(children);
@@ -388,9 +412,6 @@ impl Compiler {
           }
         }
         compiled.push(Node::ColumnDefine{children});
-      },
-      parser::Node::Data{children} => {
-        compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Index{children} => {
         compiled.append(&mut self.compile_nodes(children));

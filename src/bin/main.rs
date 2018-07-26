@@ -25,13 +25,15 @@ fn main() {
 
   let input = String::from("# Program
   
-This is a program
-  #x = 1 + 2
-  #y = 2 * 3");
+This is the first block
+  #x = 1 + 7
+
+This is a second block
+  #y = #x * 3");
   compiler.compile_string(input);
 
   println!("--------");
-  println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.parse_tree);
   println!("--------");
   println!("{:?}", compiler.syntax_tree);
   println!("--------");
@@ -50,6 +52,7 @@ This is a program
   println!("{:?}", core);
   println!("{:?}", core.store.changes);
   println!("{:?}", core.runtime);
+  
 
 
   //assert_eq!(parser.status, ParseStatus::Ready);

@@ -4,6 +4,6 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mechlang.net>"]
 
 [dependencies]
-mech = {git = "https://gitlab.com/mech-lang/core.git"}
+mech = {path = "../core"}
 time = "0.1.39"
 rand = "0.4.2"
