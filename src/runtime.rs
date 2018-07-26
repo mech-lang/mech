@@ -75,13 +75,10 @@ impl Runtime {
     // TODO Make this a parameter
     let max_iterations = 10_000;
     let mut n = 0;    
-    println!("RUNNING THE NETWORK: {:?}", self.ready_blocks);
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
-        println!("{:?}", block);
         block.solve(store);
-        println!("{:?}", block);
       }
       // Queue up the next blocks
       for table_address in store.tables.changed_this_round.drain() {
@@ -89,7 +86,7 @@ impl Runtime {
           Some(register_addresses) => {
             for register_address in register_addresses {
               let block_ix = register_address.block - 1;
-              let mut block = &mut self.blocks.get_mut(&block_ix).unwrap();
+              let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
               block.ready = set_bit(block.ready, register_address.register - 1);
               if block.is_ready() {
                 self.ready_blocks.insert(register_address.block);
