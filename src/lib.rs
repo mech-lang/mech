@@ -80,6 +80,18 @@ impl Core {
     self.runtime.run_network(&mut self.store);
   }
 
+  pub fn index(&mut self, table: u64, row: u64, column: u64) -> Option<&Value> {
+    match self.store.tables.get(table) {
+      Some(table_ref) => {
+        match table_ref.index(row as usize, column as usize) {
+          Some(cell_data) => Some(cell_data),
+          None => None,
+        }
+      },
+      None => None,
+    }
+  }
+
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
     // First make any tables
