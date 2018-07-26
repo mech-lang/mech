@@ -65,6 +65,7 @@ pub enum Node {
   BracketIndex{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
+  SelectData{ children: Vec<Node> },
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
@@ -129,6 +130,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
     Node::Infix{children} => {print!("Infix\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Constant{children} => {print!("Constant\n"); Some(children)},
@@ -446,11 +448,12 @@ node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix
 node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
-node!{l4, L4, |s|{ data(s) }, "L4"}
+node!{l4, L4, |s|{ select_data(s) }, "L4"}
 
-node!{math_expression, MathExpression, |s|{ node(s).optional(left_parenthesis).and(l1).optional(right_parenthesis) }, "Math Expression"}
+node!{math_expression, MathExpression, |s|{ l1(s) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
+node!{select_data, SelectData, |s| { table(s).or(identifier).or(constant).optional(index) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_bracket) }, "Bracket Index"}
