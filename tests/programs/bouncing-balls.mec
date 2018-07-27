@@ -1,6 +1,7 @@
 # Bouncing Balls
 
 Set up the environment
+  x = y = vx = vy = range[from: 1 to: 100]
   #ball = [x y vx vy]
   #system/timer += [#timer resolution: 60Hz]
   #gravity = 9.8m/s^2
