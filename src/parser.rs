@@ -430,7 +430,7 @@ node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repe
 node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ node(s).and(space).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
+node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ table_define(s).or(column_define) }, "Statement"}
