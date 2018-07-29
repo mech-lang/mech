@@ -20,10 +20,19 @@ use mech::Core;
 fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(10, 10);
-  let input = String::from("#ball = [hello]");
+  let input = String::from("# Bouncing Balls
+
+Set up the environment
+  #ball = [x: 0 y: 0 vx: 1 vy: 0 ]
+  #boundary = [b: 5000 ]
+
+Another block
+  #gravity = [a: 98 c: 29 ]
+  #x = 35 + #boundary");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   core.step();
+  println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
