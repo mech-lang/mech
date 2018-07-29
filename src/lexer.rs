@@ -84,7 +84,6 @@ impl Lexer {
       } else if match_char(&bytes, '^', self) { self.push_token(Token::Caret); 
       } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
-      } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma);
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
