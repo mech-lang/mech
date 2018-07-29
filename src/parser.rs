@@ -55,6 +55,11 @@ pub enum Node {
   Insert { children: Vec<Node> },
   ColumnDefine { children: Vec<Node> },
   TableDefine { children: Vec<Node> },
+  TableDefineRHS { children: Vec<Node> },
+  RowDefine { children: Vec<Node> },
+  Column { children: Vec<Node> },
+  Binding { children: Vec<Node> },
+  IdentifierOrNumber { children: Vec<Node> },
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
@@ -109,7 +114,7 @@ impl fmt::Debug for Node {
 }
 
 pub fn print_recurse(node: &Node, level: usize) {
-  // spacer(level);
+  spacer(level);
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
@@ -124,6 +129,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
+    Node::TableDefineRHS{children} => {print!("TableDefineRHS\n"); Some(children)},
+    Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
+    Node::Column{children} => {print!("Column\n"); Some(children)},
+    Node::Binding{children} => {print!("Binding\n"); Some(children)},
+    Node::IdentifierOrNumber{children} => {print!("IdentifierOrNumber\n"); Some(children)},
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
@@ -435,11 +445,16 @@ node!{fragment, Fragment, |s|{ statement_or_expression(s) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ table_define(s).or(column_define) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
-node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(rhs) }, "TableDefine"}
+node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
+node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
+node!{row_define, RowDefine, |s|{ left_bracket(s).repeat(column).and(right_bracket) }, "RowDefine"}
+node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).and(space) }, "Column"}
+node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
+node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
 
 
 
@@ -471,6 +486,8 @@ leaf!{alpha, Token::Alpha}
 leaf!{digit, Token::Digit}
 leaf!{hashtag, Token::HashTag}
 leaf!{period, Token::Period}
+leaf!{colon, Token::Colon}
+leaf!{comma, Token::Comma}
 leaf!{left_bracket, Token::LeftBracket}
 leaf!{right_bracket, Token::RightBracket}
 leaf!{left_parenthesis, Token::LeftParenthesis}
