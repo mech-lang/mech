@@ -281,10 +281,10 @@ impl Compiler {
           },
           _ => (), 
         }
-        let columns = self.memory_registers as u64 - 1;
+        let columns = self.memory_registers as u64 - m;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
-        for i in 1..columns+1 {
-          constraints.push(Constraint::Insert{table: table_id, column: i, output: self.output_registers as u64, memory: i});
+        for i in 1..columns + 1 {
+          constraints.push(Constraint::Insert{table: table_id, column: i, output: self.output_registers as u64, memory: i + m - 1});
           self.output_registers += 1;
         }
       },
