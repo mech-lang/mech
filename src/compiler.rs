@@ -27,6 +27,9 @@ pub enum Node {
   Math{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
+  RowDefine{ children: Vec<Node> },
+  Column{ children: Vec<Node> },
+  Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   LHS{ children: Vec<Node> },
   RHS{ children: Vec<Node> },
@@ -64,6 +67,9 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::LHS{children} => {print!("LHS\n"); Some(children)},
     Node::RHS{children} => {print!("RHS\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
+    Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
+    Node::Column{children} => {print!("Column\n"); Some(children)},
+    Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
@@ -388,6 +394,46 @@ impl Compiler {
       parser::Node::RHS{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::RHS{children: result});
+      },
+      parser::Node::TableDefineRHS{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::RHS{children: result});
+      },
+      parser::Node::RowDefine{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::RowDefine{children});
+      },
+      parser::Node::Column{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Column{children});
+      },
+      parser::Node::Binding{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Binding{children});
+      },
+      parser::Node::IdentifierOrNumber{children} => {
+        compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Constraint{children} => {
         let result = self.compile_nodes(children);
