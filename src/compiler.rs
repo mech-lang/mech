@@ -231,6 +231,25 @@ impl Compiler {
       Node::Math{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
+      Node::RowDefine{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Column{children} => {
+        let mut result = self.compile_constraints(children);
+        for constraint in result {
+          match constraint {
+            Constraint::Data{table, column} => {
+              constraints.push(Constraint::Id{id: column, memory: self.memory_registers as u64 - 1 });
+            },
+            _ => {
+              constraints.push(constraint)
+            }, 
+          }
+        }
+      },
+      Node::Binding{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
       Node::Data{children} => {
         let mut row = 1;
         let mut column = 1;
@@ -249,23 +268,25 @@ impl Compiler {
       },
       Node::TableDefine{children} => {
         let mut table_id = 0;
-        let mut column = 1;
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
+        println!("{:?}", result);
         result.reverse();
         let table = result.pop();
         result.reverse();
         constraints.append(&mut result);
         match table {
-          Some(Constraint::Data{table: t, column: c}) => {
+          Some(Constraint::Data{table: t, ..}) => {
             table_id = t;
-            column = c;
           },
           _ => (), 
         }
-        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns: column});
-        constraints.push(Constraint::Insert{table: table_id, column, output: self.output_registers as u64, memory: m});
-        self.output_registers += 1;
+        let columns = self.memory_registers as u64 - 1;
+        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
+        for i in 1..columns+1 {
+          constraints.push(Constraint::Insert{table: table_id, column: i, output: self.output_registers as u64, memory: i});
+          self.output_registers += 1;
+        }
       },
       Node::LHS{children} => {
         let mut row = 1;
@@ -326,6 +347,9 @@ impl Compiler {
             _ => constraints.push(constraint),
           }
         }
+      },
+      Node::Identifier{name, id} => {
+        constraints.push(Constraint::Data{table: 0, column: *id});
       },
       Node::Table{name, id} => {
         constraints.push(Constraint::Data{table: *id, column: 1});
