@@ -7,7 +7,7 @@ use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::set::{HashSet};
-use hashmap_core::map::{HashMap};
+use hashmap_core::map::{HashMap, Entry};
 use runtime::{Runtime, Block};
 
 // ## Changes
@@ -140,8 +140,18 @@ impl Interner {
       Change::Add{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            table_ref.grow_to_fit(*row as usize, *column as usize);
-            table_ref.set_cell(*row as usize, *column as usize, value.clone());
+            let column_ix: usize = match table_ref.attributes.entry(*column) {
+              Entry::Occupied(o) => {
+                *o.get()
+              },
+              Entry::Vacant(v) => {
+                table_ref.columns += 1;
+                v.insert(table_ref.columns);
+                table_ref.columns
+              },
+            };
+            table_ref.grow_to_fit(*row as usize, column_ix);
+            table_ref.set_cell(*row as usize, column_ix, value.clone());
           }
           None => (),
         };
