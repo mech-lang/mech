@@ -241,9 +241,12 @@ impl Compiler {
         let mut column_ix = 1;
         for constraint in result {
           match constraint {
+            Constraint::Identifier{id, memory} => {
+              column_ix = id;
+              constraints.push(constraint);
+            },
             Constraint::Insert{memory, output, table, column} => {
               constraints.push(Constraint::Insert{memory, output, table, column: column_ix});
-              column_ix += 1;
             },
             _ => constraints.push(constraint),
           }
