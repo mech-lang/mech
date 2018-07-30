@@ -302,6 +302,9 @@ impl Block {
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
       },
+      Constraint::Identifier{id, memory} => {
+        self.memory.attributes.insert(id, memory as usize);
+      },
       Constraint::Data{..} => (),
       Constraint::NewTable{..} => (),
     }
@@ -524,6 +527,7 @@ pub enum Constraint {
   NewTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Scan {table: u64, column: u64, input: u64},
+  Identifier {id: u64, memory: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
@@ -553,6 +557,7 @@ impl fmt::Debug for Constraint {
       Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
+      Constraint::Identifier{id, memory} => write!(f, "Identifier({:?} -> M{:?})", id, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
       Constraint::Set{output, table, column} => write!(f, "Set(O{:#x} -> #{:#x}({:#x}))",  output, table, column),
