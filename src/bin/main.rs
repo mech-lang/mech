@@ -23,16 +23,16 @@ fn main() {
   let input = String::from("# Bouncing Balls
 
 Set up the environment
-  #ball = [x: 0 y: 0 vx: 1 vy: 0 ]
-  #boundary = [b: 5000 ]
-
-Another block
-  #gravity = [a: 98 c: 29 ]
-  #x = 35 + #boundary");
+  #gravity = 98
+  #ball = [x: 100 y: 200 vx: 1 vy: 0 ]
+  #boundary = 5000
+  
+block
+  #x = 5 * #gravity");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   core.step();
-  println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
