@@ -254,7 +254,7 @@ impl Compiler {
         for constraint in result {
           match constraint {
             Constraint::Data{table, column} => {
-              constraints.push(Constraint::Id{id: column, memory: self.memory_registers as u64 - 1 });
+              constraints.push(Constraint::Identifier{id: column, memory: self.memory_registers as u64 - 1 });
             },
             _ => {
               constraints.push(constraint)
