@@ -251,6 +251,8 @@ impl fmt::Debug for Table {
       print_repeated_char("═", header_width, f);
       write!(f, "╝\n").unwrap();
 
+      write!(f, "Columns: {:?}\n", self.attributes).unwrap();
+
       // Print table body
       if self.columns > 0 {
         print_top_border(self.columns, cell_width, f);
