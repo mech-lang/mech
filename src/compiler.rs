@@ -229,13 +229,25 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Math{children} => {
-        constraints.append(&mut self.compile_constraints(children));
+        let m = self.memory_registers as u64;
+        let mut result = self.compile_constraints(children);
+        constraints.push(Constraint::Data{table: 0, column: m});
+        constraints.append(&mut result);
       },
       Node::RowDefine{children} => {
         let m = self.memory_registers;
         let mut result = self.compile_constraints(children);
-        self.output_registers += self.memory_registers - m;
-        constraints.append(&mut result);
+        // Assign the column
+        let mut column_ix = 1;
+        for constraint in result {
+          match constraint {
+            Constraint::Insert{memory, output, table, column} => {
+              constraints.push(Constraint::Insert{memory, output, table, column: column_ix});
+              column_ix += 1;
+            },
+            _ => constraints.push(constraint),
+          }
+        }
       },
       Node::Column{children} => {
         let mut result = self.compile_constraints(children);
@@ -251,6 +263,8 @@ impl Compiler {
         }
       },
       Node::Binding{children} => {
+        constraints.push(Constraint::Insert{memory: self.memory_registers as u64, output: self.output_registers as u64, table: 0, column: 0});
+        self.output_registers += 1;
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Data{children} => {
@@ -277,28 +291,34 @@ impl Compiler {
         result.reverse();
         let table = result.pop();
         result.reverse();
-        constraints.append(&mut result);
-        /*match table {
+        // Create the new table
+        match table {
           Some(Constraint::Data{table: t, ..}) => {
             table_id = t;
           },
           _ => (), 
         }
+        // Assign the table
+        let mut column_ix = 1;
+        for constraint in result {
+          match constraint {
+            Constraint::Insert{memory, output, table, column} => {
+              constraints.push(Constraint::Insert{memory, output, table: table_id, column});
+            },
+            _ => constraints.push(constraint),
+          }
+        }
+        let columns = self.memory_registers as u64 - m;
+        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
         println!("{:?}", constraints);
+        // Add an insert if the RHS is a constant
+        // e.g. #x = 5
         match constraints[0] {
-          Constraint::Constant{..} => {
+          Constraint::Data{table, column} => {
+            constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
             self.output_registers += 1;
           },
           _ => (),
-        }*/
-        let columns = self.memory_registers as u64 - m;
-        let output = self.output_registers as u64 - o;
-        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
-        for i in o..self.output_registers as u64 {
-          //println!("{:?}", i);
-          println!("table: {:?} column: {:?} output: {:?}, memory: {:?}", table_id, i - o + 1, i, i)
-
-          //constraints.push(Constraint::Insert{table: table_id, column: self.output_registers as u64 - i, output: i, memory: i + m - 1});
         }
       },
       Node::LHS{children} => {
