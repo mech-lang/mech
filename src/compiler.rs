@@ -232,7 +232,10 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::RowDefine{children} => {
-        constraints.append(&mut self.compile_constraints(children));
+        let m = self.memory_registers;
+        let mut result = self.compile_constraints(children);
+        self.output_registers += self.memory_registers - m;
+        constraints.append(&mut result);
       },
       Node::Column{children} => {
         let mut result = self.compile_constraints(children);
@@ -269,23 +272,33 @@ impl Compiler {
       Node::TableDefine{children} => {
         let mut table_id = 0;
         let m = self.memory_registers as u64;
+        let o = self.output_registers as u64;
         let mut result = self.compile_constraints(children);
-        println!("{:?}", result);
         result.reverse();
         let table = result.pop();
         result.reverse();
         constraints.append(&mut result);
-        match table {
+        /*match table {
           Some(Constraint::Data{table: t, ..}) => {
             table_id = t;
           },
           _ => (), 
         }
+        println!("{:?}", constraints);
+        match constraints[0] {
+          Constraint::Constant{..} => {
+            self.output_registers += 1;
+          },
+          _ => (),
+        }*/
         let columns = self.memory_registers as u64 - m;
+        let output = self.output_registers as u64 - o;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
-        for i in 1..columns + 1 {
-          constraints.push(Constraint::Insert{table: table_id, column: i, output: self.output_registers as u64, memory: i + m - 1});
-          self.output_registers += 1;
+        for i in o..self.output_registers as u64 {
+          //println!("{:?}", i);
+          println!("table: {:?} column: {:?} output: {:?}, memory: {:?}", table_id, i - o + 1, i, i)
+
+          //constraints.push(Constraint::Insert{table: table_id, column: self.output_registers as u64 - i, output: i, memory: i + m - 1});
         }
       },
       Node::LHS{children} => {
@@ -420,8 +433,8 @@ impl Compiler {
         compiled.push(Node::RHS{children: result});
       },
       parser::Node::TableDefineRHS{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::RHS{children: result});
+        let mut result = self.compile_nodes(children);
+        compiled.append(&mut result);
       },
       parser::Node::RowDefine{children} => {
         let result = self.compile_nodes(children);
@@ -523,9 +536,8 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Table{..} => children.push(node),
-            Node::RHS{..} => children.push(node),
-            _ => (),
+            Node::Token{..} => (),
+            _ => children.push(node),
           }
         }
         compiled.push(Node::TableDefine{children});
