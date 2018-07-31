@@ -271,12 +271,23 @@ impl Compiler {
         let mut row = 1;
         let mut column = 1;
         let mut table = 0;
+        let mut data: Vec<Constraint> = Vec::new();
         for child in children {
           match child {
-            Node::Table{name, id} => constraints.push(Constraint::Data{table: *id, column}),
+            Node::Table{name, id} => table = *id,
+            Node::Index{rows, columns} => {
+              for column in columns {
+                match column {
+                  Node::Identifier{name, id} => data.push(Constraint::Data{table, column: *id}),
+                  _ => (),
+                }
+              }
+              
+            }
             _ => constraints.append(&mut self.compile_constraints(children)),
           }
         };
+        constraints.append(&mut data);
       },
       Node::ColumnDefine{children} => {
         let mut c = children.clone();
