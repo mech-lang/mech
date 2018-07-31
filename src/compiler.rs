@@ -219,12 +219,8 @@ impl Compiler {
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
-      Node::Constraint{children} => {
-        constraints.append(&mut self.compile_constraints(children));
-      },
-      Node::Statement{children} => {
-        constraints.append(&mut self.compile_constraints(children));
-      },
+      Node::Constraint{children} |
+      Node::Statement{children} |
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -474,9 +470,6 @@ impl Compiler {
         }
         compiled.push(Node::Binding{children});
       },
-      parser::Node::IdentifierOrNumber{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
       parser::Node::Constraint{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -488,12 +481,6 @@ impl Compiler {
           }
         }
         compiled.push(Node::Constraint{children});
-      },
-      parser::Node::ProseOrCode{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
-      parser::Node::StatementOrExpression{children} => {
-        compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Statement{children} => {
         let result = self.compile_nodes(children);
@@ -579,9 +566,7 @@ impl Compiler {
           _ => (),
         };
       },  
-      parser::Node::Constant{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
+      // Quantities
       parser::Node::Number{children} => {
         let mut value = 0;
         let mut result = self.compile_nodes(children);
@@ -599,6 +584,7 @@ impl Compiler {
         }
         compiled.push(Node::Constant{value});
       },
+      // String-like nodes
       parser::Node::Paragraph{children} => {
         let mut result = self.compile_nodes(children);
         let node = match &result[0] {
@@ -609,6 +595,7 @@ impl Compiler {
       },
       parser::Node::Title{children} => {
         let mut result = self.compile_nodes(children);
+        // space space #
         let node = match &result[2] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
@@ -617,6 +604,7 @@ impl Compiler {
       },
       parser::Node::Subtitle{children} => {
         let mut result = self.compile_nodes(children);
+        // space space # #
         let node = match &result[3] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
@@ -664,63 +652,10 @@ impl Compiler {
         let id = Hasher::hash_string(word.clone());
         compiled.push(Node::Identifier{name: word, id});
       },
-      parser::Node::L1{children} => {
-        let result = self.compile_nodes(children);
-        let mut last = Node::Null;
-        for node in result {
-          match last {
-            Node::Null => last = node,
-            _ => {
-              let (name, mut children) = match node {
-                Node::Function{name, mut children} => (name.clone(), children.clone()),
-                _ => (String::from(""), vec![]),
-              };
-              children.push(last);
-              children.reverse();
-              last = Node::Function{name, children};
-            },
-          };
-        }
-        compiled.push(last);
-      },
-      parser::Node::L2{children} => {
-        let result = self.compile_nodes(children);
-        let mut last = Node::Null;
-        for node in result {
-          match last {
-            Node::Null => last = node,
-            _ => {
-              let (name, mut children) = match node {
-                Node::Function{name, mut children} => (name.clone(), children.clone()),
-                _ => (String::from(""), vec![]),
-              };
-              children.push(last);
-              children.reverse();
-              last = Node::Function{name, children};
-            },
-          };
-        }
-        compiled.push(last);
-      },
-      parser::Node::L3{children} => {
-        let result = self.compile_nodes(children);
-        let mut last = Node::Null;
-        for node in result {
-          match last {
-            Node::Null => last = node,
-            _ => {
-              let (name, mut children) = match node {
-                Node::Function{name, mut children} => (name.clone(), children.clone()),
-                _ => (String::from(""), vec![]),
-              };
-              children.push(last);
-              children.reverse();
-              last = Node::Function{name, children};
-            },
-          };
-        }
-        compiled.push(last);
-      },
+      // Math
+      parser::Node::L1{children} |
+      parser::Node::L2{children} |
+      parser::Node::L3{children} |
       parser::Node::L4{children} => {
         let result = self.compile_nodes(children);
         let mut last = Node::Null;
@@ -740,26 +675,8 @@ impl Compiler {
         }
         compiled.push(last);
       },
-      parser::Node::L1Infix{children} => {
-        let result = self.compile_nodes(children);
-        let operator = &result[1].clone();
-        let input = &result[3].clone();
-        let name: String = match operator {
-          Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
-          _ => String::from(""),
-        };
-        compiled.push(Node::Function{name, children: vec![input.clone()]})
-      },
-      parser::Node::L2Infix{children} => {
-        let result = self.compile_nodes(children);
-        let operator = &result[1].clone();
-        let input = &result[3].clone();
-        let name: String = match operator {
-          Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
-          _ => String::from(""),
-        };        
-        compiled.push(Node::Function{name, children: vec![input.clone()]});
-      },
+      parser::Node::L1Infix{children} |
+      parser::Node::L2Infix{children} |
       parser::Node::L3Infix{children} => {
         let result = self.compile_nodes(children);
         let operator = &result[1].clone();
@@ -770,12 +687,13 @@ impl Compiler {
         };        
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
-      parser::Node::Repeat{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
-      parser::Node::Alphanumeric{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
+      // Pass through nodes. These will just be omitted
+      parser::Node::IdentifierOrNumber{children} |
+      parser::Node::ProseOrCode{children}|
+      parser::Node::StatementOrExpression{children} |
+      parser::Node::Constant{children} |
+      parser::Node::Repeat{children} |
+      parser::Node::Alphanumeric{children} |
       parser::Node::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
