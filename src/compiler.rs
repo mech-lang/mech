@@ -221,6 +221,7 @@ impl Compiler {
     match node {
       Node::Constraint{children} |
       Node::Statement{children} |
+      Node::RHS{children} |
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -319,9 +320,6 @@ impl Compiler {
           },
           _ => (),
         }
-      },
-      Node::RHS{children} => {
-        constraints.append(&mut self.compile_constraints(children));
       },
       Node::Function{name, children} => {       
         let operation = match name.as_ref() {
@@ -437,6 +435,14 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         compiled.append(&mut result);
       },
+      parser::Node::Statement{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Statement{children: result});
+      },
+      parser::Node::Expression{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Expression{children: result});
+      },
       parser::Node::RowDefine{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -481,14 +487,6 @@ impl Compiler {
           }
         }
         compiled.push(Node::Constraint{children});
-      },
-      parser::Node::Statement{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Statement{children: result});
-      },
-      parser::Node::Expression{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Expression{children: result});
       },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
