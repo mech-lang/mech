@@ -471,7 +471,7 @@ node!{l4, L4, |s|{ select_data(s) }, "L4"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "Math Expression"}
 node!{expression, Expression, |s|{ math_expression(s).or(data) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
-node!{select_data, SelectData, |s| { table(s).or(identifier).or(constant).optional(index) }, "SelectData"}
+node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_bracket) }, "Bracket Index"}
