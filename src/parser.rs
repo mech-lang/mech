@@ -63,6 +63,7 @@ pub enum Node {
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
+  SelectExpression { children: Vec<Node> },
   InfixOperation { children: Vec<Node>},
   Repeat{ children: Vec<Node> },
   Identifier{ children: Vec<Node> },
@@ -86,6 +87,7 @@ pub enum Node {
   IdentifierCharacter{ children: Vec<Node> },
   Fragment{ children: Vec<Node> },
   Node{ children: Vec<Node> },
+  SpaceOrNewLineOrEnd{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
   Word{ children: Vec<Node> },
@@ -121,7 +123,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Select{children} => {print!("Select\n"); Some(children)},
     Node::Insert{children} => {print!("Insert\n"); Some(children)},
-    Node::MathExpression{children} => {print!("Math\n"); Some(children)},
+    Node::MathExpression{children} => {print!("Math Expression\n"); Some(children)},
+    Node::SelectExpression{children} => {print!("Select Expression\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
@@ -153,6 +156,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
+    Node::SpaceOrNewLineOrEnd{children} => {print!("SpaceOrNewLineOrEnd\n"); Some(children)},
     Node::Fragment{children} => {print!("Fragment\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
@@ -387,7 +391,8 @@ impl Parser {
     let mut s = ParseState::new();
     s.text = self.text.clone();
     s.token_stack.append(&mut self.tokens);
-    let result = fragment(&mut s).or(program).and(end);
+    let result = root(&mut s).or(program);
+    
     //println!("{:?}",result);
     if result.ok() {
       self.status = ParseStatus::Ready;
@@ -424,6 +429,7 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
+node!{root, Root, |s|{ fragment(s).or(program) }, "Root"}
 node!{program, Program, |s|{ node(s).optional(head).optional(body) }, "Program"}
 node!{head, Head, |s|{ node(s).and(title) }, "Head"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
@@ -432,11 +438,9 @@ node!{text, Text, |s|{ word(s).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
 node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
 node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
-
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).repeat(prose_or_code)}, "Section"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
-
 node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
@@ -455,9 +459,7 @@ node!{row_define, RowDefine, |s|{ left_bracket(s).repeat(column).and(right_brack
 node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).and(space) }, "Column"}
 node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
 node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
-
-
-
+node!{space_or_newline_or_end, SpaceOrNewLineOrEnd, |s|{ newline(s).or(end) }, "SpaceOrNewLineOrEnd"}
 
 node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
 node!{l2_infix, L2Infix, |s|{ space(s).and(asterisk).or(slash).and(space).and(l3) }, "L2Infix"}
@@ -466,13 +468,14 @@ node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix
 node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
-node!{l4, L4, |s|{ select_data(s) }, "L4"}
+node!{l4, L4, |s|{ select_data(s).or(constant) }, "L4"}
 
-node!{math_expression, MathExpression, |s|{ l1(s) }, "Math Expression"}
-node!{expression, Expression, |s|{ math_expression(s).or(data) }, "Expression"}
+node!{math_expression, MathExpression, |s|{ l1(s).and(space_or_newline_or_end) }, "Math Expression"}
+node!{select_expression, SelectExpression, |s|{ data(s).and(space_or_newline_or_end) }, "Select Expression"}
+node!{expression, Expression, |s|{ select_expression(s).or(math_expression) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
-node!{data, Data, |s| { table(s).or(identifier).or(constant).optional(index) }, "Data"}
+node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
@@ -500,25 +503,11 @@ leaf!{slash, Token::Slash}
 leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{newline, Token::Newline}
+leaf!{end, Token::EndOfStream}
  
 // A dummy node that returns itself.
 pub fn node(s: &mut ParseState) -> &mut ParseState {
   s
-}
-
-// Matches the end of stream token
-pub fn end(s: &mut ParseState) -> &mut ParseState {
-  let old_depth = s.depth;
-  s.depth += 1; 
-  // spacer(s.depth); println!("End");
-  let result = token(s, Token::EndOfStream);
-  if result.ok() {
-    result.node_stack.pop();
-    let node = Node::Root{children: result.node_stack.drain(..).collect()};
-    result.node_stack.push(node);
-  }
-  result.depth = old_depth;
-  result
 }
 
 // Matches a token from the lexer step.
@@ -534,10 +523,10 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
     s.position += 1;
     s.last_match += 1;
     s.node_stack.push(Node::Token{token, byte});
-    //println!(" √");
+    // spacer(0); println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
-    //println!(" X");
+    // spacer(0); println!(" X");
   }
   s
 }
