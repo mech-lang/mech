@@ -409,7 +409,7 @@ impl Block {
         },
         Constraint::Insert{memory, output, table, column} => {
           let output_memory_ix = self.output_registers[*output as usize - 1].column;
-          match &mut self.memory.get_column(output_memory_ix as usize) {
+          match &mut self.memory.get_column_by_ix(output_memory_ix as usize) {
             Some(column_data) => {
               for (row_ix, cell) in column_data.iter().enumerate() {
                 match cell {
