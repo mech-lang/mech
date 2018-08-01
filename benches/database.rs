@@ -27,7 +27,7 @@ fn db_register_table(b: &mut Bencher) {
     let mut db = Core::new(1, 1);
     b.iter(|| {
         let txn = Transaction::from_changeset(vec![
-            Change::NewTable{ tag: 0, rows: 10, columns: 10 },
+            Change::NewTable{ id: 0, rows: 10, columns: 10 },
         ]);
         db.process_transaction(&txn);
     });
@@ -38,7 +38,7 @@ fn db_register_add(b: &mut Bencher) {
     let mut db = Core::new(1, 1);
     let students: u64 = Hasher::hash_str("students");  
     let txn = Transaction::from_change(
-        Change::NewTable{ tag: 0, rows: 10, columns: 10 },
+        Change::NewTable{ id: 0, rows: 10, columns: 10 },
     );
     b.iter(|| {
         let txn = Transaction::from_change(
