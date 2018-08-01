@@ -20,15 +20,11 @@ use mech::Core;
 fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(10, 100);
-  let input = String::from("# Bouncing Balls
-
-Set up the environment
-  #ball = [x: 15 y: 0 vx: 1 vy: 0 ]
-
-## Update Condition
-
-The positions of the balls update on every tick
-  #y = #ball.x + 10");
+  let input = String::from("
+block
+  #ball = [x: 15 y: 9 vx: 18 vy: 0 ]
+block
+  #test = #ball.x + #ball.y * #ball.vx");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   core.step();
@@ -36,5 +32,8 @@ The positions of the balls update on every tick
   println!("{:?}", compiler.syntax_tree);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
-  
+  let table = Hasher::hash_str("test");
+  let row = 1;
+  let column = 1;
+  println!("{:?}", core.index(table,row,column).unwrap().as_u64().unwrap());
 }   
