@@ -103,12 +103,12 @@ impl Table {
     }
   }
 
-  pub fn get_row_index(&mut self, entity: u64) -> Option<&usize> {
-    self.row_aliases.get(&entity)
+  pub fn get_row_index(&mut self, alias: u64) -> Option<&usize> {
+    self.row_aliases.get(&alias)
   }
 
-  pub fn get_column_index(&mut self, attribute: u64) -> Option<&usize> {
-    self.column_aliases.get(&attribute)
+  pub fn get_column_index(&mut self, alias: u64) -> Option<&usize> {
+    self.column_aliases.get(&alias)
   }
 
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
