@@ -76,7 +76,6 @@ impl Runtime {
     let max_iterations = 10_000;
     let mut n = 0;    
     while {
-      println!("Ready: {:?}", self.ready_blocks);
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
@@ -344,14 +343,12 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("SOLVING {:?}", self);
     for step in &self.plan {
       match step {
         Constraint::ChangeScan{table, column, input} => {
           self.ready = clear_bit(self.ready, *input as usize - 1);
         }
         Constraint::Function{operation, parameters, memory} => {
-          println!("Function");
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
@@ -366,13 +363,10 @@ impl Block {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::CopyInput{input, memory} => {
-          println!("Copy Input");
           let register = &self.input_registers[*input as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
-              println!("HERE1");
               self.column_lengths[*memory as usize - 1] = column.len() as u64;
-              println!("HERE2");
               operations::identity(column, *memory, &mut self.memory);
             },
             None => (),
@@ -413,7 +407,6 @@ impl Block {
           self.column_lengths[memory_ix - 1] = source_length as u64;
         },
         Constraint::Insert{memory, output, table, column} => {
-          println!("Insert");
           let output_memory_ix = self.output_registers[*output as usize - 1].column;
           match &mut self.memory.get_column_by_ix(output_memory_ix as usize) {
             Some(column_data) => {
