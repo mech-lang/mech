@@ -270,7 +270,6 @@ impl Block {
         if self.memory_registers.len() < memory as usize {
           self.memory_registers.resize(memory as usize, Register::new());
         }
-        self.memory_registers.push(Register::memory(memory));
         self.memory_registers[memory as usize - 1] = Register::memory(memory);
         self.memory.grow_to_fit(1, memory as usize);
         let result = self.memory.set_cell(1, memory as usize, Value::from_i64(value));
@@ -287,11 +286,6 @@ impl Block {
         }
         self.memory_registers[memory as usize - 1] = self.input_registers[input as usize - 1].clone();
         self.memory.add_column(source.column);
-        self.column_lengths.push(0);
-      }
-      Constraint::CopyOutput{memory, output} => {
-        self.memory_registers.push(self.input_registers[memory as usize - 1].clone());
-        self.memory.add_column(new_column_ix);
         self.column_lengths.push(0);
       }
       Constraint::Condition{truth, result, default, memory} => {
@@ -315,6 +309,7 @@ impl Block {
       },
       Constraint::Data{..} => (),
       Constraint::NewTable{..} => (),
+      Constraint::CopyOutput{..} => (),
     }
     self.constraints.push(constraint);
 
