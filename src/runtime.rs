@@ -363,7 +363,6 @@ impl Block {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::CopyInput{input, memory} => {
-          println!("SOLING COPY INPUT I{:?} -> M{:?}", input, memory);
           let register = &self.input_registers[*input as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
