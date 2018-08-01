@@ -256,7 +256,7 @@ impl Block {
       Constraint::Function{ref operation, ref parameters, memory} => {
         self.memory_registers.push(Register::memory(memory));
         self.memory.grow_to_fit(1, memory as usize);
-       if self.column_lengths.len() < memory as usize {
+        if self.column_lengths.len() < memory as usize {
           self.column_lengths.resize(memory as usize, 0);
         }
         self.column_lengths[memory as usize - 1] = 0;
@@ -267,7 +267,11 @@ impl Block {
         self.column_lengths.push(0);
       }
       Constraint::Constant{value, memory} => {
+        if self.memory_registers.len() < memory as usize {
+          self.memory_registers.resize(memory as usize, Register::new());
+        }
         self.memory_registers.push(Register::memory(memory));
+        self.memory_registers[memory as usize - 1] = Register::memory(memory);
         self.memory.grow_to_fit(1, memory as usize);
         let result = self.memory.set_cell(1, memory as usize, Value::from_i64(value));
         if self.column_lengths.len() < memory as usize {
