@@ -258,10 +258,10 @@ impl Block {
           self.memory_registers.resize(memory as usize, Register::new());
         }
         self.memory_registers[memory as usize - 1] = Register::memory(memory);
-        self.memory.grow_to_fit(1, memory as usize);
         if self.column_lengths.len() < memory as usize {
           self.column_lengths.resize(memory as usize, 0);
         }
+        self.memory.grow_to_fit(1, memory as usize);
         self.column_lengths[memory as usize - 1] = 0;
       },
       Constraint::Filter{ref comparator, lhs, rhs, memory} => {
@@ -288,7 +288,9 @@ impl Block {
           self.memory_registers.resize(memory as usize, Register::new());
         }
         self.memory_registers[memory as usize - 1] = self.input_registers[input as usize - 1].clone();
-        self.memory.add_column(source.column);
+        self.memory.grow_to_fit(1, memory as usize);
+        self.memory.column_aliases.insert(source.column as u64, memory as usize);
+        self.memory.column_ids[memory as usize - 1] = Some(source.column);
         self.column_lengths.push(0);
       }
       Constraint::Condition{truth, result, default, memory} => {
