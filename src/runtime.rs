@@ -299,7 +299,10 @@ impl Block {
         self.column_lengths.push(0);
       },
       Constraint::Insert{memory, output, table, column} => {
-        self.output_registers.push(Register::output(column));
+        if self.output_registers.len() < output as usize {
+          self.output_registers.resize(output as usize, Register::new());
+        }
+        self.output_registers[output as usize - 1] = Register::output(memory);
       },
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
