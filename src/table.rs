@@ -84,8 +84,8 @@ pub struct Table {
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<Vec<Value>>,
-  pub attributes: HashMap<u64, usize>,
-  pub entities: HashMap<u64, usize>,
+  pub column_aliases: HashMap<u64, usize>,
+  pub row_aliases: HashMap<u64, usize>,
 }
 
 impl Table {
@@ -96,17 +96,17 @@ impl Table {
       rows: 0,
       columns: 0,
       data: vec![vec![Value::Empty; rows]; columns], 
-      entities: HashMap::with_capacity(rows),
-      attributes: HashMap::with_capacity(columns),
+      row_aliases: HashMap::with_capacity(rows),
+      column_aliases: HashMap::with_capacity(columns),
     }
   }
 
   pub fn get_row_index(&mut self, entity: u64) -> Option<&usize> {
-    self.entities.get(&entity)
+    self.row_aliases.get(&entity)
   }
 
   pub fn get_column_index(&mut self, attribute: u64) -> Option<&usize> {
-    self.attributes.get(&attribute)
+    self.column_aliases.get(&attribute)
   }
 
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
@@ -127,11 +127,11 @@ impl Table {
   }
 
   pub fn add_column(&mut self, attribute: u64) {
-    if !self.attributes.contains_key(&attribute) {
+    if !self.column_aliases.contains_key(&attribute) {
       let columns = self.columns + 1;
       let rows = self.rows;
       self.grow_to_fit(rows, columns);
-      self.attributes.insert(attribute.clone(), columns);
+      self.column_aliases.insert(attribute.clone(), columns);
     };
   }
 
@@ -145,7 +145,7 @@ impl Table {
   }
 
   pub fn get_column(&self, column_id: usize) -> Option<&Vec<Value>> {
-    match self.attributes.get(&(column_id as u64)) {
+    match self.column_aliases.get(&(column_id as u64)) {
       Some(column_ix) => {
         let mut column_data = &self.data[*column_ix - 1];      
         Some(column_data)
@@ -155,7 +155,7 @@ impl Table {
   }
 
   pub fn get_column_mut(&mut self, column_id: usize) -> Option<&mut Vec<Value>> {
-    match self.attributes.get_mut(&(column_id as u64)) {
+    match self.column_aliases.get_mut(&(column_id as u64)) {
       Some(column_ix) => {
         let mut column_data = &mut self.data[*column_ix - 1];      
         Some(column_data)
@@ -169,6 +169,9 @@ impl Table {
       // The new row is larger than the underlying column structure
       if columns > self.data.len() {
         let new_column = vec![Value::Empty; self.rows];
+        for i in self.data.len()..columns + 1 {
+          self.column_aliases.insert(i as u64,i);
+        }
         self.data.resize(columns, new_column);
       }
       self.columns = columns;
@@ -254,7 +257,7 @@ impl fmt::Debug for Table {
       print_repeated_char("═", header_width, f);
       write!(f, "╝\n").unwrap();
 
-      write!(f, "Columns: {:?}\n", self.attributes).unwrap();
+      write!(f, "Columns: {:?}\n", self.column_aliases).unwrap();
 
       // Print table body
       if self.columns > 0 {
