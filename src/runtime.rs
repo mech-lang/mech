@@ -312,6 +312,10 @@ impl Block {
       },
       Constraint::Identifier{id, memory} => {
         self.memory.column_aliases.insert(id, memory as usize);
+        if self.memory.column_ids.len() < memory as usize {
+          self.memory.column_ids.resize(memory as usize, None);
+        }
+        self.memory.column_ids[memory as usize - 1] = Some(id.clone());
       },
       Constraint::Data{..} => (),
       Constraint::NewTable{..} => (),
