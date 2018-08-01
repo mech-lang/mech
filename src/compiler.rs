@@ -316,21 +316,15 @@ impl Compiler {
             Constraint::Insert{memory, output, table, column} => {
               constraints.push(Constraint::Insert{memory, output, table: table_id, column});
             },
+            Constraint::Data{table: 0, column} => {
+              constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
+              self.output_registers += 1;
+            },
             _ => constraints.push(constraint),
           }
         }
         let columns = self.memory_registers as u64 - m;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
-        println!("{:?}", constraints);
-        // Add an insert if the RHS is a constant
-        // e.g. #x = 5
-        match constraints[0] {
-          Constraint::Data{table, column} => {
-            constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
-            self.output_registers += 1;
-          },
-          _ => (),
-        }
       },
       Node::Function{name, children} => {       
         let operation = match name.as_ref() {
