@@ -28,10 +28,10 @@ Set up the environment
 ## Update Condition
 
 The positions of the balls update on every tick
-  #y = #ball.x + #ball.y");
+  #y = #ball.x + 10");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
-  //core.step();
+  core.step();
   //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   println!("{:?}", core);
