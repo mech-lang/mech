@@ -76,6 +76,7 @@ impl Runtime {
     let max_iterations = 10_000;
     let mut n = 0;    
     while {
+      println!("Ready: {:?}", self.ready_blocks);
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
@@ -243,11 +244,7 @@ impl Block {
   pub fn add_constraint(&mut self, constraint: Constraint) {
     let new_column_ix = (self.memory.columns + 1) as u64;
     match constraint {
-      Constraint::Scan{table, column, input} => {
-        self.input_registers.push(Register::input(table, column));
-        let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
-        listeners.push(input);
-      },
+      Constraint::Scan{table, column, input} | 
       Constraint::ChangeScan{table, column, input} => {
         self.input_registers.push(Register::input(table, column));
         let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
@@ -277,8 +274,12 @@ impl Block {
         self.updated = true;
       }
       Constraint::CopyInput{input, memory} => {
-        self.memory_registers.push(self.input_registers[input as usize - 1].clone());
-        self.memory.add_column(new_column_ix);
+        let source = self.input_registers[input as usize - 1].clone();
+        if self.memory_registers.len() < memory as usize {
+          self.memory_registers.resize(memory as usize, Register::new());
+        }
+        self.memory_registers[memory as usize - 1] = self.input_registers[input as usize - 1].clone();
+        self.memory.add_column(source.column);
         self.column_lengths.push(0);
       }
       Constraint::CopyOutput{memory, output} => {
@@ -297,7 +298,7 @@ impl Block {
         self.column_lengths.push(0);
       },
       Constraint::Insert{memory, output, table, column} => {
-        self.output_registers.push(Register::output(memory));
+        self.output_registers.push(Register::output(column));
       },
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
@@ -330,6 +331,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
+      println!("{:?}", step);
       match step {
         Constraint::ChangeScan{table, column, input} => {
           self.ready = clear_bit(self.ready, *input as usize - 1);
@@ -349,6 +351,7 @@ impl Block {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
         Constraint::CopyInput{input, memory} => {
+          println!("SOLING COPY INPUT I{:?} -> M{:?}", input, memory);
           let register = &self.input_registers[*input as usize - 1];
           match store.get_column(register.table, register.column as usize) {
             Some(column) => {
@@ -394,16 +397,20 @@ impl Block {
         },
         Constraint::Insert{memory, output, table, column} => {
           let output_memory_ix = self.output_registers[*output as usize - 1].column;
-          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
-          for (row_ix, cell) in column_data.iter().enumerate() {
-            match cell {
-              Value::Empty => (),
-              _ => {
-                store.intern_change(
-                  &Change::Add{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() }
-                );
+          match &mut self.memory.get_column(output_memory_ix as usize) {
+            Some(column_data) => {
+              for (row_ix, cell) in column_data.iter().enumerate() {
+                match cell {
+                  Value::Empty => (),
+                  _ => {
+                    store.intern_change(
+                      &Change::Add{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() }
+                    );
+                  }
+                }
               }
-            }
+            },
+            None => (),
           }
         },
         Constraint::NewTable{id, rows, columns} => {
@@ -477,7 +484,7 @@ impl fmt::Debug for Block {
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ {}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
-    write!(f, "│ Ready: {:b}\n", self.ready).unwrap();
+    write!(f, "│ Ready: {:?} ({:b})\n", self.is_ready(), self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
