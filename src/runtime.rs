@@ -254,7 +254,10 @@ impl Block {
         listeners.push(input);
       },
       Constraint::Function{ref operation, ref parameters, memory} => {
-        self.memory_registers.push(Register::memory(memory));
+        if self.memory_registers.len() < memory as usize {
+          self.memory_registers.resize(memory as usize, Register::new());
+        }
+        self.memory_registers[memory as usize - 1] = Register::memory(memory);
         self.memory.grow_to_fit(1, memory as usize);
         if self.column_lengths.len() < memory as usize {
           self.column_lengths.resize(memory as usize, 0);
