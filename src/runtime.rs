@@ -246,7 +246,10 @@ impl Block {
     match constraint {
       Constraint::Scan{table, column, input} | 
       Constraint::ChangeScan{table, column, input} => {
-        self.input_registers.push(Register::input(table, column));
+        if self.input_registers.len() < input as usize {
+          self.input_registers.resize(input as usize, Register::new());
+        }
+        self.input_registers[input as usize - 1] = Register::input(table, column);
         let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
         listeners.push(input);
       },
