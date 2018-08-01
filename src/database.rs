@@ -140,7 +140,7 @@ impl Interner {
       Change::Add{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            let column_ix: usize = match table_ref.attributes.entry(*column) {
+            let column_ix: usize = match table_ref.column_aliases.entry(*column) {
               Entry::Occupied(o) => {
                 *o.get()
               },

@@ -311,7 +311,7 @@ impl Block {
         self.output_registers.push(Register::new());
       },
       Constraint::Identifier{id, memory} => {
-        self.memory.attributes.insert(id, memory as usize);
+        self.memory.column_aliases.insert(id, memory as usize);
       },
       Constraint::Data{..} => (),
       Constraint::NewTable{..} => (),
