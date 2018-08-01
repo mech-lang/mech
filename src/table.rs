@@ -83,6 +83,7 @@ pub struct Table {
   pub id: u64,
   pub rows: usize,
   pub columns: usize,
+  pub column_ids: Vec<Option<u64>>,
   pub data: Vec<Vec<Value>>,
   pub column_aliases: HashMap<u64, usize>,
   pub row_aliases: HashMap<u64, usize>,
@@ -95,6 +96,7 @@ impl Table {
       id: tag,
       rows: 0,
       columns: 0,
+      column_ids: Vec::new(),
       data: vec![vec![Value::Empty; rows]; columns], 
       row_aliases: HashMap::with_capacity(rows),
       column_aliases: HashMap::with_capacity(columns),
@@ -132,6 +134,7 @@ impl Table {
       let rows = self.rows;
       self.grow_to_fit(rows, columns);
       self.column_aliases.insert(attribute.clone(), columns);
+      self.column_ids[columns - 1] = Some(attribute.clone());
     };
   }
 
@@ -169,11 +172,9 @@ impl Table {
       // The new row is larger than the underlying column structure
       if columns > self.data.len() {
         let new_column = vec![Value::Empty; self.rows];
-        for i in self.data.len()..columns + 1 {
-          self.column_aliases.insert(i as u64,i);
-        }
         self.data.resize(columns, new_column);
       }
+      self.column_ids.resize(columns, None);
       self.columns = columns;
     }
     if rows > self.rows {
@@ -258,6 +259,7 @@ impl fmt::Debug for Table {
       write!(f, "╝\n").unwrap();
 
       write!(f, "Columns: {:?}\n", self.column_aliases).unwrap();
+      write!(f, "Column Ids: {:?}\n", self.column_ids).unwrap();
 
       // Print table body
       if self.columns > 0 {
