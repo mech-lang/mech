@@ -2,15 +2,15 @@
 
 Set up the environment
   #ball = [x: 0 y: 0 vx: 1 vy: 0 ]
-  #system/timer += [#timer resolution: 60Hz]
-  #gravity = 9.8m/s^2
-  #boundary = 5km
+  #system/timer = [resolution: 100]
+  #gravity = 98
+  #boundary = 5000
 
 ## Update Condition
 
 The positions of the balls update on every tick
-  on #timer.tick
-  [#ball x y vx vy]
+  on #system/timer.tick
+  #ball[x y vx vy]
   x := x + vx
   y := y + vy
   vy := vy + #gravity * #timer.dt
