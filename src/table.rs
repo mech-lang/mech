@@ -144,20 +144,23 @@ impl Table {
     columns
   }
 
-  pub fn get_column(&self, column_ix: usize) -> Option<&Vec<Value>> {
-    if column_ix - 1 < self.columns {
-      let mut column = &self.data[column_ix - 1];      
-      Some(column)
-    } else {
-      None
+  pub fn get_column(&self, column_id: usize) -> Option<&Vec<Value>> {
+    match self.attributes.get(&(column_id as u64)) {
+      Some(column_ix) => {
+        let mut column_data = &self.data[*column_ix - 1];      
+        Some(column_data)
+      },
+      None => None,
     }
   }
 
-  pub fn get_column_mut(&mut self, column_ix: usize) -> Option<&mut Vec<Value>> {
-    if column_ix - 1 < self.columns {
-      Some(&mut self.data[column_ix - 1])
-    } else {
-      None
+  pub fn get_column_mut(&mut self, column_id: usize) -> Option<&mut Vec<Value>> {
+    match self.attributes.get_mut(&(column_id as u64)) {
+      Some(column_ix) => {
+        let mut column_data = &mut self.data[*column_ix - 1];      
+        Some(column_data)
+      },
+      None => None,
     }
   }
 
