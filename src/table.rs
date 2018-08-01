@@ -138,9 +138,9 @@ impl Table {
     };
   }
 
-  pub fn get_columns(&self, column_ides: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
+  pub fn get_columns(&self, column_ids: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
     let mut columns: Vec<Option<&Vec<Value>>> = vec![];
-    for id in column_ides{
+    for id in column_ids{
       let column = self.get_column(id);
       columns.push(column);
     }
@@ -155,6 +155,15 @@ impl Table {
       },
       None => None,
     }
+  }
+
+  pub fn get_columns_by_ixes(&self, column_ixes: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
+    let mut columns: Vec<Option<&Vec<Value>>> = vec![];
+    for ix in column_ixes{
+      let column = self.get_column_by_ix(ix);
+      columns.push(column);
+    }
+    columns
   }
 
   pub fn get_column_by_ix(&self, column_ix: usize) -> Option<&Vec<Value>> {

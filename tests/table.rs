@@ -57,7 +57,7 @@ fn get_multiple_rows() {
 #[test]
 fn get_a_column() {
     let mut table = make_table();
-    let col = table.get_column(3);
+    let col = table.get_column_by_ix(3);
     let col2 = vec![Value::from_u64(83), Value::from_u64(99)];
     let answer = Some(&col2);
     assert_eq!(col, answer);
@@ -66,7 +66,7 @@ fn get_a_column() {
 #[test]
 fn get_multiple_columns() {
     let mut table = make_table();
-    let col = table.get_columns(vec![3, 4]);
+    let col = table.get_columns_by_ixes(vec![3, 4]);
     let c1 = vec![Value::from_u64(83), Value::from_u64(99)];
     let c2 = vec![Value::from_u64(76), Value::from_u64(95)];
     let answer = vec![Some(&c1), Some(&c2)];
