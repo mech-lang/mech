@@ -27,6 +27,7 @@ pub enum Node {
   MathExpression{ children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
+  DataWatch{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
   RowDefine{ children: Vec<Node> },
   Column{ children: Vec<Node> },
@@ -76,6 +77,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
     Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -234,6 +236,18 @@ impl Compiler {
         constraints.push(Constraint::Data{table: 0, column: m});
         constraints.append(&mut result);
       },
+      Node::DataWatch{children} => {
+       let result = self.compile_constraints(children);
+        for constraint in result {
+          match constraint {
+            Constraint::Data{table, column} => {
+              constraints.push(Constraint::ChangeScan {table, column, input: self.input_registers as u64});
+              self.input_registers += 1;
+            },
+            _ => (),
+          }
+        }
+      }
       Node::RowDefine{children} => {
         let m = self.memory_registers;
         let mut result = self.compile_constraints(children);
@@ -472,6 +486,10 @@ impl Compiler {
       parser::Node::Expression{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Expression{children: result});
+      },
+      parser::Node::DataWatch{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::DataWatch{children: result});
       },
       parser::Node::RowDefine{children} => {
         let result = self.compile_nodes(children);
@@ -723,6 +741,7 @@ impl Compiler {
       parser::Node::IdentifierOrNumber{children} |
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
+      parser::Node::DataWatch{children} |
       parser::Node::Constant{children} |
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
@@ -818,6 +837,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     120 => Some('x'),
     121 => Some('y'),    
     122 => Some('z'),
+    126 => Some('~'),
     65 => Some('A'),
     66 => Some('B'),
     67 => Some('C'),

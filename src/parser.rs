@@ -52,6 +52,7 @@ pub enum Node {
   Block{ children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Select { children: Vec<Node> },
+  DataWatch { children: Vec<Node> },
   Insert { children: Vec<Node> },
   ColumnDefine { children: Vec<Node> },
   TableDefine { children: Vec<Node> },
@@ -122,6 +123,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Select{children} => {print!("Select\n"); Some(children)},
+    Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::Insert{children} => {print!("Insert\n"); Some(children)},
     Node::MathExpression{children} => {print!("Math Expression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("Select Expression\n"); Some(children)},
@@ -447,7 +449,8 @@ node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{statement, Statement, |s|{ table_define(s).or(column_define) }, "Statement"}
+node!{statement, Statement, |s|{ table_define(s).or(column_define).or(data_watch) }, "Statement"}
+node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
@@ -502,6 +505,7 @@ leaf!{asterisk, Token::Asterisk}
 leaf!{slash, Token::Slash}
 leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
+leaf!{tilde, Token::Tilde}
 leaf!{newline, Token::Newline}
 leaf!{end, Token::EndOfStream}
 
