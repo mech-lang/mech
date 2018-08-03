@@ -20,9 +20,6 @@ macro_rules! parse_string {
   )
 }
 
-
-
-
 // ## Variable
 
 parse_string!(variable, "variable");
