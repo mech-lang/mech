@@ -342,7 +342,6 @@ impl ParseState {
     let mut result = self;
     let start_pos = result.last_match.clone();
     while result.ok() {
-      println!("{:?}", result);
       let result = production(result);
       if result.ok() {
         result.depth = before_depth;
