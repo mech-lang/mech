@@ -429,7 +429,7 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
-node!{root, Root, |s|{ program(s).or(fragment) }, "Root"}
+node!{root, Root, |s|{ fragment(s).or(program) }, "Root"}
 node!{program, Program, |s|{ node(s).optional(head).optional(body) }, "Program"}
 node!{head, Head, |s|{ title(s) }, "Head"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
