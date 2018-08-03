@@ -147,6 +147,7 @@ impl Interner {
               Entry::Vacant(v) => {
                 table_ref.columns += 1;
                 v.insert(table_ref.columns);
+                table_ref.column_ids.push(Some(*column));
                 table_ref.columns
               },
             };
