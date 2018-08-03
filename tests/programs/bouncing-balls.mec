@@ -13,7 +13,7 @@ The positions of the balls update on every tick
   #ball[x y vx vy]
   x := x + vx
   y := y + vy
-  vy := vy + #gravity * #timer.dt
+  vy := vy + #gravity * #system/timer.dt
 
 ## Boundary Conditions
 
