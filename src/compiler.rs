@@ -230,6 +230,7 @@ impl Compiler {
       Node::MathExpression{children} => {
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
+        
         constraints.push(Constraint::Data{table: 0, column: m});
         constraints.append(&mut result);
       },
@@ -289,6 +290,10 @@ impl Compiler {
             _ => constraints.append(&mut self.compile_constraints(children)),
           }
         };
+        // If there is no index, we just take the first column for now later we'll tale the whole table
+        if data.len() == 0 {
+          data.push(Constraint::Data{table, column: 1})
+        }
         constraints.append(&mut data);
       },
       Node::ColumnDefine{children} => {
@@ -328,7 +333,7 @@ impl Compiler {
         let columns = self.memory_registers as u64 - m;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
       },
-      Node::Function{name, children} => {       
+      Node::Function{name, children} => {   
         let operation = match name.as_ref() {
           "+" => Function::Add,
           "-" => Function::Subtract,
