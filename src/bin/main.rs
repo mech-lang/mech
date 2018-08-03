@@ -20,20 +20,12 @@ use mech::Core;
 fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(10, 100);
-  let input = String::from("
-block
-  #ball = [x: 15 y: 9 vx: 18 vy: 0 ]
-block
-  #test = #ball.x + #ball.y * #ball.vx");
+  let input = String::from("#x = 2 + 1");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   core.step();
-  //println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
-  let table = Hasher::hash_str("test");
-  let row = 1;
-  let column = 1;
-  println!("{:?}", core.index(table,row,column).unwrap().as_u64().unwrap());
 }   
