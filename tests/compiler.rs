@@ -73,6 +73,6 @@ test_math!(math_multiply,"#test = 2 * 2", 4);
 test_math!(math_divide,"#test = 4 / 2", 2);
 test_math!(math_multiple_rows_select,"
 block
-  #ball = [x: 15 y: 9 vx: 18 vy: 0 ]
+  #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = #ball.x + #ball.y * #ball.vx",177);
