@@ -467,6 +467,12 @@ impl Block {
     }
     for constraint in &self.constraints {
       match constraint {
+        Constraint::ChangeScan{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
         Constraint::CopyInput{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
