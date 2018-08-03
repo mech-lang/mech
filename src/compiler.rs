@@ -351,6 +351,24 @@ impl Compiler {
           constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
         }
       },
+      Node::SelectExpression{children} => {
+        let m = self.memory_registers as u64;
+        let mut result = self.compile_constraints(children);
+        for constraint in result {
+          match constraint {
+            Constraint::Data{table, column} => {
+              let input = self.input_registers as u64;
+              let memory = self.memory_registers as u64;
+              self.input_registers += 1;
+              self.memory_registers += 1;
+              constraints.push(Constraint::Data{table: 0, column: m});
+              constraints.push(Constraint::Scan{table, column, input});
+              constraints.push(Constraint::CopyInput{input, memory});
+            },
+            _ => constraints.push(constraint),
+          }
+        }
+      },
       Node::SelectData{children} => {
         let mut result = self.compile_constraints(children);
         for constraint in result {
