@@ -261,7 +261,6 @@ impl Block {
           self.column_lengths.resize(memory as usize, 0);
         }
         self.memory.grow_to_fit(1, memory as usize);
-        self.column_lengths.push(0);
       },
       Constraint::Filter{ref comparator, lhs, rhs, memory} => {
         self.memory_registers.push(Register::memory(memory));
