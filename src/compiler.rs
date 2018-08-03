@@ -29,6 +29,7 @@ pub enum Node {
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
+  SetData{ children: Vec<Node> },
   RowDefine{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -76,6 +77,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
+    Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
@@ -235,6 +237,52 @@ impl Compiler {
         
         constraints.push(Constraint::Data{table: 0, column: m});
         constraints.append(&mut result);
+      },
+      Node::SetData{children} => {
+        let mut table_id = 0;
+        let mut column_id = 1;
+        let m = self.memory_registers as u64;
+        let o = self.output_registers as u64;
+        let mut result = self.compile_constraints(children);
+        result.reverse();
+        let table = result.pop();
+        result.reverse();
+        // Create the new table
+        match table {
+          Some(Constraint::Data{table: t, column: c}) => {
+            table_id = t;
+            column_id = c;
+          },
+          _ => (), 
+        }
+        result.reverse();
+        let output = result.pop();
+        result.reverse();
+         match output {
+          Some(Constraint::Data{table: 0, column: c}) => {
+            constraints.push(Constraint::Insert{memory: c, output: self.output_registers as u64, table: table_id, column: column_id});
+            self.output_registers += 1;
+          },
+          _ => ()
+        }
+        constraints.append(&mut result);
+        // Assign the table
+        /*
+        let mut column_ix = 1;
+        for constraint in result {
+          match constraint {
+            Constraint::Insert{memory, output, table, column} => {
+              constraints.push(Constraint::Insert{memory, output, table: table_id, column});
+            },
+            Constraint::Data{table: 0, column} => {
+              constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
+              self.output_registers += 1;
+            },
+            _ => constraints.push(constraint),
+          }
+        }
+        let columns = self.memory_registers as u64 - m;
+        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});*/
       },
       Node::DataWatch{children} => {
        let result = self.compile_constraints(children);
@@ -502,6 +550,17 @@ impl Compiler {
         }
         compiled.push(Node::RowDefine{children});
       },
+      parser::Node::SetData{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::SetData{children});
+      },
       parser::Node::Column{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -743,6 +802,7 @@ impl Compiler {
       parser::Node::StatementOrExpression{children} |
       parser::Node::DataWatch{children} |
       parser::Node::Constant{children} |
+      parser::Node::SetOperator{children} |
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
       parser::Node::IdentifierCharacter{children} => {
