@@ -24,7 +24,8 @@ pub enum Node {
   Block{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
-  Math{ children: Vec<Node> },
+  MathExpression{ children: Vec<Node> },
+  SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
   RowDefine{ children: Vec<Node> },
@@ -79,7 +80,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
-    Node::Math{children} => {print!("Math\n"); Some(children)},
+    Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
+    Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
@@ -225,7 +227,7 @@ impl Compiler {
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
-      Node::Math{children} => {
+      Node::MathExpression{children} => {
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
         constraints.push(Constraint::Data{table: 0, column: m});
@@ -493,6 +495,10 @@ impl Compiler {
         }
         compiled.push(Node::Constraint{children});
       },
+      parser::Node::SelectExpression{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::SelectExpression{children: result});
+      },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -503,7 +509,7 @@ impl Compiler {
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Math{children});
+        compiled.push(Node::MathExpression{children});
       },
       parser::Node::Infix{children} => {
         let result = self.compile_nodes(children);
