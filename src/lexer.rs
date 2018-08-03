@@ -26,6 +26,7 @@ pub enum Token {
   Period,
   Colon,
   Comma,
+  Tilde,
   Newline,
   EndOfStream,
 }
@@ -85,6 +86,7 @@ impl Lexer {
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
+      } else if match_char(&bytes, '~', self) { self.push_token(Token::Tilde);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
       } else {
         println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
