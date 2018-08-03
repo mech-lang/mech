@@ -429,8 +429,8 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
-node!{root, Root, |s|{ fragment(s).or(program) }, "Root"}
-node!{program, Program, |s|{ node(s).optional(head).optional(body) }, "Program"}
+node!{root, Root, |s|{ program(s).or(fragment) }, "Root"}
+node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
 node!{head, Head, |s|{ title(s) }, "Head"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
 node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
@@ -445,7 +445,7 @@ node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(wh
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
-node!{fragment, Fragment, |s|{ statement_or_expression(s) }, "Fragment"}
+node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
 node!{statement, Statement, |s|{ table_define(s).or(column_define) }, "Statement"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
@@ -455,8 +455,8 @@ node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{lhs, LHS, |s|{ data(s) }, "LHS"}
 node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
-node!{row_define, RowDefine, |s|{ left_bracket(s).repeat(column).and(right_bracket) }, "RowDefine"}
-node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).and(space) }, "Column"}
+node!{row_define, RowDefine, |s|{ left_bracket(s).optional_repeat(column).and(right_bracket) }, "RowDefine"}
+node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).optional(space) }, "Column"}
 node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
 node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
