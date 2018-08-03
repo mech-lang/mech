@@ -74,6 +74,8 @@ pub enum Node {
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
+  SetData{ children: Vec<Node> },
+  SetOperator{ children: Vec<Node> },
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
@@ -147,6 +149,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
+    Node::SetData{children} => {print!("SetData\n"); Some(children)},
+    Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
     Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
     Node::Infix{children} => {print!("Infix\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -449,7 +453,9 @@ node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{statement, Statement, |s|{ table_define(s).or(column_define).or(data_watch) }, "Statement"}
+node!{statement, Statement, |s|{ table_define(s).or(column_define).or(data_watch).or(set_data) }, "Statement"}
+node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
+node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
 node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
