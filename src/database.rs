@@ -144,15 +144,15 @@ impl Interner {
               Entry::Occupied(o) => {
                 *o.get()
               },
-              Entry::Vacant(v) => {
-                table_ref.columns += 1;
-                v.insert(table_ref.columns);
+              Entry::Vacant(v) => {    
+                let ix = table_ref.columns + 1;
+                v.insert(ix);
                 if table_ref.columns == *column as usize {
                   table_ref.column_ids.push(None);                  
                 } else {
                   table_ref.column_ids.push(Some(*column));
                 }
-                table_ref.columns
+                ix
               },
             };
             table_ref.grow_to_fit(*row as usize, column_ix);
