@@ -289,7 +289,9 @@ impl Block {
         self.memory.grow_to_fit(1, memory as usize);
         self.memory.column_aliases.insert(source.column as u64, memory as usize);
         self.memory.column_ids[memory as usize - 1] = Some(source.column);
-        self.column_lengths.push(0);
+        if self.column_lengths.len() < memory as usize {
+          self.column_lengths.resize(memory as usize, 0);
+        }
       }
       Constraint::Condition{truth, result, default, memory} => {
         self.memory_registers.push(Register::memory(memory));
