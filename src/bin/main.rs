@@ -21,17 +21,13 @@ fn main() {
   println!("system/timer ({:#x})", Hasher::hash_str("system/timer"));
   let mut compiler = Compiler::new();
   let mut core = Core::new(10, 100);
-  let input = String::from("# Bouncing Balls
-Define the environment
-  #ball = [x: 15 y: 9 vx: 18 vy: 9]
-  #system/timer = [tick: 1]
-  #gravity = 98
-
-Now update the block positions
-  ~ #system/timer.tick
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity");
+  let input = String::from("
+block 
+  #x = [x: 5001 y: 456]
+  #boundary = 5000
+block
+  ix = #x.x > #boundary
+  iy = #x.y > #boundary");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   println!("{:?}", compiler.parse_tree);
@@ -39,5 +35,6 @@ Now update the block positions
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime);
+  
   
 }   
