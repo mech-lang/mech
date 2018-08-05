@@ -65,7 +65,7 @@ impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       match self {
         &Value::Number(ref x) => write!(f, "{}", x),
-        &Value::String(ref x) => write!(f, "\"{}\"", x),
+        &Value::String(ref x) => write!(f, "{}", x),
         &Value::Empty => write!(f, ""),
         &Value::Table(ref x) => write!(f, "{}", x),
         &Value::Bool(ref b) => write!(f, "{}", b),
@@ -276,9 +276,6 @@ impl fmt::Debug for Table {
       print_repeated_char("═", header_width, f);
       write!(f, "╝\n").unwrap();
 
-      write!(f, "Columns: {:?}\n", self.column_aliases).unwrap();
-      write!(f, "Column Ids: {:?}\n", self.column_ids).unwrap();
-
       // Print table body
       if self.columns > 0 {
         print_top_border(self.columns, cell_width, f);
@@ -287,8 +284,16 @@ impl fmt::Debug for Table {
         } else {
           self.rows
         };
+        let mut column_labels: Vec<Value> = Vec::new();
+        for (ix, id) in self.column_ids.iter().enumerate() {
+          match id {
+            Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:?})", ix + 1, *column_id))),
+            None => column_labels.push(Value::from_u64(ix as u64 + 1)),
+          }
+        }
+        print_row(column_labels, cell_width, f);
         for m in 1 .. max_rows + 1 {
-          print_row(self.get_row(m).unwrap(), self.columns, cell_width, f);
+          print_row(self.get_row(m).unwrap(), cell_width, f);
         }
         print_bottom_border(self.columns, cell_width,  f);
       }
@@ -312,10 +317,10 @@ fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   write!(f, "┐\n").unwrap();
 }
 
-fn print_row(row: Vec<Value>, n: usize, cell_width: usize, f: &mut fmt::Formatter) {
+fn print_row(row: Vec<Value>, cell_width: usize, f: &mut fmt::Formatter) {
   write!(f, "│").unwrap();
-  for i in 0 .. n {
-    let content_string = format!("{:?}", row[i]);
+  for value in row {
+    let content_string = format!("{:?}", value);
     print_cell_contents(content_string, cell_width, f);
     write!(f, "│").unwrap();
   }
