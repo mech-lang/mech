@@ -34,8 +34,6 @@ pub enum Node {
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
-  LHS{ children: Vec<Node> },
-  RHS{ children: Vec<Node> },
   Define { name: String, id: u64},
   Index { rows: Vec<Node>, columns: Vec<Node>},
   ColumnDefine {children: Vec<Node> },
@@ -67,8 +65,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
-    Node::LHS{children} => {print!("LHS\n"); Some(children)},
-    Node::RHS{children} => {print!("RHS\n"); Some(children)},
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
@@ -227,7 +223,6 @@ impl Compiler {
     match node {
       Node::Constraint{children} |
       Node::Statement{children} |
-      Node::RHS{children} |
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -497,18 +492,6 @@ impl Compiler {
       parser::Node::SelectData{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectData{children: result});
-      },
-      parser::Node::LHS{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::LHS{children: result});
-      },
-      parser::Node::RHS{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::RHS{children: result});
-      },
-      parser::Node::TableDefineRHS{children} => {
-        let mut result = self.compile_nodes(children);
-        compiled.append(&mut result);
       },
       parser::Node::Statement{children} => {
         let result = self.compile_nodes(children);

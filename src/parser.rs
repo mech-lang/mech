@@ -95,8 +95,6 @@ pub enum Node {
   Paragraph{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
-  LHS{ children: Vec<Node> },
-  RHS{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
   Text{ children: Vec<Node> },
@@ -168,8 +166,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
-    Node::RHS{children} => {print!("RHS\n"); Some(children)},
-    Node::LHS{children} => {print!("LHS\n"); Some(children)},    
     Node::L1Infix{children} => {print!("L1Infix\n"); Some(children)},
     Node::L2Infix{children} => {print!("L2Infix\n"); Some(children)},
     Node::L3Infix{children} => {print!("L3Infix\n"); Some(children)},
@@ -461,8 +457,6 @@ node!{column_define, ColumnDefine, |s|{ identifier(s).and(space).and(equal).and(
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
-node!{lhs, LHS, |s|{ data(s) }, "LHS"}
-node!{rhs, RHS, |s|{ expression(s) }, "RHS"}
 node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
 node!{row_define, RowDefine, |s|{ left_bracket(s).optional_repeat(column).and(right_bracket) }, "RowDefine"}
 node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).optional(space) }, "Column"}
