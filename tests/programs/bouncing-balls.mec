@@ -9,32 +9,21 @@ Set up the environment
 ## Update Condition
 
 The positions of the balls update on every tick
-  on #system/timer.tick
-  #ball[x y vx vy]
-  x := x + vx
-  y := y + vy
-  vy := vy + #gravity * #system/timer.dt
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
 
 ## Boundary Conditions
 
 Constrain balls to within the boundary 
-  [#ball x y vx vy]
-  ix = x > #boundary
-  iy = y > #boundary
-  i0 = x < 0km
-
-  The balls cannot exceed the window boundary
-  x[ix] := #boundary
+  iy = #ball.y > #boundary
   y[iy] := #boundary
-  x[i0] := 0
-  
-  Reverse velocity and dampen rebound
-  vy[iy] := -vy * 90%
-  vx[ix or i0] := -vx * 90%
+  vy[iy] := 0 - 1 * vy * 90 / 100
 
 ## Reset on click
 
-  on click = [#html/event/click]
+  ~ click = [#html/event/click]
   [#ball x y]
   x := click.x
   y := click.y
