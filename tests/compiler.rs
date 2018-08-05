@@ -76,7 +76,7 @@ block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = #ball.x + #ball.y * #ball.vx",177);
-test_math!(meth_single_cell_table_math,"# Bouncing Balls
+test_math!(math_single_cell_table_math,"# Bouncing Balls
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
   #system/timer = [resolution: 1000]
