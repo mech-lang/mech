@@ -303,6 +303,7 @@ impl fmt::Debug for Table {
           }
         }
         print_row(column_labels, cell_width, f);
+        print_inner_border(self.columns, cell_width,  f);
         for m in 1 .. max_rows + 1 {
           print_row(self.get_row(m).unwrap(), cell_width, f);
         }
@@ -353,6 +354,16 @@ fn print_cell_contents(content_string: String, cell_width: usize, f: &mut fmt::F
         write!(f, " ").unwrap();
       }
     }
+}
+
+fn print_inner_border(n: usize, m: usize, f: &mut fmt::Formatter) {
+  write!(f, "├").unwrap();
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "┼").unwrap();
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┤\n").unwrap();
 }
 
 fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
