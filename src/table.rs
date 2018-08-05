@@ -238,6 +238,15 @@ impl Table {
     }
   }
 
+  pub fn index_by_alias(&mut self, row_ix: usize, column_alias: &u64) -> Option<&Value> {
+    let column_ix = self.column_aliases.get(column_alias).unwrap();
+    if *column_ix <= self.columns && row_ix <= self.rows {
+      Some(&self.data[column_ix - 1][row_ix - 1])
+    } else {
+      None
+    }
+  }
+
   // Clear a cell, setting it's value to Value::Empty
   pub fn clear_cell(&mut self, row_ix: usize, column_ix: usize) -> Result<(), &str> {
     self.set_cell(row_ix, column_ix, Value::Empty)
