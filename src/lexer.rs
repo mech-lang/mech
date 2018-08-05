@@ -23,6 +23,9 @@ pub enum Token {
   Asterisk,
   Slash,
   Equal,
+  LessThan,
+  GreaterThan,
+  Exclamation,
   Period,
   Colon,
   Comma,
@@ -83,6 +86,9 @@ impl Lexer {
       } else if match_char(&bytes, '/', self) { self.push_token(Token::Slash); 
       } else if match_char(&bytes, '^', self) { self.push_token(Token::Caret); 
       } else if match_char(&bytes, '=', self) { self.push_token(Token::Equal); 
+      } else if match_char(&bytes, '<', self) { self.push_token(Token::LessThan);
+      } else if match_char(&bytes, '>', self) { self.push_token(Token::GreaterThan);
+      } else if match_char(&bytes, '!', self) { self.push_token(Token::Exclamation);
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
