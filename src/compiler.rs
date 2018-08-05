@@ -36,7 +36,8 @@ pub enum Node {
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
-  Index { rows: Vec<Node>, columns: Vec<Node>},
+  DotIndex { rows: Vec<Node>, columns: Vec<Node>},
+  BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
   ColumnDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
@@ -78,7 +79,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
-    Node::Index{rows, columns} => {print!("Index[rows: {:?}, columns: {:?}]\n", rows, columns); None},
+    Node::DotIndex{rows, columns} => {print!("DotIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
+    Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
@@ -120,6 +122,7 @@ pub fn spacer(width: usize) {
 
 // ## Compiler
 
+#[derive(Debug)]
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
@@ -231,7 +234,6 @@ impl Compiler {
       Node::MathExpression{children} => {
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
-        
         constraints.push(Constraint::Data{table: 0, column: m});
         constraints.append(&mut result);
       },
@@ -252,16 +254,18 @@ impl Compiler {
           },
           _ => (), 
         }
+        
         result.reverse();
         let output = result.pop();
-        result.reverse();
-         match output {
+        match output {
           Some(Constraint::Data{table: 0, column: c}) => {
             constraints.push(Constraint::Insert{memory: c, output: self.output_registers as u64, table: table_id, column: column_id});
             self.output_registers += 1;
           },
-          _ => ()
+          Some(constraint) => result.push(constraint),
+          _ => (),
         }
+        result.reverse();
         constraints.append(&mut result);
       },
       Node::DataWatch{children} => {
@@ -320,22 +324,34 @@ impl Compiler {
         for child in children {
           match child {
             Node::Table{name, id} => table = *id,
-            Node::Index{rows, columns} => {
+            Node::DotIndex{rows, columns} => {
               for column in columns {
                 match column {
                   Node::Identifier{name, id} => data.push(Constraint::Data{table, column: *id}),
+                  Node::BracketIndex{rows, columns} => {
+                    for column in columns {
+                      match column {
+                        Node::Identifier{name, id} => {
+                          data.push(Constraint::IndexMask{ source: 5, truth: *id, memory: self.memory_registers as u64});
+                          self.memory_registers += 1;
+                        },
+                        _ => (),
+                      }
+                    }
+                  },
                   _ => (),
                 }
               }
-              
             }
             _ => constraints.append(&mut self.compile_constraints(children)),
           }
         };
+        println!("DATAAAA {:?}", data);
         // If there is no index, we just take the first column for now later we'll tale the whole table
         if data.len() == 0 {
           data.push(Constraint::Data{table, column: 1})
         }
+        data.reverse();
         constraints.append(&mut data);
       },
       Node::ColumnDefine{children} => {
@@ -686,7 +702,7 @@ impl Compiler {
             _ => columns.push(node),
           };
         }
-        compiled.push(Node::Index{rows: vec![], columns});
+        compiled.push(Node::DotIndex{rows: vec![], columns});
       },
       parser::Node::BracketIndex{children} => {
         let result = self.compile_nodes(children);
@@ -697,7 +713,7 @@ impl Compiler {
             _ => columns.push(node),
           };
         }
-        compiled.push(Node::Index{rows: vec![], columns});
+        compiled.push(Node::BracketIndex{rows: vec![], columns});
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
@@ -777,6 +793,7 @@ impl Compiler {
         }
         compiled.push(Node::String{text: word});
       },
+      parser::Node::TableIdentifier{children} |
       parser::Node::Identifier{children} => {
         let mut word = String::new();
         let mut result = self.compile_nodes(children);
@@ -786,7 +803,7 @@ impl Compiler {
               let character = byte_to_char(byte).unwrap();
               word.push(character);
             },
-            _ => (),
+            _ => compiled.push(node),
           }
         }
         let id = Hasher::hash_string(word.clone());
