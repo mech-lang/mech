@@ -346,7 +346,6 @@ impl Compiler {
             _ => constraints.append(&mut self.compile_constraints(children)),
           }
         };
-        println!("DATAAAA {:?}", data);
         // If there is no index, we just take the first column for now later we'll tale the whole table
         if data.len() == 0 {
           data.push(Constraint::Data{table, column: 1})
