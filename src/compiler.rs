@@ -254,7 +254,7 @@ impl Compiler {
           },
           _ => (), 
         }
-        
+        println!("{:?}", result);
         result.reverse();
         let output = result.pop();
         match output {
@@ -333,6 +333,7 @@ impl Compiler {
                       match column {
                         Node::Identifier{name, id} => {
                           data.push(Constraint::IndexMask{ source: 5, truth: *id, memory: self.memory_registers as u64});
+                          data.push(Constraint::Data{table: 0, column: self.memory_registers as u64});
                           self.memory_registers += 1;
                         },
                         _ => (),
@@ -346,7 +347,7 @@ impl Compiler {
             _ => constraints.append(&mut self.compile_constraints(children)),
           }
         };
-        // If there is no index, we just take the first column for now later we'll tale the whole table
+        // If there is no index, we just take the first column for now later we'll take the whole table
         if data.len() == 0 {
           data.push(Constraint::Data{table, column: 1})
         }
