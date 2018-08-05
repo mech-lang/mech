@@ -480,6 +480,12 @@ impl Block {
     }
     for constraint in &self.constraints {
       match constraint {
+        Constraint::Filter{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
         Constraint::Function{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
