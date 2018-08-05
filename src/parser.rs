@@ -69,6 +69,7 @@ pub enum Node {
   Comparator { children: Vec<Node> },
   InfixOperation { children: Vec<Node>},
   Repeat{ children: Vec<Node> },
+  TableIdentifier{ children: Vec<Node> },
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
@@ -146,6 +147,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
+    Node::TableIdentifier{children} => {print!("TableIdentifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::BracketIndex{children} => {print!("BracketIndex\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
@@ -486,11 +488,12 @@ node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(exp
 node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
-node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).and(right_bracket) }, "Bracket Index"}
+node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).or(identifier).and(right_bracket) }, "Bracket Index"}
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
-node!{table, Table, |s| { hashtag(s).and(identifier) }, "Table"}
+node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character) }, "Identifier"}
+node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character).optional(bracket_index) }, "Identifier"}
+node!{table_identifier, TableIdentifier, |s| { alpha(s).optional_repeat(identifier_character) }, "TableIdentifier"}
 
 // ## Parse Leaves
 
