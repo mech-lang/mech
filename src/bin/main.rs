@@ -26,11 +26,11 @@ block
   #x = [x: 5001 y: 456]
   #boundary = 5000
 block
-  ix = #x.x > #boundary
-  iy = #x.y > #boundary");
+  iy = #x.y > #boundary
+  #x.y[iy] := 12");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
-  println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
