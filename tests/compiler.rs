@@ -89,3 +89,12 @@ Now update the block positions
   #x = #ball.x + #ball.vx
   #y = #ball.y + #ball.vy
   #test = #ball.vy + #gravity * #dt",10009);
+
+test_math!(filter_less_than,"block 
+  #x = [x: 5001 y: 456]
+  #boundary = 5000
+block
+  iy = #x.y < #boundary
+  #x.y[iy] := 12
+block
+  #test = #x.y",12);
