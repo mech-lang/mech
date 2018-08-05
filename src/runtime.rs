@@ -263,9 +263,14 @@ impl Block {
         self.memory.grow_to_fit(1, memory as usize);
       },
       Constraint::Filter{ref comparator, lhs, rhs, memory} => {
-        self.memory_registers.push(Register::memory(memory));
-        self.memory.add_column(new_column_ix);
-        self.column_lengths.push(0);
+        if self.memory_registers.len() < memory as usize {
+          self.memory_registers.resize(memory as usize, Register::new());
+        }
+        self.memory_registers[memory as usize - 1] = Register::memory(memory);
+        self.memory.grow_to_fit(1, memory as usize);
+        if self.column_lengths.len() < memory as usize {
+          self.column_lengths.resize(memory as usize, 0);
+        }
       }
       Constraint::Constant{value, memory} => {
         if self.memory_registers.len() < memory as usize {
@@ -299,9 +304,14 @@ impl Block {
         self.column_lengths.push(0);
       }
       Constraint::IndexMask{source, truth, memory} => {
-        self.memory_registers.push(Register::memory(memory));
-        self.memory.add_column(new_column_ix);
-        self.column_lengths.push(0);
+        if self.memory_registers.len() < memory as usize {
+          self.memory_registers.resize(memory as usize, Register::new());
+        }
+        self.memory_registers[memory as usize - 1] = Register::memory(memory);
+        self.memory.grow_to_fit(1, memory as usize);
+        if self.column_lengths.len() < memory as usize {
+          self.column_lengths.resize(memory as usize, 0);
+        }
       },
       Constraint::Insert{memory, output, table, column} => {
         if self.output_registers.len() < output as usize {
@@ -393,16 +403,11 @@ impl Block {
           let memory_ix = *memory as usize;
           let source_length = self.column_lengths[source_ix - 1] as usize;
           for i in 1 .. source_length + 1 {
-            match self.memory.index(i, *truth as usize) {
-              Some(Value::Bool(true)) => {
-                let value = self.memory.index(i, source_ix).unwrap().clone();
-                self.memory.set_cell(i, memory_ix, value);
-              },
-              Some(Value::Bool(false)) => {
-                let value = self.memory.index(i, source_ix).unwrap().clone();
-                self.memory.set_cell(i, memory_ix, Value::Empty);
-              },
-              _ => (),
+            let value = self.memory.index(i, source_ix).unwrap().clone();
+            match self.memory.index_by_alias(i, truth) {
+              Some(Value::Bool(true)) =>  self.memory.set_cell(i, memory_ix, value),
+              Some(Value::Bool(false)) => self.memory.set_cell(i, memory_ix, Value::Empty),
+              otherwise => Ok(()),
             };
           }
           self.column_lengths[memory_ix - 1] = source_length as u64;
@@ -481,6 +486,12 @@ impl Block {
     for constraint in &self.constraints {
       match constraint {
         Constraint::Filter{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::IndexMask{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
