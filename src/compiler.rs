@@ -337,8 +337,17 @@ impl Compiler {
         constraints.append(&mut data);
       },
       Node::ColumnDefine{children} => {
-        let mut c = children.clone();
-        let mut result = self.compile_constraints(&c);
+        let m = self.memory_registers as u64;
+        let mut result = self.compile_constraints(children);
+        result.reverse();
+        let identifier = result.pop();
+        result.reverse();
+        match identifier {
+          Some(Constraint::Data{table, column}) => {
+            constraints.push(Constraint::Identifier{id: column, memory: m});
+          },
+          _ => (),
+        }
         constraints.append(&mut result);
       },
       Node::TableDefine{children} => {
