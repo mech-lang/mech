@@ -266,23 +266,6 @@ impl Compiler {
           _ => ()
         }
         constraints.append(&mut result);
-        // Assign the table
-        /*
-        let mut column_ix = 1;
-        for constraint in result {
-          match constraint {
-            Constraint::Insert{memory, output, table, column} => {
-              constraints.push(Constraint::Insert{memory, output, table: table_id, column});
-            },
-            Constraint::Data{table: 0, column} => {
-              constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
-              self.output_registers += 1;
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-        let columns = self.memory_registers as u64 - m;
-        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});*/
       },
       Node::DataWatch{children} => {
        let result = self.compile_constraints(children);
