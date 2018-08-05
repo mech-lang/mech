@@ -157,12 +157,12 @@ impl fmt::Debug for Comparator {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      GreaterThan => write!(f, ">"),
-      LessThan => write!(f, "<"),
-      LessThanOrEqual => write!(f, "<="),
-      GreaterThanOrEqual => write!(f, ">="),
-      Equal => write!(f, "="),
-      NotEqual => write!(f, "!="),
+      Comparator::GreaterThan => write!(f, ">"),
+      Comparator::LessThan => write!(f, "<"),
+      Comparator::LessThanOrEqual => write!(f, "<="),
+      Comparator::GreaterThanOrEqual => write!(f, ">="),
+      Comparator::Equal => write!(f, "="),
+      Comparator::NotEqual => write!(f, "!="),
       _ => Ok(()),
     }
   }
