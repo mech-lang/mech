@@ -134,7 +134,9 @@ impl Table {
       let rows = self.rows;
       self.grow_to_fit(rows, columns);
       self.column_aliases.insert(attribute.clone(), columns);
-      self.column_ids[columns - 1] = Some(attribute.clone());
+      if self.column_ids[columns - 1] == None {
+        self.column_ids[columns - 1] = Some(attribute.clone());
+      }
     };
   }
 
@@ -287,7 +289,7 @@ impl fmt::Debug for Table {
         let mut column_labels: Vec<Value> = Vec::new();
         for (ix, id) in self.column_ids.iter().enumerate() {
           match id {
-            Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:?})", ix + 1, *column_id))),
+            Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:#x})", ix + 1, *column_id))),
             None => column_labels.push(Value::from_u64(ix as u64 + 1)),
           }
         }
