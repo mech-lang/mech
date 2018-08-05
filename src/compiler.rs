@@ -493,6 +493,10 @@ impl Compiler {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectData{children: result});
       },
+      parser::Node::TableDefineRHS{children} => {
+        let mut result = self.compile_nodes(children);
+        compiled.append(&mut result);
+      },
       parser::Node::Statement{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Statement{children: result});

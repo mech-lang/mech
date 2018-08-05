@@ -40,8 +40,6 @@ parse_string!(math_add_index, "#x[1] + #y.1");
 // ## Statement
 
 parse_string!(statement_variable_define, "x = 1");
-parse_string!(statement_column_define, "#add.1 = 1");
-parse_string!(statement_column_define_add, "#add.3 = #add.2 + 3");
 
 // ## Programs
 
