@@ -19,7 +19,7 @@ The positions of the balls update on every tick
 Constrain balls to within the boundary 
   iy = #ball.y > #boundary
   y[iy] := #boundary
-  vy[iy] := 0 - 1 * vy * 90 / 100
+  #ball.vy[iy] := 0 - 1 * vy * 90 / 100
 
 ## Reset on click
 
