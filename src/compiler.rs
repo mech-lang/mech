@@ -608,9 +608,8 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::LHS{..} => children.push(node),
-            Node::RHS{..} => children.push(node),
-            _ => (),
+            Node::Token{..} => (),
+            _ => children.push(node),
           }
         }
         compiled.push(Node::ColumnDefine{children});

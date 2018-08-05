@@ -457,7 +457,7 @@ node!{statement, Statement, |s|{ table_define(s).or(column_define).or(data_watch
 node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
-node!{column_define, ColumnDefine, |s|{ lhs(s).and(space).and(equal).and(space).and(rhs) }, "ColumnDefine"}
+node!{column_define, ColumnDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
