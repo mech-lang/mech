@@ -65,6 +65,8 @@ pub enum Node {
   Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
   SelectExpression { children: Vec<Node> },
+  FilterExpression { children: Vec<Node> },
+  Comparator { children: Vec<Node> },
   InfixOperation { children: Vec<Node>},
   Repeat{ children: Vec<Node> },
   Identifier{ children: Vec<Node> },
@@ -127,6 +129,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Insert{children} => {print!("Insert\n"); Some(children)},
     Node::MathExpression{children} => {print!("Math Expression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("Select Expression\n"); Some(children)},
+    Node::Comparator{children} => {print!("Comparator\n"); Some(children)},
+    Node::FilterExpression{children} => {print!("Filter Expression\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
@@ -474,8 +478,10 @@ node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ select_data(s).or(constant) }, "L4"}
 
 node!{math_expression, MathExpression, |s|{ l1(s).and(newline_or_end) }, "Math Expression"}
-node!{select_expression, SelectExpression, |s|{ data(s).and(newline_or_end) }, "Select Expression"}
-node!{expression, Expression, |s|{ select_expression(s).or(math_expression) }, "Expression"}
+node!{select_expression, SelectExpression, |s|{ data(s).and(newline_or_end) }, "SelectExpression"}
+node!{filter_expression, FilterExpression, |s|{ select_data(s).or(constant).and(space).and(comparator).and(space).and(select_data).or(constant) }, "FilterExpression"}
+node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"}
+node!{expression, Expression, |s|{ select_expression(s).or(math_expression).or(filter_expression) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
@@ -499,6 +505,9 @@ leaf!{right_bracket, Token::RightBracket}
 leaf!{left_parenthesis, Token::LeftParenthesis}
 leaf!{right_parenthesis, Token::RightParenthesis}
 leaf!{equal, Token::Equal}
+leaf!{less_than, Token::LessThan}
+leaf!{greater_than, Token::GreaterThan}
+leaf!{exclamation, Token::Exclamation}
 leaf!{plus, Token::Plus}
 leaf!{dash, Token::Dash}
 leaf!{asterisk, Token::Asterisk}
