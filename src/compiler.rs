@@ -25,6 +25,7 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
+  FilterExpression{ children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
@@ -82,6 +83,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
+    Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
@@ -382,6 +384,46 @@ impl Compiler {
         let columns = self.memory_registers as u64 - m;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
       },
+      Node::FilterExpression{children} => {   
+        let m = self.memory_registers as u64;
+        self.memory_registers += 1;
+        // Get the comparator. One of: > < != =
+        let comparator_node = &children[1];
+        let comparator: Comparator = match comparator_node {
+          Node::Token{token: Token::GreaterThan, ..} => Comparator::GreaterThan,
+          Node::Token{token: Token::LessThan, ..} => Comparator::LessThan,
+          _ => Comparator::Equal,
+        };
+        let mut lhs_constraints = self.compile_constraint(&children[0]);
+        let lhs = match &lhs_constraints[0] {
+          Constraint::Function{operation, parameters, memory} => *memory,
+          Constraint::Constant{value, memory} => *memory,
+          Constraint::CopyInput{input, memory} => *memory,
+          Constraint::Scan{..} => {
+            match &lhs_constraints[1] {
+              Constraint::CopyInput{input, memory} => *memory,
+              _ => 0,
+            }
+          },
+          _ => 0,
+        };
+        let mut rhs_constraints = self.compile_constraint(&children[2]);
+        let rhs = match &rhs_constraints[0] {
+          Constraint::Function{operation, parameters, memory} => *memory,
+          Constraint::Constant{value, memory} => *memory,
+          Constraint::CopyInput{input, memory} => *memory,
+          Constraint::Scan{..} => {
+            match &rhs_constraints[1] {
+              Constraint::CopyInput{input, memory} => *memory,
+              _ => 0,
+            }
+          },
+          _ => 0,
+        };
+        constraints.push(Constraint::Filter{comparator, lhs, rhs, memory: m});
+        constraints.append(&mut lhs_constraints);
+        constraints.append(&mut rhs_constraints);
+      },
       Node::Function{name, children} => {   
         let operation = match name.as_ref() {
           "+" => Function::Add,
@@ -577,6 +619,17 @@ impl Compiler {
       parser::Node::SelectExpression{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectExpression{children: result});
+      },
+      parser::Node::FilterExpression{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{token: Token::Space, ..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::FilterExpression{children});
       },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
@@ -775,6 +828,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Comparator{children} |
       parser::Node::IdentifierOrNumber{children} |
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
@@ -835,6 +889,7 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
 
 fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
+    33 => Some('!'),
     42 => Some('*'),
     43 => Some('+'),
     45 => Some('-'),
@@ -849,6 +904,8 @@ fn byte_to_char(byte: u8) -> Option<char> {
     55 => Some('7'),
     56 => Some('8'),
     57 => Some('9'),
+    60 => Some('<'),
+    62 => Some('>'),
     97 => Some('a'),
     98 => Some('b'),
     99 => Some('c'),
