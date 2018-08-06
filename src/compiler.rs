@@ -240,13 +240,21 @@ impl Compiler {
       Node::SetData{children} => {
         let mut table_id = 0;
         let mut column_id = 1;
+        let mut output_column = 0;
         let m = self.memory_registers as u64;
         let o = self.output_registers as u64;
-        let mut result = self.compile_constraints(children);
-        result.reverse();
-        let table = result.pop();
-        result.reverse();
-        // Create the new table
+
+        let mut lhs_constraints = self.compile_constraint(&children[0]);
+        let mut rhs_constraints = self.compile_constraint(&children[1]);
+        lhs_constraints.reverse();
+        rhs_constraints.reverse();
+
+        let table = lhs_constraints.pop();
+        let output = rhs_constraints.pop();
+
+        lhs_constraints.reverse();
+        rhs_constraints.reverse();
+
         match table {
           Some(Constraint::Data{table: t, column: c}) => {
             table_id = t;
@@ -254,19 +262,27 @@ impl Compiler {
           },
           _ => (), 
         }
-        println!("{:?}", result);
-        result.reverse();
-        let output = result.pop();
+        
         match output {
           Some(Constraint::Data{table: 0, column: c}) => {
-            constraints.push(Constraint::Insert{memory: c, output: self.output_registers as u64, table: table_id, column: column_id});
-            self.output_registers += 1;
+            output_column = c;
           },
-          Some(constraint) => result.push(constraint),
           _ => (),
         }
-        result.reverse();
-        constraints.append(&mut result);
+
+        // If there is an index:
+        for index_mask in lhs_constraints {
+          match index_mask {
+            Constraint::IndexMask{source, truth, memory} => {
+              constraints.push(Constraint::IndexMask{ source: output_column, truth, memory});
+              output_column = memory;
+            }
+            _ => (),
+          }
+        }
+        constraints.push(Constraint::Insert{memory: output_column, output: self.output_registers as u64, table: table_id, column: column_id});
+        self.output_registers += 1;
+        constraints.append(&mut rhs_constraints);
       },
       Node::DataWatch{children} => {
        let result = self.compile_constraints(children);
@@ -332,8 +348,7 @@ impl Compiler {
                     for column in columns {
                       match column {
                         Node::Identifier{name, id} => {
-                          data.push(Constraint::IndexMask{ source: 5, truth: *id, memory: self.memory_registers as u64});
-                          data.push(Constraint::Data{table: 0, column: self.memory_registers as u64});
+                          data.push(Constraint::IndexMask{ source: 0, truth: *id, memory: self.memory_registers as u64});
                           self.memory_registers += 1;
                         },
                         _ => (),
