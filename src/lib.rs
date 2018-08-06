@@ -92,6 +92,18 @@ impl Core {
     }
   }
 
+  pub fn index_by_alias(&mut self, table: u64, row: u64, column: &u64) -> Option<&Value> {
+    match self.store.tables.get(table) {
+      Some(table_ref) => {
+        match table_ref.index_by_alias(row as usize, column) {
+          Some(cell_data) => Some(cell_data),
+          None => None,
+        }
+      },
+      None => None,
+    }
+  }
+
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
     // First make any tables
@@ -110,8 +122,8 @@ impl Core {
     self.runtime.run_network(&mut self.store);
     
     // Mark watched tables as changed
-    for (table_id, _) in self.store.tables.changed.drain() {
-      match self.watched_index.get_mut(&(table_id as u64)) {
+    for (table_id, _) in self.store.tables.changed.iter() {
+      match self.watched_index.get_mut(&(*table_id as u64)) {
         Some(q) => *q = true,
         _ => (),
       }
