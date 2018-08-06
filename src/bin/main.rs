@@ -26,7 +26,8 @@ block
   #x = [x: 5001 y: 456]
   #boundary = 5000
 block
-  iy = #x.y > #boundary
+  ~ #boundary
+  iy = #x.y < #boundary
   #x.y[iy] := 12");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
