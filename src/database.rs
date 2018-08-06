@@ -117,7 +117,7 @@ pub struct Interner {
   pub tables: TableIndex,
   pub changes: Vec<Change>,
   pub changes_count: usize,
-  pub change_pointer: usize,
+  pub change_pointer: usize, // points at the next available slot in memory that can hold a change
   pub rollover: usize,
   pub last_round: usize,
 }
