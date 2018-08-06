@@ -12,7 +12,7 @@ There are three components to Mech:
 2. [Server](https://gitlab.com/mech-lang/server) - Hosts Mech cores for connected clients. 
 3. [Notebook](https://gitlab.com/mech-lang/notebook) - A graphical interface that connects to a Mech server.
 
-Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hvemind) for an example of this).
+Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hivemind) for an example of this).
 
 ## Contents
 
