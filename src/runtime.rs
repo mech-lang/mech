@@ -319,6 +319,12 @@ impl Block {
         }
         self.output_registers[output as usize - 1] = Register::output(memory);
       },
+      Constraint::Append{memory, output, table, column} => {
+        if self.output_registers.len() < output as usize {
+          self.output_registers.resize(output as usize, Register::new());
+        }
+        self.output_registers[output as usize - 1] = Register::output(memory);
+      },
       Constraint::Set{output, table, column} => {
         self.output_registers.push(Register::new());
       },
@@ -430,6 +436,25 @@ impl Block {
             None => (),
           }
         },
+        Constraint::Append{memory, output, table, column} => {
+          let output_memory_ix = self.output_registers[*output as usize - 1].column;
+          match &mut self.memory.get_column_by_ix(output_memory_ix as usize) {
+            Some(column_data) => {
+              for (row_ix, cell) in column_data.iter().enumerate() {
+                let length = column_data.len() as u64;
+                match cell {
+                  Value::Empty => (),
+                  _ => {
+                    store.intern_change(
+                      &Change::Append{ table: *table, column: *column, value: cell.clone() }
+                    );
+                  }
+                }
+              }
+            },
+            None => (),
+          }
+        },
         Constraint::NewTable{id, rows, columns} => {
           store.intern_change(
             &Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize}
@@ -503,6 +528,7 @@ impl Block {
     }
     for constraint in &self.constraints {
       match constraint {
+        Constraint::Append{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
@@ -582,6 +608,7 @@ pub enum Constraint {
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
   Insert {memory: u64, output: u64, table: u64, column: u64},
+  Append {memory: u64, output: u64, table: u64, column: u64},
   Set{output: u64, table: u64, column: u64},
 }
 
@@ -602,6 +629,7 @@ impl fmt::Debug for Constraint {
       Constraint::Identifier{id, memory} => write!(f, "Identifier({:?} -> M{:?})", id, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
+      Constraint::Append{memory, output, table, column} => write!(f, "Append(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
       Constraint::Set{output, table, column} => write!(f, "Set(O{:#x} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
