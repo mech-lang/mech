@@ -40,6 +40,7 @@ pub enum Node {
   BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
   ColumnDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
+  AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
   Identifier{ name: String, id: u64 },
@@ -72,6 +73,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
+    Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
@@ -415,6 +417,32 @@ impl Compiler {
         let columns = self.memory_registers as u64 - m;
         constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
       },
+      Node::AddRow{children} => {
+        let mut table_id = 0;
+        let m = self.memory_registers as u64;
+        let o = self.output_registers as u64;
+        let mut result = self.compile_constraints(children);
+        result.reverse();
+        let table = result.pop();
+        result.reverse();
+        // Create the new table
+        match table {
+          Some(Constraint::Data{table: t, ..}) => {
+            table_id = t;
+          },
+          _ => (), 
+        }
+        // Assign the table
+        let mut column_ix = 1;
+        for constraint in result {
+          match constraint {
+            Constraint::Insert{memory, output, table, column} => {
+              constraints.push(Constraint::Append{memory, output, table: table_id, column});
+            },
+            _ => constraints.push(constraint),
+          }
+        }
+      },
       Node::FilterExpression{children} => {   
         let m = self.memory_registers as u64;
         self.memory_registers += 1;
@@ -704,6 +732,17 @@ impl Compiler {
           }
         }
         compiled.push(Node::TableDefine{children});
+      },
+      parser::Node::AddRow{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::AddRow{children});
       },
       parser::Node::Index{children} => {
         compiled.append(&mut self.compile_nodes(children));
