@@ -57,6 +57,7 @@ pub enum Node {
   ColumnDefine { children: Vec<Node> },
   TableDefine { children: Vec<Node> },
   TableDefineRHS { children: Vec<Node> },
+  AddRow { children: Vec<Node> },
   RowDefine { children: Vec<Node> },
   Column { children: Vec<Node> },
   Binding { children: Vec<Node> },
@@ -140,6 +141,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::TableDefineRHS{children} => {print!("TableDefineRHS\n"); Some(children)},
+    Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
@@ -455,12 +457,13 @@ node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{statement, Statement, |s|{ table_define(s).or(column_define).or(data_watch).or(set_data) }, "Statement"}
+node!{statement, Statement, |s|{ table_define(s).or(add_row).or(column_define).or(data_watch).or(set_data) }, "Statement"}
 node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
 node!{column_define, ColumnDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "ColumnDefine"}
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
+node!{add_row, AddRow, |s|{ table(s).and(space).and(plus).and(equal).and(space).and(table_define_rhs) }, "AddRow"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
