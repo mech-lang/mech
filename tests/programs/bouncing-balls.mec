@@ -1,9 +1,10 @@
 # Bouncing Balls
 
 Set up the environment
-  #ball = [x: 0 y: 0 vx: 1 vy: 0 ]
-  #system/timer = [resolution: 100]
-  #gravity = 98
+  #html/event/click = [x: 0 y: 0]
+  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15]
+  #gravity = 2
   #boundary = 5000
 
 ## Update Condition
@@ -16,14 +17,22 @@ The positions of the balls update on every tick
 
 ## Boundary Conditions
 
-Constrain balls to within the boundary 
+Constrain balls within x boundary 
   iy = #ball.y > #boundary
   y[iy] := #boundary
   #ball.vy[iy] := 0 - 1 * vy * 90 / 100
 
-## Reset on click
+Constrain balls within y boundary 
+  ~ #ball.y
+  ix = #ball.x > #boundary
+  ixx = #ball.x < 0
+  #ball.x[ix] := #boundary
+  #ball.x[ixx] := 0
+  #ball.vx[ix] := 0 - 1 * #ball.vx * 80 / 100
+  #ball.vx[ixx] := 0 - 1 * #ball.vx * 80 / 100
 
-  ~ click = [#html/event/click]
-  [#ball x y]
-  x := click.x
-  y := click.y
+## On Click
+
+Create a new ball on click
+  ~ #html/event/click.x
+  #ball += [x: 10 y: 10 vx: 40 vy: 0]
