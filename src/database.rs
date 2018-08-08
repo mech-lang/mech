@@ -14,6 +14,7 @@ use runtime::{Runtime, Block};
 
 #[derive(Clone)]
 pub enum Change {
+  Append{table: u64, column: u64, value: Value},
   Add{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
   NewTable{id: u64, rows: usize, columns: usize},
@@ -23,6 +24,7 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
+      Change::Append{table, column, value} => write!(f, "<+> #{:#x} [{:#x}: {:?}]", table, column, value),
       Change::Add{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::NewTable{id, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", id, rows, columns),
@@ -60,6 +62,7 @@ impl Transaction {
     let mut txn = Transaction::new();
     for change in changes {
       match change {
+        Change::Append{..} |
         Change::Add{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
         Change::NewTable{..} => txn.tables.push(change),
@@ -71,6 +74,7 @@ impl Transaction {
   pub fn from_change(change: Change) -> Transaction {
     let mut txn = Transaction::new();
     match change {
+      Change::Append{..} |
       Change::Add{..} => txn.adds.push(change),
       Change::Remove{..} => txn.removes.push(change),
       Change::NewTable{..} => txn.tables.push(change),
@@ -157,6 +161,33 @@ impl Interner {
             };
             table_ref.grow_to_fit(*row as usize, column_ix);
             table_ref.set_cell(*row as usize, column_ix, value.clone());
+          }
+          None => (),
+        };
+        self.tables.changed.insert((*table as usize, *column as usize));
+        self.tables.changed_this_round.insert((*table as usize, *column as usize));
+      },
+      Change::Append{table, column, value} => {
+        match self.tables.get_mut(*table) {
+          Some(table_ref) => {
+            let column_ix: usize = match table_ref.column_aliases.entry(*column) {
+              Entry::Occupied(o) => {
+                *o.get()
+              },
+              Entry::Vacant(v) => {    
+                let ix = table_ref.columns + 1;
+                v.insert(ix);
+                if table_ref.columns == *column as usize {
+                  table_ref.column_ids.push(None);                  
+                } else {
+                  table_ref.column_ids.push(Some(*column));
+                }
+                ix
+              },
+            };
+            let row: usize = table_ref.column_lengths[column_ix - 1] as usize + 1;
+            table_ref.grow_to_fit(row, column_ix);
+            table_ref.set_cell(row, column_ix, value.clone());
           }
           None => (),
         };
