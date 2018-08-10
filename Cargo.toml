@@ -7,3 +7,4 @@ authors = ["Corey Montella <corey@mechlang.net>"]
 mech = {git = "https://gitlab.com/mech-lang/core.git"}
 time = "0.1.39"
 rand = "0.4.2"
+bincode = "0.8"
