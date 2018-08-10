@@ -11,6 +11,7 @@ There are three components to Mech:
 1. Core (this repository) - A small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
 2. [Server](https://gitlab.com/mech-lang/server) - Hosts Mech cores for connected clients. 
 3. [Notebook](https://gitlab.com/mech-lang/notebook) - A graphical interface that connects to a Mech server.
+4. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
 
 Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hivemind) for an example of this).
 
@@ -22,56 +23,48 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 - runtime - defines a `Runtime`, which orchestrates the compute graph; and `Blocks`, which comprise the compute graph.
 - operations - defines the primitive operations that can be performed by nodes in the compute network.
 
-## Usage
+## Example Mech Code
 
-You can use Mech core in your Rust project:
+```mech
+# Bouncing Balls
 
-```rust
-// In Cargo.toml, include Mech as a dependency:
-// mech = {git = "https://gitlab.com/mech-lang/core.git"}
-extern crate mech;
-use mech::{Core, Transaction, Block, Value};
+Define the environment
+  #html/event/click = [x: 0 y: 0]
+  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15]
+  #gravity = 2
+  #boundary = 5000
 
-// Create a new mech core
-let mut core = Core::new(change_capacity, table_capacity);
+## Update condition
 
-// Create a new table, and add two values to it
-let txn = Transaction::from_text("#add += [5 3]");
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
 
-// Apply the transaction
-core.process_transaction(&txn);
+## Boundary Condition
 
-// #add:
-// ┌───┬───┬───┐
-// │ 5 │ 3 │   │
-// └───┴───┴───┘
+Keep the balls within the y boundary
+  ~ #ball.x
+  iy = #ball.y > #boundary
+  #ball.y[iy] := #boundary
+  #ball.vy[iy] := 0 - 1 * #ball.vy * 80 / 100
 
-// Create a block that adds two numbers.
-let mut block = Block::new("#add[3] = #add[1] + #add[2]");
+Keep the balls within the x boundary
+  ~ #ball.y
+  ix = #ball.x > #boundary
+  ixx = #ball.x < 0
+  #ball.x[ix] := #boundary
+  #ball.x[ixx] := 0
+  #ball.vx[ix] := 0 - 1 * #ball.vx * 80 / 100
+  #ball.vx[ixx] := 0 - 1 * #ball.vx * 80 / 100
 
-// Register the block with the core
-core.register_block(block);
+## Create More Balls
 
-// #add:
-// ┌───┬───┬───┐
-// │ 5 │ 3 │ 8 │
-// └───┴───┴───┘
-
-// Check that the numbers were added together
-assert_eq!(core.get_cell("#add[1 3]"), Some(Value::from_u64(8)));
-
-// We can add another row to the #add table
-let txn2 = Transaction::from_text("#add += [3 4]");
-core.process_transaction(&txn2);
-
-// #add:
-// ┌───┬───┬───┐
-// │ 5 │ 3 │ 8 │
-// │ 3 │ 4 │ 7 │
-// └───┴───┴───┘
-
-// Notice the second row was automatically added
-assert_eq!(core.get_cell("#add[2 3]"), Some(Value::from_u64(7)));
+Create ball on click
+  ~ #html/event/click.x
+  #ball += [x: 2 y: 3 vx: 40 vy: 0]
 ```
 
 ## License
