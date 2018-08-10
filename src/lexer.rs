@@ -31,6 +31,7 @@ pub enum Token {
   Comma,
   Tilde,
   Newline,
+  CarriageReturn,
   EndOfStream,
 }
 
@@ -94,6 +95,7 @@ impl Lexer {
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
       } else if match_char(&bytes, '~', self) { self.push_token(Token::Tilde);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
+      } else if match_char(&bytes, '\r', self) { self.push_token(Token::CarriageReturn);
       } else {
         println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
         break;
