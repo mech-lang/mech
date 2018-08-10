@@ -101,6 +101,7 @@ pub enum Node {
   Section{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
+  NewLine{ children: Vec<Node> },
   Text{ children: Vec<Node> },
   L1Infix{ children: Vec<Node> },
   L2Infix{ children: Vec<Node> },
@@ -183,6 +184,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L4{children} => {print!("L4\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
+    Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -497,6 +499,7 @@ node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
 node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character).optional(bracket_index) }, "Identifier"}
 node!{table_identifier, TableIdentifier, |s| { alpha(s).optional_repeat(identifier_character) }, "TableIdentifier"}
+node!{newline, NewLine, |s| { node(s).optional(carriage_return).and(new_line_char) }, "NewLine"}
 
 // ## Parse Leaves
 
@@ -521,7 +524,8 @@ leaf!{slash, Token::Slash}
 leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{tilde, Token::Tilde}
-leaf!{newline, Token::Newline}
+leaf!{new_line_char, Token::Newline}
+leaf!{carriage_return, Token::CarriageReturn}
 leaf!{end, Token::EndOfStream}
 
 
