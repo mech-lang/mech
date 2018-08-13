@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate mech_syntax;
-extern crate mech;
+extern crate mech_core;
 
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
-use mech::{Hasher, Core};
+use mech_core::{Hasher, Core};
 
 macro_rules! compile_string {
   ($func:ident, $test:tt) => (
