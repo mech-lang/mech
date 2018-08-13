@@ -1,0 +1,9 @@
+[package]
+name = "mech"
+version = "0.0.1"
+authors = ["Corey Montella <corey@mechlang.net>"]
+
+[dependencies]
+mech-core = {git = "https://gitlab.com/mech-lang/core.git"}
+mech-server = {git = "https://gitlab.com/mech-lang/server.git"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax.git"}
