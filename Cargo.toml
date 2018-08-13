@@ -1,5 +1,5 @@
 [package]
-name = "mech"
+name = "mech-core"
 version = "0.0.1"
 authors = ["Corey Montella <corey@mechlang.net>"]
 
