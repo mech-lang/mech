@@ -7,3 +7,4 @@ authors = ["Corey Montella <corey@mechlang.net>"]
 mech-core = {path = "core"}
 mech-syntax = {path = "syntax"}
 mech-server = {path = "server"}
+clap = "2.31.2"
