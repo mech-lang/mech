@@ -2,7 +2,7 @@ extern crate core;
 extern crate time;
 extern crate rand;
 extern crate mech_syntax;
-extern crate mech;
+extern crate mech_core;
 
 use std::time::SystemTime;
 use std::thread::{self};
@@ -11,11 +11,11 @@ use rand::{Rng, thread_rng};
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
-use mech::Block;
-use mech::{Change, Transaction};
-use mech::{Value};
-use mech::Hasher;
-use mech::Core;
+use mech_core::Block;
+use mech_core::{Change, Transaction};
+use mech_core::{Value};
+use mech_core::Hasher;
+use mech_core::Core;
 
 fn main() {
   println!("system/timer ({:#x})", Hasher::hash_str("system/timer"));
