@@ -2,7 +2,7 @@
 
 #![feature(alloc)]
 
-extern crate mech-core;
+extern crate mech_core;
 #[macro_use]
 extern crate alloc;
 

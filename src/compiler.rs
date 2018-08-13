@@ -2,9 +2,9 @@
 
 // ## Preamble
 
-use mech::{Block, Constraint};
-use mech::{Function, Plan, Comparator};
-use mech::Hasher;
+use mech_core::{Block, Constraint};
+use mech_core::{Function, Plan, Comparator};
+use mech_core::Hasher;
 use parser;
 use lexer::Lexer;
 use parser::{Parser, ParseStatus};
