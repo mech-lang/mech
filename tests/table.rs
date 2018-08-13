@@ -1,7 +1,7 @@
-extern crate mech;
+extern crate mech_core;
 
-use mech::{Table, Value};
-use mech::Hasher;
+use mech_core::{Table, Value};
+use mech_core::Hasher;
 
 fn make_table() -> Table {
 

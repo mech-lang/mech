@@ -1,7 +1,7 @@
-extern crate mech;
+extern crate mech_core;
 
-use mech::Hasher;
-use mech::{Core, Transaction, Change};
-use mech::{Function};
-use mech::{Value};
-use mech::Block;
+use mech_core::Hasher;
+use mech_core::{Core, Transaction, Change};
+use mech_core::{Function};
+use mech_core::{Value};
+use mech_core::Block;

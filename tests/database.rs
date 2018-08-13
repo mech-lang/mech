@@ -1,7 +1,7 @@
-extern crate mech;
+extern crate mech_core;
 
-use mech::Hasher;
-use mech::{Core, Transaction, Change};
+use mech_core::Hasher;
+use mech_core::{Core, Transaction, Change};
 
 #[test]
 fn create_database() {
