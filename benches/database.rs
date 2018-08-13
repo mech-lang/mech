@@ -1,12 +1,12 @@
 #![feature(test)]
 
 extern crate test;
-extern crate mech;
+extern crate mech_core;
 
 use test::Bencher;
-use mech::{Core, Transaction, Change};
-use mech::{Table, Value};
-use mech::Hasher;
+use mech_core::{Core, Transaction, Change};
+use mech_core::{Table, Value};
+use mech_core::Hasher;
 
 #[bench]
 fn db_new(b:&mut Bencher) {

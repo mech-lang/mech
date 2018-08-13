@@ -1,10 +1,10 @@
 #![feature(test)]
 
 extern crate test;
-extern crate mech;
+extern crate mech_core;
 
 use test::Bencher;
-use mech::{Table, Value};
+use mech_core::{Table, Value};
 
 #[bench]
 fn make_table(b: &mut Bencher) {
