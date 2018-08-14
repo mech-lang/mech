@@ -1,15 +1,15 @@
 [submodule "core"]
 	path = core
-	url = ../core.git
+	url = https://gitlab.com/mech-lang/core.git
 [submodule "server"]
 	path = server
-	url = ../server.git
+	url = https://gitlab.com/mech-lang/server.git
 [submodule "notebook"]
 	path = notebook
-	url = ../notebook.git
+	url = https://gitlab.com/mech-lang/notebook.git
 [submodule "syntax"]
 	path = syntax
-	url = ../syntax.git
+	url = https://gitlab.com/mech-lang/syntax.git
 [submodule "assets"]
 	path = assets
-	url = ../assets.git
+	url = https://gitlab.com/mech-lang/assets.git
