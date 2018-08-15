@@ -109,7 +109,7 @@ impl Table {
     self.row_aliases.get(&alias)
   }
 
-  pub fn get_column_index(&mut self, alias: u64) -> Option<&usize> {
+  pub fn get_column_index(&self, alias: u64) -> Option<&usize> {
     self.column_aliases.get(&alias)
   }
 
