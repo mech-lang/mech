@@ -1,9 +1,6 @@
 [submodule "core"]
 	path = core
 	url = https://gitlab.com/mech-lang/core.git
-[submodule "server"]
-	path = server
-	url = https://gitlab.com/mech-lang/server.git
 [submodule "notebook"]
 	path = notebook
 	url = https://gitlab.com/mech-lang/notebook.git
