@@ -13,6 +13,15 @@ This repository serves as a sort of table of contents for the constellation of t
 3. [Server](https://gitlab.com/mech-lang/server) - A server that hosts Mech for any websocket client
 4. [Notebook](https://gitlab.com/mech-lang/notebook) - A browser-based interface that connects to a Mech server. Meant for performing calculations and drawing graphs.
 
+## Building from Source
+
+```bash
+> git clone https://gitlab.com/mech-lang/mech
+> cd mech
+> git submodule update --init --recursive
+> cargo build --bin server --release
+```
+
 ## License
 
 Apache 2.0
