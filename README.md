@@ -6,12 +6,7 @@ Read about progress on our [blog](https://mechlang.net/blog/), follow us on Twit
 
 # Core
 
-There are three components to Mech:
-
-1. Core (this repository) - A small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
-2. [Server](https://gitlab.com/mech-lang/server) - Hosts Mech cores for connected clients. 
-3. [Notebook](https://gitlab.com/mech-lang/notebook) - A graphical interface that connects to a Mech server.
-4. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
+The language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
 
 Mech core does not rely on the Rust standard library, so it can be compiled and used on bare-bones operating systems (check out [HiveMind OS](https://gitlab.com/cmontella/hivemind) for an example of this).
 
