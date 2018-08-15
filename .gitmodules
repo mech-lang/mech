@@ -12,4 +12,4 @@
 	url = https://gitlab.com/mech-lang/assets.git
 [submodule "server"]
 	path = server
-	url = https://gitlab.com/mech-lang/server
+	url = https://gitlab.com/mech-lang/server.git
