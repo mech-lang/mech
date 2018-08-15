@@ -12,7 +12,7 @@ A toolchain for compiling textual syntax into Mech blocks.
 
 - lexer - converts raw text into tokens
 - parser - converts tokens into a parse tree
-- compiler - converts the parse tree into a syntax tree
+- compiler - converts a parse tree into a syntax tree
 - formatter - converts a parse tree into text
 
 ## License
