@@ -113,15 +113,16 @@ impl Table {
     self.column_aliases.get(&alias)
   }
 
-  pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<(), &str> {
+  pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
     if row_ix > 0 && column_ix > 0 &&
        self.rows > 0 && row_ix <= self.rows &&
        self.columns > 0 && column_ix <= self.columns {
       if (self.column_lengths[column_ix - 1] < row_ix as u64) {
         self.column_lengths[column_ix - 1] = row_ix as u64;
       }
+      let old_value = self.data[column_ix - 1][row_ix - 1].clone();
       self.data[column_ix - 1][row_ix - 1] = value;
-      Ok(())
+      Ok(old_value)
     } else {
       Err("Index out of table bounds.")
     }
@@ -254,7 +255,7 @@ impl Table {
   }
 
   // Clear a cell, setting it's value to Value::Empty
-  pub fn clear_cell(&mut self, row_ix: usize, column_ix: usize) -> Result<(), &str> {
+  pub fn clear_cell(&mut self, row_ix: usize, column_ix: usize) -> Result<Value, &str> {
     self.set_cell(row_ix, column_ix, Value::Empty)
   }
 
