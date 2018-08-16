@@ -40,8 +40,10 @@ impl Runtime {
   // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
     if block.id == 0 {
+      // TODO Better auto ID. Maybe hash constraints?
       block.id = self.blocks.len() + 1;
     }
+    // Take the input registers from the block and add them to the pipes map
     for (ix, register) in block.input_registers.iter().enumerate() {
       let table = register.table as usize;
       let column = register.column as usize;
@@ -49,15 +51,17 @@ impl Runtime {
       let mut listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
       listeners.push(new_address);
 
-      // Put associated values on the registers if we have them in the DB already
+      // Set the register as ready if the referenced column exists
       match store.get_column(table as u64, column) {
         Some(column) => block.ready = set_bit(block.ready, ix),
         None => (),
       }
     }
+    // Mark the block as ready for execution on the next available cycle
     if block.updated && block.input_registers.len() == 0 {
       self.ready_blocks.insert(block.id);
     }
+    // Add the block to our list of blocks
     self.blocks.insert(block.id, block.clone());
   } 
 
@@ -67,23 +71,28 @@ impl Runtime {
     }
   }
 
-  // We've just interned some changes, and now we react to them by running the block graph.
+  // We've just interned some changes, and now we react to them by running the 
+  // block graph.
   pub fn run_network(&mut self, store: &mut Interner) {
-    // Run the compute graph until it reaches a steady state.
+    // Run the compute graph until it reaches a steady state, or until it hits 
+    // an iteration limit
     // TODO Make this a parameter
     let max_iterations = 10_000;
-    let mut n = 0;    
+    let mut n = 0; 
+    // Note: The way this while loop is written, it's actually a do-while loop.
+    // This is a little trick in Rust. This means the network will always run
+    // at least one time, and if there are no more ready blocks after that run,
+    // the loop will terminate.
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
       }
-      // Queue up the next blocks
+      // Queue up the next blocks based on tables that changed during this round.
       for table_address in store.tables.changed_this_round.drain() {
         match self.pipes_map.get(&table_address) {
           Some(register_addresses) => {
             for register_address in register_addresses {
-              let block_ix = register_address.block - 1;
               let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
               block.ready = set_bit(block.ready, register_address.register - 1);
               if block.is_ready() {
@@ -100,9 +109,10 @@ impl Runtime {
         // TODO Insert an error into the db here.
         self.ready_blocks.clear();        
       }
+      // Terminate if no blocks are ready to execute next round.
       !self.ready_blocks.is_empty()
     } {}
-    // Reset blocks updated status
+    // Reset blocks' updated status
     for mut block in &mut self.blocks.values_mut() {
       block.updated = false;
     }
