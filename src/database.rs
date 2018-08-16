@@ -205,9 +205,13 @@ impl Interner {
         }
       }
     }
-    // Intern the change. If there's enough room in memory, store it there. 
-    // If not, make room by evicting some old change and throw that on disk. 
-    // For now, we'll make the policy that the oldest record get evicted first.
+    self.save_change(change);
+  }
+
+  // Save the change. If there's enough room in memory, store it there. 
+  // If not, make room by evicting some old change and throw that on disk. 
+  // For now, we'll make the policy that the oldest record get evicted first.
+  fn save_change(&mut self, change: &Change) {
     if self.changes.len() < self.changes.capacity() {
       self.changes.push(change.clone());
     } else if self.change_pointer == self.changes.capacity() {
