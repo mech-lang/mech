@@ -160,7 +160,10 @@ impl Interner {
               },
             };
             table_ref.grow_to_fit(*row as usize, column_ix);
-            table_ref.set_cell(*row as usize, column_ix, value.clone());
+            match table_ref.set_cell(*row as usize, column_ix, value.clone()) {
+              Ok(old_value) => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
+              _ => (),
+            };
           }
           None => (),
         };
