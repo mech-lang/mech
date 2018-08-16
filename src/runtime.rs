@@ -42,14 +42,16 @@ impl Runtime {
     if block.id == 0 {
       block.id = self.blocks.len() + 1;
     }
-    for ((table, column), register) in &block.input_registers {
-      let new_address = Address{block: block.id, register: *register as usize};
-      let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
+    for (ix, register) in block.input_registers.iter().enumerate() {
+      let table = register.table as usize;
+      let column = register.column as usize;
+      let new_address = Address{block: block.id, register: ix + 1};
+      let mut listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
       listeners.push(new_address);
 
-      // Mark the register as ready if it is in the DB
-      match store.get_column(*table, *column as usize) {
-        Some(column) => block.ready = set_bit(block.ready, *register as usize - 1),
+      // Put associated values on the registers if we have them in the DB already
+      match store.get_column(table as u64, column) {
+        Some(column) => block.ready = set_bit(block.ready, ix),
         None => (),
       }
     }
@@ -207,7 +209,7 @@ pub struct Block {
   pub updated: bool,
   pub plan: Vec<Constraint>,
   pub column_lengths: Vec<u64>,
-  pub input_registers: HashMap<(u64,u64),u64>,
+  pub input_registers: Vec<Register>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
@@ -225,7 +227,7 @@ impl Block {
       updated: false,
       plan: Vec::new(),
       column_lengths: Vec::new(),
-      input_registers: HashMap::new(),
+      input_registers: Vec::with_capacity(1),
       memory_registers: Vec::with_capacity(1),
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
@@ -238,7 +240,10 @@ impl Block {
     match constraint {
       Constraint::Scan{table, column, input} | 
       Constraint::ChangeScan{table, column, input} => {
-        self.input_registers.insert((table,column), input);
+        if self.input_registers.len() < input as usize {
+          self.input_registers.resize(input as usize, Register::new());
+        }
+        self.input_registers[input as usize - 1] = Register::input(table, column);
       },
       Constraint::Function{ref operation, ref parameters, memory} => {
         if self.memory_registers.len() < memory as usize {
@@ -302,8 +307,7 @@ impl Block {
         }
       },
       Constraint::Insert{memory, table, column} |
-      Constraint::Append{memory, table, column} |
-      Constraint::Set{output, table, column} => {
+      Constraint::Append{memory, table, column} => {
         self.output_registers.push(Register::output(table, column));
       },
       Constraint::Identifier{id, memory} => {
@@ -436,25 +440,6 @@ impl Block {
             &Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize}
           );
         },
-        Constraint::Set{output, table, column} => {
-          let target_rows;
-          {
-            let table_ref = store.tables.get(*table).unwrap();
-            target_rows = table_ref.rows as u64;
-          }
-          let output_length = self.column_lengths[*output as usize - 1];
-          let output_memory_ix = self.memory_registers[*output as usize - 1].column;
-          let column_data = &mut self.memory.get_column(output_memory_ix as usize).unwrap();
-          for i in 1 .. target_rows + 1 {
-            if output_length == 1 {
-              store.intern_change(
-                &Change::Add{table: *table, row: i, column: *column, value: column_data[0].clone()}
-              );
-            } else if output_length == target_rows {
-              // TODO
-            }
-          }
-        },
         _ => (),
       } 
     }
@@ -585,7 +570,6 @@ pub enum Constraint {
   // Output Constraints
   Insert {memory: u64, table: u64, column: u64},
   Append {memory: u64, table: u64, column: u64},
-  Set{output: u64, table: u64, column: u64},
 }
 
 impl fmt::Debug for Constraint {
@@ -606,7 +590,6 @@ impl fmt::Debug for Constraint {
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{memory, table, column} => write!(f, "Insert(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
-      Constraint::Set{output, table, column} => write!(f, "Set(O{:#x} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
 }
