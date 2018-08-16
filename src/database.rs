@@ -15,7 +15,7 @@ use runtime::{Runtime, Block};
 #[derive(Clone)]
 pub enum Change {
   Append{table: u64, column: u64, value: Value},
-  Add{table: u64, row: u64, column: u64, value: Value},
+  Set{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
   NewTable{id: u64, rows: usize, columns: usize},
 }
@@ -25,7 +25,7 @@ impl fmt::Debug for Change {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Change::Append{table, column, value} => write!(f, "<+> #{:#x} [{:#x}: {:?}]", table, column, value),
-      Change::Add{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::Set{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::NewTable{id, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
@@ -63,7 +63,7 @@ impl Transaction {
     for change in changes {
       match change {
         Change::Append{..} |
-        Change::Add{..} => txn.adds.push(change),
+        Change::Set{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
         Change::NewTable{..} => txn.tables.push(change),
       }
@@ -75,7 +75,7 @@ impl Transaction {
     let mut txn = Transaction::new();
     match change {
       Change::Append{..} |
-      Change::Add{..} => txn.adds.push(change),
+      Change::Set{..} => txn.adds.push(change),
       Change::Remove{..} => txn.removes.push(change),
       Change::NewTable{..} => txn.tables.push(change),
     }
@@ -85,7 +85,7 @@ impl Transaction {
   pub fn from_adds_removes(adds: Vec<(u64, u64, u64, String)>, removes: Vec<(u64, u64, u64, String)>) -> Transaction {
     let mut txn = Transaction::new();
     for (table, row,column, value) in adds {
-      txn.adds.push(Change::Add{table, row, column, value: Value::from_string(value)});
+      txn.adds.push(Change::Set{table, row, column, value: Value::from_string(value)});
     }
     for (table, row,column, value) in removes {
       txn.removes.push(Change::Remove{table, row, column, value: Value::from_string(value)});
@@ -141,7 +141,7 @@ impl Interner {
 
   pub fn intern_change(&mut self, change: &Change) {  
     match change {
-      Change::Add{table, row, column, value} => {
+      Change::Set{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             let column_ix: usize = match table_ref.column_aliases.entry(*column) {
