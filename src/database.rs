@@ -12,7 +12,7 @@ use runtime::{Runtime, Block};
 
 // ## Changes
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Change {
   Append{table: u64, column: u64, value: Value},
   Set{table: u64, row: u64, column: u64, value: Value},
