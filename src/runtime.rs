@@ -42,20 +42,16 @@ impl Runtime {
     if block.id == 0 {
       block.id = self.blocks.len() + 1;
     }
-    for ((table, column), registers) in &block.input_map {
-      for register in registers {
-        let register_id = *register as usize - 1;
-        let new_address = Address{block: block.id, register: *register as usize};
-        let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
-        listeners.push(new_address);
+    for ((table, column), register) in &block.input_registers {
+      let new_address = Address{block: block.id, register: *register as usize};
+      let mut listeners = self.pipes_map.entry((*table as usize, *column as usize)).or_insert(vec![]);
+      listeners.push(new_address);
 
-        // Put associated values on the registers if we have them in the DB already
-        block.input_registers[register_id].set(&(*table, *column));
-        match store.get_column(*table, *column as usize) {
-          Some(column) => block.ready = set_bit(block.ready, register_id),
-          None => (),
-        }
-      }      
+      // Mark the register as ready if it is in the DB
+      match store.get_column(*table, *column as usize) {
+        Some(column) => block.ready = set_bit(block.ready, *register as usize - 1),
+        None => (),
+      }
     }
     if block.updated && block.input_registers.len() == 0 {
       self.ready_blocks.insert(block.id);
@@ -211,7 +207,7 @@ pub struct Block {
   pub updated: bool,
   pub plan: Vec<Constraint>,
   pub column_lengths: Vec<u64>,
-  pub input_registers: Vec<Register>,
+  pub input_registers: HashMap<(u64,u64),u64>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
@@ -229,7 +225,7 @@ impl Block {
       updated: false,
       plan: Vec::new(),
       column_lengths: Vec::new(),
-      input_registers: Vec::with_capacity(1),
+      input_registers: HashMap::new(),
       memory_registers: Vec::with_capacity(1),
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
@@ -242,12 +238,7 @@ impl Block {
     match constraint {
       Constraint::Scan{table, column, input} | 
       Constraint::ChangeScan{table, column, input} => {
-        if self.input_registers.len() < input as usize {
-          self.input_registers.resize(input as usize, Register::new());
-        }
-        self.input_registers[input as usize - 1] = Register::input(table, column);
-        let mut listeners = self.input_map.entry((table, column)).or_insert(vec![]);
-        listeners.push(input);
+        self.input_registers.insert((table,column), input);
       },
       Constraint::Function{ref operation, ref parameters, memory} => {
         if self.memory_registers.len() < memory as usize {
