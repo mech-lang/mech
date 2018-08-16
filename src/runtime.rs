@@ -405,7 +405,7 @@ impl Block {
             match self.memory.index_by_alias(i, truth) {
               Some(Value::Bool(true)) =>  self.memory.set_cell(i, memory_ix, value),
               Some(Value::Bool(false)) => self.memory.set_cell(i, memory_ix, Value::Empty),
-              otherwise => Ok(()),
+              otherwise => Ok(Value::Empty),
             };
           }
           self.column_lengths[memory_ix - 1] = source_length as u64;
