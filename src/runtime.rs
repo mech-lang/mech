@@ -1,10 +1,10 @@
 // # Mech Runtime
 
 /* 
- The Mech Runtime is the engine that drives computations in Mech. The 
- runtime is comprised of "Blocks", interconnected by "Pipes" of records.
- Blocks can interact with the database, by Scanning for records that 
- match a pattern, or by Projecting computed records into the database.
+ The Mech Runtime is the engine that drives computations in Mech. The runtime 
+ is comprised of "Blocks", interconnected by "Pipes" of records. Blocks can 
+ interact with the database, by Scanning for records that  match a pattern, or 
+ by Projecting computed records into the database.
 */
 
 // ## Prelude
@@ -418,7 +418,7 @@ impl Block {
                   Value::Empty => (),
                   _ => {
                     store.intern_change(
-                      &Change::Add{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() }
+                      &Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() }
                     );
                   }
                 }
