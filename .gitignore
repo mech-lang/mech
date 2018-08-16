@@ -4,6 +4,9 @@
 *.rlib
 *.dll
 
+# Database files
+*.mdb
+
 # Executables
 *.exe
 
