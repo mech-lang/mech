@@ -6,6 +6,8 @@ authors = ["Corey Montella <corey@mechlang.net>"]
 [dependencies]
 rlibc = "=1.0"
 hashmap_core = "=0.1.8"
+serde = "1.0.46"
+serde_derive = "1.0.46"
 
 [dependencies.rand]
 version = "=0.4"
