@@ -93,5 +93,5 @@ fn clear_cell() {
 fn handle_set_zero() {
     let mut table = make_table();
     let result = table.set_cell(0, 1, Value::from_str("Mark"));
-    assert_ne!(result, Ok(()));
+    assert_eq!(result, Err("Index out of table bounds."));
 } 
