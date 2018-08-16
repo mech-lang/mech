@@ -161,7 +161,12 @@ impl Interner {
             };
             table_ref.grow_to_fit(*row as usize, column_ix);
             match table_ref.set_cell(*row as usize, column_ix, value.clone()) {
-              Ok(old_value) => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
+              Ok(old_value) => {
+                match old_value {
+                  Value::Empty => (),
+                  _ => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
+                }
+              },
               _ => (),
             };
           }
@@ -169,6 +174,35 @@ impl Interner {
         };
         self.tables.changed.insert((*table as usize, *column as usize));
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
+      },
+      Change::Remove{table, row, column, value} => {
+        match value {
+          Value::Empty => (),
+          _ => {
+            match self.tables.get_mut(*table) {
+              Some(table_ref) => {
+                let column_ix: usize = match table_ref.column_aliases.entry(*column) {
+                  Entry::Occupied(o) => {
+                    *o.get()
+                  },
+                  Entry::Vacant(v) => {    
+                    let ix = table_ref.columns + 1;
+                    v.insert(ix);
+                    if table_ref.columns == *column as usize {
+                      table_ref.column_ids.push(None);                  
+                    } else {
+                      table_ref.column_ids.push(Some(*column));
+                    }
+                    ix
+                  },
+                };
+                table_ref.grow_to_fit(*row as usize, column_ix);
+                table_ref.set_cell(*row as usize, column_ix, Value::Empty);
+              }
+              None => (),
+            };            
+          },
+        }
       },
       Change::Append{table, column, value} => {
         match self.tables.get_mut(*table) {
