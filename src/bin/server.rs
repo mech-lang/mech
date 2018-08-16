@@ -52,10 +52,10 @@ fn main() {
       .help("Sets the address of the server (127.0.0.1)")
       .takes_value(true))
     .arg(Arg::with_name("persist")
-      .short("s")
+      .short("r")
       .long("persist")
-      .value_name("FILE")
-      .help("Sets the name for the database to load from and write to")
+      .value_name("PERSIST")
+      .help("The path for the file to load from and persist changes")
       .takes_value(true))
     .get_matches();
 
@@ -65,7 +65,8 @@ fn main() {
   let http_address = format!("{}:{}",address,hport);
   let websocket_address = format!("{}:{}",address,wport);
   let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
+  let persistence_path = matches.value_of("persistence").unwrap_or("");
 
   mech_server::http_server(http_address);
-  mech_server::websocket_server(websocket_address, mech_paths);
+  mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
 }
