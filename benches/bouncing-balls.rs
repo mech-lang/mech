@@ -20,12 +20,12 @@ fn make_balls(n: u64) -> Vec<Change> {
 
     let ball = Hasher::hash_str("ball");
   
-    v.push(Change::Add{table: ball, row: i, column: 1, value: Value::from_u64(1)});
-    v.push(Change::Add{table: ball, row: i, column: 2, value: Value::from_u64(2)});
-    v.push(Change::Add{table: ball, row: i, column: 3, value: Value::from_u64(3)});
-    v.push(Change::Add{table: ball, row: i, column: 4, value: Value::from_u64(4)});
-    v.push(Change::Add{table: ball, row: i, column: 5, value: Value::from_u64(16)});
-    v.push(Change::Add{table: ball, row: i, column: 6, value: Value::from_u64(500)});
+    v.push(Change::Set{table: ball, row: i, column: 1, value: Value::from_u64(1)});
+    v.push(Change::Set{table: ball, row: i, column: 2, value: Value::from_u64(2)});
+    v.push(Change::Set{table: ball, row: i, column: 3, value: Value::from_u64(3)});
+    v.push(Change::Set{table: ball, row: i, column: 4, value: Value::from_u64(4)});
+    v.push(Change::Set{table: ball, row: i, column: 5, value: Value::from_u64(16)});
+    v.push(Change::Set{table: ball, row: i, column: 6, value: Value::from_u64(500)});
   
   }
   v
@@ -137,10 +137,10 @@ fn step_db(db: &mut Core) {
   let system_timer_change = Hasher::hash_str("system/timer/change");
   let timer_id = 1;      
   let txn = Transaction::from_changeset(vec![
-    Change::Add{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(1)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(2)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(3)},
-    Change::Add{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(4)},
+    Change::Set{table: system_timer_change, row: timer_id, column: 1, value: Value::from_u64(1)},
+    Change::Set{table: system_timer_change, row: timer_id, column: 2, value: Value::from_u64(2)},
+    Change::Set{table: system_timer_change, row: timer_id, column: 3, value: Value::from_u64(3)},
+    Change::Set{table: system_timer_change, row: timer_id, column: 4, value: Value::from_u64(4)},
   ]);     
   db.process_transaction(&txn);
 }

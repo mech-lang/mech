@@ -42,7 +42,7 @@ fn db_register_add(b: &mut Bencher) {
     );
     b.iter(|| {
         let txn = Transaction::from_change(
-            Change::Add{table: students, row: 1, column: 1, value: Value::from_u64(100)}
+            Change::Set{table: students, row: 1, column: 1, value: Value::from_u64(100)}
         );
         db.process_transaction(&txn);
     });
