@@ -282,7 +282,7 @@ impl Compiler {
             _ => (),
           }
         }
-        constraints.push(Constraint::Insert{memory: output_column, output: self.output_registers as u64, table: table_id, column: column_id});
+        constraints.push(Constraint::Insert{memory: output_column, table: table_id, column: column_id});
         self.output_registers += 1;
         constraints.append(&mut rhs_constraints);
       },
@@ -309,8 +309,8 @@ impl Compiler {
               column_ix = id;
               constraints.push(constraint);
             },
-            Constraint::Insert{memory, output, table, column} => {
-              constraints.push(Constraint::Insert{memory, output, table, column: column_ix});
+            Constraint::Insert{memory, table, column} => {
+              constraints.push(Constraint::Insert{memory, table, column: column_ix});
             },
             _ => constraints.push(constraint),
           }
@@ -330,7 +330,7 @@ impl Compiler {
         }
       },
       Node::Binding{children} => {
-        constraints.push(Constraint::Insert{memory: self.memory_registers as u64, output: self.output_registers as u64, table: 0, column: 0});
+        constraints.push(Constraint::Insert{memory: self.memory_registers as u64, table: 0, column: 0});
         self.output_registers += 1;
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -404,11 +404,11 @@ impl Compiler {
         let mut column_ix = 1;
         for constraint in result {
           match constraint {
-            Constraint::Insert{memory, output, table, column} => {
-              constraints.push(Constraint::Insert{memory, output, table: table_id, column});
+            Constraint::Insert{memory, table, column} => {
+              constraints.push(Constraint::Insert{memory, table: table_id, column});
             },
             Constraint::Data{table: 0, column} => {
-              constraints.push(Constraint::Insert{table: table_id, column: 1, output: self.output_registers as u64, memory: column});
+              constraints.push(Constraint::Insert{table: table_id, column: 1, memory: column});
               self.output_registers += 1;
             },
             _ => constraints.push(constraint),
@@ -436,8 +436,8 @@ impl Compiler {
         let mut column_ix = 1;
         for constraint in result {
           match constraint {
-            Constraint::Insert{memory, output, table, column} => {
-              constraints.push(Constraint::Append{memory, output, table: table_id, column});
+            Constraint::Insert{memory, table, column} => {
+              constraints.push(Constraint::Append{memory, table: table_id, column});
             },
             _ => constraints.push(constraint),
           }
