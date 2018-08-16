@@ -42,7 +42,7 @@ impl Runtime {
     if block.id == 0 {
       block.id = self.blocks.len() + 1;
     }
-    for ((table, column), registers) in &block.pipes {
+    for ((table, column), registers) in &block.input_map {
       for register in registers {
         let register_id = *register as usize - 1;
         let new_address = Address{block: block.id, register: *register as usize};
@@ -168,9 +168,9 @@ impl Register {
     }
   }
 
-  pub fn output(n: u64) -> Register {
+  pub fn output(t: u64, n: u64) -> Register {
     Register {
-      table: 0,
+      table: t,
       column: n,
     }
   }
@@ -202,7 +202,6 @@ impl fmt::Debug for Register {
   }
 }
 
-
 #[derive(Clone)]
 pub struct Block {
   pub id: usize,
@@ -212,7 +211,6 @@ pub struct Block {
   pub updated: bool,
   pub plan: Vec<Constraint>,
   pub column_lengths: Vec<u64>,
-  pub pipes: HashMap<(u64, u64), Vec<u64>>,
   pub input_registers: Vec<Register>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -229,13 +227,12 @@ impl Block {
       text: String::from(""),
       ready: 0,
       updated: false,
-      pipes: HashMap::new(),
       plan: Vec::new(),
       column_lengths: Vec::new(),
-      input_registers: Vec::with_capacity(32),
-      memory_registers: Vec::with_capacity(32),
-      output_registers: Vec::with_capacity(32),
-      constraints: Vec::with_capacity(32),
+      input_registers: Vec::with_capacity(1),
+      memory_registers: Vec::with_capacity(1),
+      output_registers: Vec::with_capacity(1),
+      constraints: Vec::with_capacity(1),
       memory: Table::new(0, 1, 1),
     }
   }
@@ -249,7 +246,7 @@ impl Block {
           self.input_registers.resize(input as usize, Register::new());
         }
         self.input_registers[input as usize - 1] = Register::input(table, column);
-        let mut listeners = self.pipes.entry((table, column)).or_insert(vec![]);
+        let mut listeners = self.input_map.entry((table, column)).or_insert(vec![]);
         listeners.push(input);
       },
       Constraint::Function{ref operation, ref parameters, memory} => {
@@ -313,20 +310,10 @@ impl Block {
           self.column_lengths.resize(memory as usize, 0);
         }
       },
-      Constraint::Insert{memory, output, table, column} => {
-        if self.output_registers.len() < output as usize {
-          self.output_registers.resize(output as usize, Register::new());
-        }
-        self.output_registers[output as usize - 1] = Register::output(memory);
-      },
-      Constraint::Append{memory, output, table, column} => {
-        if self.output_registers.len() < output as usize {
-          self.output_registers.resize(output as usize, Register::new());
-        }
-        self.output_registers[output as usize - 1] = Register::output(memory);
-      },
+      Constraint::Insert{memory, table, column} |
+      Constraint::Append{memory, table, column} |
       Constraint::Set{output, table, column} => {
-        self.output_registers.push(Register::new());
+        self.output_registers.push(Register::output(table, column));
       },
       Constraint::Identifier{id, memory} => {
         self.memory.column_aliases.insert(id, memory as usize);
@@ -418,9 +405,8 @@ impl Block {
           }
           self.column_lengths[memory_ix - 1] = source_length as u64;
         },
-        Constraint::Insert{memory, output, table, column} => {
-          let output_memory_ix = self.output_registers[*output as usize - 1].column;
-          match &mut self.memory.get_column_by_ix(output_memory_ix as usize) {
+        Constraint::Insert{memory, table, column} => {
+          match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
               for (row_ix, cell) in column_data.iter().enumerate() {
                 match cell {
@@ -436,9 +422,8 @@ impl Block {
             None => (),
           }
         },
-        Constraint::Append{memory, output, table, column} => {
-          let output_memory_ix = self.output_registers[*output as usize - 1].column;
-          match &mut self.memory.get_column_by_ix(output_memory_ix as usize) {
+        Constraint::Append{memory, table, column} => {
+          match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
               for (row_ix, cell) in column_data.iter().enumerate() {
                 let length = column_data.len() as u64;
@@ -607,8 +592,8 @@ pub enum Constraint {
   CopyInput {input: u64, memory: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
-  Insert {memory: u64, output: u64, table: u64, column: u64},
-  Append {memory: u64, output: u64, table: u64, column: u64},
+  Insert {memory: u64, table: u64, column: u64},
+  Append {memory: u64, table: u64, column: u64},
   Set{output: u64, table: u64, column: u64},
 }
 
@@ -628,8 +613,8 @@ impl fmt::Debug for Constraint {
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id, memory} => write!(f, "Identifier({:?} -> M{:?})", id, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
-      Constraint::Insert{memory, output, table, column} => write!(f, "Insert(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
-      Constraint::Append{memory, output, table, column} => write!(f, "Append(O{:#x} -> #{:#x}[{:#x}])",  output, table, column),
+      Constraint::Insert{memory, table, column} => write!(f, "Insert(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
+      Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::Set{output, table, column} => write!(f, "Set(O{:#x} -> #{:#x}({:#x}))",  output, table, column),
     }
   }
