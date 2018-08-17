@@ -8,3 +8,4 @@ mech-core = {path = "core"}
 mech-syntax = {path = "syntax"}
 mech-server = {path = "server"}
 clap = "2.31.2"
+term-painter = "0.2.4"
