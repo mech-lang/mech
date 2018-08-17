@@ -1,4 +1,4 @@
-// # Mech Server
+// # Mech
 
 /*
  Mech Server is a wrapper around the mech runtime. It provides interfaces for 
@@ -14,24 +14,24 @@ use std::sync::mpsc::{self, Sender};
 extern crate clap;
 use clap::{Arg, App};
 
+extern crate term_painter;
+use term_painter::ToStyle;
+use term_painter::Color::*;
+
 extern crate mech_server;
 use mech_server::program::{ProgramRunner, RunLoop, RunLoopMessage};
 use mech_server::watchers::system::{SystemTimerWatcher};
 use mech_server::watchers::websocket::{WebsocketClientWatcher};
 use mech_server::client::ClientHandler;
 
-extern crate term_painter;
-use term_painter::ToStyle;
-use term_painter::Color::*;
-
 // ## Server Entry
 
 fn main() {
 
-  let matches = App::new("Mech Server")
+  let matches = App::new("Mech")
     .version("0.0.1")
     .author("Corey Montella")
-    .about("Creates an instance of a Mech server. Default values for options are in parentheses.")
+    .about("Hosts Mech on an HTTP server. Default values for options are in parentheses.")
     .arg(Arg::with_name("mech_file_paths")
       .help("The files and folders from which to load .mec files")
       .required(false)
