@@ -20,6 +20,9 @@ use mech_server::watchers::system::{SystemTimerWatcher};
 use mech_server::watchers::websocket::{WebsocketClientWatcher};
 use mech_server::client::ClientHandler;
 
+extern crate term_painter;
+use term_painter::ToStyle;
+use term_painter::Color::*;
 
 // ## Server Entry
 
@@ -67,6 +70,9 @@ fn main() {
   let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
   let persistence_path = matches.value_of("persistence").unwrap_or("");
 
+  println!("\n {}",  BrightBlack.paint("╔════════════════╗"));
+  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH"), BrightBlack.paint("║"));
+  println!(" {}\n",  BrightBlack.paint("╚════════════════╝"));
   mech_server::http_server(http_address);
   mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
 }
