@@ -108,6 +108,7 @@ impl Core {
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
+    self.store.transaction_boundaries.push(self.store.change_pointer);
     // First make any tables
     for table in txn.tables.iter() {
       self.store.intern_change(table);
