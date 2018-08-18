@@ -124,6 +124,7 @@ pub struct Interner {
   pub change_pointer: usize, // points at the next available slot in memory that can hold a change
   pub rollover: usize,
   pub last_round: usize,
+  pub transaction_boundaries: Vec<usize>, // this is a hack for the time being to use rewind.
 }
 
 impl Interner {
@@ -136,6 +137,7 @@ impl Interner {
       change_pointer: 0,
       rollover: 0,
       last_round: 0,
+      transaction_boundaries: Vec::new(),
     }
   }
 
