@@ -15,6 +15,8 @@ This repository serves as a sort of table of contents for the constellation of t
 
 ## Building from Source
 
+You will need to install Rust before building Mech.
+
 ```bash
 > git clone https://gitlab.com/mech-lang/mech
 > cd mech
