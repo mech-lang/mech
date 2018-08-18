@@ -108,22 +108,22 @@ impl Core {
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.last_transaction = self.store.change_pointer;
-    self.store.transaction_boundaries.push(self.store.change_pointer);
+
     // First make any tables
     for table in txn.tables.iter() {
-      self.store.intern_change(table);
+      self.store.intern_change(table, true);
     }
     // Handle the removes
     for remove in txn.removes.iter() {
-      self.store.intern_change(remove);
+      self.store.intern_change(remove, true);
     }
     // Handle the adds
     for add in txn.adds.iter() {
-      self.store.intern_change(add);
+      self.store.intern_change(add, true);
     }
     
     self.runtime.run_network(&mut self.store);
-    
+    self.store.transaction_boundaries.push(self.store.change_pointer);
     // Mark watched tables as changed
     for (table_id, _) in self.store.tables.changed.iter() {
       match self.watched_index.get_mut(&(*table_id as u64)) {
