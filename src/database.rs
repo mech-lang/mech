@@ -24,10 +24,10 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Change::Append{table, column, value} => write!(f, "<+> #{:#x} [{:#x}: {:?}]", table, column, value),
+      Change::Append{table, column, value} => write!(f, "<++> #{:#x} [{:#x}: {:?}]", table, column, value),
       Change::Set{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::NewTable{id, rows, columns} => write!(f, "<+> #{:#x} [{:?} x {:?}]", id, rows, columns),
+      Change::NewTable{id, rows, columns} => write!(f, "<#> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
   }
 }
@@ -141,7 +141,7 @@ impl Interner {
     }
   }
 
-  pub fn intern_change(&mut self, change: &Change) {  
+  pub fn intern_change(&mut self, change: &Change, save: bool) {  
     match change {
       Change::Set{table, row, column, value} => {
         match self.tables.get_mut(*table) {
@@ -164,9 +164,11 @@ impl Interner {
             table_ref.grow_to_fit(*row as usize, column_ix);
             match table_ref.set_cell(*row as usize, column_ix, value.clone()) {
               Ok(old_value) => {
-                match old_value {
-                  Value::Empty => (),
-                  _ => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
+                if save {
+                  match old_value {
+                    Value::Empty => (),
+                    _ => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
+                  }
                 }
               },
               _ => (),
@@ -244,7 +246,9 @@ impl Interner {
         }
       }
     }
-    self.save_change(change);
+    if save {
+      self.save_change(change);
+    }
   }
 
   // Save the change. If there's enough room in memory, store it there. 
