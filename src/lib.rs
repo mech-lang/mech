@@ -53,6 +53,8 @@ pub struct Core {
   pub runtime: Runtime,
   pub watched_index: HashMap<u64, bool>,
   pub last_transaction: usize,
+  change_capacity: usize,
+  table_capacity: usize,
 }
 
 impl Core {
@@ -63,11 +65,19 @@ impl Core {
       epoch: 0,
       changes: 0,
       round: 0,
+      change_capacity,
+      table_capacity,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
       watched_index: HashMap::new(),
       last_transaction: 0,
     }
+  }
+
+  pub fn clear_program(&mut self) {
+    self.runtime.blocks.clear();
+    self.runtime.ready_blocks.clear();
+    self.runtime.pipes_map.clear();
   }
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
