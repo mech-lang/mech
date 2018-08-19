@@ -18,19 +18,9 @@ use mech_core::Hasher;
 use mech_core::Core;
 
 fn main() {
-  println!("system/timer ({:#x})", Hasher::hash_str("system/timer"));
   let mut compiler = Compiler::new();
   let mut core = Core::new(10, 100);
-  let input = String::from("# Bouncing Balls
-
-Define the environment
-  #y = [x: 1]
-  #ball = [x: 15 y: 10]
-  
-Set ball to click
-  ~ #y.x
-  #ball += [x: 2 y: 3]
-  #ball += [x: 4 y: 5]");
+  let input = String::from("#ball = 10");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   //println!("{:?}", compiler.parse_tree);
