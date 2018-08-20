@@ -5,6 +5,7 @@ Define the environment
   #ball = [x: 15 y: 9 vx: 40 vy: 9]
   #system/timer = [resolution: 15]
   #gravity = 2
+  #height = 9000
   #boundary = 5000
 
 ## Update condition
@@ -19,8 +20,8 @@ Now update the block positions
 
 Keep the balls within the y boundary
   ~ #ball.x
-  iy = #ball.y > #boundary
-  #ball.y[iy] := #boundary
+  iy = #ball.y > #height
+  #ball.y[iy] := #height
   #ball.vy[iy] := 0 - 1 * #ball.vy * 80 / 100
 
 Keep the balls within the x boundary
