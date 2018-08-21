@@ -21,7 +21,7 @@ You will need to install Rust before building Mech.
 > git clone https://gitlab.com/mech-lang/mech
 > cd mech
 > git submodule update --init --recursive
-> cargo build --bin server --release
+> cargo build --bin mech --release
 ```
 
 ## License
