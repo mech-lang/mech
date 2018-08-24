@@ -3,7 +3,7 @@
     "displayName": "Mech",
     "description": "Support for the Mech language in Visual Studio Code",
     "version": "0.0.1",
-    "publisher": "witheve",
+    "publisher": "Mech",
     "icon": "images/logo.png",
     "engines": {
         "vscode": "^1.13.0"
