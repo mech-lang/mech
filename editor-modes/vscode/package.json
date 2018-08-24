@@ -1,8 +1,8 @@
 {
-    "name": "Eve",
-    "displayName": "Eve",
-    "description": "Support for the Eve language in Visual Studio Code",
-    "version": "0.2.4",
+    "name": "Mech",
+    "displayName": "Mech",
+    "description": "Support for the Mech language in Visual Studio Code",
+    "version": "0.0.1",
     "publisher": "witheve",
     "icon": "images/logo.png",
     "engines": {
@@ -12,26 +12,26 @@
         "Languages"
     ],
     "repository": {
-        "url": "https://github.com/witheve/vscode-eve-mode.git"
+        "url": "https://github.com/mech-lang/syntax.git"
     },
     "contributes": {
         "languages": [
             {
-                "id": "Eve",
+                "id": "Mech",
                 "aliases": [
-                    "Eve"
+                    "Mech"
                 ],
                 "extensions": [
-                    "eve"
+                    "mec"
                 ],
                 "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
             {
-                "language": "Eve",
-                "scopeName": "eve",
-                "path": "./syntaxes/eve.tmLanguage.json"
+                "language": "Mech",
+                "scopeName": "mech",
+                "path": "./syntaxes/mech.tmLanguage.json"
             }
         ]
     }
