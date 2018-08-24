@@ -1,0 +1,38 @@
+{
+    "name": "Eve",
+    "displayName": "Eve",
+    "description": "Support for the Eve language in Visual Studio Code",
+    "version": "0.2.4",
+    "publisher": "witheve",
+    "icon": "images/logo.png",
+    "engines": {
+        "vscode": "^1.13.0"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "repository": {
+        "url": "https://github.com/witheve/vscode-eve-mode.git"
+    },
+    "contributes": {
+        "languages": [
+            {
+                "id": "Eve",
+                "aliases": [
+                    "Eve"
+                ],
+                "extensions": [
+                    "eve"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "Eve",
+                "scopeName": "eve",
+                "path": "./syntaxes/eve.tmLanguage.json"
+            }
+        ]
+    }
+}

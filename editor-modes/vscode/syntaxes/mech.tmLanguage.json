@@ -1,0 +1,80 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Mech",
+	"patterns": [
+		{
+			"include": "#block"
+		},
+		{
+			"name": "markup.heading",
+			"match": "^#.+"
+		},
+		{
+			"name": "markup.heading",
+			"match": "^\\-"
+		},
+		{
+			"name": "string.quoted",
+			"match": "`[^`]*`"
+		}
+	],
+	"repository": {
+		"block": {
+			"name": "meta.block",
+			"begin": "~~~|```|(^|^ +)(?=(search|bind|commit)\\n)",
+			"end": "~~~|```|(?<=end)\n",
+			"patterns": [
+				{
+					"name": "comment.line",
+					"match": "//.+"
+				},
+				{
+					"name": "keyword.control.mech",
+					"match": "^search|end"
+				},
+				{
+					"name": "keyword.control.mech",
+					"match": "\\b(search|bind|commit|watch|if|else|then|not)\\b"
+				},
+				{
+					"name": "variable.other",
+					"match": "(#([A-Z]|[a-z]|/|-)+)"
+				},
+				{
+					"name": "variable.function",
+					"match": "\\S+(?=\\[)"
+				},
+				{
+					"name": "string.quoted.double.mech",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape.mech",
+							"match": "\\\\."
+						},
+						{
+							"name": "keyword.control.mech",
+							"begin": "{{",
+							"end": "}}",
+							"patterns": [
+								{
+									"name": "constant.numeric.integer",
+									"match": "[^}]*"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "constant.numeric.integer",
+					"match": "\\b([0-9]+)\\b"
+				},				{
+					"name": "constant.language",
+					"match": "true|false|none"
+				}
+			]
+		}
+	},
+	"scopeName": "mech"
+}
