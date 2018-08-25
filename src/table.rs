@@ -85,9 +85,9 @@ pub struct Table {
   pub columns: usize,
   // ix -> id
   pub row_ids: Vec<Option<u64>>,
-  pub column_ids: Vec<Option<u64>>,
+  column_ids: Vec<Option<u64>>,
   // id -> ix
-  pub column_aliases: HashMap<u64, usize>,
+  column_aliases: HashMap<u64, usize>,
   pub row_aliases: HashMap<u64, usize>,
   pub column_lengths: Vec<u64>,
   pub data: Vec<Vec<Value>>,
@@ -117,6 +117,41 @@ impl Table {
     self.column_aliases.get(&alias)
   }
 
+  pub fn set_cell_by_id(&mut self, row: usize, column: usize, value: Value) -> Result<Value, &str> {
+    let column_ix: usize = match self.column_aliases.entry(*column) {
+      Entry::Occupied(o) => {
+        *o.get()
+      },
+      Entry::Vacant(v) => {    
+        let ix = self.columns + 1;
+        v.insert(ix);
+        if self.columns == column {
+          self.column_ids.push(None);                  
+        } else {
+          self.column_ids.push(Some(column));
+        }
+        ix
+      },
+    };
+    let row_ix: usize = match self.row_aliases.entry(column) {
+      Entry::Occupied(o) => {
+        *o.get()
+      },
+      Entry::Vacant(v) => {    
+        let ix = self.rows + 1;
+        v.insert(ix);
+        if self.rows == row {
+          self.row_ids.push(None);                  
+        } else {
+          self.row_ids.push(Some(row));
+        }
+        ix
+      },
+    };
+    self.grow_to_fit(row_ix, column_ix);
+    self.set_cell(row_ix, column_ix, value)
+  }
+
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
     if row_ix > 0 && column_ix > 0 &&
        self.rows > 0 && row_ix <= self.rows &&
@@ -129,6 +164,16 @@ impl Table {
       Ok(old_value)
     } else {
       Err("Index out of table bounds.")
+    }
+  }
+
+  pub fn set_column_id(&mut self, id: u64, column_ix: usize) -> Result<(),&str> {
+    if self.column_ids.len() < column_ix {
+      self.column_ids[column_ix - 1] = Some(id);
+      self.column_alias.insert(id,column_ix);
+      Ok(())
+    } else {
+      Err("Index out of bounds on set column ID")
     }
   }
 
