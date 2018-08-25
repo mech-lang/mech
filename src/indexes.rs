@@ -102,6 +102,13 @@ impl TableIndex {
     }
   }
 
+  pub fn clear(&mut self) {
+    self.name_map.clear();
+    self.map.clear();
+    self.changed.clear();
+    self.changed_this_round.clear();
+  }
+
   pub fn len(&self) -> usize {
     self.map.len()
   }
