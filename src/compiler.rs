@@ -38,7 +38,7 @@ pub enum Node {
   Define { name: String, id: u64},
   DotIndex { rows: Vec<Node>, columns: Vec<Node>},
   BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
-  ColumnDefine {children: Vec<Node> },
+  VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
@@ -68,7 +68,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
-    Node::ColumnDefine{children} => {print!("ColumnDefine\n"); Some(children)},
+    Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
@@ -371,7 +371,7 @@ impl Compiler {
         data.reverse();
         constraints.append(&mut data);
       },
-      Node::ColumnDefine{children} => {
+      Node::VariableDefine{children} => {
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
         result.reverse();
@@ -711,7 +711,7 @@ impl Compiler {
         };
         compiled.push(Node::Function{name, children: vec![]});
       },
-      parser::Node::ColumnDefine{children} => {
+      parser::Node::VariableDefine{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
@@ -720,7 +720,7 @@ impl Compiler {
             _ => children.push(node),
           }
         }
-        compiled.push(Node::ColumnDefine{children});
+        compiled.push(Node::VariableDefine{children});
       },
       parser::Node::TableDefine{children} => {
         let result = self.compile_nodes(children);
