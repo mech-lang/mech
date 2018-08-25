@@ -74,7 +74,7 @@ impl Core {
     }
   }
 
-  pub fn clear_program(&mut self) {
+  pub fn clear(&mut self) {
     self.epoch = 0;
     self.round = 0;
     self.last_transaction = 0;
