@@ -168,15 +168,11 @@ impl Table {
   }
 
   pub fn set_column_id(&mut self, id: u64, column_ix: usize) {
-    println!("SETTING COLUMN ID {} {} {:?}", id, column_ix, self.column_aliases);
-
     match self.column_aliases.entry(id) {
-      Entry::Occupied(o) => {
-        println!("Occupied");
+      Entry::Occupied(o) => {;
         ()
       },
       Entry::Vacant(v) => {    
-        println!("Vacant");
         v.insert(column_ix);
         if self.column_ids.len() >= column_ix {
           self.column_ids[column_ix - 1] = Some(id);
