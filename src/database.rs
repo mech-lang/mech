@@ -141,6 +141,14 @@ impl Interner {
     }
   }
 
+  pub fn clear(&mut self) {
+    self.tables.clear();
+    self.changes.clear();
+    self.transaction_boundaries.clear();
+    self.changes_count = 0;
+    self.change_pointer = 0;
+  }
+
   pub fn intern_change(&mut self, change: &Change, save: bool) {  
     match change {
       Change::Set{table, row, column, value} => {
