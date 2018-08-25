@@ -7,7 +7,7 @@ use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
 use hashmap_core::set::{HashSet};
-use hashmap_core::map::{HashMap, Entry};
+use hashmap_core::map::{HashMap};
 use runtime::{Runtime, Block};
 
 // ## Changes
@@ -179,8 +179,7 @@ impl Interner {
       Change::Append{table, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            let row: usize = table_ref.column_lengths[column_ix - 1] as usize + 1;
-            table_ref.grow_to_fit(row, column_ix);
+            let row: usize = table_ref.rows + 1;;
             table_ref.set_cell_by_id(row, *column as usize, value.clone());
           }
           None => (),

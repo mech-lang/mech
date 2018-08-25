@@ -5,7 +5,7 @@
 use core::fmt;
 use indexes::Hasher;
 use alloc::{Vec, String};
-use hashmap_core::map::HashMap;
+use hashmap_core::map::{HashMap, Entry};
 
 // ## Row and Column
 
@@ -118,7 +118,7 @@ impl Table {
   }
 
   pub fn set_cell_by_id(&mut self, row: usize, column: usize, value: Value) -> Result<Value, &str> {
-    let column_ix: usize = match self.column_aliases.entry(*column) {
+    let column_ix: usize = match self.column_aliases.entry(column as u64) {
       Entry::Occupied(o) => {
         *o.get()
       },
@@ -128,12 +128,12 @@ impl Table {
         if self.columns == column {
           self.column_ids.push(None);                  
         } else {
-          self.column_ids.push(Some(column));
+          self.column_ids.push(Some(column as u64));
         }
         ix
       },
     };
-    let row_ix: usize = match self.row_aliases.entry(column) {
+    let row_ix: usize = match self.row_aliases.entry(row as u64) {
       Entry::Occupied(o) => {
         *o.get()
       },
@@ -143,7 +143,7 @@ impl Table {
         if self.rows == row {
           self.row_ids.push(None);                  
         } else {
-          self.row_ids.push(Some(row));
+          self.row_ids.push(Some(row as u64));
         }
         ix
       },
@@ -169,8 +169,14 @@ impl Table {
 
   pub fn set_column_id(&mut self, id: u64, column_ix: usize) -> Result<(),&str> {
     if self.column_ids.len() < column_ix {
-      self.column_ids[column_ix - 1] = Some(id);
-      self.column_alias.insert(id,column_ix);
+      self.column_ids.resize(column_ix, None);
+      self.grow_to_fit(self.rows, column_ix);
+      self.column_aliases.insert(id, column_ix);
+      self.column_ids[column_ix - 1] = Some(id.clone());
+      Ok(())
+    } else if self.column_ids.len() >= column_ix  {
+      self.column_aliases.insert(id, column_ix);
+      self.column_ids[column_ix - 1] = Some(id.clone());
       Ok(())
     } else {
       Err("Index out of bounds on set column ID")

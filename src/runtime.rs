@@ -295,8 +295,7 @@ impl Block {
         }
         self.memory_registers[memory as usize - 1] = self.input_registers[input as usize - 1].clone();
         self.memory.grow_to_fit(1, memory as usize);
-        self.memory.column_aliases.insert(source.column as u64, memory as usize);
-        self.memory.column_ids[memory as usize - 1] = Some(source.column);
+        self.memory.set_column_id(source.column as u64, memory as usize);
         if self.column_lengths.len() < memory as usize {
           self.column_lengths.resize(memory as usize, 0);
         }
@@ -321,11 +320,7 @@ impl Block {
         self.output_registers.push(Register::output(table, column));
       },
       Constraint::Identifier{id, memory} => {
-        self.memory.column_aliases.insert(id, memory as usize);
-        if self.memory.column_ids.len() < memory as usize {
-          self.memory.column_ids.resize(memory as usize, None);
-        }
-        self.memory.column_ids[memory as usize - 1] = Some(id.clone());
+        self.memory.set_column_id(id, memory as usize);
       },
       Constraint::Data{..} => (),
       Constraint::NewTable{..} => (),
