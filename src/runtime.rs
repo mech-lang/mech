@@ -37,6 +37,12 @@ impl Runtime {
     }
   }
 
+  pub fn clear(&mut self) {
+    self.blocks.clear();
+    self.ready_blocks.clear();
+    self.pipes_map.clear();
+  }
+
   // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
     if block.id == 0 {
