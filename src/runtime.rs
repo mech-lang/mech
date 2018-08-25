@@ -295,7 +295,6 @@ impl Block {
         }
         self.memory_registers[memory as usize - 1] = self.input_registers[input as usize - 1].clone();
         self.memory.grow_to_fit(1, memory as usize);
-        self.memory.set_column_id(source.column as u64, memory as usize);
         if self.column_lengths.len() < memory as usize {
           self.column_lengths.resize(memory as usize, 0);
         }
@@ -594,7 +593,7 @@ impl fmt::Debug for Constraint {
       Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
-      Constraint::Identifier{id, memory} => write!(f, "Identifier({:#x} -> M{:?})", id, memory),
+      Constraint::Identifier{id, memory} => write!(f, "Identifier({:#x} -> M{:#x})", id, memory),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{memory, table, column} => write!(f, "Insert(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
