@@ -146,23 +146,7 @@ impl Interner {
       Change::Set{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            let column_ix: usize = match table_ref.column_aliases.entry(*column) {
-              Entry::Occupied(o) => {
-                *o.get()
-              },
-              Entry::Vacant(v) => {    
-                let ix = table_ref.columns + 1;
-                v.insert(ix);
-                if table_ref.columns == *column as usize {
-                  table_ref.column_ids.push(None);                  
-                } else {
-                  table_ref.column_ids.push(Some(*column));
-                }
-                ix
-              },
-            };
-            table_ref.grow_to_fit(*row as usize, column_ix);
-            match table_ref.set_cell(*row as usize, column_ix, value.clone()) {
+            match table_ref.set_cell_by_id(*row as usize, *column as usize, value.clone()) {
               Ok(old_value) => {
                 if save {
                   match old_value {
@@ -185,23 +169,7 @@ impl Interner {
           _ => {
             match self.tables.get_mut(*table) {
               Some(table_ref) => {
-                let column_ix: usize = match table_ref.column_aliases.entry(*column) {
-                  Entry::Occupied(o) => {
-                    *o.get()
-                  },
-                  Entry::Vacant(v) => {    
-                    let ix = table_ref.columns + 1;
-                    v.insert(ix);
-                    if table_ref.columns == *column as usize {
-                      table_ref.column_ids.push(None);                  
-                    } else {
-                      table_ref.column_ids.push(Some(*column));
-                    }
-                    ix
-                  },
-                };
-                table_ref.grow_to_fit(*row as usize, column_ix);
-                table_ref.set_cell(*row as usize, column_ix, Value::Empty);
+                table_ref.set_cell_by_id(*row as usize, *column as usize, Value::Empty);
               }
               None => (),
             };            
@@ -211,24 +179,9 @@ impl Interner {
       Change::Append{table, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            let column_ix: usize = match table_ref.column_aliases.entry(*column) {
-              Entry::Occupied(o) => {
-                *o.get()
-              },
-              Entry::Vacant(v) => {    
-                let ix = table_ref.columns + 1;
-                v.insert(ix);
-                if table_ref.columns == *column as usize {
-                  table_ref.column_ids.push(None);                  
-                } else {
-                  table_ref.column_ids.push(Some(*column));
-                }
-                ix
-              },
-            };
             let row: usize = table_ref.column_lengths[column_ix - 1] as usize + 1;
             table_ref.grow_to_fit(row, column_ix);
-            table_ref.set_cell(row, column_ix, value.clone());
+            table_ref.set_cell_by_id(row, *column as usize, value.clone());
           }
           None => (),
         };
