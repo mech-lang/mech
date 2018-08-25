@@ -167,19 +167,24 @@ impl Table {
     }
   }
 
-  pub fn set_column_id(&mut self, id: u64, column_ix: usize) -> Result<(),&str> {
-    if self.column_ids.len() < column_ix {
-      self.column_ids.resize(column_ix, None);
-      self.grow_to_fit(self.rows, column_ix);
-      self.column_aliases.insert(id, column_ix);
-      self.column_ids[column_ix - 1] = Some(id.clone());
-      Ok(())
-    } else if self.column_ids.len() >= column_ix  {
-      self.column_aliases.insert(id, column_ix);
-      self.column_ids[column_ix - 1] = Some(id.clone());
-      Ok(())
-    } else {
-      Err("Index out of bounds on set column ID")
+  pub fn set_column_id(&mut self, id: u64, column_ix: usize) {
+    println!("SETTING COLUMN ID {} {} {:?}", id, column_ix, self.column_aliases);
+
+    match self.column_aliases.entry(id) {
+      Entry::Occupied(o) => {
+        println!("Occupied");
+        ()
+      },
+      Entry::Vacant(v) => {    
+        println!("Vacant");
+        v.insert(column_ix);
+        if self.column_ids.len() >= column_ix {
+          self.column_ids[column_ix - 1] = Some(id);
+        } else {
+          self.column_ids.resize(column_ix, None);
+          self.column_ids[column_ix - 1] = Some(id);
+        }
+      },
     }
   }
 
