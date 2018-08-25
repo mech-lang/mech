@@ -47,8 +47,8 @@ pub use self::runtime::{Runtime, Block, Constraint, Register};
 pub struct Core {
   pub id: u64,
   pub epoch: usize,
+  pub round: usize,
   pub changes: usize,
-  pub round: u64,
   pub store: Interner,
   pub runtime: Runtime,
   pub watched_index: HashMap<u64, bool>,
@@ -63,8 +63,8 @@ impl Core {
     Core {
       id: 0,
       epoch: 0,
-      changes: 0,
       round: 0,
+      changes: 0,
       change_capacity,
       table_capacity,
       store: Interner::new(change_capacity, table_capacity),
@@ -75,9 +75,12 @@ impl Core {
   }
 
   pub fn clear_program(&mut self) {
-    self.runtime.blocks.clear();
-    self.runtime.ready_blocks.clear();
-    self.runtime.pipes_map.clear();
+    self.epoch = 0;
+    self.round = 0;
+    self.last_transaction = 0;
+    self.runtime.clear();
+    self.store.clear();
+    self.watched_index.clear();
   }
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
