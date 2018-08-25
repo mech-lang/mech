@@ -83,11 +83,14 @@ pub struct Table {
   pub id: u64,
   pub rows: usize,
   pub columns: usize,
+  // ix -> id
+  pub row_ids: Vec<Option<u64>>,
   pub column_ids: Vec<Option<u64>>,
-  pub column_lengths: Vec<u64>,
-  pub data: Vec<Vec<Value>>,
+  // id -> ix
   pub column_aliases: HashMap<u64, usize>,
   pub row_aliases: HashMap<u64, usize>,
+  pub column_lengths: Vec<u64>,
+  pub data: Vec<Vec<Value>>,
 }
 
 impl Table {
@@ -98,10 +101,11 @@ impl Table {
       rows: 0,
       columns: 0,
       column_ids: Vec::new(),
+      row_ids: Vec::new(),
+      column_aliases: HashMap::with_capacity(columns),
+      row_aliases: HashMap::with_capacity(rows),
       column_lengths: Vec::new(),
       data: vec![vec![Value::Empty; rows]; columns], 
-      row_aliases: HashMap::with_capacity(rows),
-      column_aliases: HashMap::with_capacity(columns),
     }
   }
 
