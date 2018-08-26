@@ -11,7 +11,7 @@
 
 use table::{Table, Value};
 use alloc::{fmt, Vec, String};
-use database::{Interner, Change};
+use database::{Transaction, Interner, Change};
 use hashmap_core::map::HashMap;
 use hashmap_core::set::HashSet;
 use indexes::Hasher;
@@ -417,10 +417,9 @@ impl Block {
                 match cell {
                   Value::Empty => (),
                   _ => {
-                    store.intern_change(
-                      &Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() },
-                      true
-                    );
+                    store.process_transaction(&Transaction::from_change(
+                      Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() },
+                    ));
                   }
                 }
               }
@@ -436,10 +435,9 @@ impl Block {
                 match cell {
                   Value::Empty => (),
                   _ => {
-                    store.intern_change(
-                      &Change::Append{ table: *table, column: *column, value: cell.clone() },
-                      true
-                    );
+                    store.process_transaction(&Transaction::from_change(
+                      Change::Append{ table: *table, column: *column, value: cell.clone() }
+                    ));
                   }
                 }
               }
@@ -448,10 +446,9 @@ impl Block {
           }
         },
         Constraint::NewTable{id, rows, columns} => {
-          store.intern_change(
-            &Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
-            true
-          );
+          store.process_transaction(&Transaction::from_change(
+            Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
+          ));
         },
         _ => (),
       } 
