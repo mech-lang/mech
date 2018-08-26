@@ -47,14 +47,15 @@ pub use self::runtime::{Runtime, Block, Constraint, Register};
 pub struct Core {
   pub id: u64,
   pub epoch: usize,
+  pub time: usize, // this is an offset from now. 0 means now, 1 means 1 tick ago, etc.
   pub round: usize,
   pub changes: usize,
   pub store: Interner,
   pub runtime: Runtime,
   pub watched_index: HashMap<u64, bool>,
-  pub last_transaction: usize,
   change_capacity: usize,
   table_capacity: usize,
+  transaction_boundaries: Vec<usize>,
 }
 
 impl Core {
@@ -62,6 +63,7 @@ impl Core {
   pub fn new(change_capacity: usize, table_capacity: usize) -> Core {
     Core {
       id: 0,
+      time: 0,
       epoch: 0,
       round: 0,
       changes: 0,
@@ -70,14 +72,13 @@ impl Core {
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
       watched_index: HashMap::new(),
-      last_transaction: 0,
+      transaction_boundaries: Vec::new(),
     }
   }
 
   pub fn clear(&mut self) {
     self.epoch = 0;
     self.round = 0;
-    self.last_transaction = 0;
     self.runtime.clear();
     self.store.clear();
     self.watched_index.clear();
@@ -119,24 +120,38 @@ impl Core {
     }
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) {
-    self.last_transaction = self.store.change_pointer;
+  pub fn step_backward(&mut self, steps: usize) {
 
-    // First make any tables
-    for table in txn.tables.iter() {
-      self.store.intern_change(table, true);
+  }
+
+  pub fn step_back_one(&mut self) {
+    let time = self.time;
+    let transactions = self.transaction_boundaries.len();
+    // We can only step back if there is at least one transaction, 
+    // and we aren't at the beginning of time
+    if transactions > 0  {
+      let now_ix = if time == 0 {
+        self.store.change_pointer
+      } else if transactions == time {
+        0
+      } else {
+        self.transaction_boundaries[transactions - time]
+      };
+      println!("{:?}", now_ix);
     }
-    // Handle the removes
-    for remove in txn.removes.iter() {
-      self.store.intern_change(remove, true);
+
+    for change in &self.store.changes {
+      println!("{:?}",change);
     }
-    // Handle the adds
-    for add in txn.adds.iter() {
-      self.store.intern_change(add, true);
-    }
-    
+    println!("{:?}",self.transaction_boundaries);
+  }
+
+  pub fn process_transaction(&mut self, txn: &Transaction) {
+
+    self.transaction_boundaries.push(self.store.change_pointer);
+    self.store.process_transaction(txn);
     self.runtime.run_network(&mut self.store);
-    self.store.transaction_boundaries.push(self.store.change_pointer);
+    
     // Mark watched tables as changed
     for (table_id, _) in self.store.tables.changed.iter() {
       match self.watched_index.get_mut(&(*table_id as u64)) {
