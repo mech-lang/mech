@@ -36,10 +36,6 @@ impl fmt::Debug for Change {
 
 #[derive(Clone)]
 pub struct Transaction {
-  pub timestamp: u64,
-  complete: bool,
-  pub epoch: u64,
-  pub round: u64,
   pub tables: Vec<Change>,
   pub adds: Vec<Change>,
   pub removes: Vec<Change>,
@@ -48,10 +44,6 @@ pub struct Transaction {
 impl Transaction {
   pub fn new() -> Transaction {
     Transaction {
-      timestamp: 0,
-      complete: false,
-      epoch: 0,
-      round: 0,
       tables: Vec::new(),
       adds: Vec::new(),
       removes: Vec::new(),
@@ -93,9 +85,6 @@ impl Transaction {
     txn    
   }
 
-  pub fn is_complete(&self) -> bool {
-    self.complete == true
-  }
 }
 
 impl fmt::Debug for Transaction {
@@ -124,7 +113,6 @@ pub struct Interner {
   pub change_pointer: usize, // points at the next available slot in memory that can hold a change
   pub rollover: usize,
   pub last_round: usize,
-  pub transaction_boundaries: Vec<usize>, // this is a hack for the time being to use rewind.
 }
 
 impl Interner {
@@ -137,19 +125,34 @@ impl Interner {
       change_pointer: 0,
       rollover: 0,
       last_round: 0,
-      transaction_boundaries: Vec::new(),
     }
   }
 
   pub fn clear(&mut self) {
     self.tables.clear();
     self.changes.clear();
-    self.transaction_boundaries.clear();
     self.changes_count = 0;
     self.change_pointer = 0;
   }
 
-  pub fn intern_change(&mut self, change: &Change, save: bool) {  
+  pub fn process_transaction(&mut self, txn: &Transaction) {
+    
+    // First make any tables
+    for table in txn.tables.iter() {
+      self.intern_change(table, true);
+    }
+    // Handle the removes
+    for remove in txn.removes.iter() {
+      self.intern_change(remove, true);
+    }
+    // Handle the adds
+    for add in txn.adds.iter() {
+      self.intern_change(add, true);
+    }    
+
+  }
+
+  fn intern_change(&mut self, change: &Change, save: bool) {  
     match change {
       Change::Set{table, row, column, value} => {
         match self.tables.get_mut(*table) {
