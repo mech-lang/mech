@@ -18,6 +18,7 @@ pub enum Change {
   Set{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
   NewTable{id: u64, rows: usize, columns: usize},
+  RemoveTable{id: u64, rows: usize, columns: usize},
 }
 
 impl fmt::Debug for Change {
@@ -27,7 +28,8 @@ impl fmt::Debug for Change {
       Change::Append{table, column, value} => write!(f, "<++> #{:#x} [{:#x}: {:?}]", table, column, value),
       Change::Set{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::NewTable{id, rows, columns} => write!(f, "<#> #{:#x} [{:?} x {:?}]", id, rows, columns),
+      Change::NewTable{id, rows, columns} => write!(f, "<+#> #{:#x} [{:?} x {:?}]", id, rows, columns),
+      Change::RemoveTable{id, rows, columns} => write!(f, "<-#> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
   }
 }
@@ -57,6 +59,7 @@ impl Transaction {
         Change::Append{..} |
         Change::Set{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
+        Change::RemoveTable{..} |
         Change::NewTable{..} => txn.tables.push(change),
       }
     }
@@ -69,6 +72,7 @@ impl Transaction {
       Change::Append{..} |
       Change::Set{..} => txn.adds.push(change),
       Change::Remove{..} => txn.removes.push(change),
+      Change::RemoveTable{..} |
       Change::NewTable{..} => txn.tables.push(change),
     }
     txn
@@ -198,15 +202,11 @@ impl Interner {
         self.tables.changed.insert((*table as usize, *column as usize));
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
       },
-      // TODO Implement removes
-      Change::Remove{..} => {
-
-      }
       Change::NewTable{id, rows, columns } => {
-        if !self.tables.name_map.contains_key(&id) {
-          self.tables.name_map.insert(*id, 0);
-          self.tables.register(Table::new(*id, *rows, *columns));
-        }
+        self.tables.register(Table::new(*id, *rows, *columns));
+      }
+      Change::RemoveTable{id, rows, columns } => {
+        self.tables.remove(&id);
       }
     }
     if save {
