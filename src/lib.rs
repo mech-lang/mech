@@ -94,6 +94,7 @@ impl Core {
 
   pub fn step(&mut self) {
     self.runtime.run_network(&mut self.store);
+    self.transaction_boundaries.push(self.store.change_pointer);
   }
 
   pub fn index(&mut self, table: u64, row: u64, column: u64) -> Option<&Value> {
@@ -130,25 +131,54 @@ impl Core {
     // We can only step back if there is at least one transaction, 
     // and we aren't at the beginning of time
     if transactions > 0  {
-      let now_ix = if time == 0 {
-        self.store.change_pointer
-      } else if transactions == time {
+      let now_ix = if transactions <= time {
         0
       } else {
-        self.transaction_boundaries[transactions - time]
+        self.transaction_boundaries[transactions - time - 1]
       };
-      println!("{:?}", now_ix);
-    }
+      let prev_ix = if transactions <= time + 1 {
+        0 
+      } else {
+        self.transaction_boundaries[transactions - time - 2]
+      };
 
-    for change in &self.store.changes {
-      println!("{:?}",change);
+      // Now process the transactions in reverse order
+      for ix in (prev_ix..now_ix).rev() {
+        match self.store.changes[ix] {
+          Change::Set{table, row, column, ref value} => {
+            self.store.process_transaction(&Transaction::from_change(
+              Change::Remove{table,row,column,value: value.clone()}
+            ));
+          },
+          Change::Remove{table, row, column, ref value} => {
+            self.store.process_transaction(&Transaction::from_change(
+              Change::Set{table,row,column,value: value.clone()}
+            ));
+          },
+          Change::NewTable{id, rows, columns} => {
+            self.store.process_transaction(&Transaction::from_change(
+              Change::RemoveTable{id,rows,columns}
+            ));
+          },
+          _ => (),
+        };
+      }
+
+      for (ix, change) in self.store.changes.iter().enumerate() {
+        let foo = if ix < now_ix && ix >= prev_ix {
+          "->"
+        } else {
+          "  "
+        };
+        println!("{} {:?}",foo, change);
+      }
+      self.time += 1;
+
     }
-    println!("{:?}",self.transaction_boundaries);
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
 
-    self.transaction_boundaries.push(self.store.change_pointer);
     self.store.process_transaction(txn);
     self.runtime.run_network(&mut self.store);
     
@@ -160,6 +190,7 @@ impl Core {
       }
     }
 
+    self.transaction_boundaries.push(self.store.change_pointer);
     self.changes = self.store.changes_count;
     self.epoch = self.store.rollover;
   }
@@ -175,13 +206,14 @@ impl fmt::Debug for Core {
     write!(f, "┌────────────────────┐\n").unwrap();
     write!(f, "│ Mech Core #{:0x}\n", self.id).unwrap();
     write!(f, "├────────────────────┤\n").unwrap();
+    write!(f, "│ Time Offset: {:?}\n", self.time).unwrap();
     write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
     write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
     write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
     write!(f, "└────────────────────┘\n").unwrap();
-    for (table, history) in self.store.tables.map.values() {
+    for table in self.store.tables.map.values() {
       write!(f, "{:?}", table).unwrap();
     }
     Ok(())
