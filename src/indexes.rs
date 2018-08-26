@@ -86,7 +86,7 @@ impl Hasher {
 
 pub struct TableIndex {
   pub name_map: HashMap<u64, u64>,
-  pub map: HashMap<u64, (Table, Vec<(u64, u64, usize)>)>,
+  pub map: HashMap<u64, Table>,
   pub changed: HashSet<(usize, usize)>,
   pub changed_this_round: HashSet<(usize, usize)>,
 }
@@ -115,30 +115,32 @@ impl TableIndex {
 
   pub fn get(&self, table_id: u64) -> Option<&Table> {
     match self.map.get(&table_id) {
-      Some((table, _)) => Some(table),
+      Some(table) => Some(table),
       None => None,
     }
   }
 
   pub fn get_mut(&mut self, table_id: u64) -> Option<&mut Table> {
     match self.map.get_mut(&table_id) {
-      Some((table, _)) => Some(table),
+      Some(table) => Some(table),
       None => None,
     }
   }
 
   pub fn register(&mut self, table: Table) {
     if !self.map.contains_key(&table.id) {
-      self.map.insert(table.id, (table, Vec::with_capacity(100)));
+      self.name_map.insert(table.id, 0);
+      self.map.insert(table.id, table);
     }
   }
 
-  pub fn contains_table(&mut self, table: u64) -> bool {
+  pub fn contains(&mut self, table: u64) -> bool {
     self.map.contains_key(&table)
   }
 
   pub fn remove(&mut self, table: &u64) {
-    self.map.remove(table);
+    self.name_map.remove(&table);
+    self.map.remove(&table);
   }
 
 }
