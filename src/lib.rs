@@ -47,7 +47,7 @@ pub use self::runtime::{Runtime, Block, Constraint, Register};
 pub struct Core {
   pub id: u64,
   pub epoch: usize,
-  pub time: usize, // this is an offset from now. 0 means now, 1 means 1 tick ago, etc.
+  pub offset: usize, // this is an offset from now. 0 means now, 1 means 1 txn ago, etc.
   pub round: usize,
   pub changes: usize,
   pub store: Interner,
@@ -63,7 +63,7 @@ impl Core {
   pub fn new(change_capacity: usize, table_capacity: usize) -> Core {
     Core {
       id: 0,
-      time: 0,
+      offset: 0,
       epoch: 0,
       round: 0,
       changes: 0,
@@ -126,7 +126,8 @@ impl Core {
   }
 
   pub fn step_back_one(&mut self) {
-    let time = self.time;
+    let time = self.store.offset;
+    self.store.offset += 1;
     let transactions = self.transaction_boundaries.len();
     // We can only step back if there is at least one transaction, 
     // and we aren't at the beginning of time
@@ -172,9 +173,41 @@ impl Core {
         };
         println!("{} {:?}",foo, change);
       }
-      self.time += 1;
 
     }
+    self.offset = self.store.offset;
+  }
+
+  pub fn step_forward_one(&mut self) {
+    let time = self.store.offset;
+    let transactions = self.transaction_boundaries.len();
+    // We can only step forward if there is at least one transaction and we are
+    // rewound from "now"
+    if time > 0 && transactions > 0 {
+      let now_ix = if transactions <= time {
+        0
+      } else {
+        self.transaction_boundaries[transactions - time - 1]
+      };
+      let next_ix = if transactions <= time - 1 {
+        0 
+      } else {
+        self.transaction_boundaries[transactions - time]
+      };
+      for ix in now_ix..next_ix {
+        self.store.process_transaction(&Transaction::from_change(self.store.changes[ix].clone()));
+      }
+      for (ix, change) in self.store.changes.iter().enumerate() {
+        let foo = if ix >= now_ix && ix < next_ix {
+          "->"
+        } else {
+          "  "
+        };
+        println!("{} {:?}",foo, change);
+      }
+      self.store.offset -= 1;
+    }
+    self.offset = self.store.offset;
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
@@ -206,7 +239,7 @@ impl fmt::Debug for Core {
     write!(f, "┌────────────────────┐\n").unwrap();
     write!(f, "│ Mech Core #{:0x}\n", self.id).unwrap();
     write!(f, "├────────────────────┤\n").unwrap();
-    write!(f, "│ Time Offset: {:?}\n", self.time).unwrap();
+    write!(f, "│ Time Offset: {:?}\n", self.offset).unwrap();
     write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
     write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
