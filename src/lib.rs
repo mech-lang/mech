@@ -52,7 +52,6 @@ pub struct Core {
   pub changes: usize,
   pub store: Interner,
   pub runtime: Runtime,
-  pub watched_index: HashMap<u64, bool>,
   change_capacity: usize,
   table_capacity: usize,
   transaction_boundaries: Vec<usize>,
@@ -71,7 +70,6 @@ impl Core {
       table_capacity,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
-      watched_index: HashMap::new(),
       transaction_boundaries: Vec::new(),
     }
   }
@@ -81,15 +79,28 @@ impl Core {
     self.round = 0;
     self.runtime.clear();
     self.store.clear();
-    self.watched_index.clear();
   }
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
     self.runtime.register_blocks(blocks, &mut self.store);
   }
 
-  pub fn register_watcher(&mut self, table: u64) {
-    self.watched_index.insert(table, false);
+  pub fn last_transaction(&self) -> usize {
+    if self.transaction_boundaries.len() <= 1 {
+      0
+    } else {
+      self.transaction_boundaries[self.transaction_boundaries.len() - 2]
+    }
+    
+  }
+
+  pub fn this_transaction(&self) -> usize {
+    if self.transaction_boundaries.len() == 0 {
+      0
+    } else {
+      self.transaction_boundaries[self.transaction_boundaries.len() - 1]
+    }
+    
   }
 
   pub fn step(&mut self) {
@@ -214,14 +225,6 @@ impl Core {
 
     self.store.process_transaction(txn);
     self.runtime.run_network(&mut self.store);
-    
-    // Mark watched tables as changed
-    for (table_id, _) in self.store.tables.changed_this_round.iter() {
-      match self.watched_index.get_mut(&(*table_id as u64)) {
-        Some(q) => *q = true,
-        _ => (),
-      }
-    }
 
     self.transaction_boundaries.push(self.store.change_pointer);
     self.changes = self.store.changes_count;
