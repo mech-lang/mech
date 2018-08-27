@@ -133,7 +133,9 @@ impl Core {
   }
 
   pub fn step_backward(&mut self, steps: usize) {
-
+    for i in 0..steps {
+      self.step_back_one();
+    }
   }
 
   pub fn step_back_one(&mut self) {
@@ -189,6 +191,12 @@ impl Core {
     self.offset = self.store.offset;
   }
 
+  pub fn step_forward(&mut self, steps: usize) {
+    for i in 0..steps {
+      self.step_forward_one();
+    }
+  }
+
   pub fn step_forward_one(&mut self) {
     let time = self.store.offset;
     let transactions = self.transaction_boundaries.len();
@@ -219,6 +227,12 @@ impl Core {
       self.store.offset -= 1;
     }
     self.offset = self.store.offset;
+  }
+
+  pub fn resume(&mut self) {
+    for i in 0..self.offset {
+      self.step_forward_one();
+    }
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
