@@ -191,7 +191,8 @@ impl Interner {
               None => (),
             };            
           },
-        }
+        };
+        self.tables.changed_this_round.insert((*table as usize, *column as usize));
       },
       Change::Append{table, column, value} => {
         match self.tables.get_mut(*table) {
