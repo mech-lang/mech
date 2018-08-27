@@ -165,14 +165,14 @@ impl Core {
         };
       }
 
-      for (ix, change) in self.store.changes.iter().enumerate() {
+      /*for (ix, change) in self.store.changes.iter().enumerate() {
         let foo = if ix < now_ix && ix >= prev_ix {
           "->"
         } else {
           "  "
         };
         println!("{} {:?}",foo, change);
-      }
+      }*/
 
     }
     self.offset = self.store.offset;
@@ -197,14 +197,14 @@ impl Core {
       for ix in now_ix..next_ix {
         self.store.process_transaction(&Transaction::from_change(self.store.changes[ix].clone()));
       }
-      for (ix, change) in self.store.changes.iter().enumerate() {
+      /*for (ix, change) in self.store.changes.iter().enumerate() {
         let foo = if ix >= now_ix && ix < next_ix {
           "->"
         } else {
           "  "
         };
         println!("{} {:?}",foo, change);
-      }
+      }*/
       self.store.offset -= 1;
     }
     self.offset = self.store.offset;
