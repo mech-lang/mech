@@ -85,9 +85,7 @@ impl Hasher {
 // ## Table Index
 
 pub struct TableIndex {
-  pub name_map: HashMap<u64, u64>,
   pub map: HashMap<u64, Table>,
-  pub changed: HashSet<(usize, usize)>,
   pub changed_this_round: HashSet<(usize, usize)>,
 }
 
@@ -95,17 +93,13 @@ impl TableIndex {
 
   pub fn new(capacity: usize) -> TableIndex {
     TableIndex {
-      name_map: HashMap::with_capacity(capacity),
       map: HashMap::with_capacity(capacity),
-      changed: HashSet::with_capacity(capacity),
       changed_this_round: HashSet::with_capacity(capacity),
     }
   }
 
   pub fn clear(&mut self) {
-    self.name_map.clear();
     self.map.clear();
-    self.changed.clear();
     self.changed_this_round.clear();
   }
 
@@ -129,7 +123,6 @@ impl TableIndex {
 
   pub fn register(&mut self, table: Table) {
     if !self.map.contains_key(&table.id) {
-      self.name_map.insert(table.id, 0);
       self.map.insert(table.id, table);
     }
   }
@@ -139,7 +132,6 @@ impl TableIndex {
   }
 
   pub fn remove(&mut self, table: &u64) {
-    self.name_map.remove(&table);
     self.map.remove(&table);
   }
 

@@ -178,7 +178,6 @@ impl Interner {
           }
           None => (),
         };
-        self.tables.changed.insert((*table as usize, *column as usize));
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
       },
       Change::Remove{table, row, column, value} => {
@@ -202,7 +201,6 @@ impl Interner {
           }
           None => (),
         };
-        self.tables.changed.insert((*table as usize, *column as usize));
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
       },
       Change::NewTable{id, rows, columns } => {

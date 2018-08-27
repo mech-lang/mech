@@ -216,7 +216,7 @@ impl Core {
     self.runtime.run_network(&mut self.store);
     
     // Mark watched tables as changed
-    for (table_id, _) in self.store.tables.changed.iter() {
+    for (table_id, _) in self.store.tables.changed_this_round.iter() {
       match self.watched_index.get_mut(&(*table_id as u64)) {
         Some(q) => *q = true,
         _ => (),
