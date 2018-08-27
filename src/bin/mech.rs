@@ -20,8 +20,6 @@ use term_painter::Color::*;
 
 extern crate mech_server;
 use mech_server::program::{ProgramRunner, RunLoop, RunLoopMessage};
-use mech_server::watchers::system::{SystemTimerWatcher};
-use mech_server::watchers::websocket::{WebsocketClientWatcher};
 use mech_server::client::ClientHandler;
 
 // ## Server Entry
