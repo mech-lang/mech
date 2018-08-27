@@ -111,6 +111,7 @@ impl fmt::Debug for Transaction {
 
 #[derive(Debug)]
 pub struct Interner {
+  pub offset: usize,
   pub tables: TableIndex,
   pub changes: Vec<Change>,
   pub changes_count: usize,
@@ -123,6 +124,7 @@ impl Interner {
 
   pub fn new(change_capacity: usize, table_capacity: usize) -> Interner {
     Interner {
+      offset: 0,
       tables: TableIndex::new(table_capacity),
       changes: Vec::with_capacity(change_capacity),
       changes_count: 0,
@@ -143,29 +145,30 @@ impl Interner {
     
     // First make any tables
     for table in txn.tables.iter() {
-      self.intern_change(table, true);
+      self.intern_change(table);
     }
     // Handle the removes
     for remove in txn.removes.iter() {
-      self.intern_change(remove, true);
+      self.intern_change(remove);
     }
     // Handle the adds
     for add in txn.adds.iter() {
-      self.intern_change(add, true);
+      self.intern_change(add);
     }    
 
   }
 
-  fn intern_change(&mut self, change: &Change, save: bool) {  
+  fn intern_change(&mut self, change: &Change) {  
     match change {
       Change::Set{table, row, column, value} => {
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             match table_ref.set_cell_by_id(*row as usize, *column as usize, value.clone()) {
               Ok(old_value) => {
-                if save {
+                if self.offset == 0 {
                   match old_value {
                     Value::Empty => (),
+                    // Save a remove so that we can rewind
                     _ => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
                   }
                 }
@@ -209,9 +212,9 @@ impl Interner {
         self.tables.remove(&id);
       }
     }
-    if save {
+    if self.offset == 0 {
       self.save_change(change);
-    }
+    }    
   }
 
   // Save the change. If there's enough room in memory, store it there. 
