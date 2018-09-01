@@ -24,7 +24,7 @@ macro_rules! node {
     pub fn $func(s: &mut ParseState) -> &mut ParseState {
       let old_depth = s.depth.clone();
       s.depth += 1; 
-      // spacer(s.depth); println!($label);
+      spacer(s.depth); println!($label);
       let previous = s.last_match.clone();
       let old_position = s.position;
       let result = $production(s);
@@ -32,9 +32,9 @@ macro_rules! node {
       if result.ok() {
         result.node_stack.push(node);
         result.last_match = result.node_stack.len();
-        // spacer(old_depth + 1); print!($label); println!(" √");
+        spacer(old_depth + 1); print!($label); println!(" √");
       } else { 
-        // spacer(old_depth + 1); print!($label); println!(" X");
+        spacer(old_depth + 1); print!($label); println!(" X");
         result.position = old_position;
         result.last_match = previous;
       }
@@ -82,6 +82,8 @@ pub enum Node {
   SetOperator{ children: Vec<Node> },
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
+  AnonymousTable{ children: Vec<Node> },
+  AnonymousTableRow{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
@@ -130,10 +132,12 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Select{children} => {print!("Select\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::Insert{children} => {print!("Insert\n"); Some(children)},
-    Node::MathExpression{children} => {print!("Math Expression\n"); Some(children)},
-    Node::SelectExpression{children} => {print!("Select Expression\n"); Some(children)},
+    Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
+    Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::Comparator{children} => {print!("Comparator\n"); Some(children)},
-    Node::FilterExpression{children} => {print!("Filter Expression\n"); Some(children)},
+    Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
+    Node::AnonymousTable{children} => {print!("AnonymousTable\n"); Some(children)},
+    Node::AnonymousTableRow{children} => {print!("AnonymousTableRow\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
@@ -261,7 +265,7 @@ impl ParseState {
       self
     } else {
       let mut before = self.clone();
-      // spacer(self.depth); println!("And");
+      spacer(self.depth); println!("And");
       let result = production(self);
       result.depth = before.depth;
       result
@@ -281,7 +285,7 @@ impl ParseState {
 
 
       self.depth += 1;
-      // spacer(self.depth); println!("OR");
+      spacer(self.depth); println!("OR");
       self.status = ParseStatus::Parsing;
       let result = production(self);
 
@@ -303,7 +307,7 @@ impl ParseState {
   {
     let before_depth = self.depth;
     self.depth += 1;
-    // spacer(self.depth); println!("Optional");
+    spacer(self.depth); println!("Optional");
     if self.ok() {
       let result = production(self);
       if result.ok() {
@@ -324,7 +328,7 @@ impl ParseState {
   {
     self.depth += 1; 
     let before_depth = self.depth;
-    // spacer(self.depth); println!("Repeat");
+    spacer(self.depth); println!("Repeat");
     let mut once = false;
     let mut result = self;
     let start_pos = result.last_match.clone();
@@ -350,7 +354,7 @@ impl ParseState {
     self.depth += 1; 
     let before_status = self.status.clone();
     let before_depth = self.depth;
-    // spacer(self.depth); println!("Optional Repeat");
+    spacer(self.depth); println!("Optional Repeat");
     let mut result = self;
     let start_pos = result.last_match.clone();
     while result.ok() {
@@ -470,7 +474,7 @@ node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
 node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
 node!{row_define, RowDefine, |s|{ left_bracket(s).optional_repeat(column).and(right_bracket) }, "RowDefine"}
-node!{column, Column, |s|{ identifier(s).optional(binding).optional(comma).optional(space) }, "Column"}
+node!{column, Column, |s|{ identifier(s).or(number).optional(binding).optional(comma).optional(space) }, "Column"}
 node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
 node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
@@ -484,11 +488,14 @@ node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ select_data(s).or(constant) }, "L4"}
 
-node!{math_expression, MathExpression, |s|{ l1(s).and(newline_or_end) }, "Math Expression"}
+node!{expression, Expression, |s|{ select_expression(s).or(anonymous_table).or(math_expression).or(filter_expression) }, "Expression"}
+node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(anonymous_table_row).and(right_bracket) }, "AnonymousTable"}
+node!{anonymous_table_row, AnonymousTableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "AnonymousTableRow"}
+node!{math_expression, MathExpression, |s|{ l1(s).and(newline_or_end) }, "MathExpression"}
 node!{select_expression, SelectExpression, |s|{ data(s).and(newline_or_end) }, "SelectExpression"}
 node!{filter_expression, FilterExpression, |s|{ select_data(s).or(constant).and(space).and(comparator).and(space).and(select_data).or(constant) }, "FilterExpression"}
+
 node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"}
-node!{expression, Expression, |s|{ select_expression(s).or(math_expression).or(filter_expression) }, "Expression"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
@@ -524,6 +531,7 @@ leaf!{slash, Token::Slash}
 leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{tilde, Token::Tilde}
+leaf!{semicolon, Token::Semicolon}
 leaf!{new_line_char, Token::Newline}
 leaf!{carriage_return, Token::CarriageReturn}
 leaf!{end, Token::EndOfStream}
@@ -537,7 +545,7 @@ pub fn node(s: &mut ParseState) -> &mut ParseState {
 // Matches a token from the lexer step.
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
-  // spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
+  spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
   if s.token_stack[s.position] == token {
     let byte = if s.position < s.text.len() {
       s.text.as_bytes()[s.position]
@@ -552,10 +560,10 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
       },
     };
     s.node_stack.push(Node::Token{token, byte});
-    // spacer(0); println!(" √");
+    spacer(0); println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
-    // spacer(0); println!(" X");
+    spacer(0); println!(" X");
   }
   s
 }
