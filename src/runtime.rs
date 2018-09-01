@@ -14,7 +14,7 @@ use alloc::{fmt, Vec, String};
 use database::{Transaction, Interner, Change};
 use hashmap_core::map::HashMap;
 use hashmap_core::set::HashSet;
-use indexes::Hasher;
+use indexes::{Hasher, TableIndex};
 use operations;
 use operations::Function;
 
@@ -229,7 +229,7 @@ pub struct Block {
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
-  memory: Table,
+  memory: TableIndex,
 }
 
 impl Block {
@@ -247,12 +247,14 @@ impl Block {
       memory_registers: Vec::with_capacity(1),
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
-      memory: Table::new(0, 1, 1),
+      memory: TableIndex::new(1),
     }
   }
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
-    let new_column_ix = (self.memory.columns + 1) as u64;
+    println!("{:?}", constraint);
+    //let constraint_id = format!("{}-{}", self.id, self.);
+    /*
     match constraint {
       Constraint::Scan{table, column, input} | 
       Constraint::ChangeScan{table, column, input} => {
@@ -332,7 +334,7 @@ impl Block {
       Constraint::CopyOutput{..} => (),
     }
     self.constraints.push(constraint);
-
+    */
   }
 
   pub fn add_constraints(&mut self, constraints: Vec<Constraint>) {
@@ -352,6 +354,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    /*
     for step in &self.plan {
       match step {
         Constraint::ChangeScan{table, column, input} => {
@@ -454,6 +457,7 @@ impl Block {
       } 
     }
     self.updated = true;
+    */
   }
 
   // Right now, the planner works just by giving the constraint an order to execute.
@@ -571,7 +575,7 @@ pub enum Constraint {
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
   Function {operation: operations::Function, parameters: Vec<u64>, memory: u64},
-  Constant {value: i64, memory: u64},
+  Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
@@ -592,7 +596,7 @@ impl fmt::Debug for Constraint {
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, memory} => write!(f, "Fxn::{:?}{:?} -> M{:#x}", operation, parameters, memory),
-      Constraint::Constant{value, memory} => write!(f, "Constant({:?} -> M{:#x})", value, memory),
+      Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
       Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
