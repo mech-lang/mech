@@ -56,9 +56,7 @@ pub enum Node {
   Insert { children: Vec<Node> },
   VariableDefine { children: Vec<Node> },
   TableDefine { children: Vec<Node> },
-  TableDefineRHS { children: Vec<Node> },
   AddRow { children: Vec<Node> },
-  RowDefine { children: Vec<Node> },
   Column { children: Vec<Node> },
   Binding { children: Vec<Node> },
   IdentifierOrNumber { children: Vec<Node> },
@@ -83,7 +81,7 @@ pub enum Node {
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   AnonymousTable{ children: Vec<Node> },
-  AnonymousTableRow{ children: Vec<Node> },
+  TableRow{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
@@ -137,7 +135,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Comparator{children} => {print!("Comparator\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::AnonymousTable{children} => {print!("AnonymousTable\n"); Some(children)},
-    Node::AnonymousTableRow{children} => {print!("AnonymousTableRow\n"); Some(children)},
+    Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
@@ -145,9 +143,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
-    Node::TableDefineRHS{children} => {print!("TableDefineRHS\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
-    Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::IdentifierOrNumber{children} => {print!("IdentifierOrNumber\n"); Some(children)},
@@ -468,12 +464,10 @@ node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).an
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
 node!{variable_define, VariableDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "VariableDefine"}
-node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(table_define_rhs) }, "TableDefine"}
-node!{add_row, AddRow, |s|{ table(s).and(space).and(plus).and(equal).and(space).and(table_define_rhs) }, "AddRow"}
+node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(expression) }, "TableDefine"}
+node!{add_row, AddRow, |s|{ table(s).and(space).and(plus).and(equal).and(space).and(expression) }, "AddRow"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
-node!{table_define_rhs, TableDefineRHS, |s|{ expression(s).or(row_define) }, "TableDefineRHS"}
-node!{row_define, RowDefine, |s|{ left_bracket(s).optional_repeat(column).and(right_bracket) }, "RowDefine"}
 node!{column, Column, |s|{ identifier(s).or(number).optional(binding).optional(comma).optional(space) }, "Column"}
 node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
 node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
@@ -489,8 +483,8 @@ node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ select_data(s).or(constant) }, "L4"}
 
 node!{expression, Expression, |s|{ select_expression(s).or(anonymous_table).or(math_expression).or(filter_expression) }, "Expression"}
-node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(anonymous_table_row).and(right_bracket) }, "AnonymousTable"}
-node!{anonymous_table_row, AnonymousTableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "AnonymousTableRow"}
+node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
+node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{math_expression, MathExpression, |s|{ l1(s).and(newline_or_end) }, "MathExpression"}
 node!{select_expression, SelectExpression, |s|{ data(s).and(newline_or_end) }, "SelectExpression"}
 node!{filter_expression, FilterExpression, |s|{ select_data(s).or(constant).and(space).and(comparator).and(space).and(select_data).or(constant) }, "FilterExpression"}

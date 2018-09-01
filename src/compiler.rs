@@ -31,7 +31,6 @@ pub enum Node {
   DataWatch{ children: Vec<Node> },
   SelectData{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
-  RowDefine{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
@@ -41,14 +40,14 @@ pub enum Node {
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
-  AnonymousTableRow {children: Vec<Node> },
+  TableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
-  Constant {value: u64},
+  Constant {table: u64, row: u64, column: u64, value: u64},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   Null,
@@ -71,12 +70,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
-    Node::RowDefine{children} => {print!("RowDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
-    Node::AnonymousTableRow{children} => {print!("AnonymousTableRow\n"); Some(children)},
+    Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
@@ -93,10 +91,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
-    Node::Identifier{name, id} => {print!("{}({:?})\n", name, id); None},
+    Node::Identifier{name, id} => {print!("{}({:#x})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value} => {print!("{:?}\n", value); None},
+    Node::Constant{value, ..} => {print!("{:?}\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Table{name,id} => {print!("#{}({:?})\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
@@ -134,7 +132,8 @@ pub struct Compiler {
   pub constraints: Vec<Constraint>,
   pub depth: usize,
   pub input_registers: usize,
-  pub memory_registers: usize,
+  pub row_register: usize,
+  pub column_register: usize,
   pub output_registers: usize,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
@@ -154,11 +153,19 @@ impl Compiler {
       section: 1,
       block: 1,
       input_registers: 1,
-      memory_registers: 1,
+      row_register: 1,
+      column_register: 1,
       output_registers: 1,
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
     }
+  }
+
+  fn reset_registers(&mut self) {
+    self.input_registers = 1;
+    self.row_register = 1;
+    self.column_register = 1;
+    self.output_registers = 1;
   }
 
   pub fn compile_string(&mut self, input: String) -> &Vec<Block> {
@@ -184,9 +191,7 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        self.input_registers = 1;
-        self.memory_registers = 1;
-        self.output_registers = 1;
+        self.reset_registers();
         let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
         block.plan();
@@ -202,9 +207,7 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        self.input_registers = 1;
-        self.memory_registers = 1;
-        self.output_registers = 1;
+        self.reset_registers();
         let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
         block.plan();
@@ -230,14 +233,19 @@ impl Compiler {
   }
 
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
+    
     let mut constraints: Vec<Constraint> = Vec::new();
+    
     match node {
+      Node::TableRow{children} |
+      Node::Column{children} |
       Node::Constraint{children} |
-      Node::Statement{children} |
-      Node::AnonymousTableRow{children} |
+      Node::Statement {children} |
+      Node::TableRow{children} |
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
+      /*
       Node::MathExpression{children} => {
         let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
@@ -303,24 +311,19 @@ impl Compiler {
           }
         }
       }
-      Node::RowDefine{children} => {
-        let m = self.memory_registers;
+      */
+      Node::AnonymousTableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        // Assign the column
-        let mut column_ix = 1;
         for constraint in result {
           match constraint {
-            Constraint::Identifier{id, memory} => {
-              column_ix = id;
-              constraints.push(constraint);
-            },
-            Constraint::Insert{memory, table, column} => {
-              constraints.push(Constraint::Insert{memory, table, column: column_ix});
+            Constraint::Constant{table, row, column, value} => {
+              constraints.push(Constraint::Constant{table: table_id, row, column, value});
             },
             _ => constraints.push(constraint),
           }
         }
       },
+      /*
       Node::Column{children} => {
         let mut result = self.compile_constraints(children);
         for constraint in result {
@@ -376,20 +379,12 @@ impl Compiler {
         data.reverse();
         constraints.append(&mut data);
       },
+      */
       Node::VariableDefine{children} => {
-        let m = self.memory_registers as u64;
         let mut result = self.compile_constraints(children);
-        result.reverse();
-        let identifier = result.pop();
-        result.reverse();
-        match identifier {
-          Some(Constraint::Data{table, column}) => {
-            constraints.push(Constraint::Identifier{id: column, memory: m});
-          },
-          _ => (),
-        }
         constraints.append(&mut result);
       },
+      /*
       Node::TableDefine{children} => {
         let mut table_id = 0;
         let m = self.memory_registers as u64;
@@ -545,20 +540,25 @@ impl Compiler {
           }
         }
       },
+      */
       Node::Identifier{name, id} => {
         constraints.push(Constraint::Data{table: 0, column: *id});
       },
+      /*
       Node::Table{name, id} => {
         constraints.push(Constraint::Data{table: *id, column: 1});
       },
-      Node::Constant{value} => {
-        constraints.push(Constraint::Constant{value: *value as i64, memory: self.memory_registers as u64});
-        self.memory_registers += 1;
+      */
+      Node::Constant{table, row, column, value} => {
+        constraints.push(Constraint::Constant{table: *table, row: *row, column: *column, value: *value as i64});
       },
       _ => (),
     }
+    
     constraints
+    
   }
+
 
   pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
     let mut compiled = Vec::new();
@@ -608,10 +608,6 @@ impl Compiler {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectData{children: result});
       },
-      parser::Node::TableDefineRHS{children} => {
-        let mut result = self.compile_nodes(children);
-        compiled.append(&mut result);
-      },
       parser::Node::Statement{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Statement{children: result});
@@ -623,17 +619,6 @@ impl Compiler {
       parser::Node::DataWatch{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::DataWatch{children: result});
-      },
-      parser::Node::RowDefine{children} => {
-        let result = self.compile_nodes(children);
-        let mut children: Vec<Node> = Vec::new();
-        for node in result {
-          match node {
-            Node::Token{..} => (), 
-            _ => children.push(node),
-          }
-        }
-        compiled.push(Node::RowDefine{children});
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
@@ -652,10 +637,14 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{..} => (), 
+            Node::Constant{table, row, column, value} => {
+              children.push(Node::Constant{table, row, column: self.column_register as u64, value});
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Column{children});
+        compiled.append(&mut children);
+        self.column_register += 1;
       },
       parser::Node::Binding{children} => {
         let result = self.compile_nodes(children);
@@ -708,16 +697,22 @@ impl Compiler {
         }
         compiled.push(Node::AnonymousTableDefine{children});
       },
-      parser::Node::AnonymousTableRow{children} => {
+      parser::Node::TableRow{children} => {
         let result = self.compile_nodes(children);
+        println!("RESSSULT{:?}", result);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
             Node::Token{token: Token::Space, ..} => (), 
+            Node::Constant{table, row, column, value} => {
+              children.push(Node::Constant{table, row: self.row_register as u64, column, value})
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(Node::AnonymousTableRow{children});
+        compiled.push(Node::TableRow{children});
+        self.column_register = 1;
+        self.row_register += 1;
       },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
@@ -821,7 +816,7 @@ impl Compiler {
             _ => (),
           }
         }
-        compiled.push(Node::Constant{value});
+        compiled.push(Node::Constant{table: 0, row: 0 , column: 0, value});
       },
       // String-like nodes
       parser::Node::Paragraph{children} => {
@@ -928,8 +923,6 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
-      parser::Node::AnonymousTable{children} |
-      parser::Node::AnonymousTableRow{children} |
       parser::Node::Comparator{children} |
       parser::Node::IdentifierOrNumber{children} |
       parser::Node::ProseOrCode{children}|
