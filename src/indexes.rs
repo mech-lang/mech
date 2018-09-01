@@ -84,6 +84,7 @@ impl Hasher {
 
 // ## Table Index
 
+#[derive(Clone)]
 pub struct TableIndex {
   pub map: HashMap<u64, Table>,
   pub changed_this_round: HashSet<(usize, usize)>,
