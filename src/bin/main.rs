@@ -19,15 +19,15 @@ use mech_core::Core;
 
 fn main() {
   let mut compiler = Compiler::new();
-  let mut core = Core::new(10, 100);
-  let input = String::from("#ball = 10");
+  let mut core = Core::new(100000, 50000);
+  let input = String::from("ball = [1 2 3
+                                    4 5 6]");
   compiler.compile_string(input);
-  core.register_blocks(compiler.blocks);
+  core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  println!("{:?}", core.runtime);
-  
-  
+  println!("{:?}", core.runtime); 
+
 }   
