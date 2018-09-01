@@ -40,6 +40,8 @@ pub enum Node {
   BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
+  AnonymousTableDefine {children: Vec<Node> },
+  AnonymousTableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Title{ text: String },
@@ -73,6 +75,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
+    Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
+    Node::AnonymousTableRow{children} => {print!("AnonymousTableRow\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
@@ -230,6 +234,7 @@ impl Compiler {
     match node {
       Node::Constraint{children} |
       Node::Statement{children} |
+      Node::AnonymousTableRow{children} |
       Node::Expression{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -690,6 +695,30 @@ impl Compiler {
         }
         compiled.push(Node::FilterExpression{children});
       },
+      parser::Node::AnonymousTable{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{token: Token::LeftBracket, ..} |
+            Node::Token{token: Token::RightBracket, ..} |
+            Node::Token{token: Token::Space, ..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::AnonymousTableDefine{children});
+      },
+      parser::Node::AnonymousTableRow{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{token: Token::Space, ..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::AnonymousTableRow{children});
+      },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -899,6 +928,8 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::AnonymousTable{children} |
+      parser::Node::AnonymousTableRow{children} |
       parser::Node::Comparator{children} |
       parser::Node::IdentifierOrNumber{children} |
       parser::Node::ProseOrCode{children}|
