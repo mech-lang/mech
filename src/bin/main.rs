@@ -15,4 +15,6 @@ use rand::{Rng};
 
 fn main() {
 
+  Core::new(100,100);
+
 }
