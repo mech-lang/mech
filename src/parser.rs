@@ -24,7 +24,7 @@ macro_rules! node {
     pub fn $func(s: &mut ParseState) -> &mut ParseState {
       let old_depth = s.depth.clone();
       s.depth += 1; 
-      spacer(s.depth); println!($label);
+      // spacer(s.depth); println!($label);
       let previous = s.last_match.clone();
       let old_position = s.position;
       let result = $production(s);
@@ -32,9 +32,9 @@ macro_rules! node {
       if result.ok() {
         result.node_stack.push(node);
         result.last_match = result.node_stack.len();
-        spacer(old_depth + 1); print!($label); println!(" √");
+        // spacer(old_depth + 1); print!($label); println!(" √");
       } else { 
-        spacer(old_depth + 1); print!($label); println!(" X");
+        // spacer(old_depth + 1); print!($label); println!(" X");
         result.position = old_position;
         result.last_match = previous;
       }
@@ -263,7 +263,7 @@ impl ParseState {
       self
     } else {
       let mut before = self.clone();
-      spacer(self.depth); println!("And");
+      // spacer(self.depth); println!("And");
       let result = production(self);
       result.depth = before.depth;
       result
@@ -283,7 +283,7 @@ impl ParseState {
 
 
       self.depth += 1;
-      spacer(self.depth); println!("OR");
+      // spacer(self.depth); println!("OR");
       self.status = ParseStatus::Parsing;
       let result = production(self);
 
@@ -305,7 +305,7 @@ impl ParseState {
   {
     let before_depth = self.depth;
     self.depth += 1;
-    spacer(self.depth); println!("Optional");
+    // spacer(self.depth); println!("Optional");
     if self.ok() {
       let result = production(self);
       if result.ok() {
@@ -326,7 +326,7 @@ impl ParseState {
   {
     self.depth += 1; 
     let before_depth = self.depth;
-    spacer(self.depth); println!("Repeat");
+    // spacer(self.depth); println!("Repeat");
     let mut once = false;
     let mut result = self;
     let start_pos = result.last_match.clone();
@@ -352,7 +352,7 @@ impl ParseState {
     self.depth += 1; 
     let before_status = self.status.clone();
     let before_depth = self.depth;
-    spacer(self.depth); println!("Optional Repeat");
+    // spacer(self.depth); println!("Optional Repeat");
     let mut result = self;
     let start_pos = result.last_match.clone();
     while result.ok() {
@@ -540,7 +540,7 @@ pub fn node(s: &mut ParseState) -> &mut ParseState {
 // Matches a token from the lexer step.
 pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
   s.depth += 1; 
-  spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
+  // spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
   if s.token_stack[s.position] == token {
     let byte = if s.position < s.text.len() {
       s.text.as_bytes()[s.position]
@@ -555,10 +555,10 @@ pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
       },
     };
     s.node_stack.push(Node::Token{token, byte});
-    spacer(0); println!(" √");
+    // spacer(0); println!(" √");
   } else {
     s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
-    spacer(0); println!(" X");
+    // spacer(0); println!(" X");
   }
   s
 }
