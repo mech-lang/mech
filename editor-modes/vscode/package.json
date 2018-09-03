@@ -1,7 +1,7 @@
 {
     "name": "Mech",
     "displayName": "Mech",
-    "description": "Support for the Mech language in Visual Studio Code",
+    "description": "Support for the Mech programming language.",
     "version": "0.0.1",
     "publisher": "Mech",
     "icon": "images/logo.png",
