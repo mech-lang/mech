@@ -47,7 +47,7 @@ pub enum Node {
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
-  Constant {table: u64, row: u64, column: u64, value: u64},
+  Constant {value: i64},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   Null,
@@ -94,7 +94,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{name, id} => {print!("{}({:#x})\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value, ..} => {print!("{:?}\n", value); None},
+    Node::Constant{value} => {print!("{:?}\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Table{name,id} => {print!("#{}({:?})\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
@@ -130,11 +130,7 @@ pub fn spacer(width: usize) {
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
-  pub depth: usize,
-  pub input_registers: usize,
-  pub row_register: usize,
-  pub column_register: usize,
-  pub output_registers: usize,
+  depth: usize,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -152,20 +148,9 @@ impl Compiler {
       depth: 0,
       section: 1,
       block: 1,
-      input_registers: 1,
-      row_register: 1,
-      column_register: 1,
-      output_registers: 1,
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
     }
-  }
-
-  fn reset_registers(&mut self) {
-    self.input_registers = 1;
-    self.row_register = 1;
-    self.column_register = 1;
-    self.output_registers = 1;
   }
 
   pub fn compile_string(&mut self, input: String) -> &Vec<Block> {
@@ -191,9 +176,8 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        self.reset_registers();
-        let constraints = self.compile_constraints(&children);
-        block.add_constraints(constraints);
+        //let constraints = self.compile_constraints(&children);
+        //block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
       },
@@ -207,9 +191,8 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        self.reset_registers();
-        let constraints = self.compile_constraints(&children);
-        block.add_constraints(constraints);
+        //let constraints = self.compile_constraints(&children);
+        //block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
       },
@@ -228,342 +211,6 @@ impl Compiler {
     let mut compiled = Vec::new();
     for node in nodes {
       compiled.append(&mut self.compile_blocks(node));
-    }
-    compiled
-  }
-
-  pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
-    
-    let mut constraints: Vec<Constraint> = Vec::new();
-    
-    match node {
-      Node::TableRow{children} |
-      Node::Column{children} |
-      Node::Constraint{children} |
-      Node::Statement {children} |
-      Node::TableRow{children} |
-      Node::Expression{children} => {
-        constraints.append(&mut self.compile_constraints(children));
-      },
-      /*
-      Node::MathExpression{children} => {
-        let m = self.memory_registers as u64;
-        let mut result = self.compile_constraints(children);
-        constraints.push(Constraint::Data{table: 0, column: m});
-        constraints.append(&mut result);
-      },
-      Node::SetData{children} => {
-        let mut table_id = 0;
-        let mut column_id = 1;
-        let mut output_column = 0;
-        let m = self.memory_registers as u64;
-        let o = self.output_registers as u64;
-
-        let mut lhs_constraints = self.compile_constraint(&children[0]);
-        let mut rhs_constraints = self.compile_constraint(&children[1]);
-        lhs_constraints.reverse();
-        rhs_constraints.reverse();
-
-        let table = lhs_constraints.pop();
-        let output = rhs_constraints.pop();
-
-        lhs_constraints.reverse();
-        rhs_constraints.reverse();
-
-        match table {
-          Some(Constraint::Data{table: t, column: c}) => {
-            table_id = t;
-            column_id = c;
-          },
-          _ => (), 
-        }
-        
-        match output {
-          Some(Constraint::Data{table: 0, column: c}) => {
-            output_column = c;
-          },
-          _ => (),
-        }
-
-        // If there is an index:
-        for index_mask in lhs_constraints {
-          match index_mask {
-            Constraint::IndexMask{source, truth, memory} => {
-              constraints.push(Constraint::IndexMask{ source: output_column, truth, memory});
-              output_column = memory;
-            }
-            _ => (),
-          }
-        }
-        constraints.push(Constraint::Insert{memory: output_column, table: table_id, column: column_id});
-        self.output_registers += 1;
-        constraints.append(&mut rhs_constraints);
-      },
-      Node::DataWatch{children} => {
-       let result = self.compile_constraints(children);
-        for constraint in result {
-          match constraint {
-            Constraint::Data{table, column} => {
-              constraints.push(Constraint::ChangeScan {table, column, input: self.input_registers as u64});
-              self.input_registers += 1;
-            },
-            _ => (),
-          }
-        }
-      }
-      */
-      Node::AnonymousTableDefine{children} => {
-        let mut result = self.compile_constraints(children);
-        for constraint in result {
-          match constraint {
-            Constraint::Constant{table, row, column, value} => {
-              constraints.push(Constraint::Constant{table: table_id, row, column, value});
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-      },
-      /*
-      Node::Column{children} => {
-        let mut result = self.compile_constraints(children);
-        for constraint in result {
-          match constraint {
-            Constraint::Data{table, column} => {
-              constraints.push(Constraint::Identifier{id: column, memory: self.memory_registers as u64 - 1 });
-            },
-            _ => {
-              constraints.push(constraint)
-            }, 
-          }
-        }
-      },
-      Node::Binding{children} => {
-        constraints.push(Constraint::Insert{memory: self.memory_registers as u64, table: 0, column: 0});
-        self.output_registers += 1;
-        constraints.append(&mut self.compile_constraints(children));
-      },
-      Node::Data{children} => {
-        let mut row = 1;
-        let mut column = 1;
-        let mut table = 0;
-        let mut data: Vec<Constraint> = Vec::new();
-        for child in children {
-          match child {
-            Node::Table{name, id} => table = *id,
-            Node::DotIndex{rows, columns} => {
-              for column in columns {
-                match column {
-                  Node::Identifier{name, id} => data.push(Constraint::Data{table, column: *id}),
-                  Node::BracketIndex{rows, columns} => {
-                    for column in columns {
-                      match column {
-                        Node::Identifier{name, id} => {
-                          data.push(Constraint::IndexMask{ source: 0, truth: *id, memory: self.memory_registers as u64});
-                          self.memory_registers += 1;
-                        },
-                        _ => (),
-                      }
-                    }
-                  },
-                  _ => (),
-                }
-              }
-            }
-            _ => constraints.append(&mut self.compile_constraints(children)),
-          }
-        };
-        // If there is no index, we just take the first column for now later we'll take the whole table
-        if data.len() == 0 {
-          data.push(Constraint::Data{table, column: 1})
-        }
-        data.reverse();
-        constraints.append(&mut data);
-      },
-      */
-      Node::VariableDefine{children} => {
-        let mut result = self.compile_constraints(children);
-        constraints.append(&mut result);
-      },
-      /*
-      Node::TableDefine{children} => {
-        let mut table_id = 0;
-        let m = self.memory_registers as u64;
-        let o = self.output_registers as u64;
-        let mut result = self.compile_constraints(children);
-        result.reverse();
-        let table = result.pop();
-        result.reverse();
-        // Create the new table
-        match table {
-          Some(Constraint::Data{table: t, ..}) => {
-            table_id = t;
-          },
-          _ => (), 
-        }
-        // Assign the table
-        let mut column_ix = 1;
-        for constraint in result {
-          match constraint {
-            Constraint::Insert{memory, table, column} => {
-              constraints.push(Constraint::Insert{memory, table: table_id, column});
-            },
-            Constraint::Data{table: 0, column} => {
-              constraints.push(Constraint::Insert{table: table_id, column: 1, memory: column});
-              self.output_registers += 1;
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-        let columns = self.memory_registers as u64 - m;
-        constraints.push(Constraint::NewTable{id: table_id, rows: 1, columns});
-      },
-      Node::AddRow{children} => {
-        let mut table_id = 0;
-        let m = self.memory_registers as u64;
-        let o = self.output_registers as u64;
-        let mut result = self.compile_constraints(children);
-        result.reverse();
-        let table = result.pop();
-        result.reverse();
-        // Create the new table
-        match table {
-          Some(Constraint::Data{table: t, ..}) => {
-            table_id = t;
-          },
-          _ => (), 
-        }
-        // Assign the table
-        let mut column_ix = 1;
-        for constraint in result {
-          match constraint {
-            Constraint::Insert{memory, table, column} => {
-              constraints.push(Constraint::Append{memory, table: table_id, column});
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-      },
-      Node::FilterExpression{children} => {   
-        let m = self.memory_registers as u64;
-        self.memory_registers += 1;
-        // Get the comparator. One of: > < != =
-        let comparator_node = &children[1];
-        let comparator: Comparator = match comparator_node {
-          Node::Token{token: Token::GreaterThan, ..} => Comparator::GreaterThan,
-          Node::Token{token: Token::LessThan, ..} => Comparator::LessThan,
-          _ => Comparator::Equal,
-        };
-        let mut lhs_constraints = self.compile_constraint(&children[0]);
-        let lhs = match &lhs_constraints[0] {
-          Constraint::Function{operation, parameters, memory} => *memory,
-          Constraint::Constant{value, memory} => *memory,
-          Constraint::CopyInput{input, memory} => *memory,
-          Constraint::Scan{..} => {
-            match &lhs_constraints[1] {
-              Constraint::CopyInput{input, memory} => *memory,
-              _ => 0,
-            }
-          },
-          _ => 0,
-        };
-        let mut rhs_constraints = self.compile_constraint(&children[2]);
-        let rhs = match &rhs_constraints[0] {
-          Constraint::Function{operation, parameters, memory} => *memory,
-          Constraint::Constant{value, memory} => *memory,
-          Constraint::CopyInput{input, memory} => *memory,
-          Constraint::Scan{..} => {
-            match &rhs_constraints[1] {
-              Constraint::CopyInput{input, memory} => *memory,
-              _ => 0,
-            }
-          },
-          _ => 0,
-        };
-        constraints.push(Constraint::Filter{comparator, lhs, rhs, memory: m});
-        constraints.append(&mut lhs_constraints);
-        constraints.append(&mut rhs_constraints);
-      },
-      Node::Function{name, children} => {   
-        let operation = match name.as_ref() {
-          "+" => Function::Add,
-          "-" => Function::Subtract,
-          "*" => Function::Multiply,
-          "/" => Function::Divide,
-          _ => Function::Add,
-        };
-        let o1 = self.memory_registers as u64;
-        self.memory_registers += 1;
-        let p1 = self.memory_registers as u64;
-        let mut result = self.compile_constraints(children);
-        if result.len() >= 2 {
-          let p2 = match &result[result.len() - 1] {
-            Constraint::Function{operation, parameters, memory} => *memory,
-            Constraint::Constant{value, memory} => *memory,
-            Constraint::CopyInput{input, memory} => *memory,
-            _ => 0,
-          };
-          constraints.append(&mut result);
-          constraints.push(Constraint::Function{operation, parameters: vec![p1, p2], memory: o1});
-        }
-      },
-      Node::SelectExpression{children} => {
-        let m = self.memory_registers as u64;
-        let mut result = self.compile_constraints(children);
-        for constraint in result {
-          match constraint {
-            Constraint::Data{table, column} => {
-              let input = self.input_registers as u64;
-              let memory = self.memory_registers as u64;
-              self.input_registers += 1;
-              self.memory_registers += 1;
-              constraints.push(Constraint::Data{table: 0, column: m});
-              constraints.push(Constraint::Scan{table, column, input});
-              constraints.push(Constraint::CopyInput{input, memory});
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-      },
-      Node::SelectData{children} => {
-        let mut result = self.compile_constraints(children);
-        for constraint in result {
-          match constraint {
-            Constraint::Data{table, column} => {
-              let input = self.input_registers as u64;
-              let memory = self.memory_registers as u64;
-              self.input_registers += 1;
-              self.memory_registers += 1;
-              constraints.push(Constraint::Scan{table, column, input});
-              constraints.push(Constraint::CopyInput{input, memory});
-            },
-            _ => constraints.push(constraint),
-          }
-        }
-      },
-      */
-      Node::Identifier{name, id} => {
-        constraints.push(Constraint::Data{table: 0, column: *id});
-      },
-      /*
-      Node::Table{name, id} => {
-        constraints.push(Constraint::Data{table: *id, column: 1});
-      },
-      */
-      Node::Constant{table, row, column, value} => {
-        constraints.push(Constraint::Constant{table: *table, row: *row, column: *column, value: *value as i64});
-      },
-      _ => (),
-    }
-    
-    constraints
-    
-  }
-
-
-  pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
-    let mut compiled = Vec::new();
-    for node in nodes {
-      compiled.append(&mut self.compile_constraint(node));
     }
     compiled
   }
@@ -636,15 +283,11 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
-            Node::Constant{table, row, column, value} => {
-              children.push(Node::Constant{table, row, column: self.column_register as u64, value});
-            },
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
-        compiled.append(&mut children);
-        self.column_register += 1;
+        compiled.push(Node::Column{children});
       },
       parser::Node::Binding{children} => {
         let result = self.compile_nodes(children);
@@ -689,9 +332,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{token: Token::LeftBracket, ..} |
-            Node::Token{token: Token::RightBracket, ..} |
-            Node::Token{token: Token::Space, ..} => (), 
+            Node::Token{..} => (), 
             _ => children.push(node),
           }
         }
@@ -699,20 +340,14 @@ impl Compiler {
       },
       parser::Node::TableRow{children} => {
         let result = self.compile_nodes(children);
-        println!("RESSSULT{:?}", result);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{token: Token::Space, ..} => (), 
-            Node::Constant{table, row, column, value} => {
-              children.push(Node::Constant{table, row: self.row_register as u64, column, value})
-            },
+            Node::Token{..} => (), 
             _ => children.push(node),
           }
         }
         compiled.push(Node::TableRow{children});
-        self.column_register = 1;
-        self.row_register += 1;
       },
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
@@ -816,7 +451,7 @@ impl Compiler {
             _ => (),
           }
         }
-        compiled.push(Node::Constant{table: 0, row: 0 , column: 0, value});
+        compiled.push(Node::Constant{value: value as i64});
       },
       // String-like nodes
       parser::Node::Paragraph{children} => {
@@ -924,7 +559,7 @@ impl Compiler {
       },
       // Pass through nodes. These will just be omitted
       parser::Node::Comparator{children} |
-      parser::Node::IdentifierOrNumber{children} |
+      parser::Node::IdentifierOrConstant{children} |
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
       parser::Node::DataWatch{children} |
