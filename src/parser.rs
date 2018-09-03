@@ -59,7 +59,7 @@ pub enum Node {
   AddRow { children: Vec<Node> },
   Column { children: Vec<Node> },
   Binding { children: Vec<Node> },
-  IdentifierOrNumber { children: Vec<Node> },
+  IdentifierOrConstant { children: Vec<Node> },
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   MathExpression { children: Vec<Node> },
@@ -146,7 +146,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
-    Node::IdentifierOrNumber{children} => {print!("IdentifierOrNumber\n"); Some(children)},
+    Node::IdentifierOrConstant{children} => {print!("IdentifierOrConstant\n"); Some(children)},
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
@@ -468,9 +468,8 @@ node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).
 node!{add_row, AddRow, |s|{ table(s).and(space).and(plus).and(equal).and(space).and(expression) }, "AddRow"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
-node!{column, Column, |s|{ identifier(s).or(number).optional(binding).optional(comma).optional(space) }, "Column"}
-node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_number) }, "Binding"}
-node!{identifier_or_number, IdentifierOrNumber, |s|{ identifier(s).or(number) }, "IdentifierOrNumber"}
+node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_constant) }, "Binding"}
+node!{identifier_or_constant, IdentifierOrConstant, |s|{ identifier(s).or(constant) }, "IdentifierOrConstant"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
 
 node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
@@ -480,18 +479,17 @@ node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix
 node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
-node!{l4, L4, |s|{ select_data(s).or(constant) }, "L4"}
+node!{l4, L4, |s|{ data(s).or(constant) }, "L4"}
 
-node!{expression, Expression, |s|{ select_expression(s).or(anonymous_table).or(math_expression).or(filter_expression) }, "Expression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
-node!{math_expression, MathExpression, |s|{ l1(s).and(newline_or_end) }, "MathExpression"}
-node!{select_expression, SelectExpression, |s|{ data(s).and(newline_or_end) }, "SelectExpression"}
-node!{filter_expression, FilterExpression, |s|{ select_data(s).or(constant).and(space).and(comparator).and(space).and(select_data).or(constant) }, "FilterExpression"}
+node!{column, Column, |s|{ identifier(s).or(expression).or(number).optional(comma).optional(space) }, "Column"}
+node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
+node!{filter_expression, FilterExpression, |s|{ data(s).or(constant).and(space).and(comparator).and(space).and(data).or(constant) }, "FilterExpression"}
 
 node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
-node!{select_data, SelectData, |s| { data(s) }, "SelectData"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
 node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).or(identifier).and(right_bracket) }, "Bracket Index"}
