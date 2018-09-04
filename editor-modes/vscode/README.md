@@ -1,6 +1,6 @@
 # Mech Mode for Visual Studio Code
 
-Find out more at https://mechlang.net
+Find out more at http://mech-lang.org
 
 ## Installation
 
