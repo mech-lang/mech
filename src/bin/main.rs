@@ -20,8 +20,15 @@ use mech_core::Core;
 fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(100000, 50000);
-  let input = String::from("ball = [1 2 3
-                                    4 5 6]");
+  let input = String::from("# Hello World
+
+  ball = [1 2 3
+          4 5 6]
+  box = [7 8 9 3 4
+         10 11 12 12 14
+         10 11 12 12 14
+         10 11 12 12 14
+         10 11 12 12 14]");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
