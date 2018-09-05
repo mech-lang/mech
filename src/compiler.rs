@@ -131,6 +131,9 @@ pub struct Compiler {
   pub blocks: Vec<Block>,
   pub constraints: Vec<Constraint>,
   depth: usize,
+  row: usize,
+  column: usize,
+  table: u64,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -146,6 +149,9 @@ impl Compiler {
       constraints: Vec::new(),
       node_stack: Vec::new(),
       depth: 0,
+      column: 0,
+      row: 0,
+      table: 0,
       section: 1,
       block: 1,
       parse_tree: parser::Node::Root{ children: Vec::new() },
@@ -176,8 +182,8 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        //let constraints = self.compile_constraints(&children);
-        //block.add_constraints(constraints);
+        let constraints = self.compile_constraints(&children);
+        block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
       },
@@ -191,8 +197,8 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        //let constraints = self.compile_constraints(&children);
-        //block.add_constraints(constraints);
+        let constraints = self.compile_constraints(&children);
+        block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
       },
@@ -205,6 +211,65 @@ impl Compiler {
       _ => (),
     }
     blocks
+  }
+
+  pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
+    
+    let mut constraints: Vec<Constraint> = Vec::new();
+    match node {
+      Node::Statement{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Constraint{children} => {
+        self.row = 0;
+        self.column = 0;
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Expression{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::AnonymousTableDefine{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::VariableDefine{children} => {
+        let mut result = self.compile_constraint(&children[0]);
+        match result[0] {
+          Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
+          _ => (),
+        }
+        let mut result = self.compile_constraint(&children[1]);
+        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.append(&mut result);
+      },
+      Node::MathExpression{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::TableRow{children} => {
+        self.row += 1;
+        self.column = 0;
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Column{children} => {
+        self.column += 1;
+        constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Identifier{name, id} => {
+        constraints.push(Constraint::Identifier{id: *id});
+      },
+      Node::Constant{value} => {
+        constraints.push(Constraint::Constant{table: self.table, row: self.row as u64, column: self.column as u64, value: *value as i64});
+      },
+      _ => (),
+    }
+    constraints
+  }
+
+  pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
+    let mut compiled = Vec::new();
+    for node in nodes {
+      compiled.append(&mut self.compile_constraint(node));
+    }
+    compiled
   }
 
   pub fn compile_children(&mut self, nodes: Vec<Node>) -> Vec<Block> {
