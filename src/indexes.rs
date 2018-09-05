@@ -141,8 +141,8 @@ impl TableIndex {
 impl fmt::Debug for TableIndex {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    for (table_id, _) in self.map.iter() {
-      write!(f, "{:#x}\n", table_id).unwrap();
+    for (table_id, table) in self.map.iter() {
+      write!(f, "{:?}\n", table).unwrap();
     }
     Ok(())
   }
