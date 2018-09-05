@@ -12,7 +12,7 @@
 use table::{Table, Value};
 use alloc::{fmt, Vec, String};
 use database::{Transaction, Interner, Change};
-use hashmap_core::map::HashMap;
+use hashmap_core::map::{HashMap, Entry};
 use hashmap_core::set::HashSet;
 use indexes::{Hasher, TableIndex};
 use operations;
@@ -252,6 +252,25 @@ impl Block {
   }
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
+    match constraint {
+      Constraint::NewBlockTable{id, rows, columns} => {
+        self.memory.register(Table::new(id, rows as usize, columns as usize));
+      },
+      Constraint::Constant{table, row, column, value} => {
+        println!("FOO");
+        match self.memory.map.entry(table) {
+          Entry::Occupied(mut o) => {
+            println!("{:?}",o);
+            let mut table_ref = o.get_mut();
+            table_ref.grow_to_fit(row as usize, column as usize);
+            table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
+          },
+          Entry::Vacant(v) => {    
+          },
+        };
+      },
+      _ => (),
+    }
 
 
   }
@@ -487,9 +506,10 @@ pub struct Pipe {
 pub enum Constraint {
   Data {table: u64, column: u64},
   NewTable{id: u64, rows: u64, columns: u64},
+  NewBlockTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Scan {table: u64, column: u64, input: u64},
-  Identifier {id: u64, memory: u64},
+  Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
@@ -511,6 +531,7 @@ impl fmt::Debug for Constraint {
     match self {
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
+      Constraint::NewBlockTable{id, rows, columns} => write!(f, "NewBlockTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:#x})", table, column, input),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
@@ -519,7 +540,7 @@ impl fmt::Debug for Constraint {
       Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
-      Constraint::Identifier{id, memory} => write!(f, "Identifier({:#x} -> M{:#x})", id, memory),
+      Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{memory, table, column} => write!(f, "Insert(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
