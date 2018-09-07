@@ -198,6 +198,7 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let constraints = self.compile_constraints(&children);
+        println!("{:?}", constraints);
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
@@ -242,7 +243,18 @@ impl Compiler {
         constraints.append(&mut result);
       },
       Node::MathExpression{children} => {
+        self.row = 1;
+        self.column = 1;
         constraints.append(&mut self.compile_constraints(children));
+      },
+      Node::Function{name, children} => {
+        let operation = match name.as_ref() {
+          "+" => Function::Add,
+          "-" => Function::Subtract,
+          "*" => Function::Multiply,
+          "/" => Function::Divide,
+          _ => Function::Add,
+        };
       },
       Node::TableRow{children} => {
         self.row += 1;
