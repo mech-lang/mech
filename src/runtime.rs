@@ -257,10 +257,8 @@ impl Block {
         self.memory.register(Table::new(id, rows as usize, columns as usize));
       },
       Constraint::Constant{table, row, column, value} => {
-        println!("FOO");
         match self.memory.map.entry(table) {
           Entry::Occupied(mut o) => {
-            println!("{:?}",o);
             let mut table_ref = o.get_mut();
             table_ref.grow_to_fit(row as usize, column as usize);
             table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
