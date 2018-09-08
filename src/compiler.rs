@@ -227,10 +227,17 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Expression{children} => {
-        constraints.append(&mut self.compile_constraints(children));
+        let mut result = self.compile_constraints(children);
+        match result[0] {
+          Constraint::NewBlockTable{..} => {},
+          _ => (),
+        }
+        constraints.append(&mut result);
       },
       Node::AnonymousTableDefine{children} => {
-        constraints.append(&mut self.compile_constraints(children));
+        let mut result = self.compile_constraints(children);
+        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.append(&mut result);
       },
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraint(&children[0]);
@@ -239,13 +246,15 @@ impl Compiler {
           _ => (),
         }
         let mut result = self.compile_constraint(&children[1]);
-        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
       },
       Node::MathExpression{children} => {
         self.row = 1;
         self.column = 1;
-        constraints.append(&mut self.compile_constraints(children));
+        let mut result = self.compile_constraints(children);
+        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.append(&mut result);
+        
       },
       Node::Function{name, children} => {
         let operation = match name.as_ref() {
@@ -429,14 +438,23 @@ impl Compiler {
       parser::Node::MathExpression{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
+        let mut new_node = false;
         for node in result {
           match node {
             // Ignore irrelevant nodes like spaces and operators
             Node::Token{..} => (), 
+            Node::Function{..} => {
+              new_node = true;
+              children.push(node);
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(Node::MathExpression{children});
+        if new_node {
+          compiled.push(Node::MathExpression{children});
+        } else {
+          compiled.append(&mut children);
+        }
       },
       parser::Node::Infix{children} => {
         let result = self.compile_nodes(children);
