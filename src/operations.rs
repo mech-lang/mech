@@ -16,8 +16,11 @@ work on the supplied data.
 #[repr(u8)]
 #[derive(Debug, Clone)]
 pub enum Function {
-  Add, Subtract, Multiply, Divide,
-  //Power,
+  Add, 
+  Subtract, 
+  Multiply, 
+  Divide,
+  Power,
 }
 
 #[macro_export]
@@ -75,6 +78,7 @@ binary_math!{math_add, +}
 binary_math!{math_subtract, -}
 binary_math!{math_multiply, *}
 binary_math!{math_divide, /}
+binary_math!{math_power, ^}
 
 // ## Comparators
 
@@ -174,22 +178,5 @@ pub fn identity(source: &Vec<Value>, sink: u64, store: &mut Table) {
   store.grow_to_fit(source.len(), 0);
   for i in 1 .. source.len() + 1 {     
     store.set_cell(i, sink as usize, source[i - 1].clone());
-  }
-}
-
-// ## Plans
-
-// Plans are an ordered list of operations.
-
-#[derive(Debug, Clone)]
-pub struct Plan {
-  pub constraints: Vec<Constraint>,
-}
-
-impl Plan {
-  pub fn new() -> Plan {
-    Plan {
-      constraints: Vec::new(),
-    }
   }
 }
