@@ -252,6 +252,7 @@ impl Compiler {
         self.row = 1;
         self.column = 1;
         let mut result = self.compile_constraints(children);
+        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, result));
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         
@@ -264,6 +265,12 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
+        for child in children {
+          constraints.append(&mut self.compile_constraint(child));
+          self.column += 1;
+        }
+        //Constraint::Function{operation, parameters, memory} => write!(f, "Fxn::{:?}{:?} -> M{:#x}", operation, parameters, memory),
+        
       },
       Node::TableRow{children} => {
         self.row += 1;
