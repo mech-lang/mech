@@ -39,7 +39,7 @@ mod operations;
 pub use self::database::{Transaction, Change, Interner};
 pub use self::table::{Value, Table};
 pub use self::indexes::{TableIndex, Hasher};
-pub use self::operations::{Function, Plan, Comparator};
+pub use self::operations::{Function, Comparator};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
 
 // ## Core
