@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Block, Constraint};
-use mech_core::{Function, Plan, Comparator};
+use mech_core::{Function, Comparator};
 use mech_core::Hasher;
 use parser;
 use lexer::Lexer;
