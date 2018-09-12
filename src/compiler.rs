@@ -251,8 +251,8 @@ impl Compiler {
       Node::MathExpression{children} => {
         self.row = 1;
         self.column = 1;
+        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, children));
         let mut result = self.compile_constraints(children);
-        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, result));
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         
@@ -265,12 +265,23 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
+        let mut new_constraints = vec![];
         for child in children {
-          constraints.append(&mut self.compile_constraint(child));
+          new_constraints.append(&mut self.compile_constraint(child));
           self.column += 1;
         }
-        //Constraint::Function{operation, parameters, memory} => write!(f, "Fxn::{:?}{:?} -> M{:#x}", operation, parameters, memory),
-        
+        let mut parameters: Vec<(u64, u64)> = vec![];
+        for constraint in &new_constraints {
+          match constraint {
+            Constraint::Constant{table, row, column, value} => {
+              parameters.push((*table, *column));
+            },
+            _ => (),
+          };
+        }
+        let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
+        constraints.push(Constraint::Function{operation, parameters, output});
+        constraints.append(&mut new_constraints);
       },
       Node::TableRow{children} => {
         self.row += 1;
