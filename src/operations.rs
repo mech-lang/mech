@@ -78,6 +78,7 @@ binary_math!{math_add, +}
 binary_math!{math_subtract, -}
 binary_math!{math_multiply, *}
 binary_math!{math_divide, /}
+// FIXME this isn't actually right at all. ^ is not power in Rust
 binary_math!{math_power, ^}
 
 // ## Comparators
