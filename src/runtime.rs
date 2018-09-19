@@ -252,7 +252,14 @@ impl Block {
   }
 
   pub fn add_constraint(&mut self, constraint: Constraint) {
+    self.constraints.push(constraint.clone());
     match constraint {
+      Constraint::Function{operation, parameters, output} => {
+        for (table, column) in output {
+          let mut table_ref = self.memory.get_mut(table).unwrap();
+          table_ref.grow_to_fit(table_ref.rows, column as usize);
+        }
+      },
       Constraint::NewBlockTable{id, rows, columns} => {
         self.memory.register(Table::new(id, rows as usize, columns as usize));
       },
@@ -290,23 +297,28 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    /*
+    println!("Stepping!");
     for step in &self.plan {
+      
       match step {
+        /*
         Constraint::ChangeScan{table, column, input} => {
           self.ready = clear_bit(self.ready, *input as usize - 1);
-        }
-        Constraint::Function{operation, parameters, memory} => {
+        }*/
+        Constraint::Function{operation, parameters, output} => {
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
             Function::Add => operations::math_add,
             Function::Subtract => operations::math_subtract,
             Function::Multiply => operations::math_multiply,
             Function::Divide => operations::math_divide,
+            Function::Power => operations::math_power,
           };
+          println!("Function");
           // Execute the function. Results are placed on the memory registers
-          op_fun(parameters, &vec![*memory], &mut self.memory, &mut self.column_lengths);
+          //op_fun(parameters, &vec![*memory], &mut self.memory, &mut self.column_lengths);
         },
+        /*
         Constraint::Filter{comparator, lhs, rhs, memory} => {
           operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
         },
@@ -389,11 +401,11 @@ impl Block {
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
           ));
         },
+        */
         _ => (),
       } 
     }
     self.updated = true;
-    */
   }
 
   // Right now, the planner works just by giving the constraint an order to execute.
@@ -511,7 +523,7 @@ pub enum Constraint {
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
-  Function {operation: operations::Function, parameters: Vec<u64>, memory: u64},
+  Function {operation: operations::Function, parameters: Vec<(u64, u64)>, output: Vec<(u64,u64)>},
   Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
@@ -533,7 +545,7 @@ impl fmt::Debug for Constraint {
       Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:#x})", table, column, input),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
-      Constraint::Function{operation, parameters, memory} => write!(f, "Fxn::{:?}{:?} -> M{:#x}", operation, parameters, memory),
+      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
       Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
