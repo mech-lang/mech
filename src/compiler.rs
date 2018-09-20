@@ -265,23 +265,30 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
-        let mut new_constraints = vec![];
+        let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
-          new_constraints.append(&mut self.compile_constraint(child));
+          parameters.push(self.compile_constraint(child));
           self.column += 1;
-        }
-        let mut parameters: Vec<(u64, u64)> = vec![];
-        for constraint in &new_constraints {
-          match constraint {
+        }     
+        let mut parameter_registers: Vec<(u64, u64)> = vec![];
+        for parameter in &parameters {
+          match &parameter[0] {
             Constraint::Constant{table, row, column, value} => {
-              parameters.push((*table, *column));
+              parameter_registers.push((*table, *column));
+            },
+            Constraint::Function{operation, parameters, output} => {
+              for o in output {
+                parameter_registers.push(*o);
+              }
             },
             _ => (),
           };
         }
         let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
-        constraints.push(Constraint::Function{operation, parameters, output});
-        constraints.append(&mut new_constraints);
+        constraints.push(Constraint::Function{operation, parameters: parameter_registers, output});
+        for mut p in &parameters {
+          constraints.append(&mut p.clone());
+        }
       },
       Node::TableRow{children} => {
         self.row += 1;
