@@ -265,10 +265,11 @@ impl Compiler {
           "/" => Function::Divide,
           _ => Function::Add,
         };
+        let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
-          parameters.push(self.compile_constraint(child));
           self.column += 1;
+          parameters.push(self.compile_constraint(child));
         }     
         let mut parameter_registers: Vec<(u64, u64)> = vec![];
         for parameter in &parameters {
@@ -284,7 +285,7 @@ impl Compiler {
             _ => (),
           };
         }
-        let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
+
         constraints.push(Constraint::Function{operation, parameters: parameter_registers, output});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
