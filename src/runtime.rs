@@ -45,6 +45,7 @@ impl Runtime {
 
   // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
+    println!("Registering {:?}", block.id);
     if block.id == 0 {
       // TODO Better auto ID. Maybe hash constraints?
       block.id = self.blocks.len() + 1;
@@ -89,6 +90,7 @@ impl Runtime {
     // This is a little trick in Rust. This means the network will always run
     // at least one time, and if there are no more ready blocks after that run,
     // the loop will terminate.
+    println!("Ready Blocks {:?}", self.ready_blocks);
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
@@ -273,6 +275,7 @@ impl Block {
           Entry::Vacant(v) => {    
           },
         };
+        self.updated = true;
       },
       _ => (),
     }
@@ -316,7 +319,7 @@ impl Block {
           };
           println!("Function");
           // Execute the function. Results are placed on the memory registers
-          //op_fun(parameters, &vec![*memory], &mut self.memory, &mut self.column_lengths);
+          op_fun(parameters, output, &mut self.memory, &store);
         },
         /*
         Constraint::Filter{comparator, lhs, rhs, memory} => {
@@ -443,7 +446,10 @@ impl Block {
         _ => (),
       }
     }
-    for constraint in &self.constraints {
+    // TODO Actually sort the function constraints
+    let mut reversed = self.constraints.clone();
+    reversed.reverse();
+    for constraint in &reversed {
       match constraint {
         Constraint::Function{..} => self.plan.push(constraint.clone()),
         _ => (),
