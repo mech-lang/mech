@@ -232,6 +232,7 @@ pub struct Block {
   pub output_registers: Vec<Register>,
   pub constraints: Vec<Constraint>,
   memory: TableIndex,
+  scratch: Vec<Value>,
 }
 
 impl Block {
@@ -250,6 +251,7 @@ impl Block {
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
+      scratch: Vec::new(),
     }
   }
 
@@ -260,6 +262,7 @@ impl Block {
         for (table, column) in output {
           let mut table_ref = self.memory.get_mut(table).unwrap();
           table_ref.grow_to_fit(table_ref.rows, column as usize);
+          table_ref.set_column_id(column, column as usize);
         }
       },
       Constraint::NewBlockTable{id, rows, columns} => {
@@ -271,6 +274,7 @@ impl Block {
             let mut table_ref = o.get_mut();
             table_ref.grow_to_fit(row as usize, column as usize);
             table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
+            table_ref.set_column_id(column, column as usize);
           },
           Entry::Vacant(v) => {    
           },
@@ -319,7 +323,28 @@ impl Block {
           };
           println!("Function");
           // Execute the function. Results are placed on the memory registers
-          op_fun(parameters, output, &mut self.memory, &store);
+          let (lhs_table, lhs_column) = parameters[0];
+          let (rhs_table, rhs_column) = parameters[1];
+          let (out_table, out_column) = output[0];
+
+          {         
+            let lhs = match self.memory.get(lhs_table) {
+              Some(table_ref) => {
+                table_ref.get_column(lhs_column as usize).unwrap()
+              },
+              None => store.get_column(lhs_table, lhs_column as usize).unwrap(),
+            };
+            let rhs = match self.memory.get(rhs_table) {
+              Some(table_ref) => {
+                table_ref.get_column(rhs_column as usize).unwrap()
+              },
+              None => store.get_column(rhs_table, rhs_column as usize).unwrap(),
+            };
+            op_fun(lhs, rhs, &mut self.scratch);
+          }
+          let out = self.memory.get_mut(out_table).unwrap().get_column_mut(out_column as usize).unwrap();
+          out[0] = self.scratch[0].clone();
+          self.scratch.clear();
         },
         /*
         Constraint::Filter{comparator, lhs, rhs, memory} => {
