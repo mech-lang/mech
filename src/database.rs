@@ -233,6 +233,10 @@ impl Interner {
     self.changes_count += 1;
   }
 
+  pub fn get_table(&self, table: u64) -> Option<&Table> {
+    self.tables.get(table)
+  }
+
   pub fn get_column(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
