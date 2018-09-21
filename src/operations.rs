@@ -28,34 +28,20 @@ pub enum Function {
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(parameters: &Vec<(u64, u64)>, output: &Vec<(u64, u64)>, memory: &mut TableIndex, store: &Interner) {
-      if parameters.len() == 2 && output.len() == 1 {
-        // Extract parameters
-        let (lhs_table, lhs_column) = parameters[0];
-        let (rhs_table, rhs_column) = parameters[1];
-        let (output_table, output_column) = output[0];
-      
-        let lhs = memory.get(lhs_table).unwrap().get_column_by_ix(lhs_column as usize).unwrap();
-        let rhs = memory.get(rhs_table).unwrap().get_column_by_ix(rhs_column as usize).unwrap();
-      
-        let lhs_length = lhs.len();
-        let rhs_length = rhs.len();
-
-        
-        let mut out_length = 0;
-        // Operate element wise
-        if lhs_length == rhs_length {
-          for i in 0 .. lhs_length {     
-            match (&lhs[i], &rhs[i]) {
-              (Value::Number(x), Value::Number(y)) => {
-                println!("{:?}",Value::from_i64(*x $op *y));
-              },
-              _ => {},
-            } 
-            out_length = lhs_length;
-          }
-        // Add vector to scalar  
+    pub fn $func_name(lhs: &Vec<Value>, rhs: &Vec<Value>, out: &mut Vec<Value>) {
+            
+      // Operate element wise
+      if lhs.len() == rhs.len() {
+        for i in 0 .. lhs.len() {     
+          match (&lhs[i], &rhs[i]) {
+            (Value::Number(x), Value::Number(y)) => {
+              out.push(Value::from_i64(*x $op *y));
+            },
+            _ => {},
+          } 
         }
+      // Add vector to scalar  
+      }
         /* else if lhs_length == 1 && rhs_length > 1 {
           for i in 1 .. rhs_length + 1 {     
             match (store.index(1, lhs), store.index(i, rhs)) {
@@ -78,8 +64,8 @@ macro_rules! binary_math {
           }
         }
         lengths[out - 1] = out_length as u64;*/
-      }
     }
+    
   )
 }
 
