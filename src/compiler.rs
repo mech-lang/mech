@@ -228,25 +228,29 @@ impl Compiler {
       },
       Node::Expression{children} => {
         let mut result = self.compile_constraints(children);
-        match result[0] {
-          Constraint::NewBlockTable{..} => {},
-          _ => (),
+        if result.len() > 1 {
+          match result[0] {
+            Constraint::NewBlockTable{..} => {},
+            _ => (),
+          }
+          constraints.append(&mut result);
         }
-        constraints.append(&mut result);
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        let to_table: u64 = match result[0] {
-          Constraint::Identifier{id} => id,
-          _ => 0,
-        };
-        let from_table = match result[1] {
-          Constraint::NewBlockTable{id, rows, columns} => id,
-          _ => 0,
-        };
-        constraints.push(Constraint::NewTable{id: to_table, rows: self.row as u64, columns: self.column as u64});
-        constraints.push(Constraint::Insert{from: (from_table, 1, 1), to: (to_table, 1, 1)});
-        constraints.append(&mut result);
+        if result.len() > 2 {
+          let to_table: u64 = match result[0] {
+            Constraint::Identifier{id} => id,
+            _ => 0,
+          };
+          let from_table = match result[1] {
+            Constraint::NewBlockTable{id, rows, columns} => id,
+            _ => 0,
+          };
+          constraints.push(Constraint::NewTable{id: to_table, rows: self.row as u64, columns: self.column as u64});
+          constraints.push(Constraint::Insert{from: (from_table, 1, 1), to: (to_table, 1, 1)});
+          constraints.append(&mut result);
+        }
       },
       Node::AnonymousTableDefine{children} => {
         let mut result = self.compile_constraints(children);
@@ -255,12 +259,14 @@ impl Compiler {
       },
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraint(&children[0]);
-        match result[0] {
-          Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
-          _ => (),
+        if result.len() > 1 {
+          match result[0] {
+            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
+            _ => (),
+          }
+          let mut result = self.compile_constraint(&children[1]);
+          constraints.append(&mut result);
         }
-        let mut result = self.compile_constraint(&children[1]);
-        constraints.append(&mut result);
       },
       Node::MathExpression{children} => {
         self.row = 1;
