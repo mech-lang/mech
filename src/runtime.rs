@@ -562,7 +562,7 @@ pub enum Constraint {
   CopyInput {input: u64, memory: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
-  Insert {memory: u64, table: u64, column: u64},
+  Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
   Append {memory: u64, table: u64, column: u64},
 }
 
@@ -583,7 +583,7 @@ impl fmt::Debug for Constraint {
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
-      Constraint::Insert{memory, table, column} => write!(f, "Insert(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
+      Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
     }
   }
