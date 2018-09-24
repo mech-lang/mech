@@ -326,7 +326,6 @@ impl Block {
           let (lhs_table, lhs_column) = parameters[0];
           let (rhs_table, rhs_column) = parameters[1];
           let (out_table, out_column) = output[0];
-
           {         
             let lhs = match self.memory.get(lhs_table) {
               Some(table_ref) => {
@@ -388,9 +387,31 @@ impl Block {
             };
           }
           self.column_lengths[memory_ix - 1] = source_length as u64;
-        },
-        Constraint::Insert{memory, table, column} => {
-          match &mut self.memory.get_column_by_ix(*memory as usize) {
+        },*/
+        Constraint::Insert{from, to} => {
+          let (from_table, from_row, from_column) = from;
+          let (to_table, to_row, to_column) = to;
+          match &mut self.memory.get_mut(*from_table) {
+            Some(table_ref) => {
+              match &mut table_ref.get_column_by_ix(*from_column as usize) {
+                Some(column_data) => {
+                  for (row_ix, cell) in column_data.iter().enumerate() {
+                    match cell {
+                      Value::Empty => (),
+                      _ => {
+                        store.process_transaction(&Transaction::from_change(
+                          Change::Set{ table: *to_table, row: row_ix as u64 + 1, column: *to_column, value: cell.clone() },
+                        ));
+                      }
+                    }
+                  }
+                },
+                None => (),
+              };
+            },
+            None => (),
+          }
+          /*match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
               for (row_ix, cell) in column_data.iter().enumerate() {
                 match cell {
@@ -404,8 +425,8 @@ impl Block {
               }
             },
             None => (),
-          }
-        },
+          }*/
+        },/*
         Constraint::Append{memory, table, column} => {
           match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
@@ -424,12 +445,12 @@ impl Block {
             None => (),
           }
         },
+        */
         Constraint::NewTable{id, rows, columns} => {
           store.process_transaction(&Transaction::from_change(
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
           ));
         },
-        */
         _ => (),
       } 
     }
