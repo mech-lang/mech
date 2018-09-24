@@ -91,12 +91,12 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
-    Node::Identifier{name, id} => {print!("{}({:#x})\n", name, id); None},
+    Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value} => {print!("{:?}\n", value); None},
+    Node::Constant{value} => {print!("Constant({:?})\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
-    Node::Table{name,id} => {print!("#{}({:?})\n", name, id); None},
+    Node::Table{name,id} => {print!("Table(#{}({:?}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     Node::Null => {print!("Null\n"); None},
@@ -234,6 +234,20 @@ impl Compiler {
         }
         constraints.append(&mut result);
       },
+      Node::TableDefine{children} => {
+        let mut result = self.compile_constraints(children);
+        let to_table: u64 = match result[0] {
+          Constraint::Identifier{id} => id,
+          _ => 0,
+        };
+        let from_table = match result[1] {
+          Constraint::NewBlockTable{id, rows, columns} => id,
+          _ => 0,
+        };
+        constraints.push(Constraint::NewTable{id: to_table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::Insert{from: (from_table, 1, 1), to: (to_table, 1, 1)});
+        constraints.append(&mut result);
+      },
       Node::AnonymousTableDefine{children} => {
         let mut result = self.compile_constraints(children);
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
@@ -291,6 +305,12 @@ impl Compiler {
           constraints.append(&mut p.clone());
         }
       },
+      Node::Table{name, id} => {
+        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, name));
+        self.row = 1;
+        self.column = 1;
+        constraints.push(Constraint::Identifier{id: *id});
+      },
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
@@ -306,7 +326,9 @@ impl Compiler {
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{table: self.table, row: self.row as u64, column: self.column as u64, value: *value as i64});
       },
-      _ => (),
+      _ => {
+        println!("Unhandled Node {:?}", node);
+      },
     }
     constraints
   }
