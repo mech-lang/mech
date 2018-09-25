@@ -45,7 +45,6 @@ impl Runtime {
 
   // Register a new block with the runtime
   pub fn register_block(&mut self, mut block: Block, store: &mut Interner) {
-    println!("Registering {:?}", block.id);
     if block.id == 0 {
       // TODO Better auto ID. Maybe hash constraints?
       block.id = self.blocks.len() + 1;
@@ -90,7 +89,6 @@ impl Runtime {
     // This is a little trick in Rust. This means the network will always run
     // at least one time, and if there are no more ready blocks after that run,
     // the loop will terminate.
-    println!("Ready Blocks {:?}", self.ready_blocks);
     while {
       for block_id in self.ready_blocks.drain() {
         let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
@@ -304,7 +302,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("Stepping!");
     for step in &self.plan {
       
       match step {
@@ -321,7 +318,6 @@ impl Block {
             Function::Divide => operations::math_divide,
             Function::Power => operations::math_power,
           };
-          println!("Function");
           // Execute the function. Results are placed on the memory registers
           let (lhs_table, lhs_column) = parameters[0];
           let (rhs_table, rhs_column) = parameters[1];
