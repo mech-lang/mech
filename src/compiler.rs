@@ -501,6 +501,10 @@ impl Compiler {
               new_node = true;
               children.push(node);
             },
+            Node::Constant{..} => {
+              new_node = true;
+              children.push(node);
+            }
             _ => children.push(node),
           }
         }
