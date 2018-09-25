@@ -198,7 +198,6 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let constraints = self.compile_constraints(&children);
-        println!("{:?}", constraints);
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
@@ -218,6 +217,7 @@ impl Compiler {
     
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
+      
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -261,7 +261,7 @@ impl Compiler {
         let mut result = self.compile_constraint(&children[0]);
         if result.len() > 1 {
           match result[0] {
-            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
+            Constraint::Identifier{id} => self.table = 0,// Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
             _ => (),
           }
           let mut result = self.compile_constraint(&children[1]);
@@ -271,7 +271,7 @@ impl Compiler {
       Node::MathExpression{children} => {
         self.row = 1;
         self.column = 1;
-        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, children));
+        self.table = 0;// Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, self.constraints.len() + 1));
         let mut result = self.compile_constraints(children);
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
@@ -305,7 +305,6 @@ impl Compiler {
             _ => (),
           };
         }
-
         constraints.push(Constraint::Function{operation, parameters: parameter_registers, output});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
@@ -332,9 +331,7 @@ impl Compiler {
       Node::Constant{value} => {
         constraints.push(Constraint::Constant{table: self.table, row: self.row as u64, column: self.column as u64, value: *value as i64});
       },
-      _ => {
-        println!("Unhandled Node {:?}", node);
-      },
+      _ => ()
     }
     constraints
   }
