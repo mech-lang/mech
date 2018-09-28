@@ -263,6 +263,7 @@ impl Block {
           table_ref.set_column_id(column, column as usize);
         }
       },
+      Constraint::NewTable{..} => self.updated = true,
       Constraint::NewBlockTable{id, rows, columns} => {
         self.memory.register(Table::new(id, rows as usize, columns as usize));
       },
