@@ -23,7 +23,7 @@ macro_rules! compile_string {
       compiler.build_syntax_tree(parser.parse_tree);
       let ast = compiler.syntax_tree.clone();
       compiler.compile_blocks(ast);
-      //assert_eq!(parser.status, ParseStatus::Ready);
+      assert_eq!(parser.status, ParseStatus::Ready);
     }
   )
 }
@@ -56,7 +56,7 @@ compile_string!(constant_digit, "1");
 // ## Table
 
 compile_string!(table, "#table");
-//compile_string!(table_index_dot_index, "#table.1");
+compile_string!(table_define, "#table = [x y z]");
 //compile_string!(table_index_bracket_index, "#table[1]");
 //compile_string!(table_index_dot_index_name, "#table.field");
 
