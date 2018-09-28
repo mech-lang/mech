@@ -20,7 +20,7 @@ use mech_core::Core;
 fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new(100000, 50000);
-  let input = String::from("ball = 9 + 3 * 4");
+  let input = String::from("#test = [x y z]");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
