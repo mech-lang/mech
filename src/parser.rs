@@ -457,11 +457,14 @@ node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespa
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
 node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
-node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
+
+node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
+node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
+
 node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
@@ -470,7 +473,6 @@ node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).
 node!{add_row, AddRow, |s|{ table(s).and(space).and(plus).and(equal).and(space).and(expression) }, "AddRow"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit) }, "Number"}
-node!{binding, Binding, |s|{ colon(s).and(space).and(identifier_or_constant) }, "Binding"}
 node!{identifier_or_constant, IdentifierOrConstant, |s|{ identifier(s).or(constant) }, "IdentifierOrConstant"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
 
@@ -483,8 +485,11 @@ node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ data(s).or(constant) }, "L4"}
 
-node!{expression, Expression, |s|{ filter_expression(s).or(anonymous_table).or(math_expression) }, "Expression"}
-node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
+
+
+node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
+node!{binding, Binding, |s|{ node(s) }, "TableRow"}
+node!{table_header, TableHeader, |s|{ optional(binding).optional(newline) }, "TableRow"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ identifier(s).or(expression).or(number).optional(comma).optional(space) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
@@ -530,7 +535,6 @@ leaf!{semicolon, Token::Semicolon}
 leaf!{new_line_char, Token::Newline}
 leaf!{carriage_return, Token::CarriageReturn}
 leaf!{end, Token::EndOfStream}
-
 
 // A dummy node that returns itself.
 pub fn node(s: &mut ParseState) -> &mut ParseState {
