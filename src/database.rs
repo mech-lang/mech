@@ -18,6 +18,7 @@ pub enum Change {
   Set{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
   NewTable{id: u64, rows: usize, columns: usize},
+  RenameColumn{table: u64, column_ix: u64, column_id: u64},
   RemoveTable{id: u64, rows: usize, columns: usize},
 }
 
@@ -25,11 +26,12 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Change::Append{table, column, value} => write!(f, "<++> #{:#x} [{:#x}: {:?}]", table, column, value),
-      Change::Set{table, row, column, value} => write!(f, "<+> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::Remove{table, row, column, value} => write!(f, "<-> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
-      Change::NewTable{id, rows, columns} => write!(f, "<+#> #{:#x} [{:?} x {:?}]", id, rows, columns),
-      Change::RemoveTable{id, rows, columns} => write!(f, "<-#> #{:#x} [{:?} x {:?}]", id, rows, columns),
+      Change::Append{table, column, value} => write!(f, "<append> #{:#x} [{:#x}: {:?}]", table, column, value),
+      Change::Set{table, row, column, value} => write!(f, "<set> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::Remove{table, row, column, value} => write!(f, "<remove> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
+      Change::NewTable{id, rows, columns} => write!(f, "<newtable> #{:#x} [{:?} x {:?}]", id, rows, columns),
+      Change::RenameColumn{table, column_ix, column_id} => write!(f, "<renamecolumn> #{:#x} {:#x} -> {:#x}", table, column_ix, column_id),
+      Change::RemoveTable{id, rows, columns} => write!(f, "<removetable> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
   }
 }
@@ -41,6 +43,7 @@ pub struct Transaction {
   pub tables: Vec<Change>,
   pub adds: Vec<Change>,
   pub removes: Vec<Change>,
+  pub names: Vec<Change>,
 }
 
 impl Transaction {
@@ -49,6 +52,7 @@ impl Transaction {
       tables: Vec::new(),
       adds: Vec::new(),
       removes: Vec::new(),
+      names: Vec::new(),
     }
   }
 
@@ -61,6 +65,7 @@ impl Transaction {
         Change::Remove{..} => txn.removes.push(change),
         Change::RemoveTable{..} |
         Change::NewTable{..} => txn.tables.push(change),
+        Change::RenameColumn{..} => txn.names.push(change),
       }
     }
     txn
@@ -74,6 +79,7 @@ impl Transaction {
       Change::Remove{..} => txn.removes.push(change),
       Change::RemoveTable{..} |
       Change::NewTable{..} => txn.tables.push(change),
+      Change::RenameColumn{..} => txn.names.push(change),
     }
     txn
   }
@@ -102,6 +108,9 @@ impl fmt::Debug for Transaction {
     }
     for ref remove in &self.removes {
       write!(f, "{:?}\n", remove).unwrap();
+    }
+    for ref name in &self.names {
+      write!(f, "{:?}\n", name).unwrap();
     }
     Ok(())
   }
@@ -146,6 +155,10 @@ impl Interner {
     // First make any tables
     for table in txn.tables.iter() {
       self.intern_change(table);
+    }
+    // Change names
+    for name in txn.names.iter() {
+      self.intern_change(name);
     }
     // Handle the removes
     for remove in txn.removes.iter() {
@@ -210,6 +223,14 @@ impl Interner {
       Change::RemoveTable{id, rows, columns } => {
         self.tables.remove(&id);
       }
+      Change::RenameColumn{table, column_ix, column_id} => {
+        match self.tables.get_mut(*table) {
+          Some(table_ref) => {
+            table_ref.set_column_id(*column_id, *column_ix as usize);
+          }
+          None => (),
+        };
+      },
     }
     if self.offset == 0 {
       self.save_change(change);
