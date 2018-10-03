@@ -264,7 +264,6 @@ impl Compiler {
           constraints.push(Constraint::NewTable{id: to_table, rows: self.row as u64, columns: self.column as u64});
           //constraints.push(Constraint::Insert{from: (from_table, 1, 1), to: (to_table, 1, 1)});
           constraints.append(&mut new_result);
-          println!("{:?}", constraints);
         }
       },
       Node::AnonymousTableDefine{children} => {
@@ -288,9 +287,11 @@ impl Compiler {
         self.column = 1;
         self.table = 0;// Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, self.constraints.len() + 1));
         let mut result = self.compile_constraints(children);
-        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        // If the math expression is just a constant, we don't need a new internal table for it.
+        if result.len() > 1 {
+          constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        }
         constraints.append(&mut result);
-        
       },
       Node::Function{name, children} => {
         let operation = match name.as_ref() {
