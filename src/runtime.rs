@@ -448,6 +448,11 @@ impl Block {
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
           ));
         },
+        Constraint::TableColumn{table, column_ix, column_id} => {
+          store.process_transaction(&Transaction::from_change(
+            Change::RenameColumn{table: *table, column_ix: *column_ix, column_id: *column_id},
+          ));          
+        }
         _ => (),
       } 
     }
@@ -462,6 +467,12 @@ impl Block {
     for constraint in &self.constraints {
       match constraint {
         Constraint::NewTable{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::TableColumn{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
@@ -565,6 +576,7 @@ pub struct Pipe {
 pub enum Constraint {
   Data {table: u64, column: u64},
   NewTable{id: u64, rows: u64, columns: u64},
+  TableColumn{table: u64, column_ix: u64, column_id: u64},
   NewBlockTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Scan {table: u64, column: u64, input: u64},
@@ -603,6 +615,7 @@ impl fmt::Debug for Constraint {
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
+      Constraint::TableColumn{table, column_ix, column_id}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_id),
     }
   }
 }
