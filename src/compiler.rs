@@ -40,6 +40,7 @@ pub enum Node {
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
+  TableHeader {children: Vec<Node> },
   TableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
@@ -74,6 +75,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
+    Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
@@ -475,6 +477,18 @@ impl Compiler {
         }
         compiled.push(Node::AnonymousTableDefine{children});
       },
+      parser::Node::TableHeader{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            // Ignore irrelevant nodes like spaces and operators
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::TableHeader{children});
+      },
       parser::Node::TableRow{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -708,6 +722,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Attribute{children} |
       parser::Node::Comparator{children} |
       parser::Node::IdentifierOrConstant{children} |
       parser::Node::ProseOrCode{children}|
