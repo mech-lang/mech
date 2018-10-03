@@ -138,6 +138,7 @@ pub struct Compiler {
   row: usize,
   column: usize,
   table: u64,
+  expression: usize,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -153,6 +154,7 @@ impl Compiler {
       constraints: Vec::new(),
       node_stack: Vec::new(),
       depth: 0,
+      expression: 0,
       column: 0,
       row: 0,
       table: 0,
@@ -275,7 +277,7 @@ impl Compiler {
         let mut result = self.compile_constraint(&children[0]);
         if result.len() > 1 {
           match result[0] {
-            Constraint::Identifier{id} => self.table = 0,// Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
+            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
             _ => (),
           }
           let mut result = self.compile_constraint(&children[1]);
@@ -285,12 +287,11 @@ impl Compiler {
       Node::MathExpression{children} => {
         self.row = 1;
         self.column = 1;
-        self.table = 0;// Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, self.constraints.len() + 1));
+        self.expression += 1;
+        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
-        if result.len() > 1 {
-          constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
-        }
+        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
       },
       Node::Function{name, children} => {
@@ -355,7 +356,7 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Column{children} => {
-        self.column += 1;
+        self.column += 1;        
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Identifier{name, id} => {
