@@ -58,7 +58,6 @@ pub enum Node {
   TableDefine { children: Vec<Node> },
   AddRow { children: Vec<Node> },
   Column { children: Vec<Node> },
-  Binding { children: Vec<Node> },
   IdentifierOrConstant { children: Vec<Node> },
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
@@ -82,6 +81,9 @@ pub enum Node {
   Expression{ children: Vec<Node> },
   AnonymousTable{ children: Vec<Node> },
   TableRow{ children: Vec<Node> },
+  Binding{ children: Vec<Node> },
+  Attribute{ children: Vec<Node> },
+  TableHeader{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
@@ -147,6 +149,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
+    Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
+    Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
     Node::IdentifierOrConstant{children} => {print!("IdentifierOrConstant\n"); Some(children)},
     Node::InfixOperation{children} => {print!("Infix\n"); Some(children)},
     Node::Repeat{children} => {print!("Repeat\n"); Some(children)},
@@ -488,8 +492,9 @@ node!{l4, L4, |s|{ data(s).or(constant) }, "L4"}
 
 
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
-node!{binding, Binding, |s|{ node(s) }, "TableRow"}
-node!{table_header, TableHeader, |s|{ optional(binding).optional(newline) }, "TableRow"}
+node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
+node!{column_name, Attribute, |s|{ identifier(s).optional(binding).and(space).optional_repeat(space) }, "Attribute"}
+node!{table_header, TableHeader, |s|{ node(s).repeat(column_name).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ identifier(s).or(expression).or(number).optional(comma).optional(space) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
