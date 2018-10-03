@@ -489,12 +489,10 @@ node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ data(s).or(constant) }, "L4"}
 
-
-
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
-node!{column_name, Attribute, |s|{ identifier(s).optional(binding).and(space).optional_repeat(space) }, "Attribute"}
-node!{table_header, TableHeader, |s|{ node(s).repeat(column_name).optional(newline) }, "TableHeader"}
+node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional_repeat(space) }, "Attribute"}
+node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ identifier(s).or(expression).or(number).optional(comma).optional(space) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
