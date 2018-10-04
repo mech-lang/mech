@@ -439,7 +439,14 @@ impl Compiler {
       },
       parser::Node::Expression{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Expression{children: result});
+        for node in result {
+          match node {
+            Node::Constant{..} => {
+              compiled.push(node);
+            }
+            _ => compiled.push(Node::Expression{children: vec![node]}),
+          }
+        }
       },
       parser::Node::Attribute{children} => {
         let result = self.compile_nodes(children);
@@ -562,7 +569,7 @@ impl Compiler {
               children.push(node);
             },
             Node::Constant{..} => {
-              new_node = true;
+              new_node = false;
               children.push(node);
             }
             _ => children.push(node),
