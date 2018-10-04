@@ -235,14 +235,9 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::Expression{children} => {
+        self.expression += 1;
         let mut result = self.compile_constraints(children);
-        if result.len() > 1 {
-          match result[0] {
-            Constraint::NewBlockTable{..} => {},
-            _ => (),
-          }
-          constraints.append(&mut result);
-        }
+        constraints.append(&mut result);
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
@@ -271,9 +266,12 @@ impl Compiler {
         }
       },
       Node::AnonymousTableDefine{children} => {
+        let store_table = self.table;
+        self.table = Hasher::hash_string(format!("AT{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
+        self.table = store_table;
       },
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraint(&children[0]);
@@ -289,17 +287,18 @@ impl Compiler {
       Node::MathExpression{children} => {
         let store_row = self.row;
         let store_col = self.column;
+        let store_table = self.table;
         self.row = 1;
         self.column = 1;
-        self.expression += 1;
-        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        self.table = Hasher::hash_string(format!("ME{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
-        constraints.push(Constraint::Reference{table: self.table, rows: vec![0] , columns: vec![1]});
+        //constraints.push(Constraint::Reference{table: self.table, rows: vec![0] , columns: vec![1]});
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         self.row = store_row;
         self.column = store_col;
+        self.table = store_table;
       },
       Node::Function{name, children} => {
         let operation = match name.as_ref() {
@@ -335,9 +334,7 @@ impl Compiler {
         }
       },
       Node::Table{name, id} => {
-        self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, name));
-        self.row = 1;
-        self.column = 1;
+        self.table = Hasher::hash_string(format!("T{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::TableHeader{children} => {
