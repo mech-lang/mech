@@ -579,6 +579,7 @@ pub enum Constraint {
   TableColumn{table: u64, column_ix: u64, column_id: u64},
   NewBlockTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
+  Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>},
   Scan {table: u64, column: u64, input: u64},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
@@ -600,6 +601,7 @@ impl fmt::Debug for Constraint {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
+      Constraint::Reference{table, rows, columns} => write!(f, "Reference(@{:#x}(rows: {:?}, cols: {:?}))", table, rows, columns),
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::NewBlockTable{id, rows, columns} => write!(f, "NewBlockTable(#{:#x}({:?}x{:?}))", id, rows, columns),
