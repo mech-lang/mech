@@ -494,7 +494,7 @@ node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_c
 node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional_repeat(space) }, "Attribute"}
 node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
-node!{column, Column, |s|{ identifier(s).or(expression).or(number).optional(comma).optional(space) }, "Column"}
+node!{column, Column, |s|{ node(s).optional_repeat(space).and(identifier).or(expression).or(number).optional(comma).optional(space) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
 node!{filter_expression, FilterExpression, |s|{ data_or_constant(s).and(space).and(comparator).and(space).and(data_or_constant) }, "FilterExpression"}
 
