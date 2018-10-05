@@ -255,7 +255,7 @@ impl Compiler {
           for constraint in result {
             match constraint {
               Constraint::TableColumn{table, column_ix, column_id} => {
-                new_result.push(Constraint::TableColumn{table: to_table, column_ix, column_id});
+                new_result.push(Constraint::TableColumn{table: from_table, column_ix, column_id});
               }
               _ => new_result.push(constraint),
             }
@@ -277,7 +277,7 @@ impl Compiler {
         let mut result = self.compile_constraint(&children[0]);
         if result.len() > 1 {
           match result[0] {
-            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("{:?},{:?}-{:?}", self.section, self.block, id)),
+            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("VAR{:?},{:?}-{:?}", self.section, self.block, id)),
             _ => (),
           }
           let mut result = self.compile_constraint(&children[1]);
