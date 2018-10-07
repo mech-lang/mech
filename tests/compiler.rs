@@ -61,7 +61,7 @@ compile_string!(table_define, "#table = [x y z]");
 //compile_string!(table_index_dot_index_name, "#table.field");
 
 
-compile_string!(table_define, "# A Working Program
+compile_string!(table_define_program, "# A Working Program
 
 ## Section Two
 
