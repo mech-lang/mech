@@ -189,7 +189,6 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let constraints = self.compile_constraints(&children);
-        println!("{:?}", constraints);
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
@@ -238,7 +237,7 @@ impl Compiler {
         self.expression += 1;
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
-      },
+      }, 
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
