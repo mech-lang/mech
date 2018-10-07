@@ -85,9 +85,9 @@ pub struct Table {
   pub columns: usize,
   // ix -> id
   pub row_ids: Vec<Option<u64>>,
-  column_ids: Vec<Option<u64>>,
+  pub column_ids: Vec<Option<u64>>,
   // id -> ix
-  column_aliases: HashMap<u64, usize>,
+  pub column_aliases: HashMap<u64, usize>,
   pub row_aliases: HashMap<u64, usize>,
   pub column_lengths: Vec<u64>,
   pub data: Vec<Vec<Value>>,
