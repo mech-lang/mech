@@ -273,12 +273,19 @@ impl Block {
             let mut table_ref = o.get_mut();
             table_ref.grow_to_fit(row as usize, column as usize);
             table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
-            table_ref.set_column_id(column, column as usize);
           },
           Entry::Vacant(v) => {    
           },
         };
         self.updated = true;
+      },
+      Constraint::TableColumn{table, column_ix, column_id} => {
+        match self.memory.get_mut(table) {
+          Some(table_ref) => {
+            table_ref.set_column_id(column_id, column_ix as usize);
+          }
+          None => (),
+        };
       },
       _ => (),
     }
@@ -448,11 +455,6 @@ impl Block {
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
           ));
         },
-        Constraint::TableColumn{table, column_ix, column_id} => {
-          store.process_transaction(&Transaction::from_change(
-            Change::RenameColumn{table: *table, column_ix: *column_ix, column_id: *column_id},
-          ));          
-        }
         _ => (),
       } 
     }
@@ -467,12 +469,6 @@ impl Block {
     for constraint in &self.constraints {
       match constraint {
         Constraint::NewTable{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::TableColumn{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
