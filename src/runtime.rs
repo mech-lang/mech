@@ -260,7 +260,6 @@ impl Block {
         for (table, column) in output {
           let mut table_ref = self.memory.get_mut(table).unwrap();
           table_ref.grow_to_fit(table_ref.rows, column as usize);
-          table_ref.set_column_id(column, column as usize);
         }
       },
       Constraint::NewTable{..} => self.updated = true,
@@ -311,7 +310,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      
+      println!("{:?}", step);
       match step {
         /*
         Constraint::ChangeScan{table, column, input} => {
@@ -330,22 +329,24 @@ impl Block {
           let (lhs_table, lhs_column) = parameters[0];
           let (rhs_table, rhs_column) = parameters[1];
           let (out_table, out_column) = output[0];
+          // TODO This seems very inefficient. Find a better way to do this. 
+          // I'm having trouble getting the borrow checker to understand what I'm doing here
           {         
             let lhs = match self.memory.get(lhs_table) {
               Some(table_ref) => {
-                table_ref.get_column(lhs_column as usize).unwrap()
+                table_ref.get_column_by_ix(lhs_column as usize).unwrap()
               },
-              None => store.get_column(lhs_table, lhs_column as usize).unwrap(),
+              None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
             };
             let rhs = match self.memory.get(rhs_table) {
               Some(table_ref) => {
-                table_ref.get_column(rhs_column as usize).unwrap()
+                table_ref.get_column_by_ix(rhs_column as usize).unwrap()
               },
-              None => store.get_column(rhs_table, rhs_column as usize).unwrap(),
+              None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
             };
             op_fun(lhs, rhs, &mut self.scratch);
           }
-          let out = self.memory.get_mut(out_table).unwrap().get_column_mut(out_column as usize).unwrap();
+          let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
           out[0] = self.scratch[0].clone();
           self.scratch.clear();
         },
