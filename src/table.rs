@@ -169,10 +169,10 @@ impl Table {
 
   pub fn set_column_id(&mut self, id: u64, column_ix: usize) {
     match self.column_aliases.entry(id) {
-      Entry::Occupied(o) => {;
+      Entry::Occupied(o) => {
         ()
       },
-      Entry::Vacant(v) => {    
+      Entry::Vacant(v) => {
         v.insert(column_ix);
         if self.column_ids.len() >= column_ix {
           self.column_ids[column_ix - 1] = Some(id);
@@ -257,7 +257,9 @@ impl Table {
         self.data.resize(columns, new_column);
       }
       self.column_lengths.resize(columns, 1);
-      self.column_ids.resize(columns, None);
+      if self.column_ids.len() < columns {
+        self.column_ids.resize(columns, None);  
+      }
       self.columns = columns;
     }
     if rows > self.rows {
