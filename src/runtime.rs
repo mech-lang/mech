@@ -481,12 +481,6 @@ impl Block {
     }
     for constraint in &self.constraints {
       match constraint {
-        Constraint::CopyInput{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
         Constraint::Filter{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
@@ -510,6 +504,12 @@ impl Block {
       match constraint {
         Constraint::Append{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::CopyTable{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
@@ -587,7 +587,7 @@ pub enum Constraint {
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
-  CopyInput {input: u64, memory: u64},
+  CopyTable {from_table: u64, to_table: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
@@ -607,7 +607,7 @@ impl fmt::Debug for Constraint {
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
-      Constraint::CopyInput{input, memory} => write!(f, "CopyInput(I{:#x} -> M{:#x})", input, memory),
+      Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
