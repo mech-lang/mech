@@ -451,6 +451,24 @@ impl Block {
           }
         },
         */
+        Constraint::CopyTable{from_table, to_table} => {
+          let from_table_ref = self.memory.get(*from_table).unwrap();
+          let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.rows}];
+          for (ix, column_id) in from_table_ref.column_ids.iter().enumerate() {
+            match column_id {
+              Some(col_id) => {
+                changes.push(Change::RenameColumn{table: *to_table, column_ix: ix as u64 + 1, column_id: *col_id});
+              },
+              None => (),
+            };
+          }
+          for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+            for (row_ix, data) in column.iter().enumerate() {
+              changes.push(Change::Set{table: *to_table, row: row_ix as u64 + 1, column: col_ix as u64 + 1, value: data.clone()});
+            }
+          }
+          store.process_transaction(&Transaction::from_changeset(changes));
+        },
         Constraint::NewTable{id, rows, columns} => {
           store.process_transaction(&Transaction::from_change(
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
