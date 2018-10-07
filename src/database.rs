@@ -270,6 +270,18 @@ impl Interner {
     }
   }
 
+  pub fn get_column_by_ix(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
+    match self.tables.get(table) {
+      Some(stored_table) => {
+        match stored_table.get_column_by_ix(column_ix) {
+          Some(column) => Some(column),
+          None => None,
+        }
+      },
+      None => None,
+    }
+  }
+
   pub fn get_cell(&self, table: u64, row_ix: usize, column_ix: usize) -> Option<&Value> {
     match self.tables.get(table) {
       Some(stored_table) => {
