@@ -239,6 +239,15 @@ impl Table {
     }
   }
 
+  pub fn get_column_mut_by_ix(&mut self, column_ix: usize) -> Option<&mut Vec<Value>> {
+    if self.columns > 0 && self.columns >= column_ix {
+      let mut column_data = &mut self.data[column_ix - 1];      
+      Some(column_data)
+    } else {
+      None
+    }
+  }
+
   pub fn get_column_mut(&mut self, column_id: usize) -> Option<&mut Vec<Value>> {
     match self.column_aliases.get_mut(&(column_id as u64)) {
       Some(column_ix) => {
