@@ -240,29 +240,25 @@ impl Compiler {
       }, 
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
+        // If there are no children, 
         if result.len() > 2 {
           let to_table: u64 = match result[0] {
-            Constraint::Identifier{id} => id,
+            Constraint::Identifier{id} => {
+              id
+            },
             _ => 0,
           };
           let from_table = match result[1] {
-            Constraint::NewBlockTable{id, rows, columns} => id,
+            Constraint::NewBlockTable{id, rows, columns} => {
+              id
+            },
             _ => 0,
           };
-          // Redirect table column definitions
-          let mut new_result = Vec::new();
-          for constraint in result {
-            match constraint {
-              Constraint::TableColumn{table, column_ix, column_id} => {
-                new_result.push(Constraint::TableColumn{table: from_table, column_ix, column_id});
-              }
-              _ => new_result.push(constraint),
-            }
-          }
-          constraints.push(Constraint::NewTable{id: to_table, rows: self.row as u64, columns: self.column as u64});
-          //constraints.push(Constraint::Insert{from: (from_table, 1, 1), to: (to_table, 1, 1)});
-          constraints.append(&mut new_result);
+          constraints.push(Constraint::CopyTable{from_table, to_table});
+        } else {
+
         }
+        constraints.append(&mut result);
       },
       Node::AnonymousTableDefine{children} => {
         let store_table = self.table;
@@ -343,7 +339,7 @@ impl Compiler {
           i += 1;
           match constraint {
             Constraint::Identifier{id} => {
-              constraints.push(Constraint::TableColumn{table: 0, column_ix: i, column_id: id});
+              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
             }
             _ => (),
           }
@@ -805,13 +801,6 @@ impl Compiler {
     compiled
   }
 
-}
-
-fn get_destination_register(constraint: &Constraint) -> Option<usize> {
-  match constraint {
-    Constraint::CopyInput{input, memory} => Some(*memory as usize),
-    _ => None,
-  }
 }
 
 // ## Appendix 
