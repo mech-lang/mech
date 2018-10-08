@@ -125,11 +125,6 @@ impl Table {
       Entry::Vacant(v) => {    
         let ix = self.columns + 1;
         v.insert(ix);
-        if self.columns == column {
-          self.column_ids.push(None);                  
-        } else {
-          self.column_ids.push(Some(column as u64));
-        }
         ix
       },
     };
