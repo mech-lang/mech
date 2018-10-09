@@ -15,6 +15,7 @@ pub enum Value {
   String(String),
   Table(u64),
   Bool(bool),
+  Reference((u64,Vec<u64>,Vec<u64>)),
   Empty,
 }
 
@@ -61,16 +62,17 @@ impl Value {
 }
 
 impl fmt::Debug for Value {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      match self {
-        &Value::Number(ref x) => write!(f, "{}", x),
-        &Value::String(ref x) => write!(f, "{}", x),
-        &Value::Empty => write!(f, ""),
-        &Value::Table(ref x) => write!(f, "{}", x),
-        &Value::Bool(ref b) => write!(f, "{}", b),
-      }
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &Value::Number(ref x) => write!(f, "{}", x),
+      &Value::String(ref x) => write!(f, "{}", x),
+      &Value::Empty => write!(f, ""),
+      &Value::Table(ref x) => write!(f, "{}", x),
+      &Value::Bool(ref b) => write!(f, "{}", b),
+      &Value::Reference(ref b) => write!(f, "{:?}", b),
     }
+  }
 }
 
 // ## Table
@@ -321,65 +323,63 @@ impl Table {
     self.set_cell(row_ix, column_ix, Value::Empty)
   }
 
-
-
 }
 
 // ### Pretty Printing Tables
 
 impl fmt::Debug for Table {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      let cell_width = 15;
-      let mut table_width = cell_width * self.columns + self.columns * 2;
-      if table_width < 20 {
-        table_width = 20;
-      }
-      let header_width = table_width - self.columns - 1;
-
-      // Print table header
-      write!(f, "╔").unwrap();
-      print_repeated_char("═", header_width, f);
-      write!(f, "╗\n").unwrap();
-
-      let table_name = format!("#{:#x}", self.id);
-      write!(f, "║").unwrap();
-      print_cell_contents(table_name, header_width, f);
-      write!(f, "║\n").unwrap();
-
-      let table_dimensions = format!("{:?} x {:?}", self.rows, self.columns);
-      write!(f, "║").unwrap();
-      print_cell_contents(table_dimensions, header_width, f);
-      write!(f, "║\n").unwrap();
-
-      write!(f, "╚").unwrap();
-      print_repeated_char("═", header_width, f);
-      write!(f, "╝\n").unwrap();
-
-      // Print table body
-      if self.columns > 0 {
-        print_top_border(self.columns, cell_width, f);
-        let max_rows = if self.rows > 10 {
-          10
-        } else {
-          self.rows
-        };
-        let mut column_labels: Vec<Value> = Vec::new();
-        for (ix, id) in self.column_ids.iter().enumerate() {
-          match id {
-            Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:#x})", ix + 1, *column_id))),
-            None => column_labels.push(Value::from_u64(ix as u64 + 1)),
-          }
-        }
-        print_row(column_labels, cell_width, f);
-        print_inner_border(self.columns, cell_width,  f);
-        for m in 1 .. max_rows + 1 {
-          print_row(self.get_row(m).unwrap(), cell_width, f);
-        }
-        print_bottom_border(self.columns, cell_width,  f);
-      }
-      Ok(())
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let cell_width = 15;
+    let mut table_width = cell_width * self.columns + self.columns * 2;
+    if table_width < 20 {
+      table_width = 20;
     }
+    let header_width = table_width - self.columns - 1;
+
+    // Print table header
+    write!(f, "╔").unwrap();
+    print_repeated_char("═", header_width, f);
+    write!(f, "╗\n").unwrap();
+
+    let table_name = format!("#{:#x}", self.id);
+    write!(f, "║").unwrap();
+    print_cell_contents(table_name, header_width, f);
+    write!(f, "║\n").unwrap();
+
+    let table_dimensions = format!("{:?} x {:?}", self.rows, self.columns);
+    write!(f, "║").unwrap();
+    print_cell_contents(table_dimensions, header_width, f);
+    write!(f, "║\n").unwrap();
+
+    write!(f, "╚").unwrap();
+    print_repeated_char("═", header_width, f);
+    write!(f, "╝\n").unwrap();
+
+    // Print table body
+    if self.columns > 0 {
+      print_top_border(self.columns, cell_width, f);
+      let max_rows = if self.rows > 10 {
+        10
+      } else {
+        self.rows
+      };
+      let mut column_labels: Vec<Value> = Vec::new();
+      for (ix, id) in self.column_ids.iter().enumerate() {
+        match id {
+          Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:#x})", ix + 1, *column_id))),
+          None => column_labels.push(Value::from_u64(ix as u64 + 1)),
+        }
+      }
+      print_row(column_labels, cell_width, f);
+      print_inner_border(self.columns, cell_width,  f);
+      for m in 1 .. max_rows + 1 {
+        print_row(self.get_row(m).unwrap(), cell_width, f);
+      }
+      print_bottom_border(self.columns, cell_width,  f);
+    }
+    Ok(())
+  }
 }
 
 fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) {
@@ -409,20 +409,20 @@ fn print_row(row: Vec<Value>, cell_width: usize, f: &mut fmt::Formatter) {
 }
 
 fn print_cell_contents(content_string: String, cell_width: usize, f: &mut fmt::Formatter) {
-    // If the contents exceed the cell width, truncate it and add ellipsis
-    if content_string.len() > cell_width {
-      let mut truncated_content_string = content_string.clone();
-      let content_width = cell_width - 3; 
-      truncated_content_string.truncate(content_width);
-      truncated_content_string.insert_str(content_width, "...");
-      write!(f, "{}", truncated_content_string.clone()).unwrap();
-    } else {
-      write!(f, "{}", content_string.clone()).unwrap();
-      let cell_padding = cell_width - content_string.len();
-      for _ in 0 .. cell_padding {
-        write!(f, " ").unwrap();
-      }
+  // If the contents exceed the cell width, truncate it and add ellipsis
+  if content_string.len() > cell_width {
+    let mut truncated_content_string = content_string.clone();
+    let content_width = cell_width - 3; 
+    truncated_content_string.truncate(content_width);
+    truncated_content_string.insert_str(content_width, "...");
+    write!(f, "{}", truncated_content_string.clone()).unwrap();
+  } else {
+    write!(f, "{}", content_string.clone()).unwrap();
+    let cell_padding = cell_width - content_string.len();
+    for _ in 0 .. cell_padding {
+      write!(f, " ").unwrap();
     }
+  }
 }
 
 fn print_inner_border(n: usize, m: usize, f: &mut fmt::Formatter) {
