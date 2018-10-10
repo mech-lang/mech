@@ -288,7 +288,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("ME{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
-        //constraints.push(Constraint::Reference{table: self.table, rows: vec![0] , columns: vec![1]});
+        constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         self.row = store_row;
@@ -301,7 +301,8 @@ impl Compiler {
           "-" => Function::Subtract,
           "*" => Function::Multiply,
           "/" => Function::Divide,
-          _ => Function::Add,
+          "^" => Function::Power,
+          _ => Function::Undefined,
         };
         let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
