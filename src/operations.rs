@@ -23,6 +23,7 @@ pub enum Function {
   Multiply, 
   Divide,
   Power,
+  Undefined
 }
 
 #[macro_export]
@@ -75,6 +76,9 @@ binary_math!{math_multiply, *}
 binary_math!{math_divide, /}
 // FIXME this isn't actually right at all. ^ is not power in Rust
 binary_math!{math_power, ^}
+
+pub fn undefined(lhs: &Vec<Value>, rhs: &Vec<Value>, out: &mut Vec<Value>) {
+}
 
 // ## Comparators
 
