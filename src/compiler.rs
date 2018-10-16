@@ -262,10 +262,18 @@ impl Compiler {
       },
       Node::AnonymousTableDefine{children} => {
         let store_table = self.table;
+        let anon_table_rows = 0;
+        let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AT{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut result = self.compile_constraints(children);
+        let mut compiled = vec![];
+        for child in children {
+          let mut result = self.compile_constraint(child);
+          println!("child {:?}", result);
+          compiled.append(&mut result);
+        }
+        
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
-        constraints.append(&mut result);
+        constraints.append(&mut compiled);
         self.table = store_table;
       },
       Node::VariableDefine{children} => {
@@ -304,17 +312,17 @@ impl Compiler {
           "^" => Function::Power,
           _ => Function::Undefined,
         };
-        let mut output: Vec<(u64, u64)> = vec![(self.table, self.column as u64)];
+        let mut output: Vec<(u64, u64, u64)> = vec![(self.table, self.row as u64, self.column as u64)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        let mut parameter_registers: Vec<(u64, u64)> = vec![];
+        let mut parameter_registers: Vec<(u64, u64, u64)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             Constraint::Constant{table, row, column, value} => {
-              parameter_registers.push((*table, *column));
+              parameter_registers.push((*table, *row, *column));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
