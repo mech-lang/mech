@@ -268,10 +268,16 @@ impl Compiler {
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
-          println!("child {:?}", result);
-          compiled.append(&mut result);
+          for constraint in result {
+            match constraint {
+              Constraint::Reference{table, rows, columns, destination} => {
+                let (to_table, to_row, to_column) = destination;
+                compiled.push(Constraint::Function{operation: Function::Undefined, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
+              },
+              _ => compiled.push(constraint),
+            }
+          }
         }
-        
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut compiled);
         self.table = store_table;
