@@ -272,7 +272,7 @@ impl Compiler {
             match constraint {
               Constraint::Reference{table, rows, columns, destination} => {
                 let (to_table, to_row, to_column) = destination;
-                compiled.push(Constraint::Function{operation: Function::Undefined, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
+                compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
               },
               _ => compiled.push(constraint),
             }
