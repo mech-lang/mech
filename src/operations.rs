@@ -16,7 +16,7 @@ work on the supplied data.
 // ## Functions
 
 #[repr(u8)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Function {
   Add, 
   Subtract, 
@@ -79,6 +79,9 @@ binary_math!{math_divide, /}
 binary_math!{math_power, ^}
 
 pub fn undefined(lhs: &Vec<Value>, rhs: &Vec<Value>, out: &mut Vec<Value>) {
+}
+
+pub fn concatenate(input: &Vec<Value>, out: &mut Vec<Value>) {
 }
 
 // ## Comparators
