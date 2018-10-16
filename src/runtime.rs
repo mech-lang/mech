@@ -337,12 +337,10 @@ impl Block {
                 },
                 None => store.get_column_by_ix(in_table, in_column as usize).unwrap(),
               };
-              println!("{:?}", in_data);
               self.scratch.push(in_data[0].clone());
             }
             let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
             out[output_row as usize - 1] = self.scratch[0].clone();
-            println!("OUT {:?}", out[output_row as usize - 1]);
             self.scratch.clear();
           }
           else if parameters.len() == 2 {
