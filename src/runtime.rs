@@ -324,9 +324,28 @@ impl Block {
             Function::Multiply => operations::math_multiply,
             Function::Divide => operations::math_divide,
             Function::Power => operations::math_power,
+            Function::Concatenate => operations::undefined, 
             Function::Undefined => operations::undefined,
           };
-          if parameters.len() == 2 {
+          if *operation == Function::Concatenate {
+            let (in_table, in_row, in_column) = parameters[0];
+            let (out_table, output_row, out_column) = output[0];
+            {         
+              let in_data = match self.memory.get(in_table) {
+                Some(table_ref) => {
+                  table_ref.get_column_by_ix(in_column as usize).unwrap()
+                },
+                None => store.get_column_by_ix(in_table, in_column as usize).unwrap(),
+              };
+              println!("{:?}", in_data);
+              self.scratch.push(in_data[0].clone());
+            }
+            let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
+            out[output_row as usize - 1] = self.scratch[0].clone();
+            println!("OUT {:?}", out[output_row as usize - 1]);
+            self.scratch.clear();
+          }
+          else if parameters.len() == 2 {
             // Execute the function. Results are placed on the memory registers
             let (lhs_table, lhs_row, lhs_column) = parameters[0];
             let (rhs_table, rhs_row, rhs_column) = parameters[1];
@@ -348,6 +367,7 @@ impl Block {
               };
               op_fun(lhs, rhs, &mut self.scratch);
             }
+            // TODO Make this work for multiple rows using output_row
             let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
             out[0] = self.scratch[0].clone();
             self.scratch.clear();
