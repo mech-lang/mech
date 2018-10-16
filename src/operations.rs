@@ -23,6 +23,7 @@ pub enum Function {
   Multiply, 
   Divide,
   Power,
+  Concatenate,
   Undefined
 }
 
