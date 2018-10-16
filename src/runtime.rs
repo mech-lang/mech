@@ -257,7 +257,7 @@ impl Block {
     self.constraints.push(constraint.clone());
     match constraint {
       Constraint::Function{operation, parameters, output} => {
-        for (table, row, column) in output {
+        for (table, row, column) in output {          
           let mut table_ref = self.memory.get_mut(table).unwrap();
           table_ref.grow_to_fit(table_ref.rows, column as usize);
         }
@@ -310,7 +310,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      println!("{:?}", step);
+      println!("Step: {:?}", step);
       match step {
         /*
         Constraint::ChangeScan{table, column, input} => {
@@ -326,30 +326,32 @@ impl Block {
             Function::Power => operations::math_power,
             Function::Undefined => operations::undefined,
           };
-          // Execute the function. Results are placed on the memory registers
-          let (lhs_table, lhs_row, lhs_column) = parameters[0];
-          let (rhs_table, rhs_row, rhs_column) = parameters[1];
-          let (out_table, output_row, out_column) = output[0];
-          // TODO This seems very inefficient. Find a better way to do this. 
-          // I'm having trouble getting the borrow checker to understand what I'm doing here
-          {         
-            let lhs = match self.memory.get(lhs_table) {
-              Some(table_ref) => {
-                table_ref.get_column_by_ix(lhs_column as usize).unwrap()
-              },
-              None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
-            };
-            let rhs = match self.memory.get(rhs_table) {
-              Some(table_ref) => {
-                table_ref.get_column_by_ix(rhs_column as usize).unwrap()
-              },
-              None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
-            };
-            op_fun(lhs, rhs, &mut self.scratch);
+          if parameters.len() == 2 {
+            // Execute the function. Results are placed on the memory registers
+            let (lhs_table, lhs_row, lhs_column) = parameters[0];
+            let (rhs_table, rhs_row, rhs_column) = parameters[1];
+            let (out_table, output_row, out_column) = output[0];
+            // TODO This seems very inefficient. Find a better way to do this. 
+            // I'm having trouble getting the borrow checker to understand what I'm doing here
+            {         
+              let lhs = match self.memory.get(lhs_table) {
+                Some(table_ref) => {
+                  table_ref.get_column_by_ix(lhs_column as usize).unwrap()
+                },
+                None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+              };
+              let rhs = match self.memory.get(rhs_table) {
+                Some(table_ref) => {
+                  table_ref.get_column_by_ix(rhs_column as usize).unwrap()
+                },
+                None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
+              };
+              op_fun(lhs, rhs, &mut self.scratch);
+            }
+            let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
+            out[0] = self.scratch[0].clone();
+            self.scratch.clear();
           }
-          let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
-          out[0] = self.scratch[0].clone();
-          self.scratch.clear();
         },
         /*
         Constraint::Filter{comparator, lhs, rhs, memory} => {
