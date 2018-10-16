@@ -257,7 +257,7 @@ impl Block {
     self.constraints.push(constraint.clone());
     match constraint {
       Constraint::Function{operation, parameters, output} => {
-        for (table, column) in output {
+        for (table, row, column) in output {
           let mut table_ref = self.memory.get_mut(table).unwrap();
           table_ref.grow_to_fit(table_ref.rows, column as usize);
         }
@@ -327,9 +327,9 @@ impl Block {
             Function::Undefined => operations::undefined,
           };
           // Execute the function. Results are placed on the memory registers
-          let (lhs_table, lhs_column) = parameters[0];
-          let (rhs_table, rhs_column) = parameters[1];
-          let (out_table, out_column) = output[0];
+          let (lhs_table, lhs_row, lhs_column) = parameters[0];
+          let (rhs_table, rhs_row, rhs_column) = parameters[1];
+          let (out_table, output_row, out_column) = output[0];
           // TODO This seems very inefficient. Find a better way to do this. 
           // I'm having trouble getting the borrow checker to understand what I'm doing here
           {         
@@ -601,7 +601,7 @@ pub enum Constraint {
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
-  Function {operation: operations::Function, parameters: Vec<(u64, u64)>, output: Vec<(u64,u64)>},
+  Function {operation: operations::Function, parameters: Vec<(u64, u64, u64)>, output: Vec<(u64, u64, u64)>},
   Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
