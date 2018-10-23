@@ -448,9 +448,16 @@ impl Compiler {
         let result = self.compile_nodes(children);
         for node in result {
           match node {
-            Node::Constant{..} => {
-              compiled.push(node);
-            }
+            // If the node is a naked math expression or constant, modify the 
+            // graph to put it into an anonymous table
+            Node::Constant{..} |
+            Node::MathExpression{..} => {
+              compiled.push(Node::Expression{
+                children: vec![Node::AnonymousTableDefine{
+                  children: vec![Node::TableRow{
+                    children: vec![Node::Column{
+                      children: vec![node]}]}]}]});
+            },
             _ => compiled.push(Node::Expression{children: vec![node]}),
           }
         }
