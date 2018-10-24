@@ -492,6 +492,12 @@ impl Block {
           }
           store.process_transaction(&Transaction::from_changeset(changes));
         },
+        Constraint::CopyBlockTable{from_table, to_table} => {
+          let from_table_ref = self.memory.get(*from_table).unwrap();
+          let mut new_table = from_table_ref.clone();
+          new_table.id = *to_table;
+          self.memory.register(new_table);
+        },
         Constraint::NewTable{id, rows, columns} => {
           store.process_transaction(&Transaction::from_change(
             Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
@@ -545,6 +551,12 @@ impl Block {
       match constraint {
         Constraint::Append{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+    for constraint in &self.constraints {
+      match constraint {
+        Constraint::CopyBlockTable{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
@@ -629,6 +641,7 @@ pub enum Constraint {
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
+  CopyBlockTable {from_table: u64, to_table: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
@@ -649,6 +662,7 @@ impl fmt::Debug for Constraint {
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
+      Constraint::CopyBlockTable{from_table, to_table} => write!(f, "CopyBlockTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
