@@ -452,11 +452,7 @@ impl Compiler {
             // graph to put it into an anonymous table
             Node::Constant{..} |
             Node::MathExpression{..} => {
-              compiled.push(Node::Expression{
-                children: vec![Node::AnonymousTableDefine{
-                  children: vec![Node::TableRow{
-                    children: vec![Node::Column{
-                      children: vec![node]}]}]}]});
+              compiled.push(node);
             },
             _ => compiled.push(Node::Expression{children: vec![node]}),
           }
@@ -621,6 +617,14 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{..} => (),
+            Node::Constant{..} |
+            Node::MathExpression{..} => {
+              children.push(Node::Expression{
+                children: vec![Node::AnonymousTableDefine{
+                  children: vec![Node::TableRow{
+                    children: vec![Node::Column{
+                      children: vec![node]}]}]}]});
+            },
             _ => children.push(node),
           }
         }
