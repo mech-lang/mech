@@ -238,9 +238,29 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
       }, 
+      Node::VariableDefine{children} => {
+        let mut result = self.compile_constraints(children);
+        if result.len() > 2 {
+          let to_table: u64 = match result[0] {
+            Constraint::Identifier{id} => {
+              id
+            },
+            _ => 0,
+          };
+          let from_table = match result[1] {
+            Constraint::NewBlockTable{id, rows, columns} => {
+              id
+            },
+            _ => 0,
+          };
+          constraints.push(Constraint::CopyBlockTable{from_table, to_table});
+        } else {
+          // TODO error if there are no children
+        }
+        constraints.append(&mut result);
+      },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        // If there are no children, 
         if result.len() > 2 {
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id} => {
@@ -256,7 +276,7 @@ impl Compiler {
           };
           constraints.push(Constraint::CopyTable{from_table, to_table});
         } else {
-
+          // TODO error if there are no children
         }
         constraints.append(&mut result);
       },
@@ -281,17 +301,6 @@ impl Compiler {
         constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut compiled);
         self.table = store_table;
-      },
-      Node::VariableDefine{children} => {
-        let mut result = self.compile_constraint(&children[0]);
-        if result.len() > 1 {
-          match result[0] {
-            Constraint::Identifier{id} => self.table = Hasher::hash_string(format!("VAR{:?},{:?}-{:?}", self.section, self.block, id)),
-            _ => (),
-          }
-          let mut result = self.compile_constraint(&children[1]);
-          constraints.append(&mut result);
-        }
       },
       Node::MathExpression{children} => {
         let store_row = self.row;
