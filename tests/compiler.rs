@@ -65,7 +65,7 @@ test_math!(table_define_program, "# A Working Program
 
 ## Section Two
 
-  #test = 9",9);
+  #test = 9", 9);
 
 test_math!(math_constant,"#test = 10", 10);
 test_math!(math_add,"#test = 1 + 1", 2);
