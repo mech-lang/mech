@@ -339,7 +339,9 @@ impl Block {
               };
               self.scratch.push(in_data[0].clone());
             }
-            let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
+            let out_table_ref = self.memory.get_mut(out_table).unwrap();
+            out_table_ref.grow_to_fit(output_row as usize, out_column as usize);
+            let out = out_table_ref.get_column_mut_by_ix(out_column as usize).unwrap();
             out[output_row as usize - 1] = self.scratch[0].clone();
             self.scratch.clear();
           }
