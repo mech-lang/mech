@@ -61,11 +61,11 @@ compile_string!(table_define, "#table = [x y z]");
 //compile_string!(table_index_dot_index_name, "#table.field");
 
 
-compile_string!(table_define_program, "# A Working Program
+test_math!(table_define_program, "# A Working Program
 
 ## Section Two
 
-  #gravity = 9");
+  #test = 9",9);
 
 test_math!(math_constant,"#test = 10", 10);
 test_math!(math_add,"#test = 1 + 1", 2);
