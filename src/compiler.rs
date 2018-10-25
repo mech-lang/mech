@@ -29,7 +29,7 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
-  SelectData{ children: Vec<Node> },
+  SelectData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -86,7 +86,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
-    Node::SelectData{children} => {print!("SelectData\n"); Some(children)},
+    Node::SelectData{id, rows, columns} => {print!("SelectData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::DotIndex{rows, columns} => {print!("DotIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -369,6 +369,11 @@ impl Compiler {
           }
         }
       },
+      Node::SelectData{id, rows, columns} => {
+        let r: Vec<u64> = rows.clone();
+        let c: Vec<u64> = columns.clone();
+        constraints.push(Constraint::Scan{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
+      },
       Node::Attribute{children} => {
         self.column += 1;
         constraints.append(&mut self.compile_constraints(children));
@@ -443,11 +448,18 @@ impl Compiler {
       },
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Data{children: result});
-      },
-      parser::Node::SelectData{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::SelectData{children: result});
+        // TODO Handle indexes
+        for node in result {
+          match node {
+            Node::Table{name, id} => {
+              compiled.push(Node::SelectData{id, rows: vec![0], columns: vec![0]});
+            }, 
+            Node::Identifier{..} => {
+              println!("SELECTVARIABLE{:?}", node);
+            },
+            _ => (),
+          }
+        }
       },
       parser::Node::Statement{children} => {
         let result = self.compile_nodes(children);
@@ -594,6 +606,7 @@ impl Compiler {
             _ => children.push(node),
           }
         }
+        // TODO I might be able to simplify this now. This doesn't seem to be necessary
         if new_node {
           compiled.push(Node::MathExpression{children});
         } else {
