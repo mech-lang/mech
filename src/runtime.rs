@@ -256,6 +256,10 @@ impl Block {
   pub fn add_constraint(&mut self, constraint: Constraint) {
     self.constraints.push(constraint.clone());
     match constraint {
+      Constraint::Scan{table, rows, columns, destination} => {
+        // TODO Update this whole register adding process and marking tables ready
+        self.input_registers.push(Register::input(table, 1));
+      },
       Constraint::Function{operation, parameters, output} => {
         for (table, row, column) in output {          
           let mut table_ref = self.memory.get_mut(table).unwrap();
@@ -523,6 +527,7 @@ impl Block {
     for constraint in &self.constraints {
       match constraint {
         Constraint::ChangeScan{..} => self.plan.push(constraint.clone()),
+        Constraint::Scan{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
