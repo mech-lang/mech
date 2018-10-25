@@ -320,6 +320,26 @@ impl Block {
         Constraint::ChangeScan{table, column, input} => {
           self.ready = clear_bit(self.ready, *input as usize - 1);
         }*/
+        Constraint::Scan{table, rows, columns, destination} => {
+          let (to_table, to_row, to_column) = destination;
+          // select the entire table
+          if rows[0] == 0 && columns[0] == 0 {
+            match store.get_table(*table) {
+              Some(table_ref) => {
+                let to_table_ref = self.memory.get_mut(*to_table).unwrap();
+                to_table_ref.rows = table_ref.rows;
+                to_table_ref.columns = table_ref.columns;
+                to_table_ref.row_ids = table_ref.row_ids.clone();
+                to_table_ref.column_ids = to_table_ref.column_ids.clone();
+                to_table_ref.column_aliases = to_table_ref.column_aliases.clone();
+                to_table_ref.row_aliases = to_table_ref.row_aliases.clone();
+                to_table_ref.column_lengths = to_table_ref.column_lengths.clone();
+                to_table_ref.data = table_ref.data.clone();
+              },
+              None => (),
+            }
+          }
+        },
         Constraint::Function{operation, parameters, output} => {
           // Pass the parameters to the appropriate function
           let op_fun = match operation {
