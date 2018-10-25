@@ -630,7 +630,7 @@ pub enum Constraint {
   NewBlockTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  Scan {table: u64, column: u64, input: u64},
+  Scan {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
@@ -656,7 +656,7 @@ impl fmt::Debug for Constraint {
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::NewBlockTable{id, rows, columns} => write!(f, "NewBlockTable(#{:#x}({:?}x{:?}))", id, rows, columns),
-      Constraint::Scan{table, column, input} => write!(f, "Scan(#{:#x}({:#x}) -> I{:#x})", table, column, input),
+      Constraint::Scan{table, rows, columns, destination} => write!(f, "Scan(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
