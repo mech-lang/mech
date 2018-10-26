@@ -340,6 +340,10 @@ impl Compiler {
             Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },
+            Constraint::ScanLocal{table, rows, columns, destination} => {
+              let (to_table, to_row, to_column) = destination;
+              parameter_registers.push((*to_table, *to_row, *to_column));
+            }
             Constraint::Function{operation, parameters, output} => {
               for o in output {
                 parameter_registers.push(*o);
@@ -802,7 +806,6 @@ impl Compiler {
       parser::Node::L3{children} |
       parser::Node::L4{children} => {
         let result = self.compile_nodes(children);
-        println!("The result::: {:?}", result);
         let mut last = Node::Null;
         for node in result {
           match last {
