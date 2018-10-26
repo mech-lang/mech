@@ -330,10 +330,10 @@ impl Block {
                 to_table_ref.rows = table_ref.rows;
                 to_table_ref.columns = table_ref.columns;
                 to_table_ref.row_ids = table_ref.row_ids.clone();
-                to_table_ref.column_ids = to_table_ref.column_ids.clone();
-                to_table_ref.column_aliases = to_table_ref.column_aliases.clone();
-                to_table_ref.row_aliases = to_table_ref.row_aliases.clone();
-                to_table_ref.column_lengths = to_table_ref.column_lengths.clone();
+                to_table_ref.column_ids = table_ref.column_ids.clone();
+                to_table_ref.column_aliases = table_ref.column_aliases.clone();
+                to_table_ref.row_aliases = table_ref.row_aliases.clone();
+                to_table_ref.column_lengths = table_ref.column_lengths.clone();
                 to_table_ref.data = table_ref.data.clone();
               },
               None => (),
