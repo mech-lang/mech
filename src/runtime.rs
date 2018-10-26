@@ -313,222 +313,243 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    for step in &self.plan {
-      println!("Step: {:?}", step);
-      match step {
-        /*
-        Constraint::ChangeScan{table, column, input} => {
-          self.ready = clear_bit(self.ready, *input as usize - 1);
-        }*/
-        Constraint::Scan{table, rows, columns, destination} => {
-          let (to_table, to_row, to_column) = destination;
-          // select the entire table
-          if rows[0] == 0 && columns[0] == 0 {
-            match store.get_table(*table) {
+    while self.updated == true {
+      self.updated = false;
+      for step in &self.plan {
+        println!("Step: {:?}", step);
+        match step {
+          /*
+          Constraint::ChangeScan{table, column, input} => {
+            self.ready = clear_bit(self.ready, *input as usize - 1);
+          }*/
+          Constraint::Scan{table, rows, columns, destination} => {
+            let (to_table, to_row, to_column) = destination;
+            // select the entire table
+            if rows[0] == 0 && columns[0] == 0 {
+              match store.get_table(*table) {
+                Some(table_ref) => {
+                  let to_table_ref = self.memory.get_mut(*to_table).unwrap();
+                  to_table_ref.rows = table_ref.rows;
+                  to_table_ref.columns = table_ref.columns;
+                  to_table_ref.row_ids = table_ref.row_ids.clone();
+                  to_table_ref.column_ids = table_ref.column_ids.clone();
+                  to_table_ref.column_aliases = table_ref.column_aliases.clone();
+                  to_table_ref.row_aliases = table_ref.row_aliases.clone();
+                  to_table_ref.column_lengths = table_ref.column_lengths.clone();
+                  to_table_ref.data = table_ref.data.clone();
+                },
+                None => (),
+              }
+            }
+          },
+          // TODO MAke this real... it's not generalized
+          Constraint::ScanLocal{table, rows, columns, destination} => { 
+            let (to_table, to_row, to_column) = destination;
+            let value = match self.memory.get(*table) {
               Some(table_ref) => {
-                let to_table_ref = self.memory.get_mut(*to_table).unwrap();
-                to_table_ref.rows = table_ref.rows;
-                to_table_ref.columns = table_ref.columns;
-                to_table_ref.row_ids = table_ref.row_ids.clone();
-                to_table_ref.column_ids = table_ref.column_ids.clone();
-                to_table_ref.column_aliases = table_ref.column_aliases.clone();
-                to_table_ref.row_aliases = table_ref.row_aliases.clone();
-                to_table_ref.column_lengths = table_ref.column_lengths.clone();
-                to_table_ref.data = table_ref.data.clone();
+                table_ref.index(1,1).unwrap().clone()
+              },
+              None => Value::Empty,
+            };
+            let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
+            to_table_ref.grow_to_fit(*to_row as usize, *to_column as usize);
+            to_table_ref.set_cell(*to_row as usize, *to_column as usize, value);
+          },
+          Constraint::Function{operation, parameters, output} => {
+            // Pass the parameters to the appropriate function
+            let op_fun = match operation {
+              Function::Add => operations::math_add,
+              Function::Subtract => operations::math_subtract,
+              Function::Multiply => operations::math_multiply,
+              Function::Divide => operations::math_divide,
+              Function::Power => operations::math_power,
+              Function::Concatenate => operations::undefined, 
+              Function::Undefined => operations::undefined,
+            };
+            if *operation == Function::Concatenate {
+              let (in_table, in_row, in_column) = parameters[0];
+              let (out_table, output_row, out_column) = output[0];
+              {         
+                let in_data = match self.memory.get(in_table) {
+                  Some(table_ref) => {
+                    table_ref.get_column_by_ix(in_column as usize).unwrap()
+                  },
+                  None => store.get_column_by_ix(in_table, in_column as usize).unwrap(),
+                };
+                self.scratch.push(in_data[0].clone());
+              }
+              let out_table_ref = self.memory.get_mut(out_table).unwrap();
+              out_table_ref.grow_to_fit(output_row as usize, out_column as usize);
+              let out = out_table_ref.get_column_mut_by_ix(out_column as usize).unwrap();
+              out[output_row as usize - 1] = self.scratch[0].clone();
+              self.scratch.clear();
+            }
+            else if parameters.len() == 2 {
+              // Execute the function. Results are placed on the memory registers
+              let (lhs_table, lhs_row, lhs_column) = parameters[0];
+              let (rhs_table, rhs_row, rhs_column) = parameters[1];
+              let (out_table, output_row, out_column) = output[0];
+              // TODO This seems very inefficient. Find a better way to do this. 
+              // I'm having trouble getting the borrow checker to understand what I'm doing here
+              {         
+                let lhs = match self.memory.get(lhs_table) {
+                  Some(table_ref) => {
+                    table_ref.get_column_by_ix(lhs_column as usize).unwrap()
+                  },
+                  None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+                };
+                let rhs = match self.memory.get(rhs_table) {
+                  Some(table_ref) => {
+                    table_ref.get_column_by_ix(rhs_column as usize).unwrap()
+                  },
+                  None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
+                };
+                op_fun(lhs, rhs, &mut self.scratch);
+              }
+              // TODO Make this work for multiple rows using output_row
+              let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
+              if self.scratch.len() > 0 {
+                out[0] = self.scratch[0].clone();
+              }
+              self.scratch.clear();
+            }
+          },
+          /*
+          Constraint::Filter{comparator, lhs, rhs, memory} => {
+            operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
+          },
+          Constraint::CopyInput{input, memory} => {
+            let register = &self.input_registers[*input as usize - 1];
+            match store.get_column(register.table, register.column as usize) {
+              Some(column) => {
+                self.column_lengths[*memory as usize - 1] = column.len() as u64;
+                operations::identity(column, *memory, &mut self.memory);
               },
               None => (),
             }
-          }
-        },
-        Constraint::Function{operation, parameters, output} => {
-          // Pass the parameters to the appropriate function
-          let op_fun = match operation {
-            Function::Add => operations::math_add,
-            Function::Subtract => operations::math_subtract,
-            Function::Multiply => operations::math_multiply,
-            Function::Divide => operations::math_divide,
-            Function::Power => operations::math_power,
-            Function::Concatenate => operations::undefined, 
-            Function::Undefined => operations::undefined,
-          };
-          if *operation == Function::Concatenate {
-            let (in_table, in_row, in_column) = parameters[0];
-            let (out_table, output_row, out_column) = output[0];
-            {         
-              let in_data = match self.memory.get(in_table) {
-                Some(table_ref) => {
-                  table_ref.get_column_by_ix(in_column as usize).unwrap()
+          },
+          Constraint::Condition{truth, result, default, memory} => {
+            for i in 1 .. self.memory.rows + 1 {
+              match self.memory.index(i, *truth as usize) {
+                Some(Value::Bool(true)) => {
+                  let value = self.memory.index(i, *result as usize).unwrap().clone();
+                  self.memory.set_cell(i, *memory as usize, value);
                 },
-                None => store.get_column_by_ix(in_table, in_column as usize).unwrap(),
+                Some(Value::Bool(false)) => {
+                  let value = self.memory.index(i, *default as usize).unwrap().clone();
+                  self.memory.set_cell(i, *memory as usize, value);
+                },
+                _ => (),
               };
-              self.scratch.push(in_data[0].clone());
             }
-            let out_table_ref = self.memory.get_mut(out_table).unwrap();
-            out_table_ref.grow_to_fit(output_row as usize, out_column as usize);
-            let out = out_table_ref.get_column_mut_by_ix(out_column as usize).unwrap();
-            out[output_row as usize - 1] = self.scratch[0].clone();
-            self.scratch.clear();
           }
-          else if parameters.len() == 2 {
-            // Execute the function. Results are placed on the memory registers
-            let (lhs_table, lhs_row, lhs_column) = parameters[0];
-            let (rhs_table, rhs_row, rhs_column) = parameters[1];
-            let (out_table, output_row, out_column) = output[0];
-            // TODO This seems very inefficient. Find a better way to do this. 
-            // I'm having trouble getting the borrow checker to understand what I'm doing here
-            {         
-              let lhs = match self.memory.get(lhs_table) {
-                Some(table_ref) => {
-                  table_ref.get_column_by_ix(lhs_column as usize).unwrap()
-                },
-                None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+          Constraint::IndexMask{source, truth, memory} => {
+            let source_ix = *source as usize;
+            let memory_ix = *memory as usize;
+            let source_length = self.column_lengths[source_ix - 1] as usize;
+            for i in 1 .. source_length + 1 {
+              let value = self.memory.index(i, source_ix).unwrap().clone();
+              match self.memory.index_by_alias(i, truth) {
+                Some(Value::Bool(true)) =>  self.memory.set_cell(i, memory_ix, value),
+                Some(Value::Bool(false)) => self.memory.set_cell(i, memory_ix, Value::Empty),
+                otherwise => Ok(Value::Empty),
               };
-              let rhs = match self.memory.get(rhs_table) {
-                Some(table_ref) => {
-                  table_ref.get_column_by_ix(rhs_column as usize).unwrap()
-                },
-                None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
-              };
-              op_fun(lhs, rhs, &mut self.scratch);
             }
-            // TODO Make this work for multiple rows using output_row
-            let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
-            out[0] = self.scratch[0].clone();
-            self.scratch.clear();
-          }
-        },
-        /*
-        Constraint::Filter{comparator, lhs, rhs, memory} => {
-          operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
-        },
-        Constraint::CopyInput{input, memory} => {
-          let register = &self.input_registers[*input as usize - 1];
-          match store.get_column(register.table, register.column as usize) {
-            Some(column) => {
-              self.column_lengths[*memory as usize - 1] = column.len() as u64;
-              operations::identity(column, *memory, &mut self.memory);
-            },
-            None => (),
-          }
-        },
-        Constraint::Condition{truth, result, default, memory} => {
-          for i in 1 .. self.memory.rows + 1 {
-            match self.memory.index(i, *truth as usize) {
-              Some(Value::Bool(true)) => {
-                let value = self.memory.index(i, *result as usize).unwrap().clone();
-                self.memory.set_cell(i, *memory as usize, value);
-              },
-              Some(Value::Bool(false)) => {
-                let value = self.memory.index(i, *default as usize).unwrap().clone();
-                self.memory.set_cell(i, *memory as usize, value);
-              },
-              _ => (),
-            };
-          }
-        }
-        Constraint::IndexMask{source, truth, memory} => {
-          let source_ix = *source as usize;
-          let memory_ix = *memory as usize;
-          let source_length = self.column_lengths[source_ix - 1] as usize;
-          for i in 1 .. source_length + 1 {
-            let value = self.memory.index(i, source_ix).unwrap().clone();
-            match self.memory.index_by_alias(i, truth) {
-              Some(Value::Bool(true)) =>  self.memory.set_cell(i, memory_ix, value),
-              Some(Value::Bool(false)) => self.memory.set_cell(i, memory_ix, Value::Empty),
-              otherwise => Ok(Value::Empty),
-            };
-          }
-          self.column_lengths[memory_ix - 1] = source_length as u64;
-        },*/
-        Constraint::Insert{from, to} => {
-          let (from_table, from_row, from_column) = from;
-          let (to_table, to_row, to_column) = to;
-          match &mut self.memory.get_mut(*from_table) {
-            Some(table_ref) => {
-              match &mut table_ref.get_column_by_ix(*from_column as usize) {
-                Some(column_data) => {
-                  for (row_ix, cell) in column_data.iter().enumerate() {
-                    match cell {
-                      Value::Empty => (),
-                      _ => {
-                        store.process_transaction(&Transaction::from_change(
-                          Change::Set{ table: *to_table, row: row_ix as u64 + 1, column: *to_column, value: cell.clone() },
-                        ));
+            self.column_lengths[memory_ix - 1] = source_length as u64;
+          },*/
+          Constraint::Insert{from, to} => {
+            let (from_table, from_row, from_column) = from;
+            let (to_table, to_row, to_column) = to;
+            match &mut self.memory.get_mut(*from_table) {
+              Some(table_ref) => {
+                match &mut table_ref.get_column_by_ix(*from_column as usize) {
+                  Some(column_data) => {
+                    for (row_ix, cell) in column_data.iter().enumerate() {
+                      match cell {
+                        Value::Empty => (),
+                        _ => {
+                          store.process_transaction(&Transaction::from_change(
+                            Change::Set{ table: *to_table, row: row_ix as u64 + 1, column: *to_column, value: cell.clone() },
+                          ));
+                        }
                       }
                     }
+                  },
+                  None => (),
+                };
+              },
+              None => (),
+            }
+            /*match &mut self.memory.get_column_by_ix(*memory as usize) {
+              Some(column_data) => {
+                for (row_ix, cell) in column_data.iter().enumerate() {
+                  match cell {
+                    Value::Empty => (),
+                    _ => {
+                      store.process_transaction(&Transaction::from_change(
+                        Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() },
+                      ));
+                    }
                   }
+                }
+              },
+              None => (),
+            }*/
+          },/*
+          Constraint::Append{memory, table, column} => {
+            match &mut self.memory.get_column_by_ix(*memory as usize) {
+              Some(column_data) => {
+                for (row_ix, cell) in column_data.iter().enumerate() {
+                  let length = column_data.len() as u64;
+                  match cell {
+                    Value::Empty => (),
+                    _ => {
+                      store.process_transaction(&Transaction::from_change(
+                        Change::Append{ table: *table, column: *column, value: cell.clone() }
+                      ));
+                    }
+                  }
+                }
+              },
+              None => (),
+            }
+          },
+          */
+          Constraint::CopyTable{from_table, to_table} => {
+            let from_table_ref = self.memory.get(*from_table).unwrap();
+            let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.rows}];
+            for (ix, column_id) in from_table_ref.column_ids.iter().enumerate() {
+              match column_id {
+                Some(col_id) => {
+                  changes.push(Change::RenameColumn{table: *to_table, column_ix: ix as u64 + 1, column_id: *col_id});
                 },
                 None => (),
               };
-            },
-            None => (),
-          }
-          /*match &mut self.memory.get_column_by_ix(*memory as usize) {
-            Some(column_data) => {
-              for (row_ix, cell) in column_data.iter().enumerate() {
-                match cell {
-                  Value::Empty => (),
-                  _ => {
-                    store.process_transaction(&Transaction::from_change(
-                      Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() },
-                    ));
-                  }
-                }
-              }
-            },
-            None => (),
-          }*/
-        },/*
-        Constraint::Append{memory, table, column} => {
-          match &mut self.memory.get_column_by_ix(*memory as usize) {
-            Some(column_data) => {
-              for (row_ix, cell) in column_data.iter().enumerate() {
-                let length = column_data.len() as u64;
-                match cell {
-                  Value::Empty => (),
-                  _ => {
-                    store.process_transaction(&Transaction::from_change(
-                      Change::Append{ table: *table, column: *column, value: cell.clone() }
-                    ));
-                  }
-                }
-              }
-            },
-            None => (),
-          }
-        },
-        */
-        Constraint::CopyTable{from_table, to_table} => {
-          let from_table_ref = self.memory.get(*from_table).unwrap();
-          let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.rows}];
-          for (ix, column_id) in from_table_ref.column_ids.iter().enumerate() {
-            match column_id {
-              Some(col_id) => {
-                changes.push(Change::RenameColumn{table: *to_table, column_ix: ix as u64 + 1, column_id: *col_id});
-              },
-              None => (),
-            };
-          }
-          for (col_ix, column) in from_table_ref.data.iter().enumerate() {
-            for (row_ix, data) in column.iter().enumerate() {
-              changes.push(Change::Set{table: *to_table, row: row_ix as u64 + 1, column: col_ix as u64 + 1, value: data.clone()});
             }
-          }
-          store.process_transaction(&Transaction::from_changeset(changes));
-        },
-        Constraint::CopyBlockTable{from_table, to_table} => {
-          let from_table_ref = self.memory.get(*from_table).unwrap();
-          let mut new_table = from_table_ref.clone();
-          new_table.id = *to_table;
-          self.memory.register(new_table);
-        },
-        Constraint::NewTable{id, rows, columns} => {
-          store.process_transaction(&Transaction::from_change(
-            Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
-          ));
-        },
-        _ => (),
-      } 
+            for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+              for (row_ix, data) in column.iter().enumerate() {
+                changes.push(Change::Set{table: *to_table, row: row_ix as u64 + 1, column: col_ix as u64 + 1, value: data.clone()});
+              }
+            }
+            store.process_transaction(&Transaction::from_changeset(changes));
+          },
+          Constraint::CopyBlockTable{from_table, to_table} => {
+            if !self.memory.contains(*to_table) {
+              let from_table_ref = self.memory.get(*from_table).unwrap();
+              let mut new_table = from_table_ref.clone();
+              new_table.id = *to_table;
+              self.memory.register(new_table);
+              self.updated = true;
+            }
+          },
+          Constraint::NewTable{id, rows, columns} => {
+            store.process_transaction(&Transaction::from_change(
+              Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
+            ));
+          },
+          _ => (),
+        } 
+      }
     }
     self.updated = true;
   }
@@ -547,6 +568,7 @@ impl Block {
     for constraint in &self.constraints {
       match constraint {
         Constraint::ChangeScan{..} => self.plan.push(constraint.clone()),
+        Constraint::ScanLocal{..} => self.plan.push(constraint.clone()),
         Constraint::Scan{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
