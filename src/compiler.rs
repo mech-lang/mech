@@ -30,6 +30,7 @@ pub enum Node {
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
   SelectData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
+  SelectLocalData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -87,6 +88,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{id, rows, columns} => {print!("SelectData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
+    Node::SelectLocalData{id, rows, columns} => {print!("SelectLocalData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::DotIndex{rows, columns} => {print!("DotIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -202,7 +204,6 @@ impl Compiler {
         let mut block = Block::new();
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
-
         self.block += 1;
         let constraints = self.compile_constraints(&children);
         block.add_constraints(constraints);
@@ -374,6 +375,11 @@ impl Compiler {
         let c: Vec<u64> = columns.clone();
         constraints.push(Constraint::Scan{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
       },
+      Node::SelectLocalData{id, rows, columns} => {
+        let r: Vec<u64> = rows.clone();
+        let c: Vec<u64> = columns.clone();
+        constraints.push(Constraint::ScanLocal{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
+      },
       Node::Attribute{children} => {
         self.column += 1;
         constraints.append(&mut self.compile_constraints(children));
@@ -454,8 +460,8 @@ impl Compiler {
             Node::Table{name, id} => {
               compiled.push(Node::SelectData{id, rows: vec![0], columns: vec![0]});
             }, 
-            Node::Identifier{..} => {
-              println!("SELECTVARIABLE{:?}", node);
+            Node::Identifier{name, id} => {
+              compiled.push(Node::SelectLocalData{id, rows: vec![0], columns: vec![0]});
             },
             _ => (),
           }
@@ -796,6 +802,7 @@ impl Compiler {
       parser::Node::L3{children} |
       parser::Node::L4{children} => {
         let result = self.compile_nodes(children);
+        println!("The result::: {:?}", result);
         let mut last = Node::Null;
         for node in result {
           match last {
