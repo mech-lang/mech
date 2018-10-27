@@ -254,6 +254,8 @@ impl Block {
   pub fn add_constraint(&mut self, constraint: Constraint) {
     self.constraints.push(constraint.clone());
     match constraint {
+      Constraint::ScanLocal{table, rows, columns, destination} => {
+      },
       Constraint::Scan{table, rows, columns, destination} => {
         // TODO Update this whole register adding process and marking tables ready
         self.input_registers.push(Register::input(table, 1));
@@ -530,7 +532,7 @@ impl Block {
             }
             store.process_transaction(&Transaction::from_changeset(changes));
           },
-          Constraint::CopyBlockTable{from_table, to_table} => {
+          Constraint::CopyLocalTable{from_table, to_table} => {
             if !self.memory.contains(*to_table) {
               let from_table_ref = self.memory.get(*from_table).unwrap();
               let mut new_table = from_table_ref.clone();
@@ -600,7 +602,7 @@ impl Block {
     }
     for constraint in &self.constraints {
       match constraint {
-        Constraint::CopyBlockTable{..} => self.plan.push(constraint.clone()),
+        Constraint::CopyLocalTable{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
@@ -685,7 +687,7 @@ pub enum Constraint {
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
-  CopyBlockTable {from_table: u64, to_table: u64},
+  CopyLocalTable {from_table: u64, to_table: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
@@ -707,7 +709,7 @@ impl fmt::Debug for Constraint {
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
-      Constraint::CopyBlockTable{from_table, to_table} => write!(f, "CopyBlockTable({:#x} -> {:#x})", from_table, to_table),
+      Constraint::CopyLocalTable{from_table, to_table} => write!(f, "CopyLocalTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
