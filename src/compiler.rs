@@ -249,7 +249,7 @@ impl Compiler {
             _ => 0,
           };
           let from_table = match result[1] {
-            Constraint::NewBlockTable{id, rows, columns} => {
+            Constraint::NewLocalTable{id, rows, columns} => {
               id
             },
             _ => 0,
@@ -270,7 +270,7 @@ impl Compiler {
             _ => 0,
           };
           let from_table = match result[1] {
-            Constraint::NewBlockTable{id, rows, columns} => {
+            Constraint::NewLocalTable{id, rows, columns} => {
               id
             },
             _ => 0,
@@ -299,7 +299,7 @@ impl Compiler {
             }
           }
         }
-        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut compiled);
         self.table = store_table;
       },
@@ -313,7 +313,7 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
         constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
-        constraints.push(Constraint::NewBlockTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         self.row = store_row;
         self.column = store_col;
