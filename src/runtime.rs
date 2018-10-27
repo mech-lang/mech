@@ -267,7 +267,7 @@ impl Block {
         }
       },
       Constraint::NewTable{..} => self.updated = true,
-      Constraint::NewBlockTable{id, rows, columns} => {
+      Constraint::NewLocalTable{id, rows, columns} => {
         self.memory.register(Table::new(id, rows as usize, columns as usize));
       },
       Constraint::Constant{table, row, column, value} => {
@@ -672,7 +672,7 @@ pub enum Constraint {
   Data {table: u64, column: u64},
   NewTable{id: u64, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_id: u64},
-  NewBlockTable{id: u64, rows: u64, columns: u64},
+  NewLocalTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
   Scan {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
@@ -701,7 +701,7 @@ impl fmt::Debug for Constraint {
       Constraint::Reference{table, rows, columns, destination} => write!(f, "Reference(@{:#x}(rows: {:?}, cols: {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
-      Constraint::NewBlockTable{id, rows, columns} => write!(f, "NewBlockTable(#{:#x}({:?}x{:?}))", id, rows, columns),
+      Constraint::NewLocalTable{id, rows, columns} => write!(f, "NewLocalTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns, destination} => write!(f, "Scan(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::ScanLocal{table, rows, columns, destination} => write!(f, "ScanLocal(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
