@@ -254,7 +254,7 @@ impl Compiler {
             },
             _ => 0,
           };
-          constraints.push(Constraint::CopyBlockTable{from_table, to_table});
+          constraints.push(Constraint::CopyLocalTable{from_table, to_table});
         } else {
           // TODO error if there are no children
         }
