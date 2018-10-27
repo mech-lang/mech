@@ -224,7 +224,6 @@ pub struct Block {
   pub ready: u64,
   pub updated: bool,
   pub plan: Vec<Constraint>,
-  pub column_lengths: Vec<u64>,
   pub input_registers: Vec<Register>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
@@ -243,7 +242,6 @@ impl Block {
       ready: 0,
       updated: false,
       plan: Vec::new(),
-      column_lengths: Vec::new(),
       input_registers: Vec::with_capacity(1),
       memory_registers: Vec::with_capacity(1),
       output_registers: Vec::with_capacity(1),
@@ -313,8 +311,8 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    while self.updated == true {
-      self.updated = false;
+
+
       for step in &self.plan {
         println!("Step: {:?}", step);
         match step {
@@ -335,7 +333,6 @@ impl Block {
                   to_table_ref.column_ids = table_ref.column_ids.clone();
                   to_table_ref.column_aliases = table_ref.column_aliases.clone();
                   to_table_ref.row_aliases = table_ref.row_aliases.clone();
-                  to_table_ref.column_lengths = table_ref.column_lengths.clone();
                   to_table_ref.data = table_ref.data.clone();
                 },
                 None => (),
@@ -549,7 +546,7 @@ impl Block {
           },
           _ => (),
         } 
-      }
+      
     }
     self.updated = true;
   }
@@ -648,7 +645,6 @@ impl fmt::Debug for Block {
       write!(f, "│  {:?}. {:?}\n", ix + 1, step).unwrap();
     }
     write!(f, "└────────────────────────────────────────┘\n").unwrap();
-    write!(f, "{:?}\n", self.column_lengths).unwrap();
     write!(f, "{:?}\n", self.memory).unwrap();
     Ok(())
   }
