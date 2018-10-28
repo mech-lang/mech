@@ -10,6 +10,7 @@ use lexer::Lexer;
 use parser::{Parser, ParseStatus};
 use lexer::Token;
 use alloc::{String, Vec, fmt};
+use hashmap_core::set::{HashSet};
 
 // ## Compiler Nodes
 
@@ -191,24 +192,38 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let mut constraints = Vec::new();
+        let mut plan: Vec<(Node, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
         for constraint_node in children {
           let mut result = self.compile_constraint(&constraint_node);
-          let mut produces = Vec::new();
-          let mut consumes = Vec::new();
+          let mut produces = HashSet::new();
+          let mut consumes = HashSet::new();
+          let this_one = result.clone();
           for constraint in result {
             constraints.push(constraint.clone());
             match constraint {
               Constraint::CopyLocalTable{from_table, to_table} => {
-                produces.push(to_table);
+                produces.insert(to_table);
               },
               Constraint::ScanLocal{table, rows, columns, destination} => {
-                consumes.push(table);
+                consumes.insert(table);
               },
               _ => (),
             }
+            
           }
-          println!("{:?} {:?}", produces, consumes);
+          // This is the start of a new planner. This will evolve into its own thing I imagine.
+          if plan.len() == 0 {
+            plan.push((constraint_node, produces, consumes, this_one));
+          } else if consumes.len() == 0 {
+            plan.insert(0, (constraint_node, produces, consumes, this_one));
+          } else {
+            for step in &plan {
+              let (step_node, step_produces, step_consumes, step_constraints) = step;
+              println!("{:?} {:?}", step_produces, consumes)
+            }
+          }
         }
+        println!("{:?}", plan);
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
