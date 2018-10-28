@@ -190,7 +190,25 @@ impl Compiler {
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
-        let constraints = self.compile_constraints(&children);
+        let mut constraints = Vec::new();
+        for constraint_node in children {
+          let mut result = self.compile_constraint(&constraint_node);
+          let mut produces = Vec::new();
+          let mut consumes = Vec::new();
+          for constraint in result {
+            constraints.push(constraint.clone());
+            match constraint {
+              Constraint::CopyLocalTable{from_table, to_table} => {
+                produces.push(to_table);
+              },
+              Constraint::ScanLocal{table, rows, columns, destination} => {
+                consumes.push(table);
+              },
+              _ => (),
+            }
+          }
+          println!("{:?} {:?}", produces, consumes);
+        }
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
@@ -411,7 +429,8 @@ impl Compiler {
   pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
     let mut compiled = Vec::new();
     for node in nodes {
-      compiled.append(&mut self.compile_constraint(node));
+      let mut result = self.compile_constraint(node);
+      compiled.append(&mut result);
     }
     compiled
   }
