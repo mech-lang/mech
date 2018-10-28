@@ -8,3 +8,4 @@ mech-core = {git = "https://gitlab.com/mech-lang/core.git"}
 time = "0.1.39"
 rand = "0.4.2"
 bincode = "0.8"
+hashmap_core = "=0.1.8"
