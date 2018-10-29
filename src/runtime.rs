@@ -553,6 +553,21 @@ impl Block {
     self.updated = true;
   }
 
+  pub fn add_to_plan(&mut self, constraints: &Vec<Constraint>) {
+    let mut reversed = constraints.clone();
+    reversed.reverse();
+    for constraint in reversed {
+      match constraint {
+        Constraint::ScanLocal{..} |
+        Constraint::Function{..} |
+        Constraint::CopyLocalTable{..} |
+        Constraint::NewLocalTable{..} |
+        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
+    }
+  }
+
   // Right now, the planner works just by giving the constraint an order to execute.
   // This is accomplished with a weighted sort. First scans, then transforms, then
   // inserts.
