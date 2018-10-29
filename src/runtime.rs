@@ -564,7 +564,6 @@ impl Block {
         Constraint::CopyLocalTable{..} |
         Constraint::CopyTable{..} |
         Constraint::Insert{..} |
-        Constraint::NewLocalTable{..} |
         Constraint::NewTable{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
