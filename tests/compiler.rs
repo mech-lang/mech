@@ -71,30 +71,8 @@ test_math!(math_constant,"#test = 10", 10);
 test_math!(math_add,"#test = 1 + 1", 2);
 test_math!(math_multiply,"#test = 2 * 2", 4);
 test_math!(math_divide,"#test = 4 / 2", 2);
-test_math!(math_multiple_rows_select,"
-block
-  #ball = [x: 15 y: 9 vx: 18 vy: 0]
-block
-  #test = #ball.x + #ball.y * #ball.vx",177);
-test_math!(math_single_cell_table_math,"# Bouncing Balls
-Define the environment
-  #ball = [x: 15 y: 9 vx: 18 vy: 9]
-  #system/timer = [resolution: 1000]
-  #gravity = 10
-  
-Define the timestep
-  #dt = #system/timer.resolution
-
-Now update the block positions
-  #x = #ball.x + #ball.vx
-  #y = #ball.y + #ball.vy
-  #test = #ball.vy + #gravity * #dt",10009);
-
-test_math!(filter_less_than,"block 
-  #x = [x: 5001 y: 456]
-  #boundary = 5000
-block
-  iy = #x.y < #boundary
-  #x.y[iy] := 12
-block
-  #test = #x.y",12);
+test_math!(math_multiple_variable_graph,"block
+  a = z * 5
+  #test = d * z + 7
+  d = 9 * z
+  z = 5", 232);
