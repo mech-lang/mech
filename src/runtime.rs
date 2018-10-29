@@ -568,67 +568,6 @@ impl Block {
     }
   }
 
-  // Right now, the planner works just by giving the constraint an order to execute.
-  // This is accomplished with a weighted sort. First scans, then transforms, then
-  // inserts.
-  // This could be an entire thing all by itself, so let's just keep it simple at first.
-  pub fn plan(&mut self) {
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::ChangeScan{..} => self.plan.push(constraint.clone()),
-        Constraint::ScanLocal{..} => self.plan.push(constraint.clone()),
-        Constraint::Scan{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::Filter{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::IndexMask{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    // TODO Actually sort the function constraints
-    let mut reversed = self.constraints.clone();
-    reversed.reverse();
-    for constraint in &reversed {
-      match constraint {
-        Constraint::Function{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::Append{..} |
-        Constraint::Insert{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::CopyLocalTable{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-    for constraint in &self.constraints {
-      match constraint {
-        Constraint::CopyTable{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-  }
-
 }
 
 impl fmt::Debug for Block {
