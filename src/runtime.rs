@@ -558,9 +558,12 @@ impl Block {
     reversed.reverse();
     for constraint in reversed {
       match constraint {
+        Constraint::Scan{..} |
         Constraint::ScanLocal{..} |
         Constraint::Function{..} |
         Constraint::CopyLocalTable{..} |
+        Constraint::CopyTable{..} |
+        Constraint::Insert{..} |
         Constraint::NewLocalTable{..} |
         Constraint::NewTable{..} => self.plan.push(constraint.clone()),
         _ => (),
