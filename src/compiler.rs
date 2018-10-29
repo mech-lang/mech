@@ -186,6 +186,7 @@ impl Compiler {
   pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
     match node {
+      Node::Fragment{children} |
       Node::Block{children} => {
         let mut block = Block::new();
         block.name = format!("{:?},{:?}", self.section, self.block);
@@ -273,16 +274,6 @@ impl Compiler {
         self.blocks = result;
       },
       Node::Program{children} => {blocks.append(&mut self.compile_children(children));},
-      Node::Fragment{children} => {
-        let mut block = Block::new();
-        block.name = format!("{:?},{:?}", self.section, self.block);
-        block.id = Hasher::hash_string(block.name.clone()) as usize;
-        self.block += 1;
-        let constraints = self.compile_constraints(&children);
-        block.add_constraints(constraints);
-        block.plan();
-        blocks.push(block);
-      },
       Node::Body{children} => {blocks.append(&mut self.compile_children(children));},
       Node::Section{children} => {
         blocks.append(&mut self.compile_children(children));
