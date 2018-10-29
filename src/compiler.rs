@@ -262,7 +262,10 @@ impl Compiler {
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
         block.add_constraints(constraints);
-        block.plan();
+        for step in plan {
+          let (_, _, _, step_constraints) = step;
+          block.add_to_plan(&step_constraints);
+        }
         blocks.push(block);
       },
       Node::Root{children} => {
