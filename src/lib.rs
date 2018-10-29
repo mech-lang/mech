@@ -1,6 +1,7 @@
 // # Syntax
 
 #![feature(alloc)]
+#![feature(drain_filter)]
 
 extern crate mech_core;
 #[macro_use]
