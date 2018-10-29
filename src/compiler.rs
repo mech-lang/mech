@@ -193,10 +193,13 @@ impl Compiler {
         self.block += 1;
         let mut constraints = Vec::new();
         let mut plan: Vec<(Node, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
+        let mut unsatisfied_constraints: Vec<(Node, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
+        let mut block_produced: HashSet<u64> = HashSet::new();
+        let mut block_consumed: HashSet<u64> = HashSet::new();
         for constraint_node in children {
           let mut result = self.compile_constraint(&constraint_node);
-          let mut produces = HashSet::new();
-          let mut consumes = HashSet::new();
+          let mut produces: HashSet<u64> = HashSet::new();
+          let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
           for constraint in result {
             constraints.push(constraint.clone());
@@ -211,19 +214,53 @@ impl Compiler {
             }
             
           }
-          // This is the start of a new planner. This will evolve into its own thing I imagine.
-          if plan.len() == 0 {
-            plan.push((constraint_node, produces, consumes, this_one));
-          } else if consumes.len() == 0 {
+          // ----------------------------------------------------------------------------------------------------------
+          // Planner
+          // ----------------------------------------------------------------------------------------------------------
+          // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
+          if consumes.len() == 0 {
+            block_produced = block_produced.union(&produces).cloned().collect();
             plan.insert(0, (constraint_node, produces, consumes, this_one));
           } else {
-            for step in &plan {
-              let (step_node, step_produces, step_consumes, step_constraints) = step;
-              println!("{:?} {:?}", step_produces, consumes)
+            let mut satisfied = false;
+            //let (step_node, step_produces, step_consumes, step_constraints) = step;
+            //let intersection: HashSet<u64> = block_produces.intersection(&consumes).cloned().collect();
+            let unsatisfied: HashSet<u64> = consumes.difference(&block_produced).cloned().collect();
+            if unsatisfied.is_empty() {
+              block_produced = block_produced.union(&produces).cloned().collect();
+              plan.push((constraint_node, produces, consumes, this_one));
+            } else {
+              unsatisfied_constraints.push((constraint_node, produces, consumes, this_one));
             }
           }
+          // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
+          let mut now_satisfied = unsatisfied_constraints.drain_filter(|unsatisfied_constraint| {
+            let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
+            let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
+            match unsatisfied.is_empty() {
+              true => {
+                block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
+                true
+              }
+              false => false
+            }
+          }).collect::<Vec<_>>();
+          plan.append(&mut now_satisfied);
         }
-        println!("{:?}", plan);
+        // Do a final check on unsatisfied constraints that are now satisfied
+        let mut now_satisfied = unsatisfied_constraints.drain_filter(|unsatisfied_constraint| {
+          let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
+          let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
+          match unsatisfied.is_empty() {
+            true => {
+              block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
+              true
+            }
+            false => false
+          }
+        }).collect::<Vec<_>>();
+        plan.append(&mut now_satisfied);
+        // ----------------------------------------------------------------------------------------------------------
         block.add_constraints(constraints);
         block.plan();
         blocks.push(block);
