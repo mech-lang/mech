@@ -901,6 +901,8 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Whitespace{children} |
+      parser::Node::NewLine{children} |
       parser::Node::Attribute{children} |
       parser::Node::Comparator{children} |
       parser::Node::IdentifierOrConstant{children} |
@@ -917,7 +919,7 @@ impl Compiler {
       parser::Node::Token{token, byte} => {
         compiled.push(Node::Token{token, byte});
       },
-      _ => (),
+      _ => println!("Unhandled Node: {:?}", node),
     }
     
     //self.constraints = constraints.clone();
@@ -956,6 +958,7 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
 
 fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
+    10 => Some('\n'),
     32 => Some(' '),
     33 => Some('!'),
     35 => Some('#'),
