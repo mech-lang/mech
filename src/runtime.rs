@@ -578,7 +578,7 @@ impl fmt::Debug for Block {
     write!(f, "┌────────────────────────────────────────┐\n").unwrap();
     write!(f, "│ Block {:?} ({:#x})\n", self.name, self.id).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
-    write!(f, "│ {}\n",self.text).unwrap();
+    write!(f, "│ \n{}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:?} ({:b})\n", self.is_ready(), self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
