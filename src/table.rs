@@ -91,7 +91,6 @@ pub struct Table {
   // id -> ix
   pub column_aliases: HashMap<u64, usize>,
   pub row_aliases: HashMap<u64, usize>,
-  pub column_lengths: Vec<u64>,
   pub data: Vec<Vec<Value>>,
 }
 
@@ -106,7 +105,6 @@ impl Table {
       row_ids: Vec::new(),
       column_aliases: HashMap::with_capacity(columns),
       row_aliases: HashMap::with_capacity(rows),
-      column_lengths: Vec::new(),
       data: vec![vec![Value::Empty; rows]; columns], 
     }
   }
@@ -153,9 +151,6 @@ impl Table {
     if row_ix > 0 && column_ix > 0 &&
        self.rows > 0 && row_ix <= self.rows &&
        self.columns > 0 && column_ix <= self.columns {
-      if (self.column_lengths[column_ix - 1] < row_ix as u64) {
-        self.column_lengths[column_ix - 1] = row_ix as u64;
-      }
       let old_value = self.data[column_ix - 1][row_ix - 1].clone();
       self.data[column_ix - 1][row_ix - 1] = value;
       Ok(old_value)
@@ -262,7 +257,6 @@ impl Table {
         let new_column = vec![Value::Empty; self.rows];
         self.data.resize(columns, new_column);
       }
-      self.column_lengths.resize(columns, 1);
       if self.column_ids.len() < columns {
         self.column_ids.resize(columns, None);  
       }
