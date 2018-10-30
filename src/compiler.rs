@@ -17,12 +17,12 @@ use hashmap_core::set::{HashSet};
 #[derive(Clone, PartialEq)]
 pub enum Node {
   Root{ children: Vec<Node> },
-  Fragment{ children: Vec<Node> },
+  Fragment{ children: Vec<Node>, start: usize, end: usize },
   Program{ children: Vec<Node> },
   Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
   Section{ children: Vec<Node> },
-  Block{ children: Vec<Node> },
+  Block{ children: Vec<Node>, start: usize, end: usize },
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
@@ -69,7 +69,7 @@ pub fn print_recurse(node: &Node, level: usize) {
   spacer(level);
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
-    Node::Fragment{children} => {print!("Fragment\n"); Some(children)},
+    Node::Fragment{children, ..} => {print!("Fragment\n"); Some(children)},
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
@@ -83,7 +83,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
-    Node::Block{children} => {print!("Block\n"); Some(children)},
+    Node::Block{children, ..} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
@@ -142,6 +142,7 @@ pub struct Compiler {
   column: usize,
   table: u64,
   expression: usize,
+  pub text: String,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -149,6 +150,7 @@ pub struct Compiler {
   pub block: usize,
   pub current_char: usize,
   pub current_line: usize,
+  pub current_col: usize,
 }
 
 impl Compiler {
@@ -165,8 +167,10 @@ impl Compiler {
       table: 0,
       section: 1,
       block: 1,
-      current_char: 1,
+      current_char: 0,
       current_line: 1,
+      current_col: 1,
+      text: String::new(),
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
     }
@@ -175,6 +179,7 @@ impl Compiler {
   pub fn compile_string(&mut self, input: String) -> &Vec<Block> {
     let mut lexer = Lexer::new();
     let mut parser = Parser::new();
+    self.text = input.clone();
     lexer.add_string(input.clone());
     let tokens = lexer.get_tokens();
     parser.text = input;
@@ -190,9 +195,10 @@ impl Compiler {
   pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
     match node {
-      Node::Fragment{children} |
-      Node::Block{children} => {
+      Node::Fragment{children, start, end} |
+      Node::Block{children, start, end} => {
         let mut block = Block::new();
+        block.text = self.text[start..end].to_string();
         block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
@@ -502,8 +508,10 @@ impl Compiler {
         self.syntax_tree = Node::Root{children: result};        
       },
       parser::Node::Fragment{children} => {
+        let start = self.current_char;
         let result = self.compile_nodes(children);
-        compiled.push(Node::Fragment{children: result});
+        let end = self.current_char;
+        compiled.push(Node::Fragment{children: result, start, end});
       },
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
@@ -522,8 +530,10 @@ impl Compiler {
         compiled.push(Node::Section{children: result});
       },
       parser::Node::Block{children} => {
+        let start = self.current_char;
         let result = self.compile_nodes(children);
-        compiled.push(Node::Block{children: result});
+        let end = self.current_char;
+        compiled.push(Node::Block{children: result, start, end});
       },
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
@@ -924,10 +934,11 @@ impl Compiler {
         match token {
           Token::Newline => {
             self.current_line += 1;
-            self.current_char = 1;
+            self.current_col = 1;
           },
-          _ => self.current_char += 1,
+          _ => self.current_col += 1,
         }
+        self.current_char += 1;
         compiled.push(Node::Token{token, byte});
       },
       _ => println!("Unhandled Node: {:?}", node),
