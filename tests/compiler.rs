@@ -48,6 +48,10 @@ compile_string!(constant_digit, "1");
 
 compile_string!(table, "#table");
 compile_string!(table_define, "#table = [x y z]");
+compile_string!(table_define_data, "#table = [x y z
+                                              1 2 3]");
+compile_string!(table_define_data_math, "#table = [x      y          z
+                                                   1 * 2, 4 + 7 * 9, 3]");
 //compile_string!(table_index_bracket_index, "#table[1]");
 //compile_string!(table_index_dot_index_name, "#table.field");
 
