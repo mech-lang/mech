@@ -956,7 +956,9 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
 
 fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
+    32 => Some(' '),
     33 => Some('!'),
+    35 => Some('#'),
     42 => Some('*'),
     43 => Some('+'),
     45 => Some('-'),
@@ -972,6 +974,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     56 => Some('8'),
     57 => Some('9'),
     60 => Some('<'),
+    61 => Some('='),
     62 => Some('>'),
     97 => Some('a'),
     98 => Some('b'),
