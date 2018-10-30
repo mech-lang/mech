@@ -73,6 +73,6 @@ test_math!(math_multiply,"#test = 2 * 2", 4);
 test_math!(math_divide,"#test = 4 / 2", 2);
 test_math!(math_multiple_variable_graph,"block
   a = z * 5
-  #test = d * z + 7
+  #test = d * z + a
   d = 9 * z
-  z = 5", 232);
+  z = 5", 250);
