@@ -151,6 +151,7 @@ pub struct Compiler {
   pub current_char: usize,
   pub current_line: usize,
   pub current_col: usize,
+  pub errors: Vec<u64>,
 }
 
 impl Compiler {
@@ -173,6 +174,7 @@ impl Compiler {
       text: String::new(),
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
+      errors: Vec::new(),
     }
   }
 
@@ -936,9 +938,12 @@ impl Compiler {
             self.current_line += 1;
             self.current_col = 1;
           },
-          _ => self.current_col += 1,
+          Token::EndOfStream => (),
+          _ => {
+            self.current_char += 1;
+            self.current_col += 1;
+          }
         }
-        self.current_char += 1;
         compiled.push(Node::Token{token, byte});
       },
       _ => println!("Unhandled Node: {:?}", node),
