@@ -937,6 +937,7 @@ impl Compiler {
           Token::Newline => {
             self.current_line += 1;
             self.current_col = 1;
+            self.current_char += 1;
           },
           Token::EndOfStream => (),
           _ => {
