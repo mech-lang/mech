@@ -147,6 +147,8 @@ pub struct Compiler {
   pub node_stack: Vec<Node>, 
   pub section: usize,
   pub block: usize,
+  pub current_char: usize,
+  pub current_line: usize,
 }
 
 impl Compiler {
@@ -163,6 +165,8 @@ impl Compiler {
       table: 0,
       section: 1,
       block: 1,
+      current_char: 1,
+      current_line: 1,
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
     }
@@ -917,6 +921,13 @@ impl Compiler {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::Token{token, byte} => {
+        match token {
+          Token::Newline => {
+            self.current_line += 1;
+            self.current_char = 1;
+          },
+          _ => self.current_char += 1,
+        }
         compiled.push(Node::Token{token, byte});
       },
       _ => println!("Unhandled Node: {:?}", node),
