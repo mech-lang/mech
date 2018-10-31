@@ -46,7 +46,7 @@ pub enum Node {
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
-  Constraint{ children: Vec<Node> },
+  Constraint{ children: Vec<Node>, start: usize, end: usize },
   Title{ text: String },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
@@ -97,7 +97,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
-    Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
+    Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
@@ -205,11 +205,17 @@ impl Compiler {
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let mut constraints = Vec::new();
-        let mut plan: Vec<(Node, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
-        let mut unsatisfied_constraints: Vec<(Node, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
+        let mut plan: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
+        let mut unsatisfied_constraints: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
         for constraint_node in children {
+          let constraint_text = match constraint_node.clone() {
+            Node::Constraint{children, start, end} => {
+              self.text[start..end].to_string()
+            },
+            _ => "".to_string()
+          };
           let mut result = self.compile_constraint(&constraint_node);
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
@@ -233,7 +239,7 @@ impl Compiler {
           // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
-            plan.insert(0, (constraint_node, produces, consumes, this_one));
+            plan.insert(0, (constraint_text, produces, consumes, this_one));
           } else {
             let mut satisfied = false;
             //let (step_node, step_produces, step_consumes, step_constraints) = step;
@@ -241,9 +247,9 @@ impl Compiler {
             let unsatisfied: HashSet<u64> = consumes.difference(&block_produced).cloned().collect();
             if unsatisfied.is_empty() {
               block_produced = block_produced.union(&produces).cloned().collect();
-              plan.push((constraint_node, produces, consumes, this_one));
+              plan.push((constraint_text, produces, consumes, this_one));
             } else {
-              unsatisfied_constraints.push((constraint_node, produces, consumes, this_one));
+              unsatisfied_constraints.push((constraint_text, produces, consumes, this_one));
             }
           }
           // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
@@ -304,7 +310,7 @@ impl Compiler {
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
-      Node::Constraint{children} => {
+      Node::Constraint{children, ..} => {
         self.row = 0;
         self.column = 0;
         constraints.append(&mut self.compile_constraints(children));
@@ -618,7 +624,9 @@ impl Compiler {
         compiled.push(Node::Binding{children});
       },
       parser::Node::Constraint{children} => {
+        let start = self.current_char;
         let result = self.compile_nodes(children);
+        let end = self.current_char;
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
@@ -627,7 +635,7 @@ impl Compiler {
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Constraint{children});
+        compiled.push(Node::Constraint{children, start, end});
       },
       parser::Node::SelectExpression{children} => {
         let result = self.compile_nodes(children);
