@@ -71,3 +71,8 @@ test_math!(math_multiple_variable_graph,"block
   #test = d * z + a
   d = 9 * z
   z = 5", 250);
+test_math!(math_multiple_variable_graph_new_ordering,"block
+  #test = d * z + a
+  a = z * 5
+  z = 5
+  d = 9 * z", 250);
