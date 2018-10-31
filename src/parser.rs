@@ -83,6 +83,7 @@ pub enum Node {
   Binding{ children: Vec<Node> },
   Attribute{ children: Vec<Node> },
   TableHeader{ children: Vec<Node> },
+  InlineTable{ children: Vec<Node> },
   Constant{ children: Vec<Node> },
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
@@ -148,6 +149,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
+    Node::InlineTable{children} => {print!("InlineTable\n"); Some(children)},
     Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
     Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
     Node::IdentifierOrConstant{children} => {print!("IdentifierOrConstant\n"); Some(children)},
@@ -295,9 +297,6 @@ impl ParseState {
         result.position = old_position;
         result.last_match = previous;
       }      
-
-
-
       result
     }
   }
@@ -461,7 +460,7 @@ node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(wh
 
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{expression, Expression, |s|{ filter_expression(s).or(anonymous_table).or(math_expression) }, "Expression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
@@ -486,6 +485,8 @@ node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
 node!{l4, L4, |s|{ data(s).or(constant) }, "L4"}
+
+node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(attribute).and(right_bracket) }, "InlineTable"}
 
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
