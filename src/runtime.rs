@@ -260,6 +260,7 @@ impl Block {
     reversed.reverse();
     for constraint in reversed {
       match constraint {
+        Constraint::ScanColumnById{..} |
         Constraint::Scan{..} |
         Constraint::ScanLocal{..} |
         Constraint::Function{..} |
@@ -275,6 +276,9 @@ impl Block {
     for constraint in constraints {
       match constraint {
         Constraint::ScanLocal{table, rows, columns, destination} => {
+        },
+        Constraint::ScanColumnById{table, column, destination} => {
+          self.input_registers.push(Register::input(table, column));
         },
         Constraint::Scan{table, rows, columns, destination} => {
           // TODO Update this whole register adding process and marking tables ready
@@ -335,10 +339,13 @@ impl Block {
           Constraint::ChangeScan{table, column, input} => {
             self.ready = clear_bit(self.ready, *input as usize - 1);
           }*/
+          Constraint::ScanColumnById{table, column, destination} => {
+            let (to_table, to_column) = destination;
+          }
           Constraint::Scan{table, rows, columns, destination} => {
             let (to_table, to_row, to_column) = destination;
             // select the entire table
-            if rows[0] == 0 && columns[0] == 0 {
+            if rows.is_empty() && columns.is_empty() {
               match store.get_table(*table) {
                 Some(table_ref) => {
                   let to_table_ref = self.memory.get_mut(*to_table).unwrap();
