@@ -281,8 +281,8 @@ impl Compiler {
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
-          let (_, _, _, step_constraints) = step;
-          block.add_constraints(step_constraints);
+          let (constraint_text, _, _, step_constraints) = step;
+          block.add_constraints((constraint_text, step_constraints));
         }
         blocks.push(block);
       },
