@@ -629,6 +629,7 @@ pub enum Constraint {
   NewLocalTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
+  ScanColumnById{table: u64, column: u64, destination: (u64, u64)},
   Scan {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
   ScanLocal {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
   Identifier {id: u64},
@@ -657,6 +658,7 @@ impl fmt::Debug for Constraint {
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::NewLocalTable{id, rows, columns} => write!(f, "NewLocalTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns, destination} => write!(f, "Scan(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
+      Constraint::ScanColumnById{table, column, destination} => write!(f, "ScanColumnById(#{:#x}({:?}) -> {:?})", table, column, destination),
       Constraint::ScanLocal{table, rows, columns, destination} => write!(f, "ScanLocal(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
