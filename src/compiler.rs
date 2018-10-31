@@ -31,13 +31,14 @@ pub enum Node {
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
   SelectData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
+  SelectDataById{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
   SelectLocalData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
-  DotIndex { rows: Vec<Node>, columns: Vec<Node>},
+  DotIndex { column: Vec<Node>},
   BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
@@ -91,8 +92,9 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{id, rows, columns} => {print!("SelectData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
+    Node::SelectDataById{id, rows, columns} => {print!("SelectDataById({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::SelectLocalData{id, rows, columns} => {print!("SelectLocalData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
-    Node::DotIndex{rows, columns} => {print!("DotIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
+    Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
     Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
@@ -577,14 +579,31 @@ impl Compiler {
       },
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
-        // TODO Handle indexes
-        for node in result {
+        let mut reversed = result.clone();
+        reversed.reverse();
+        let mut columns = vec![];
+        let mut rows = vec![];
+        let mut by_id = false;
+        for node in reversed {
           match node {
             Node::Table{name, id} => {
-              compiled.push(Node::SelectData{id, rows: vec![0], columns: vec![0]});
+              if by_id {
+                compiled.push(Node::SelectDataById{id, rows: rows.clone(), columns: columns.clone()});
+              } else {
+                compiled.push(Node::SelectData{id, rows: rows.clone(), columns: columns.clone()});
+              }
             }, 
             Node::Identifier{name, id} => {
-              compiled.push(Node::SelectLocalData{id, rows: vec![0], columns: vec![0]});
+              compiled.push(Node::SelectLocalData{id, rows: rows.clone(), columns: columns.clone()});
+            },
+            Node::DotIndex{column} => {
+              match column[0] {
+                Node::Identifier{ref name, ref id} => {
+                  by_id = true;
+                  columns.push(*id);
+                }, 
+                _ => (),
+              }
             },
             _ => (),
           }
@@ -832,7 +851,7 @@ impl Compiler {
             _ => columns.push(node),
           };
         }
-        compiled.push(Node::DotIndex{rows: vec![], columns});
+        compiled.push(Node::DotIndex{column: columns});
       },
       parser::Node::BracketIndex{children} => {
         let result = self.compile_nodes(children);
