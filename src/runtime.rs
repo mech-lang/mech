@@ -227,7 +227,7 @@ pub struct Block {
   pub input_registers: Vec<Register>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
-  pub constraints: Vec<Constraint>,
+  pub constraints: Vec<Vec<Constraint>>,
   memory: TableIndex,
   scratch: Vec<Value>,
 }
@@ -251,54 +251,66 @@ impl Block {
     }
   }
 
-  pub fn add_constraint(&mut self, constraint: Constraint) {
-    self.constraints.push(constraint.clone());
-    match constraint {
-      Constraint::ScanLocal{table, rows, columns, destination} => {
-      },
-      Constraint::Scan{table, rows, columns, destination} => {
-        // TODO Update this whole register adding process and marking tables ready
-        self.input_registers.push(Register::input(table, 1));
-      },
-      Constraint::Function{operation, parameters, output} => {
-        for (table, row, column) in output {          
-          let mut table_ref = self.memory.get_mut(table).unwrap();
-          table_ref.grow_to_fit(table_ref.rows, column as usize);
-        }
-      },
-      Constraint::NewTable{..} => self.updated = true,
-      Constraint::NewLocalTable{id, rows, columns} => {
-        self.memory.register(Table::new(id, rows as usize, columns as usize));
-      },
-      Constraint::Constant{table, row, column, value} => {
-        match self.memory.map.entry(table) {
-          Entry::Occupied(mut o) => {
-            let mut table_ref = o.get_mut();
-            table_ref.grow_to_fit(row as usize, column as usize);
-            table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
-          },
-          Entry::Vacant(v) => {    
-          },
-        };
-        self.updated = true;
-      },
-      Constraint::TableColumn{table, column_ix, column_id} => {
-        match self.memory.get_mut(table) {
-          Some(table_ref) => {
-            table_ref.set_column_id(column_id, column_ix as usize);
-          }
-          None => (),
-        };
-      },
-      _ => (),
+  pub fn add_constraints(&mut self, constraints: Vec<Constraint>) {
+    self.constraints.push(constraints.clone());
+
+    // Add relevant constraints to plan
+    let mut reversed = constraints.clone();
+    reversed.reverse();
+    for constraint in reversed {
+      match constraint {
+        Constraint::Scan{..} |
+        Constraint::ScanLocal{..} |
+        Constraint::Function{..} |
+        Constraint::CopyLocalTable{..} |
+        Constraint::CopyTable{..} |
+        Constraint::Insert{..} |
+        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
+        _ => (),
+      }
     }
 
-
-  }
-
-  pub fn add_constraints(&mut self, constraints: Vec<Constraint>) {
+    // Do any work we can up front
     for constraint in constraints {
-      self.add_constraint(constraint)
+      match constraint {
+        Constraint::ScanLocal{table, rows, columns, destination} => {
+        },
+        Constraint::Scan{table, rows, columns, destination} => {
+          // TODO Update this whole register adding process and marking tables ready
+          self.input_registers.push(Register::input(table, 1));
+        },
+        Constraint::Function{operation, parameters, output} => {
+          for (table, row, column) in output {          
+            let mut table_ref = self.memory.get_mut(table).unwrap();
+            table_ref.grow_to_fit(table_ref.rows, column as usize);
+          }
+        },
+        Constraint::NewTable{..} => self.updated = true,
+        Constraint::NewLocalTable{id, rows, columns} => {
+          self.memory.register(Table::new(id, rows as usize, columns as usize));
+        },
+        Constraint::Constant{table, row, column, value} => {
+          match self.memory.map.entry(table) {
+            Entry::Occupied(mut o) => {
+              let mut table_ref = o.get_mut();
+              table_ref.grow_to_fit(row as usize, column as usize);
+              table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
+            },
+            Entry::Vacant(v) => {    
+            },
+          };
+          self.updated = true;
+        },
+        Constraint::TableColumn{table, column_ix, column_id} => {
+          match self.memory.get_mut(table) {
+            Some(table_ref) => {
+              table_ref.set_column_id(column_id, column_ix as usize);
+            }
+            None => (),
+          };
+        },
+        _ => (),
+      }
     }
   }
 
@@ -552,24 +564,6 @@ impl Block {
     }
     self.updated = true;
   }
-
-  pub fn add_to_plan(&mut self, constraints: &Vec<Constraint>) {
-    let mut reversed = constraints.clone();
-    reversed.reverse();
-    for constraint in reversed {
-      match constraint {
-        Constraint::Scan{..} |
-        Constraint::ScanLocal{..} |
-        Constraint::Function{..} |
-        Constraint::CopyLocalTable{..} |
-        Constraint::CopyTable{..} |
-        Constraint::Insert{..} |
-        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
-        _ => (),
-      }
-    }
-  }
-
 }
 
 impl fmt::Debug for Block {
@@ -595,8 +589,11 @@ impl fmt::Debug for Block {
       write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
-    for constraint in &self.constraints {
-      write!(f, "│  > {:?}\n", constraint).unwrap();
+    for (ix, constraint) in self.constraints.iter().enumerate() {
+      write!(f, "│  {}.\n", ix + 1).unwrap();
+      for constraint_step in constraint {
+        write!(f, "│    > {:?}\n", constraint_step).unwrap();
+      }
     }
     write!(f, "│ Plan: {:?}\n", self.plan.len()).unwrap();
     for (ix, step) in self.plan.iter().enumerate() {
