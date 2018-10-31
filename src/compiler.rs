@@ -42,6 +42,7 @@ pub enum Node {
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
+  InlineTable {children: Vec<Node> },
   TableHeader {children: Vec<Node> },
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
@@ -78,6 +79,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
+    Node::InlineTable{children} => {print!("InlineTable\n"); Some(children)},
     Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
     Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
@@ -362,6 +364,39 @@ impl Compiler {
         }
         constraints.append(&mut result);
       },
+      Node::InlineTable{children} => {
+        let store_table = self.table;
+        let store_column = self.column;
+        let store_row = self.row;
+        self.row = 1;
+        self.table = Hasher::hash_string(format!("AT{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        let mut result = self.compile_constraints(children);
+        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        let mut i = 0;
+        for constraint in result {
+          match constraint {
+            Constraint::Identifier{id} => {
+              i += 1;
+              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
+            }
+            _ => constraints.push(constraint),
+          }
+        }
+        
+        self.row = store_row;
+        self.column = store_column;
+        self.table = store_table;
+      }
+      Node::Binding{children} => {
+        let mut result = self.compile_constraints(children);
+        println!("{:?}", result);
+        constraints.append(&mut result);
+      }
+      Node::Binding{children} => {
+        let mut result = self.compile_constraints(children);
+        println!("{:?}", result);
+        constraints.append(&mut result);
+      }
       Node::AnonymousTableDefine{children} => {
         let store_table = self.table;
         let anon_table_rows = 0;
@@ -651,6 +686,17 @@ impl Compiler {
           }
         }
         compiled.push(Node::FilterExpression{children});
+      },
+      parser::Node::InlineTable{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::InlineTable{children});
       },
       parser::Node::AnonymousTable{children} => {
         let result = self.compile_nodes(children);
