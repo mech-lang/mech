@@ -76,3 +76,13 @@ test_math!(math_multiple_variable_graph_new_ordering,"block
   a = z * 5
   z = 5
   d = 9 * z", 250);
+test_math!(math_select_table,"  
+block
+  #x = 500
+block
+  #test = #x", 500);
+test_math!(math_select_table_reverse_ordering,"  
+block
+  #test = #x
+block
+  #x = 500", 500);
