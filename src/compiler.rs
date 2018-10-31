@@ -600,9 +600,10 @@ impl Compiler {
         let result = self.compile_nodes(children);
         for node in result {
           match node {
-            // If the node is a naked math expression or constant, modify the 
-            // graph to put it into an anonymous table
+            // If the node is a naked expression, modify the graph
+            // TODO this is hacky... maybe change the parser?
             Node::Constant{..} |
+            Node::SelectData{..} |
             Node::MathExpression{..} => {
               compiled.push(node);
             },
@@ -772,9 +773,12 @@ impl Compiler {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
+          // If the node is a naked expression, modify the 
+          // graph to put it into an anonymous table
           match node {
             Node::Token{..} => (),
             Node::Constant{..} |
+            Node::SelectData{..} |
             Node::MathExpression{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
@@ -794,6 +798,7 @@ impl Compiler {
           match node {
             Node::Token{..} => (),
             Node::Constant{..} |
+            Node::SelectData{..} |
             Node::MathExpression{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
