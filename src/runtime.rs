@@ -227,7 +227,7 @@ pub struct Block {
   pub input_registers: Vec<Register>,
   pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
-  pub constraints: Vec<Vec<Constraint>>,
+  pub constraints: Vec<(String, Vec<Constraint>)>,
   memory: TableIndex,
   scratch: Vec<Value>,
 }
@@ -251,8 +251,9 @@ impl Block {
     }
   }
 
-  pub fn add_constraints(&mut self, constraints: Vec<Constraint>) {
-    self.constraints.push(constraints.clone());
+  pub fn add_constraints(&mut self, constraint_tuple: (String, Vec<Constraint>)) {
+    self.constraints.push(constraint_tuple.clone());
+    let (constraint_text, constraints) = constraint_tuple;
 
     // Add relevant constraints to plan
     let mut reversed = constraints.clone();
@@ -589,8 +590,8 @@ impl fmt::Debug for Block {
       write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Constraints: {:?}\n", self.constraints.len()).unwrap();
-    for (ix, constraint) in self.constraints.iter().enumerate() {
-      write!(f, "│  {}.\n", ix + 1).unwrap();
+    for (ix, (text, constraint)) in self.constraints.iter().enumerate() {
+      write!(f, "│  {}. {}\n", ix + 1, text).unwrap();
       for constraint_step in constraint {
         write!(f, "│    > {:?}\n", constraint_step).unwrap();
       }
