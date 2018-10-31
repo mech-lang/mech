@@ -495,6 +495,10 @@ impl Compiler {
         let c: Vec<u64> = columns.clone();
         constraints.push(Constraint::Scan{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
       },
+      Node::SelectDataById{id, rows, columns} => {
+        let c: Vec<u64> = columns.clone();
+        constraints.push(Constraint::ScanColumnById{table: *id, column: c[0], destination: (self.table, self.column as u64)});
+      },
       Node::SelectLocalData{id, rows, columns} => {
         let r: Vec<u64> = rows.clone();
         let c: Vec<u64> = columns.clone();
@@ -621,6 +625,7 @@ impl Compiler {
             // TODO this is hacky... maybe change the parser?
             Node::Constant{..} |
             Node::SelectData{..} |
+            Node::SelectDataById{..} |
             Node::MathExpression{..} => {
               compiled.push(node);
             },
@@ -796,6 +801,7 @@ impl Compiler {
             Node::Token{..} => (),
             Node::Constant{..} |
             Node::SelectData{..} |
+            Node::SelectDataById{..} |
             Node::MathExpression{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
@@ -816,6 +822,7 @@ impl Compiler {
             Node::Token{..} => (),
             Node::Constant{..} |
             Node::SelectData{..} |
+            Node::SelectDataById{..} |
             Node::MathExpression{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
