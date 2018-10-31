@@ -389,12 +389,10 @@ impl Compiler {
       }
       Node::Binding{children} => {
         let mut result = self.compile_constraints(children);
-        println!("{:?}", result);
         constraints.append(&mut result);
       }
       Node::Binding{children} => {
         let mut result = self.compile_constraints(children);
-        println!("{:?}", result);
         constraints.append(&mut result);
       }
       Node::AnonymousTableDefine{children} => {
