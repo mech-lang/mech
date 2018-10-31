@@ -670,7 +670,9 @@ impl Compiler {
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Constraint{children, start, end});
+        if !children.is_empty() {
+          compiled.push(Node::Constraint{children, start, end});
+        }
       },
       parser::Node::SelectExpression{children} => {
         let result = self.compile_nodes(children);
