@@ -1005,6 +1005,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::SpaceOrTab{children} |
       parser::Node::Whitespace{children} |
       parser::Node::NewLine{children} |
       parser::Node::Attribute{children} |
