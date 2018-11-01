@@ -18,8 +18,6 @@ extern crate alloc;
 extern crate core;
 extern crate hashmap_core;
 extern crate rand;
-#[macro_use]
-extern crate serde_derive;
 
 use alloc::{String, Vec};
 use core::fmt;
