@@ -91,3 +91,8 @@ block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
 block
   #test = #ball.x", 56);
+test_math!(math_multiple_rows_select,"
+block
+  #ball = [x: 15 y: 9 vx: 18 vy: 0]
+block
+  #test = #ball.x + #ball.y", 24);
