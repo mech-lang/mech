@@ -330,8 +330,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-
-
       for step in &self.plan {
         println!("Step: {:?}", step);
         match step {
@@ -341,6 +339,16 @@ impl Block {
           }*/
           Constraint::ScanColumnById{table, column, destination} => {
             let (to_table, to_column) = destination;
+            match store.get_column_by_id(*table, *column as usize) {
+                Some(column_ref) => {
+                  let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
+                  for (row_ix, value) in column_ref.iter().enumerate() {
+                    let row_ix_shift = row_ix + 1;
+                    to_table_ref.set_cell_by_ix(row_ix_shift, *to_column as usize, value.clone());
+                  }
+                },
+                None => (),
+              }
           }
           Constraint::Scan{table, rows, columns, destination} => {
             let (to_table, to_row, to_column) = destination;
