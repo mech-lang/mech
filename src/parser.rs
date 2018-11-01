@@ -104,6 +104,7 @@ pub enum Node {
   Section{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
+  SpaceOrTab{ children: Vec<Node> },
   NewLine{ children: Vec<Node> },
   Text{ children: Vec<Node> },
   L1Infix{ children: Vec<Node> },
@@ -190,6 +191,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L4{children} => {print!("L4\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
+    Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
     Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     _ => {print!("Unhandled Node"); None},
@@ -453,6 +455,7 @@ node!{text, Text, |s|{ word(s).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
 node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
 node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
+node!{space_or_tab, SpaceOrTab, |s|{ space(s).or(tab) }, "SpaceOrTab"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
 node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).repeat(prose_or_code)}, "Section"}
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
@@ -492,8 +495,8 @@ node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_heade
 node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
 node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional_repeat(space) }, "Attribute"}
 node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline) }, "TableHeader"}
-node!{table_row, TableRow, |s|{ node(s).optional_repeat(space).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
-node!{column, Column, |s|{ node(s).optional_repeat(space).and(identifier).or(expression).or(number).optional(comma).optional(space) }, "Column"}
+node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
+node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(identifier).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
 node!{filter_expression, FilterExpression, |s|{ data_or_constant(s).and(space).and(comparator).and(space).and(data_or_constant) }, "FilterExpression"}
 
@@ -532,6 +535,7 @@ leaf!{asterisk, Token::Asterisk}
 leaf!{slash, Token::Slash}
 leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
+leaf!{tab, Token::Tab}
 leaf!{tilde, Token::Tilde}
 leaf!{semicolon, Token::Semicolon}
 leaf!{new_line_char, Token::Newline}
