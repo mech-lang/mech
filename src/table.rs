@@ -147,6 +147,11 @@ impl Table {
     self.set_cell(row_ix, column_ix, value)
   }
 
+  pub fn set_cell_by_ix(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
+    self.grow_to_fit(row_ix, column_ix);
+    self.set_cell(row_ix, column_ix, value)
+  }
+
   pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
     if row_ix > 0 && column_ix > 0 &&
        self.rows > 0 && row_ix <= self.rows &&
