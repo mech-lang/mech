@@ -32,6 +32,7 @@ pub enum Token {
   Tilde,
   Newline,
   CarriageReturn,
+  Tab,
   EndOfStream,
 }
 
@@ -96,6 +97,7 @@ impl Lexer {
       } else if match_char(&bytes, '~', self) { self.push_token(Token::Tilde);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
       } else if match_char(&bytes, '\r', self) { self.push_token(Token::CarriageReturn);
+      } else if match_char(&bytes, '\t', self) { self.push_token(Token::Tab);
       } else {
         println!("Unknown Byte {:?} {:?}", bytes[self.position] as char, bytes[self.position]);
         break;
