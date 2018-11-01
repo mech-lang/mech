@@ -96,3 +96,13 @@ block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = #ball.x + #ball.y * #ball.vx", 177);
+test_math!(math_math_const_and_select,"
+block
+  #ball = [x: 15 y: 9 vx: 18 vy: 0]
+block
+  #test = 9 + #ball.x", 24);
+test_math!(math_math_select_and_const,"
+block
+  #ball = [x: 15 y: 9 vx: 18 vy: 0]
+block
+  #test = #ball.x + 9", 24);
