@@ -96,13 +96,24 @@ block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = #ball.x + #ball.y * #ball.vx", 177);
-test_math!(math_math_const_and_select,"
+test_math!(math_const_and_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = 9 + #ball.x", 24);
-test_math!(math_math_select_and_const,"
+test_math!(math_select_and_const,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
   #test = #ball.x + 9", 24);
+test_math!(math_partial_bouncing_ball,"# Bouncing Balls
+Define the environment
+  #ball = [x: 15 y: 9 vx: 18 vy: 9]
+  #system/timer = [resolution: 1000]
+  #gravity = 10
+
+Now update the block positions
+  x = #ball.x + #ball.vx
+  y = #ball.y + #ball.vy
+  dt = #system/timer.resolution
+  #test = x + y * dt", 18033);
