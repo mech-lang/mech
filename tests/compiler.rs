@@ -33,7 +33,7 @@ macro_rules! test_math {
       let row = 1;
       let column = 1;
       let test = $test;
-      assert_eq!(core.index(table,row,column).unwrap().as_u64().unwrap(),test);
+      assert_eq!(core.index(table, row, column).unwrap().as_u64().unwrap(), test);
     }
   )
 }
@@ -117,3 +117,11 @@ Now update the block positions
   y = #ball.y + #ball.vy
   dt = #system/timer.resolution
   #test = x + y * dt", 18033);
+test_math!(math_add_columns,"
+  block
+  #ball = [x y
+           1 2
+           3 4
+           5 6]
+block
+  #test = #ball.x + #ball.y", 3);
