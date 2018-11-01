@@ -403,12 +403,17 @@ impl Block {
                   },
                   None => store.get_column_by_ix(in_table, in_column as usize).unwrap(),
                 };
-                self.scratch.push(in_data[0].clone());
+                self.scratch = in_data.clone();
               }
               let out_table_ref = self.memory.get_mut(out_table).unwrap();
-              out_table_ref.grow_to_fit(output_row as usize, out_column as usize);
-              let out = out_table_ref.get_column_mut_by_ix(out_column as usize).unwrap();
-              out[output_row as usize - 1] = self.scratch[0].clone();
+              // If the table is empty, we can cat whatever we want into it
+              if out_table_ref.rows == 0 {
+                out_table_ref.grow_to_fit(self.scratch.len(), out_column as usize);
+                let out = out_table_ref.get_column_mut_by_ix(out_column as usize).unwrap();
+                for (ix, value) in self.scratch.iter().enumerate() {
+                  out[ix] = value.clone();
+                }
+              }
               self.scratch.clear();
             }
             else if parameters.len() == 2 {
@@ -433,10 +438,9 @@ impl Block {
                 };
                 op_fun(lhs, rhs, &mut self.scratch);
               }
-              // TODO Make this work for multiple rows using output_row
               let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
-              if self.scratch.len() > 0 {
-                out[0] = self.scratch[0].clone();
+              for (ix, value) in self.scratch.iter().enumerate() {
+                out[ix] = value.clone();
               }
               self.scratch.clear();
             }
