@@ -95,4 +95,4 @@ test_math!(math_multiple_rows_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = #ball.x + #ball.y", 24);
+  #test = #ball.x + #ball.y * #ball.vx", 177);
