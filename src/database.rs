@@ -258,10 +258,10 @@ impl Interner {
     self.tables.get(table)
   }
 
-  pub fn get_column(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
+  pub fn get_column_by_id(&self, table: u64, column_id: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
-        match stored_table.get_column(column_ix) {
+        match stored_table.get_column_by_id(column_id) {
           Some(column) => Some(column),
           None => None,
         }

@@ -58,7 +58,7 @@ impl Runtime {
       listeners.push(new_address);
 
       // Set the register as ready if the referenced column exists
-      match store.get_column(table as u64, column) {
+      match store.get_column_by_id(table as u64, column) {
         Some(column) => block.ready = set_bit(block.ready, ix),
         None => (),
       }
