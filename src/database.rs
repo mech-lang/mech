@@ -230,6 +230,7 @@ impl Interner {
           }
           None => (),
         };
+        self.tables.changed_this_round.insert((*table as usize, *column_id as usize));
       },
     }
     if self.offset == 0 {
