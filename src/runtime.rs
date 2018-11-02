@@ -370,7 +370,7 @@ impl Block {
           },
           // TODO MAke this real... it's not generalized
           Constraint::ScanLocal{table, rows, columns, destination} => { 
-            let (to_table, to_row, to_column) = destination;
+            /*let (to_table, to_row, to_column) = destination;
             let value = match self.memory.get(*table) {
               Some(table_ref) => {
                 table_ref.index(1,1).unwrap().clone()
@@ -379,7 +379,7 @@ impl Block {
             };
             let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
             to_table_ref.grow_to_fit(*to_row as usize, *to_column as usize);
-            to_table_ref.set_cell(*to_row as usize, *to_column as usize, value);
+            to_table_ref.set_cell(*to_row as usize, *to_column as usize, value);*/
           },
           Constraint::Function{operation, parameters, output} => {
             // Pass the parameters to the appropriate function
@@ -392,7 +392,9 @@ impl Block {
               Function::Concatenate => operations::undefined, 
               Function::Undefined => operations::undefined,
             };
+            
             if *operation == Function::Concatenate {
+              /*
               let (in_table, in_row, in_column) = parameters[0];
               let (out_table, output_row, out_column) = output[0];
               {         
@@ -413,35 +415,48 @@ impl Block {
                   out[ix] = value.clone();
                 }
               }
-              self.scratch.clear();
+              self.scratch.clear();*/
             }
             else if parameters.len() == 2 {
               // Execute the function. Results are placed on the memory registers
-              let (lhs_table, lhs_row, lhs_column) = parameters[0];
-              let (rhs_table, rhs_row, rhs_column) = parameters[1];
+              let (lhs_table, lhs_rows, lhs_columns) = &parameters[0];
+              let (rhs_table, rhs_rows, rhs_columns) = &parameters[1];
               let (out_table, output_row, out_column) = output[0];
               // TODO This seems very inefficient. Find a better way to do this. 
               // I'm having trouble getting the borrow checker to understand what I'm doing here
-              {         
-                let lhs = match self.memory.get(lhs_table) {
+              {     
+                
+                let lhs = match self.memory.get(*lhs_table) {
                   Some(table_ref) => {
-                    table_ref.get_column_by_ix(lhs_column as usize).unwrap()
+                    println!("LHS {:?}", table_ref);
+                    //table_ref.get_column_by_ix(lhs_column as usize).unwrap()
                   },
-                  None => store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+                  None => (),//store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
                 };
+                let rhs = match self.memory.get(*rhs_table) {
+                  Some(table_ref) => {
+                    // get the whole table
+                    
+                    println!("RHS {:?}", table_ref);
+                    //table_ref.get_column_by_ix(lhs_column as usize).unwrap()
+                  },
+                  None => (),//store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+                };
+                /*
                 let rhs = match self.memory.get(rhs_table) {
                   Some(table_ref) => {
                     table_ref.get_column_by_ix(rhs_column as usize).unwrap()
                   },
                   None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
                 };
-                op_fun(lhs, rhs, &mut self.scratch);
+                op_fun(lhs, rhs, &mut self.scratch);*/
               }
+              /*
               let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
               for (ix, value) in self.scratch.iter().enumerate() {
                 out[ix] = value.clone();
               }
-              self.scratch.clear();
+              self.scratch.clear();*/
             }
           },
           /*
@@ -654,7 +669,7 @@ pub enum Constraint {
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
-  Function {operation: operations::Function, parameters: Vec<(u64, u64, u64)>, output: Vec<(u64, u64, u64)>},
+  Function {operation: operations::Function, parameters: Vec<(u64, Vec<u64>, Vec<u64>)>, output: Vec<(u64, u64, u64)>},
   Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
