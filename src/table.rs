@@ -9,7 +9,7 @@ use hashmap_core::map::{HashMap, Entry};
 
 // ## Row and Column
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   Number(i64),
   String(String),
