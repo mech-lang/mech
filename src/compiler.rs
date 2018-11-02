@@ -409,7 +409,7 @@ impl Compiler {
             match constraint {
               Constraint::Reference{table, rows, columns, destination} => {
                 let (to_table, to_row, to_column) = destination;
-                compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
+                //compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
               },
               _ => compiled.push(constraint),
             }
@@ -450,25 +450,26 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        let mut parameter_registers: Vec<(u64, u64, u64)> = vec![];
+        println!("PARAMETERS {:?}", parameters);
+        let mut parameter_registers: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
-            Constraint::Constant{table, row, column, value} => {
+            /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },
             Constraint::ScanColumnById{table, column, destination} => {
               let (to_table, to_column) = destination;
               parameter_registers.push((*to_table, 0, *to_column));
-            }
+            }*/
             Constraint::ScanLocal{table, rows, columns, destination} => {
-              let (to_table, to_row, to_column) = destination;
-              parameter_registers.push((*to_table, *to_row, *to_column));
+              parameter_registers.push((*table, rows.clone(), columns.clone()));
             }
+            /*
             Constraint::Function{operation, parameters, output} => {
               for o in output {
                 parameter_registers.push(*o);
               }
-            },
+            },*/
             _ => (),
           };
         }
