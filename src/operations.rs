@@ -40,7 +40,7 @@ macro_rules! binary_math {
           if lhs_rows.is_empty() && rhs_rows.is_empty() && lhs_columns.is_empty() && rhs_columns.is_empty() {
             // The tables are the same size
             if lhs.rows == rhs.rows && lhs.columns == rhs.columns {
-              out.grow_to_fit(lhs.columns,lhs.rows);
+              out.grow_to_fit(lhs.rows, lhs.columns);
               for i in (0..lhs.columns) {
                 for j in (0..lhs.rows) {
                   match (&lhs.data[i][j], &rhs.data[i][j]) {
