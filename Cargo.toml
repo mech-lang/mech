@@ -5,7 +5,7 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
 rlibc = "=1.0"
-hashmap_core = "=0.1.8"
+hashmap_core = "=0.1.9"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
 
