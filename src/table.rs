@@ -4,7 +4,8 @@
 
 use core::fmt;
 use indexes::Hasher;
-use alloc::{Vec, String};
+use alloc::string::String;
+use alloc::vec::Vec;
 use hashmap_core::map::{HashMap, Entry};
 
 // ## Row and Column

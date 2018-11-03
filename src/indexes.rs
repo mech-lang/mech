@@ -3,7 +3,9 @@
 // ## Prelude
 
 use table::{Value, Table};
-use alloc::{fmt, Vec, String};
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::fmt;
 use hashmap_core::map::HashMap;
 use hashmap_core::set::HashSet;
 

@@ -2,7 +2,9 @@
 
 // ## Prelude
 
-use alloc::{String, Vec, fmt};
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::fmt;
 use runtime::{Constraint, Register};
 use table::{Table, Value};
 use indexes::{TableIndex};

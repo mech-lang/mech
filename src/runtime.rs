@@ -10,7 +10,9 @@
 // ## Prelude
 
 use table::{Table, Value};
-use alloc::{fmt, Vec, String};
+use alloc::fmt;
+use alloc::string::String;
+use alloc::vec::Vec;
 use database::{Transaction, Interner, Change};
 use hashmap_core::map::{HashMap, Entry};
 use hashmap_core::set::HashSet;

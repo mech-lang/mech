@@ -2,7 +2,8 @@
 
 // ## Prelude
 
-use alloc::{String, Vec};
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::fmt;
 use table::{Value, Table};
 use indexes::{TableIndex, Hasher};
