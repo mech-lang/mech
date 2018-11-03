@@ -462,6 +462,9 @@ impl Compiler {
               let (to_table, to_column) = destination;
               parameter_registers.push((*to_table, 0, *to_column));
             }*/
+            Constraint::NewLocalTable{id, rows, columns} => {
+              parameter_registers.push((*id, vec![], vec![]));
+            },
             Constraint::ScanLocal{table, rows, columns} => {
               parameter_registers.push((*table, rows.clone(), columns.clone()));
             }
@@ -527,7 +530,9 @@ impl Compiler {
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::Constant{value} => {
-        constraints.push(Constraint::Constant{table: self.table, row: self.row as u64, column: self.column as u64, value: *value as i64});
+        let table = Hasher::hash_string(format!("Constant-{:?}", *value));
+        constraints.push(Constraint::NewLocalTable{id: table, rows: 1, columns: 1});
+        constraints.push(Constraint::Constant{table, row: 1, column: 1, value: *value as i64});
       },
       _ => ()
     }
