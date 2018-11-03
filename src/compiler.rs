@@ -9,7 +9,9 @@ use parser;
 use lexer::Lexer;
 use parser::{Parser, ParseStatus};
 use lexer::Token;
-use alloc::{String, Vec, fmt};
+use alloc::fmt;
+use alloc::string::String;
+use alloc::vec::Vec;
 use hashmap_core::set::{HashSet};
 
 // ## Compiler Nodes

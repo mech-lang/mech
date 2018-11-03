@@ -6,7 +6,9 @@ use lexer::Token;
 use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Newline,
                    Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Slash};
 use mech_core::{Hasher, Function};
-use alloc::{String, Vec, fmt};
+use alloc::fmt;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 // ## Helper Macros
 
