@@ -373,7 +373,7 @@ impl Compiler {
         let store_column = self.column;
         let store_row = self.row;
         self.row = 1;
-        self.table = Hasher::hash_string(format!("AT{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         let mut i = 0;
@@ -403,7 +403,7 @@ impl Compiler {
         let store_table = self.table;
         let anon_table_rows = 0;
         let anon_table_cols = 0;
-        self.table = Hasher::hash_string(format!("AT{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
@@ -427,7 +427,7 @@ impl Compiler {
         let store_table = self.table;
         self.row = 1;
         self.column = 1;
-        self.table = Hasher::hash_string(format!("ME{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        self.table = Hasher::hash_string(format!("MathExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
         //constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
@@ -483,7 +483,7 @@ impl Compiler {
         }
       },
       Node::Table{name, id} => {
-        self.table = Hasher::hash_string(format!("T{:?},{:?}-{:?}", self.section, self.block, name));
+        self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::TableHeader{children} => {
