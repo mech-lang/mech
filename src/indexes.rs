@@ -87,6 +87,7 @@ impl Hasher {
 #[derive(Clone)]
 pub struct TableIndex {
   pub map: HashMap<u64, Table>,
+  pub aliases: HashMap<u64, u64>,
   pub changed_this_round: HashSet<(usize, usize)>,
 }
 
@@ -95,12 +96,14 @@ impl TableIndex {
   pub fn new(capacity: usize) -> TableIndex {
     TableIndex {
       map: HashMap::with_capacity(capacity),
+      aliases: HashMap::new(),
       changed_this_round: HashSet::with_capacity(capacity),
     }
   }
 
   pub fn clear(&mut self) {
     self.map.clear();
+    self.aliases.clear();
     self.changed_this_round.clear();
   }
 
@@ -108,10 +111,19 @@ impl TableIndex {
     self.map.len()
   }
 
+  pub fn add_alias(&mut self, table: u64, alias: u64) {
+    self.aliases.insert(alias, table);
+  }
+
   pub fn get(&self, table_id: u64) -> Option<&Table> {
     match self.map.get(&table_id) {
       Some(table) => Some(table),
-      None => None,
+      None => {
+        match self.aliases.get(&table_id) {
+          Some(id) => self.map.get(&id),
+          None => None,
+        }
+      },
     }
   }
 
