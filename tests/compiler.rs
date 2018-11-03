@@ -118,10 +118,19 @@ Now update the block positions
   dt = #system/timer.resolution
   #test = x + y * dt", 18033);
 test_math!(math_add_columns,"
-  block
+block
   #ball = [x y
            1 2
            3 4
            5 6]
 block
   #test = #ball.x + #ball.y", 3);
+test_math!(math_add_matrices,"
+block
+  x = [1 2 3
+       4 5 6
+       7 8 9]
+  y = [10 11 12
+       13 14 15
+       16 17 18]
+  #test = x + y", 11);
