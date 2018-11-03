@@ -634,7 +634,6 @@ impl Compiler {
           match node {
             // If the node is a naked expression, modify the graph
             // TODO this is hacky... maybe change the parser?
-            Node::Constant{..} |
             Node::SelectData{..} |
             Node::SelectDataById{..} => {
               compiled.push(node);
@@ -809,7 +808,6 @@ impl Compiler {
           // graph to put it into an anonymous table
           match node {
             Node::Token{..} => (),
-            Node::Constant{..} |
             Node::SelectData{..} |
             Node::SelectDataById{..} |
             Node::MathExpression{..} => {
@@ -830,7 +828,6 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{..} => (),
-            Node::Constant{..} |
             Node::SelectData{..} |
             Node::SelectDataById{..}=> {
               children.push(Node::Expression{
