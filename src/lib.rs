@@ -236,12 +236,10 @@ impl Core {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
-
     self.store.process_transaction(txn);
     self.runtime.run_network(&mut self.store);
 
     self.transaction_boundaries.push(self.store.change_pointer);
-    self.changes = self.store.changes_count;
     self.epoch = self.store.rollover;
   }
 
@@ -258,7 +256,7 @@ impl fmt::Debug for Core {
     write!(f, "├────────────────────┤\n").unwrap();
     write!(f, "│ Time Offset: {:?}\n", self.offset).unwrap();
     write!(f, "│ Epoch: {:?}\n", self.epoch).unwrap();
-    write!(f, "│ Changes: {:?}\n", self.changes).unwrap();
+    write!(f, "│ Changes: {:?}\n", self.store.changes_count).unwrap();
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
     write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
