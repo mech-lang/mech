@@ -264,7 +264,6 @@ impl Block {
         Constraint::Scan{..} |
         Constraint::ScanLocal{..} |
         Constraint::Function{..} |
-        Constraint::CopyLocalTable{..} |
         Constraint::CopyTable{..} |
         Constraint::Insert{..} |
         Constraint::NewTable{..} => self.plan.push(constraint.clone()),
@@ -275,20 +274,21 @@ impl Block {
     // Do any work we can up front
     for constraint in constraints {
       match constraint {
-        Constraint::ScanLocal{table, rows, columns, destination} => {
+        Constraint::ScanLocal{table, rows, columns} => {
         },
-        Constraint::ScanColumnById{table, column, destination} => {
+        Constraint::ScanColumnById{table, column} => {
           self.input_registers.push(Register::input(table, column));
         },
-        Constraint::Scan{table, rows, columns, destination} => {
+        Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
           self.input_registers.push(Register::input(table, 1));
         },
+        Constraint::AliasLocalTable{table, alias} => {
+          // TODO Raise an error here if the alias already exists
+          self.memory.add_alias(table, alias);
+        },
         Constraint::Function{operation, parameters, output} => {
-          for (table, row, column) in output {          
-            let mut table_ref = self.memory.get_mut(table).unwrap();
-            table_ref.grow_to_fit(table_ref.rows, column as usize);
-          }
+
         },
         Constraint::NewTable{..} => self.updated = true,
         Constraint::NewLocalTable{id, rows, columns} => {
@@ -336,8 +336,8 @@ impl Block {
           Constraint::ChangeScan{table, column, input} => {
             self.ready = clear_bit(self.ready, *input as usize - 1);
           }*/
-          Constraint::ScanColumnById{table, column, destination} => {
-            let (to_table, to_column) = destination;
+          Constraint::ScanColumnById{table, column} => {
+            /*let (to_table, to_column) = destination;
             match store.get_column_by_id(*table, *column as usize) {
                 Some(column_ref) => {
                   let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
@@ -347,10 +347,10 @@ impl Block {
                   }
                 },
                 None => (),
-              }
+              }*/
           }
-          Constraint::Scan{table, rows, columns, destination} => {
-            let (to_table, to_row, to_column) = destination;
+          Constraint::Scan{table, rows, columns} => {
+            /*let (to_table, to_row, to_column) = destination;
             // select the entire table
             if rows.is_empty() && columns.is_empty() {
               match store.get_table(*table) {
@@ -366,10 +366,10 @@ impl Block {
                 },
                 None => (),
               }
-            }
+            }*/
           },
           // TODO MAke this real... it's not generalized
-          Constraint::ScanLocal{table, rows, columns, destination} => { 
+          Constraint::ScanLocal{table, rows, columns} => { 
             /*let (to_table, to_row, to_column) = destination;
             let value = match self.memory.get(*table) {
               Some(table_ref) => {
@@ -421,7 +421,7 @@ impl Block {
               // Execute the function. Results are placed on the memory registers
               let (lhs_table, lhs_rows, lhs_columns) = &parameters[0];
               let (rhs_table, rhs_rows, rhs_columns) = &parameters[1];
-              let (out_table, output_row, out_column) = &output[0];
+              let out_table = &output[0];
               // TODO This seems very inefficient. Find a better way to do this. 
               // I'm having trouble getting the borrow checker to understand what I'm doing here
               {     
@@ -564,15 +564,6 @@ impl Block {
             }
             store.process_transaction(&Transaction::from_changeset(changes));
           },
-          Constraint::CopyLocalTable{from_table, to_table} => {
-            if !self.memory.contains(*to_table) {
-              let from_table_ref = self.memory.get(*from_table).unwrap();
-              let mut new_table = from_table_ref.clone();
-              new_table.id = *to_table;
-              self.memory.register(new_table);
-              self.updated = true;
-            }
-          },
           Constraint::NewTable{id, rows, columns} => {
             store.process_transaction(&Transaction::from_change(
               Change::NewTable{id: *id, rows: *rows as usize, columns: *columns as usize},
@@ -648,20 +639,20 @@ pub enum Constraint {
   NewLocalTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  ScanColumnById{table: u64, column: u64, destination: (u64, u64)},
-  Scan {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  ScanLocal {table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
+  ScanColumnById{table: u64, column: u64},
+  Scan {table: u64, rows: Vec<u64>, columns: Vec<u64>},
+  ScanLocal {table: u64, rows: Vec<u64>, columns: Vec<u64>},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
-  Function {operation: operations::Function, parameters: Vec<(u64, Vec<u64>, Vec<u64>)>, output: Vec<(u64, u64, u64)>},
+  Function {operation: operations::Function, parameters: Vec<(u64, Vec<u64>, Vec<u64>)>, output: Vec<u64>},
   Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
-  CopyLocalTable {from_table: u64, to_table: u64},
+  AliasLocalTable {table: u64, alias: u64},
   CopyOutput {memory: u64, output: u64},
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
@@ -676,15 +667,15 @@ impl fmt::Debug for Constraint {
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
       Constraint::NewLocalTable{id, rows, columns} => write!(f, "NewLocalTable(#{:#x}({:?}x{:?}))", id, rows, columns),
-      Constraint::Scan{table, rows, columns, destination} => write!(f, "Scan(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
-      Constraint::ScanColumnById{table, column, destination} => write!(f, "ScanColumnById(#{:#x}({:?}) -> {:?})", table, column, destination),
-      Constraint::ScanLocal{table, rows, columns, destination} => write!(f, "ScanLocal(#{:#x}({:?} x {:?}) -> {:?})", table, rows, columns, destination),
+      Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:#x}({:?} x {:?}))", table, rows, columns),
+      Constraint::ScanColumnById{table, column} => write!(f, "ScanColumnById(#{:#x}({:?}))", table, column),
+      Constraint::ScanLocal{table, rows, columns} => write!(f, "ScanLocal(#{:#x}({:?} x {:?}))", table, rows, columns),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
-      Constraint::CopyLocalTable{from_table, to_table} => write!(f, "CopyLocalTable({:#x} -> {:#x})", from_table, to_table),
+      Constraint::AliasLocalTable{table, alias} => write!(f, "AliasLocalTable({:#x} -> {:#x})", table, alias),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
       Constraint::Condition{truth, result, default, memory} => write!(f, "Condition({:?} ? {:?} | {:?} -> M{:?})", truth, result, default, memory),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
