@@ -357,7 +357,7 @@ impl fmt::Debug for Table {
 
     // Print table body
     if self.columns > 0 {
-      print_top_border(self.columns, cell_width, f);
+      //print_top_border(self.columns, cell_width, f);
       let max_rows = if self.rows > 10 {
         10
       } else {
