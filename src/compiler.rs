@@ -227,10 +227,10 @@ impl Compiler {
           for constraint in result {
             constraints.push(constraint.clone());
             match constraint {
-              Constraint::CopyLocalTable{from_table, to_table} => {
-                produces.insert(to_table);
+              Constraint::AliasLocalTable{table, alias} => {
+                produces.insert(alias);
               },
-              Constraint::ScanLocal{table, rows, columns, destination} => {
+              Constraint::ScanLocal{table, rows, columns} => {
                 consumes.insert(table);
               },
               _ => (),
@@ -327,19 +327,19 @@ impl Compiler {
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
-          let to_table: u64 = match result[0] {
+          let alias: u64 = match result[0] {
             Constraint::Identifier{id} => {
               id
             },
             _ => 0,
           };
-          let from_table = match result[1] {
+          let table = match result[1] {
             Constraint::NewLocalTable{id, rows, columns} => {
               id
             },
             _ => 0,
           };
-          constraints.push(Constraint::CopyLocalTable{from_table, to_table});
+          constraints.push(Constraint::AliasLocalTable{table, alias});
         } else {
           // TODO error if there are no children
         }
@@ -444,13 +444,12 @@ impl Compiler {
           "^" => Function::Power,
           _ => Function::Undefined,
         };
-        let mut output: Vec<(u64, u64, u64)> = vec![(self.table, self.row as u64, self.column as u64)];
+        let mut output: Vec<u64> = vec![self.table];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        println!("PARAMETERS {:?}", parameters);
         let mut parameter_registers: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
@@ -461,7 +460,7 @@ impl Compiler {
               let (to_table, to_column) = destination;
               parameter_registers.push((*to_table, 0, *to_column));
             }*/
-            Constraint::ScanLocal{table, rows, columns, destination} => {
+            Constraint::ScanLocal{table, rows, columns} => {
               parameter_registers.push((*table, rows.clone(), columns.clone()));
             }
             /*
@@ -498,16 +497,16 @@ impl Compiler {
       Node::SelectData{id, rows, columns} => {
         let r: Vec<u64> = rows.clone();
         let c: Vec<u64> = columns.clone();
-        constraints.push(Constraint::Scan{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
+        constraints.push(Constraint::Scan{table: *id, rows: r, columns: c});
       },
       Node::SelectDataById{id, rows, columns} => {
         let c: Vec<u64> = columns.clone();
-        constraints.push(Constraint::ScanColumnById{table: *id, column: c[0], destination: (self.table, self.column as u64)});
+        constraints.push(Constraint::ScanColumnById{table: *id, column: c[0]});
       },
       Node::SelectLocalData{id, rows, columns} => {
         let r: Vec<u64> = rows.clone();
         let c: Vec<u64> = columns.clone();
-        constraints.push(Constraint::ScanLocal{table: *id, rows: r, columns: c, destination: (self.table, self.row as u64, self.column as u64)});
+        constraints.push(Constraint::ScanLocal{table: *id, rows: r, columns: c});
       },
       Node::Attribute{children} => {
         self.column += 1;
