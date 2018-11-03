@@ -5,7 +5,7 @@ image: "rust:latest"
 
 test:cargo:
   script:
-  - rustup default nightly-2018-06-24
+  - rustup default nightly-2018-11-01
   - rustup show
   - rustc --version && cargo --version
   - rustup component add rust-src
