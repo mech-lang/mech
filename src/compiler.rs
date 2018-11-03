@@ -409,7 +409,7 @@ impl Compiler {
             match constraint {
               Constraint::Reference{table, rows, columns, destination} => {
                 let (to_table, to_row, to_column) = destination;
-                //compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, 1, 1)], output: vec![(to_table, to_row, to_column)]})
+                compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, vec![], vec![])], output: vec![to_table]})
               },
               _ => compiled.push(constraint),
             }
@@ -428,7 +428,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("ME{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
-        constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
+        //constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
         constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         self.row = store_row;
@@ -629,8 +629,7 @@ impl Compiler {
             // TODO this is hacky... maybe change the parser?
             Node::Constant{..} |
             Node::SelectData{..} |
-            Node::SelectDataById{..} |
-            Node::MathExpression{..} => {
+            Node::SelectDataById{..} => {
               compiled.push(node);
             },
             _ => compiled.push(Node::Expression{children: vec![node]}),
@@ -826,8 +825,7 @@ impl Compiler {
             Node::Token{..} => (),
             Node::Constant{..} |
             Node::SelectData{..} |
-            Node::SelectDataById{..} |
-            Node::MathExpression{..} => {
+            Node::SelectDataById{..}=> {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
                   children: vec![Node::TableRow{
