@@ -21,11 +21,8 @@ extern crate rand;
 #[macro_use]
 extern crate serde_derive;
 
-use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
-use hashmap_core::set::{HashSet};
-use hashmap_core::map::{HashMap};
 
 // ## Modules
 
@@ -53,8 +50,8 @@ pub struct Core {
   pub changes: usize,
   pub store: Interner,
   pub runtime: Runtime,
-  change_capacity: usize,
-  table_capacity: usize,
+  pub change_capacity: usize,
+  pub table_capacity: usize,
   transaction_boundaries: Vec<usize>,
 }
 
@@ -134,7 +131,7 @@ impl Core {
   }
 
   pub fn step_backward(&mut self, steps: usize) {
-    for i in 0..steps {
+    for _ in 0..steps {
       self.step_back_one();
     }
   }
@@ -231,7 +228,7 @@ impl Core {
   }
 
   pub fn resume(&mut self) {
-    for i in 0..self.offset {
+    for _ in 0..self.offset {
       self.step_forward_one();
     }
   }

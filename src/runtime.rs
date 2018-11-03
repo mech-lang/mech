@@ -16,7 +16,7 @@ use alloc::vec::Vec;
 use database::{Transaction, Interner, Change};
 use hashmap_core::map::{HashMap, Entry};
 use hashmap_core::set::HashSet;
-use indexes::{Hasher, TableIndex};
+use indexes::TableIndex;
 use operations;
 use operations::Function;
 
@@ -56,12 +56,12 @@ impl Runtime {
       let table = register.table as usize;
       let column = register.column as usize;
       let new_address = Address{block: block.id, register: ix + 1};
-      let mut listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
+      let listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
       listeners.push(new_address);
 
       // Set the register as ready if the referenced column exists
       match store.get_column_by_id(table as u64, column) {
-        Some(column) => block.ready = set_bit(block.ready, ix),
+        Some(_column) => block.ready = set_bit(block.ready, ix),
         None => (),
       }
     }
@@ -93,7 +93,7 @@ impl Runtime {
     // the loop will terminate.
     while {
       for block_id in self.ready_blocks.drain() {
-        let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+        let block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
       }
       // Queue up the next blocks based on tables that changed during this round.
@@ -299,7 +299,7 @@ impl Block {
         Constraint::Constant{table, row, column, value} => {
           match self.memory.map.entry(table) {
             Entry::Occupied(mut o) => {
-              let mut table_ref = o.get_mut();
+              let table_ref = o.get_mut();
               table_ref.grow_to_fit(row as usize, column as usize);
               table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
             },

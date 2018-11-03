@@ -6,10 +6,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 use table::{Value, Table};
-use indexes::{TableIndex, Hasher};
-use hashmap_core::set::{HashSet};
-use hashmap_core::map::{HashMap};
-use runtime::{Runtime, Block};
+use indexes::TableIndex;
 
 // ## Changes
 
@@ -221,7 +218,7 @@ impl Interner {
       Change::NewTable{id, rows, columns } => {
         self.tables.register(Table::new(*id, *rows, *columns));
       }
-      Change::RemoveTable{id, rows, columns } => {
+      Change::RemoveTable{id, rows: _, columns: _} => {
         self.tables.remove(&id);
       }
       Change::RenameColumn{table, column_ix, column_id} => {

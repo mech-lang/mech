@@ -40,7 +40,7 @@ impl Hasher {
 
   pub fn hash_byte_vector(bytes: &Vec<u8>) -> u64 {
     let mut hasher = Hasher::new();
-    let mut string;
+    let string;
     unsafe {
       string = String::from_utf8_unchecked(bytes.to_vec());
     }
@@ -155,7 +155,7 @@ impl TableIndex {
 impl fmt::Debug for TableIndex {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    for (table_id, table) in self.map.iter() {
+    for (_table_id, table) in self.map.iter() {
       write!(f, "{:?}\n", table).unwrap();
     }
     Ok(())
