@@ -229,7 +229,7 @@ pub struct Block {
   pub output_registers: Vec<Register>,
   pub constraints: Vec<(String, Vec<Constraint>)>,
   memory: TableIndex,
-  scratch: Vec<Value>,
+  scratch: Table,
 }
 
 impl Block {
@@ -247,7 +247,7 @@ impl Block {
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
-      scratch: Vec::new(),
+      scratch: Table::new(0,1,1),
     }
   }
 
@@ -421,42 +421,28 @@ impl Block {
               // Execute the function. Results are placed on the memory registers
               let (lhs_table, lhs_rows, lhs_columns) = &parameters[0];
               let (rhs_table, rhs_rows, rhs_columns) = &parameters[1];
-              let (out_table, output_row, out_column) = output[0];
+              let (out_table, output_row, out_column) = &output[0];
               // TODO This seems very inefficient. Find a better way to do this. 
               // I'm having trouble getting the borrow checker to understand what I'm doing here
               {     
-                
                 let lhs = match self.memory.get(*lhs_table) {
-                  Some(table_ref) => {
-                    println!("LHS {:?}", table_ref);
-                    //table_ref.get_column_by_ix(lhs_column as usize).unwrap()
-                  },
-                  None => (),//store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+                  Some(table_ref) => Some(table_ref),
+                  None => store.get_table(*lhs_table),
                 };
                 let rhs = match self.memory.get(*rhs_table) {
-                  Some(table_ref) => {
-                    // get the whole table
-                    
-                    println!("RHS {:?}", table_ref);
-                    //table_ref.get_column_by_ix(lhs_column as usize).unwrap()
-                  },
-                  None => (),//store.get_column_by_ix(lhs_table, lhs_column as usize).unwrap(),
+                  Some(table_ref) => Some(table_ref),
+                  None => store.get_table(*rhs_table),
                 };
-                /*
-                let rhs = match self.memory.get(rhs_table) {
-                  Some(table_ref) => {
-                    table_ref.get_column_by_ix(rhs_column as usize).unwrap()
-                  },
-                  None => store.get_column_by_ix(rhs_table, rhs_column as usize).unwrap(),
-                };
-                op_fun(lhs, rhs, &mut self.scratch);*/
+                op_fun(lhs,lhs_rows,lhs_columns,rhs,rhs_rows,rhs_columns, &mut self.scratch);
               }
-              /*
-              let out = self.memory.get_mut(out_table).unwrap().get_column_mut_by_ix(out_column as usize).unwrap();
-              for (ix, value) in self.scratch.iter().enumerate() {
-                out[ix] = value.clone();
-              }
-              self.scratch.clear();*/
+              let out = self.memory.get_mut(*out_table).unwrap();
+              out.rows = self.scratch.rows;
+              out.columns = self.scratch.columns;
+              out.row_ids = self.scratch.row_ids.clone();
+              out.column_ids = self.scratch.column_ids.clone();
+              out.column_aliases = self.scratch.column_aliases.clone();
+              out.row_aliases = self.scratch.row_aliases.clone();
+              out.data = self.scratch.data.clone();
             }
           },
           /*
