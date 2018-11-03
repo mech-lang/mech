@@ -259,6 +259,10 @@ impl Interner {
     self.tables.get(table)
   }
 
+  pub fn get_table_mut(&mut self, table: u64) -> Option<&mut Table> {
+    self.tables.get_mut(table)
+  }
+
   pub fn get_column_by_id(&self, table: u64, column_id: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
