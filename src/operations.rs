@@ -30,8 +30,34 @@ pub enum Function {
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Vec<Value>, rhs: &Vec<Value>, out: &mut Vec<Value>) {
-            
+    pub fn $func_name(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
+                      rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
+                      out: &mut Table) {
+      match (lhs_table, rhs_table) {
+        // we have both tables, so let's do some math
+        (Some(lhs), Some(rhs)) => {
+          // We're operating on the whole of both tables
+          if lhs_rows.is_empty() && rhs_rows.is_empty() && lhs_columns.is_empty() && rhs_columns.is_empty() {
+            // The tables are the same size
+            if lhs.rows == rhs.rows && lhs.columns == rhs.columns {
+              out.grow_to_fit(lhs.columns,lhs.rows);
+              for i in (0..lhs.columns) {
+                for j in (0..lhs.rows) {
+                  match (&lhs.data[i][j], &rhs.data[i][j]) {
+                    (Value::Number(x), Value::Number(y)) => {
+                      out.data[i][j] = Value::from_i64(x $op y);
+                    },
+                    _ => (),
+                  }
+                  
+                }
+              }
+            }
+          }
+        },
+        _ => (),
+      }
+      /* 
       // Operate element wise
       if lhs.len() == rhs.len() {
         for i in 0 .. lhs.len() {     
@@ -65,7 +91,7 @@ macro_rules! binary_math {
             out_length = lhs_length; 
           }
         }
-        lengths[out - 1] = out_length as u64;*/
+        lengths[out - 1] = out_length as u64;*/*/
     }
     
   )
@@ -78,10 +104,14 @@ binary_math!{math_divide, /}
 // FIXME this isn't actually right at all. ^ is not power in Rust
 binary_math!{math_power, ^}
 
-pub fn undefined(lhs: &Vec<Value>, rhs: &Vec<Value>, out: &mut Vec<Value>) {
+pub fn undefined(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
+                 rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
+                 out: &mut Table) {
 }
 
-pub fn concatenate(input: &Vec<Value>, out: &mut Vec<Value>) {
+pub fn concatenate(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
+                   rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
+                   out: &mut Table) {
 }
 
 // ## Comparators
