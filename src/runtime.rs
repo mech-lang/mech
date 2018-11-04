@@ -391,11 +391,10 @@ impl Block {
               Function::Multiply => operations::math_multiply,
               Function::Divide => operations::math_divide,
               Function::Power => operations::math_power,
-              Function::Concatenate => operations::undefined, 
-              Function::Undefined => operations::undefined,
+              _ => operations::undefined, 
             };
             
-            if *operation == Function::Concatenate {
+            if *operation == Function::HorizontalConcatenate {
               /*
               let (in_table, in_row, in_column) = parameters[0];
               let (out_table, output_row, out_column) = output[0];
