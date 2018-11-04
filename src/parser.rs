@@ -495,7 +495,7 @@ node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(attribute).and(righ
 
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
-node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional_repeat(space) }, "Attribute"}
+node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional(comma).optional_repeat(space) }, "Attribute"}
 node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(identifier).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
