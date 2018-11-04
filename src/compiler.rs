@@ -374,19 +374,31 @@ impl Compiler {
         let store_row = self.row;
         self.row = 1;
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut result = self.compile_constraints(children);
-        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         let mut i = 0;
-        for constraint in result {
-          match constraint {
+        let mut column_names = vec![];
+        let mut parameters = vec![];
+        let mut compiled = vec![];
+        for (ix, child) in children.iter().enumerate() {
+          let mut result = self.compile_constraint(child);
+          match result[0] {
             Constraint::Identifier{id} => {
-              i += 1;
-              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
+              column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_id: id});
             }
-            _ => constraints.push(constraint),
+            _ => (),
           }
+          match result[1] {
+            Constraint::NewLocalTable{id, rows, columns} => {
+              parameters.push((id, vec![], vec![]));
+            }
+            _ => (),
+          }
+          compiled.append(&mut result);
         }
-        
+        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.append(&mut column_names);
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![self.table]});
+        constraints.append(&mut compiled);
+        println!("{:?}", constraints);
         self.row = store_row;
         self.column = store_column;
         self.table = store_table;
