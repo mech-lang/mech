@@ -490,6 +490,9 @@ impl Compiler {
             Constraint::NewLocalTable{id, rows, columns} => {
               parameter_registers.push((*id, vec![], vec![]));
             },
+            Constraint::Scan{table, rows, columns} => {
+              parameter_registers.push((*table, rows.clone(), columns.clone()));
+            }
             Constraint::ScanLocal{table, rows, columns} => {
               parameter_registers.push((*table, rows.clone(), columns.clone()));
             }
