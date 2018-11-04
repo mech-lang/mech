@@ -398,7 +398,6 @@ impl Compiler {
         constraints.append(&mut column_names);
         constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![self.table]});
         constraints.append(&mut compiled);
-        println!("{:?}", constraints);
         self.row = store_row;
         self.column = store_column;
         self.table = store_table;
@@ -428,6 +427,19 @@ impl Compiler {
         constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![self.table]});
         constraints.append(&mut compiled);
         self.table = store_table;
+      },
+      Node::TableHeader{children} => {
+        let result = self.compile_constraints(children);
+        let mut i = 0;
+        for constraint in result {
+          i += 1;
+          match constraint {
+            Constraint::Identifier{id} => {
+              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
+            }
+            _ => (),
+          }
+        }
       },
       Node::MathExpression{children} => {
         let store_row = self.row;
@@ -493,19 +505,6 @@ impl Compiler {
       Node::Table{name, id} => {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id});
-      },
-      Node::TableHeader{children} => {
-        let result = self.compile_constraints(children);
-        let mut i = 0;
-        for constraint in result {
-          i += 1;
-          match constraint {
-            Constraint::Identifier{id} => {
-              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
-            }
-            _ => (),
-          }
-        }
       },
       Node::SelectData{id, rows, columns} => {
         let r: Vec<u64> = rows.clone();
@@ -660,8 +659,7 @@ impl Compiler {
           match node {
             // If the node is a naked expression, modify the graph
             // TODO this is hacky... maybe change the parser?
-            Node::SelectData{..} |
-            Node::SelectDataById{..} => {
+            Node::SelectData{..} => {
               compiled.push(node);
             },
             _ => compiled.push(Node::Expression{children: vec![node]}),
@@ -834,9 +832,7 @@ impl Compiler {
           // graph to put it into an anonymous table
           match node {
             Node::Token{..} => (),
-            Node::SelectData{..} |
-            Node::SelectDataById{..} |
-            Node::MathExpression{..} => {
+            Node::SelectData{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
                   children: vec![Node::TableRow{
@@ -854,8 +850,7 @@ impl Compiler {
         for node in result {
           match node {
             Node::Token{..} => (),
-            Node::SelectData{..} |
-            Node::SelectDataById{..}=> {
+            Node::SelectData{..} => {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
                   children: vec![Node::TableRow{
