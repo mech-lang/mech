@@ -369,6 +369,7 @@ impl Compiler {
         constraints.append(&mut result);
       },
       Node::InlineTable{children} => {
+        println!("INLINE TABLE");
         let store_table = self.table;
         let store_column = self.column;
         let store_row = self.row;
@@ -380,23 +381,28 @@ impl Compiler {
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
+          println!("{:?}", result);
           match result[0] {
             Constraint::Identifier{id} => {
               column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_id: id});
             }
             _ => (),
           }
-          match result[1] {
-            Constraint::NewLocalTable{id, rows, columns} => {
-              parameters.push((id, vec![], vec![]));
+          if result.len() > 1 {
+            match result[1] {
+              Constraint::NewLocalTable{id, rows, columns} => {
+                parameters.push((id, vec![], vec![]));
+              }
+              _ => (),
             }
-            _ => (),
           }
           compiled.append(&mut result);
         }
         constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut column_names);
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![self.table]});
+        if parameters.len() > 1 {
+          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![self.table]});
+        }
         constraints.append(&mut compiled);
         self.row = store_row;
         self.column = store_column;
@@ -488,12 +494,11 @@ impl Compiler {
             Constraint::ScanLocal{table, rows, columns} => {
               parameter_registers.push((*table, rows.clone(), columns.clone()));
             }
-            /*
             Constraint::Function{operation, parameters, output} => {
               for o in output {
-                parameter_registers.push(*o);
+                parameter_registers.push((*o, vec![], vec![]));
               }
-            },*/
+            },
             _ => (),
           };
         }
