@@ -369,7 +369,6 @@ impl Compiler {
         constraints.append(&mut result);
       },
       Node::InlineTable{children} => {
-        println!("INLINE TABLE");
         let store_table = self.table;
         let store_column = self.column;
         let store_row = self.row;
