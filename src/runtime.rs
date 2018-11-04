@@ -334,55 +334,6 @@ impl Block {
   pub fn solve(&mut self, store: &mut Interner) {
       for step in &self.plan {
         match step {
-          /*
-          Constraint::ChangeScan{table, column, input} => {
-            self.ready = clear_bit(self.ready, *input as usize - 1);
-          }*/
-          Constraint::ScanColumnById{table, column} => {
-            /*let (to_table, to_column) = destination;
-            match store.get_column_by_id(*table, *column as usize) {
-                Some(column_ref) => {
-                  let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
-                  for (row_ix, value) in column_ref.iter().enumerate() {
-                    let row_ix_shift = row_ix + 1;
-                    to_table_ref.set_cell_by_ix(row_ix_shift, *to_column as usize, value.clone());
-                  }
-                },
-                None => (),
-              }*/
-          }
-          Constraint::Scan{table, rows, columns} => {
-            /*let (to_table, to_row, to_column) = destination;
-            // select the entire table
-            if rows.is_empty() && columns.is_empty() {
-              match store.get_table(*table) {
-                Some(table_ref) => {
-                  let to_table_ref = self.memory.get_mut(*to_table).unwrap();
-                  to_table_ref.rows = table_ref.rows;
-                  to_table_ref.columns = table_ref.columns;
-                  to_table_ref.row_ids = table_ref.row_ids.clone();
-                  to_table_ref.column_ids = table_ref.column_ids.clone();
-                  to_table_ref.column_aliases = table_ref.column_aliases.clone();
-                  to_table_ref.row_aliases = table_ref.row_aliases.clone();
-                  to_table_ref.data = table_ref.data.clone();
-                },
-                None => (),
-              }
-            }*/
-          },
-          // TODO MAke this real... it's not generalized
-          Constraint::ScanLocal{table, rows, columns} => { 
-            /*let (to_table, to_row, to_column) = destination;
-            let value = match self.memory.get(*table) {
-              Some(table_ref) => {
-                table_ref.index(1,1).unwrap().clone()
-              },
-              None => Value::Empty,
-            };
-            let mut to_table_ref = self.memory.get_mut(*to_table).unwrap();
-            to_table_ref.grow_to_fit(*to_row as usize, *to_column as usize);
-            to_table_ref.set_cell(*to_row as usize, *to_column as usize, value);*/
-          },
           Constraint::Function{operation, parameters, output} => {
             // Pass the parameters to the appropriate function
             let op_fun = match operation {
@@ -450,16 +401,6 @@ impl Block {
           Constraint::Filter{comparator, lhs, rhs, memory} => {
             operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
           },
-          Constraint::CopyInput{input, memory} => {
-            let register = &self.input_registers[*input as usize - 1];
-            match store.get_column(register.table, register.column as usize) {
-              Some(column) => {
-                self.column_lengths[*memory as usize - 1] = column.len() as u64;
-                operations::identity(column, *memory, &mut self.memory);
-              },
-              None => (),
-            }
-          },
           Constraint::Condition{truth, result, default, memory} => {
             for i in 1 .. self.memory.rows + 1 {
               match self.memory.index(i, *truth as usize) {
@@ -512,21 +453,6 @@ impl Block {
               },
               None => (),
             }
-            /*match &mut self.memory.get_column_by_ix(*memory as usize) {
-              Some(column_data) => {
-                for (row_ix, cell) in column_data.iter().enumerate() {
-                  match cell {
-                    Value::Empty => (),
-                    _ => {
-                      store.process_transaction(&Transaction::from_change(
-                        Change::Set{ table: *table, row: row_ix as u64 + 1, column: *column, value: cell.clone() },
-                      ));
-                    }
-                  }
-                }
-              },
-              None => (),
-            }*/
           },/*
           Constraint::Append{memory, table, column} => {
             match &mut self.memory.get_column_by_ix(*memory as usize) {
