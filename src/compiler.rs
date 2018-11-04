@@ -395,29 +395,25 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
       }
-      Node::Binding{children} => {
-        let mut result = self.compile_constraints(children);
-        constraints.append(&mut result);
-      }
       Node::AnonymousTableDefine{children} => {
         let store_table = self.table;
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        let mut parameters: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![]; 
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
-          for constraint in result {
-            match constraint {
-              Constraint::Reference{table, rows, columns, destination} => {
-                let (to_table, to_row, to_column) = destination;
-                compiled.push(Constraint::Function{operation: Function::Concatenate, parameters: vec![(table, vec![], vec![])], output: vec![to_table]})
-              },
-              _ => compiled.push(constraint),
-            }
+          match result[0] {
+            Constraint::NewLocalTable{id, rows, columns} => {
+              parameters.push((id, vec![], vec![]));
+            },
+            _ => (),
           }
+          compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: 1});
+        constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![self.table]});
         constraints.append(&mut compiled);
         self.table = store_table;
       },
@@ -520,11 +516,29 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        constraints.append(&mut self.compile_constraints(children));
+        let mut parameters: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![]; 
+        let mut compiled = vec![];
+        let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
+        for child in children {
+          let mut result = self.compile_constraint(child);
+          match result[0] {
+            Constraint::NewLocalTable{id, rows, columns} => {
+              parameters.push((id, vec![], vec![]));
+            },
+            _ => (),
+          }
+          compiled.append(&mut result);
+        }
+        constraints.push(Constraint::NewLocalTable{id: table, rows: 1, columns: self.column as u64});
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![table]});
+        constraints.append(&mut compiled);
       },
       Node::Column{children} => {
-        self.column += 1;        
-        constraints.append(&mut self.compile_constraints(children));
+        self.column += 1;       
+        for child in children {
+          let mut result = self.compile_constraint(child);
+          constraints.append(&mut result);
+        }
       },
       Node::Identifier{name, id} => {
         constraints.push(Constraint::Identifier{id: *id});
