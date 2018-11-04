@@ -102,16 +102,7 @@ binary_math!{math_multiply, *}
 binary_math!{math_divide, /}
 // FIXME this isn't actually right at all. ^ is not power in Rust
 binary_math!{math_power, ^}
-
-pub fn undefined(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
-                 rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
-                 out: &mut Table) {
-}
-
-pub fn concatenate(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
-                   rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
-                   out: &mut Table) {
-}
+binary_math!{undefined, +}
 
 // ## Comparators
 
