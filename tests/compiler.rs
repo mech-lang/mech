@@ -87,6 +87,11 @@ block
   #test = #x
 block
   #x = 500", 500);
+test_math!(math_on_whole_table,"
+block
+  #x = 500
+block
+  #test = #x + 5", 505);
 test_math!(math_select_column_by_id,"  
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
