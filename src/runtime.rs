@@ -344,19 +344,18 @@ impl Block {
                 None => store.get_table(*table).unwrap(),
               };
               if self.scratch.rows == 0 {
-                self.scratch.rows = table_ref.rows;
-                self.scratch.columns = table_ref.columns;
+                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
                 self.scratch.data = table_ref.data.clone();
               } else if self.scratch.rows == table_ref.rows {
-                self.scratch.columns += table_ref.columns;
                 self.scratch.data.append(&mut table_ref.data.clone());
+                self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + table_ref.columns);
               }
             }
             let out = self.memory.get_mut(*out_table).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.row_ids = self.scratch.row_ids.clone();
-            out.column_ids = self.scratch.column_ids.clone();
+            //out.column_ids = self.scratch.column_ids.clone();
             out.column_aliases = self.scratch.column_aliases.clone();
             out.row_aliases = self.scratch.row_aliases.clone();
             out.data = self.scratch.data.clone();
@@ -371,11 +370,11 @@ impl Block {
                 None => store.get_table(*table).unwrap(),
               };
               if self.scratch.columns == 0 {
-                self.scratch.rows = table_ref.rows;
-                self.scratch.columns = table_ref.columns;
+                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
                 self.scratch.data = table_ref.data.clone();
               } else if self.scratch.columns == table_ref.columns {
                 self.scratch.rows += table_ref.rows;
+                self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
                 let mut i = 0;
                 for column in &mut self.scratch.data {
                   let mut col = table_ref.data[i].clone();
@@ -388,7 +387,7 @@ impl Block {
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.row_ids = self.scratch.row_ids.clone();
-            out.column_ids = self.scratch.column_ids.clone();
+            //out.column_ids = self.scratch.column_ids.clone();
             out.column_aliases = self.scratch.column_aliases.clone();
             out.row_aliases = self.scratch.row_aliases.clone();
             out.data = self.scratch.data.clone();
