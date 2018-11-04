@@ -482,11 +482,10 @@ impl Compiler {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
-            },
-            Constraint::ScanColumnById{table, column, destination} => {
-              let (to_table, to_column) = destination;
-              parameter_registers.push((*to_table, 0, *to_column));
-            }*/
+            },*/
+            Constraint::ScanColumnById{table, column} => {
+              parameter_registers.push((*table, vec![], vec![*column]));
+            }
             Constraint::NewLocalTable{id, rows, columns} => {
               parameter_registers.push((*id, vec![], vec![]));
             },
