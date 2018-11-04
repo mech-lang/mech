@@ -109,6 +109,16 @@ impl Table {
     }
   }
 
+  pub fn clear(&mut self) {
+    self.rows = 0;
+    self.columns = 0;
+    self.row_ids.clear();
+    self.column_ids.clear();
+    self.row_aliases.clear();
+    self.column_aliases.clear();
+    self.data.clear();
+  }
+
   pub fn get_row_index(&mut self, alias: u64) -> Option<&usize> {
     self.row_aliases.get(&alias)
   }
