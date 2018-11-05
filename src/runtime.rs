@@ -272,10 +272,10 @@ impl Block {
           };
           self.updated = true;
         },
-        Constraint::TableColumn{table, column_ix, column_id} => {
+        Constraint::TableColumn{table, column_ix, column_alias} => {
           match self.memory.get_mut(table) {
             Some(table_ref) => {
-              table_ref.set_column_alias(column_id, column_ix);
+              table_ref.set_column_alias(column_alias, column_ix);
             }
             None => (),
           };
@@ -566,7 +566,7 @@ pub struct Pipe {
 pub enum Constraint {
   Data {table: u64, column: u64},
   NewTable{id: TableId, rows: u64, columns: u64},
-  TableColumn{table: u64, column_ix: u64, column_id: u64},
+  TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
   Scan {table: TableId, rows: Vec<Index>, columns: Vec<Index>},
@@ -607,7 +607,7 @@ impl fmt::Debug for Constraint {
       Constraint::IndexMask{source, truth, memory} => write!(f, "IndexMask({:#x}, {:#x} -> M{:#x})", source, truth, memory),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
-      Constraint::TableColumn{table, column_ix, column_id}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_id),
+      Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
     }
   }
 }
