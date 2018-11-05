@@ -81,105 +81,75 @@ impl fmt::Debug for Value {
 // where each column represents an attribute, and each row represents an entity.
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub enum TableIndex {
+pub enum Index {
   Index(u64),
   Alias(u64)
 }
 
-#[derive(Clone, PartialEq)]
+impl fmt::Debug for Index {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
+      &Index::Alias(ref alias) => write!(f, "Alias({:#x})", alias),
+    }
+  }
+}
+
+#[derive(Clone, PartialEq, Debug)]
 pub struct Table {
   pub id: u64,
-  pub rows: usize,
-  pub columns: usize,
-  // ix -> id
-  pub row_ids: Vec<Option<u64>>,
-  pub column_ids: Vec<Option<u64>>,
-  // id -> ix
-  pub column_aliases: HashMap<u64, usize>,
-  pub row_aliases: HashMap<u64, usize>,
+  pub rows: u64,
+  pub columns: u64,
+  pub column_aliases: HashMap<u64, u64>,
+  pub row_aliases: HashMap<u64, u64>,
   pub data: Vec<Vec<Value>>,
 }
 
 impl Table {
 
-  pub fn new(tag: u64, rows: usize, columns: usize) -> Table {
+  pub fn new(tag: u64, rows: u64, columns: u64) -> Table {
     Table {
       id: tag,
-      rows: 0,
-      columns: 0,
-      column_ids: Vec::new(),
-      row_ids: Vec::new(),
-      column_aliases: HashMap::with_capacity(columns),
-      row_aliases: HashMap::with_capacity(rows),
-      data: vec![vec![Value::Empty; rows]; columns], 
+      rows: rows,
+      columns: columns,
+      column_aliases: HashMap::with_capacity(columns as usize),
+      row_aliases: HashMap::with_capacity(rows as usize),
+      data: vec![vec![Value::Empty; rows as usize]; columns as usize], 
     }
   }
 
   pub fn clear(&mut self) {
     self.rows = 0;
     self.columns = 0;
-    self.row_ids.clear();
-    self.column_ids.clear();
     self.row_aliases.clear();
     self.column_aliases.clear();
     self.data.clear();
   }
 
-  pub fn get_row_index(&mut self, alias: u64) -> Option<&usize> {
+  pub fn get_row_index(&mut self, alias: u64) -> Option<&u64> {
     self.row_aliases.get(&alias)
   }
 
-  pub fn get_column_index(&self, alias: u64) -> Option<&usize> {
+  pub fn get_column_index(&self, alias: u64) -> Option<&u64> {
     self.column_aliases.get(&alias)
   }
 
-  pub fn set_cell_by_id(&mut self, row: usize, column: usize, value: Value) -> Result<Value, &str> {
-    let column_ix: usize = match self.column_aliases.entry(column as u64) {
-      Entry::Occupied(o) => {
-        *o.get()
-      },
-      Entry::Vacant(v) => {    
-        let ix = self.columns + 1;
-        v.insert(ix);
-        ix
-      },
+  pub fn set_cell(&mut self, row: Index, column: Index, value: Value) -> Value {
+    let row_ix: usize = match row {
+      Index::Index(ix) => ix  as usize,
+      Index::Alias(alias) => *self.get_row_index(alias).unwrap() as usize,
     };
-    let row_ix: usize = match self.row_aliases.entry(row as u64) {
-      Entry::Occupied(o) => {
-        *o.get()
-      },
-      Entry::Vacant(v) => {    
-        let ix = self.rows + 1;
-        v.insert(ix);
-        if self.rows == row {
-          self.row_ids.push(None);                  
-        } else {
-          self.row_ids.push(Some(row as u64));
-        }
-        ix
-      },
+    let column_ix: usize = match column {
+      Index::Index(ix) => ix as usize,
+      Index::Alias(alias) => *self.get_column_index(alias).unwrap() as usize,
     };
-    self.grow_to_fit(row_ix, column_ix);
-    self.set_cell(row_ix, column_ix, value)
+    let old_value = self.data[column_ix - 1][row_ix - 1].clone();
+    self.data[column_ix - 1][row_ix - 1] = value;
+    old_value
   }
 
-  pub fn set_cell_by_ix(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
-    self.grow_to_fit(row_ix, column_ix);
-    self.set_cell(row_ix, column_ix, value)
-  }
-
-  pub fn set_cell(&mut self, row_ix: usize, column_ix: usize, value: Value) -> Result<Value, &str> {
-    if row_ix > 0 && column_ix > 0 &&
-       self.rows > 0 && row_ix <= self.rows &&
-       self.columns > 0 && column_ix <= self.columns {
-      let old_value = self.data[column_ix - 1][row_ix - 1].clone();
-      self.data[column_ix - 1][row_ix - 1] = value;
-      Ok(old_value)
-    } else {
-      Err("Index out of table bounds.")
-    }
-  }
-
+  /*
   pub fn set_column_id(&mut self, id: u64, column_ix: usize) {
     match self.column_aliases.entry(id) {
       Entry::Occupied(_) => {
@@ -336,12 +306,12 @@ impl Table {
   // Clear a cell, setting it's value to Value::Empty
   pub fn clear_cell(&mut self, row_ix: usize, column_ix: usize) -> Result<Value, &str> {
     self.set_cell(row_ix, column_ix, Value::Empty)
-  }
+  }*/
 
 }
 
 // ### Pretty Printing Tables
-
+/*
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -458,4 +428,4 @@ fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   }
   print_repeated_char("─", m, f);
   write!(f, "┘\n").unwrap();
-}
+}*/

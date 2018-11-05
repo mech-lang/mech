@@ -104,13 +104,13 @@ macro_rules! binary_math {
   )
 }
 
-binary_math!{math_add, +}
-binary_math!{math_subtract, -}
-binary_math!{math_multiply, *}
-binary_math!{math_divide, /}
+//binary_math!{math_add, +}
+//binary_math!{math_subtract, -}
+//binary_math!{math_multiply, *}
+//binary_math!{math_divide, /}
 // FIXME this isn't actually right at all. ^ is not power in Rust
-binary_math!{math_power, ^}
-binary_math!{undefined, +}
+//binary_math!{math_power, ^}
+//binary_math!{undefined, +}
 
 // ## Comparators
 
@@ -125,6 +125,21 @@ pub enum Comparator {
   NotEqual
 }
 
+impl fmt::Debug for Comparator {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      Comparator::GreaterThan => write!(f, ">"),
+      Comparator::LessThan => write!(f, "<"),
+      Comparator::LessThanOrEqual => write!(f, "<="),
+      Comparator::GreaterThanOrEqual => write!(f, ">="),
+      Comparator::Equal => write!(f, "="),
+      Comparator::NotEqual => write!(f, "!="),
+    }
+  }
+}
+
+/*
 pub fn compare(comparator: &Comparator, lhs: usize, rhs: usize, output: usize, store: &mut Table, lengths: &mut Vec<u64>) {
   let lhs_length = lengths[lhs - 1] as usize;
   let rhs_length = lengths[rhs - 1] as usize;
@@ -188,17 +203,4 @@ pub fn compare(comparator: &Comparator, lhs: usize, rhs: usize, output: usize, s
   }
   lengths[out - 1] = out_length as u64;
 }
-
-impl fmt::Debug for Comparator {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      Comparator::GreaterThan => write!(f, ">"),
-      Comparator::LessThan => write!(f, "<"),
-      Comparator::LessThanOrEqual => write!(f, "<="),
-      Comparator::GreaterThanOrEqual => write!(f, ">="),
-      Comparator::Equal => write!(f, "="),
-      Comparator::NotEqual => write!(f, "!="),
-    }
-  }
-}
+*/

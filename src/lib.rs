@@ -35,7 +35,7 @@ mod operations;
 // ## Exported Modules
 
 pub use self::database::{Transaction, Change, Interner};
-pub use self::table::{Value, Table};
+pub use self::table::{Value, Index, Table};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Comparator};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
@@ -106,6 +106,7 @@ impl Core {
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
+/*
   pub fn index(&mut self, table: u64, row: u64, column: u64) -> Option<&Value> {
     match self.store.tables.get(table) {
       Some(table_ref) => {
@@ -128,7 +129,7 @@ impl Core {
       },
       None => None,
     }
-  }
+  }*/
 
   pub fn step_backward(&mut self, steps: usize) {
     for _ in 0..steps {

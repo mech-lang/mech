@@ -15,9 +15,9 @@ pub enum Change {
   Append{table: u64, column: u64, value: Value},
   Set{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
-  NewTable{id: u64, rows: usize, columns: usize},
+  NewTable{id: u64, rows: u64, columns: u64},
   RenameColumn{table: u64, column_ix: u64, column_id: u64},
-  RemoveTable{id: u64, rows: usize, columns: usize},
+  RemoveTable{id: u64, rows: u64, columns: u64},
 }
 
 impl fmt::Debug for Change {
@@ -172,6 +172,7 @@ impl Interner {
   fn intern_change(&mut self, change: &Change) {  
     match change {
       Change::Set{table, row, column, value} => {
+        /*
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             match table_ref.set_cell_by_id(*row as usize, *column as usize, value.clone()) {
@@ -190,8 +191,10 @@ impl Interner {
           None => (),
         };
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
+        */
       },
       Change::Remove{table, row, column, value} => {
+        /*
         match value {
           Value::Empty => (),
           _ => {
@@ -204,8 +207,10 @@ impl Interner {
           },
         };
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
+        */
       },
       Change::Append{table, column, value} => {
+        /*
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             let row: usize = table_ref.rows + 1;;
@@ -214,6 +219,7 @@ impl Interner {
           None => (),
         };
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
+        */
       },
       Change::NewTable{id, rows, columns } => {
         self.tables.register(Table::new(*id, *rows, *columns));
@@ -222,6 +228,7 @@ impl Interner {
         self.tables.remove(&id);
       }
       Change::RenameColumn{table, column_ix, column_id} => {
+        /*
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             table_ref.set_column_id(*column_id, *column_ix as usize);
@@ -229,6 +236,7 @@ impl Interner {
           None => (),
         };
         self.tables.changed_this_round.insert((*table as usize, *column_id as usize));
+        */
       },
     }
     if self.offset == 0 {
@@ -260,7 +268,7 @@ impl Interner {
   pub fn get_table_mut(&mut self, table: u64) -> Option<&mut Table> {
     self.tables.get_mut(table)
   }
-
+/*
   pub fn get_column_by_id(&self, table: u64, column_id: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
@@ -271,8 +279,8 @@ impl Interner {
       },
       None => None,
     }
-  }
-
+  }*/
+/*
   pub fn get_column_by_ix(&self, table: u64, column_ix: usize) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
@@ -283,8 +291,9 @@ impl Interner {
       },
       None => None,
     }
-  }
+  }*/
 
+  /*
   pub fn get_cell(&self, table: u64, row_ix: usize, column_ix: usize) -> Option<&Value> {
     match self.tables.get(table) {
       Some(stored_table) => {
@@ -292,7 +301,7 @@ impl Interner {
       },
       None => None,
     }
-  }
+  }*/
 
   pub fn len(&self) -> usize {
     self.changes_count as usize
