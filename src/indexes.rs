@@ -136,7 +136,7 @@ impl TableIndex {
     }
   }
 
-  pub fn register(&mut self, table: Table) {
+  pub fn insert(&mut self, table: Table) {
     if !self.map.contains_key(&table.id) {
       self.map.insert(table.id, table);
     }

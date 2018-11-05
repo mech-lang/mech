@@ -222,7 +222,7 @@ impl Interner {
         */
       },
       Change::NewTable{id, rows, columns } => {
-        self.tables.register(Table::new(*id, *rows, *columns));
+        self.tables.insert(Table::new(*id, *rows, *columns));
       }
       Change::RemoveTable{id, rows: _, columns: _} => {
         self.tables.remove(&id);
