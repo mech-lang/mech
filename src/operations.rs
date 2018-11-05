@@ -39,14 +39,17 @@ macro_rules! binary_math {
           let lhs_height = if lhs_rows.is_empty() { lhs.rows }
                            else { lhs_rows.len() };
           let lhs_width = if lhs_columns.is_empty() { lhs.columns }
-                          else { lhs_columns.len() }; 
+                          else { lhs_columns.len() };
           let rhs_height = if rhs_rows.is_empty() { rhs.rows }
                            else { rhs_rows.len() };
           let rhs_width = if rhs_columns.is_empty() { rhs.columns }
                           else { rhs_columns.len() }; 
+          println!("{:?} x {:?}, {:?} x {:?} {:?} {:?}", lhs_height, lhs_width, rhs_height, rhs_width, lhs, rhs);
+
 
           // The tables are the same size
           if lhs_height == rhs_height && lhs_width == rhs_width {
+            println!("WE ARE HERE2");
             out.grow_to_fit(lhs_height, lhs_width);
             for i in 0..lhs_width {
               for j in 0..lhs_height {
@@ -60,8 +63,15 @@ macro_rules! binary_math {
             }
           // Add a scalar 5 + [1 2 3]
           } else if lhs_width == 1 && lhs_height == 1 {
+            println!("WE ARE HERE");
+            let (start, end): (usize, usize) = if rhs_columns.is_empty() {
+              (0, rhs.columns)
+            } else {
+              let ix = rhs.get_column_index(rhs_columns[0]).unwrap();
+              (*ix, *ix)
+            };
             out.grow_to_fit(rhs_height, rhs_width); 
-            for i in 0..rhs_width {
+            for i in start..end {
               for j in 0..rhs_height {
                 match (&lhs.data[0][0], &rhs.data[i][j]) {
                   (Value::Number(x), Value::Number(y)) => {
@@ -72,6 +82,7 @@ macro_rules! binary_math {
               }
             }
           } else if rhs_width == 1 && rhs_height == 1 {
+            println!("WE ARE HERE3");
             out.grow_to_fit(lhs_height, lhs_width); 
             for i in 0..lhs_width {
               for j in 0..lhs_height {
