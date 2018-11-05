@@ -486,7 +486,7 @@ impl Block {
           }
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
             for (row_ix, data) in column.iter().enumerate() {
-              changes.push(Change::Set{table: *to_table, row: row_ix as u64 + 1, column: col_ix as u64 + 1, value: data.clone()});
+              changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
             }
           }
           store.process_transaction(&Transaction::from_changeset(changes));

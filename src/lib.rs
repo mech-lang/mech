@@ -157,20 +157,20 @@ impl Core {
 
       // Now process the transactions in reverse order
       for ix in (prev_ix..now_ix).rev() {
-        match self.store.changes[ix] {
-          Change::Set{table, row, column, ref value} => {
+        match &self.store.changes[ix] {
+          Change::Set{table, row, column, value} => {
             self.store.process_transaction(&Transaction::from_change(
-              Change::Remove{table,row,column,value: value.clone()}
+              Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: value.clone()}
             ));
           },
-          Change::Remove{table, row, column, ref value} => {
+          Change::Remove{table, row, column, value} => {
             self.store.process_transaction(&Transaction::from_change(
-              Change::Set{table,row,column,value: value.clone()}
+              Change::Set{table: *table, row: row.clone(), column: column.clone(), value: value.clone()}
             ));
           },
           Change::NewTable{id, rows, columns} => {
             self.store.process_transaction(&Transaction::from_change(
-              Change::RemoveTable{id,rows,columns}
+              Change::RemoveTable{id: *id, rows: *rows, columns: *columns}
             ));
           },
           _ => (),
