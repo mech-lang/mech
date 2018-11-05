@@ -325,23 +325,19 @@ impl Compiler {
       }, 
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        /*if result.len() > 2 {
+        if result.len() > 2 {
           let alias: u64 = match result[0] {
-            Constraint::Identifier{id} => {
-              id
-            },
+            Constraint::Identifier{id} => id,
             _ => 0,
           };
-          let table = match result[1] {
-            Constraint::NewTable{id, rows, columns} => {
-              id
-            },
-            _ => 0,
+          let table = match &result[1] {
+            Constraint::NewTable{id, rows, columns} =>id.clone(),
+            _ => TableId::Local(0),
           };
-          constraints.push(Constraint::AliasLocalTable{table, alias});
+          constraints.push(Constraint::AliasTable{table, alias});
         } else {
           // TODO error if there are no children
-        }*/
+        }
         constraints.append(&mut result);
       },
       Node::TableDefine{children} => {
