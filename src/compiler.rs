@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Block, Constraint, Index};
+use mech_core::{Block, Constraint, Index, TableId};
 use mech_core::{Function, Comparator};
 use mech_core::Hasher;
 use parser;
@@ -32,8 +32,7 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
-  SelectData{ id: u64, rows: Vec<Index>, columns: Vec<Index> },
-  SelectLocalData{ id: u64, rows: Vec<Index>, columns: Vec<Index> },
+  SelectData{ id: TableId, rows: Vec<Index>, columns: Vec<Index> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -92,8 +91,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
-    Node::SelectData{id, rows, columns} => {print!("SelectData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
-    Node::SelectLocalData{id, rows, columns} => {print!("SelectLocalData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
+    Node::SelectData{id, rows, columns} => {print!("SelectData({:?} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
     Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -227,12 +225,13 @@ impl Compiler {
           for constraint in result {
             constraints.push(constraint.clone());
             match constraint {
+              /*
               Constraint::AliasLocalTable{table, alias} => {
                 produces.insert(alias);
               },
-              Constraint::ScanLocal{table, rows, columns} => {
+              Constraint::Scan{table, rows, columns} => {
                 consumes.insert(table);
-              },
+              },*/
               _ => (),
             }
             
@@ -326,7 +325,7 @@ impl Compiler {
       }, 
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        if result.len() > 2 {
+        /*if result.len() > 2 {
           let alias: u64 = match result[0] {
             Constraint::Identifier{id} => {
               id
@@ -334,7 +333,7 @@ impl Compiler {
             _ => 0,
           };
           let table = match result[1] {
-            Constraint::NewLocalTable{id, rows, columns} => {
+            Constraint::NewTable{id, rows, columns} => {
               id
             },
             _ => 0,
@@ -342,11 +341,12 @@ impl Compiler {
           constraints.push(Constraint::AliasLocalTable{table, alias});
         } else {
           // TODO error if there are no children
-        }
+        }*/
         constraints.append(&mut result);
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
+        /*
         if result.len() > 2 {
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id} => {
@@ -363,7 +363,7 @@ impl Compiler {
           constraints.push(Constraint::CopyTable{from_table, to_table});
         } else {
           // TODO error if there are no children
-        }
+        }*/
         constraints.append(&mut result);
       },
       Node::InlineTable{children} => {
@@ -374,7 +374,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
-        let mut parameters = vec![];
+        let mut parameters: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![]; 
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
@@ -386,19 +386,19 @@ impl Compiler {
             _ => (),
           }
           if result.len() > 1 {
-            match result[1] {
-              Constraint::NewLocalTable{id, rows, columns} => {
-                parameters.push((id, vec![], vec![]));
+            match &result[1] {
+              Constraint::NewTable{id, rows, columns} => {
+                parameters.push((id.clone(), vec![], vec![]));
               }
               _ => (),
             }
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut column_names);
         if parameters.len() > 1 {
-          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![self.table]});
+          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         }
         constraints.append(&mut compiled);
         self.row = store_row;
@@ -414,20 +414,20 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![]; 
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
-          match result[0] {
-            Constraint::NewLocalTable{id, rows, columns} => {
-              parameters.push((id, vec![], vec![]));
+          match &result[0] {
+            Constraint::NewTable{id, rows, columns} => {
+              parameters.push((id.clone(), vec![], vec![]));
             },
             _ => (),
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: 1});
-        constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![self.table]});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
+        constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
         self.table = store_table;
       },
@@ -454,7 +454,7 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
         //constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
-        constraints.push(Constraint::NewLocalTable{id: self.table, rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: self.column as u64});
         constraints.append(&mut result);
         self.row = store_row;
         self.column = store_col;
@@ -469,30 +469,27 @@ impl Compiler {
           "^" => Function::Power,
           _ => Function::Undefined,
         };
-        let mut output: Vec<u64> = vec![self.table];
+        let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        let mut parameter_registers: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![];
+        let mut parameter_registers: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
-            Constraint::NewLocalTable{id, rows, columns} => {
-              parameter_registers.push((*id, vec![], vec![]));
+            Constraint::NewTable{id, rows, columns} => {
+              parameter_registers.push((id.clone(), vec![], vec![]));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((*table, rows.clone(), columns.clone()));
-            }
-            Constraint::ScanLocal{table, rows, columns} => {
-              parameter_registers.push((*table, rows.clone(), columns.clone()));
-            }
+              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
+            },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
-                parameter_registers.push((*o, vec![], vec![]));
+                parameter_registers.push((o.clone(), vec![], vec![]));
               }
             },
             _ => (),
@@ -510,12 +507,7 @@ impl Compiler {
       Node::SelectData{id, rows, columns} => {
         let r: Vec<Index> = rows.clone();
         let c: Vec<Index> = columns.clone();
-        constraints.push(Constraint::Scan{table: *id, rows: r, columns: c});
-      },
-      Node::SelectLocalData{id, rows, columns} => {
-        let r: Vec<Index> = rows.clone();
-        let c: Vec<Index> = columns.clone();
-        constraints.push(Constraint::ScanLocal{table: *id, rows: r, columns: c});
+        constraints.push(Constraint::Scan{table: id.clone(), rows: r, columns: c});
       },
       Node::Attribute{children} => {
         self.column += 1;
@@ -524,21 +516,21 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameters: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
           let mut result = self.compile_constraint(child);
-          match result[0] {
-            Constraint::NewLocalTable{id, rows, columns} => {
-              parameters.push((id, vec![], vec![]));
+          match &result[0] {
+            Constraint::NewTable{id, rows, columns} => {
+              parameters.push((id.clone(), vec![], vec![]));
             },
             _ => (),
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewLocalTable{id: table, rows: 1, columns: self.column as u64});
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![table]});
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: self.column as u64});
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(table)]});
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
@@ -553,7 +545,7 @@ impl Compiler {
       },
       Node::Constant{value} => {
         let table = Hasher::hash_string(format!("Constant-{:?}", *value));
-        constraints.push(Constraint::NewLocalTable{id: table, rows: 1, columns: 1});
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
         constraints.push(Constraint::Constant{table, row: 1, column: 1, value: *value as i64});
       },
       _ => ()
@@ -623,10 +615,10 @@ impl Compiler {
         for node in reversed {
           match node {
             Node::Table{name, id} => {
-              compiled.push(Node::SelectData{id, rows: rows.clone(), columns: columns.clone()});
+              compiled.push(Node::SelectData{id: TableId::Global(id), rows: rows.clone(), columns: columns.clone()});
             }, 
             Node::Identifier{name, id} => {
-              compiled.push(Node::SelectLocalData{id, rows: rows.clone(), columns: columns.clone()});
+              compiled.push(Node::SelectData{id: TableId::Local(id), rows: rows.clone(), columns: columns.clone()});
             },
             Node::DotIndex{column} => {
               match column[0] {
