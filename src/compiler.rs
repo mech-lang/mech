@@ -393,11 +393,9 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
         constraints.append(&mut column_names);
-        if parameters.len() > 1 {
-          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
-        }
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
         self.row = store_row;
         self.column = store_column;
@@ -527,7 +525,7 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: self.column as u64});
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
         constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(table)]});
         constraints.append(&mut compiled);
       },
