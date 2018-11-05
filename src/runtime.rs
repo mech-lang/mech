@@ -318,14 +318,10 @@ impl Block {
                 self.scratch.data.append(&mut table_ref.data.clone());
                 self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + table_ref.columns);
               }
-              
             }
-
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
-            out.column_aliases = self.scratch.column_aliases.clone();
-            out.row_aliases = self.scratch.row_aliases.clone();
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }

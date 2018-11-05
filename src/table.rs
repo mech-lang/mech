@@ -382,12 +382,12 @@ impl fmt::Debug for Table {
         self.rows
       };
       let mut column_labels: Vec<Value> = Vec::new();
-      /*for (ix, id) in self.column_ids.iter().enumerate() {
-        match id {
-          Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:#x})", ix + 1, *column_id))),
-          None => column_labels.push(Value::from_u64(ix as u64 + 1)),
-        }
-      }*/
+      for i in 1..self.columns + 1 {
+        column_labels.push(Value::from_i64(i as i64));
+      }
+      for (alias, ix) in self.column_aliases.iter() {
+        column_labels[*ix as usize - 1] = Value::from_string(format!("{:?} ({:#x})", ix, alias));
+      }
       print_row(column_labels, cell_width as usize, f);
       print_inner_border(self.columns as usize, cell_width as usize,  f);
       for m in 1 .. max_rows + 1 {
