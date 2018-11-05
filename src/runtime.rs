@@ -373,14 +373,13 @@ impl Block {
                 self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
                 self.scratch.data = table_ref.data.clone();
               } else if self.scratch.columns == table_ref.columns {
-                self.scratch.rows += table_ref.rows;
-                self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
                 let mut i = 0;
                 for column in &mut self.scratch.data {
                   let mut col = table_ref.data[i].clone();
                   column.append(&mut col);
                   i += 1;
                 }
+                self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
               }
             }
             let out = self.memory.get_mut(*out_table).unwrap();
