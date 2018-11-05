@@ -172,27 +172,20 @@ impl Interner {
   fn intern_change(&mut self, change: &Change) {  
     match change {
       Change::Set{table, row, column, value} => {
-        println!("SET: {:?}", change)
-        /*
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            match table_ref.set_cell_by_id(*row as usize, *column as usize, value.clone()) {
-              Ok(old_value) => {
-                if self.offset == 0 {
-                  match old_value {
-                    Value::Empty => (),
-                    // Save a remove so that we can rewind
-                    _ => self.save_change(&Change::Remove{table: *table, row: *row, column: *column, value: old_value}),
-                  }
-                }
-              },
-              _ => (),
-            };
+            let old_value = table_ref.set_cell(&row, &column, value.clone());
+            if self.offset == 0 {
+              match old_value {
+                Value::Empty => (),
+                // Save a remove so that we can rewind
+                _ => self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
+              }
+            }
           }
           None => (),
         };
-        self.tables.changed_this_round.insert((*table as usize, *column as usize));
-        */
+        self.tables.changed_this_round.insert((table.clone(), column.clone()));
       },
       Change::Remove{table, row, column, value} => {
         /*

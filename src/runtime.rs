@@ -265,7 +265,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(row, column, Value::from_i64(value));
+              table_ref.set_cell(&row, &column, Value::from_i64(value));
             },
             Entry::Vacant(v) => {    
             },

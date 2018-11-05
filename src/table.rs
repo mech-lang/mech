@@ -162,9 +162,9 @@ impl Table {
     self.data.clear();
   }
 
-  pub fn get_row_index(&self, row: Index) -> Option<u64> {
+  pub fn get_row_index(&self, row: &Index) -> Option<u64> {
     match row {
-      Index::Index(ix) => Some(ix),
+      Index::Index(ix) => Some(*ix),
       Index::Alias(alias) => match self.row_aliases.get(&alias) {
         Some(ix) => Some(ix.clone()),
         None => None,
@@ -172,9 +172,9 @@ impl Table {
     }
   }
 
-  pub fn get_column_index(&self, column: Index) -> Option<u64> {
+  pub fn get_column_index(&self, column: &Index) -> Option<u64> {
     match column {
-      Index::Index(ix) => Some(ix),
+      Index::Index(ix) => Some(*ix),
       Index::Alias(alias) => match self.column_aliases.get(&alias) {
         Some(ix) => Some(ix.clone()),
         None => None,
@@ -182,7 +182,7 @@ impl Table {
     }
   }
 
-  pub fn set_cell(&mut self, row: Index, column: Index, value: Value) -> Value {
+  pub fn set_cell(&mut self, row: &Index, column: &Index, value: Value) -> Value {
     let row_ix = self.get_row_index(row).unwrap() as usize;
     let column_ix = self.get_column_index(column).unwrap() as usize;
     let old_value = self.data[column_ix - 1][row_ix - 1].clone();
@@ -302,7 +302,7 @@ impl Table {
     rows
   }
   */
-  pub fn get_row(&self, row: Index) -> Option<Vec<Value>> {
+  pub fn get_row(&self, row: &Index) -> Option<Vec<Value>> {
     match self.get_row_index(row) {
       Some(row_ix) => {
         let mut row: Vec<Value> = vec![];
@@ -391,7 +391,7 @@ impl fmt::Debug for Table {
       print_row(column_labels, cell_width as usize, f);
       print_inner_border(self.columns as usize, cell_width as usize,  f);
       for m in 1 .. max_rows + 1 {
-        print_row(self.get_row(Index::Index(m)).unwrap(), cell_width as usize, f);
+        print_row(self.get_row(&Index::Index(m)).unwrap(), cell_width as usize, f);
       }
       print_bottom_border(self.columns as usize, cell_width as usize,  f);
     }
