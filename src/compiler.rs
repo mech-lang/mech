@@ -333,7 +333,7 @@ impl Compiler {
             _ => 0,
           };
           let table = match &result[1] {
-            Constraint::NewTable{id, rows, columns} =>id.clone(),
+            Constraint::NewTable{id, rows, columns} => id.clone(),
             _ => TableId::Local(0),
           };
           constraints.push(Constraint::AliasTable{table, alias});
@@ -344,7 +344,6 @@ impl Compiler {
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        /*
         if result.len() > 2 {
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id} => {
@@ -352,16 +351,16 @@ impl Compiler {
             },
             _ => 0,
           };
-          let from_table = match result[1] {
-            Constraint::NewLocalTable{id, rows, columns} => {
-              id
+          let from_table: u64 = match &result[1] {
+            Constraint::NewTable{id, rows, columns} => {
+              *id.unwrap()
             },
             _ => 0,
           };
           constraints.push(Constraint::CopyTable{from_table, to_table});
         } else {
           // TODO error if there are no children
-        }*/
+        }
         constraints.append(&mut result);
       },
       Node::InlineTable{children} => {
