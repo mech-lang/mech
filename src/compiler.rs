@@ -544,7 +544,7 @@ impl Compiler {
       Node::Constant{value} => {
         let table = Hasher::hash_string(format!("Constant-{:?}", *value));
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
-        constraints.push(Constraint::Constant{table, row: 1, column: 1, value: *value as i64});
+        constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value as i64});
       },
       _ => ()
     }
