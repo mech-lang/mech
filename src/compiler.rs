@@ -225,13 +225,15 @@ impl Compiler {
           for constraint in result {
             constraints.push(constraint.clone());
             match constraint {
-              /*
-              Constraint::AliasLocalTable{table, alias} => {
+              Constraint::AliasTable{table, alias} => {
                 produces.insert(alias);
               },
               Constraint::Scan{table, rows, columns} => {
-                consumes.insert(table);
-              },*/
+                match table {
+                  TableId::Local(id) => consumes.insert(id),
+                  TableId::Global(id) => false, // TODO handle global
+                };
+              },
               _ => (),
             }
             
