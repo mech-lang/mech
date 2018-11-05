@@ -293,17 +293,17 @@ impl Table {
   }
   */
   pub fn get_row(&self, row: Index) -> Option<Vec<Value>> {
-    let row_ix = self.get_row_index(row).unwrap();
-    if row_ix - 1 < self.rows {
-      let mut row: Vec<Value> = vec![];
-      // Get the index for the given attribute
-      for column_ix in 0 .. self.columns as usize {
-        let cell = self.data[column_ix][row_ix as usize - 1].clone();
-        row.push(cell);
+    match self.get_row_index(row) {
+      Some(row_ix) => {
+        let mut row: Vec<Value> = vec![];
+        // Get the index for the given attribute
+        for column_ix in 0 .. self.columns as usize {
+          let cell = self.data[column_ix][row_ix as usize - 1].clone();
+          row.push(cell);
+        }
+        Some(row)
       }
-      Some(row)
-    } else {
-      None
+      None => None,
     }
   }/*
 
