@@ -86,6 +86,15 @@ pub enum TableId {
   Global(u64)
 }
 
+impl TableId {
+  pub fn unwrap(&self) -> &u64 {
+    match self {
+      TableId::Local(id) => id,
+      TableId::Global(id) => id,
+    }
+  }
+}
+
 impl fmt::Debug for TableId {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -101,6 +110,15 @@ impl fmt::Debug for TableId {
 pub enum Index {
   Index(u64),
   Alias(u64)
+}
+
+impl Index {
+  pub fn unwrap(&self) -> &u64 {
+    match self {
+      Index::Index(ix) => ix,
+      Index::Alias(alias) => alias,
+    }
+  }
 }
 
 impl fmt::Debug for Index {
@@ -262,28 +280,25 @@ impl Table {
       },
       None => None,
     }
-  }
+  }*/
 
-  pub fn grow_to_fit(&mut self, rows: usize, columns: usize) {
+  pub fn grow_to_fit(&mut self, rows: u64, columns: u64) {
     if columns > self.columns {
       // The new row is larger than the underlying column structure
-      if columns > self.data.len() {
-        let new_column = vec![Value::Empty; self.rows];
-        self.data.resize(columns, new_column);
-      }
-      if self.column_ids.len() < columns {
-        self.column_ids.resize(columns, None);  
+      if columns > self.data.len() as u64 {
+        let new_column = vec![Value::Empty; self.rows as usize];
+        self.data.resize(columns as usize, new_column);
       }
       self.columns = columns;
     }
     if rows > self.rows {
       for column in &mut self.data {
-        column.resize(rows, Value::Empty);
+        column.resize(rows as usize, Value::Empty);
       }
       self.rows = rows;
     }    
 
-  }
+  }/*
   
   pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
     let mut rows: Vec<Option<Vec<Value>>> = vec![];
