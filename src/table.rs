@@ -113,7 +113,7 @@ impl fmt::Debug for Index {
   }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq)]
 pub struct Table {
   pub id: u64,
   pub rows: u64,
@@ -144,8 +144,14 @@ impl Table {
     self.data.clear();
   }
 
-  pub fn get_row_index(&mut self, alias: u64) -> Option<&u64> {
-    self.row_aliases.get(&alias)
+  pub fn get_row_index(&self, row: Index) -> Option<u64> {
+    match row {
+      Index::Index(ix) => Some(ix),
+      Index::Alias(alias) => match self.row_aliases.get(&alias) {
+        Some(ix) => Some(ix.clone()),
+        None => None,
+      },
+    }
   }
 
   pub fn get_column_index(&self, alias: u64) -> Option<&u64> {
@@ -153,17 +159,15 @@ impl Table {
   }
 
   pub fn set_cell(&mut self, row: Index, column: Index, value: Value) -> Value {
-    let row_ix: usize = match row {
-      Index::Index(ix) => ix  as usize,
-      Index::Alias(alias) => *self.get_row_index(alias).unwrap() as usize,
-    };
+    let row_ix = self.get_row_index(row).unwrap();
     let column_ix: usize = match column {
       Index::Index(ix) => ix as usize,
       Index::Alias(alias) => *self.get_column_index(alias).unwrap() as usize,
     };
-    let old_value = self.data[column_ix - 1][row_ix - 1].clone();
+    /*let old_value = self.data[column_ix - 1][row_ix - 1].clone();
     self.data[column_ix - 1][row_ix - 1] = value;
-    old_value
+    old_value*/
+    Value::Empty
   }
 
   /*
@@ -287,20 +291,21 @@ impl Table {
     }
     rows
   }
-
-  pub fn get_row(&self, row_ix: usize) -> Option<Vec<Value>> {
+  */
+  pub fn get_row(&self, row: Index) -> Option<Vec<Value>> {
+    let row_ix = self.get_row_index(row).unwrap();
     if row_ix - 1 < self.rows {
       let mut row: Vec<Value> = vec![];
       // Get the index for the given attribute
-      for column_ix in 0 .. self.columns {
-        let cell = self.data[column_ix][row_ix - 1].clone();
+      for column_ix in 0 .. self.columns as usize {
+        let cell = self.data[column_ix][row_ix as usize - 1].clone();
         row.push(cell);
       }
       Some(row)
     } else {
       None
     }
-  }
+  }/*
 
   // Index into a cell without having to access the data member directly
   pub fn index(&self, row_ix: usize, column_ix: usize) -> Option<&Value> {
@@ -328,16 +333,16 @@ impl Table {
 }
 
 // ### Pretty Printing Tables
-/*
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let cell_width = 15;
-    let mut table_width = cell_width * self.columns + self.columns * 2;
+    let cell_width: usize = 15;
+    let columns = self.columns as usize;
+    let mut table_width: usize = cell_width * columns + columns * 2;
     if table_width < 20 {
       table_width = 20;
     }
-    let header_width = table_width - self.columns - 1;
+    let header_width: usize = table_width - columns - 1 ;
 
     // Print table header
     write!(f, "╔").unwrap();
@@ -367,18 +372,18 @@ impl fmt::Debug for Table {
         self.rows
       };
       let mut column_labels: Vec<Value> = Vec::new();
-      for (ix, id) in self.column_ids.iter().enumerate() {
+      /*for (ix, id) in self.column_ids.iter().enumerate() {
         match id {
           Some(column_id) => column_labels.push(Value::from_string(format!("{:?} ({:#x})", ix + 1, *column_id))),
           None => column_labels.push(Value::from_u64(ix as u64 + 1)),
         }
-      }
-      print_row(column_labels, cell_width, f);
-      print_inner_border(self.columns, cell_width,  f);
+      }*/
+      print_row(column_labels, cell_width as usize, f);
+      print_inner_border(self.columns as usize, cell_width as usize,  f);
       for m in 1 .. max_rows + 1 {
-        print_row(self.get_row(m).unwrap(), cell_width, f);
+        print_row(self.get_row(Index::Index(m)).unwrap(), cell_width as usize, f);
       }
-      print_bottom_border(self.columns, cell_width,  f);
+      print_bottom_border(self.columns as usize, cell_width as usize,  f);
     }
     Ok(())
   }
@@ -445,4 +450,4 @@ fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   }
   print_repeated_char("─", m, f);
   write!(f, "┘\n").unwrap();
-}*/
+}
