@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Block, Constraint};
+use mech_core::{Block, Constraint, Index};
 use mech_core::{Function, Comparator};
 use mech_core::Hasher;
 use parser;
@@ -32,9 +32,8 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
-  SelectData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
-  SelectDataById{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
-  SelectLocalData{ id: u64, rows: Vec<u64>, columns: Vec<u64> },
+  SelectData{ id: u64, rows: Vec<Index>, columns: Vec<Index> },
+  SelectLocalData{ id: u64, rows: Vec<Index>, columns: Vec<Index> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -94,7 +93,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{id, rows, columns} => {print!("SelectData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
-    Node::SelectDataById{id, rows, columns} => {print!("SelectDataById({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::SelectLocalData{id, rows, columns} => {print!("SelectLocalData({:#x} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
     Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
@@ -416,7 +414,7 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![]; 
+        let mut parameters: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![]; 
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
@@ -477,15 +475,12 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        let mut parameter_registers: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![];
+        let mut parameter_registers: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
-            Constraint::ScanColumnById{table, column} => {
-              parameter_registers.push((*table, vec![], vec![*column]));
-            }
             Constraint::NewLocalTable{id, rows, columns} => {
               parameter_registers.push((*id, vec![], vec![]));
             },
@@ -513,17 +508,13 @@ impl Compiler {
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::SelectData{id, rows, columns} => {
-        let r: Vec<u64> = rows.clone();
-        let c: Vec<u64> = columns.clone();
+        let r: Vec<Index> = rows.clone();
+        let c: Vec<Index> = columns.clone();
         constraints.push(Constraint::Scan{table: *id, rows: r, columns: c});
       },
-      Node::SelectDataById{id, rows, columns} => {
-        let c: Vec<u64> = columns.clone();
-        constraints.push(Constraint::ScanColumnById{table: *id, column: c[0]});
-      },
       Node::SelectLocalData{id, rows, columns} => {
-        let r: Vec<u64> = rows.clone();
-        let c: Vec<u64> = columns.clone();
+        let r: Vec<Index> = rows.clone();
+        let c: Vec<Index> = columns.clone();
         constraints.push(Constraint::ScanLocal{table: *id, rows: r, columns: c});
       },
       Node::Attribute{children} => {
@@ -533,7 +524,7 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameters: Vec<(u64, Vec<u64>, Vec<u64>)> = vec![]; 
+        let mut parameters: Vec<(u64, Vec<Index>, Vec<Index>)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
@@ -627,17 +618,12 @@ impl Compiler {
         let result = self.compile_nodes(children);
         let mut reversed = result.clone();
         reversed.reverse();
-        let mut columns = vec![];
-        let mut rows = vec![];
-        let mut by_id = false;
+        let mut columns: Vec<Index> = vec![];
+        let mut rows: Vec<Index> = vec![];
         for node in reversed {
           match node {
             Node::Table{name, id} => {
-              if by_id {
-                compiled.push(Node::SelectDataById{id, rows: rows.clone(), columns: columns.clone()});
-              } else {
-                compiled.push(Node::SelectData{id, rows: rows.clone(), columns: columns.clone()});
-              }
+              compiled.push(Node::SelectData{id, rows: rows.clone(), columns: columns.clone()});
             }, 
             Node::Identifier{name, id} => {
               compiled.push(Node::SelectLocalData{id, rows: rows.clone(), columns: columns.clone()});
@@ -645,8 +631,7 @@ impl Compiler {
             Node::DotIndex{column} => {
               match column[0] {
                 Node::Identifier{ref name, ref id} => {
-                  by_id = true;
-                  columns.push(*id);
+                  columns.push(Index::Alias(*id));
                 }, 
                 _ => (),
               }
