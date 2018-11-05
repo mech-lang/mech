@@ -378,7 +378,7 @@ impl Compiler {
           println!("{:?}", result);
           match result[0] {
             Constraint::Identifier{id} => {
-              column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_id: id});
+              column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_alias: id});
             }
             _ => (),
           }
@@ -433,7 +433,7 @@ impl Compiler {
           i += 1;
           match constraint {
             Constraint::Identifier{id} => {
-              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_id: id});
+              constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_alias: id});
             }
             _ => (),
           }
