@@ -154,16 +154,19 @@ impl Table {
     }
   }
 
-  pub fn get_column_index(&self, alias: u64) -> Option<&u64> {
-    self.column_aliases.get(&alias)
+  pub fn get_column_index(&self, column: Index) -> Option<u64> {
+    match column {
+      Index::Index(ix) => Some(ix),
+      Index::Alias(alias) => match self.column_aliases.get(&alias) {
+        Some(ix) => Some(ix.clone()),
+        None => None,
+      },
+    }
   }
 
   pub fn set_cell(&mut self, row: Index, column: Index, value: Value) -> Value {
     let row_ix = self.get_row_index(row).unwrap();
-    let column_ix: usize = match column {
-      Index::Index(ix) => ix as usize,
-      Index::Alias(alias) => *self.get_column_index(alias).unwrap() as usize,
-    };
+    let column_ix = self.get_column_index(row).unwrap();
     /*let old_value = self.data[column_ix - 1][row_ix - 1].clone();
     self.data[column_ix - 1][row_ix - 1] = value;
     old_value*/
