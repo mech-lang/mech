@@ -297,17 +297,19 @@ impl Block {
           }
         },
         Constraint::Constant{table, row, column, value} => {
-          /*
-          match self.memory.map.entry(table) {
+          let table_id = match table {
+            TableId::Local(id) => id,
+            _ => 0,
+          };
+          match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.grow_to_fit(row as usize, column as usize);
-              table_ref.set_cell(row as usize, column as usize, Value::from_i64(value));
+              table_ref.set_cell(row, column, Value::from_i64(value));
             },
             Entry::Vacant(v) => {    
             },
           };
-          self.updated = true;*/
+          self.updated = true;
         },
         Constraint::TableColumn{table, column_ix, column_id} => {
           /*
