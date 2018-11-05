@@ -272,6 +272,7 @@ impl Block {
 
     // Do any work we can up front
     for constraint in constraints {
+      println!("Adding Constraint {:?}", constraint);
       match constraint {
         Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
@@ -334,6 +335,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
+      println!("Step: {:?}", step);
       match step {
         Constraint::Function{operation, parameters, output} => { 
           /*
@@ -614,7 +616,7 @@ pub enum Constraint {
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
   Function {operation: operations::Function, parameters: Vec<(TableId, Vec<Index>, Vec<Index>)>, output: Vec<TableId>},
-  Constant {table: u64, row: u64, column: u64, value: i64},
+  Constant {table: TableId, row: Index, column: Index, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
   // Identity Constraints
@@ -637,7 +639,7 @@ impl fmt::Debug for Constraint {
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-      Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:#x}({:#x}, {:#x}))", value, table, row, column),
+      Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
       Constraint::CopyOutput{memory, output} => write!(f, "CopyOutput(M{:#x} -> O{:#x})", memory, output),
