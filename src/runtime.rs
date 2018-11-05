@@ -273,13 +273,12 @@ impl Block {
           self.updated = true;
         },
         Constraint::TableColumn{table, column_ix, column_id} => {
-          /*
           match self.memory.get_mut(table) {
             Some(table_ref) => {
-              table_ref.set_column_id(column_id, column_ix as usize);
+              table_ref.set_column_alias(column_id, column_ix);
             }
             None => (),
-          };*/
+          };
         },
         _ => (),
       }
