@@ -81,6 +81,23 @@ impl fmt::Debug for Value {
 // where each column represents an attribute, and each row represents an entity.
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub enum TableId {
+  Local(u64),
+  Global(u64)
+}
+
+impl fmt::Debug for TableId {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &TableId::Local(ref id) => write!(f, "Local({:#x})", id),
+      &TableId::Global(ref id) => write!(f, "Global({:#x})", id),
+    }
+  }
+}
+
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Index {
   Index(u64),
   Alias(u64)

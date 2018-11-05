@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use table::{Table, Value, Index};
+use table::{Table, TableId, Value, Index};
 use alloc::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -264,7 +264,6 @@ impl Block {
     for constraint in reversed {
       match constraint {
         Constraint::Scan{..} |
-        Constraint::ScanLocal{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
         Constraint::Insert{..} |
@@ -276,11 +275,9 @@ impl Block {
     // Do any work we can up front
     for constraint in constraints {
       match constraint {
-        Constraint::ScanLocal{table, rows, columns} => {
-        },
         Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
-          self.input_registers.push(Register::input(table, 1));
+          //self.input_registers.push(Register::input(table, 1));
         },
         Constraint::AliasLocalTable{table, alias} => {
           // TODO Raise an error here if the alias already exists
@@ -289,9 +286,9 @@ impl Block {
         Constraint::Function{operation, parameters, output} => {
 
         },
-        Constraint::NewTable{..} => self.updated = true,
-        Constraint::NewLocalTable{id, rows, columns} => {
-          self.memory.register(Table::new(id, rows, columns));
+        Constraint::NewTable{..} => {
+          // TODO Register local table here
+          self.updated = true
         },
         Constraint::Constant{table, row, column, value} => {
           /*
@@ -528,9 +525,14 @@ impl Block {
           store.process_transaction(&Transaction::from_changeset(changes));*/
         },
         Constraint::NewTable{id, rows, columns} => {
-          store.process_transaction(&Transaction::from_change(
-            Change::NewTable{id: *id, rows: *rows, columns: *columns},
-          ));
+          match id {
+            TableId::Global(id) => {
+              store.process_transaction(&Transaction::from_change(
+                Change::NewTable{id: *id, rows: *rows, columns: *columns},
+              ));
+            }
+            _ => (),
+          }
         },
         _ => (),
       } 
@@ -597,18 +599,16 @@ pub struct Pipe {
 #[derive(Clone)]
 pub enum Constraint {
   Data {table: u64, column: u64},
-  NewTable{id: u64, rows: u64, columns: u64},
+  NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_id: u64},
-  NewLocalTable{id: u64, rows: u64, columns: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  Scan {table: u64, rows: Vec<Index>, columns: Vec<Index>},
-  ScanLocal {table: u64, rows: Vec<Index>, columns: Vec<Index>},
+  Scan {table: TableId, rows: Vec<Index>, columns: Vec<Index>},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
-  Function {operation: operations::Function, parameters: Vec<(u64, Vec<Index>, Vec<Index>)>, output: Vec<u64>},
+  Function {operation: operations::Function, parameters: Vec<(TableId, Vec<Index>, Vec<Index>)>, output: Vec<TableId>},
   Constant {table: u64, row: u64, column: u64, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
@@ -627,10 +627,8 @@ impl fmt::Debug for Constraint {
     match self {
       Constraint::Reference{table, rows, columns, destination} => write!(f, "Reference(@{:#x}(rows: {:?}, cols: {:?}) -> {:?})", table, rows, columns, destination),
       Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
-      Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:#x}({:?}x{:?}))", id, rows, columns),
-      Constraint::NewLocalTable{id, rows, columns} => write!(f, "NewLocalTable(#{:#x}({:?}x{:?}))", id, rows, columns),
-      Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:#x}({:?} x {:?}))", table, rows, columns),
-      Constraint::ScanLocal{table, rows, columns} => write!(f, "ScanLocal(#{:#x}({:?} x {:?}))", table, rows, columns),
+      Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
+      Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
