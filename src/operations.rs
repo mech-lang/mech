@@ -35,62 +35,59 @@ macro_rules! binary_math {
       match (lhs_table, rhs_table) {
         // we have both tables, so let's do some math
         (Some(lhs), Some(rhs)) => {
-          // We're operating on the whole of both tables
-          if lhs_rows.is_empty() && rhs_rows.is_empty() && lhs_columns.is_empty() && rhs_columns.is_empty() {
-            // The tables are the same size
-            if lhs.rows == rhs.rows && lhs.columns == rhs.columns {
-              out.grow_to_fit(lhs.rows, lhs.columns);
-              for i in 0..lhs.columns {
-                for j in 0..lhs.rows {
-                  match (&lhs.data[i][j], &rhs.data[i][j]) {
-                    (Value::Number(x), Value::Number(y)) => {
-                      out.data[i][j] = Value::from_i64(x $op y);
-                    },
-                    _ => (),
-                  }
-                  
+          // Get the math dimensions
+          let lhs_height = if lhs_rows.is_empty() { lhs.rows }
+                           else { lhs_rows.len() };
+          let lhs_width = if lhs_columns.is_empty() { lhs.columns }
+                          else { lhs_columns.len() }; 
+          let rhs_height = if rhs_rows.is_empty() { rhs.rows }
+                           else { rhs_rows.len() };
+          let rhs_width = if rhs_columns.is_empty() { rhs.columns }
+                          else { rhs_columns.len() }; 
+
+          // The tables are the same size
+          if lhs_height == rhs_height && lhs_width == rhs_width {
+            out.grow_to_fit(lhs_height, lhs_width);
+            for i in 0..lhs_width {
+              for j in 0..lhs_height {
+                match (&lhs.data[i][j], &rhs.data[i][j]) {
+                  (Value::Number(x), Value::Number(y)) => {
+                    out.data[i][j] = Value::from_i64(x $op y);
+                  },
+                  _ => (),
+                }
+              }
+            }
+          // Add a scalar 5 + [1 2 3]
+          } else if lhs_width == 1 && lhs_height == 1 {
+            out.grow_to_fit(rhs_height, rhs_width); 
+            for i in 0..rhs_width {
+              for j in 0..rhs_height {
+                match (&lhs.data[0][0], &rhs.data[i][j]) {
+                  (Value::Number(x), Value::Number(y)) => {
+                    out.data[i][j] = Value::from_i64(x $op y);
+                  },
+                  _ => (),
+                }
+              }
+            }
+          } else if rhs_width == 1 && rhs_height == 1 {
+            out.grow_to_fit(lhs_height, lhs_width); 
+            for i in 0..lhs_width {
+              for j in 0..lhs_height {
+                match (&lhs.data[i][j], &rhs.data[0][0]) {
+                  (Value::Number(x), Value::Number(y)) => {
+                    out.data[i][j] = Value::from_i64(x $op y);
+                  },
+                  _ => (),
                 }
               }
             }
           }
+ 
         },
         _ => (),
       }
-      /* 
-      // Operate element wise
-      if lhs.len() == rhs.len() {
-        for i in 0 .. lhs.len() {     
-          match (&lhs[i], &rhs[i]) {
-            (Value::Number(x), Value::Number(y)) => {
-              out.push(Value::from_i64(*x $op *y));
-            },
-            _ => {},
-          } 
-        }
-      // Add vector to scalar  
-      }
-        /* else if lhs_length == 1 && rhs_length > 1 {
-          for i in 1 .. rhs_length + 1 {     
-            match (store.index(1, lhs), store.index(i, rhs)) {
-              (Some(Value::Number(x)), Some(Value::Number(y))) => {
-                store.set_cell(i, out, Value::from_i64(*x as i64 $op *y as i64)); 
-              },
-              _ => {store.set_cell(i, out, Value::Empty);},
-            } 
-            out_length = rhs_length;
-          }
-        } else if lhs_length > 1 && rhs_length == 1 {
-          for i in 1 .. lhs_length + 1 {     
-            match (store.index(i, lhs), store.index(1, rhs)) {
-              (Some(Value::Number(x)), Some(Value::Number(y))) => {
-                store.set_cell(i, out, Value::from_i64(*x as i64 $op *y as i64)); 
-              },
-              _ => {store.set_cell(i, out, Value::Empty);},
-            }
-            out_length = lhs_length; 
-          }
-        }
-        lengths[out - 1] = out_length as u64;*/*/
     }
     
   )
