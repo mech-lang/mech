@@ -219,6 +219,10 @@ impl Compiler {
             _ => "".to_string()
           };
           let mut result = self.compile_constraint(&constraint_node);
+          // ----------------------------------------------------------------------------------------------------------
+          // Planner
+          // ----------------------------------------------------------------------------------------------------------
+          // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
@@ -238,10 +242,6 @@ impl Compiler {
             }
             
           }
-          // ----------------------------------------------------------------------------------------------------------
-          // Planner
-          // ----------------------------------------------------------------------------------------------------------
-          // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
             plan.insert(0, (constraint_text, produces, consumes, this_one));
