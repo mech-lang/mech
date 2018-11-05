@@ -263,11 +263,9 @@ impl Block {
     reversed.reverse();
     for constraint in reversed {
       match constraint {
-        Constraint::Scan{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
-        Constraint::Insert{..} |
-        Constraint::NewTable{..} => self.plan.push(constraint.clone()),
+        Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
     }
@@ -289,9 +287,13 @@ impl Block {
         Constraint::Function{operation, parameters, output} => {
 
         },
-        Constraint::NewTable{..} => {
-          // TODO Register local table here
-          self.updated = true
+        Constraint::NewTable{id, rows, columns} => {
+          match id {
+            TableId::Local(id) => {
+              self.memory.insert(Table::new(id, rows, columns));
+            }
+            _ => (),
+          }
         },
         Constraint::Constant{table, row, column, value} => {
           /*
