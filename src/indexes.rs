@@ -2,7 +2,7 @@
 
 // ## Prelude
 
-use table::{Value, Table};
+use table::{Value, Table, Index};
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::fmt;
@@ -90,7 +90,7 @@ impl Hasher {
 pub struct TableIndex {
   pub map: HashMap<u64, Table>,
   pub aliases: HashMap<u64, u64>,
-  pub changed_this_round: HashSet<(usize, usize)>,
+  pub changed_this_round: HashSet<(u64, Index)>,
 }
 
 impl TableIndex {

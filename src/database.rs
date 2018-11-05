@@ -5,7 +5,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
-use table::{Value, Table};
+use table::{Value, Table, Index};
 use indexes::TableIndex;
 
 // ## Changes
@@ -16,7 +16,7 @@ pub enum Change {
   Set{table: u64, row: u64, column: u64, value: Value},
   Remove{table: u64, row: u64, column: u64, value: Value},
   NewTable{id: u64, rows: u64, columns: u64},
-  RenameColumn{table: u64, column_ix: u64, column_id: u64},
+  RenameColumn{table: u64, column_ix: u64, column_alias: u64},
   RemoveTable{id: u64, rows: u64, columns: u64},
 }
 
@@ -28,7 +28,7 @@ impl fmt::Debug for Change {
       Change::Set{table, row, column, value} => write!(f, "<set> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<remove> #{:#x} [{:#x} {:#x}: {:?}]", table, row, column, value),
       Change::NewTable{id, rows, columns} => write!(f, "<newtable> #{:#x} [{:?} x {:?}]", id, rows, columns),
-      Change::RenameColumn{table, column_ix, column_id} => write!(f, "<renamecolumn> #{:#x} {:#x} -> {:#x}", table, column_ix, column_id),
+      Change::RenameColumn{table, column_ix, column_alias} => write!(f, "<renamecolumn> #{:#x} {:#x} -> {:#x}", table, column_ix, column_alias),
       Change::RemoveTable{id, rows, columns} => write!(f, "<removetable> #{:#x} [{:?} x {:?}]", id, rows, columns),
     }
   }
@@ -227,16 +227,14 @@ impl Interner {
       Change::RemoveTable{id, rows: _, columns: _} => {
         self.tables.remove(&id);
       }
-      Change::RenameColumn{table, column_ix, column_id} => {
-        /*
+      Change::RenameColumn{table, column_ix, column_alias} => { 
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
-            table_ref.set_column_id(*column_id, *column_ix as usize);
+            table_ref.set_column_alias(*column_alias, *column_ix);
           }
           None => (),
         };
-        self.tables.changed_this_round.insert((*table as usize, *column_id as usize));
-        */
+        self.tables.changed_this_round.insert((*table, Index::Alias(*column_alias)));
       },
     }
     if self.offset == 0 {

@@ -106,7 +106,7 @@ impl fmt::Debug for TableId {
 }
 
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Index {
   Index(u64),
   Alias(u64)
@@ -190,24 +190,17 @@ impl Table {
     old_value
   }
 
-  /*
-  pub fn set_column_id(&mut self, id: u64, column_ix: usize) {
-    match self.column_aliases.entry(id) {
+  pub fn set_column_alias(&mut self, alias: u64, ix: u64) {
+    match self.column_aliases.entry(alias) {
       Entry::Occupied(_) => {
         ()
       },
       Entry::Vacant(v) => {
-        v.insert(column_ix);
-        if self.column_ids.len() >= column_ix {
-          self.column_ids[column_ix - 1] = Some(id);
-        } else {
-          self.column_ids.resize(column_ix, None);
-          self.column_ids[column_ix - 1] = Some(id);
-        }
+        v.insert(ix);
       },
     }
   }
-
+  /*
   pub fn add_row(&mut self) {
     let rows = self.rows + 1;
     let columns = self.columns;

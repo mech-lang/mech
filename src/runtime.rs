@@ -25,7 +25,7 @@ use operations::Function;
 #[derive(Clone)]
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
-  pub pipes_map: HashMap<(usize, usize), Vec<Address>>,
+  pub pipes_map: HashMap<(u64, Index), Vec<Address>>,
   pub ready_blocks: HashSet<usize>,
 }
 
@@ -53,8 +53,8 @@ impl Runtime {
     }
     // Take the input registers from the block and add them to the pipes map
     for (ix, register) in block.input_registers.iter().enumerate() {
-      let table = register.table as usize;
-      let column = register.column as usize;
+      let table = register.table;
+      let column = register.column.clone();
       let new_address = Address{block: block.id, register: ix + 1};
       let listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
       listeners.push(new_address);
@@ -159,55 +159,16 @@ impl fmt::Debug for Address {
 #[derive(Clone)]
 pub struct Register {
   pub table: u64,
-  pub column: u64,
+  pub column: Index,
 }
 
 impl Register {
   
-  pub fn new() -> Register { 
+  pub fn new(table: u64, column: Index) -> Register { 
     Register {
       table: 0,
-      column: 0,
+      column: column,
     }
-  }
-
-  pub fn input(t: u64, n: u64) -> Register {
-    Register {
-      table: t,
-      column: n,
-    }
-  }
-
-  pub fn memory(n: u64) -> Register {
-    Register {
-      table: 0,
-      column: n,
-    }
-  }
-
-  pub fn output(t: u64, n: u64) -> Register {
-    Register {
-      table: t,
-      column: n,
-    }
-  }
-
-  pub fn get(&self) -> (u64, u64) {
-    (self.table, self.column)
-  }
-
-  pub fn set(&mut self, index: &(u64, u64)) {
-    let (table, column) = index;
-    self.table = *table;
-    self.column = *column;
-  }
-
-  pub fn table(&self) -> u64 {
-    self.table
-  }
-
-  pub fn column(&self) -> u64 {
-    self.column
   }
 
 }
@@ -215,7 +176,7 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "({:#x}, {:#x})", self.table, self.column)
+    write!(f, "({:#x}, {:?})", self.table, self.column)
   }
 }
 
@@ -521,7 +482,7 @@ impl Block {
           let from_table_ref = self.memory.get(*from_table).unwrap();
           let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
           for (alias, ix) in from_table_ref.column_aliases.iter() {
-            changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_id: *alias});
+            changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
           }
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
             for (row_ix, data) in column.iter().enumerate() {
