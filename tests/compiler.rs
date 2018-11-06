@@ -5,7 +5,7 @@ extern crate mech_core;
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{Hasher, Core};
+use mech_core::{Hasher, Core, Index};
 
 macro_rules! compile_string {
   ($func:ident, $test:tt) => (
@@ -30,10 +30,10 @@ macro_rules! test_math {
       core.register_blocks(compiler.blocks);
       core.step();
       let table = Hasher::hash_str("test");
-      let row = 1;
-      let column = 1;
+      let row = Index::Index(1);
+      let column = Index::Index(1);
       let test = $test;
-      assert_eq!(core.index(table, row, column).unwrap().as_u64().unwrap(), test);
+      assert_eq!(core.index(table, &row, &column).unwrap().as_u64().unwrap(), test);
     }
   )
 }
