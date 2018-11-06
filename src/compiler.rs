@@ -449,7 +449,7 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
         //constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: self.column as u64});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
         constraints.append(&mut result);
         self.row = store_row;
         self.column = store_col;
