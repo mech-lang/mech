@@ -28,7 +28,7 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
-  FilterExpression{ children: Vec<Node> },
+  FilterExpression{ name: String, children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
@@ -98,7 +98,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
+    Node::FilterExpression{name, children} => {print!("FilterExpression({:?})\n", name); Some(children)},
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
@@ -439,6 +439,42 @@ impl Compiler {
           }
         }
       },
+      Node::FilterExpression{name, children} => {
+        let comparator = match name.as_ref() {
+          ">" => Comparator::GreaterThan,
+          "<" => Comparator::LessThan,
+          _ => Comparator::Undefined,
+        };
+        self.table = Hasher::hash_string(format!("FilterExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        let mut output = TableId::Local(self.table);
+        let mut parameters: Vec<Vec<Constraint>> = vec![];
+        for child in children {
+          self.column += 1;
+          parameters.push(self.compile_constraint(child));
+        }
+        let mut parameter_registers: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![];
+        for parameter in &parameters {
+          match &parameter[0] {
+            Constraint::NewTable{id, rows, columns} => {
+              parameter_registers.push((id.clone(), vec![], vec![]));
+            },
+            Constraint::Scan{table, rows, columns} => {
+              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
+            },
+            Constraint::Function{operation, parameters, output} => {
+              for o in output {
+                parameter_registers.push((o.clone(), vec![], vec![]));
+              }
+            },
+            _ => (),
+          };
+        }
+        constraints.push(Constraint::NewTable{id: output.clone(), rows: 0, columns: 0});
+        constraints.push(Constraint::Filter{comparator, lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
+        for mut p in &parameters {
+          constraints.append(&mut p.clone());
+        }  
+      },
       Node::MathExpression{children} => {
         let store_row = self.row;
         let store_col = self.column;
@@ -718,13 +754,15 @@ impl Compiler {
       parser::Node::FilterExpression{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
+        let mut name = String::new();
         for node in result {
           match node {
             Node::Token{token: Token::Space, ..} => (), 
+            Node::Token{token, byte} => name = byte_to_char(byte).unwrap().to_string(),
             _ => children.push(node),
           }
         }
-        compiled.push(Node::FilterExpression{children});
+        compiled.push(Node::FilterExpression{name, children});
       },
       parser::Node::InlineTable{children} => {
         let result = self.compile_nodes(children);
@@ -1009,6 +1047,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::DataOrConstant{children} |
       parser::Node::SpaceOrTab{children} |
       parser::Node::Whitespace{children} |
       parser::Node::NewLine{children} |
