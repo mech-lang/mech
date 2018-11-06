@@ -106,7 +106,6 @@ impl Core {
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
-
   pub fn index(&mut self, table: u64, row: &Index, column: &Index) -> Option<&Value> {
     match self.store.tables.get(table) {
       Some(table_ref) => {

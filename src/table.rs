@@ -290,18 +290,8 @@ impl Table {
       }
       self.rows = rows;
     }    
-
-  }/*
-  
-  pub fn get_rows(&self, row_ixes: Vec<usize>) -> Vec<Option<Vec<Value>>> {
-    let mut rows: Vec<Option<Vec<Value>>> = vec![];
-    for ix in row_ixes {
-      let row = self.get_row(ix);
-      rows.push(row);
-    }
-    rows
   }
-  */
+  
   pub fn get_row(&self, row: &Index) -> Option<Vec<Value>> {
     match self.get_row_index(row) {
       Some(row_ix) => {
