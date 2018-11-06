@@ -44,7 +44,7 @@ macro_rules! binary_math {
       let lhs_is_scalar = lhs_columns.is_empty() && lhs_width == 1 && lhs_rows.is_empty() && lhs_height == 1;
       let rhs_is_scalar = rhs_columns.is_empty() && rhs_width == 1 && rhs_rows.is_empty() && rhs_height == 1;
 
-      // The tables are the same size
+      // The tables are the same size, and we're operating over the whole of both
       if lhs_columns.is_empty() && rhs_columns.is_empty() {
         out.grow_to_fit(lhs_height, lhs_width);
         for i in 0..lhs_width as usize {
@@ -57,6 +57,7 @@ macro_rules! binary_math {
             }
           }
         }
+      // Operate with scalar on the left
       } else if lhs_is_scalar {
         out.grow_to_fit(rhs_height, rhs_width);
         for column in rhs_columns {
@@ -70,6 +71,7 @@ macro_rules! binary_math {
             }
           }
         }
+      // Operate with scalar on the right
       } else if rhs_is_scalar {
         out.grow_to_fit(lhs_height, lhs_width);
         for column in lhs_columns {
@@ -77,6 +79,19 @@ macro_rules! binary_math {
             match (lhs.index(&Index::Index(j), column).unwrap(), &rhs.data[0][0]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[0][j as usize - 1] = Value::from_i64(x $op y);
+              },
+              _ => (),
+            }
+          }
+        }
+      // Operate on a selection of columns
+      } else if rhs_width == lhs_width && !lhs_columns.is_empty() && !lhs_columns.is_empty()  {
+        out.grow_to_fit(lhs_height, lhs_width);
+        for (i, (lhs_column, rhs_column)) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+          for j in 1..lhs_height + 1 {
+            match (lhs.index(&Index::Index(j), lhs_column).unwrap(), rhs.index(&Index::Index(j), rhs_column).unwrap()) {
+              (Value::Number(x), Value::Number(y)) => {
+                out.data[i][j as usize - 1] = Value::from_i64(x $op y);
               },
               _ => (),
             }
