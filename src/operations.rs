@@ -85,7 +85,7 @@ macro_rules! binary_math {
           }
         }
       // Operate on a selection of columns
-      } else if rhs_width == lhs_width && !lhs_columns.is_empty() && !lhs_columns.is_empty()  {
+      } else if rhs_width == lhs_width && lhs_height == rhs_height &&!lhs_columns.is_empty() && !lhs_columns.is_empty()  {
         out.grow_to_fit(lhs_height, lhs_width);
         for (i, (lhs_column, rhs_column)) in lhs_columns.iter().zip(rhs_columns).enumerate() {
           for j in 1..lhs_height + 1 {
