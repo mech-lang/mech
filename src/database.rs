@@ -186,6 +186,7 @@ impl Interner {
           None => (),
         };
         self.tables.changed_this_round.insert((table.clone(), column.clone()));
+        self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
       },
       Change::Remove{table, row, column, value} => {
         /*
