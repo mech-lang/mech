@@ -330,14 +330,13 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
-          /*
           // Concat Functions  
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
             for (table, rows, columns) in parameters {
-              let table_ref = match self.memory.get(*table) {
-                Some(table_ref) => table_ref,
-                None => store.get_table(*table).unwrap(),
+              let table_ref = match table {
+                TableId::Local(id) => self.memory.get(*id).unwrap(),
+                TableId::Global(id) => store.get_table(*id).unwrap(),
               };
               if self.scratch.columns == 0 {
                 self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
@@ -352,17 +351,12 @@ impl Block {
                 self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
               }
             }
-            let out = self.memory.get_mut(*out_table).unwrap();
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
-            out.row_ids = self.scratch.row_ids.clone();
-            //out.column_ids = self.scratch.column_ids.clone();
-            out.column_aliases = self.scratch.column_aliases.clone();
-            out.row_aliases = self.scratch.row_aliases.clone();
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
-          */
           // Infix Math
           else if parameters.len() == 2 {
             // Pass the parameters to the appropriate function
