@@ -166,7 +166,7 @@ impl Register {
   
   pub fn new(table: u64, column: Index) -> Register { 
     Register {
-      table: 0,
+      table: table,
       column: column,
     }
   }
@@ -189,7 +189,6 @@ pub struct Block {
   pub updated: bool,
   pub plan: Vec<Constraint>,
   pub input_registers: Vec<Register>,
-  pub memory_registers: Vec<Register>,
   pub output_registers: Vec<Register>,
   pub constraints: Vec<(String, Vec<Constraint>)>,
   memory: TableIndex,
@@ -207,7 +206,6 @@ impl Block {
       updated: false,
       plan: Vec::new(),
       input_registers: Vec::with_capacity(1),
-      memory_registers: Vec::with_capacity(1),
       output_registers: Vec::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
@@ -233,7 +231,6 @@ impl Block {
 
     // Do any work we can up front
     for constraint in constraints {
-      println!("Adding Constraint {:?}", constraint);
       match constraint {
         Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
@@ -247,7 +244,16 @@ impl Block {
           }
         },
         Constraint::Function{operation, parameters, output} => {
-
+          for (table, rows, columns) in parameters {
+            match table {
+              TableId::Global(id) => {
+                for column in columns {
+                  self.input_registers.push(Register{table: id, column});
+                }
+              }
+              _ => (),
+            }
+          }
         },
         Constraint::NewTable{id, rows, columns} => {
           match id {
@@ -310,7 +316,6 @@ impl Block {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
               };
-              println!("{:?}", self.scratch);
               if self.scratch.rows == 0 {
                 self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
                 self.scratch.data = table_ref.data.clone();
@@ -357,6 +362,7 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
+          */
           // Infix Math
           else if parameters.len() == 2 {
             // Pass the parameters to the appropriate function
@@ -374,27 +380,24 @@ impl Block {
             let out_table = &output[0];
             // TODO This seems very inefficient. Find a better way to do this. 
             // I'm having trouble getting the borrow checker to understand what I'm doing here
+            
             {     
-              let lhs = match self.memory.get(*lhs_table) {
-                Some(table_ref) => Some(table_ref),
-                None => store.get_table(*lhs_table),
+              let lhs = match lhs_table {
+                TableId::Local(id) => self.memory.get(*id).unwrap(),
+                TableId::Global(id) => store.get_table(*id).unwrap(),
               };
-              let rhs = match self.memory.get(*rhs_table) {
-                Some(table_ref) => Some(table_ref),
-                None => store.get_table(*rhs_table),
+              let rhs = match rhs_table {
+                TableId::Local(id) => self.memory.get(*id).unwrap(),
+                TableId::Global(id) => store.get_table(*id).unwrap(),
               };
               op_fun(lhs,lhs_rows,lhs_columns,rhs,rhs_rows,rhs_columns, &mut self.scratch);
             }
-            let out = self.memory.get_mut(*out_table).unwrap();
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
-            out.row_ids = self.scratch.row_ids.clone();
-            out.column_ids = self.scratch.column_ids.clone();
-            out.column_aliases = self.scratch.column_aliases.clone();
-            out.row_aliases = self.scratch.row_aliases.clone();
             out.data = self.scratch.data.clone();
             self.scratch.clear();
-          }*/
+          }
         },
         /*
         Constraint::Filter{comparator, lhs, rhs, memory} => {
@@ -516,10 +519,6 @@ impl fmt::Debug for Block {
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
-      write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
-    }
-    write!(f, "│ Memory: {:?}\n", self.memory_registers.len()).unwrap();
-    for (ix, register) in self.memory_registers.iter().enumerate() {
       write!(f, "│  {:?}. {:?}\n", ix + 1, register).unwrap();
     }
     write!(f, "│ Output: {:?}\n", self.output_registers.len()).unwrap();
