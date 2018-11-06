@@ -247,8 +247,12 @@ impl Block {
           for (table, rows, columns) in parameters {
             match table {
               TableId::Global(id) => {
-                for column in columns {
-                  self.input_registers.push(Register{table: id, column});
+                if columns.is_empty() {
+                  self.input_registers.push(Register{table: id, column: Index::Index(0)});
+                } else {
+                  for column in columns {
+                    self.input_registers.push(Register{table: id, column});
+                  }
                 }
               }
               _ => (),
