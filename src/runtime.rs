@@ -18,7 +18,7 @@ use hashmap_core::map::{HashMap, Entry};
 use hashmap_core::set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::Function;
+use operations::{Function, Comparator};
 
 // ## Runtime
 
@@ -222,6 +222,7 @@ impl Block {
     reversed.reverse();
     for constraint in reversed {
       match constraint {
+        Constraint::Filter{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
@@ -378,7 +379,6 @@ impl Block {
             let out_table = &output[0];
             // TODO This seems very inefficient. Find a better way to do this. 
             // I'm having trouble getting the borrow checker to understand what I'm doing here
-            
             {     
               let lhs = match lhs_table {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
@@ -397,10 +397,33 @@ impl Block {
             self.scratch.clear();
           }
         },
-        /*
-        Constraint::Filter{comparator, lhs, rhs, memory} => {
-          operations::compare(comparator, *lhs as usize, *rhs as usize, *memory as usize, &mut self.memory, &mut self.column_lengths);
+        Constraint::Filter{comparator, lhs, rhs, output} => {
+          let op_fun = match comparator {
+            Comparator::GreaterThan => operations::compare_greater_than,
+            Comparator::LessThan => operations::compare_less_than,
+            _ => operations::compare_undefined, 
+          };
+          let (lhs_table, lhs_rows, lhs_columns) = &lhs;
+          let (rhs_table, rhs_rows, rhs_columns) = &rhs;
+          let out_table = output;
+          {
+            let lhs_table_ref = match lhs_table {
+              TableId::Local(id) => self.memory.get(*id).unwrap(),
+              TableId::Global(id) => store.get_table(*id).unwrap(),
+            };
+            let rhs_table_ref = match rhs_table {
+              TableId::Local(id) => self.memory.get(*id).unwrap(),
+              TableId::Global(id) => store.get_table(*id).unwrap(),
+            };
+            op_fun(lhs_table_ref,lhs_rows,lhs_columns,rhs_table_ref,rhs_rows,rhs_columns, &mut self.scratch);
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            out.rows = self.scratch.rows;
+            out.columns = self.scratch.columns;
+            out.data = self.scratch.data.clone();
+            self.scratch.clear();
+          }
         },
+        /*
         Constraint::Condition{truth, result, default, memory} => {
           for i in 1 .. self.memory.rows + 1 {
             match self.memory.index(i, *truth as usize) {
@@ -566,7 +589,7 @@ pub enum Constraint {
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
-  Filter {comparator: operations::Comparator, lhs: u64, rhs: u64, memory: u64},
+  Filter {comparator: operations::Comparator, lhs: (TableId, Vec<Index>, Vec<Index>), rhs: (TableId, Vec<Index>, Vec<Index>), output: TableId},
   Function {operation: operations::Function, parameters: Vec<(TableId, Vec<Index>, Vec<Index>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
@@ -589,7 +612,7 @@ impl fmt::Debug for Constraint {
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
       Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
-      Constraint::Filter{comparator, lhs, rhs, memory} => write!(f, "Filter({:#x} {:?} {:#x} -> M{:?})", lhs, comparator, rhs, memory),
+      Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
