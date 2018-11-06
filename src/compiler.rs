@@ -520,6 +520,9 @@ impl Compiler {
             Constraint::NewTable{id, rows, columns} => {
               parameters.push((id.clone(), vec![], vec![]));
             },
+            Constraint::Scan{table, rows, columns} => {
+              parameters.push((table.clone(), rows.clone(), columns.clone()));
+            }
             _ => (),
           }
           compiled.append(&mut result);
