@@ -5,7 +5,7 @@ extern crate mech_core;
 
 use test::Bencher;
 use mech_core::{Core, Transaction, Change};
-use mech_core::{Table, Value};
+use mech_core::{Table, Value, Index};
 use mech_core::Hasher;
 
 #[bench]
@@ -42,7 +42,7 @@ fn db_register_add(b: &mut Bencher) {
     );
     b.iter(|| {
         let txn = Transaction::from_change(
-            Change::Set{table: students, row: 1, column: 1, value: Value::from_u64(100)}
+            Change::Set{table: students, row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(100)}
         );
         db.process_transaction(&txn);
     });
