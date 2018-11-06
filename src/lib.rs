@@ -106,11 +106,11 @@ impl Core {
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
-/*
-  pub fn index(&mut self, table: u64, row: u64, column: u64) -> Option<&Value> {
+
+  pub fn index(&mut self, table: u64, row: &Index, column: &Index) -> Option<&Value> {
     match self.store.tables.get(table) {
       Some(table_ref) => {
-        match table_ref.index(row as usize, column as usize) {
+        match table_ref.index(row, column) {
           Some(cell_data) => Some(cell_data),
           None => None,
         }
@@ -118,18 +118,6 @@ impl Core {
       None => None,
     }
   }
-
-  pub fn index_by_alias(&mut self, table: u64, row: u64, column: &u64) -> Option<&Value> {
-    match self.store.tables.get(table) {
-      Some(table_ref) => {
-        match table_ref.index_by_alias(row as usize, column) {
-          Some(cell_data) => Some(cell_data),
-          None => None,
-        }
-      },
-      None => None,
-    }
-  }*/
 
   pub fn step_backward(&mut self, steps: usize) {
     for _ in 0..steps {
