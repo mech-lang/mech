@@ -21,7 +21,7 @@ Keep the balls within the y boundary
   ~ #ball.x
   iy = #ball.y > #boundary
   #ball.y[iy] := #boundary
-  #ball.vy[iy] := 0 - 1 * #ball.vy * 80 / 100
+  #ball.vy[iy] := -#ball.vy * 80%
 
 Keep the balls within the x boundary
   ~ #ball.y
