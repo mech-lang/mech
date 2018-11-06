@@ -315,17 +315,19 @@ impl Table {
       }
       None => None,
     }
-  }/*
+  }
 
   // Index into a cell without having to access the data member directly
-  pub fn index(&self, row_ix: usize, column_ix: usize) -> Option<&Value> {
+  pub fn index(&self, row: &Index, column: &Index) -> Option<&Value> {
+    let row_ix = self.get_row_index(row).unwrap();
+    let column_ix = self.get_column_index(column).unwrap();
     if column_ix <= self.columns && row_ix <= self.rows {
-      Some(&self.data[column_ix - 1][row_ix - 1])
+      Some(&self.data[column_ix as usize - 1][row_ix as usize - 1])
     } else {
       None
     }
   }
-
+/*
   pub fn index_by_alias(&self, row_ix: usize, column_alias: &u64) -> Option<&Value> {
     let column_ix = self.column_aliases.get(column_alias).unwrap();
     if *column_ix <= self.columns && row_ix <= self.rows {
