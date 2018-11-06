@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 use alloc::fmt;
-use table::{Table, Value};
+use table::{Table, Value, Index};
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -29,88 +29,71 @@ pub enum Function {
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs_table: Option<&Table>, lhs_rows: &Vec<u64>, lhs_columns: &Vec<u64>, 
-                      rhs_table: Option<&Table>, rhs_rows: &Vec<u64>, rhs_columns: &Vec<u64>,
+    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Index>, lhs_columns: &Vec<Index>, 
+                      rhs: &Table, rhs_rows: &Vec<Index>, rhs_columns: &Vec<Index>,
                       out: &mut Table) {
-      match (lhs_table, rhs_table) {
-        // we have both tables, so let's do some math
-        (Some(lhs), Some(rhs)) => {
-          // Get the math dimensions
-          let lhs_height = if lhs_rows.is_empty() { lhs.rows }
-                           else { lhs_rows.len() };
-          let lhs_width = if lhs_columns.is_empty() { lhs.columns }
-                          else { lhs_columns.len() };
-          let rhs_height = if rhs_rows.is_empty() { rhs.rows }
-                           else { rhs_rows.len() };
-          let rhs_width = if rhs_columns.is_empty() { rhs.columns }
-                          else { rhs_columns.len() }; 
-          println!("{:?} x {:?}, {:?} x {:?} {:?} {:?}", lhs_height, lhs_width, rhs_height, rhs_width, lhs, rhs);
+      // Get the math dimensions
+      let lhs_height = if lhs_rows.is_empty() { lhs.rows }
+                       else { lhs_rows.len() as u64 };
+      let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
+                       else { lhs_columns.len() as u64 };
+      let rhs_height = if rhs_rows.is_empty() { rhs.rows }
+                       else { rhs_rows.len() as u64 };
+      let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
+                       else { rhs_columns.len() as u64 }; 
+      let lhs_is_scalar = lhs_columns.is_empty() && lhs_width == 1 && lhs_rows.is_empty() && lhs_height == 1;
+      let rhs_is_scalar = rhs_columns.is_empty() && rhs_width == 1 && rhs_rows.is_empty() && rhs_height == 1;
 
-
-          // The tables are the same size
-          if lhs_height == rhs_height && lhs_width == rhs_width {
-            println!("WE ARE HERE2");
-            out.grow_to_fit(lhs_height, lhs_width);
-            for i in 0..lhs_width {
-              for j in 0..lhs_height {
-                match (&lhs.data[i][j], &rhs.data[i][j]) {
-                  (Value::Number(x), Value::Number(y)) => {
-                    out.data[i][j] = Value::from_i64(x $op y);
-                  },
-                  _ => (),
-                }
-              }
-            }
-          // Add a scalar 5 + [1 2 3]
-          } else if lhs_width == 1 && lhs_height == 1 {
-            println!("WE ARE HERE");
-            let (start, end): (usize, usize) = if rhs_columns.is_empty() {
-              (0, rhs.columns)
-            } else {
-              let ix = rhs.get_column_index(rhs_columns[0]).unwrap();
-              (*ix, *ix)
-            };
-            out.grow_to_fit(rhs_height, rhs_width); 
-            for i in start..end {
-              for j in 0..rhs_height {
-                match (&lhs.data[0][0], &rhs.data[i][j]) {
-                  (Value::Number(x), Value::Number(y)) => {
-                    out.data[i][j] = Value::from_i64(x $op y);
-                  },
-                  _ => (),
-                }
-              }
-            }
-          } else if rhs_width == 1 && rhs_height == 1 {
-            println!("WE ARE HERE3");
-            out.grow_to_fit(lhs_height, lhs_width); 
-            for i in 0..lhs_width {
-              for j in 0..lhs_height {
-                match (&lhs.data[i][j], &rhs.data[0][0]) {
-                  (Value::Number(x), Value::Number(y)) => {
-                    out.data[i][j] = Value::from_i64(x $op y);
-                  },
-                  _ => (),
-                }
-              }
+      // The tables are the same size
+      if lhs_columns.is_empty() && rhs_columns.is_empty() {
+        out.grow_to_fit(lhs_height, lhs_width);
+        for i in 0..lhs_width as usize {
+          for j in 0..lhs_height as usize {
+            match (&lhs.data[i][j], &rhs.data[i][j]) {
+              (Value::Number(x), Value::Number(y)) => {
+                out.data[i][j] = Value::from_i64(x $op y);
+              },
+              _ => (),
             }
           }
- 
-        },
-        _ => (),
+        }
+      } else if lhs_is_scalar {
+        out.grow_to_fit(rhs_height, rhs_width);
+        for column in rhs_columns {
+          for j in 1..rhs_height + 1 {
+            match (&lhs.data[0][0], rhs.index(&Index::Index(j), column).unwrap()) {
+              (Value::Number(x), Value::Number(y)) => {
+                
+                out.data[0][j as usize - 1] = Value::from_i64(x $op y);
+              },
+              _ => (),
+            }
+          }
+        }
+      } else if rhs_is_scalar {
+        out.grow_to_fit(lhs_height, lhs_width);
+        for column in lhs_columns {
+          for j in 1..lhs_height + 1 {
+            match (lhs.index(&Index::Index(j), column).unwrap(), &rhs.data[0][0]) {
+              (Value::Number(x), Value::Number(y)) => {
+                out.data[0][j as usize - 1] = Value::from_i64(x $op y);
+              },
+              _ => (),
+            }
+          }
+        }
       }
     }
-    
   )
 }
 
-//binary_math!{math_add, +}
-//binary_math!{math_subtract, -}
-//binary_math!{math_multiply, *}
-//binary_math!{math_divide, /}
+binary_math!{math_add, +}
+binary_math!{math_subtract, -}
+binary_math!{math_multiply, *}
+binary_math!{math_divide, /}
 // FIXME this isn't actually right at all. ^ is not power in Rust
-//binary_math!{math_power, ^}
-//binary_math!{undefined, +}
+binary_math!{math_power, ^}
+binary_math!{undefined, +}
 
 // ## Comparators
 
