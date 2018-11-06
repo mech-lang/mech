@@ -260,6 +260,34 @@ impl Block {
             }
           }
         },
+        Constraint::Filter{comparator, lhs, rhs, output} => {
+          let (lhs_table, lhs_rows, lhs_columns) = lhs;
+          let (rhs_table, rhs_rows, rhs_columns) = rhs;
+          match lhs_table {
+            TableId::Global(id) => {
+              if lhs_columns.is_empty() {
+                self.input_registers.push(Register{table: id, column: Index::Index(0)});
+              } else {
+                for column in lhs_columns {
+                  self.input_registers.push(Register{table: id, column});
+                }
+              }
+            }
+            _ => (),
+          }
+          match rhs_table {
+            TableId::Global(id) => {
+              if rhs_columns.is_empty() {
+                self.input_registers.push(Register{table: id, column: Index::Index(0)});
+              } else {
+                for column in rhs_columns {
+                  self.input_registers.push(Register{table: id, column});
+                }
+              }
+            }
+            _ => (),
+          }
+        },
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Local(id) => {
