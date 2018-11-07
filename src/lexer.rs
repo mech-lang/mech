@@ -15,6 +15,8 @@ pub enum Token {
   RightBracket,
   LeftParenthesis,
   RightParenthesis,
+  LeftBrace,
+  RightBrace
   Caret,
   Semicolon,
   Space,
@@ -82,6 +84,8 @@ impl Lexer {
       } else if match_char(&bytes, ']', self) { self.push_token(Token::RightBracket);
       } else if match_char(&bytes, '(', self) { self.push_token(Token::LeftParenthesis);
       } else if match_char(&bytes, ')', self) { self.push_token(Token::RightParenthesis);
+      } else if match_char(&bytes, '{', self) { self.push_token(Token::LeftBrace);
+      } else if match_char(&bytes, '}', self) { self.push_token(Token::RightBrace);
       } else if match_char(&bytes, ',', self) { self.push_token(Token::Comma); 
       } else if match_char(&bytes, ' ', self) { self.push_token(Token::Space); 
       } else if match_char(&bytes, '+', self) { self.push_token(Token::Plus); 
