@@ -544,6 +544,8 @@ leaf!{left_bracket, Token::LeftBracket}
 leaf!{right_bracket, Token::RightBracket}
 leaf!{left_parenthesis, Token::LeftParenthesis}
 leaf!{right_parenthesis, Token::RightParenthesis}
+leaf!{left_brace, Token::LeftBrace}
+leaf!{right_brace, Token::RightBrace}
 leaf!{equal, Token::Equal}
 leaf!{less_than, Token::LessThan}
 leaf!{greater_than, Token::GreaterThan}
