@@ -30,6 +30,7 @@ pub enum Token {
   Colon,
   Comma,
   Tilde,
+  Bar,
   Newline,
   CarriageReturn,
   Tab,
@@ -95,6 +96,7 @@ impl Lexer {
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
       } else if match_char(&bytes, '~', self) { self.push_token(Token::Tilde);
+      } else if match_char(&bytes, '|', self) { self.push_token(Token::Bar);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
       } else if match_char(&bytes, '\r', self) { self.push_token(Token::CarriageReturn);
       } else if match_char(&bytes, '\t', self) { self.push_token(Token::Tab);
