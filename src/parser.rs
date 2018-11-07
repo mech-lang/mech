@@ -73,7 +73,10 @@ pub enum Node {
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
-  BracketIndex{ children: Vec<Node> },
+  SubscriptIndex{ children: Vec<Node> },
+  SubscriptList{ children: Vec<Node> },
+  Subscript{ children: Vec<Node> },
+  Range{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
@@ -161,7 +164,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
     Node::TableIdentifier{children} => {print!("TableIdentifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
-    Node::BracketIndex{children} => {print!("BracketIndex\n"); Some(children)},
+    Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
+    Node::SubscriptList{children} => {print!("SubscriptList\n"); Some(children)},
+    Node::Subscript{children} => {print!("Subscript\n"); Some(children)},
+    Node::Range{children} => {print!("Range\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
@@ -506,12 +512,15 @@ node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"
 node!{data_or_constant, DataOrConstant, |s|{ data(s).or(constant) }, "DataOrConstant"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
-node!{index, Index, |s| { dot_index(s).or(bracket_index) }, "Index"}
-node!{bracket_index, BracketIndex, |s| { left_bracket(s).and(number).or(identifier).and(right_bracket) }, "Bracket Index"}
+node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
+node!{subscript_index, SubscriptIndex, |s| { left_parenthesis(s).repeat(subscript).and(right_parenthesis) }, "Subscript Index"}
+node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
+node!{subscript, Subscript, |s| { range(s).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
+node!{range, Range, |s| { expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(expression) }, "Range"}
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character).optional(bracket_index) }, "Identifier"}
+node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character).optional(subscript_index) }, "Identifier"}
 node!{table_identifier, TableIdentifier, |s| { alpha(s).optional_repeat(identifier_character) }, "TableIdentifier"}
 node!{newline, NewLine, |s| { node(s).optional(carriage_return).and(new_line_char) }, "NewLine"}
 
