@@ -39,7 +39,7 @@ pub enum Node {
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
   DotIndex { column: Vec<Node>},
-  BracketIndex { rows: Vec<Node>, columns: Vec<Node>},
+  SubscriptIndex { rows: Vec<Node>, columns: Vec<Node>},
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
@@ -93,7 +93,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{id, rows, columns} => {print!("SelectData({:?} rows: {:?} cols: {:?})\n", id, rows, columns); None},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
-    Node::BracketIndex{rows, columns} => {print!("BracketIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
+    Node::SubscriptIndex{rows, columns} => {print!("SubscriptIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
@@ -906,7 +906,7 @@ impl Compiler {
         }
         compiled.push(Node::DotIndex{column: columns});
       },
-      parser::Node::BracketIndex{children} => {
+      parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
         let mut columns: Vec<Node> = Vec::new();
         for node in result {
@@ -915,7 +915,7 @@ impl Compiler {
             _ => columns.push(node),
           };
         }
-        compiled.push(Node::BracketIndex{rows: vec![], columns});
+        compiled.push(Node::SubscriptIndex{rows: vec![], columns});
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
