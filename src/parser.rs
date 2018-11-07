@@ -76,6 +76,8 @@ pub enum Node {
   SubscriptIndex{ children: Vec<Node> },
   SubscriptList{ children: Vec<Node> },
   Subscript{ children: Vec<Node> },
+  LogicOperator{ children: Vec<Node> },
+  LogicExpression{ children: Vec<Node> },
   Range{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
@@ -167,6 +169,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::SubscriptList{children} => {print!("SubscriptList\n"); Some(children)},
     Node::Subscript{children} => {print!("Subscript\n"); Some(children)},
+    Node::LogicOperator{children} => {print!("LogicOperator\n"); Some(children)},
+    Node::LogicExpression{children} => {print!("LogicExpression\n"); Some(children)},
     Node::Range{children} => {print!("Range\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
@@ -471,7 +475,7 @@ node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(wh
 
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{expression, Expression, |s|{ filter_expression(s).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
@@ -506,9 +510,13 @@ node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(identifier).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
-node!{filter_expression, FilterExpression, |s|{ data_or_constant(s).and(space).and(comparator).and(space).and(data_or_constant) }, "FilterExpression"}
 
+node!{logic_expression, LogicExpression, |s|{ data_or_constant(s).and(space).and(logic_operator).and(space).and(data_or_constant)  }, "LogicExpression"}
+node!{logic_operator, LogicOperator, |s|{ ampersand(s).or(bar) }, "LogicOperator"}
+
+node!{filter_expression, FilterExpression, |s|{ data_or_constant(s).and(space).and(comparator).and(space).and(data_or_constant) }, "FilterExpression"}
 node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"}
+
 node!{data_or_constant, DataOrConstant, |s|{ data(s).or(constant) }, "DataOrConstant"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
@@ -548,6 +556,8 @@ leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{tab, Token::Tab}
 leaf!{tilde, Token::Tilde}
+leaf!{bar, Token::Bar}
+leaf!{ampersand, Token::Ampersand}
 leaf!{semicolon, Token::Semicolon}
 leaf!{new_line_char, Token::Newline}
 leaf!{carriage_return, Token::CarriageReturn}
