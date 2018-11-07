@@ -20,17 +20,16 @@ Now update the block positions
 Keep the balls within the y boundary
   ~ #ball.x
   iy = #ball.y > #boundary
-  #ball.y[iy] := #boundary
-  #ball.vy[iy] := -#ball.vy * 80%
+  #ball.y(iy) := #boundary
+  #ball.vy(iy) := -#ball.vy * 80%
 
 Keep the balls within the x boundary
   ~ #ball.y
   ix = #ball.x > #boundary
   ixx = #ball.x < 0
-  #ball.x[ix] := #boundary
-  #ball.x[ixx] := 0
-  #ball.vx[ix] := -#ball.vx * 80%
-  #ball.vx[ixx] := -#ball.vx * 80%
+  #ball.x(ix) := #boundary
+  #ball.x(ixx) := 0
+  #ball.vx(ix | ixx) := -#ball.vx * 80%
 
 ## Create More Balls
 
