@@ -18,13 +18,13 @@ Now update the block positions
 ## Boundary Condition
 
 Keep the balls within the y boundary
-  ~ #ball.x
+  ~ #ball.y
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
   #ball.vy{iy} := -#ball.vy * 80%
 
 Keep the balls within the x boundary
-  ~ #ball.y
+  ~ #ball.x
   ix = #ball.x > #boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
@@ -34,5 +34,5 @@ Keep the balls within the x boundary
 ## Create More Balls
 
 Create ball on click
-  ~ #html/event/click.x
+  ~ #html/event/click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
