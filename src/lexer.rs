@@ -16,7 +16,7 @@ pub enum Token {
   LeftParenthesis,
   RightParenthesis,
   LeftBrace,
-  RightBrace
+  RightBrace,
   Caret,
   Semicolon,
   Space,
