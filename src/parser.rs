@@ -521,7 +521,7 @@ node!{data_or_constant, DataOrConstant, |s|{ data(s).or(constant) }, "DataOrCons
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
 node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
-node!{subscript_index, SubscriptIndex, |s| { left_parenthesis(s).repeat(subscript).and(right_parenthesis) }, "Subscript Index"}
+node!{subscript_index, SubscriptIndex, |s| { left_brace(s).repeat(subscript).and(right_brace) }, "Subscript Index"}
 node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
 node!{subscript, Subscript, |s| { range(s).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
 node!{range, Range, |s| { expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(expression) }, "Range"}
