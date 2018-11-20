@@ -908,14 +908,24 @@ impl Compiler {
       },
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
+        let mut rows: Vec<Node> = Vec::new();
         let mut columns: Vec<Node> = Vec::new();
         for node in result {
           match node {
             Node::Token{token, byte} => (),
-            _ => columns.push(node),
+            Node::Expression{ref children} => {
+              if rows.is_empty() {
+                rows.push(node.clone());
+              } else if columns.is_empty() {
+                columns.push(node.clone());
+              } else {
+                // TODO Throw error here, we've indexed into the third dimension!
+              }
+            },
+            _ => (), // TODO Handle other nodes
           };
         }
-        compiled.push(Node::SubscriptIndex{rows: vec![], columns});
+        compiled.push(Node::SubscriptIndex{rows, columns});
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
@@ -1047,6 +1057,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Subscript{children} |
       parser::Node::DataOrConstant{children} |
       parser::Node::SpaceOrTab{children} |
       parser::Node::Whitespace{children} |
