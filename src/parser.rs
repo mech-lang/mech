@@ -528,7 +528,7 @@ node!{range, Range, |s| { expression(s).optional_repeat(space).and(colon).option
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character).optional(subscript_index) }, "Identifier"}
+node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character) }, "Identifier"}
 node!{table_identifier, TableIdentifier, |s| { alpha(s).optional_repeat(identifier_character) }, "TableIdentifier"}
 node!{newline, NewLine, |s| { node(s).optional(carriage_return).and(new_line_char) }, "NewLine"}
 
