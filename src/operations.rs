@@ -218,3 +218,24 @@ macro_rules! comparator {
 comparator!{compare_greater_than, >}
 comparator!{compare_less_than, <}
 comparator!{compare_undefined, >}
+
+// ## Logic
+
+#[repr(u8)]
+#[derive(Clone)]
+pub enum Logic {
+  And,
+  Or,
+  Undefined
+}
+
+impl fmt::Debug for Logic {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      Logic::And => write!(f, "&"),
+      Logic::Or => write!(f, "|"),
+      Logic::Undefined => write!(f, "Undefined Logic"),
+    }
+  }
+}
