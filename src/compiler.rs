@@ -32,14 +32,14 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
-  SelectData{ id: TableId, rows: Vec<Index>, columns: Vec<Index> },
+  SelectData{ id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
   DotIndex { column: Vec<Node>},
-  SubscriptIndex { rows: Vec<Node>, columns: Vec<Node>},
+  SubscriptIndex { children: Vec<Node> },
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
@@ -91,9 +91,9 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
-    Node::SelectData{id, rows, columns} => {print!("SelectData({:?} rows: {:?} cols: {:?})\n", id, rows, columns); None},
+    Node::SelectData{id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
-    Node::SubscriptIndex{rows, columns} => {print!("SubscriptIndex[rows: {:?}, columns: {:?}]\n", rows, columns); None},
+    Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
@@ -535,10 +535,10 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id});
       },
-      Node::SelectData{id, rows, columns} => {
-        let r: Vec<Index> = rows.clone();
-        let c: Vec<Index> = columns.clone();
-        constraints.push(Constraint::Scan{table: id.clone(), rows: r, columns: c});
+      Node::SelectData{id, children} => {
+        //let r: Vec<Index> = rows.clone();
+        //let c: Vec<Index> = columns.clone();
+        constraints.push(Constraint::Scan{table: id.clone(), rows: vec![], columns: vec![]});
       },
       Node::Attribute{children} => {
         self.column += 1;
@@ -644,24 +644,28 @@ impl Compiler {
         let result = self.compile_nodes(children);
         let mut reversed = result.clone();
         reversed.reverse();
-        let mut columns: Vec<Index> = vec![];
-        let mut rows: Vec<Index> = vec![];
+        let mut select_data_children: Vec<Node> = vec![];
         for node in reversed {
           match node {
             Node::Table{name, id} => {
-              compiled.push(Node::SelectData{id: TableId::Global(id), rows: rows.clone(), columns: columns.clone()});
+
+              compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
-              compiled.push(Node::SelectData{id: TableId::Local(id), rows: rows.clone(), columns: columns.clone()});
+              compiled.push(Node::SelectData{id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{column} => {
               match column[0] {
                 Node::Identifier{ref name, ref id} => {
-                  columns.push(Index::Alias(*id));
+                  select_data_children.push(Node::Null);
+                  select_data_children.push(column[0].clone());
                 }, 
                 _ => (),
               }
             },
+            Node::SubscriptIndex{children} => {
+              select_data_children.append(&mut children.clone());
+            }
             _ => (),
           }
         }
@@ -908,24 +912,14 @@ impl Compiler {
       },
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
-        let mut rows: Vec<Node> = Vec::new();
-        let mut columns: Vec<Node> = Vec::new();
+        let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{token, byte} => (),
-            Node::Expression{ref children} => {
-              if rows.is_empty() {
-                rows.push(node.clone());
-              } else if columns.is_empty() {
-                columns.push(node.clone());
-              } else {
-                // TODO Throw error here, we've indexed into the third dimension!
-              }
-            },
-            _ => (), // TODO Handle other nodes
-          };
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
         }
-        compiled.push(Node::SubscriptIndex{rows, columns});
+        compiled.push(Node::SubscriptIndex{children});
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
