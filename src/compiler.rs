@@ -575,8 +575,6 @@ impl Compiler {
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::SelectData{id, children} => {
-        //let r: Vec<Index> = rows.clone();
-        //let c: Vec<Index> = columns.clone();
         constraints.push(Constraint::Scan{table: id.clone(), rows: vec![], columns: vec![]});
       },
       Node::Attribute{children} => {
