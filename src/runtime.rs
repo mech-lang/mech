@@ -613,7 +613,8 @@ pub enum Constraint {
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  Scan {table: TableId, rows: Vec<Index>, columns: Vec<Index>},
+  Scan {table: TableId, rows: TableId, columns: TableId},
+  //ScanColumn {table: TableId, column: u64},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
