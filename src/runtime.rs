@@ -618,8 +618,8 @@ pub enum Constraint {
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
-  Filter {comparator: operations::Comparator, lhs: (TableId, Vec<Index>, Vec<Index>), rhs: (TableId, Vec<Index>, Vec<Index>), output: TableId},
-  Function {operation: operations::Function, parameters: Vec<(TableId, Vec<Index>, Vec<Index>)>, output: Vec<TableId>},
+  Filter {comparator: operations::Comparator, lhs: (TableId, Option<TableId>, Option<TableId>), rhs: (TableId, Option<TableId>, Option<TableId>), output: TableId},
+  Function {operation: operations::Function, parameters: Vec<(TableId, Option<TableId>, Option<TableId>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
