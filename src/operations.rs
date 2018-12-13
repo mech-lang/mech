@@ -33,18 +33,27 @@ macro_rules! binary_math {
                       rhs: &Table, rhs_rows: Option<&Table>, rhs_columns: Option<&Table>,
                       out: &mut Table) {
       // Get the math dimensions
+      let lhs_width = match lhs_columns {
+        Some(table_ref) => table_ref.columns,
+        None => lhs.columns,
+      };
+      let rhs_width = match rhs_columns {
+        Some(table_ref) => table_ref.columns,
+        None => rhs.columns,
+      };
+      let lhs_height = match lhs_rows {
+        Some(table_ref) => table_ref.rows,
+        None => lhs.rows,
+      };
+      let rhs_height = match rhs_rows {
+        Some(table_ref) => table_ref.rows,
+        None => rhs.rows,
+      };
 
-                       /*
-      let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
-                       else { lhs_columns.len() as u64 };
-      let rhs_height = if rhs_rows.is_empty() { rhs.rows }
-                       else { rhs_rows.len() as u64 };
-      let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
-                       else { rhs_columns.len() as u64 }; 
-      let lhs_is_scalar = lhs_columns.is_empty() && lhs_width == 1 && lhs_rows.is_empty() && lhs_height == 1;
-      let rhs_is_scalar = rhs_columns.is_empty() && rhs_width == 1 && rhs_rows.is_empty() && rhs_height == 1;
-
-*/
+      
+      let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
+      let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
+      
       /*
       // The tables are the same size, and we're operating over the whole of both
       if lhs_columns.is_empty() && rhs_columns.is_empty() {
