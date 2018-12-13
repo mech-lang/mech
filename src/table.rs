@@ -80,6 +80,8 @@ impl fmt::Debug for Value {
 // A table starts with a tag, and has a matrix of memory available for data, 
 // where each column represents an attribute, and each row represents an entity.
 
+// ### Table Id
+
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum TableId {
   Local(u64),
@@ -105,6 +107,7 @@ impl fmt::Debug for TableId {
   }
 }
 
+// ### Row or Column Index
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Index {
@@ -130,6 +133,8 @@ impl fmt::Debug for Index {
     }
   }
 }
+
+// ### Table
 
 #[derive(Clone, PartialEq)]
 pub struct Table {
