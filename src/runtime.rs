@@ -248,14 +248,8 @@ impl Block {
           for (table, rows, columns) in parameters {
             match table {
               TableId::Global(id) => {
-                if columns.is_empty() {
-                  self.input_registers.push(Register{table: id, column: Index::Index(0)});
-                } else {
-                  for column in columns {
-                    self.input_registers.push(Register{table: id, column});
-                  }
-                }
-              }
+                self.input_registers.push(Register{table: id, column: Index::Index(0)});
+              },
               _ => (),
             }
           }
@@ -265,25 +259,27 @@ impl Block {
           let (rhs_table, rhs_rows, rhs_columns) = rhs;
           match lhs_table {
             TableId::Global(id) => {
+              /*
               if lhs_columns.is_empty() {
                 self.input_registers.push(Register{table: id, column: Index::Index(0)});
               } else {
                 for column in lhs_columns {
                   self.input_registers.push(Register{table: id, column});
                 }
-              }
+              }*/
             }
             _ => (),
           }
           match rhs_table {
             TableId::Global(id) => {
+              /*
               if rhs_columns.is_empty() {
                 self.input_registers.push(Register{table: id, column: Index::Index(0)});
               } else {
                 for column in rhs_columns {
                   self.input_registers.push(Register{table: id, column});
                 }
-              }
+              }*/
             }
             _ => (),
           }
@@ -416,7 +412,28 @@ impl Block {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
               };
-              op_fun(lhs,lhs_rows,lhs_columns,rhs,rhs_rows,rhs_columns, &mut self.scratch);
+              let lhs_rows_table = match lhs_rows {
+                Some(TableId::Local(id)) => self.memory.get(*id),
+                Some(TableId::Global(id)) => store.get_table(*id),
+                None => None,
+              };
+              let rhs_rows_table = match rhs_rows {
+                Some(TableId::Local(id)) => self.memory.get(*id),
+                Some(TableId::Global(id)) => store.get_table(*id),
+                None => None,
+              };
+              let lhs_columns_table = match lhs_columns {
+                Some(TableId::Local(id)) => self.memory.get(*id),
+                Some(TableId::Global(id)) => store.get_table(*id),
+                None => None,
+              };
+              let rhs_columns_table = match rhs_columns {
+                Some(TableId::Local(id)) => self.memory.get(*id),
+                Some(TableId::Global(id)) => store.get_table(*id),
+                None => None,
+              };
+              op_fun(lhs, lhs_rows_table, lhs_columns_table,
+                     rhs, rhs_rows_table, rhs_columns_table, &mut self.scratch);
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
