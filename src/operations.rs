@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 use alloc::fmt;
-use table::{Table, Value, Index};
+use table::{Table, Value, TableId, Index};
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -29,12 +29,12 @@ pub enum Function {
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Index>, lhs_columns: &Vec<Index>, 
-                      rhs: &Table, rhs_rows: &Vec<Index>, rhs_columns: &Vec<Index>,
+    pub fn $func_name(lhs: &Table, lhs_rows: Option<&Table>, lhs_columns: Option<&Table>, 
+                      rhs: &Table, rhs_rows: Option<&Table>, rhs_columns: Option<&Table>,
                       out: &mut Table) {
       // Get the math dimensions
-      let lhs_height = if lhs_rows.is_empty() { lhs.rows }
-                       else { lhs_rows.len() as u64 };
+
+                       /*
       let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
                        else { lhs_columns.len() as u64 };
       let rhs_height = if rhs_rows.is_empty() { rhs.rows }
@@ -44,6 +44,8 @@ macro_rules! binary_math {
       let lhs_is_scalar = lhs_columns.is_empty() && lhs_width == 1 && lhs_rows.is_empty() && lhs_height == 1;
       let rhs_is_scalar = rhs_columns.is_empty() && rhs_width == 1 && rhs_rows.is_empty() && rhs_height == 1;
 
+*/
+      /*
       // The tables are the same size, and we're operating over the whole of both
       if lhs_columns.is_empty() && rhs_columns.is_empty() {
         out.grow_to_fit(lhs_height, lhs_width);
@@ -97,7 +99,7 @@ macro_rules! binary_math {
             }
           }
         }
-      }
+      }*/
     }
   )
 }
@@ -142,10 +144,11 @@ impl fmt::Debug for Comparator {
 #[macro_export]
 macro_rules! comparator {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Index>, lhs_columns: &Vec<Index>, 
-                      rhs: &Table, rhs_rows: &Vec<Index>, rhs_columns: &Vec<Index>,
+    pub fn $func_name(lhs: &Table, lhs_rows: &Option<TableId>, lhs_columns: &Option<TableId>, 
+                      rhs: &Table, rhs_rows: &Option<TableId>, rhs_columns: &Option<TableId>,
                       out: &mut Table) {
-                              // Get the math dimensions
+                       /* 
+      // Get the math dimensions
       let lhs_height = if lhs_rows.is_empty() { lhs.rows }
                        else { lhs_rows.len() as u64 };
       let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
@@ -210,7 +213,7 @@ macro_rules! comparator {
             }
           }
         }
-      }
+      }*/
     }
   )
 }
