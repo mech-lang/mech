@@ -373,7 +373,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
-        let mut parameters: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![]; 
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
@@ -387,7 +387,7 @@ impl Compiler {
           if result.len() > 1 {
             match &result[1] {
               Constraint::NewTable{id, rows, columns} => {
-                parameters.push((id.clone(), vec![], vec![]));
+                parameters.push((id.clone(), None, None));
               }
               _ => (),
             }
@@ -411,13 +411,13 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![]; 
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
-              parameters.push((id.clone(), vec![], vec![]));
+              parameters.push((id.clone(), None, None));
             },
             _ => (),
           }
