@@ -4,8 +4,8 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core.git"}
+mech-core = {path = "../core"}
 time = "0.1.39"
 rand = "0.4.2"
 bincode = "0.8"
-hashmap_core = "=0.1.9"
+hashmap_core = {git = "https://github.com/cmontella/hashmap_core"}
