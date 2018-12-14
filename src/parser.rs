@@ -79,6 +79,7 @@ pub enum Node {
   LogicOperator{ children: Vec<Node> },
   LogicExpression{ children: Vec<Node> },
   Range{ children: Vec<Node> },
+  SelectAll{ children: Vec<Node> },
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
@@ -172,6 +173,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::LogicOperator{children} => {print!("LogicOperator\n"); Some(children)},
     Node::LogicExpression{children} => {print!("LogicExpression\n"); Some(children)},
     Node::Range{children} => {print!("Range\n"); Some(children)},
+    Node::SelectAll{children} => {print!("SelectAll\n"); Some(children)},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
@@ -523,8 +525,9 @@ node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
 node!{subscript_index, SubscriptIndex, |s| { left_brace(s).repeat(subscript).and(right_brace) }, "Subscript Index"}
 node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
-node!{subscript, Subscript, |s| { range(s).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
+node!{subscript, Subscript, |s| { select_all(s).or(range).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
 node!{range, Range, |s| { expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(expression) }, "Range"}
+node!{select_all, SelectAll, |s| { colon(s) }, "SelectAll"}
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
 node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
