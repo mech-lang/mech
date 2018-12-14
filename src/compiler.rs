@@ -41,6 +41,7 @@ pub enum Node {
   Define { name: String, id: u64},
   DotIndex { column: Vec<Node>},
   SubscriptIndex { children: Vec<Node> },
+  Range { children: Vec<Node> },
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
@@ -96,6 +97,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectData{id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
+    Node::Range{children} => {print!("Range\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
@@ -580,6 +582,7 @@ impl Compiler {
         let mut compiled = vec![];
         let mut indices = vec![];
         for child in children {
+          println!("{:?}", child);
           let mut result = self.compile_constraint(child); 
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => {
@@ -598,6 +601,9 @@ impl Compiler {
         
         constraints.push(Constraint::Scan{table: id.clone(), rows: indices[0].clone(), columns: indices[1].clone()});
         constraints.append(&mut compiled);
+      },
+      Node::Range{children} => {
+        constraints.append(&mut self.compile_constraints(children));
       },
       Node::SelectAll => {
         constraints.push(Constraint::SelectAll);
@@ -767,6 +773,10 @@ impl Compiler {
       parser::Node::SelectAll{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectAll);
+      },
+      parser::Node::Range{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Range{children: result});
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
