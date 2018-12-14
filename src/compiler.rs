@@ -57,6 +57,7 @@ pub enum Node {
   Constant {value: i64},
   String{ text: String },
   Token{ token: Token, byte: u8 },
+  SelectAll,
   Null,
 }
 
@@ -110,6 +111,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Table{name,id} => {print!("Table(#{}({:?}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
+    Node::SelectAll => {print!("SelectAll\n"); None},
     Node::Null => {print!("Null\n"); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -461,7 +463,7 @@ impl Compiler {
               parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), Some(rows.clone()), Some(columns.clone())));
+              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
@@ -555,7 +557,7 @@ impl Compiler {
               parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), Some(rows.clone()), Some(columns.clone())));
+              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
@@ -581,17 +583,24 @@ impl Compiler {
           let mut result = self.compile_constraint(child); 
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => {
-              indices.push(id.clone());
+              indices.push(Some(id.clone()));
+            },
+            Constraint::SelectAll => {
+              indices.push(None);
             },
             _ => (),
           };
           compiled.append(&mut result);
         }
         while indices.len() < 2 {
-          indices.push(TableId::Local(0));
+          indices.push(None);
         }
+        
         constraints.push(Constraint::Scan{table: id.clone(), rows: indices[0].clone(), columns: indices[1].clone()});
         constraints.append(&mut compiled);
+      },
+      Node::SelectAll => {
+        constraints.push(Constraint::SelectAll);
       },
       Node::Attribute{children} => {
         self.column += 1;
@@ -610,7 +619,7 @@ impl Compiler {
               parameters.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameters.push((table.clone(), Some(rows.clone()), Some(columns.clone())));
+              parameters.push((table.clone(), rows.clone(), columns.clone()));
             }
             _ => (),
           }
@@ -754,6 +763,10 @@ impl Compiler {
       parser::Node::DataWatch{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::DataWatch{children: result});
+      },
+      parser::Node::SelectAll{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::SelectAll);
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
