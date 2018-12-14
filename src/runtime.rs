@@ -630,7 +630,7 @@ pub enum Constraint {
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
   Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
-  Scan {table: TableId, rows: TableId, columns: TableId},
+  Scan {table: TableId, rows: Option<TableId>, columns: Option<TableId>},
   //ScanColumn {table: TableId, column: u64},
   Identifier {id: u64},
   ChangeScan {table: u64, column: u64, input: u64},
@@ -647,6 +647,7 @@ pub enum Constraint {
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
   Append {memory: u64, table: u64, column: u64},
+  SelectAll,
 }
 
 impl fmt::Debug for Constraint {
@@ -670,6 +671,7 @@ impl fmt::Debug for Constraint {
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
+      Constraint::SelectAll => write!(f, "SelectAll"),
     }
   }
 }
