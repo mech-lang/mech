@@ -50,10 +50,15 @@ macro_rules! binary_math {
         None => rhs.rows,
       };
 
-      
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
-      
+
+      let lhs_data = &lhs.data;
+
+      println!("LHS DATA {:?}", lhs_data);
+
+
+
       /*
       // The tables are the same size, and we're operating over the whole of both
       if lhs_columns.is_empty() && rhs_columns.is_empty() {
