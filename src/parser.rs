@@ -477,7 +477,7 @@ node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(wh
 
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{expression, Expression, |s|{ filter_expression(s).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(range).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
@@ -526,7 +526,7 @@ node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
 node!{subscript_index, SubscriptIndex, |s| { left_brace(s).repeat(subscript).and(right_brace) }, "Subscript Index"}
 node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
 node!{subscript, Subscript, |s| { select_all(s).or(range).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
-node!{range, Range, |s| { expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(expression) }, "Range"}
+node!{range, Range, |s| { math_expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(math_expression) }, "Range"}
 node!{select_all, SelectAll, |s| { colon(s) }, "SelectAll"}
 node!{dot_index, DotIndex, |s| { period(s).and(number).or(identifier) }, "Dot Index"}
 node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
