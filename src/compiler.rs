@@ -775,7 +775,14 @@ impl Compiler {
       },
       parser::Node::Range{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Range{children: result});
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Range{children});
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
