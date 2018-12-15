@@ -582,7 +582,6 @@ impl Compiler {
         let mut compiled = vec![];
         let mut indices = vec![];
         for child in children {
-          println!("{:?}", child);
           let mut result = self.compile_constraint(child); 
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => {
