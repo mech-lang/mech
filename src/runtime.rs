@@ -225,6 +225,7 @@ impl Block {
         Constraint::Filter{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
+        Constraint::Range{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
@@ -468,6 +469,22 @@ impl Block {
             self.scratch.clear();
           }
         },
+        Constraint::Range{table, start, end} => {
+          {
+            let start_value = &self.memory.get(*start.unwrap()).unwrap().data[0][0].as_u64().unwrap().clone();
+            let end_value = &self.memory.get(*end.unwrap()).unwrap().data[0][0].as_u64().unwrap().clone();
+            self.scratch.grow_to_fit(end_value - start_value + 1, 1);
+            let mut row = 1;
+            for i in *start_value..*end_value + 1 {
+              self.scratch.set_cell(&Index::Index(row), &Index::Index(1), Value::Number(i as i64));
+              row += 1;
+            }
+          }
+          let out = self.memory.get_mut(*table.unwrap()).unwrap();
+          out.data = self.scratch.data.clone();
+          out.rows = self.scratch.rows;
+          out.columns = self.scratch.columns;
+        }
         /*
         Constraint::Condition{truth, result, default, memory} => {
           for i in 1 .. self.memory.rows + 1 {
@@ -502,7 +519,7 @@ impl Block {
           /*
           let (from_table, from_row, from_column) = from;
           let (to_table, to_row, to_column) = to;
-          match &mut self.memory.get_mut(*from_table) {
+          }match &mut self.memory.get_mut(*from_table) {
             Some(table_ref) => {
               match &mut table_ref.get_column_by_ix(*from_column as usize) {
                 Some(column_data) => {
@@ -512,7 +529,7 @@ impl Block {
                       _ => {
                         store.process_transaction(&Transaction::from_change(
                           Change::Set{ table: *to_table, row: row_ix as u64 + 1, column: *to_column, value: cell.clone() },
-                        ));
+                        ));;
                       }
                     }
                   }
@@ -647,6 +664,7 @@ pub enum Constraint {
   // Output Constraints
   Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
   Append {memory: u64, table: u64, column: u64},
+  Range{table: TableId, start: TableId, end: TableId},
   SelectAll,
 }
 
@@ -671,6 +689,7 @@ impl fmt::Debug for Constraint {
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
+      Constraint::Range{table, start, end} => write!(f, "Range({:?} -> {:?} to {:?})", table, start, end),
       Constraint::SelectAll => write!(f, "SelectAll"),
     }
   }
