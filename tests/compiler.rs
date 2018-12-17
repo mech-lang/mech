@@ -140,3 +140,5 @@ block
        13 14 15
        16 17 18]
   #test = x + y", 11);
+
+test_math!(range_basic,"#test = 5 : 14", 5);
