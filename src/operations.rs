@@ -53,10 +53,6 @@ macro_rules! binary_math {
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
 
-      println!("LHS DATA {:?}", &lhs.data);
-      println!("RHS DATA {:?}", &rhs.data);
-
-      
       // The tables are the same size
       if lhs_width == rhs_width && lhs_height == rhs_height {
         out.grow_to_fit(lhs_height, lhs_width);
