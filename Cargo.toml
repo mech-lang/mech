@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
-mech-core = {path = "../core"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
 time = "0.1.39"
 rand = "0.4.2"
 bincode = "0.8"
