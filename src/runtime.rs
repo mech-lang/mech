@@ -193,6 +193,10 @@ pub struct Block {
   pub constraints: Vec<(String, Vec<Constraint>)>,
   memory: TableIndex,
   scratch: Table,
+  lhs_rows_empty: Vec<Value>,
+  lhs_columns_empty: Vec<Value>,
+  rhs_rows_empty: Vec<Value>,
+  rhs_columns_empty: Vec<Value>,
 }
 
 impl Block {
@@ -210,6 +214,11 @@ impl Block {
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
       scratch: Table::new(0,0,0),
+      // allocate empty indices so we don't have to do this on each iteration
+      lhs_rows_empty: Vec::new(),
+      lhs_columns_empty: Vec::new(),
+      rhs_rows_empty: Vec::new(),
+      rhs_columns_empty: Vec::new(),
     }
   }
 
@@ -413,28 +422,28 @@ impl Block {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
               };
-              let lhs_rows_table = match lhs_rows {
-                Some(TableId::Local(id)) => self.memory.get(*id),
-                Some(TableId::Global(id)) => store.get_table(*id),
-                None => None,
+              let lhs_rows: &Vec<Value> = match lhs_rows {
+                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                None => &self.lhs_rows_empty,
               };
-              let rhs_rows_table = match rhs_rows {
-                Some(TableId::Local(id)) => self.memory.get(*id),
-                Some(TableId::Global(id)) => store.get_table(*id),
-                None => None,
+              let rhs_rows: &Vec<Value> = match rhs_rows {
+                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                None => &self.rhs_rows_empty,
               };
-              let lhs_columns_table = match lhs_columns {
-                Some(TableId::Local(id)) => self.memory.get(*id),
-                Some(TableId::Global(id)) => store.get_table(*id),
-                None => None,
+              let lhs_columns: &Vec<Value> = match lhs_columns {
+                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                None => &self.lhs_rows_empty,
               };
-              let rhs_columns_table = match rhs_columns {
-                Some(TableId::Local(id)) => self.memory.get(*id),
-                Some(TableId::Global(id)) => store.get_table(*id),
-                None => None,
+              let rhs_columns: &Vec<Value> = match rhs_columns {
+                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                None => &self.rhs_columns_empty,
               };
-              op_fun(lhs, lhs_rows_table, lhs_columns_table,
-                     rhs, rhs_rows_table, rhs_columns_table, &mut self.scratch);
+              //op_fun(lhs, lhs_rows_table, lhs_columns_table,
+              //       rhs, rhs_rows_table, rhs_columns_table, &mut self.scratch);
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
