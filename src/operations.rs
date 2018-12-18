@@ -45,9 +45,6 @@ macro_rules! binary_math {
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
 
-      println!("{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n", lhs.data, lhs_rows, lhs_columns, rhs.data, rhs_rows, rhs_columns);
-println!("OUT {:?}", out);
-
       // The tables are the same size
       if lhs_width == rhs_width && lhs_height == rhs_height {
         out.grow_to_fit(lhs_height, lhs_width);        
@@ -61,14 +58,12 @@ println!("OUT {:?}", out);
                        else { lhs_rows[i].as_u64().unwrap() as usize - 1 };
             let rrix = if rhs_rows.is_empty() { j }
                        else { rhs_rows[i].as_u64().unwrap() as usize - 1 };
-            println!("{:?}x{:?} {:?}x{:?}", lcix, lrix, rcix, rrix);
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::from_i64(x $op y);
               },
               _ => (),
             }
-            println!("{:?}", out);
           }
         }
       // Operate with scalar on the left
