@@ -442,8 +442,8 @@ impl Block {
                 Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
                 None => &self.rhs_columns_empty,
               };
-              //op_fun(lhs, lhs_rows_table, lhs_columns_table,
-              //       rhs, rhs_rows_table, rhs_columns_table, &mut self.scratch);
+              op_fun(lhs, lhs_rows, lhs_columns,
+                     rhs, rhs_rows, rhs_columns, &mut self.scratch);
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
@@ -493,6 +493,7 @@ impl Block {
           out.data = self.scratch.data.clone();
           out.rows = self.scratch.rows;
           out.columns = self.scratch.columns;
+          self.scratch.clear();
         }
         /*
         Constraint::Condition{truth, result, default, memory} => {
