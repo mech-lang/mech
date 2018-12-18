@@ -29,46 +29,50 @@ pub enum Function {
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Table, lhs_rows: Option<&Table>, lhs_columns: Option<&Table>, 
-                      rhs: &Table, rhs_rows: Option<&Table>, rhs_columns: Option<&Table>,
+    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Value>, lhs_columns: &Vec<Value>, 
+                      rhs: &Table, rhs_rows: &Vec<Value>, rhs_columns: &Vec<Value>,
                       out: &mut Table) {
       // Get the math dimensions
-      let lhs_width = match lhs_columns {
-        Some(table_ref) => table_ref.columns,
-        None => lhs.columns,
-      };
-      let rhs_width = match rhs_columns {
-        Some(table_ref) => table_ref.columns,
-        None => rhs.columns,
-      };
-      let lhs_height = match lhs_rows {
-        Some(table_ref) => table_ref.rows,
-        None => lhs.rows,
-      };
-      let rhs_height = match rhs_rows {
-        Some(table_ref) => table_ref.rows,
-        None => rhs.rows,
-      };
+      let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
+                       else { lhs_columns.len() as u64 };
+      let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
+                       else { rhs_columns.len() as u64 };      
+      let lhs_height = if lhs_rows.is_empty() { lhs.rows }
+                       else { lhs_rows.len() as u64 };
+      let rhs_height = if rhs_rows.is_empty() { rhs.rows }
+                       else { rhs_rows.len() as u64 };
 
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
 
+      println!("{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n", lhs.data, lhs_rows, lhs_columns, rhs.data, rhs_rows, rhs_columns);
+println!("OUT {:?}", out);
+
       // The tables are the same size
       if lhs_width == rhs_width && lhs_height == rhs_height {
-        out.grow_to_fit(lhs_height, lhs_width);
+        out.grow_to_fit(lhs_height, lhs_width);        
         for i in 0..lhs_width as usize {
+          let lcix = if lhs_columns.is_empty() { i }
+                    else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
+          let rcix = if rhs_columns.is_empty() { i }
+                    else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
           for j in 0..lhs_height as usize {
-            match (&lhs.data[i][j], &rhs.data[i][j]) {
+            let lrix = if lhs_rows.is_empty() { j }
+                       else { lhs_rows[i].as_u64().unwrap() as usize - 1 };
+            let rrix = if rhs_rows.is_empty() { j }
+                       else { rhs_rows[i].as_u64().unwrap() as usize - 1 };
+            println!("{:?}x{:?} {:?}x{:?}", lcix, lrix, rcix, rrix);
+            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::from_i64(x $op y);
               },
               _ => (),
             }
+            println!("{:?}", out);
           }
         }
-        /*
       // Operate with scalar on the left
-      } else if lhs_is_scalar {
+      } /*else if lhs_is_scalar {
         out.grow_to_fit(rhs_height, rhs_width);
         for column in rhs_columns {
           for j in 1..rhs_height + 1 {
@@ -106,8 +110,8 @@ macro_rules! binary_math {
               _ => (),
             }
           }
-        }*/
-      }
+        }
+      }*/
     }
   )
 }
