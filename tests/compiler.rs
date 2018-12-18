@@ -142,3 +142,9 @@ block
   #test = x + y", 11);
 
 test_math!(range_basic,"#test = 5 : 14", 5);
+
+test_math!(subscript_scalar_math,"
+block
+  x = 3:6
+  y = 10:12
+  #test = x{1,1} + y{3,1}", 15);
