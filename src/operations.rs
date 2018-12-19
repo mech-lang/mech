@@ -67,14 +67,21 @@ macro_rules! binary_math {
           }
         }
       // Operate with scalar on the left
-      } /*else if lhs_is_scalar {
-        out.grow_to_fit(rhs_height, rhs_width);
-        for column in rhs_columns {
-          for j in 1..rhs_height + 1 {
-            match (&lhs.data[0][0], rhs.index(&Index::Index(j), column).unwrap()) {
+      } else if lhs_is_scalar {
+        out.grow_to_fit(rhs_height, rhs_width);        
+        for i in 0..rhs_width as usize {
+          let lcix = if lhs_columns.is_empty() { 0 }
+                    else { lhs_columns[0].as_u64().unwrap() as usize - 1 };
+          let rcix = if rhs_columns.is_empty() { i }
+                    else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
+          for j in 0..rhs_height as usize {
+            let lrix = if lhs_rows.is_empty() { 0 }
+                       else { lhs_rows[0].as_u64().unwrap() as usize - 1 };
+            let rrix = if rhs_rows.is_empty() { j }
+                       else { rhs_rows[i].as_u64().unwrap() as usize - 1 };
+            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                
-                out.data[0][j as usize - 1] = Value::from_i64(x $op y);
+                out.data[i][j] = Value::from_i64(x $op y);
               },
               _ => (),
             }
@@ -82,31 +89,26 @@ macro_rules! binary_math {
         }
       // Operate with scalar on the right
       } else if rhs_is_scalar {
-        out.grow_to_fit(lhs_height, lhs_width);
-        for column in lhs_columns {
-          for j in 1..lhs_height + 1 {
-            match (lhs.index(&Index::Index(j), column).unwrap(), &rhs.data[0][0]) {
+        out.grow_to_fit(lhs_height, lhs_width);        
+        for i in 0..rhs_width as usize {
+          let lcix = if lhs_columns.is_empty() { i }
+                    else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
+          let rcix = if rhs_columns.is_empty() { 0 }
+                    else { rhs_columns[0].as_u64().unwrap() as usize - 1 };
+          for j in 0..rhs_height as usize {
+            let lrix = if lhs_rows.is_empty() { i }
+                       else { lhs_rows[i].as_u64().unwrap() as usize - 1 };
+            let rrix = if rhs_rows.is_empty() { 0 }
+                       else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
+            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[0][j as usize - 1] = Value::from_i64(x $op y);
+                out.data[i][j] = Value::from_i64(x $op y);
               },
               _ => (),
             }
           }
         }
-      // Operate on a selection of columns
-      } else if rhs_width == lhs_width && lhs_height == rhs_height &&!lhs_columns.is_empty() && !lhs_columns.is_empty()  {
-        out.grow_to_fit(lhs_height, lhs_width);
-        for (i, (lhs_column, rhs_column)) in lhs_columns.iter().zip(rhs_columns).enumerate() {
-          for j in 1..lhs_height + 1 {
-            match (lhs.index(&Index::Index(j), lhs_column).unwrap(), rhs.index(&Index::Index(j), rhs_column).unwrap()) {
-              (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j as usize - 1] = Value::from_i64(x $op y);
-              },
-              _ => (),
-            }
-          }
-        }
-      }*/
+      }
     }
   )
 }
