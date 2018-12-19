@@ -598,27 +598,32 @@ impl Compiler {
       },
       Node::SelectData{id, children} => {
         let mut compiled = vec![];
-        let mut indices = vec![];
-        println!("HERE {:?}", children);
+        let mut indices: Vec<Option<TableId>> = vec![];
+        let mut select_column: u64 = 0;
         for child in children {
           let mut result = self.compile_constraint(child); 
-          println!("HERE {:?}", result);
           match &result[0] {
-            Constraint::NewTable{ref id, rows, columns} => {
-              indices.push(Some(id.clone()));
-            },
-            Constraint::SelectAll => {
-              indices.push(None);
+            Constraint::NewTable{ref id, rows, columns} => indices.push(Some(id.clone())),
+            Constraint::SelectAll => indices.push(None),
+            Constraint::Null => indices.push(None),
+            Constraint::Identifier{id} => {
+              // If we have an identifier, it means we're doing a column select
+              select_column = *id;
             },
             _ => (),
           };
           compiled.append(&mut result);
         }
-        while indices.len() < 2 {
-          indices.push(None);
+        // subscript index select
+        if select_column == 0 {
+          while indices.len() < 2 {
+            indices.push(None);
+          }
+          constraints.push(Constraint::Scan{table: id.clone(), rows: indices[0].clone(), columns: indices[1].clone()});
+        // dot index select
+        } else {
+          constraints.push(Constraint::ScanColumn{table: id.clone(), column: Index::Alias(select_column)});
         }
-        
-        constraints.push(Constraint::Scan{table: id.clone(), rows: indices[0].clone(), columns: indices[1].clone()});
         constraints.append(&mut compiled);
       },
       Node::Range{children} => {
