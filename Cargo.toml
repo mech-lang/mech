@@ -4,8 +4,8 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
-mech-core = {path = "core"}
-mech-syntax = {path = "syntax"}
-mech-server = {path = "server"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-server = {git = "https://gitlab.com/mech-lang/server"}
 clap = "2.31.2"
 term-painter = "0.2.4"
