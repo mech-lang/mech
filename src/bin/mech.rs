@@ -18,9 +18,11 @@ extern crate term_painter;
 use term_painter::ToStyle;
 use term_painter::Color::*;
 
+extern crate mech;
+use mech::{ProgramRunner, RunLoop, RunLoopMessage};
+use mech::ClientHandler;
+
 extern crate mech_server;
-use mech_server::program::{ProgramRunner, RunLoop, RunLoopMessage};
-use mech_server::client::ClientHandler;
 
 // ## Server Entry
 
