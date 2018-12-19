@@ -599,8 +599,10 @@ impl Compiler {
       Node::SelectData{id, children} => {
         let mut compiled = vec![];
         let mut indices = vec![];
+        println!("HERE {:?}", children);
         for child in children {
           let mut result = self.compile_constraint(child); 
+          println!("HERE {:?}", result);
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => {
               indices.push(Some(id.clone()));
@@ -667,6 +669,7 @@ impl Compiler {
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
         constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value as i64});
       },
+      Node::Null => constraints.push(Constraint::Null),
       _ => ()
     }
     constraints
@@ -733,7 +736,6 @@ impl Compiler {
         for node in reversed {
           match node {
             Node::Table{name, id} => {
-
               compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
