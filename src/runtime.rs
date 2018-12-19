@@ -676,6 +676,7 @@ pub enum Constraint {
   Append {memory: u64, table: u64, column: u64},
   Range{table: TableId, start: TableId, end: TableId},
   SelectAll,
+  Null,
 }
 
 impl fmt::Debug for Constraint {
@@ -701,6 +702,7 @@ impl fmt::Debug for Constraint {
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
       Constraint::Range{table, start, end} => write!(f, "Range({:?} -> {:?} to {:?})", table, start, end),
       Constraint::SelectAll => write!(f, "SelectAll"),
+      Constraint::Null => write!(f, "Null"),
     }
   }
 }
