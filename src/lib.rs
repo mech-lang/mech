@@ -37,7 +37,7 @@ mod operations;
 pub use self::database::{Transaction, Change, Interner};
 pub use self::table::{Value, Index, TableId, Table};
 pub use self::indexes::{TableIndex, Hasher};
-pub use self::operations::{Function, Comparator, Logic};
+pub use self::operations::{Function, Comparator, Logic, Parameter};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
 
 // ## Core
