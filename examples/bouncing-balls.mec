@@ -2,11 +2,10 @@
 
 Define the environment
   #html/event/click = [x: 0 y: 0]
-  #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #system/timer = [resolution: 15]
-  #gravity = 2
-  #height = 9000
-  #boundary = 5000
+  #ball = [x: 15_m y: 9_m vx: 40_m/s vy: 9_m/s]
+  #system/timer = [resolution: 15_ms]
+  #gravity = 2_m/s^2
+  #boundary = 5000_m
 
 ## Update condition
 
@@ -19,22 +18,21 @@ Now update the block positions
 ## Boundary Condition
 
 Keep the balls within the y boundary
-  ~ #ball.x
-  iy = #ball.y > #height
-  #ball.y[iy] := #height
-  #ball.vy[iy] := 0 - 1 * #ball.vy * 80 / 100
+  ~ #ball.y
+  iy = #ball.y > #boundary
+  #ball.y{iy} := #boundary
+  #ball.vy{iy} := -#ball.vy * 80%
 
 Keep the balls within the x boundary
-  ~ #ball.y
+  ~ #ball.x
   ix = #ball.x > #boundary
-  ixx = #ball.x < 0
-  #ball.x[ix] := #boundary
-  #ball.x[ixx] := 0
-  #ball.vx[ix] := 0 - 1 * #ball.vx * 80 / 100
-  #ball.vx[ixx] := 0 - 1 * #ball.vx * 80 / 100
+  ixx = #ball.x < 0_m
+  #ball.x{ix} := #boundary
+  #ball.x{ixx} := 0_m
+  #ball.vx{ix | ixx} := -#ball.vx * 80%
 
 ## Create More Balls
 
 Create ball on click
   ~ #html/event/click.x
-  #ball += [x: 2 y: 3 vx: 40 vy: 0]
+  #ball += [x: 10_m y: 10_m vx: 40_m/s vy: 0_m]
