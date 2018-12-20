@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Block, Constraint, Index, TableId};
-use mech_core::{Function, Comparator, Logic};
+use mech_core::{Function, Comparator, Logic, Parameter};
 use mech_core::Hasher;
 use parser;
 use lexer::Lexer;
@@ -377,7 +377,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
-        let mut parameters: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
@@ -415,7 +415,7 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
         let mut compiled = vec![];
         for child in children {
           let mut result = self.compile_constraint(child);
@@ -567,7 +567,7 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        let mut parameter_registers: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![];
+        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
@@ -577,7 +577,7 @@ impl Compiler {
               parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
+              parameter_registers.push((table.clone(), Some(Parameter::TableId(rows.clone().unwrap())), Some(Parameter::TableId(columns.clone().unwrap()))));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
@@ -639,7 +639,7 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameters: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![]; 
+        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
@@ -649,7 +649,7 @@ impl Compiler {
               parameters.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameters.push((table.clone(), rows.clone(), columns.clone()));
+              parameters.push((table.clone(), Some(Parameter::TableId(rows.clone().unwrap())), Some(Parameter::TableId(columns.clone().unwrap()))));
             }
             _ => (),
           }
