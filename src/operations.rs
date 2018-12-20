@@ -11,6 +11,14 @@ Queries are compiled down to a Plan, which is a sequence of Operations that
 work on the supplied data.
 */
 
+// ## Parameters
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Parameter {
+  TableId (TableId),
+  Index (Index),
+}
+
 // ## Functions
 
 #[repr(u8)]
