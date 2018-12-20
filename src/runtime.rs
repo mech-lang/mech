@@ -18,7 +18,7 @@ use hashmap_core::map::{HashMap, Entry};
 use hashmap_core::set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{Function, Comparator};
+use operations::{Function, Comparator, Parameter};
 
 // ## Runtime
 
@@ -423,24 +423,24 @@ impl Block {
                 TableId::Global(id) => store.get_table(*id).unwrap(),
               };
               let lhs_rows: &Vec<Value> = match lhs_rows {
-                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
-                None => &self.lhs_rows_empty,
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.lhs_rows_empty,
               };
               let rhs_rows: &Vec<Value> = match rhs_rows {
-                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
-                None => &self.rhs_rows_empty,
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_rows_empty,
               };
               let lhs_columns: &Vec<Value> = match lhs_columns {
-                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
-                None => &self.lhs_rows_empty,
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.lhs_rows_empty,
               };
               let rhs_columns: &Vec<Value> = match rhs_columns {
-                Some(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Some(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
-                None => &self.rhs_columns_empty,
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_columns_empty,
               };
               op_fun(lhs, lhs_rows, lhs_columns,
                      rhs, rhs_rows, rhs_columns, &mut self.scratch);
@@ -663,7 +663,7 @@ pub enum Constraint {
   ChangeScan {table: u64, column: u64, input: u64},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<TableId>, Option<TableId>), rhs: (TableId, Option<TableId>, Option<TableId>), output: TableId},
-  Function {operation: operations::Function, parameters: Vec<(TableId, Option<TableId>, Option<TableId>)>, output: Vec<TableId>},
+  Function {operation: operations::Function, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: i64},
   Condition {truth: u64, result: u64, default: u64, memory: u64},
   IndexMask {source: u64, truth: u64, memory: u64},
