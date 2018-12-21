@@ -671,7 +671,7 @@ impl Compiler {
               parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
             },
             Constraint::ScanColumn{table, column} => {
-              ()
+              parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
             },
             _ => (),
           }
