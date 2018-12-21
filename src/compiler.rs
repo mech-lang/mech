@@ -577,7 +577,15 @@ impl Compiler {
               parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), Some(Parameter::TableId(rows.clone().unwrap())), Some(Parameter::TableId(columns.clone().unwrap()))));
+              let rows_parameter = match rows {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              let columns_parameter = match columns {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
@@ -639,24 +647,32 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
+        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
-              parameters.push((id.clone(), None, None));
+              parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameters.push((table.clone(), Some(Parameter::TableId(rows.clone().unwrap())), Some(Parameter::TableId(columns.clone().unwrap()))));
+              let rows_parameter = match rows {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              let columns_parameter = match columns {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
             }
             _ => (),
           }
           compiled.append(&mut result);
         }
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(table)]});
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
