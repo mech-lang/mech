@@ -435,11 +435,27 @@ impl Block {
               let lhs_columns: &Vec<Value> = match lhs_columns {
                 Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
                 Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                Some(Parameter::Index(index)) => {
+                  let ix = match lhs.get_column_index(index) {
+                    Some(ix) => ix,
+                    None => 0,
+                  };
+                  self.lhs_columns_empty.push(Value::Number(ix as i64));
+                  &self.lhs_columns_empty
+                },
                 _ => &self.lhs_rows_empty,
               };
               let rhs_columns: &Vec<Value> = match rhs_columns {
                 Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
                 Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                Some(Parameter::Index(index)) => {
+                  let ix = match rhs.get_column_index(index) {
+                    Some(ix) => ix,
+                    None => 0,
+                  };
+                  self.rhs_columns_empty.push(Value::Number(ix as i64));
+                  &self.rhs_columns_empty
+                },
                 _ => &self.rhs_columns_empty,
               };
               op_fun(lhs, lhs_rows, lhs_columns,
@@ -450,6 +466,8 @@ impl Block {
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
+            self.rhs_columns_empty.clear();
+            self.lhs_columns_empty.clear();
           }
         },
         Constraint::Filter{comparator, lhs, rhs, output} => {
