@@ -587,6 +587,9 @@ impl Compiler {
               };
               parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
             },
+            Constraint::ScanColumn{table, column} => {
+              parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
+            },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
                 parameter_registers.push((o.clone(), None, None));
@@ -666,7 +669,10 @@ impl Compiler {
                 None => None, 
               };
               parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
-            }
+            },
+            Constraint::ScanColumn{table, column} => {
+              ()
+            },
             _ => (),
           }
           compiled.append(&mut result);
