@@ -86,7 +86,7 @@ macro_rules! binary_math {
             let lrix = if lhs_rows.is_empty() { 0 }
                        else { lhs_rows[0].as_u64().unwrap() as usize - 1 };
             let rrix = if rhs_rows.is_empty() { j }
-                       else { rhs_rows[i].as_u64().unwrap() as usize - 1 };
+                       else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::from_i64(x $op y);
@@ -103,9 +103,9 @@ macro_rules! binary_math {
                     else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
           let rcix = if rhs_columns.is_empty() { 0 }
                     else { rhs_columns[0].as_u64().unwrap() as usize - 1 };
-          for j in 0..rhs_height as usize {
-            let lrix = if lhs_rows.is_empty() { i }
-                       else { lhs_rows[i].as_u64().unwrap() as usize - 1 };
+          for j in 0..lhs_height as usize {
+            let lrix = if lhs_rows.is_empty() { j }
+                       else { lhs_rows[j].as_u64().unwrap() as usize - 1 };
             let rrix = if rhs_rows.is_empty() { 0 }
                        else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
