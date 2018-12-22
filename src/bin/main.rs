@@ -20,16 +20,21 @@ use mech_core::Core;
 fn main() {
   let mut core = Core::new(100, 100);
   let mut compiler = Compiler::new();
-  let input = String::from("
-block
-  x = [14; 15; 16]
-  y = [17; 18; 19]
-  #test = x + y");
+  let input = String::from("# Bouncing Balls
+
+Now update the block positions
+  y = #ball.y + #ball.vy
+  dt = #system/timer.resolution
+  
+Define the environment
+  #ball = [x: 15 y: 9 vx: 18 vy: 9]
+  #system/timer = [resolution: 1000]
+  #gravity = 10");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.syntax_tree);
   core.step();
-  //println!("{:?}", core);
+  println!("{:?}", core);
   println!("{:?}", core.runtime); 
 }   
