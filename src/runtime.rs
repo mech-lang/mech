@@ -355,31 +355,30 @@ impl Block {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
               };
-              if self.scratch.rows == 0 {
-                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
-                self.scratch.data = table_ref.data.clone();
-              } else if self.scratch.rows == table_ref.rows {
-                
-                let row_ixes: &Vec<Value> = match rows {
+              let row_ixes: &Vec<Value> = match rows {
                   Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
                   Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
                   _ => &self.rhs_rows_empty,
                 };
-                let column_ixes: &Vec<Value> = match columns {
-                  Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                  Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                  Some(Parameter::Index(index)) => {
-                    let ix = match table_ref.get_column_index(index) {
-                      Some(ix) => ix,
-                      None => 0,
-                    };
-                    self.lhs_columns_empty.push(Value::Number(ix as i64));
-                    &self.lhs_columns_empty
-                  },
-                  _ => &self.lhs_rows_empty,
-                };
-                println!("ROWS {:?}", row_ixes);
-                println!("COLUMNS {:?}", column_ixes);
+              let column_ixes: &Vec<Value> = match columns {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                Some(Parameter::Index(index)) => {
+                  let ix = match table_ref.get_column_index(index) {
+                    Some(ix) => ix,
+                    None => 0,
+                  };
+                  self.lhs_columns_empty.push(Value::Number(ix as i64));
+                  &self.lhs_columns_empty
+                },
+                _ => &self.lhs_rows_empty,
+              };
+              println!("ROWS {:?}", row_ixes);
+              println!("COLUMNS {:?}", column_ixes);
+              if self.scratch.rows == 0 {
+                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
+                self.scratch.data = table_ref.data.clone();
+              } else if self.scratch.rows == table_ref.rows {
                 self.scratch.data.append(&mut table_ref.data.clone());
                 self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + table_ref.columns);
               }
