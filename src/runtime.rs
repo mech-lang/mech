@@ -373,14 +373,26 @@ impl Block {
                 },
                 _ => &self.lhs_rows_empty,
               };
-              println!("ROWS {:?}", row_ixes);
-              println!("COLUMNS {:?}", column_ixes);
+              let width  = if column_ixes.is_empty() { table_ref.columns }
+                       else { column_ixes.len() as u64 };      
+              let height = if row_ixes.is_empty() { table_ref.rows }
+                       else { row_ixes.len() as u64 };
+              // Do the work here
+              // TODO move this into operations
               if self.scratch.rows == 0 {
-                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
-                self.scratch.data = table_ref.data.clone();
-              } else if self.scratch.rows == table_ref.rows {
+                self.scratch.grow_to_fit(height, width);
+                for i in 0..width as usize {
+                  let cix = if column_ixes.is_empty() { i }
+                            else { column_ixes[i].as_u64().unwrap() as usize - 1 };
+                  for j in 0..height as usize {
+                    let rix = if row_ixes.is_empty() { j }
+                              else { row_ixes[i].as_u64().unwrap() as usize - 1 };
+                    self.scratch.data[i][j] = table_ref.data[cix][rix].clone();
+                  }
+                }
+              } else if self.scratch.rows == height {
                 self.scratch.data.append(&mut table_ref.data.clone());
-                self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + table_ref.columns);
+                self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + width);
               }
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
@@ -388,6 +400,7 @@ impl Block {
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
+            self.lhs_columns_empty.clear();
           }
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
