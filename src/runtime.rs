@@ -374,9 +374,9 @@ impl Block {
                 _ => &self.lhs_rows_empty,
               };
               let width  = if column_ixes.is_empty() { table_ref.columns }
-                       else { column_ixes.len() as u64 };      
+                           else { column_ixes.len() as u64 };      
               let height = if row_ixes.is_empty() { table_ref.rows }
-                       else { row_ixes.len() as u64 };
+                           else { row_ixes.len() as u64 };
               // Do the work here
               // TODO move this into operations
               if self.scratch.rows == 0 {
@@ -386,21 +386,33 @@ impl Block {
                             else { column_ixes[i].as_u64().unwrap() as usize - 1 };
                   for j in 0..height as usize {
                     let rix = if row_ixes.is_empty() { j }
-                              else { row_ixes[i].as_u64().unwrap() as usize - 1 };
+                              else { row_ixes[j].as_u64().unwrap() as usize - 1 };
                     self.scratch.data[i][j] = table_ref.data[cix][rix].clone();
                   }
                 }
               } else if self.scratch.rows == height {
-                self.scratch.data.append(&mut table_ref.data.clone());
-                self.scratch.grow_to_fit(self.scratch.rows, self.scratch.columns + width);
+                let start_col: usize = self.scratch.columns as usize;
+                let end_col: usize = (self.scratch.columns + width) as usize;
+                let start_row: usize = 0;
+                let end_row: usize = self.scratch.rows as usize;
+                self.scratch.grow_to_fit(end_row as u64, end_col as u64);
+                for i in start_col..end_col {
+                  let cix = if column_ixes.is_empty() { i - start_col }
+                            else { column_ixes[i - start_col].as_u64().unwrap() as usize - 1 };
+                  for j in 0..height as usize {
+                    let rix: usize = if row_ixes.is_empty() { j }
+                              else { row_ixes[j as usize].as_u64().unwrap() as usize - 1 };
+                    self.scratch.data[i as usize][j as usize] = table_ref.data[cix][rix].clone();
+                  }
+                }
               }
+              self.lhs_columns_empty.clear();
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
-            self.lhs_columns_empty.clear();
           }
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
