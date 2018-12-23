@@ -63,9 +63,9 @@ macro_rules! binary_math {
                     else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
           for j in 0..lhs_height as usize {
             let lrix = if lhs_rows.is_empty() { j }
-                       else { lhs_rows[i].as_u64().unwrap() as usize - 1 };
+                       else { lhs_rows[j].as_u64().unwrap() as usize - 1 };
             let rrix = if rhs_rows.is_empty() { j }
-                       else { rhs_rows[i].as_u64().unwrap() as usize - 1 };
+                       else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::from_i64(x $op y);
