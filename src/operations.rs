@@ -161,8 +161,8 @@ impl fmt::Debug for Comparator {
 #[macro_export]
 macro_rules! comparator {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Table, lhs_rows: &Option<TableId>, lhs_columns: &Option<TableId>, 
-                      rhs: &Table, rhs_rows: &Option<TableId>, rhs_columns: &Option<TableId>,
+    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Value>, lhs_columns: &Vec<Value>, 
+                      rhs: &Table, rhs_rows: &Vec<Value>, rhs_columns: &Vec<Value>,
                       out: &mut Table) {
                        /* 
       // Get the math dimensions
