@@ -458,14 +458,25 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }
-        let mut parameter_registers: Vec<(TableId, Option<TableId>, Option<TableId>)> = vec![];
+        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
+              let rows_parameter = match rows {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              let columns_parameter = match columns {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            },
+            Constraint::ScanColumn{table, column} => {
+              parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
