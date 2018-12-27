@@ -232,6 +232,7 @@ impl Block {
     for constraint in reversed {
       match constraint {
         Constraint::Filter{..} |
+        Constraint::Logic{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
         Constraint::Range{..} |
