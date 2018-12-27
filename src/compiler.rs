@@ -493,11 +493,10 @@ impl Compiler {
         }  
       },
       Node::LogicExpression{name, children} => {
-        /*
-        let comparator = match name.as_ref() {
-          "&" => Comparator::And,
-          "|" => Comparator::Or,
-          _ => Comparator::Undefined,
+        let logic = match name.as_ref() {
+          "&" => Logic::And,
+          "|" => Logic::Or,
+          _ => Logic::Undefined,
         };
         self.table = Hasher::hash_string(format!("LogicExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
@@ -506,29 +505,40 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }
-        let mut parameter_registers: Vec<(TableId, Vec<Index>, Vec<Index>)> = vec![];
+        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push((id.clone(), vec![], vec![]));
+              parameter_registers.push((id.clone(), None, None));
             },
             Constraint::Scan{table, rows, columns} => {
-              parameter_registers.push((table.clone(), rows.clone(), columns.clone()));
+              let rows_parameter = match rows {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              let columns_parameter = match columns {
+                Some(x) => Some(Parameter::TableId(x.clone())),
+                None => None, 
+              };
+              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            },
+            Constraint::ScanColumn{table, column} => {
+              parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
             },
             Constraint::Function{operation, parameters, output} => {
               for o in output {
-                parameter_registers.push((o.clone(), vec![], vec![]));
+                parameter_registers.push((o.clone(), None, None));
               }
             },
             _ => (),
           };
         }
         constraints.push(Constraint::NewTable{id: output.clone(), rows: 0, columns: 0});
-        constraints.push(Constraint::Filter{comparator, lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
+        constraints.push(Constraint::Logic{logic, lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
-        }*/
-      },
+        }  
+      },      
       Node::Range{children} => {
         let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
         let mut arguments = vec![];
