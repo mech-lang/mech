@@ -361,3 +361,4 @@ macro_rules! logic {
 
 logic!{logic_and, &&}
 logic!{logic_or, ||}
+logic!{logic_undefined, &&}
