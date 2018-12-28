@@ -56,9 +56,6 @@ compile_string!(table_define_data, "#table = [x y z
 compile_string!(table_define_data_math, "#table = [x      y          z
                                                    1 * 2, 4 + 7 * 9, 3]");
 
-//compile_string!(table_index_bracket_index, "#table[1]");
-//compile_string!(table_index_dot_index_name, "#table.field");
-
 test_math!(table_define_program, "# A Working Program
 
 ## Section Two
@@ -177,4 +174,3 @@ block
   x = 3:6
   y = 10:12
   #test = x{1,1} + y{3,1}", 15);
-
