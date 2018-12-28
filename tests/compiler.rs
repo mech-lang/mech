@@ -174,3 +174,9 @@ block
   x = 3:6
   y = 10:12
   #test = x{1,1} + y{3,1}", 15);
+
+test_math!(subscript_scan,"
+block
+  x = 10:20
+  z = 3:5
+  #test = x{z, :}", 12);
