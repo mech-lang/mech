@@ -638,6 +638,7 @@ impl Compiler {
             Constraint::NewTable{ref id, rows, columns} => indices.push(Some(id.clone())),
             Constraint::SelectAll => indices.push(None),
             Constraint::Null => indices.push(None),
+            Constraint::Scan{table, ..} => indices.push(Some(table.clone())),
             Constraint::Identifier{id} => {
               // If we have an identifier, it means we're doing a column select
               select_column = *id;
