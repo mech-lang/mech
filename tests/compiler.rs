@@ -186,3 +186,9 @@ test_math!(subscript_logical_greater,"
   x = 10:20
   z = x > 15
   #test = x{z, :}", 16);
+
+test_math!(subscript_logical_less,"
+  block
+  x = 10:20
+  z = x < 15
+  #test = x{z, :}", 10);
