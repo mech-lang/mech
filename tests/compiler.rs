@@ -180,3 +180,9 @@ block
   x = 10:20
   z = 3:5
   #test = x{z, :}", 12);
+
+test_math!(subscript_logical_greater,"
+  block
+  x = 10:20
+  z = x > 15
+  #test = x{z, :}", 16);
