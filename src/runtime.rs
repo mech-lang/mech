@@ -350,7 +350,6 @@ impl Block {
           // Concat Functions  
           if *operation == Function::HorizontalConcatenate {
             let out_table = &output[0];
-
             for (table, rows, columns) in parameters {
               let table_ref = match table {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
@@ -380,17 +379,51 @@ impl Block {
                            else { row_ixes.len() as u64 };
               // Do the work here
               // TODO move this into operations
+              println!("HERE");
               if self.scratch.rows == 0 {
                 self.scratch.grow_to_fit(height, width);
+                let mut iix = 0;
+                let mut actual_width = 0;
+                let mut actual_height = 0;
                 for i in 0..width as usize {
+                  let mut column_mask = true;
                   let cix = if column_ixes.is_empty() { i }
-                            else { column_ixes[i].as_u64().unwrap() as usize - 1 };
+                            else { 
+                              match column_ixes[i] {
+                                Value::Number(n) => n as usize - 1,
+                                Value::Bool(true) => i,
+                                _ => {
+                                  column_mask = false;
+                                  0
+                                },  
+                              }
+                            };
+                  let mut jix = 0;
                   for j in 0..height as usize {
+                    let mut row_mask = true;
                     let rix = if row_ixes.is_empty() { j }
-                              else { row_ixes[j].as_u64().unwrap() as usize - 1 };
-                    self.scratch.data[i][j] = table_ref.data[cix][rix].clone();
+                              else { 
+                                match row_ixes[j] {
+                                  Value::Number(n) => n as usize - 1,
+                                  Value::Bool(true) => j,
+                                  _ => {
+                                    row_mask = false;
+                                    0
+                                  }, 
+                                }
+                              };
+                    if column_mask == true && row_mask == true {
+                      self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
+                      jix += 1;
+                      actual_height = jix;
+                    }
+                  }
+                  if column_mask == true {
+                    iix += 1;
+                    actual_width = iix;
                   }
                 }
+                self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
               } else if self.scratch.rows == height {
                 let start_col: usize = self.scratch.columns as usize;
                 let end_col: usize = (self.scratch.columns + width) as usize;
