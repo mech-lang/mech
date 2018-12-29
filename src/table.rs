@@ -296,6 +296,23 @@ impl Table {
       self.rows = rows;
     }    
   }
+
+  pub fn shrink_to_fit(&mut self, rows: u64, columns: u64) {
+    if columns < self.columns {
+      // The new row is larger than the underlying column structure
+      if columns > self.data.len() as u64 {
+        let new_column = vec![Value::Empty; self.rows as usize];
+        self.data.resize(columns as usize, new_column);
+      }
+      self.columns = columns;
+    }
+    if rows < self.rows {
+      for column in &mut self.data {
+        column.resize(rows as usize, Value::Empty);
+      }
+      self.rows = rows;
+    }    
+  }
   
   pub fn get_row(&self, row: &Index) -> Option<Vec<Value>> {
     match self.get_row_index(row) {
