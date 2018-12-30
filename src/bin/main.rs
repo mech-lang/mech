@@ -22,9 +22,15 @@ fn main() {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 10:20
-  z = 3:5
-  #y = x{z, :}");
+  x = #ball.x
+  ix = x > 4
+  #ball.x{ix} := 3
+
+block
+  #ball = [x y z
+           1 2 3
+           4 5 6
+           7 8 9]");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
