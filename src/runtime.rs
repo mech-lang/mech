@@ -379,7 +379,6 @@ impl Block {
                            else { row_ixes.len() as u64 };
               // Do the work here
               // TODO move this into operations
-              println!("HERE");
               if self.scratch.rows == 0 {
                 self.scratch.grow_to_fit(height, width);
                 let mut iix = 0;
