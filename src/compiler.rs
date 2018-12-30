@@ -110,7 +110,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::Constant{value} => {print!("Constant({:?})\n", value); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
-    Node::Table{name,id} => {print!("Table(#{}({:?}))\n", name, id); None},
+    Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     Node::SelectAll => {print!("SelectAll\n"); None},
