@@ -483,7 +483,7 @@ node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define)
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
 node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
 
-node!{set_data, SetData, |s|{ data(s).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
+node!{set_data, SetData, |s|{ table(s).optional(index).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
 node!{variable_define, VariableDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "VariableDefine"}
