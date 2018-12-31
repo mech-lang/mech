@@ -317,7 +317,41 @@ impl Compiler {
     
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
-      
+      Node::SetData{children} => {
+        let result1 = self.compile_constraint(&children[0]);
+        let to = match &result1[0] {
+          Constraint::Identifier{id} => TableId::Global(id.clone()),
+          _ => TableId::Global(0), 
+        };
+        let mut result2 = self.compile_constraint(&children[2]);
+        let from = match &result2[0] {
+          Constraint::NewTable{id, ..} => id.clone(),
+          _ => TableId::Local(0), 
+        };
+        // Get the subscripts for the destination
+        let mut select_data_children = vec![];
+        match &children[1] {
+          Node::DotIndex{column} => {
+            for subscript in column {
+              match subscript {
+                Node::Identifier{name, id} => select_data_children.push(Some(Parameter::Index(Index::Alias(id.clone())))),
+                Node::SubscriptIndex{children} => {
+                  for child in children {
+                    match child {
+                      Node::SelectData{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
+                      _ => (),
+                    }
+                  }
+                },
+                _ => (),
+              };
+            }
+          },
+          _ => (),
+        }
+        constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
+        constraints.append(&mut result2);
+      },
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
