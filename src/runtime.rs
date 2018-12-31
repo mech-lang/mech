@@ -693,37 +693,7 @@ impl Block {
           out.rows = self.scratch.rows;
           out.columns = self.scratch.columns;
           self.scratch.clear();
-        }
-        /*
-        Constraint::Condition{truth, result, default, memory} => {
-          for i in 1 .. self.memory.rows + 1 {
-            match self.memory.index(i, *truth as usize) {
-              Some(Value::Bool(true)) => {
-                let value = self.memory.index(i, *result as usize).unwrap().clone();
-                self.memory.set_cell(i, *memory as usize, value);
-              },
-              Some(Value::Bool(false)) => {
-                let value = self.memory.index(i, *default as usize).unwrap().clone();
-                self.memory.set_cell(i, *memory as usize, value);
-              },
-              _ => (),
-            };
-          }
-        }
-        Constraint::IndexMask{source, truth, memory} => {
-          let source_ix = *source as usize;
-          let memory_ix = *memory as usize;
-          let source_length = self.column_lengths[source_ix - 1] as usize;
-          for i in 1 .. source_length + 1 {
-            let value = self.memory.index(i, source_ix).unwrap().clone();
-            match self.memory.index_by_alias(i, truth) {
-              Some(Value::Bool(true)) =>  self.memory.set_cell(i, memory_ix, value),
-              Some(Value::Bool(false)) => self.memory.set_cell(i, memory_ix, Value::Empty),
-              otherwise => Ok(Value::Empty),
-            };
-          }
-          self.column_lengths[memory_ix - 1] = source_length as u64;
-        },*/
+        },
         Constraint::Insert{from, to} => {
           /*
           let (from_table, from_row, from_column) = from;
