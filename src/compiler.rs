@@ -349,8 +349,8 @@ impl Compiler {
           },
           _ => (),
         }
-        constraints.append(&mut result2);
         constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
+        constraints.append(&mut result2);
       },
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
