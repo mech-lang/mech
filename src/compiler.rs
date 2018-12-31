@@ -244,6 +244,16 @@ impl Compiler {
                   TableId::Global(id) => false, // TODO handle global
                 };
               },
+              Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
+                match from_table {
+                  TableId::Local(id) => false,
+                  _ => false,
+                };
+                match to_table {
+                  TableId::Global(id) => produces.insert(id),
+                  _ => false,
+                };
+              },
               _ => (),
             }
             
