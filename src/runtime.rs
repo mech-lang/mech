@@ -840,7 +840,7 @@ pub enum Constraint {
   CopyTable {from_table: u64, to_table: u64},
   AliasTable {table: TableId, alias: u64},
   // Output Constraints
-  Insert {from: (u64, u64, u64), to: (u64, u64, u64)},
+  Insert {from: (TableId, Option<Parameter>, Option<Parameter>), to: (TableId, Option<Parameter>, Option<Parameter>)},
   Append {memory: u64, table: u64, column: u64},
   SelectAll,
   Null,
