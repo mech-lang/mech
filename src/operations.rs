@@ -100,9 +100,9 @@ macro_rules! binary_math {
         out.grow_to_fit(lhs_height, lhs_width);        
         for i in 0..rhs_width as usize {
           let lcix = if lhs_columns.is_empty() { i }
-                    else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
+                     else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
           let rcix = if rhs_columns.is_empty() { 0 }
-                    else { rhs_columns[0].as_u64().unwrap() as usize - 1 };
+                     else { rhs_columns[0].as_u64().unwrap() as usize - 1 };
           for j in 0..lhs_height as usize {
             let lrix = if lhs_rows.is_empty() { j }
                        else { lhs_rows[j].as_u64().unwrap() as usize - 1 };
