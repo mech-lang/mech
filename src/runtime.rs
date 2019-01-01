@@ -197,6 +197,7 @@ pub struct Block {
   lhs_columns_empty: Vec<Value>,
   rhs_rows_empty: Vec<Value>,
   rhs_columns_empty: Vec<Value>,
+  block_changes: Vec<Change>,
 }
 
 impl Block {
@@ -219,6 +220,7 @@ impl Block {
       lhs_columns_empty: Vec::new(),
       rhs_rows_empty: Vec::new(),
       rhs_columns_empty: Vec::new(),
+      block_changes: Vec::new(),
     }
   }
 
@@ -695,31 +697,109 @@ impl Block {
           self.scratch.clear();
         },
         Constraint::Insert{from, to} => {
-          /*
-          let (from_table, from_row, from_column) = from;
-          let (to_table, to_row, to_column) = to;
-          }match &mut self.memory.get_mut(*from_table) {
-            Some(table_ref) => {
-              match &mut table_ref.get_column_by_ix(*from_column as usize) {
-                Some(column_data) => {
-                  for (row_ix, cell) in column_data.iter().enumerate() {
-                    match cell {
-                      Value::Empty => (),
-                      _ => {
-                        store.process_transaction(&Transaction::from_change(
-                          Change::Set{ table: *to_table, row: row_ix as u64 + 1, column: *to_column, value: cell.clone() },
-                        ));;
-                      }
-                    }
-                  }
-                },
-                None => (),
+          
+          let (from_table, from_rows, from_columns) = from;
+          let (to_table, to_rows, to_columns) = to;
+
+          let from = match from_table {
+            TableId::Local(id) => self.memory.get(*id).unwrap(),
+            TableId::Global(id) => store.get_table(*id).unwrap(),
+          };
+
+          let (to, to_table_id) = match to_table {
+            TableId::Local(id) => (self.memory.get(*id).unwrap(), id.clone()),
+            TableId::Global(id) => (store.get_table(*id).unwrap(), id.clone()),
+          };
+
+          let from_column_values: &Vec<Value> = match from_columns {
+            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+            Some(Parameter::Index(index)) => {
+              let ix = match from.get_column_index(index) {
+                Some(ix) => ix,
+                None => 0,
               };
+              self.rhs_columns_empty.push(Value::Number(ix as i64));
+              &self.rhs_columns_empty
             },
-            None => (),
-          }*/
-        },/*
+            _ => &self.rhs_columns_empty,
+          };
+
+          let from_row_values: &Vec<Value> = match from_rows {
+            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+            Some(Parameter::Index(index)) => {
+              let ix = match from.get_row_index(index) {
+                Some(ix) => ix,
+                None => 0,
+              };
+              self.rhs_rows_empty.push(Value::Number(ix as i64));
+              &self.rhs_rows_empty
+            },
+            _ => &self.rhs_rows_empty,
+          };
+
+          let to_column_values: &Vec<Value> = match to_columns {
+            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+            Some(Parameter::Index(index)) => {
+              let ix = match from.get_column_index(index) {
+                Some(ix) => ix,
+                None => 0,
+              };
+              self.lhs_columns_empty.push(Value::Number(ix as i64));
+              &self.lhs_columns_empty
+            },
+            _ => &self.lhs_columns_empty,
+          };
+
+          let to_row_values: &Vec<Value> = match to_rows {
+            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+            Some(Parameter::Index(index)) => {
+              let ix = match from.get_row_index(index) {
+                Some(ix) => ix,
+                None => 0,
+              };
+              self.lhs_rows_empty.push(Value::Number(ix as i64));
+              &self.lhs_rows_empty
+            },
+            _ => &self.lhs_rows_empty,
+          };
+
+          let to_width = if to_column_values.is_empty() { to.columns }
+                        else { to_column_values.len() as u64 };
+          let from_width = if from_column_values.is_empty() { from.columns }
+                          else { from_column_values.len() as u64 };      
+          let to_height = if to_row_values.is_empty() { to.rows }
+                          else { to_row_values.len() as u64 };
+          let from_height = if from_row_values.is_empty() { from.rows }
+                            else { from_row_values.len() as u64 };
+
+          let to_is_scalar = to_width == 1 && to_height == 1;
+          let from_is_scalar = from_width == 1 && from_height == 1;
+
+          // TODO MAKE THIS REAL
+          if from_is_scalar {
+            for i in 0..to_width as usize {
+              for j in 0..to_height as usize {
+                match &to_row_values[j] {
+                  Value::Bool(true) => {
+                    let change = Change::Set{table: to_table_id.clone(), 
+                                             row: Index::Index(j as u64 + 1), 
+                                             column: Index::Index(i as u64 + 1), 
+                                             value: from.data[0][0].clone() 
+                                            };
+                    self.block_changes.push(change);
+                  },
+                  _ => (),
+                }
+              }
+            }
+          }
+        },
         Constraint::Append{memory, table, column} => {
+          /*
           match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
               for (row_ix, cell) in column_data.iter().enumerate() {
@@ -735,9 +815,8 @@ impl Block {
               }
             },
             None => (),
-          }
+          }*/
         },
-        */
         Constraint::CopyTable{from_table, to_table} => {
           let from_table_ref = self.memory.get(*from_table).unwrap();
           let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
@@ -765,6 +844,7 @@ impl Block {
       } 
       
     }
+    store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
     self.updated = true;
   }
 }
