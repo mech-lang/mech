@@ -192,3 +192,15 @@ test_math!(subscript_logical_less,"
   x = 10:20
   z = x < 15
   #test = x{z, :}", 10);
+
+test_math!(set_column_logical,"
+block
+  ix = x > 0
+  x = #test.x
+  #test.x{ix} := 3
+
+block
+  #test = [x y z
+           1 2 3
+           4 5 6
+           7 8 9]", 3);
