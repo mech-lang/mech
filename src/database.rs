@@ -165,7 +165,6 @@ impl Interner {
     for add in txn.adds.iter() {
       self.intern_change(add);
     }    
-    println!("{:?}", self.tables);
   }
 
   fn intern_change(&mut self, change: &Change) {  
