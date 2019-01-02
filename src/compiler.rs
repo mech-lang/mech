@@ -426,7 +426,6 @@ impl Compiler {
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
-          println!("{:?}", result);
           match result[0] {
             Constraint::Identifier{id} => {
               column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_alias: id});
