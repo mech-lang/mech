@@ -22,8 +22,8 @@ fn main() {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
+  ix = x > 0
   x = #ball.x
-  ix = x > 4
   #ball.x{ix} := 3
 
 block
