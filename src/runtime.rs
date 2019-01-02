@@ -797,6 +797,10 @@ impl Block {
               }
             }
           }
+          self.rhs_columns_empty.clear();
+          self.lhs_columns_empty.clear();
+          self.rhs_rows_empty.clear();
+          self.lhs_rows_empty.clear();
         },
         Constraint::Append{memory, table, column} => {
           /*
