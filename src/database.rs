@@ -149,7 +149,6 @@ impl Interner {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
-    
     // First make any tables
     for table in txn.tables.iter() {
       self.intern_change(table);
@@ -166,16 +165,20 @@ impl Interner {
     for add in txn.adds.iter() {
       self.intern_change(add);
     }    
-
+    println!("{:?}", self.tables);
   }
 
   fn intern_change(&mut self, change: &Change) {  
     match change {
       Change::Set{table, row, column, value} => {
+        let mut changed = false;
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
             let old_value = table_ref.set_cell(&row, &column, value.clone());
-            if self.offset == 0 {
+            if old_value != *value {
+              changed = true;
+            }
+            if self.offset == 0 && changed == true {
               match old_value {
                 Value::Empty => (),
                 // Save a remove so that we can rewind
@@ -185,8 +188,10 @@ impl Interner {
           }
           None => (),
         };
-        self.tables.changed_this_round.insert((table.clone(), column.clone()));
-        self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
+        if changed == true {
+          self.tables.changed_this_round.insert((table.clone(), column.clone()));
+          self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
+        }
       },
       Change::Remove{table, row, column, value} => {
         /*
