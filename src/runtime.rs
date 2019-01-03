@@ -768,9 +768,9 @@ impl Block {
           };
 
           let to_width = if to_column_values.is_empty() { to.columns }
-                        else { to_column_values.len() as u64 };
+                         else { to_column_values.len() as u64 };
           let from_width = if from_column_values.is_empty() { from.columns }
-                          else { from_column_values.len() as u64 };      
+                           else { from_column_values.len() as u64 };      
           let to_height = if to_row_values.is_empty() { to.rows }
                           else { to_row_values.len() as u64 };
           let from_height = if from_row_values.is_empty() { from.rows }
