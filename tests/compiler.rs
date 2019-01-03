@@ -204,3 +204,18 @@ block
            1 2 3
            4 5 6
            7 8 9]", 3);
+
+test_math!(set_second_column_logical,"
+block
+  #test = #ball.y
+
+block
+  ix = x > 0
+  x = #ball.y
+  #ball.y{ix} := 3
+
+block
+  #ball = [x y z
+           1 2 3
+           4 5 6
+           7 8 9]", 3);
