@@ -743,7 +743,7 @@ impl Block {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match from.get_column_index(index) {
+              let ix = match to.get_column_index(index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -757,7 +757,7 @@ impl Block {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match from.get_row_index(index) {
+              let ix = match to.get_row_index(index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -782,12 +782,14 @@ impl Block {
           // TODO MAKE THIS REAL
           if from_is_scalar {
             for i in 0..to_width as usize {
+              let cix = if to_column_values.is_empty() { i }
+                        else { to_column_values[i].as_u64().unwrap() as usize - 1 };
               for j in 0..to_height as usize {
                 match &to_row_values[j] {
                   Value::Bool(true) => {
                     let change = Change::Set{table: to_table_id.clone(), 
                                              row: Index::Index(j as u64 + 1), 
-                                             column: Index::Index(i as u64 + 1), 
+                                             column: Index::Index(cix as u64 + 1),
                                              value: from.data[0][0].clone() 
                                             };
                     self.block_changes.push(change);
