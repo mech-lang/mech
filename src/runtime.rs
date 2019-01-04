@@ -823,7 +823,7 @@ impl Block {
           if from_width == to_width {
             for i in 0..from_width as usize {
               for j in 0..from.rows as usize {
-                self.block_changes.push(Change::Append{ table: *to_id, column: i as u64 + 1, value: from.data[i][j].clone() });
+                self.block_changes.push(Change::Set{table: *to_id, row: Index::Index((j as u64 + to.rows) + 1), column: Index::Index(i as u64 + 1), value: from.data[i][j].clone() });
               }
             }
           }
