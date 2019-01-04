@@ -22,9 +22,15 @@ fn main() {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
+  y = #test.x
+  #test += [x: 10 y: 11 z: 12]
+
+block
   ix = x > 0
-  x = #ball.x
-  #ball.x{ix} := 3
+  x = #ball.y
+  #ball.y{ix} := 3
+  #test = [x y z
+           5 6 7]
 
 block
   #ball = [x y z
