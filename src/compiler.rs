@@ -365,7 +365,19 @@ impl Compiler {
       },
       Node::AddRow{children} => {
         let mut result = self.compile_constraints(&children);
-        constraints.append(&mut result);
+        let mut to_table_constraints = self.compile_constraint(&children[0]);
+        let mut from_table_constraints = self.compile_constraint(&children[1]);
+        let to_table = match to_table_constraints[0].clone() {
+          Constraint::Identifier{id} => TableId::Global(id),
+          _ => TableId::Global(0),
+        };
+        let from_table = match from_table_constraints[0].clone() {
+          Constraint::NewTable{id, ..} => id,
+          _ => TableId::Global(0),
+        };
+        constraints.push(Constraint::Append{from_table, to_table});
+        constraints.append(&mut from_table_constraints);
+        constraints.append(&mut to_table_constraints);
       },
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
