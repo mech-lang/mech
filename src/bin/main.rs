@@ -23,14 +23,16 @@ fn main() {
   let input = String::from("
 block
   y = #test.x
-  #test += [x: 10 y: 11 z: 12]
+  #test += [x: 100 y: 110 z: 120]
 
 block
   ix = x > 0
   x = #ball.y
   #ball.y{ix} := 3
   #test = [x y z
-           5 6 7]
+           5 6 7
+           8 9 10
+           11 12 13]
 
 block
   #ball = [x y z
@@ -43,5 +45,5 @@ block
   println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  println!("{:?}", core.runtime); 
+  //println!("{:?}", core.runtime); 
 }   
