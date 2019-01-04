@@ -804,7 +804,7 @@ impl Block {
           self.rhs_rows_empty.clear();
           self.lhs_rows_empty.clear();
         },
-        Constraint::Append{memory, table, column} => {
+        Constraint::Append{from_table, to_table} => {
           /*
           match &mut self.memory.get_column_by_ix(*memory as usize) {
             Some(column_data) => {
@@ -927,7 +927,7 @@ pub enum Constraint {
   AliasTable {table: TableId, alias: u64},
   // Output Constraints
   Insert {from: (TableId, Option<Parameter>, Option<Parameter>), to: (TableId, Option<Parameter>, Option<Parameter>)},
-  Append {memory: u64, table: u64, column: u64},
+  Append {from_table: TableId, to_table: TableId},
   SelectAll,
   Null,
 }
@@ -950,7 +950,7 @@ impl fmt::Debug for Constraint {
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
-      Constraint::Append{memory, table, column} => write!(f, "Append(M{:#x} -> #{:#x}[{:#x}])",  memory, table, column),
+      Constraint::Append{from_table, to_table} => write!(f, "Append({:?} -> {:?})", from_table, to_table),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
       Constraint::Range{table, start, end} => write!(f, "Range({:?} -> {:?} to {:?})", table, start, end),
       Constraint::SelectAll => write!(f, "SelectAll"),
