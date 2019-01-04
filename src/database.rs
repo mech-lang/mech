@@ -12,7 +12,6 @@ use indexes::TableIndex;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Change {
-  Append{table: u64, column: u64, value: Value},
   Set{table: u64, row: Index, column: Index, value: Value},
   Remove{table: u64, row: Index, column: Index, value: Value},
   NewTable{id: u64, rows: u64, columns: u64},
@@ -24,7 +23,6 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Change::Append{table, column, value} => write!(f, "<append> #{:#x} [{:#x}: {:?}]", table, column, value),
       Change::Set{table, row, column, value} => write!(f, "<set> #{:#x} [{:?} {:?} {:?}]", table, row, column, value),
       Change::Remove{table, row, column, value} => write!(f, "<remove> #{:#x} [{:?} {:?}: {:?}]", table, row, column, value),
       Change::NewTable{id, rows, columns} => write!(f, "<newtable> #{:#x} [{:?} x {:?}]", id, rows, columns),
@@ -58,7 +56,6 @@ impl Transaction {
     let mut txn = Transaction::new();
     for change in changes {
       match change {
-        Change::Append{..} |
         Change::Set{..} => txn.adds.push(change),
         Change::Remove{..} => txn.removes.push(change),
         Change::RemoveTable{..} |
@@ -72,7 +69,6 @@ impl Transaction {
   pub fn from_change(change: Change) -> Transaction {
     let mut txn = Transaction::new();
     match change {
-      Change::Append{..} |
       Change::Set{..} => txn.adds.push(change),
       Change::Remove{..} => txn.removes.push(change),
       Change::RemoveTable{..} |
@@ -184,6 +180,7 @@ impl Interner {
                 _ => self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
               }
             }
+            
           }
           None => (),
         };
@@ -204,18 +201,6 @@ impl Interner {
               None => (),
             };            
           },
-        };
-        self.tables.changed_this_round.insert((*table as usize, *column as usize));
-        */
-      },
-      Change::Append{table, column, value} => {
-        /*
-        match self.tables.get_mut(*table) {
-          Some(table_ref) => {
-            let row: usize = table_ref.rows + 1;;
-            table_ref.set_cell_by_id(row, *column as usize, value.clone());
-          }
-          None => (),
         };
         self.tables.changed_this_round.insert((*table as usize, *column as usize));
         */
