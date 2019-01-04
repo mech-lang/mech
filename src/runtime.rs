@@ -238,6 +238,7 @@ impl Block {
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
         Constraint::Range{..} |
+        Constraint::Append{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
