@@ -26,9 +26,7 @@ block
   #test += [x: 100 y: 110 z: 120]
 
 block
-  ix = x > 0
   x = #ball.y
-  #ball.y{ix} := 3
   #test = [x y z
            5 6 7
            8 9 10
@@ -36,14 +34,12 @@ block
 
 block
   #ball = [x y z
-           1 2 3
-           4 5 6
-           7 8 9]");
+           1 2 3]");
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  //println!("{:?}", core.runtime); 
+  println!("{:?}", core.runtime); 
 }   
