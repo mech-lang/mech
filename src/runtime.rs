@@ -770,7 +770,7 @@ impl Block {
 
           let to_width = if to_column_values.is_empty() { to.columns }
                          else { to_column_values.len() as u64 };
-          let from_width = if from_column_values.is_empty() { from.columns }
+            let from_width = if from_column_values.is_empty() { from.columns }
                            else { from_column_values.len() as u64 };      
           let to_height = if to_row_values.is_empty() { to.rows }
                           else { to_row_values.len() as u64 };
@@ -806,23 +806,27 @@ impl Block {
           self.lhs_rows_empty.clear();
         },
         Constraint::Append{from_table, to_table} => {
-          /*
-          match &mut self.memory.get_column_by_ix(*memory as usize) {
-            Some(column_data) => {
-              for (row_ix, cell) in column_data.iter().enumerate() {
-                let length = column_data.len() as u64;
-                match cell {
-                  Value::Empty => (),
-                  _ => {
-                    store.process_transaction(&Transaction::from_change(
-                      Change::Append{ table: *table, column: *column, value: cell.clone() }
-                    ));
-                  }
-                }
+
+          let from = match from_table {
+            TableId::Local(id) => self.memory.get(*id).unwrap(),
+            TableId::Global(id) => store.get_table(*id).unwrap(),
+          };
+
+          let (to, to_id) = match to_table {
+            TableId::Local(id) => (self.memory.get(*id).unwrap(), id),
+            TableId::Global(id) => (store.get_table(*id).unwrap(), id),
+          };
+
+          let from_width = from.columns;
+          let to_width = to.columns;
+
+          if from_width == to_width {
+            for i in 0..from_width as usize {
+              for j in 0..from.rows as usize {
+                self.block_changes.push(Change::Append{ table: *to_id, column: i as u64 + 1, value: from.data[i][j].clone() });
               }
-            },
-            None => (),
-          }*/
+            }
+          }
         },
         Constraint::CopyTable{from_table, to_table} => {
           let from_table_ref = self.memory.get(*from_table).unwrap();
