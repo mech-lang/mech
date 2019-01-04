@@ -363,6 +363,10 @@ impl Compiler {
         constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
         constraints.append(&mut result2);
       },
+      Node::AddRow{children} => {
+        let mut result = self.compile_constraints(&children);
+        constraints.append(&mut result);
+      },
       Node::Statement{children} => {
         constraints.append(&mut self.compile_constraints(children));
       },
@@ -1259,6 +1263,7 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::AddOperator{children} |
       parser::Node::LogicOperator{children} |
       parser::Node::Subscript{children} |
       parser::Node::DataOrConstant{children} |
