@@ -219,3 +219,24 @@ block
            1 2 3
            4 5 6
            7 8 9]", 3);
+
+test_math!(append_row_inline,"
+block
+  ix = #foo.x > 50
+  #test = #foo{ix, :}
+
+block
+  y = #z
+  #foo += [x: 100 y: 110 z: 120]
+
+block
+  x = #ball.y
+  #z = [x: 123 y: 456]
+  #foo = [x y z
+           5 6 7
+           8 9 10
+           11 12 13]
+
+block
+  #ball = [x y z
+           1 2 3]", 100);
