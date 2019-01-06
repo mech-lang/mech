@@ -919,7 +919,6 @@ pub enum Constraint {
   Scan {table: TableId, rows: Option<TableId>, columns: Option<TableId>},
   ScanColumn {table: TableId, column: Index},
   Identifier {id: u64},
-  ChangeScan {table: u64, column: u64, input: u64},
   Range{table: TableId, start: TableId, end: TableId},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
@@ -944,7 +943,6 @@ impl fmt::Debug for Constraint {
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
       Constraint::ScanColumn{table, column} => write!(f, "ScanColumn(#{:?}({:?}))", table, column),
-      Constraint::ChangeScan{table, column, input} => write!(f, "ChangeScan(#{:#x}({:#x}) -> I{:?})", table, column, input),
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
