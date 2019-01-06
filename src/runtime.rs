@@ -912,7 +912,6 @@ pub struct Pipe {
 
 #[derive(Clone)]
 pub enum Constraint {
-  Data {table: u64, column: u64},
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
@@ -942,7 +941,6 @@ impl fmt::Debug for Constraint {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Constraint::Reference{table, rows, columns, destination} => write!(f, "Reference(@{:#x}(rows: {:?}, cols: {:?}) -> {:?})", table, rows, columns, destination),
-      Constraint::Data{table, column} => write!(f, "Data(#{:#x}({:#x}))", table, column),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
       Constraint::ScanColumn{table, column} => write!(f, "ScanColumn(#{:?}({:?}))", table, column),
