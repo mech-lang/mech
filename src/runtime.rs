@@ -111,8 +111,9 @@ impl Runtime {
       }
       // Halt iterating if we've exceeded the maximum number of allowed iterations.
       iteration_count += 1;
-      if iteration_count > max_iterations {
-        // TODO Insert an error into the db here.
+      if iteration_count == max_iterations {
+        // TODO Insert an error into the db here instead.
+        println!("Reached iteration limit {:?}", iteration_count);
         self.ready_blocks.clear();        
       }
       // Terminate if no blocks are ready to execute next round.
