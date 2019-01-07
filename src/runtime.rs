@@ -81,13 +81,10 @@ impl Runtime {
   }
 
   // We've just interned some changes, and now we react to them by running the 
-  // block graph.
-  pub fn run_network(&mut self, store: &mut Interner) {
-    // Run the compute graph until it reaches a steady state, or until it hits 
-    // an iteration limit
-    // TODO Make this a parameter
-    let max_iterations = 10_000;
-    let mut n = 0; 
+  // block graph. The graph is run until the tables reach a steady state or 
+  // we hit the max_iteration limit
+  pub fn run_network(&mut self, store: &mut Interner, max_iterations: u64) {
+    let mut iteration_count = 0; 
     // Note: The way this while loop is written, it's actually a do-while loop.
     // This is a little trick in Rust. This means the network will always run
     // at least one time, and if there are no more ready blocks after that run,
@@ -113,8 +110,8 @@ impl Runtime {
         }
       }
       // Halt iterating if we've exceeded the maximum number of allowed iterations.
-      n += 1;
-      if n > max_iterations {
+      iteration_count += 1;
+      if iteration_count > max_iterations {
         // TODO Insert an error into the db here.
         self.ready_blocks.clear();        
       }

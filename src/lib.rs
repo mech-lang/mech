@@ -102,7 +102,7 @@ impl Core {
   }
 
   pub fn step(&mut self) {
-    self.runtime.run_network(&mut self.store);
+    self.runtime.run_network(&mut self.store, 10_000);
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
@@ -223,7 +223,7 @@ impl Core {
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
     self.store.process_transaction(txn);
-    self.runtime.run_network(&mut self.store);
+    self.runtime.run_network(&mut self.store, 10_000);
 
     self.transaction_boundaries.push(self.store.change_pointer);
     self.epoch = self.store.rollover;
