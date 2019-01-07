@@ -240,3 +240,16 @@ block
 block
   #ball = [x y z
            1 2 3]", 100);
+
+test_math!(logic_and,"
+block
+  ix1 = #foo.x > 5
+  ix2 = #foo.x < 11
+  ix3 = ix1 & ix2
+  #test = #foo{ix3, 1}
+
+block
+  #foo = [x y z
+           5 6 7
+           8 9 10
+           11 12 13]", 8);
