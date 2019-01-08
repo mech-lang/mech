@@ -805,7 +805,6 @@ impl Block {
               }
             }
           }
-          println!("123456");
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
