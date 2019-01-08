@@ -329,43 +329,51 @@ impl Compiler {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
-        println!("HHERERE1234 {:?}", children);
         let result1 = self.compile_constraint(&children[0]);
         let to = match &result1[0] {
           Constraint::Identifier{id} => TableId::Global(id.clone()),
           _ => TableId::Global(0), 
         };
-        let mut result2 = self.compile_constraint(&children[2]);
+        let mut select_data_children = vec![];
+        let mut result2: Vec<Constraint> = if children.len() == 3 {
+          // A subscript is specified
+          // Get the subscripts for the destination
+          match &children[1] {
+            Node::DotIndex{column} => {
+              for subscript in column {
+                match subscript {
+                  Node::Identifier{name, id} => select_data_children.push(Some(Parameter::Index(Index::Alias(id.clone())))),
+                  Node::SubscriptIndex{children} => {
+                    for child in children {
+                      match child {
+                        Node::SelectData{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
+                        _ => (),
+                      }
+                    }
+                  },
+                  _ => (),
+                };
+              }
+            },
+            _ => (),
+          }
+          // Compile the rest
+          self.compile_constraint(&children[2])
+        } else {
+          // A subscript is not specified
+          self.compile_constraint(&children[1])
+        };
         let from = match &result2[0] {
           Constraint::NewTable{id, ..} => id.clone(),
           _ => TableId::Local(0), 
         };
-        println!("HHERERE12346");
-        // Get the subscripts for the destination
-        let mut select_data_children = vec![];
-        match &children[1] {
-          Node::DotIndex{column} => {
-            for subscript in column {
-              match subscript {
-                Node::Identifier{name, id} => select_data_children.push(Some(Parameter::Index(Index::Alias(id.clone())))),
-                Node::SubscriptIndex{children} => {
-                  for child in children {
-                    match child {
-                      Node::SelectData{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
-                      _ => (),
-                    }
-                  }
-                },
-                _ => (),
-              };
-            }
-          },
-          _ => (),
+        if select_data_children.is_empty() {
+          select_data_children = vec![None; 2];
+        } else if select_data_children.len() == 1 {
+          select_data_children.push(None);
         }
-        println!("HHERERE1234: {:?}", select_data_children);
         constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
         constraints.append(&mut result2);
-        println!("HHERERE123487888888");
       },
       Node::AddRow{children} => {
         let mut result = self.compile_constraints(&children);
