@@ -266,3 +266,16 @@ block
            5 6 7
            8 9 10
            11 12 13]", 5);
+
+test_math!(set_second_omit_row_subscript,"
+block
+  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15 tick: 0]
+  #gravity = 2
+
+block
+  #system/timer.tick
+  #ball.y := #ball.vy + #gravity
+
+block
+  #test = #ball.y", 11);
