@@ -784,7 +784,14 @@ impl Block {
               let cix = if to_column_values.is_empty() { i }
                         else { to_column_values[i].as_u64().unwrap() as usize - 1 };
               for j in 0..to_height as usize {
-                match &to_row_values[j] {
+                // If to_row_values are empty, it means we're matching over all the rows
+                // otherwise we take the truth value from the vector and use it
+                let truth = if to_row_values.is_empty() {
+                  &Value::Bool(true)
+                } else {
+                  &to_row_values[j]
+                };
+                match truth {
                   Value::Bool(true) => {
                     let change = Change::Set{table: to_table_id.clone(), 
                                              row: Index::Index(j as u64 + 1), 
@@ -798,6 +805,7 @@ impl Block {
               }
             }
           }
+          println!("123456");
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
