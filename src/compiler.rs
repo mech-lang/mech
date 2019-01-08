@@ -186,7 +186,7 @@ impl Compiler {
     }
   }
 
-  pub fn compile_string(&mut self, input: String) -> &Vec<Block> {
+  pub fn compile_string(&mut self, input: String) -> &Vec<Block> {   
     let mut lexer = Lexer::new();
     let mut parser = Parser::new();
     self.text = input.clone();
@@ -329,6 +329,7 @@ impl Compiler {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
+        println!("HHERERE1234 {:?}", children);
         let result1 = self.compile_constraint(&children[0]);
         let to = match &result1[0] {
           Constraint::Identifier{id} => TableId::Global(id.clone()),
@@ -339,6 +340,7 @@ impl Compiler {
           Constraint::NewTable{id, ..} => id.clone(),
           _ => TableId::Local(0), 
         };
+        println!("HHERERE12346");
         // Get the subscripts for the destination
         let mut select_data_children = vec![];
         match &children[1] {
@@ -360,8 +362,10 @@ impl Compiler {
           },
           _ => (),
         }
+        println!("HHERERE1234: {:?}", select_data_children);
         constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
         constraints.append(&mut result2);
+        println!("HHERERE123487888888");
       },
       Node::AddRow{children} => {
         let mut result = self.compile_constraints(&children);
@@ -845,9 +849,15 @@ impl Compiler {
         for node in reversed {
           match node {
             Node::Table{name, id} => {
+              if select_data_children.is_empty() {
+                select_data_children = vec![Node::Null; 2];
+              }
               compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
+              if select_data_children.is_empty() {
+                select_data_children = vec![Node::Null; 2];
+              }
               compiled.push(Node::SelectData{id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{column} => {
