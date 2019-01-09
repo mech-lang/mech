@@ -551,7 +551,6 @@ impl Block {
           let (rhs_table, rhs_rows, rhs_columns) = &rhs;
           let out_table = output;
           {
-            println!("FILTERING");
             let lhs = match lhs_table {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
@@ -566,7 +565,6 @@ impl Block {
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
               _ => &self.lhs_rows_empty,
             };
-            println!("FILTERING");
             let rhs_rows: &Vec<Value> = match rhs_rows {
               Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
@@ -586,7 +584,6 @@ impl Block {
               },
               _ => &self.lhs_rows_empty,
             };
-            println!("FILTERING");
             let rhs_columns: &Vec<Value> = match rhs_columns {
               Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
@@ -777,7 +774,6 @@ impl Block {
           let from_is_scalar = from_width == 1 && from_height == 1;
 
           // TODO MAKE THIS REAL
-          println!("INSERTING");
           if from_is_scalar {
             for i in 0..to_width as usize {
               let cix = if to_column_values.is_empty() { i }
