@@ -763,7 +763,7 @@ impl Block {
 
           let to_width = if to_column_values.is_empty() { to.columns }
                          else { to_column_values.len() as u64 };
-            let from_width = if from_column_values.is_empty() { from.columns }
+          let from_width = if from_column_values.is_empty() { from.columns }
                            else { from_column_values.len() as u64 };      
           let to_height = if to_row_values.is_empty() { to.rows }
                           else { to_row_values.len() as u64 };
@@ -772,6 +772,9 @@ impl Block {
 
           let to_is_scalar = to_width == 1 && to_height == 1;
           let from_is_scalar = from_width == 1 && from_height == 1;
+
+          println!("from: {:?}x{:?} {:?}x{:?}", from_height, from_width, from_row_values, from_column_values);
+          println!("to: {:?}x{:?} {:?}x{:?}", to_height, to_width, to_row_values, to_column_values);
 
           // TODO MAKE THIS REAL
           if from_is_scalar {
@@ -797,6 +800,51 @@ impl Block {
                   },
                   _ => (),
                 }
+              }
+            }
+          // from and to are the same size
+          } else if to_height == from_height && to_width == from_width {
+            for i in 0..from_width as usize {
+              let fcix = if from_column_values.is_empty() { i }
+                         else {
+                           match from_column_values[i] {
+                             Value::Number(x) => x as usize - 1,
+                             Value::Bool(true) => i,
+                             _ => {continue; 0}, // This continues before the return
+                           }
+                         };
+              let tcix = if to_column_values.is_empty() { i }
+                         else {
+                           match to_column_values[i] {
+                             Value::Number(x) => x as usize - 1,
+                             Value::Bool(true) => i,
+                             _ => {continue; 0},
+                           }
+                         };
+              for j in 0..from_height as usize {
+                let frix = if from_row_values.is_empty() { j }
+                           else {
+                             match from_row_values[j] {
+                               Value::Number(x) => x as usize - 1,
+                               Value::Bool(true) => j,
+                               _ => {continue; 0},
+                             }
+                           };
+
+                let trix = if to_row_values.is_empty() { j }
+                           else {
+                             match to_row_values[j] {
+                               Value::Number(x) => x as usize - 1,
+                               Value::Bool(true) => j,
+                               _ => {continue; 0},
+                             }
+                           };
+                let change = Change::Set{table: to_table_id.clone(), 
+                                          row: Index::Index(trix as u64 + 1), 
+                                          column: Index::Index(tcix as u64 + 1),
+                                          value: from.data[fcix][frix].clone() 
+                                        };
+                self.block_changes.push(change);
               }
             }
           }
