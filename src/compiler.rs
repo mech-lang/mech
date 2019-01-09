@@ -225,6 +225,8 @@ impl Compiler {
             _ => "".to_string()
           };
           let mut result = self.compile_constraint(&constraint_node);
+          println!("{:?}", constraint_text);
+          println!("{:?}", result);
           // ----------------------------------------------------------------------------------------------------------
           // Planner
           // ----------------------------------------------------------------------------------------------------------
@@ -338,6 +340,7 @@ impl Compiler {
         let mut result2: Vec<Constraint> = if children.len() == 3 {
           // A subscript is specified
           // Get the subscripts for the destination
+          let mut subscript_result = self.compile_constraint(&children[2]);
           match &children[1] {
             Node::DotIndex{column} => {
               for subscript in column {
@@ -347,6 +350,14 @@ impl Compiler {
                     for child in children {
                       match child {
                         Node::SelectData{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
+                        Node::Expression{..} => {
+                          let mut expression_result = self.compile_constraint(child);
+                          match &expression_result[0] {
+                            Constraint::NewTable{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
+                            _ => (),
+                          }
+                          subscript_result.append(&mut expression_result);
+                        },
                         _ => (),
                       }
                     }
@@ -357,8 +368,7 @@ impl Compiler {
             },
             _ => (),
           }
-          // Compile the rest
-          self.compile_constraint(&children[2])
+          subscript_result
         } else {
           // A subscript is not specified
           self.compile_constraint(&children[1])
