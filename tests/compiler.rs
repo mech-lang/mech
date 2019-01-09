@@ -298,8 +298,6 @@ block
 block
   #test = #ball{1,2} + #ball{3,2}", 145584);
 
-
-
 test_math!(set_implicit_logic,"
 block
   #ball = [x y vx vy
