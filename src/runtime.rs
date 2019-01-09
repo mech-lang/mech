@@ -773,9 +773,6 @@ impl Block {
           let to_is_scalar = to_width == 1 && to_height == 1;
           let from_is_scalar = from_width == 1 && from_height == 1;
 
-          println!("from: {:?}x{:?} {:?}x{:?}", from_height, from_width, from_row_values, from_column_values);
-          println!("to: {:?}x{:?} {:?}x{:?}", to_height, to_width, to_row_values, to_column_values);
-
           // TODO MAKE THIS REAL
           if from_is_scalar {
             for i in 0..to_width as usize {
@@ -903,7 +900,6 @@ impl Block {
       } 
       
     }
-    println!("{:?}", self.block_changes);
     store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
     self.updated = true;
   }
