@@ -271,27 +271,19 @@ impl Block {
           let (rhs_table, rhs_rows, rhs_columns) = rhs;
           match lhs_table {
             TableId::Global(id) => {
-              /*
-              if lhs_columns.is_empty() {
-                self.input_registers.push(Register{table: id, column: Index::Index(0)});
-              } else {
-                for column in lhs_columns {
-                  self.input_registers.push(Register{table: id, column});
-                }
-              }*/
+              match lhs_columns {
+                Some(Parameter::Index(index)) => self.input_registers.push(Register{table: id, column: index}),
+                _ => self.input_registers.push(Register{table: id, column: Index::Index(0)}),
+              }
             }
             _ => (),
           }
           match rhs_table {
             TableId::Global(id) => {
-              /*
-              if rhs_columns.is_empty() {
-                self.input_registers.push(Register{table: id, column: Index::Index(0)});
-              } else {
-                for column in rhs_columns {
-                  self.input_registers.push(Register{table: id, column});
-                }
-              }*/
+              match rhs_columns {
+                Some(Parameter::Index(index)) => self.input_registers.push(Register{table: id, column: index}),
+                _ => self.input_registers.push(Register{table: id, column: Index::Index(0)}),
+              }
             }
             _ => (),
           }
@@ -343,6 +335,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("Block {:?}", self.name);
     for step in &self.plan {
       println!("Step: {:?}", step);
       match step {
@@ -558,10 +551,12 @@ impl Block {
           let (rhs_table, rhs_rows, rhs_columns) = &rhs;
           let out_table = output;
           {
+            println!("FILTERING");
             let lhs = match lhs_table {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
             };
+            
             let rhs = match rhs_table {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
@@ -571,11 +566,13 @@ impl Block {
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
               _ => &self.lhs_rows_empty,
             };
+            println!("FILTERING");
             let rhs_rows: &Vec<Value> = match rhs_rows {
               Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
               _ => &self.rhs_rows_empty,
             };
+            
             let lhs_columns: &Vec<Value> = match lhs_columns {
               Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
@@ -589,6 +586,7 @@ impl Block {
               },
               _ => &self.lhs_rows_empty,
             };
+            println!("FILTERING");
             let rhs_columns: &Vec<Value> = match rhs_columns {
               Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
               Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
@@ -779,6 +777,7 @@ impl Block {
           let from_is_scalar = from_width == 1 && from_height == 1;
 
           // TODO MAKE THIS REAL
+          println!("INSERTING");
           if from_is_scalar {
             for i in 0..to_width as usize {
               let cix = if to_column_values.is_empty() { i }
@@ -860,6 +859,7 @@ impl Block {
       } 
       
     }
+    println!("{:?}", self.block_changes);
     store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
     self.updated = true;
   }
