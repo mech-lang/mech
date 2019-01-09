@@ -225,8 +225,6 @@ impl Compiler {
             _ => "".to_string()
           };
           let mut result = self.compile_constraint(&constraint_node);
-          println!("{:?}", constraint_text);
-          println!("{:?}", result);
           // ----------------------------------------------------------------------------------------------------------
           // Planner
           // ----------------------------------------------------------------------------------------------------------
@@ -239,6 +237,15 @@ impl Compiler {
             match constraint {
               Constraint::AliasTable{table, alias} => {
                 produces.insert(alias);
+              },
+              Constraint::NewTable{id, ..} => {
+                match id {
+                  TableId::Local(id) => {
+                    block_produced.insert(id);
+                    produces.insert(id)
+                  },
+                  _ => false,
+                };
               },
               Constraint::Scan{table, rows, columns} => {
                 match table {
@@ -259,11 +266,12 @@ impl Compiler {
               },
               _ => (),
             }
-            
           }
+          // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
             plan.insert(0, (constraint_text, produces, consumes, this_one));
+          // Otherwise, the constraint consumes something, and we have to see if it's satisfied
           } else {
             let mut satisfied = false;
             //let (step_node, step_produces, step_consumes, step_constraints) = step;
