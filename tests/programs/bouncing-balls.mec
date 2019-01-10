@@ -18,11 +18,13 @@ Now update the block positions
 ## Boundary Condition
 
 Keep the balls within the y boundary
+  ~ #system/timer.tick
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
   #ball.vy{iy} := -#ball.vy * 80
 
 Keep the balls within the x boundary
+  ~ #system/timer.tick
   ix = #ball.x > #boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
