@@ -62,6 +62,22 @@ test_math!(table_define_program, "# A Working Program
 
   #test = 9", 9);
 
+// ## Select
+
+test_math!(select_table,"  
+block
+  #x = 500
+block
+  #test = #x", 500);
+
+test_math!(select_table_reverse_ordering,"  
+block
+  #test = #x
+block
+  #x = 500", 500);
+
+// ## Math
+
 test_math!(math_constant,"#test = 10", 10);
 
 test_math!(math_add,"#test = 1 + 1", 2);
@@ -84,25 +100,13 @@ test_math!(math_multiple_variable_graph_new_ordering,"block
   z = 5
   d = 9 * z", 250);
 
-test_math!(math_select_table,"  
-block
-  #x = 500
-block
-  #test = #x", 500);
-
-test_math!(math_select_table_reverse_ordering,"  
-block
-  #test = #x
-block
-  #x = 500", 500);
-
 test_math!(math_on_whole_table,"
 block
   #x = 500
 block
   #test = #x + 5", 505);
 
-test_math!(math_select_column_by_id,"  
+test_math!(select_column_by_id,"  
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
 block
@@ -126,7 +130,7 @@ block
 block
   #test = #ball.x + 9", 24);
 
-test_math!(math_partial_bouncing_ball,"# Bouncing Balls
+test_math!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
   #system/timer = [resolution: 1000]
@@ -167,7 +171,11 @@ block
   x = 3:6
   #test = x + 5", 8);
 
+// ## Ranges
+
 test_math!(range_basic,"#test = 5 : 14", 5);
+
+// ## Subscripts
 
 test_math!(subscript_scalar_math,"
 block
@@ -192,6 +200,8 @@ test_math!(subscript_logical_less,"
   x = 10:20
   z = x < 15
   #test = x{z, :}", 10);
+
+// Set
 
 test_math!(set_column_logical,"
 block
@@ -219,53 +229,6 @@ block
            1 2 3
            4 5 6
            7 8 9]", 3);
-
-test_math!(append_row_inline,"
-block
-  ix = #foo.x > 50
-  #test = #foo{ix, :}
-
-block
-  y = #z
-  #foo += [x: 100 y: 110 z: 120]
-
-block
-  x = #ball.y
-  #z = [x: 123 y: 456]
-  #foo = [x y z
-           5 6 7
-           8 9 10
-           11 12 13]
-
-block
-  #ball = [x y z
-           1 2 3]", 100);
-
-test_math!(logic_and,"
-block
-  ix1 = #foo.x > 5
-  ix2 = #foo.x < 11
-  ix3 = ix1 & ix2
-  #test = #foo{ix3, 1}
-
-block
-  #foo = [x y z
-           5 6 7
-           8 9 10
-           11 12 13]", 8);
-
-test_math!(logic_or,"
-block
-  ix1 = #foo.x < 7
-  ix2 = #foo.x > 9
-  ix3 = ix1 | ix2
-  #test = #foo{ix3, 1}
-
-block
-  #foo = [x y z
-           5 6 7
-           8 9 10
-           11 12 13]", 5);
 
 test_math!(set_second_omit_row_subscript,"
 block
@@ -314,3 +277,54 @@ block
 
 block
   #test = #ball{1,2} + #ball{3,2}", 145584);
+
+// ## Append
+
+test_math!(append_row_inline,"
+block
+  ix = #foo.x > 50
+  #test = #foo{ix, :}
+
+block
+  y = #z
+  #foo += [x: 100 y: 110 z: 120]
+
+block
+  x = #ball.y
+  #z = [x: 123 y: 456]
+  #foo = [x y z
+           5 6 7
+           8 9 10
+           11 12 13]
+
+block
+  #ball = [x y z
+           1 2 3]", 100);
+
+// ## Logic
+
+test_math!(logic_and,"
+block
+  ix1 = #foo.x > 5
+  ix2 = #foo.x < 11
+  ix3 = ix1 & ix2
+  #test = #foo{ix3, 1}
+
+block
+  #foo = [x y z
+           5 6 7
+           8 9 10
+           11 12 13]", 8);
+
+test_math!(logic_or,"
+block
+  ix1 = #foo.x < 7
+  ix2 = #foo.x > 9
+  ix3 = ix1 | ix2
+  #test = #foo{ix3, 1}
+
+block
+  #foo = [x y z
+           5 6 7
+           8 9 10
+           11 12 13]", 5);
