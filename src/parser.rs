@@ -85,6 +85,7 @@ pub enum Node {
   SetData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
   AddOperator{ children: Vec<Node> },
+  WatchOperator {children: Vec<Node>},
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   AnonymousTable{ children: Vec<Node> },
@@ -181,6 +182,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
     Node::AddOperator{children} => {print!("AddOperator\n"); Some(children)},
+    Node::WatchOperator{children} => {print!("WatchOperator\n"); Some(children)},
     Node::Infix{children} => {print!("Infix\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Constant{children} => {print!("Constant\n"); Some(children)},
@@ -488,7 +490,8 @@ node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_exp
 node!{set_data, SetData, |s|{ table(s).optional(index).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
 node!{add_operator, AddOperator, |s|{ plus(s).and(equal) }, "AddOperator"}
-node!{data_watch, DataWatch, |s|{ tilde(s).and(space).and(data) }, "DataWatch"}
+node!{watch_operator, WatchOperator, |s|{ tilde(s) }, "WatchOperator"}
+node!{data_watch, DataWatch, |s|{ watch_operator(s).and(space).and(data) }, "DataWatch"}
 node!{variable_define, VariableDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "VariableDefine"}
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(expression) }, "TableDefine"}
 node!{add_row, AddRow, |s|{ table(s).and(space).and(add_operator).and(space).and(expression) }, "AddRow"}
