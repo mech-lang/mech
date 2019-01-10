@@ -932,7 +932,14 @@ impl Compiler {
       },
       parser::Node::DataWatch{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::DataWatch{children: result});
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::DataWatch{children});
       },
       parser::Node::SelectAll{children} => {
         let result = self.compile_nodes(children);
@@ -1323,7 +1330,7 @@ impl Compiler {
       parser::Node::IdentifierOrConstant{children} |
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
-      parser::Node::DataWatch{children} |
+      parser::Node::WatchOperator{children} |
       parser::Node::Constant{children} |
       parser::Node::SetOperator{children} |
       parser::Node::Repeat{children} |
