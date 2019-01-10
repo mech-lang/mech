@@ -393,6 +393,13 @@ impl Compiler {
         constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
         constraints.append(&mut result2);
       },
+      Node::DataWatch{children} => {
+        let mut result = self.compile_constraints(&children);
+        match &result[0] {
+          Constraint::ScanColumn{table, column} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: column.clone()}),
+          _ => (),
+        }
+      },
       Node::AddRow{children} => {
         let mut result = self.compile_constraints(&children);
         let mut to_table_constraints = self.compile_constraint(&children[0]);
