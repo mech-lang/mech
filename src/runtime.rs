@@ -154,7 +154,7 @@ impl fmt::Debug for Address {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Register {
   pub table: u64,
   pub column: Index,
@@ -186,8 +186,8 @@ pub struct Block {
   pub ready: u64,
   pub updated: bool,
   pub plan: Vec<Constraint>,
-  pub input_registers: Vec<Register>,
-  pub output_registers: Vec<Register>,
+  pub input_registers: HashSet<Register>,
+  pub output_registers: HashSet<Register>,
   pub constraints: Vec<(String, Vec<Constraint>)>,
   memory: TableIndex,
   scratch: Table,
@@ -208,8 +208,8 @@ impl Block {
       ready: 0,
       updated: false,
       plan: Vec::new(),
-      input_registers: Vec::with_capacity(1),
-      output_registers: Vec::with_capacity(1),
+      input_registers: HashSet::with_capacity(1),
+      output_registers: HashSet::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
       scratch: Table::new(0,0,0),
@@ -253,7 +253,7 @@ impl Block {
         Constraint::ChangeScan{table, column} => {
           match table {
             TableId::Global(id) => {
-              self.input_registers.push(Register{table: id, column});
+              self.input_registers.insert(Register{table: id, column});
             },
             _ => (),
           }
@@ -269,7 +269,7 @@ impl Block {
           for (table, rows, columns) in parameters {
             match table {
               TableId::Global(id) => {
-                self.input_registers.push(Register{table: id, column: Index::Index(0)});
+                self.input_registers.insert(Register{table: id, column: Index::Index(0)});
               },
               _ => (),
             }
@@ -281,18 +281,18 @@ impl Block {
           match lhs_table {
             TableId::Global(id) => {
               match lhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.push(Register{table: id, column: index}),
-                _ => self.input_registers.push(Register{table: id, column: Index::Index(0)}),
-              }
+                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: id, column: index}),
+                _ => self.input_registers.insert(Register{table: id, column: Index::Index(0)}),
+              };
             }
             _ => (),
           }
           match rhs_table {
             TableId::Global(id) => {
               match rhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.push(Register{table: id, column: index}),
-                _ => self.input_registers.push(Register{table: id, column: Index::Index(0)}),
-              }
+                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: id, column: index}),
+                _ => self.input_registers.insert(Register{table: id, column: Index::Index(0)}),
+              };
             }
             _ => (),
           }
