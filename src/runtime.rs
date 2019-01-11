@@ -25,7 +25,7 @@ use operations::{Function, Comparator, Parameter, Logic};
 #[derive(Clone)]
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
-  pub pipes_map: HashMap<(u64, Index), Vec<Address>>,
+  pub pipes_map: HashMap<Register, Vec<Address>>,
   pub ready_blocks: HashSet<usize>,
 }
 
@@ -55,8 +55,8 @@ impl Runtime {
     for (ix, register) in block.input_registers.iter().enumerate() {
       let table = register.table;
       let column = register.column.clone();
-      let new_address = Address{block: block.id, register: ix + 1};
-      let listeners = self.pipes_map.entry((table, column)).or_insert(vec![]);
+      let new_address = Address{block: block.id, register: register.clone()};
+      let listeners = self.pipes_map.entry(register.clone()).or_insert(vec![]);
       listeners.push(new_address);
 
       // Set the register as ready if the referenced column exists
@@ -95,12 +95,13 @@ impl Runtime {
         block.solve(store);
       }
       // Queue up the next blocks based on tables that changed during this round.
-      for table_address in store.tables.changed_this_round.drain() {
-        match self.pipes_map.get(&table_address) {
+      for (table, column) in store.tables.changed_this_round.drain() {
+        let register = Register::new(table,column);
+        match self.pipes_map.get(&register) {
           Some(register_addresses) => {
             for register_address in register_addresses {
               let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
-              block.ready = set_bit(block.ready, register_address.register - 1);
+              block.ready.insert(register_address.register.clone());
               if block.is_ready() {
                 self.ready_blocks.insert(register_address.block);
               }
@@ -144,7 +145,7 @@ impl fmt::Debug for Runtime {
 #[derive(Clone)]
 pub struct Address {
   pub block: usize,
-  pub register: usize,
+  pub register: Register,
 }
 
 impl fmt::Debug for Address {
@@ -183,7 +184,7 @@ pub struct Block {
   pub id: usize,
   pub name: String,
   pub text: String,
-  pub ready: u64,
+  pub ready: HashSet<Register>,
   pub updated: bool,
   pub plan: Vec<Constraint>,
   pub input_registers: HashSet<Register>,
@@ -205,7 +206,7 @@ impl Block {
       id: 0,
       name: String::from(""),
       text: String::from(""),
-      ready: 0,
+      ready: HashSet::with_capacity(1),
       updated: false,
       plan: Vec::new(),
       input_registers: HashSet::with_capacity(1),
@@ -334,13 +335,9 @@ impl Block {
   }
 
   pub fn is_ready(&self) -> bool {
-    let input_registers_count = self.input_registers.len();
-    // TODO why does the exponent have to be u32?
-    if input_registers_count > 0 {
-      self.ready == 2_u64.pow(input_registers_count as u32) - 1
-    } else {
-      false
-    }
+    let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
+    // The block is ready if all input registers are ready i.e. the length of the set diff is 0
+    set_diff.len() == 0
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
@@ -922,7 +919,7 @@ impl fmt::Debug for Block {
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ \n{}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
-    write!(f, "│ Ready: {:?} ({:b})\n", self.is_ready(), self.ready).unwrap();
+    write!(f, "│ Ready: {:?} ({:?})\n", self.is_ready(), self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
