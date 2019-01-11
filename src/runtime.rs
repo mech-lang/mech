@@ -345,6 +345,15 @@ impl Block {
     for step in &self.plan {
       println!("Step: {:?}", step);
       match step {
+        Constraint::ChangeScan{table, column} => {
+          match table {
+            TableId::Global(id) => {
+              let register = Register{table: *id, column: column.clone()};
+              self.ready.remove(&register);
+            }
+            _ => (),
+          }
+        },
         Constraint::Function{operation, parameters, output} => { 
           
           // Concat Functions  
