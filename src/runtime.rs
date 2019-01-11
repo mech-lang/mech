@@ -236,6 +236,7 @@ impl Block {
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
         Constraint::Range{..} |
+        Constraint::ChangeScan{..} |
         Constraint::Append{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
@@ -248,6 +249,14 @@ impl Block {
         Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
           //self.input_registers.push(Register::input(table, 1));
+        },
+        Constraint::ChangeScan{table, column} => {
+          match table {
+            TableId::Global(id) => {
+              self.input_registers.push(Register{table: id, column});
+            },
+            _ => (),
+          }
         },
         Constraint::AliasTable{table, alias} => {
           // TODO Raise an error here if the alias already exists
