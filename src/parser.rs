@@ -124,6 +124,10 @@ pub enum Node {
   L2{ children: Vec<Node> },
   L3{ children: Vec<Node> },
   L4{ children: Vec<Node> },
+  CommentSigil{ children: Vec<Node> },
+  Comment{children: Vec<Node>},
+  Any{children: Vec<Node>},
+  Symbol{children: Vec<Node>},
   Token{token: Token, byte: u8},
 }
 
@@ -212,6 +216,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
     Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
+    Node::CommentSigil{children} => {print!("CommentSigil\n"); Some(children)},
+    Node::Comment{children} => {print!("Comment\n"); Some(children)},
+    Node::Any{children} => {print!("Any\n"); Some(children)},
+    Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
@@ -464,6 +472,11 @@ impl fmt::Debug for Parser {
 
 // These nodes represent interior connections in the parse tree.
 
+node!{comment_sigil, CommentSigil, |s|{ slash(s).and(slash) }, "CommentSigil"}
+node!{symbol, Symbol, |s|{ plus(s).or(hashtag).or(left_bracket).or(right_bracket).or(colon).or(comma).or(equal).or(slash).or(greater_than).or(less_than).or(tilde).or(left_brace).or(right_brace).or(asterisk).or(period) }, "Symbol"} // TODO fill out rest
+node!{any, Any, |s|{ alphanumeric(s).or(space_or_tab).or(symbol) }, "Any"}
+node!{comment, Comment, |s|{ comment_sigil(s).repeat(any) }, "CommentSigil"}
+
 node!{root, Root, |s|{ program(s).or(fragment) }, "Root"}
 node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
 node!{head, Head, |s|{ title(s) }, "Head"}
@@ -485,7 +498,7 @@ node!{expression, Expression, |s|{ filter_expression(s).or(range).or(logic_expre
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional_repeat(newline) }, "Constraint"}
+node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional(comment).optional_repeat(newline) }, "Constraint"}
 
 node!{set_data, SetData, |s|{ table(s).optional(index).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
 node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
