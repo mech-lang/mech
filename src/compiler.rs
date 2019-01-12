@@ -186,6 +186,26 @@ impl Compiler {
     }
   }
 
+  pub fn clear(&mut self) {
+    self.blocks.clear();
+    self.constraints.clear();
+    self.node_stack.clear();
+    self.depth = 0;
+    self.expression = 0;
+    self.column = 0;
+    self.row = 0;
+    self.table = 0;
+    self.section = 1;
+    self.block = 1;
+    self.current_char = 0;
+    self.current_line = 1;
+    self.current_col = 1;
+    self.text = String::new();
+    self.parse_tree = parser::Node::Root{ children: Vec::new() };
+    self.syntax_tree = Node::Root{ children: Vec::new() };
+    self.errors.clear();
+  }
+
   pub fn compile_string(&mut self, input: String) -> &Vec<Block> {   
     let mut lexer = Lexer::new();
     let mut parser = Parser::new();
