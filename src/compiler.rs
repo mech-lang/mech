@@ -383,6 +383,7 @@ impl Compiler {
         };
         let from = match &result2[0] {
           Constraint::NewTable{id, ..} => id.clone(),
+          Constraint::Scan{table, rows, columns} => table.clone(), // TODO do rows and column
           _ => TableId::Local(0), 
         };
         if select_data_children.is_empty() {
