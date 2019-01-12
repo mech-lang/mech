@@ -348,3 +348,47 @@ block
   
 block
   #test = #ball{1,1} + #ball{2,1} + #ball{3,1}", 24);
+
+// Full programs
+
+test_math!(program_bouncing_balls,"# Bouncing Balls
+
+Define the environment
+  #html/event/click = [x: 0 y: 0]
+  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 2
+  #boundary = 5000
+
+## Update condition
+
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the y boundary
+  ~ #system/timer.tick
+  iy = #ball.y > #boundary
+  #ball.y{iy} := #boundary
+  #ball.vy{iy} := #ball.vy * 80
+
+Keep the balls within the x boundary
+  ~ #system/timer.tick
+  ix = #ball.x > #boundary
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := #ball.vx * 80
+
+## Create More Balls
+
+Create ball on click
+  ~ #html/event/click.x
+  #ball += [x: 10 y: 10 vx: 40 vy: 0]
+  
+block
+  #test = #ball{1,1} + #ball{2,1}", 105);
