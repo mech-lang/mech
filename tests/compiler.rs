@@ -328,3 +328,23 @@ block
            5 6 7
            8 9 10
            11 12 13]", 5);
+
+// Change scan
+
+test_math!(change_scan_simple,"
+block
+  #ball = [x y z 
+           1 2 3
+           4 5 6
+           7 8 9]
+  #system/timer = [resolution: 15 tick: 0]
+  #gravity = 2
+
+block
+  ~ #system/timer.tick
+  ix = #ball.x > 5
+  ixx = #ball.x < 2
+  #ball.x{ix | ixx} := #ball.x + #ball.z
+  
+block
+  #test = #ball{1,1} + #ball{2,1} + #ball{3,1}", 24);
