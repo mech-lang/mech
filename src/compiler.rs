@@ -1325,6 +1325,10 @@ impl Compiler {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Comment{children} |
+      parser::Node::CommentSigil{children} |
+      parser::Node::Any{children} |
+      parser::Node::Symbol{children} |
       parser::Node::AddOperator{children} |
       parser::Node::LogicOperator{children} |
       parser::Node::Subscript{children} |
