@@ -1351,6 +1351,10 @@ impl Compiler {
         input.push(result[1].clone());
         compiled.push(Node::Function{ name: "-".to_string(), children: input });
       },
+      parser::Node::ParentheticalExpression{children} => {
+        let mut result = self.compile_nodes(children);
+        compiled.push(result[1].clone());
+      },
       // Pass through nodes. These will just be omitted
       parser::Node::Comment{children} |
       parser::Node::CommentSigil{children} |
