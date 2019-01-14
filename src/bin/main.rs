@@ -24,10 +24,11 @@ fn main() {
 
 Define the environment
   #html/event/click = [x: 0 y: 0]
-  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #ball = [x  y vx vy
+           15 9 40 9]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 2
-  #boundary = 5000
+  #boundary = 50
 
 ## Update condition
 
@@ -40,33 +41,30 @@ Now update the block positions
 ## Boundary Condition
 
 Keep the balls within the y boundary
-  ~ #system/timer.tick
+  ~ #ball.y
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
-  #ball.vy{iy} := #ball.vy * 80
+  #ball.vy{iy} := -#ball.vy * 80
 
 Keep the balls within the x boundary
-  ~ #system/timer.tick
+  ~ #ball.x
   ix = #ball.x > #boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := #ball.vx * 80
+  #ball.vx{ix | ixx} := -#ball.vx * 80
 
 ## Create More Balls
 
 Create ball on click
   ~ #html/event/click.x
-  #ball += [x: 10 y: 10 vx: 40 vy: 0]
-  
-block
-  #test = #ball{1,2");
+  #ball += [x: 10 y: 10 vx: 40 vy: 0]");
 
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  //println!("{:?}", core.runtime); 
+  println!("{:?}", core.runtime); 
 }
