@@ -176,6 +176,10 @@ block
   y = -13
   #test = -y", 13);
 
+test_math!(math_parenthetical_expression_constants,"
+block
+  #test = (1 + 2) * 3", 9);
+
 // ## Ranges
 
 test_math!(range_basic,"#test = 5 : 14", 5);
