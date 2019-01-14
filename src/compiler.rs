@@ -1345,6 +1345,12 @@ impl Compiler {
         };        
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
+      parser::Node::Negation{children} => {
+        let mut result = self.compile_nodes(children);
+        let mut input = vec![Node::Constant{value: 0}];
+        input.push(result[1].clone());
+        compiled.push(Node::Function{ name: "-".to_string(), children: input });
+      },
       // Pass through nodes. These will just be omitted
       parser::Node::Comment{children} |
       parser::Node::CommentSigil{children} |
