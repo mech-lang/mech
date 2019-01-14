@@ -171,6 +171,11 @@ block
   x = 3:6
   #test = x + 5", 8);
 
+test_math!(math_negation_double_negative,"
+block
+  y = -13
+  #test = -y", 13);
+
 // ## Ranges
 
 test_math!(range_basic,"#test = 5 : 14", 5);
