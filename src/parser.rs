@@ -125,6 +125,7 @@ pub enum Node {
   L3{ children: Vec<Node> },
   L4{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
+  ParentheticalExpression{ children: Vec<Node> },
   CommentSigil{ children: Vec<Node> },
   Comment{children: Vec<Node>},
   Any{children: Vec<Node>},
@@ -213,6 +214,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L3{children} => {print!("L3\n"); Some(children)},
     Node::L4{children} => {print!("L4\n"); Some(children)},
     Node::Negation{children} => {print!("Negation\n"); Some(children)},
+    Node::ParentheticalExpression{children} => {print!("ParentheticalExpression\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
@@ -522,9 +524,10 @@ node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix
 node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
 node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
 node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
-node!{l4, L4, |s|{ data(s).or(constant).or(negation) }, "L4"}
+node!{l4, L4, |s|{ data(s).or(constant).or(negation).or(parenthetical_expression) }, "L4"}
 
 node!{negation, Negation, |s|{ dash(s).and(data).or(constant) }, "Negation"}
+node!{parenthetical_expression, ParentheticalExpression, |s|{ left_parenthesis(s).and(l1).and(right_parenthesis) }, "ParentheticalExpression"}
 
 node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(attribute).and(right_bracket) }, "InlineTable"}
 
