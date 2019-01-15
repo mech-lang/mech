@@ -107,7 +107,7 @@ impl Runtime {
               }
             }
           },
-          _ => (),
+          _ => (), // No listeners
         }
       }
       // Halt iterating if we've exceeded the maximum number of allowed iterations.
@@ -343,7 +343,7 @@ impl Block {
   pub fn solve(&mut self, store: &mut Interner) {
     println!("Block {:?}", self.name);
     for step in &self.plan {
-      println!("Step: {:?}", step);
+      //println!("Step: {:?}", step);
       match step {
         Constraint::ChangeScan{table, column} => {
           match table {
