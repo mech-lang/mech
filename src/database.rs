@@ -167,8 +167,10 @@ impl Interner {
     match change {
       Change::Set{table, row, column, value} => {
         let mut changed = false;
+        let mut alias: Option<u64> = None;
         match self.tables.get_mut(*table) {
           Some(table_ref) => {
+            alias = table_ref.get_column_alias(column);
             let old_value = table_ref.set_cell(&row, &column, value.clone());
             if old_value != *value {
               changed = true;
@@ -185,6 +187,12 @@ impl Interner {
           None => (),
         };
         if changed == true {
+          match alias {
+            Some(id) => {
+              self.tables.changed_this_round.insert((table.clone(), Index::Alias(id)))
+            },
+            _ => false,
+          };
           self.tables.changed_this_round.insert((table.clone(), column.clone()));
           self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
         }
