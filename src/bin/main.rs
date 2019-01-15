@@ -40,7 +40,7 @@ Keep the balls within the y boundary
   ~ #ball.y
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
-  #ball.vy{iy} := -#ball.vy * 80
+  #ball.vy{iy} := -#ball.vy * 80 / 100
 
 Keep the balls within the x boundary
   ~ #ball.x
@@ -48,7 +48,7 @@ Keep the balls within the x boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 80
+  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
 
 Create ball on click
   ~ #html/event/click.x
