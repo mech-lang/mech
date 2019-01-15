@@ -28,17 +28,13 @@ Define the environment
            15 9 40 9]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 2
-  #boundary = 50
-
-## Update condition
+  #boundary = 30
 
 Now update the block positions
   ~ #system/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
-
-## Boundary Condition
 
 Keep the balls within the y boundary
   ~ #ball.y
@@ -54,8 +50,6 @@ Keep the balls within the x boundary
   #ball.x{ixx} := 0
   #ball.vx{ix | ixx} := -#ball.vx * 80
 
-## Create More Balls
-
 Create ball on click
   ~ #html/event/click.x
   #ball += [x: 10 y: 10 vx: 40 vy: 0]");
@@ -63,8 +57,8 @@ Create ball on click
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  println!("{:?}", core.runtime); 
+  //println!("{:?}", core.runtime); 
 }
