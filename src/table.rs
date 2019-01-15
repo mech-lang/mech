@@ -142,6 +142,7 @@ pub struct Table {
   pub rows: u64,
   pub columns: u64,
   pub column_aliases: HashMap<u64, u64>,
+  pub column_index_to_alias: Vec<Option<u64>>, 
   pub row_aliases: HashMap<u64, u64>,
   pub data: Vec<Vec<Value>>,
 }
@@ -154,6 +155,7 @@ impl Table {
       rows: rows,
       columns: columns,
       column_aliases: HashMap::with_capacity(columns as usize),
+      column_index_to_alias: Vec::new(),
       row_aliases: HashMap::with_capacity(rows as usize),
       data: vec![vec![Value::Empty; rows as usize]; columns as usize], 
     }
@@ -174,6 +176,19 @@ impl Table {
         Some(ix) => Some(ix.clone()),
         None => None,
       },
+    }
+  }
+
+  pub fn get_column_alias(&self, column: &Index) -> Option<u64> {
+    match column {
+      Index::Index(ix) => {
+        if self.column_index_to_alias.len() > 0 {
+          self.column_index_to_alias[*ix as usize - 1]
+        } else {
+          None
+        }
+      },
+      Index::Alias(alias) => Some(*alias),
     }
   }
 
@@ -203,6 +218,10 @@ impl Table {
       },
       Entry::Vacant(v) => {
         v.insert(ix);
+        if self.column_index_to_alias.len() <= ix as usize - 1 {
+          self.column_index_to_alias.resize(ix as usize, None);
+        }
+        self.column_index_to_alias[ix as usize - 1] = Some(alias); 
       },
     }
   }
