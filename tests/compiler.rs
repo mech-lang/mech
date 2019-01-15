@@ -364,10 +364,10 @@ test_math!(program_bouncing_balls,"# Bouncing Balls
 
 Define the environment
   #html/event/click = [x: 0 y: 0]
-  #ball = [x: 15 y: 9 vx: 40 vy: 9]
+  #ball = [x: 50 y: 9 vx: 40 vy: 9]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 2
-  #boundary = 5000
+  #boundary = 60
 
 ## Update condition
 
@@ -380,18 +380,18 @@ Now update the block positions
 ## Boundary Condition
 
 Keep the balls within the y boundary
-  ~ #system/timer.tick
+  ~ #ball.y
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
-  #ball.vy{iy} := #ball.vy * 80
+  #ball.vy{iy} := -#ball.vy * 80 / 100
 
 Keep the balls within the x boundary
-  ~ #system/timer.tick
+  ~ #ball.x
   ix = #ball.x > #boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := #ball.vx * 80
+  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
 
 ## Create More Balls
 
@@ -400,4 +400,4 @@ Create ball on click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
   
 block
-  #test = #ball{1,1} + #ball{2,1}", 105);
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", 118);
