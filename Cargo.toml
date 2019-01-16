@@ -1,0 +1,9 @@
+[package]
+name = "mech-system"
+version = "0.0.1"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+
+[dependencies]
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-server = {git = "https://gitlab.com/mech-lang/server"}
+time = "0.1.39"
