@@ -21,6 +21,15 @@ use mech_core::{TableIndex, Hasher};
 use mech_core::{Block, Constraint};
 use mech_core::{Function, Comparator};
 
+// ## Watchers
+
+pub trait Watcher {
+  fn get_name(& self) -> String;
+  fn get_columns(& self) -> usize;
+  fn set_name(&mut self, &str);
+  fn on_change(&mut self, store: &mut Interner, diff: Transaction);
+}
+
 // ## Modules
 
 pub mod program;
