@@ -15,7 +15,7 @@ extern crate time;
 
 extern crate mech_core;
 extern crate mech_syntax;
-use mech_core::{Core, Change, Transaction};
+use mech_core::{Core, Change, Transaction, Interner};
 use mech_core::Value;
 use mech_core::{TableIndex, Hasher};
 use mech_core::{Block, Constraint};
