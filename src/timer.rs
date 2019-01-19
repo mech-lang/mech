@@ -1,7 +1,6 @@
 extern crate time;
 use std::time::Duration;
-use super::{Watcher};
-use mech_program::{RunLoopMessage};
+use mech_program::{RunLoopMessage, Watcher};
 use mech_core::{Interner, Transaction, Change};
 use mech_core::Hasher;
 use mech_core::Value;
