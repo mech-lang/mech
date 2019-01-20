@@ -1227,13 +1227,15 @@ impl Compiler {
       parser::Node::Number{children} => {
         let mut value = 0;
         let mut result = self.compile_nodes(children);
-        let mut place = result.len();
+        result.reverse();
+        let mut place = 1;
         for node in result {
           match node {
+            Node::Token{token: Token::Comma, byte} => (),
             Node::Token{token, byte} => {
               let digit = byte_to_digit(byte).unwrap();
               let q = digit * magnitude(place);
-              place -= 1;
+              place += 1;
               value += q;
             },
             _ => (),
@@ -1356,6 +1358,7 @@ impl Compiler {
         compiled.push(result[1].clone());
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::DigitOrComma{children} |
       parser::Node::Comment{children} |
       parser::Node::CommentSigil{children} |
       parser::Node::Any{children} |
