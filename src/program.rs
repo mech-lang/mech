@@ -16,6 +16,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{TableIndex, Hasher};
 use mech_syntax::compiler::Compiler;
+use super::Watcher;
 
 use time;
 
@@ -24,6 +25,7 @@ use time;
 pub struct Program {
   pub name: String,
   pub mech: Core,
+  pub watchers: HashMap<u64, Box<Watcher + Send>>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
@@ -38,6 +40,7 @@ impl Program {
     mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
+      watchers: HashMap::new(),
       capacity,
       mech,
       incoming, 
@@ -224,6 +227,14 @@ impl ProgramRunner {
 
   pub fn load_program(&mut self, input: String) {
     self.program.compile_string(input);
+  }
+
+  pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
+    let name = Hasher::hash_str(&watcher.get_name());
+    let columns = watcher.get_columns().clone() as u64;
+    self.program.watchers.insert(name, watcher);
+    let watcher_table = Transaction::from_change(Change::NewTable{id: name, rows: 1, columns});
+    self.program.outgoing.send(RunLoopMessage::Transaction(watcher_table));
   }
 
   pub fn add_persist_channel(&mut self, persister:&mut Persister) {
