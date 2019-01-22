@@ -33,6 +33,7 @@ pub enum Token {
   Comma,
   Tilde,
   Bar,
+  Quote,
   Ampersand,
   Percent,
   Newline,
@@ -105,6 +106,7 @@ impl Lexer {
       } else if match_char(&bytes, '|', self) { self.push_token(Token::Bar);
       } else if match_char(&bytes, '&', self) { self.push_token(Token::Ampersand);
       } else if match_char(&bytes, '%', self) { self.push_token(Token::Percent);
+      } else if match_char(&bytes, '"', self) { self.push_token(Token::Quote);
       } else if match_char(&bytes, '\n', self) { self.push_token(Token::Newline);
       } else if match_char(&bytes, '\r', self) { self.push_token(Token::CarriageReturn);
       } else if match_char(&bytes, '\t', self) { self.push_token(Token::Tab);
