@@ -836,6 +836,11 @@ impl Compiler {
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
         constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value as i64});
       },
+      Node::String{text} => {
+        let table = Hasher::hash_string(format!("String-{:?}", *text));
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
+        constraints.push(Constraint::String{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: text.clone()});
+      },
       Node::Null => constraints.push(Constraint::Null),
       _ => ()
     }
@@ -1352,6 +1357,11 @@ impl Compiler {
         let mut input = vec![Node::Constant{value: 0}];
         input.push(result[1].clone());
         compiled.push(Node::Function{ name: "-".to_string(), children: input });
+      },
+      parser::Node::String{children} => {
+        let mut result = self.compile_nodes(children);
+        let string = result[1].clone();
+        compiled.push(string);
       },
       parser::Node::ParentheticalExpression{children} => {
         let mut result = self.compile_nodes(children);
