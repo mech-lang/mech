@@ -217,7 +217,7 @@ test_math!(subscript_logical_less,"
   z = x < 15
   #test = x{z, :}", Value::from_i64(10));
 
-// Set
+// ## Set
 
 test_math!(set_column_logical,"
 block
@@ -345,7 +345,7 @@ block
            8 9 10
            11 12 13]", Value::from_i64(5));
 
-// Change scan
+// ## Change scan
 
 test_math!(change_scan_simple,"
 block
@@ -365,7 +365,7 @@ block
 block
   #test = #ball{1,1} + #ball{2,1} + #ball{3,1}", Value::from_i64(24));
 
-// Full programs
+// ## Full programs
 
 test_math!(program_bouncing_balls,"# Bouncing Balls
 
@@ -408,3 +408,9 @@ Create ball on click
   
 block
   #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::from_i64(118));
+
+// ## Strings
+
+test_math!(string_basic,"
+block
+  #ball = \"Hello World\"", Value::from_str("Hello World"));
