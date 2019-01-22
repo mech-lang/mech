@@ -22,14 +22,13 @@ fn main() {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:100000
-  z = x + x");
+  #x = \"Hello world\"");
 
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
-  //println!("{:?}", core.runtime); 
+  println!("{:?}", core.runtime); 
 }
