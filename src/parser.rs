@@ -111,6 +111,7 @@ pub enum Node {
   NewLineOrEnd{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
+  String{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
@@ -163,6 +164,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
+    Node::String{children} => {print!("String\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
@@ -498,9 +500,11 @@ node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespa
 node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
 node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
 
+node!{string, String, |s|{ quote(s).and(text).and(quote) }, "String"}
+
 node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
 node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{expression, Expression, |s|{ filter_expression(s).or(range).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
+node!{expression, Expression, |s|{ filter_expression(s).or(string).or(range).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
 node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
 
 node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
@@ -591,6 +595,7 @@ leaf!{space, Token::Space}
 leaf!{tab, Token::Tab}
 leaf!{tilde, Token::Tilde}
 leaf!{bar, Token::Bar}
+leaf!{quote, Token::Quote}
 leaf!{ampersand, Token::Ampersand}
 leaf!{semicolon, Token::Semicolon}
 leaf!{new_line_char, Token::Newline}
