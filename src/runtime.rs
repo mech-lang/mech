@@ -321,6 +321,21 @@ impl Block {
           };
           self.updated = true;
         },
+        Constraint::String{table, row, column, value} => {
+          let table_id = match table {
+            TableId::Local(id) => id,
+            _ => 0,
+          };
+          match self.memory.map.entry(table_id) {
+            Entry::Occupied(mut o) => {
+              let table_ref = o.get_mut();
+              table_ref.set_cell(&row, &column, Value::from_string(value));
+            },
+            Entry::Vacant(v) => {    
+            },
+          };
+          self.updated = true;
+        },
         Constraint::TableColumn{table, column_ix, column_alias} => {
           match self.memory.get_mut(table) {
             Some(table_ref) => {
@@ -986,6 +1001,7 @@ pub enum Constraint {
   Logic {logic: operations::Logic, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Function {operation: operations::Function, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: i64},
+  String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
   AliasTable {table: TableId, alias: u64},
@@ -1009,6 +1025,7 @@ impl fmt::Debug for Constraint {
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
+      Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
       Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
