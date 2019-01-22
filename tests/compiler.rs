@@ -5,7 +5,7 @@ extern crate mech_core;
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{Hasher, Core, Index};
+use mech_core::{Hasher, Core, Index, Value};
 
 macro_rules! compile_string {
   ($func:ident, $test:tt) => (
@@ -20,7 +20,7 @@ macro_rules! compile_string {
 }
 
 macro_rules! test_math {
-  ($func:ident, $input:tt, $test:tt) => (
+  ($func:ident, $input:tt, $test:expr) => (
     #[test]
     fn $func() {
       let mut compiler = Compiler::new();
@@ -32,8 +32,15 @@ macro_rules! test_math {
       let table = Hasher::hash_str("test");
       let row = Index::Index(1);
       let column = Index::Index(1);
-      let test = $test;
-      assert_eq!(core.index(table, &row, &column).unwrap().as_u64().unwrap(), test);
+      let test: Value = $test;
+      let actual = core.index(table, &row, &column);
+      match actual {
+        Some(value) => {
+          assert_eq!(*value, test);
+        },
+        _ => (),
+      }
+      
     }
   )
 }
@@ -60,7 +67,7 @@ test_math!(table_define_program, "# A Working Program
 
 ## Section Two
 
-  #test = 9", 9);
+  #test = 9", Value::from_i64(9));
 
 // ## Select
 
@@ -68,67 +75,67 @@ test_math!(select_table,"
 block
   #x = 500
 block
-  #test = #x", 500);
+  #test = #x", Value::from_i64(500));
 
 test_math!(select_table_reverse_ordering,"  
 block
   #test = #x
 block
-  #x = 500", 500);
+  #x = 500", Value::from_i64(500));
 
 // ## Math
 
-test_math!(math_constant,"#test = 10", 10);
+test_math!(math_constant,"#test = 10", Value::from_i64(10));
 
-test_math!(math_add,"#test = 1 + 1", 2);
+test_math!(math_add,"#test = 1 + 1", Value::from_i64(2));
 
-test_math!(math_multiply,"#test = 2 * 2", 4);
+test_math!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 
-test_math!(math_divide,"#test = 4 / 2", 2);
+test_math!(math_divide,"#test = 4 / 2", Value::from_i64(2));
 
-test_math!(math_two_terms,"#test = 1 + 2 * 9", 19);
+test_math!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
 test_math!(math_multiple_variable_graph,"block
   a = z * 5
   #test = d * z + a
   d = 9 * z
-  z = 5", 250);
+  z = 5", Value::from_i64(250));
 
 test_math!(math_multiple_variable_graph_new_ordering,"block
   #test = d * z + a
   a = z * 5
   z = 5
-  d = 9 * z", 250);
+  d = 9 * z", Value::from_i64(250));
 
 test_math!(math_on_whole_table,"
 block
   #x = 500
 block
-  #test = #x + 5", 505);
+  #test = #x + 5", Value::from_i64(505));
 
 test_math!(select_column_by_id,"  
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
 block
-  #test = #ball.x", 56);
+  #test = #ball.x", Value::from_i64(56));
 
 test_math!(math_multiple_rows_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = #ball.x + #ball.y * #ball.vx", 177);
+  #test = #ball.x + #ball.y * #ball.vx", Value::from_i64(177));
 
 test_math!(math_const_and_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = 9 + #ball.x", 24);
+  #test = 9 + #ball.x", Value::from_i64(24));
 
 test_math!(math_select_and_const,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = #ball.x + 9", 24);
+  #test = #ball.x + 9", Value::from_i64(24));
 
 test_math!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
@@ -140,7 +147,7 @@ Now update the block positions
   x = #ball.x + #ball.vx
   y = #ball.y + #ball.vy
   dt = #system/timer.resolution
-  #test = x + y * dt", 18033);
+  #test = x + y * dt", Value::from_i64(18033));
 
 test_math!(math_add_columns,"
 block
@@ -149,7 +156,7 @@ block
            3 4
            5 6]
 block
-  #test = #ball.x + #ball.y", 3);
+  #test = #ball.x + #ball.y", Value::from_i64(3));
 
 test_math!(math_add_matrices,"
 block
@@ -159,30 +166,30 @@ block
   y = [10 11 12
        13 14 15
        16 17 18]
-  #test = x + y", 11);
+  #test = x + y", Value::from_i64(11));
 
 test_math!(math_scalar_plus_vector,"
 block
   x = 3:6
-  #test = 5 + x", 8);
+  #test = 5 + x", Value::from_i64(8));
 
 test_math!(math_vector_plus_scalar,"
 block
   x = 3:6
-  #test = x + 5", 8);
+  #test = x + 5", Value::from_i64(8));
 
 test_math!(math_negation_double_negative,"
 block
   y = -13
-  #test = -y", 13);
+  #test = -y", Value::from_i64(13));
 
 test_math!(math_parenthetical_expression_constants,"
 block
-  #test = (1 + 2) * 3", 9);
+  #test = (1 + 2) * 3", Value::from_i64(9));
 
 // ## Ranges
 
-test_math!(range_basic,"#test = 5 : 14", 5);
+test_math!(range_basic,"#test = 5 : 14", Value::from_i64(5));
 
 // ## Subscripts
 
@@ -190,25 +197,25 @@ test_math!(subscript_scalar_math,"
 block
   x = 3:6
   y = 10:12
-  #test = x{1,1} + y{3,1}", 15);
+  #test = x{1,1} + y{3,1}", Value::from_i64(15));
 
 test_math!(subscript_scan,"
 block
   x = 10:20
   z = 3:5
-  #test = x{z, :}", 12);
+  #test = x{z, :}", Value::from_i64(12));
 
 test_math!(subscript_logical_greater,"
   block
   x = 10:20
   z = x > 15
-  #test = x{z, :}", 16);
+  #test = x{z, :}", Value::from_i64(16));
 
 test_math!(subscript_logical_less,"
   block
   x = 10:20
   z = x < 15
-  #test = x{z, :}", 10);
+  #test = x{z, :}", Value::from_i64(10));
 
 // Set
 
@@ -222,7 +229,7 @@ block
   #test = [x y z
            1 2 3
            4 5 6
-           7 8 9]", 3);
+           7 8 9]", Value::from_i64(3));
 
 test_math!(set_second_column_logical,"
 block
@@ -237,7 +244,7 @@ block
   #ball = [x y z
            1 2 3
            4 5 6
-           7 8 9]", 3);
+           7 8 9]", Value::from_i64(3));
 
 test_math!(set_second_omit_row_subscript,"
 block
@@ -250,7 +257,7 @@ block
   #ball.y := #ball.vy + #gravity
 
 block
-  #test = #ball.y", 11);
+  #test = #ball.y", Value::from_i64(11));
 
 test_math!(set_rhs_math_filters_logic,"
 block
@@ -268,7 +275,7 @@ block
   #ball.y{ixx} := #ball.vy * 9099
 
 block
-  #test = #ball{1,2} + #ball{3,2}", 145584);
+  #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
 
 test_math!(set_implicit_logic,"
 block
@@ -285,7 +292,7 @@ block
   #ball.y{ix | iy} := #ball.vy * 9099
 
 block
-  #test = #ball{1,2} + #ball{3,2}", 145584);
+  #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
 
 // ## Append
 
@@ -308,7 +315,7 @@ block
 
 block
   #ball = [x y z
-           1 2 3]", 100);
+           1 2 3]", Value::from_i64(100));
 
 // ## Logic
 
@@ -323,7 +330,7 @@ block
   #foo = [x y z
            5 6 7
            8 9 10
-           11 12 13]", 8);
+           11 12 13]", Value::from_i64(8));
 
 test_math!(logic_or,"
 block
@@ -336,7 +343,7 @@ block
   #foo = [x y z
            5 6 7
            8 9 10
-           11 12 13]", 5);
+           11 12 13]", Value::from_i64(5));
 
 // Change scan
 
@@ -356,7 +363,7 @@ block
   #ball.x{ix | ixx} := #ball.x + #ball.z
   
 block
-  #test = #ball{1,1} + #ball{2,1} + #ball{3,1}", 24);
+  #test = #ball{1,1} + #ball{2,1} + #ball{3,1}", Value::from_i64(24));
 
 // Full programs
 
@@ -400,4 +407,4 @@ Create ball on click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
   
 block
-  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", 118);
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::from_i64(118));
