@@ -12,7 +12,7 @@ use lexer::Token;
 use alloc::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
-use hashmap_core::set::{HashSet};
+use hashbrown::hash_set::{HashSet};
 
 // ## Compiler Nodes
 
