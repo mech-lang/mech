@@ -407,7 +407,7 @@ Create ball on click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
   
 block
-  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::from_i64(118));
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::from_i64(78));
 
 // ## Strings
 
