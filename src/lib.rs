@@ -6,7 +6,7 @@
 extern crate mech_core;
 #[macro_use]
 extern crate alloc;
-extern crate hashmap_core;
+extern crate hashbrown;
 
 pub mod lexer;
 #[macro_use]
