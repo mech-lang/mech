@@ -6,8 +6,8 @@ use table::{Value, Table, Index};
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::fmt;
-use hashmap_core::map::HashMap;
-use hashmap_core::set::HashSet;
+use hashbrown::hash_map::HashMap;
+use hashbrown::hash_set::HashSet;
 
 // ## Hasher
 
