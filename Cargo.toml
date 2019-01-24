@@ -7,6 +7,7 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 mech-server = {git = "https://gitlab.com/mech-lang/server"}
+mech-program = {git = "https://gitlab.com/mech-lang/program"}
 mech-system = {git = "https://gitlab.com/mech-lang/system"}
 clap = "2.31.2"
 term-painter = "0.2.4"
