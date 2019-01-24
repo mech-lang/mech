@@ -5,7 +5,7 @@
 use core::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
-use hashmap_core::map::{HashMap, Entry};
+use hashbrown::hash_map::{HashMap, Entry};
 
 // ## Row and Column
 
