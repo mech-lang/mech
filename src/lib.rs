@@ -16,7 +16,7 @@ extern crate rlibc;
 extern crate alloc;
 #[cfg(not(target_os = "none"))]
 extern crate core;
-extern crate hashmap_core;
+extern crate hashbrown;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
