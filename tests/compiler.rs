@@ -38,7 +38,7 @@ macro_rules! test_math {
         Some(value) => {
           assert_eq!(*value, test);
         },
-        _ => (),
+        None => assert_eq!(0,1),
       }
       
     }
