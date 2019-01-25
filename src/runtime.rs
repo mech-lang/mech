@@ -247,6 +247,21 @@ impl Block {
     // Do any work we can up front
     for constraint in constraints {
       match constraint {
+        Constraint::CopyTable{from_table, to_table} => {
+          self.output_registers.insert(Register::new(to_table, Index::Index(0)));
+        },
+        Constraint::Append{from_table, to_table} => {
+          match to_table {
+            TableId::Global(id) => self.output_registers.insert(Register::new(id, Index::Index(0))),
+            _ => false,
+          };
+        },
+        Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
+          match to_table {
+            TableId::Global(id) => self.output_registers.insert(Register::new(id, Index::Index(0))),
+            _ => false,
+          };
+        },
         Constraint::Scan{table, rows, columns} => {
           // TODO Update this whole register adding process and marking tables ready
           //self.input_registers.push(Register::input(table, 1));
