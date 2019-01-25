@@ -413,8 +413,8 @@ block
 
 test_math!(string_basic,"
 block
-  #ball = \"Hello World\"", Value::from_str("Hello World"));
+  #test = \"Hello World\"", Value::from_str("Hello World"));
 
 test_math!(string_table,"
 block
-  #x = [\"Hello\"  \"World\"]", Value::from_str("Hello"));
+  #test = [\"Hello\"  \"World\"]", Value::from_str("Hello"));
