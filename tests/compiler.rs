@@ -95,6 +95,8 @@ test_math!(math_divide,"#test = 4 / 2", Value::from_i64(2));
 
 test_math!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
+test_math!(math_with_commas,"#test = 1,000 + 1,000,000", Value::from_i64(1001_000));
+
 test_math!(math_multiple_variable_graph,"block
   a = z * 5
   #test = d * z + a
