@@ -57,10 +57,9 @@ compile_string!(table, "#table");
 
 compile_string!(table_define, "#table = [x y z]");
 
-compile_string!(table_define_data, "#table = [x y z
-                                              1 2 3]");
+compile_string!(table_define_data, "#table =  [x y z | 1 2 3]");
 
-compile_string!(table_define_data_math, "#table = [x      y          z
+compile_string!(table_define_data_math, "#table = [x      y          z|
                                                    1 * 2, 4 + 7 * 9, 3]");
 
 test_math!(table_define_program, "# A Working Program
@@ -94,8 +93,6 @@ test_math!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 test_math!(math_divide,"#test = 4 / 2", Value::from_i64(2));
 
 test_math!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
-
-test_math!(math_with_commas,"#test = 1,000 + 1,000,000", Value::from_i64(1001_000));
 
 test_math!(math_multiple_variable_graph,"block
   a = z * 5
@@ -153,7 +150,7 @@ Now update the block positions
 
 test_math!(math_add_columns,"
 block
-  #ball = [x y
+  #ball = [x y |
            1 2
            3 4
            5 6]
@@ -228,7 +225,7 @@ block
   #test.x{ix} := 3
 
 block
-  #test = [x y z
+  #test = [x y z|
            1 2 3
            4 5 6
            7 8 9]", Value::from_i64(3));
@@ -243,7 +240,7 @@ block
   #ball.y{ix} := 3
 
 block
-  #ball = [x y z
+  #ball = [x y z|
            1 2 3
            4 5 6
            7 8 9]", Value::from_i64(3));
@@ -263,7 +260,7 @@ block
 
 test_math!(set_rhs_math_filters_logic,"
 block
-  #ball = [x y vx vy
+  #ball = [x y vx vy|
            1 2 3 4
            5 6 7 8
            9 10 11 12]
@@ -281,7 +278,7 @@ block
 
 test_math!(set_implicit_logic,"
 block
-  #ball = [x y vx vy
+  #ball = [x y vx vy|
            1 2 3 4
            5 6 7 8
            9 10 11 12]
@@ -310,13 +307,13 @@ block
 block
   x = #ball.y
   #z = [x: 123 y: 456]
-  #foo = [x y z
+  #foo = [x y z|
            5 6 7
            8 9 10
            11 12 13]
 
 block
-  #ball = [x y z
+  #ball = [x y z|
            1 2 3]", Value::from_i64(100));
 
 // ## Logic
@@ -329,7 +326,7 @@ block
   #test = #foo{ix3, 1}
 
 block
-  #foo = [x y z
+  #foo = [x y z|
            5 6 7
            8 9 10
            11 12 13]", Value::from_i64(8));
@@ -342,7 +339,7 @@ block
   #test = #foo{ix3, 1}
 
 block
-  #foo = [x y z
+  #foo = [x y z|
            5 6 7
            8 9 10
            11 12 13]", Value::from_i64(5));
@@ -351,7 +348,7 @@ block
 
 test_math!(change_scan_simple,"
 block
-  #ball = [x y z 
+  #ball = [x y z| 
            1 2 3
            4 5 6
            7 8 9]
