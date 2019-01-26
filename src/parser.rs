@@ -538,10 +538,10 @@ node!{parenthetical_expression, ParentheticalExpression, |s|{ left_parenthesis(s
 
 node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(attribute).and(right_bracket) }, "InlineTable"}
 
-node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
+node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(space).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
 node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional(comma).optional_repeat(space) }, "Attribute"}
-node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).optional(newline) }, "TableHeader"}
+node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).and(bar).optional_repeat(space).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(identifier).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
@@ -594,6 +594,7 @@ leaf!{caret, Token::Caret}
 leaf!{space, Token::Space}
 leaf!{tab, Token::Tab}
 leaf!{tilde, Token::Tilde}
+leaf!{grave, Token::Grave}
 leaf!{bar, Token::Bar}
 leaf!{quote, Token::Quote}
 leaf!{ampersand, Token::Ampersand}
