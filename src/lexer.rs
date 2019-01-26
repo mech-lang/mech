@@ -32,6 +32,7 @@ pub enum Token {
   Colon,
   Comma,
   Tilde,
+  Grave,
   Bar,
   Quote,
   Ampersand,
@@ -103,6 +104,7 @@ impl Lexer {
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
       } else if match_char(&bytes, '~', self) { self.push_token(Token::Tilde);
+      } else if match_char(&bytes, '`', self) { self.push_token(Token::Grave);
       } else if match_char(&bytes, '|', self) { self.push_token(Token::Bar);
       } else if match_char(&bytes, '&', self) { self.push_token(Token::Ampersand);
       } else if match_char(&bytes, '%', self) { self.push_token(Token::Percent);
