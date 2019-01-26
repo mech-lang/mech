@@ -1524,6 +1524,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     89 => Some('Y'),
     90 => Some('Z'),
     94 => Some('^'),
+    96 => Some('`').
     _ => {
       println!("Unhandled Byte {:?}", byte);
       None
