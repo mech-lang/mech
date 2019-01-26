@@ -44,7 +44,7 @@ fn add_two_vectors_10e3(b:&mut Bencher) {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:1000
+  x = 1:1,000
   z = x + x");
   compiler.compile_string(input);
   b.iter(|| {
@@ -60,7 +60,7 @@ fn add_two_vectors_10e4(b:&mut Bencher) {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:10000
+  x = 1:10,000
   z = x + x");
   compiler.compile_string(input);
   b.iter(|| {
@@ -76,7 +76,7 @@ fn add_two_vectors_10e5(b:&mut Bencher) {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:100000
+  x = 1:100,000
   z = x + x");
   compiler.compile_string(input);
   b.iter(|| {
@@ -92,7 +92,7 @@ fn add_two_vectors_10e6(b:&mut Bencher) {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:1000000
+  x = 1:1,000,000
   z = x + x");
   compiler.compile_string(input);
   b.iter(|| {
