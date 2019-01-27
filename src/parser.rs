@@ -536,14 +536,14 @@ node!{l4, L4, |s|{ data(s).or(constant).or(negation).or(parenthetical_expression
 node!{negation, Negation, |s|{ dash(s).and(data).or(constant) }, "Negation"}
 node!{parenthetical_expression, ParentheticalExpression, |s|{ left_parenthesis(s).and(l1).and(right_parenthesis) }, "ParentheticalExpression"}
 
-node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(attribute).and(right_bracket) }, "InlineTable"}
+node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(binding).and(right_bracket) }, "InlineTable"}
 
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(space).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
-node!{binding, Binding, |s|{ colon(s).optional_repeat(space).and(identifier_or_constant) }, "Binding"}
-node!{attribute, Attribute, |s|{ identifier(s).optional(binding).optional(comma).optional_repeat(space) }, "Attribute"}
+node!{binding, Binding, |s|{ identifier(s).and(colon).optional_repeat(space).and(identifier_or_constant).optional_repeat(space).optional(comma).optional_repeat(space) }, "Binding"}
+node!{attribute, Attribute, |s|{ identifier(s).optional_repeat(space).optional(comma).optional_repeat(space) }, "Attribute"}
 node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).and(bar).optional_repeat(space).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
-node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(identifier).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
+node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(data).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
 
 node!{logic_expression, LogicExpression, |s|{ data_or_constant(s).and(space).and(logic_operator).and(space).and(data_or_constant)  }, "LogicExpression"}
