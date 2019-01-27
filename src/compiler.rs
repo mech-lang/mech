@@ -796,6 +796,9 @@ impl Compiler {
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
+            Constraint::Identifier{id} => {
+              parameter_registers.push((TableId::Local(id.clone()), None, None));
+            },
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
