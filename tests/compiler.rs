@@ -293,6 +293,17 @@ block
 block
   #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
 
+// ## Concat
+
+test_math!(concat_horzcat_data,"
+block
+  x = 1:10
+  y = 11:20
+  #z = [x y]
+  
+block
+  #test = #z{1,1} + #z{1,2} + #z{2,1} + #z{1,1}", Value::from_i64(15));
+
 // ## Append
 
 test_math!(append_row_inline,"
