@@ -23,6 +23,7 @@ extern crate serde_derive;
 
 use alloc::vec::Vec;
 use core::fmt;
+use hashbrown::hash_set::HashSet;
 
 // ## Modules
 
@@ -52,6 +53,8 @@ pub struct Core {
   pub runtime: Runtime,
   pub change_capacity: usize,
   pub table_capacity: usize,
+  pub input: HashSet<Register>,
+  pub output: HashSet<Register>,
   transaction_boundaries: Vec<usize>,
 }
 
@@ -68,6 +71,8 @@ impl Core {
       table_capacity,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
+      input: HashSet::new(),
+      output: HashSet::new(),
       transaction_boundaries: Vec::new(),
     }
   }
@@ -81,6 +86,13 @@ impl Core {
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
     self.runtime.register_blocks(blocks, &mut self.store);
+    for (id, block) in self.runtime.blocks.iter() {
+      // TODO Collect unsatisfied input
+      // Collect output
+      for register in block.output_registers.iter() {
+        self.output.insert(register.clone());
+      }
+    }
   }
 
   pub fn last_transaction(&self) -> usize {
@@ -246,6 +258,8 @@ impl fmt::Debug for Core {
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
     write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
+    write!(f, "│   Input: {:?}\n", self.input).unwrap();
+    write!(f, "│   Output: {:?}\n", self.output).unwrap();
     write!(f, "└────────────────────┘\n").unwrap();
     for table in self.store.tables.map.values() {
       write!(f, "{:?}", table).unwrap();
