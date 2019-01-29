@@ -312,6 +312,7 @@ block
   #test = #foo{ix, :}
 
 block
+  ~ #z.x
   y = #z
   #foo += [x: 100 y: 110 z: 120]
 
