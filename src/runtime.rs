@@ -252,8 +252,11 @@ impl Block {
         },
         Constraint::Append{from_table, to_table} => {
           match to_table {
-            TableId::Global(id) => self.output_registers.insert(Register::new(id, Index::Index(0))),
-            _ => false,
+            TableId::Global(id) => {
+              self.input_registers.insert(Register::new(id, Index::Index(0)));
+              self.output_registers.insert(Register::new(id, Index::Index(0)));
+            }
+            _ => (),
           };
         },
         Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
