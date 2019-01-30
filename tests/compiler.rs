@@ -150,10 +150,10 @@ Now update the block positions
 
 test_math!(math_add_columns,"
 block
-  #ball = [x y |
-           1 2
-           3 4
-           5 6]
+  #ball = [|x y|
+            1 2
+            3 4
+            5 6]
 block
   #test = #ball.x + #ball.y", Value::from_i64(3));
 
@@ -225,10 +225,10 @@ block
   #test.x{ix} := 3
 
 block
-  #test = [x y z|
-           1 2 3
-           4 5 6
-           7 8 9]", Value::from_i64(3));
+  #test = [|x y z|
+            1 2 3
+            4 5 6
+            7 8 9]", Value::from_i64(3));
 
 test_math!(set_second_column_logical,"
 block
@@ -240,10 +240,10 @@ block
   #ball.y{ix} := 3
 
 block
-  #ball = [x y z|
-           1 2 3
-           4 5 6
-           7 8 9]", Value::from_i64(3));
+  #ball = [|x y z|
+            1 2 3
+            4 5 6
+            7 8 9]", Value::from_i64(3));
 
 test_math!(set_second_omit_row_subscript,"
 block
@@ -260,10 +260,10 @@ block
 
 test_math!(set_rhs_math_filters_logic,"
 block
-  #ball = [x y vx vy|
-           1 2 3 4
-           5 6 7 8
-           9 10 11 12]
+  #ball = [|x y vx vy|
+            1 2 3 4
+            5 6 7 8
+            9 10 11 12]
   #system/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
@@ -278,10 +278,10 @@ block
 
 test_math!(set_implicit_logic,"
 block
-  #ball = [x y vx vy|
-           1 2 3 4
-           5 6 7 8
-           9 10 11 12]
+  #ball = [|x y vx vy|
+            1 2 3 4
+            5 6 7 8
+            9 10 11 12]
   #system/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
@@ -319,14 +319,14 @@ block
 block
   x = #ball.y
   #z = [x: 123 y: 456]
-  #foo = [x y z|
+  #foo = [|x y z|
            5 6 7
            8 9 10
            11 12 13]
 
 block
-  #ball = [x y z|
-           1 2 3]", Value::from_i64(100));
+  #ball = [|x y z|
+            1 2 3]", Value::from_i64(100));
 
 // ## Logic
 
@@ -338,7 +338,7 @@ block
   #test = #foo{ix3, 1}
 
 block
-  #foo = [x y z|
+  #foo = [|x y z|
            5 6 7
            8 9 10
            11 12 13]", Value::from_i64(8));
@@ -351,7 +351,7 @@ block
   #test = #foo{ix3, 1}
 
 block
-  #foo = [x y z|
+  #foo = [|x y z|
            5 6 7
            8 9 10
            11 12 13]", Value::from_i64(5));
@@ -360,10 +360,10 @@ block
 
 test_math!(change_scan_simple,"
 block
-  #ball = [x y z| 
-           1 2 3
-           4 5 6
-           7 8 9]
+  #ball = [|x y z| 
+            1 2 3
+            4 5 6
+            7 8 9]
   #system/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
