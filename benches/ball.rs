@@ -13,7 +13,7 @@ fn balls_10e2(b:&mut Bencher) {
   let input = String::from("# Bouncing Balls
 
 Define the environment
-  #ball = [x y |
+  #ball = [|x y |
            1:100 1:100]
   #vx = 3
   #vy = 3
@@ -56,7 +56,7 @@ fn balls_10e3(b:&mut Bencher) {
   let input = String::from("# Bouncing Balls
 
 Define the environment
-  #ball = [x y |
+  #ball = [|x y |
            1:1,000 1:1,000]
   #vx = 3
   #vy = 3
@@ -99,7 +99,7 @@ fn balls_10e4(b:&mut Bencher) {
   let input = String::from("# Bouncing Balls
 
 Define the environment
-  #ball = [x y |
+  #ball = [|x y |
            1:10,000 1:10,000]
   #vx = 3
   #vy = 3
@@ -142,7 +142,7 @@ fn balls_10e5(b:&mut Bencher) {
   let input = String::from("# Bouncing Balls
 
 Define the environment
-  #ball = [x y |
+  #ball = [|x y |
            1:100,000 1:100,000]
   #vx = 3
   #vy = 3
