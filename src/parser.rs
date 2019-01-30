@@ -541,7 +541,7 @@ node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(binding).and(right_
 node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(space).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
 node!{binding, Binding, |s|{ identifier(s).and(colon).optional_repeat(space).and(identifier_or_constant).optional_repeat(space).optional(comma).optional_repeat(space) }, "Binding"}
 node!{attribute, Attribute, |s|{ identifier(s).optional_repeat(space).optional(comma).optional_repeat(space) }, "Attribute"}
-node!{table_header, TableHeader, |s|{ node(s).repeat(attribute).and(bar).optional_repeat(space).optional(newline) }, "TableHeader"}
+node!{table_header, TableHeader, |s|{ node(s).and(bar).repeat(attribute).and(bar).optional_repeat(space).optional(newline) }, "TableHeader"}
 node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
 node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(data).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
 node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
