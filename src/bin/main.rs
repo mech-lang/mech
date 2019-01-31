@@ -1,13 +1,6 @@
-extern crate core;
-extern crate time;
-extern crate rand;
 extern crate mech_syntax;
 extern crate mech_core;
 
-use std::time::SystemTime;
-use std::thread::{self};
-use std::time::*;
-use rand::{Rng, thread_rng};
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
