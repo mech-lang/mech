@@ -1,0 +1,27 @@
+[package]
+name = "wasmtest"
+version = "0.1.0"
+authors = ["Corey Montella <cmontella@live.com>"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+#rlibc = "=1.0"
+hashbrown = "0.1.8"
+# mech-core = {git = "https://gitlab.com/mech-lang/core"}
+# mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+wasm-bindgen = "0.2"
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2"
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
+
