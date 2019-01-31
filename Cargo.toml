@@ -4,5 +4,5 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
-mech-core = {path = "../core"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
 hashbrown = "0.1.8"
