@@ -12,6 +12,8 @@ hashbrown = "0.1.8"
 # mech-core = {git = "https://gitlab.com/mech-lang/core"}
 # mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 wasm-bindgen = "0.2"
+serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.46"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -25,3 +27,8 @@ wasm-bindgen-test = "0.2"
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
 
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "console",
+]
