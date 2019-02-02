@@ -1,7 +1,7 @@
 {
-  "name": "create-wasm-app",
-  "version": "0.1.0",
-  "description": "create an app to consume rust-generated wasm packages",
+  "name": "try-mech-wasm",
+  "version": "0.0.1",
+  "description": "mech lang wasm bindings",
   "main": "index.js",
   "bin": {
     "create-wasm-app": ".bin/create-wasm-app.js"
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rustwasm/create-wasm-app.git"
+    "url": "git+https://gitlab.com/mech-lang/wasm.git"
   },
   "keywords": [
     "webassembly",
@@ -20,12 +20,12 @@
     "rust",
     "webpack"
   ],
-  "author": "Ashley Williams <ashley666ashley@gmail.com>",
-  "license": "(MIT OR Apache-2.0)",
+  "author": "Corey Montella <corey@mech-lang.org>",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/rustwasm/create-wasm-app/issues"
+    "url": "https://gitlab.com/mech-lang/wasm/issues"
   },
-  "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
+  "homepage": "https://mech-lang.org",
   "devDependencies": {
     "copy-webpack-plugin": "^4.5.2",
     "hello-wasm-pack": "^0.1.0",
