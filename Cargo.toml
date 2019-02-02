@@ -1,5 +1,5 @@
 [package]
-name = "wasmtest"
+name = "mech-wasm"
 version = "0.1.0"
 authors = ["Corey Montella <cmontella@live.com>"]
 
