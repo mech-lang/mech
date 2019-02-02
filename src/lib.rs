@@ -1,6 +1,5 @@
 #![feature(alloc)]
 #![feature(drain_filter)]
-//extern crate mech_core;
 extern crate wasm_bindgen;
 extern crate hashbrown;
 //extern crate web_sys;
@@ -10,28 +9,21 @@ extern crate alloc;
 extern crate serde_derive;
 extern crate core;
 extern crate web_sys;
+extern crate mech_core;
+extern crate mech_syntax;
 
-//use mech_syntax::compiler::Compiler;
 use wasm_bindgen::prelude::*;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
+use mech_syntax::compiler::Compiler;
+use mech_core::Core;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
 }
-
-// ## Modules
-
-mod mechcore;
-mod mechsyntax;
-
-// ## Exported Modules
-
-pub use self::mechcore::Core;
-pub use self::mechsyntax::compiler::Compiler;
 
 #[wasm_bindgen]
 extern {
