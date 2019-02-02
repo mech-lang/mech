@@ -1,4 +1,4 @@
-import * as mech from "wasmtest";
+import * as mech from "mech-wasm";
 
 let code = document.createElement("textarea");
 code.setAttribute("class", "code");
@@ -16,8 +16,6 @@ container.appendChild(code);
 container.appendChild(compile);
 
 document.body.appendChild(container);
-
-
 
 document.getElementById("compile").addEventListener("click", function() {
   let code = document.getElementById("code");
