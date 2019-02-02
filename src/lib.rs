@@ -7,14 +7,11 @@ systems.
 
 // ## Prelude
 
-#![cfg_attr(target_os = "none", no_std)]
 #![feature(alloc)]
 #![feature(nll)]
 
-extern crate rlibc;
 #[macro_use]
 extern crate alloc;
-#[cfg(not(target_os = "none"))]
 extern crate core;
 extern crate hashbrown;
 extern crate rand;
