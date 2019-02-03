@@ -44,7 +44,14 @@ impl Core {
     compiler.compile_string(code);
     self.core.register_blocks(compiler.blocks.clone());
     self.core.step();
+    log!("Compiled {} blocks.", compiler.blocks.len());
+  }
+
+  pub fn display_core(&mut self) {
     log!("{:?}", self.core);
+  }
+
+  pub fn display_runtime(&mut self) {
     log!("{:?}", self.core.runtime);
   }
 
