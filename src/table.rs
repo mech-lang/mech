@@ -334,6 +334,15 @@ impl Table {
     }    
   }
   
+  pub fn get_column(&self, column: &Index) -> Option<&Vec<Value>> {
+    match self.get_column_index(column) {
+      Some(column_ix) => {
+        Some(&self.data[column_ix as usize])
+      }
+      None => None,
+    }
+  }
+
   pub fn get_row(&self, row: &Index) -> Option<Vec<Value>> {
     match self.get_row_index(row) {
       Some(row_ix) => {
