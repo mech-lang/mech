@@ -3,6 +3,7 @@ import {Core, hash_string} from "mech-wasm";
 let mech_core = Core.new();
 
 let balls = hash_string("ball");
+let time = 1;
 
 // ## Controls
 
@@ -34,6 +35,11 @@ get_ball.setAttribute("id", "get balls");
 get_ball.innerHTML =  "Get Balls";
 controls.appendChild(get_ball);
 
+let increment_time = document.createElement("button");
+increment_time.setAttribute("id", "increment time");
+increment_time.innerHTML =  "Increment Time";
+controls.appendChild(increment_time);
+
 let txn = document.createElement("button");
 txn.setAttribute("id", "txn");
 txn.innerHTML =  "Add Txn";
@@ -46,10 +52,11 @@ editor.setAttribute("class", "editor");
 let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
-code.innerHTML =  "#ball = [1 2 3; 4 5 6; 7 8 9]";
+code.innerHTML =  "#balls = [1 2 3; 4 5 6; 7 8 9]";
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
+canvas.setAttribute("id", "drawing area");
 canvas.setAttribute("width", "500");
 canvas.setAttribute("height", "420");
 canvas.style.backgroundColor = 'rgb(226, 79, 94)';
@@ -75,6 +82,10 @@ document.getElementById("compile").addEventListener("click", function(click) {
   mech_core.compile_code(code.value);
 });
 
+document.getElementById("drawing area").addEventListener("click", function(click) {
+  console.log(click.layerX, click.layerY);
+});
+
 document.getElementById("view core").addEventListener("click", function() {
   mech_core.display_core();
 });
@@ -88,8 +99,13 @@ document.getElementById("clear core").addEventListener("click", function() {
 });
 
 document.getElementById("get balls").addEventListener("click", function() {
-  let column = mech_core.get_table(balls);
+  let column = mech_core.get_column(balls,BigInt(1));
   console.log(column);
+});
+
+document.getElementById("increment time").addEventListener("click", function() {
+  mech_core.process_transaction("system/timer",1,2,time);
+  time = time + 1;
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {

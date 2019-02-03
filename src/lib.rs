@@ -68,18 +68,17 @@ impl Core {
                              column: Index::Index(column as u64),
                              value: Value::from_u64(value as u64),
                             };
+    log!("{:?}", change);
     let txn = Transaction::from_change(change);
     self.core.process_transaction(&txn);
-    log!("{:?}", self.core);
-    log!("{:?}", self.core.runtime);
   }
 
-  pub fn get_table(&mut self, table: u64) -> Vec<u32> {
-      let mut output: Vec<u32> = vec![];
-      match self.core.store.get_table(table) {
-          Some(table_ref) => {
-              for row in &table_ref.data[0] {
-                  output.push(row.as_u64().unwrap() as u32);
+  pub fn get_column(&mut self, table: u64, column: u64) -> Vec<u64> {
+      let mut output: Vec<u64> = vec![];
+      match self.core.store.get_column(table, Index::Index(column)) {
+          Some(column) => {
+              for row in column {
+                  output.push(row.as_u64().unwrap());
               }
           }
           _ => log!("{} not found", table),
