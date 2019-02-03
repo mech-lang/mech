@@ -52,7 +52,24 @@ editor.setAttribute("class", "editor");
 let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
-code.innerHTML =  "#balls = [1 2 3; 4 5 6; 7 8 9]";
+code.innerHTML =  `# Bouncing Balls
+
+Define the environment
+  #html/event/click = [x: 0 y: 0]
+  x = 1:10
+  v = x * 0
+  #ball = [|x y vx vy| x x v v]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 2
+  #boundary = 420
+
+## Update condition
+
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity`;
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
@@ -106,6 +123,28 @@ document.getElementById("get balls").addEventListener("click", function() {
 document.getElementById("increment time").addEventListener("click", function() {
   mech_core.process_transaction("system/timer",1,2,time);
   time = time + 1;
+
+  //render
+  let canvas = document.getElementById("drawing area");
+  let context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  let radius = 10;
+  let x = mech_core.get_column(balls,BigInt(1));
+  let y = mech_core.get_column(balls,BigInt(2));
+
+  let i;
+  for (i = 0; i < x.length; i++) {
+    let centerY = Number(y[i]);
+    let centerX = Number(x[i]);
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    context.fillStyle = 'black';
+    context.fill();
+    context.lineWidth = 1;
+    context.strokeStyle = '#000000';
+    context.stroke();
+  }
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {
