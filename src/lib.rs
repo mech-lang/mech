@@ -47,6 +47,12 @@ impl Core {
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
 
+
+  pub fn clear(&mut self) {
+    self.core.clear();
+    log!("Cleared");
+  }
+
   pub fn display_core(&mut self) {
     log!("{:?}", self.core);
   }
