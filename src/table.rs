@@ -253,16 +253,6 @@ impl Table {
     columns
   }
 
-  pub fn get_column_by_id(&self, column_id: usize) -> Option<&Vec<Value>> {
-    match self.column_aliases.get(&(column_id as u64)) {
-      Some(column_ix) => {
-        let column_data = &self.data[*column_ix - 1];      
-        Some(column_data)
-      },
-      None => None,
-    }
-  }
-
   pub fn get_columns_by_ixes(&self, column_ixes: Vec<usize>) -> Vec<Option<&Vec<Value>>> {
     let mut columns: Vec<Option<&Vec<Value>>> = vec![];
     for ix in column_ixes{
@@ -270,15 +260,6 @@ impl Table {
       columns.push(column);
     }
     columns
-  }
-
-  pub fn get_column_by_ix(&self, column_ix: usize) -> Option<&Vec<Value>> {
-    if self.columns > 0 && self.columns >= column_ix {
-      let column_data = &self.data[column_ix - 1];      
-      Some(column_data)
-    } else {
-      None
-    }
   }
 
   pub fn get_column_mut_by_ix(&mut self, column_ix: usize) -> Option<&mut Vec<Value>> {
