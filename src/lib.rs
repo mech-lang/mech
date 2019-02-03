@@ -17,7 +17,7 @@ use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::compiler::Compiler;
-use mech_core::Core;
+use mech_core::{Transaction, Hasher, Change, Index, Value};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -26,19 +26,39 @@ macro_rules! log {
 }
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+pub struct Core {
+  core: mech_core::Core,
 }
 
 #[wasm_bindgen]
-pub fn compile(input: String) {
-  let mut core = Core::new(100, 100);
-  let mut compiler = Compiler::new();
-  compiler.compile_string(input);
-  core.register_blocks(compiler.blocks.clone());
-  //println!("{:?}", compiler.parse_tree);
-  log!("{:?}", compiler.syntax_tree);
-  core.step();
-  log!("{:?}", core);
-  log!("{:?}", core.runtime); 
+impl Core {
+
+  pub fn new() -> Core {
+    Core {
+      core: mech_core::Core::new(100,100),
+    }
+  }
+
+  pub fn compile_code(&mut self, code: String) {
+    let mut compiler = Compiler::new();
+    compiler.compile_string(code);
+    self.core.register_blocks(compiler.blocks.clone());
+    self.core.step();
+    log!("{:?}", self.core);
+    log!("{:?}", self.core.runtime);
+  }
+
+  pub fn process_transaction(&mut self, table: String, row: u32, column: u32, value: u32) {
+    let table_id = Hasher::hash_string(table);
+    let change = Change::Set{table: table_id, 
+                             row: Index::Index(row as u64), 
+                             column: Index::Index(column as u64),
+                             value: Value::from_u64(value as u64),
+                            };
+    let txn = Transaction::from_change(change);
+    self.core.process_transaction(&txn);
+    log!("{:?}", self.core);
+    log!("{:?}", self.core.runtime);
+  }
+
 }
