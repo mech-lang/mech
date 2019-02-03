@@ -318,7 +318,7 @@ impl Table {
   pub fn get_column(&self, column: &Index) -> Option<&Vec<Value>> {
     match self.get_column_index(column) {
       Some(column_ix) => {
-        Some(&self.data[column_ix as usize])
+        Some(&self.data[column_ix - 1 as usize])
       }
       None => None,
     }
