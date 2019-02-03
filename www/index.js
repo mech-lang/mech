@@ -1,6 +1,8 @@
-import {Core} from "mech-wasm";
+import {Core, hash_string} from "mech-wasm";
 
 let mech_core = Core.new();
+
+let balls = hash_string("ball");
 
 // ## Controls
 
@@ -27,6 +29,11 @@ clear_core.setAttribute("id", "clear core");
 clear_core.innerHTML =  "Clear Core";
 controls.appendChild(clear_core);
 
+let get_ball = document.createElement("button");
+get_ball.setAttribute("id", "get balls");
+get_ball.innerHTML =  "Get Balls";
+controls.appendChild(get_ball);
+
 let txn = document.createElement("button");
 txn.setAttribute("id", "txn");
 txn.innerHTML =  "Add Txn";
@@ -39,7 +46,7 @@ editor.setAttribute("class", "editor");
 let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
-code.innerHTML =  "#test = [1 2 3]";
+code.innerHTML =  "#ball = [1 2 3; 4 5 6; 7 8 9]";
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
@@ -78,6 +85,11 @@ document.getElementById("view runtime").addEventListener("click", function() {
 
 document.getElementById("clear core").addEventListener("click", function() {
   mech_core.clear();
+});
+
+document.getElementById("get balls").addEventListener("click", function() {
+  let column = mech_core.get_table(balls);
+  console.log(column);
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {

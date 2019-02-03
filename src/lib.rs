@@ -17,7 +17,7 @@ use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::compiler::Compiler;
-use mech_core::{Transaction, Hasher, Change, Index, Value};
+use mech_core::{Transaction, Hasher, Change, Index, Value, Table};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -74,4 +74,22 @@ impl Core {
     log!("{:?}", self.core.runtime);
   }
 
+  pub fn get_table(&mut self, table: u64) -> Vec<u32> {
+      let mut output: Vec<u32> = vec![];
+      match self.core.store.get_table(table) {
+          Some(table_ref) => {
+              for row in &table_ref.data[0] {
+                  output.push(row.as_u64().unwrap() as u32);
+              }
+          }
+          _ => log!("{} not found", table),
+      }
+      output
+  }
+
 }
+
+#[wasm_bindgen]
+pub fn hash_string(input: String) -> u64 {
+    Hasher::hash_string(input)
+} 
