@@ -79,6 +79,9 @@ impl Core {
     self.round = 0;
     self.runtime.clear();
     self.store.clear();
+    self.input.clear();
+    self.output.clear();
+    self.transaction_boundaries.clear();
   }
 
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
