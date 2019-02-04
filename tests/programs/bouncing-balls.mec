@@ -2,10 +2,14 @@
 
 Define the environment
   #html/event/click = [x: 0 y: 0]
-  #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #system/timer = [resolution: 15]
+  x = 1:10
+  xx = x * 20
+  vy = x * 0
+  vx = x * 0 + 10
+  #ball = [|x y vx vy| xx xx vx vy]
+  #system/timer = [resolution: 15, tick: 0]
   #gravity = 2
-  #boundary = 5000
+  #boundary = 420
 
 ## Update condition
 
@@ -21,7 +25,7 @@ Keep the balls within the y boundary
   ~ #system/timer.tick
   iy = #ball.y > #boundary
   #ball.y{iy} := #boundary
-  #ball.vy{iy} := -#ball.vy * 80
+  #ball.vy{iy} := -#ball.vy
 
 Keep the balls within the x boundary
   ~ #system/timer.tick
@@ -29,7 +33,7 @@ Keep the balls within the x boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 80
+  #ball.vx{ix | ixx} := -#ball.vx
 
 ## Create More Balls
 
