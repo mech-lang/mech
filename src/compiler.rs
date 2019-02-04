@@ -517,6 +517,9 @@ impl Compiler {
               Constraint::NewTable{id, rows, columns} => {
                 parameters.push((id.clone(), None, None));
               }
+              Constraint::Identifier{id} => {
+                parameters.push((TableId::Local(id.clone()),None, None));
+              }
               _ => (),
             }
           }
