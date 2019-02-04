@@ -376,7 +376,7 @@ impl Block {
   pub fn solve(&mut self, store: &mut Interner) {
     println!("Block {:?}", self.name);
     for step in &self.plan {
-      //println!("Step: {:?}", step);
+      println!("Step: {:?}", step);
       match step {
         Constraint::ChangeScan{table, column} => {
           match table {
@@ -899,7 +899,6 @@ impl Block {
           self.lhs_rows_empty.clear();
         },
         Constraint::Append{from_table, to_table} => {
-
           let from = match from_table {
             TableId::Local(id) => self.memory.get(*id).unwrap(),
             TableId::Global(id) => store.get_table(*id).unwrap(),
