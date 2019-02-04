@@ -35,10 +35,10 @@ get_ball.setAttribute("id", "get balls");
 get_ball.innerHTML =  "Get Balls";
 controls.appendChild(get_ball);
 
-let increment_time = document.createElement("button");
-increment_time.setAttribute("id", "increment time");
-increment_time.innerHTML =  "Increment Time";
-controls.appendChild(increment_time);
+let start_timer = document.createElement("button");
+start_timer.setAttribute("id", "start timer");
+start_timer.innerHTML =  "Start Timer";
+controls.appendChild(start_timer);
 
 let txn = document.createElement("button");
 txn.setAttribute("id", "txn");
@@ -69,7 +69,15 @@ Now update the block positions
   ~ #system/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity`;
+  #ball.vy := #ball.vy + #gravity
+
+## Create More Balls
+
+Create ball on click
+  ~ #html/event/click.x
+  x = #html/event/click.x
+  y = #html/event/click.y
+  #ball += [x: x, y: y, vx: 0, vy: 0]`;
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
@@ -93,37 +101,14 @@ document.body.appendChild(container);
 
 // ## Event handlers
 
-document.getElementById("compile").addEventListener("click", function(click) {
-  console.log(click);
-  let code = document.getElementById("code");
-  mech_core.compile_code(code.value);
-});
-
-document.getElementById("drawing area").addEventListener("click", function(click) {
-  console.log(click.layerX, click.layerY);
-});
-
-document.getElementById("view core").addEventListener("click", function() {
-  mech_core.display_core();
-});
-
-document.getElementById("view runtime").addEventListener("click", function() {
-  mech_core.display_runtime();
-});
-
-document.getElementById("clear core").addEventListener("click", function() {
-  mech_core.clear();
-});
-
-document.getElementById("get balls").addEventListener("click", function() {
-  let column = mech_core.get_column(balls,BigInt(1));
-  console.log(column);
-});
-
-document.getElementById("increment time").addEventListener("click", function() {
-  mech_core.process_transaction("system/timer",1,2,time);
+function system_timer() {
+  mech_core.queue_change("system/timer",1,2,time);
+  mech_core.process_transaction();
   time = time + 1;
+  render();
+}
 
+function render() {
   //render
   let canvas = document.getElementById("drawing area");
   let context = canvas.getContext("2d");
@@ -145,6 +130,43 @@ document.getElementById("increment time").addEventListener("click", function() {
     context.strokeStyle = '#000000';
     context.stroke();
   }
+}
+
+document.getElementById("compile").addEventListener("click", function(click) {
+  console.log(click);
+  let code = document.getElementById("code");
+  mech_core.compile_code(code.value);
+  render();
+});
+
+document.getElementById("drawing area").addEventListener("click", function(click) {
+  console.log(click.layerX, click.layerY);
+  mech_core.queue_change("html/event/click",1,1,click.layerX);
+  mech_core.queue_change("html/event/click",1,2,click.layerY);
+  mech_core.process_transaction();
+  render();
+});
+
+document.getElementById("view core").addEventListener("click", function() {
+  mech_core.display_core();
+});
+
+document.getElementById("view runtime").addEventListener("click", function() {
+  mech_core.display_runtime();
+});
+
+document.getElementById("clear core").addEventListener("click", function() {
+  mech_core.clear();
+  render();
+});
+
+document.getElementById("get balls").addEventListener("click", function() {
+  let column = mech_core.get_column(balls,BigInt(1));
+  console.log(column);
+});
+
+document.getElementById("start timer").addEventListener("click", function() {
+  setInterval(system_timer, 60);
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {
