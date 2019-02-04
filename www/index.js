@@ -55,12 +55,12 @@ code.setAttribute("id", "code");
 code.innerHTML =  `# Bouncing Balls
 
 Define the environment
-  #html/event/click = [x: 0 y: 0]
-  x = 1:10
+  #html/event/click = [x: 123 y: 456]
+  x = 1:5
   v = x * 0
   #ball = [|x y vx vy| x x v v]
   #system/timer = [resolution: 15, tick: 0]
-  #gravity = 2
+  #gravity = 1
   #boundary = 420
 
 ## Update condition
@@ -166,7 +166,7 @@ document.getElementById("get balls").addEventListener("click", function() {
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
-  setInterval(system_timer, 60);
+  setInterval(system_timer, 16);
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {
