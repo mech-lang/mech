@@ -13,30 +13,37 @@ use mech_core::Core;
 fn main() {
   let mut core = Core::new(100, 100);
   let mut compiler = Compiler::new();
-  let input = String::from("
+  let input = String::from("# Bouncing Balls
 
-block
-  #start = [x: 3]
+Define the environment
+  #html/event/click = [x: 123 y: 456]
+  x = 1:5
+  v = x * 0
+  #ball = [|x y vx vy| x x v v]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 2
+  #boundary = 420
 
-block
-  ~ #start.x
-  x = 1:10
-  xp = x * 0 + 3
-  y = 11:20
-  #z = [xp y]
-  #qrs += [y: 33]
-  
-block
-  #test = #z{1,1} + #z{1,2} + #z{2,1} + #z{1,1}
+## Update condition
 
-block
-  #qrs = [y|1]
-");
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Create More Balls
+
+Create ball on click
+  ~ #html/event/click.x
+  x = #html/event/click.x
+  y = #html/event/click.y
+  #ball += [x: x y: y vx: 0 vy: 0]");
 
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime); 
