@@ -28,6 +28,7 @@ macro_rules! log {
 #[wasm_bindgen]
 pub struct Core {
   core: mech_core::Core,
+  changes: Vec<Change>,
 }
 
 #[wasm_bindgen]
@@ -36,6 +37,7 @@ impl Core {
   pub fn new() -> Core {
     Core {
       core: mech_core::Core::new(100,100),
+      changes: Vec::new(),
     }
   }
 
@@ -61,7 +63,7 @@ impl Core {
     log!("{:?}", self.core.runtime);
   }
 
-  pub fn process_transaction(&mut self, table: String, row: u32, column: u32, value: u32) {
+  pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: u32) {
     let table_id = Hasher::hash_string(table);
     let change = Change::Set{table: table_id, 
                              row: Index::Index(row as u64), 
@@ -69,8 +71,13 @@ impl Core {
                              value: Value::from_u64(value as u64),
                             };
     log!("{:?}", change);
-    let txn = Transaction::from_change(change);
+    self.changes.push(change);
+  }
+
+  pub fn process_transaction(&mut self) {
+    let txn = Transaction::from_changeset(self.changes.clone());
     self.core.process_transaction(&txn);
+    self.changes.clear();
   }
 
   pub fn get_column(&mut self, table: u64, column: u64) -> Vec<u64> {
