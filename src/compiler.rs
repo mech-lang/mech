@@ -267,6 +267,12 @@ impl Compiler {
                   _ => false,
                 };
               },
+              Constraint::Append{from_table, to_table} => {
+                match from_table {
+                  TableId::Local(id) => consumes.insert(id),
+                  _ => false,
+                };
+              },
               Constraint::Scan{table, rows, columns} => {
                 match table {
                   TableId::Local(id) => consumes.insert(id),
