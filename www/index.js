@@ -83,7 +83,7 @@ let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
 canvas.setAttribute("id", "drawing area");
 canvas.setAttribute("width", "500");
-canvas.setAttribute("height", "420");
+canvas.setAttribute("height", "820");
 canvas.style.backgroundColor = 'rgb(226, 79, 94)';
 
 editor.appendChild(code);
