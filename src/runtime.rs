@@ -948,6 +948,7 @@ impl Block {
       
     }
     store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
+    self.block_changes.clear();
     self.updated = true;
   }
 }
