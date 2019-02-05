@@ -52,6 +52,7 @@ pub struct Core {
   pub table_capacity: usize,
   pub input: HashSet<Register>,
   pub output: HashSet<Register>,
+  pub paused: bool,
   transaction_boundaries: Vec<usize>,
 }
 
@@ -70,6 +71,7 @@ impl Core {
       runtime: Runtime::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      paused: false,
       transaction_boundaries: Vec::new(),
     }
   }
@@ -231,14 +233,21 @@ impl Core {
     for _ in 0..self.offset {
       self.step_forward_one();
     }
+    self.paused = false;
+  }
+
+  pub fn pause(&mut self) {
+    self.paused = true;
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) {
-    self.store.process_transaction(txn);
-    self.runtime.run_network(&mut self.store, 10_000);
+    if !self.paused {
+      self.store.process_transaction(txn);
+      self.runtime.run_network(&mut self.store, 10_000);
 
-    self.transaction_boundaries.push(self.store.change_pointer);
-    self.epoch = self.store.rollover;
+      self.transaction_boundaries.push(self.store.change_pointer);
+      self.epoch = self.store.rollover;
+    }
   }
 
   pub fn capacity(&self) -> f64 {
