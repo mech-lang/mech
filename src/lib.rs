@@ -70,12 +70,12 @@ impl Core {
                              column: Index::Index(column as u64),
                              value: Value::from_u64(value as u64),
                             };
-    log!("{:?}", change);
     self.changes.push(change);
   }
 
   pub fn process_transaction(&mut self) {
     let txn = Transaction::from_changeset(self.changes.clone());
+    log!("{:?}", txn);
     self.core.process_transaction(&txn);
     self.changes.clear();
   }
