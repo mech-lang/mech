@@ -55,29 +55,47 @@ code.setAttribute("id", "code");
 code.innerHTML =  `# Bouncing Balls
 
 Define the environment
-  #html/event/click = [x: 123 y: 456]
-  x = 1:5
+  #html/event/click = [|x y|]
+  range = 1:5
+  x = range * 30
   v = x * 0
   #ball = [|x y vx vy| x x v v]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 1
-  #boundary = 420
+  #boundary-y = 820
+  #boundary-x = 500
 
 ## Update condition
 
-Now update the block positions
+Update the block positions on each tick of the timer
   ~ #system/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
 
+## Boundary Condition
+
+Keep the balls within the y boundary
+  ~ #system/timer.tick
+  iy = #ball.y > #boundary-y
+  #ball.y{iy} := #boundary-y
+  #ball.vy{iy} := -#ball.vy * 80 / 100
+
+Keep the balls within the x boundary
+  ~ #system/timer.tick
+  ix = #ball.x > #boundary-x
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary-x
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
+
 ## Create More Balls
 
-Create ball on click
+Create ball at click point
   ~ #html/event/click.x
   x = #html/event/click.x
   y = #html/event/click.y
-  #ball += [x: x, y: y, vx: 0, vy: 0]`;
+  #ball += [x: x, y: y, vx: 30, vy: 0]`;
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
