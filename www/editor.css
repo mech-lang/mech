@@ -17,11 +17,11 @@ label:focus,
 
 @font-face {
   font-family: 'Fira';
-  src: url('../fonts/FiraCode-Regular.ttf');
+  src: url('../fonts/FiraMono-Regular.ttf');
 }
 @font-face {
   font-family: 'FiraBold';
-  src: url('../fonts/FiraCode-Bold.ttf');
+  src: url('../fonts/FiraMono-Bold.ttf');
 }
 /* --- General --- */
 
@@ -136,7 +136,7 @@ button:hover {
 }
 
 .code {
-  height: 400px;
+  height: 800px;
   font-family: 'Fira';
   width: 600px;
   margin: 10px;
