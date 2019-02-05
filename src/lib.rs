@@ -36,7 +36,7 @@ impl Core {
 
   pub fn new() -> Core {
     Core {
-      core: mech_core::Core::new(100,100),
+      core: mech_core::Core::new(100_000,100),
       changes: Vec::new(),
     }
   }
@@ -65,8 +65,13 @@ impl Core {
     log!("Core Resumed");
   }
 
-  pub fn steb_back_one(&mut self) {
+  pub fn step_back_one(&mut self) {
     self.core.step_back_one();
+    log!("Core Time -{}", self.core.offset);
+  }
+
+  pub fn step_forward_one(&mut self) {
+    self.core.step_forward_one();
     log!("Core Time -{}", self.core.offset);
   }
 
@@ -89,9 +94,11 @@ impl Core {
   }
 
   pub fn process_transaction(&mut self) {
-    let txn = Transaction::from_changeset(self.changes.clone());
-    log!("{:?}", txn);
-    self.core.process_transaction(&txn);
+    if !self.core.paused {
+        let txn = Transaction::from_changeset(self.changes.clone());
+        log!("{:?}", txn);
+        self.core.process_transaction(&txn);
+    }
     self.changes.clear();
   }
 

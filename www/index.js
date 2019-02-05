@@ -35,6 +35,16 @@ toggle_core.setAttribute("id", "toggle core");
 toggle_core.innerHTML =  "Pause";
 controls.appendChild(toggle_core);
 
+let step_back = document.createElement("button");
+step_back.setAttribute("id", "step back");
+step_back.innerHTML =  "Step Back";
+controls.appendChild(step_back);
+
+let step_forward = document.createElement("button");
+step_forward.setAttribute("id", "step forward");
+step_forward.innerHTML =  "Step Forward";
+controls.appendChild(step_forward);
+
 let start_timer = document.createElement("button");
 start_timer.setAttribute("id", "start timer");
 start_timer.innerHTML =  "Start Timer";
@@ -175,6 +185,16 @@ document.getElementById("view runtime").addEventListener("click", function() {
 
 document.getElementById("clear core").addEventListener("click", function() {
   mech_core.clear();
+  render();
+});
+
+document.getElementById("step back").addEventListener("click", function() {
+  mech_core.step_back_one();
+  render();
+});
+
+document.getElementById("step forward").addEventListener("click", function() {
+  mech_core.step_forward_one();
   render();
 });
 
