@@ -65,6 +65,11 @@ impl Core {
     log!("Core Resumed");
   }
 
+  pub fn steb_back_one(&mut self) {
+    self.core.step_back_one();
+    log!("Core Time -{}", self.core.offset);
+  }
+
   pub fn display_core(&mut self) {
     log!("{:?}", self.core);
   }
