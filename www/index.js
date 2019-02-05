@@ -30,10 +30,10 @@ clear_core.setAttribute("id", "clear core");
 clear_core.innerHTML =  "Clear Core";
 controls.appendChild(clear_core);
 
-let get_ball = document.createElement("button");
-get_ball.setAttribute("id", "get balls");
-get_ball.innerHTML =  "Get Balls";
-controls.appendChild(get_ball);
+let toggle_core = document.createElement("button");
+toggle_core.setAttribute("id", "toggle core");
+toggle_core.innerHTML =  "Pause";
+controls.appendChild(toggle_core);
 
 let start_timer = document.createElement("button");
 start_timer.setAttribute("id", "start timer");
@@ -178,9 +178,16 @@ document.getElementById("clear core").addEventListener("click", function() {
   render();
 });
 
-document.getElementById("get balls").addEventListener("click", function() {
-  let column = mech_core.get_column(balls,BigInt(1));
-  console.log(column);
+document.getElementById("toggle core").addEventListener("click", function() {
+  let toggle_core = document.getElementById("toggle core");
+  let state = toggle_core.innerHTML;
+  if (state == "Resume") {
+    mech_core.resume();
+    toggle_core.innerHTML = "Pause";
+  } else {
+    mech_core.pause();
+    toggle_core.innerHTML = "Resume";
+  }
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
