@@ -52,7 +52,17 @@ impl Core {
 
   pub fn clear(&mut self) {
     self.core.clear();
-    log!("Cleared");
+    log!("Core Cleared");
+  }
+
+  pub fn pause(&mut self) {
+    self.core.pause();
+    log!("Core Paused");
+  }
+
+  pub fn resume(&mut self) {
+    self.core.resume();
+    log!("Core Resumed");
   }
 
   pub fn display_core(&mut self) {
