@@ -32,18 +32,26 @@ Now update the block positions
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
 
+## Boundary Condition
+
+Keep the balls within the y boundary
+  ~ #system/timer.tick
+  iy = #ball.y > #boundary
+  #ball.y{iy} := #boundary
+  #ball.vy{iy} := -#ball.vy
+
 ## Create More Balls
 
 Create ball on click
   ~ #html/event/click.x
   x = #html/event/click.x
   y = #html/event/click.y
-  #ball += [x: x y: y vx: 0 vy: 0]");
+  #ball += [x: x, y: y, vx: 0, vy: 0]");
 
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.syntax_tree);
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime); 
