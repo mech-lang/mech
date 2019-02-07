@@ -230,9 +230,10 @@ impl QuantityMath for Quantity {
             let range_delta = (a_range - b_range) as u64;
             let (neue, actual_delta) = decrease_range(a_mant, range_delta);
             if actual_delta == range_delta {
-                let mut added = (neue + b_mant).to_quantity();
-                added.set_range(b_range);
-                added
+                let added = neue + b_mant;
+                let mut added_quantity = added.to_quantity();
+                added_quantity.set_range(b_range + added_quantity.range());
+                added_quantity
             } else {
                 let (b_neue, _) = increase_range(b_mant, actual_delta);
                 let mut added = (neue + b_neue).to_quantity();
