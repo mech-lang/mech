@@ -46,6 +46,13 @@ fn quantities_base_divide() {
 }
 
 #[test]
+fn quantities_base_add_float() {
+    let x = 0.1.to_quantity();
+    let y = 0.2.to_quantity();
+    assert_eq!(x.add(y).to_float(), 0.3);
+}
+
+#[test]
 fn quantities_base_float() {
     let x = 1.2;
     let y = 1.1;
