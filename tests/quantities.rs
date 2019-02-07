@@ -76,6 +76,14 @@ fn quantities_base_associativity() {
 }
 
 #[test]
+fn quantities_base_add_subtract() {
+    let x = 0.1.to_quantity();
+    let y = 0.2.to_quantity();
+    let z = 0.3.to_quantity();
+    assert_eq!((z.add(x.add(y))).sub(z).sub(y).to_float(), 0.1);
+}
+
+#[test]
 fn quantities_base_float() {
     let x = 1.2;
     let y = 1.1;
