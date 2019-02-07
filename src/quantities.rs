@@ -215,7 +215,9 @@ impl QuantityMath for Quantity {
         let other_range = other.range();
         if my_range == other_range {
             let added = self.mantissa() + other.mantissa();
-            added.to_quantity()
+            let mut added_quantity = added.to_quantity();
+            added_quantity.set_range(added_quantity.range() + self.range());
+            added_quantity
         } else {
             let my_mant = self.mantissa();
             let other_mant = other.mantissa();
