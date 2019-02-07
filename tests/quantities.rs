@@ -53,6 +53,29 @@ fn quantities_base_add_float() {
 }
 
 #[test]
+fn quantities_base_add_different_range_float() {
+    let x = 0.2.to_quantity();
+    let y = 0.3.to_quantity();
+    assert_eq!(x.add(y).to_float(), 0.5);
+}
+
+#[test]
+fn quantities_base_add_01_02_03() {
+    let x = 0.1.to_quantity();
+    let y = 0.2.to_quantity();
+    let z = 0.3.to_quantity();
+    assert_eq!(x.add(y.add(z)).to_float(), 0.6);
+}
+
+#[test]
+fn quantities_base_associativity() {
+    let x = 0.1.to_quantity();
+    let y = 0.2.to_quantity();
+    let z = 0.3.to_quantity();
+    assert_eq!(z.add(x.add(y)).to_float(), 0.6);
+}
+
+#[test]
 fn quantities_base_float() {
     let x = 1.2;
     let y = 1.1;
