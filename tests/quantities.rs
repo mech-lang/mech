@@ -39,48 +39,34 @@ fn quantities_base_multiply() {
 }
 
 #[test]
-fn quantities_base_divide() {
-    let x = 1.to_quantity();
-    let y = 2.to_quantity();
-    assert_eq!(x.divide(y).to_float(), 0.5);
-}
-
-#[test]
 fn quantities_base_add_float() {
-    let x = 0.1.to_quantity();
-    let y = 0.2.to_quantity();
-    assert_eq!(x.add(y).to_float(), 0.3);
-}
-
-#[test]
-fn quantities_base_add_different_range_float() {
-    let x = 0.2.to_quantity();
-    let y = 0.3.to_quantity();
-    assert_eq!(x.add(y).to_float(), 0.5);
+    let x = make_quantity(1, -1, 0);
+    let y = make_quantity(2, -1, 0);
+    assert_eq!(x.add(y), make_quantity(3, -1, 0));
 }
 
 #[test]
 fn quantities_base_add_01_02_03() {
-    let x = 0.1.to_quantity();
-    let y = 0.2.to_quantity();
-    let z = 0.3.to_quantity();
-    assert_eq!(x.add(y.add(z)).to_float(), 0.6);
+    let x = make_quantity(1, -1, 0);
+    let y = make_quantity(2, -1, 0);
+    let z = make_quantity(3, -1, 0);
+    assert_eq!(x.add(y.add(z)), make_quantity(6, -1, 0));
 }
 
 #[test]
 fn quantities_base_associativity() {
-    let x = 0.1.to_quantity();
-    let y = 0.2.to_quantity();
-    let z = 0.3.to_quantity();
-    assert_eq!(z.add(x.add(y)).to_float(), 0.6);
+    let x = make_quantity(1, -1, 0);
+    let y = make_quantity(2, -1, 0);
+    let z = make_quantity(3, -1, 0);
+    assert_eq!(z.add(x.add(y)), make_quantity(6, -1, 0));
 }
 
 #[test]
 fn quantities_base_add_subtract() {
-    let x = 0.1.to_quantity();
-    let y = 0.2.to_quantity();
-    let z = 0.3.to_quantity();
-    assert_eq!((z.add(x.add(y))).sub(z).sub(y).to_float(), 0.1);
+    let x = make_quantity(1, -1, 0);
+    let y = make_quantity(2, -1, 0);
+    let z = make_quantity(3, -1, 0);
+    assert_eq!((z.add(x.add(y))).sub(z).sub(y), make_quantity(1, -1, 0));
 }
 
 #[test]
