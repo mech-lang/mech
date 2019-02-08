@@ -203,7 +203,7 @@ impl QuantityMath for Quantity {
     }
 
     fn to_string(self) -> String {
-        format!("{}r{}", self.mantissa(), self.range())
+        format!("{}e{}", self.mantissa(), self.range())
     }
 
     fn to_float(self) -> f64 {
@@ -215,10 +215,10 @@ impl QuantityMath for Quantity {
         let my_range = self.range();
         let other_range = other.range();
         if my_range == other_range {
-            let added = self.mantissa() + other.mantissa();
-            let mut added_quantity = added.to_quantity();
-            added_quantity.set_range(added_quantity.range() + self.range());
-            added_quantity
+            let add = self.mantissa() + other.mantissa();
+            let mut add_quantity = add.to_quantity();
+            add_quantity.set_range(my_range);
+            add_quantity
         } else {
             let my_mant = self.mantissa();
             let other_mant = other.mantissa();
