@@ -261,27 +261,3 @@ impl QuantityMath for Quantity {
         (self.to_float() / other.to_float()).to_quantity()
     }
 }
-
-// extern crate test;
-// use self::test::{Bencher};
-// #[bench]
-// fn bench_numerics_add(b:&mut Bencher) {
-//     let y:i32 = -1;
-//     // let xs = (0..10000).map(|x| x.to_tagged()).collect::<Vec<_>>();
-//     let y_tagged = y.to_tagged();
-//     b.iter(|| {
-//         for x in (0..10000).map(|x| x.to_tagged()) {
-//             test::black_box(x.add(y_tagged));
-//         }
-//     });
-// }
-
-// #[bench]
-// fn bench_numerics_normal_add(b:&mut Bencher) {
-//     let y:i32 = -1;
-//     b.iter(|| {
-//         for x in 0..10000 {
-//             test::black_box(x + y);
-//         }
-//     });
-// }
