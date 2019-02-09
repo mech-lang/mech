@@ -5,6 +5,7 @@
 use alloc::vec::Vec;
 use alloc::fmt;
 use table::{Table, Value, TableId, Index};
+use quantities::{Quantity, QuantityMath, ToQuantity};
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -68,7 +69,7 @@ macro_rules! binary_math {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_i64(x $op y);
+                out.data[i][j] = Value::from_quantity(x.$op(*y));
               },
               _ => (),
             }
@@ -89,7 +90,7 @@ macro_rules! binary_math {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_i64(x $op y);
+                out.data[i][j] = Value::from_quantity(x.$op(*y));
               },
               _ => (),
             }
@@ -110,7 +111,7 @@ macro_rules! binary_math {
                        else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_i64(x $op y);
+                out.data[i][j] = Value::from_quantity(x.$op(*y));
               },
               _ => (),
             }
@@ -121,13 +122,13 @@ macro_rules! binary_math {
   )
 }
 
-binary_math!{math_add, +}
-binary_math!{math_subtract, -}
-binary_math!{math_multiply, *}
-binary_math!{math_divide, /}
+binary_math!{math_add, add}
+binary_math!{math_subtract, sub}
+binary_math!{math_multiply, multiply}
+binary_math!{math_divide, divide}
 // FIXME this isn't actually right at all. ^ is not power in Rust
-binary_math!{math_power, ^}
-binary_math!{undefined, +}
+binary_math!{math_power, add}
+binary_math!{undefined, add}
 
 // ## Comparators
 
