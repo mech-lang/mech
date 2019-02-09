@@ -19,6 +19,7 @@ use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
+use quantities::Quantity;
 
 // ## Runtime
 
@@ -332,7 +333,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_i64(value));
+              table_ref.set_cell(&row, &column, Value::from_quantity(value));
             },
             Entry::Vacant(v) => {    
             },
@@ -410,7 +411,7 @@ impl Block {
                     Some(ix) => ix,
                     None => 0,
                   };
-                  self.lhs_columns_empty.push(Value::Number(ix as i64));
+                  self.lhs_columns_empty.push(Value::from_u64(ix));
                   &self.lhs_columns_empty
                 },
                 _ => &self.lhs_rows_empty,
@@ -559,7 +560,7 @@ impl Block {
                     Some(ix) => ix,
                     None => 0,
                   };
-                  self.lhs_columns_empty.push(Value::Number(ix as i64));
+                  self.lhs_columns_empty.push(Value::from_u64(ix));
                   &self.lhs_columns_empty
                 },
                 _ => &self.lhs_rows_empty,
@@ -572,7 +573,7 @@ impl Block {
                     Some(ix) => ix,
                     None => 0,
                   };
-                  self.rhs_columns_empty.push(Value::Number(ix as i64));
+                  self.rhs_columns_empty.push(Value::from_u64(ix));
                   &self.rhs_columns_empty
                 },
                 _ => &self.rhs_columns_empty,
@@ -627,7 +628,7 @@ impl Block {
                   Some(ix) => ix,
                   None => 0,
                 };
-                self.lhs_columns_empty.push(Value::Number(ix as i64));
+                self.lhs_columns_empty.push(Value::from_u64(ix));
                 &self.lhs_columns_empty
               },
               _ => &self.lhs_rows_empty,
@@ -640,7 +641,7 @@ impl Block {
                   Some(ix) => ix,
                   None => 0,
                 };
-                self.rhs_columns_empty.push(Value::Number(ix as i64));
+                self.rhs_columns_empty.push(Value::from_u64(ix));
                 &self.rhs_columns_empty
               },
               _ => &self.rhs_columns_empty,
@@ -692,7 +693,7 @@ impl Block {
                   Some(ix) => ix,
                   None => 0,
                 };
-                self.lhs_columns_empty.push(Value::Number(ix as i64));
+                self.lhs_columns_empty.push(Value::from_u64(ix));
                 &self.lhs_columns_empty
               },
               _ => &self.lhs_rows_empty,
@@ -705,7 +706,7 @@ impl Block {
                   Some(ix) => ix,
                   None => 0,
                 };
-                self.rhs_columns_empty.push(Value::Number(ix as i64));
+                self.rhs_columns_empty.push(Value::from_u64(ix));
                 &self.rhs_columns_empty
               },
               _ => &self.rhs_columns_empty,
@@ -728,7 +729,7 @@ impl Block {
             self.scratch.grow_to_fit(end_value - start_value + 1, 1);
             let mut row = 1;
             for i in *start_value..*end_value + 1 {
-              self.scratch.set_cell(&Index::Index(row), &Index::Index(1), Value::Number(i as i64));
+              self.scratch.set_cell(&Index::Index(row), &Index::Index(1), Value::from_u64(i));
               row += 1;
             }
           }
@@ -761,7 +762,7 @@ impl Block {
                 Some(ix) => ix,
                 None => 0,
               };
-              self.rhs_columns_empty.push(Value::Number(ix as i64));
+              self.rhs_columns_empty.push(Value::from_u64(ix));
               &self.rhs_columns_empty
             },
             _ => &self.rhs_columns_empty,
@@ -775,7 +776,7 @@ impl Block {
                 Some(ix) => ix,
                 None => 0,
               };
-              self.rhs_rows_empty.push(Value::Number(ix as i64));
+              self.rhs_rows_empty.push(Value::from_u64(ix));
               &self.rhs_rows_empty
             },
             _ => &self.rhs_rows_empty,
@@ -789,7 +790,7 @@ impl Block {
                 Some(ix) => ix,
                 None => 0,
               };
-              self.lhs_columns_empty.push(Value::Number(ix as i64));
+              self.lhs_columns_empty.push(Value::from_u64(ix));
               &self.lhs_columns_empty
             },
             _ => &self.lhs_columns_empty,
@@ -803,7 +804,7 @@ impl Block {
                 Some(ix) => ix,
                 None => 0,
               };
-              self.lhs_rows_empty.push(Value::Number(ix as i64));
+              self.lhs_rows_empty.push(Value::from_u64(ix));
               &self.lhs_rows_empty
             },
             _ => &self.lhs_rows_empty,
@@ -1018,7 +1019,7 @@ pub enum Constraint {
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Logic {logic: operations::Logic, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Function {operation: operations::Function, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
-  Constant {table: TableId, row: Index, column: Index, value: i64},
+  Constant {table: TableId, row: Index, column: Index, value: Quantity},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
