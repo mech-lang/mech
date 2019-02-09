@@ -5,13 +5,14 @@
 use core::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
+use quantities::{Quantity, ToQuantity, QuantityMath};
 use hashbrown::hash_map::{HashMap, Entry};
 
 // ## Row and Column
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
-  Number(i64),
+  Number(Quantity),
   String(String),
   Table(u64),
   Bool(bool),
@@ -30,23 +31,27 @@ impl Value {
   }
 
   pub fn from_u64(num: u64) -> Value {
-    Value::Number(num as i64)
+    Value::Number(num.to_quantity())
+  }
+
+  pub fn from_quantity(num: Quantity) -> Value {
+    Value::Number(num)
   }
 
   pub fn from_i64(num: i64) -> Value {
-    Value::Number(num)
+    Value::Number(num.to_quantity())
   }
 
   pub fn as_u64(&self) -> Option<u64> {
     match self {
-      Value::Number(n) => Some(*n as u64),
+      Value::Number(n) => Some(n.mantissa() as u64),
       _ => None,
     }
   }
 
   pub fn as_i64(&self) -> Option<i64> {
     match self {
-      Value::Number(n) => Some(*n),
+      Value::Number(n) => Some(n.mantissa()),
       _ => None,
     }
   }
@@ -65,7 +70,7 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &Value::Number(ref x) => write!(f, "{}", x),
+      &Value::Number(x) => write!(f, "{}", x.to_string()),
       &Value::String(ref x) => write!(f, "{}", x),
       &Value::Empty => write!(f, ""),
       &Value::Table(ref x) => write!(f, "{}", x),
