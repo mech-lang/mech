@@ -64,6 +64,7 @@ pub enum Node {
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   DigitOrComma {children: Vec<Node> },
+  FloatingPoint {children: Vec<Node> },
   MathExpression { children: Vec<Node> },
   SelectExpression { children: Vec<Node> },
   FilterExpression { children: Vec<Node> },
@@ -161,6 +162,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::DigitOrComma{children} => {print!("DigitOrComma\n"); Some(children)},
+    Node::FloatingPoint{children} => {print!("FloatingPoint\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
@@ -519,7 +521,8 @@ node!{variable_define, VariableDefine, |s|{ identifier(s).and(space).and(equal).
 node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(expression) }, "TableDefine"}
 node!{add_row, AddRow, |s|{ table(s).and(space).and(add_operator).and(space).and(expression) }, "AddRow"}
 node!{constant, Constant, |s|{ number(s) }, "Constant"}
-node!{number, Number, |s|{ node(s).repeat(digit).optional_repeat(digit_or_comma) }, "Number"}
+node!{number, Number, |s|{ node(s).repeat(digit).optional_repeat(digit_or_comma).optional(floating_point) }, "Number"}
+node!{floating_point, FloatingPoint, |s|{ period(s).repeat(digit) }, "FloatingPoint"}
 node!{digit_or_comma, DigitOrComma, |s|{ comma(s).and(digit).and(digit).and(digit) }, "DigitOrComma"}
 node!{identifier_or_constant, IdentifierOrConstant, |s|{ identifier(s).or(constant) }, "IdentifierOrConstant"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
