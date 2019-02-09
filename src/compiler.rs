@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Block, Constraint, Index, TableId};
-use mech_core::{Function, Comparator, Logic, Parameter};
+use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
 use parser;
 use lexer::Lexer;
@@ -55,7 +55,7 @@ pub enum Node {
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
-  Constant {value: i64},
+  Constant {value: Quantity},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   SelectAll,
@@ -108,7 +108,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value} => {print!("Constant({:?})\n", value); None},
+    Node::Constant{value} => {print!("Constant({:?})\n", value.to_string()); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
@@ -1242,10 +1242,11 @@ impl Compiler {
       },  
       // Quantities
       parser::Node::Number{children} => {
-        let mut value = 0;
+        let mut value: u64 = 0;
         let mut result = self.compile_nodes(children);
         result.reverse();
         let mut place = 1;
+        let mut quantities: Vec<Quantity> = vec![];
         for node in result {
           match node {
             Node::Token{token: Token::Comma, byte} => (),
@@ -1255,10 +1256,35 @@ impl Compiler {
               place += 1;
               value += q;
             },
+            Node::Constant{value} => quantities.push(value),
             _ => (),
           }
         }
-        compiled.push(Node::Constant{value: value as i64});
+        let mut quantity = make_quantity(value,0,0);
+        for q in quantities {
+          quantity = quantity.add(q);
+        }
+        compiled.push(Node::Constant{value: quantity});
+      },
+      parser::Node::FloatingPoint{children} => {
+        let mut value: u64 = 0;
+        let mut result = self.compile_nodes(children);
+        result.reverse();
+        let mut place = 1;
+        for node in result {
+          match node {
+            Node::Token{token: Token::Period, byte} => (),
+            Node::Token{token, byte} => {
+              let digit = byte_to_digit(byte).unwrap();
+              let q = digit * magnitude(place);
+              place += 1;
+              value += q;
+            },
+            _ => (),
+          }
+        }
+        let quantity = make_quantity(value,(1 - place as i64),0);
+        compiled.push(Node::Constant{value: quantity});
       },
       // String-like nodes
       parser::Node::Paragraph{children} => {
