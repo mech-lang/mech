@@ -1260,7 +1260,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let mut quantity = make_quantity(value,0,0);
+        let mut quantity = make_quantity(value as i64,0,0);
         for q in quantities {
           quantity = quantity.add(q);
         }
@@ -1283,7 +1283,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let quantity = make_quantity(value,(1 - place as i64),0);
+        let quantity = make_quantity(value as i64,(1 - place as i64),0);
         compiled.push(Node::Constant{value: quantity});
       },
       // String-like nodes
