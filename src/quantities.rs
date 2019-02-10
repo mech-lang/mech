@@ -127,7 +127,7 @@ pub fn shifted_range(range:u64) -> u64 {
     range << 49
 }
 
-pub fn make_quantity(mantissa:u64, range:i64, domain:u64) -> Quantity {
+pub fn make_quantity(mantissa:i64, range:i64, domain:u64) -> Quantity {
     let value = mantissa.to_quantity();
     let cur_range = (value.range() + range) as u64;
     value & !RANGE_MASK | ((cur_range << 49) & RANGE_MASK) | (domain << 56)
@@ -214,6 +214,9 @@ impl QuantityMath for Quantity {
     fn add(self, other:Quantity) -> Quantity {
         let my_range = self.range();
         let other_range = other.range();
+        if self.mantissa() == 0 {
+            return other
+        }
         if my_range == other_range {
             let add = self.mantissa() + other.mantissa();
             let mut add_quantity = add.to_quantity();
@@ -258,6 +261,7 @@ impl QuantityMath for Quantity {
     }
 
     fn divide(self, other:Quantity) -> Quantity {
-        (self.to_float() / other.to_float()).to_quantity()
+        let result = self.mantissa() * 10000 / other.mantissa();
+        make_quantity(result, -4, 0)
     }
 }
