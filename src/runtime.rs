@@ -19,7 +19,7 @@ use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
-use quantities::Quantity;
+use quantities::{Quantity, ToQuantity, QuantityMath};
 
 // ## Runtime
 
@@ -432,7 +432,7 @@ impl Block {
                   let cix = if column_ixes.is_empty() { i }
                             else { 
                               match column_ixes[i] {
-                                Value::Number(n) => n as usize - 1,
+                                Value::Number(n) => n.mantissa() as usize  - 1,
                                 Value::Bool(true) => i,
                                 _ => {
                                   column_mask = false;
@@ -446,7 +446,7 @@ impl Block {
                     let rix = if row_ixes.is_empty() { j }
                               else { 
                                 match row_ixes[j] {
-                                  Value::Number(n) => n as usize - 1,
+                                  Value::Number(n) => n.mantissa() as usize - 1,
                                   Value::Bool(true) => j,
                                   _ => {
                                     row_mask = false;
@@ -854,7 +854,7 @@ impl Block {
               let fcix = if from_column_values.is_empty() { i }
                          else {
                            match from_column_values[i] {
-                             Value::Number(x) => x as usize - 1,
+                             Value::Number(x) => x.mantissa() as usize  - 1,
                              Value::Bool(true) => i,
                              _ => {continue; 0}, // This continues before the return
                            }
@@ -862,7 +862,7 @@ impl Block {
               let tcix = if to_column_values.is_empty() { i }
                          else {
                            match to_column_values[i] {
-                             Value::Number(x) => x as usize - 1,
+                             Value::Number(x) => x.mantissa() as usize  - 1,
                              Value::Bool(true) => i,
                              _ => {continue; 0},
                            }
@@ -871,7 +871,7 @@ impl Block {
                 let frix = if from_row_values.is_empty() { j }
                            else {
                              match from_row_values[j] {
-                               Value::Number(x) => x as usize - 1,
+                               Value::Number(x) => x.mantissa() as usize  - 1,
                                Value::Bool(true) => j,
                                _ => {continue; 0},
                              }
@@ -880,7 +880,7 @@ impl Block {
                 let trix = if to_row_values.is_empty() { j }
                            else {
                              match to_row_values[j] {
-                               Value::Number(x) => x as usize - 1,
+                               Value::Number(x) => x.mantissa() as usize  - 1,
                                Value::Bool(true) => j,
                                _ => {continue; 0},
                              }
