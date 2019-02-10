@@ -5,7 +5,7 @@ extern crate mech_core;
 use mech_syntax::lexer::Lexer;
 use mech_syntax::parser::{Parser, ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{Hasher, Core, Index, Value};
+use mech_core::{Hasher, Core, Index, Value, make_quantity};
 
 macro_rules! compile_string {
   ($func:ident, $test:tt) => (
@@ -90,7 +90,7 @@ test_math!(math_add,"#test = 1 + 1", Value::from_i64(2));
 
 test_math!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 
-test_math!(math_divide,"#test = 4 / 2", Value::from_i64(2));
+test_math!(math_divide,"#test = 4 / 2", Value::Number(make_quantity(20000,-4,0)));
 
 test_math!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
@@ -418,7 +418,7 @@ Create ball on click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
   
 block
-  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::from_i64(78));
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::Number(make_quantity(780000,-4,0)));
 
 // ## Strings
 
