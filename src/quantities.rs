@@ -222,7 +222,7 @@ impl QuantityMath for Quantity {
         if my_range == other_range {
             let add = self.mantissa() + other.mantissa();
             let mut add_quantity = add.to_quantity();
-            add_quantity.set_range(my_range);
+            add_quantity.set_range(add_quantity.range() + my_range);
             add_quantity
         } else {
             let my_mant = self.mantissa();
