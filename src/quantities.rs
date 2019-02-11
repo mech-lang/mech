@@ -146,6 +146,8 @@ pub trait QuantityMath {
     fn sub(self, Quantity) -> Quantity;
     fn multiply(self, Quantity) -> Quantity;
     fn divide(self, Quantity) -> Quantity;
+    fn less_than(self, Quantity) -> bool;
+    fn greater_than(self, Quantity) -> bool;
     fn to_string(self) -> String;
     fn to_float(self) -> f64;
 }
@@ -263,5 +265,25 @@ impl QuantityMath for Quantity {
     fn divide(self, other:Quantity) -> Quantity {
         let result = self.mantissa() * 10000 / other.mantissa();
         make_quantity(result, -4, 0)
+    }
+
+    fn less_than(self, other: Quantity) -> bool {
+        if self.is_negative() && !other.is_negative() {
+            true
+        } else if !self.is_negative() && other.is_negative() {
+            false
+        } else {
+            self.to_float() < other.to_float()
+        }
+    }
+
+    fn greater_than(self, other: Quantity) -> bool {
+        if self.is_negative() && !other.is_negative() {
+            false
+        } else if !self.is_negative() && other.is_negative() {
+            true
+        } else {
+            self.to_float() > other.to_float()
+        }
     }
 }
