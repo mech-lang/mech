@@ -89,7 +89,7 @@ Keep the balls within the y boundary
   ~ #system/timer.tick
   iy = #ball.y > #boundary-y
   #ball.y{iy} := #boundary-y
-  #ball.vy{iy} := -#ball.vy * 80 / 100
+  #ball.vy{iy} := -#ball.vy * 0.80
 
 Keep the balls within the x boundary
   ~ #system/timer.tick
@@ -97,7 +97,7 @@ Keep the balls within the x boundary
   ixx = #ball.x < 0
   #ball.x{ix} := #boundary-x
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
 ## Create More Balls
 
