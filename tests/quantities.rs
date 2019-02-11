@@ -70,6 +70,13 @@ fn quantities_base_add_subtract() {
 }
 
 #[test]
+fn quantities_base_add_big_little() {
+  let x = make_quantity(275251200000000,-12,0);
+  let y = make_quantity(7864320000000,-12,0);
+    assert_eq!(x.add(y), make_quantity(28311552000000, -11, 0));
+}
+
+#[test]
 fn quantities_base_float() {
     let x = 1.2;
     let y = 1.1;
