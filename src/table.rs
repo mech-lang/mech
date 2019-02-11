@@ -42,6 +42,13 @@ impl Value {
     Value::Number(num.to_quantity())
   }
 
+  pub fn as_quantity(&self) -> Option<Quantity> {
+    match self {
+      Value::Number(n) => Some(*n),
+      _ => None,
+    }
+  }
+
   pub fn as_u64(&self) -> Option<u64> {
     match self {
       Value::Number(n) => Some(n.mantissa() as u64),
@@ -70,7 +77,7 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &Value::Number(x) => write!(f, "{}", x.to_string()),
+      &Value::Number(x) => write!(f, "{}", x.to_float()),
       &Value::String(ref x) => write!(f, "{}", x),
       &Value::Empty => write!(f, ""),
       &Value::Table(ref x) => write!(f, "{}", x),
