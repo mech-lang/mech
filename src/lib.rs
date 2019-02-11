@@ -17,7 +17,7 @@ use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::compiler::Compiler;
-use mech_core::{Transaction, Hasher, Change, Index, Value, Table};
+use mech_core::{Transaction, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -96,18 +96,18 @@ impl Core {
   pub fn process_transaction(&mut self) {
     if !self.core.paused {
         let txn = Transaction::from_changeset(self.changes.clone());
-        log!("{:?}", txn);
+        //log!("{:?}", txn);
         self.core.process_transaction(&txn);
     }
     self.changes.clear();
   }
 
-  pub fn get_column(&mut self, table: u64, column: u64) -> Vec<u64> {
-      let mut output: Vec<u64> = vec![];
+  pub fn get_column(&mut self, table: u64, column: u64) -> Vec<f64> {
+      let mut output: Vec<f64> = vec![];
       match self.core.store.get_column(table, Index::Index(column)) {
           Some(column) => {
               for row in column {
-                  output.push(row.as_u64().unwrap());
+                  output.push(row.as_quantity().unwrap().to_float());
               }
           }
           _ => log!("{} not found", table),
