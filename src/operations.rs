@@ -194,7 +194,7 @@ macro_rules! comparator {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x $op y);
+                out.data[i][j] = Value::Bool(x.$op(*y));
               },
               _ => (),
             }
@@ -215,7 +215,7 @@ macro_rules! comparator {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x $op y);
+                out.data[i][j] = Value::Bool(x.$op(*y));
               },
               _ => (),
             }
@@ -236,7 +236,7 @@ macro_rules! comparator {
                        else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x $op y);
+                out.data[i][j] = Value::Bool(x.$op(*y));
               },
               _ => (),
             }
@@ -247,9 +247,9 @@ macro_rules! comparator {
   )
 }
 
-comparator!{compare_greater_than, >}
-comparator!{compare_less_than, <}
-comparator!{compare_undefined, >}
+comparator!{compare_greater_than, greater_than}
+comparator!{compare_less_than, less_than}
+comparator!{compare_undefined, greater_than}
 
 // ## Logic
 
