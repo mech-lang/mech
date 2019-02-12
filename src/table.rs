@@ -77,7 +77,7 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &Value::Number(x) => write!(f, "{}", x.to_float()),
+      &Value::Number(x) => write!(f, "{}", x.to_string()),
       &Value::String(ref x) => write!(f, "{}", x),
       &Value::Empty => write!(f, ""),
       &Value::Table(ref x) => write!(f, "{}", x),
@@ -373,7 +373,7 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let cell_width: usize = 15;
+    let cell_width: usize = 30;
     let columns = self.columns as usize;
     let mut table_width: usize = cell_width * columns + columns * 2;
     if table_width < 20 {
