@@ -102,6 +102,32 @@ impl Core {
     self.changes.clear();
   }
 
+  pub fn get_mantissas(&mut self, table: u64, column: u64) -> Vec<i64> {
+      let mut output: Vec<i64> = vec![];
+      match self.core.store.get_column(table, Index::Index(column)) {
+          Some(column) => {
+              for row in column {
+                  output.push(row.as_quantity().unwrap().mantissa());
+              }
+          }
+          _ => log!("{} not found", table),
+      }
+      output
+  }
+
+  pub fn get_ranges(&mut self, table: u64, column: u64) -> Vec<i64> {
+      let mut output: Vec<i64> = vec![];
+      match self.core.store.get_column(table, Index::Index(column)) {
+          Some(column) => {
+              for row in column {
+                  output.push(row.as_quantity().unwrap().range());
+              }
+          }
+          _ => log!("{} not found", table),
+      }
+      output
+  }
+
   pub fn get_column(&mut self, table: u64, column: u64) -> Vec<f64> {
       let mut output: Vec<f64> = vec![];
       match self.core.store.get_column(table, Index::Index(column)) {
