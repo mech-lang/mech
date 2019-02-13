@@ -258,7 +258,7 @@ impl QuantityMath for Quantity {
            None => { panic!("QuantityMultiply overflow") }
         };
         let mut quantity = result.to_quantity();
-        quantity.set_range(self.range() + other.range());
+        quantity.set_range(quantity.range() + self.range() + other.range());
         quantity
     }
 
