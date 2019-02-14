@@ -77,6 +77,17 @@ fn quantities_base_add_big_little() {
 }
 
 #[test]
+fn quantities_base_multiply_small() {
+  let w = make_quantity(0,0,0);
+  let x = make_quantity(14336512000000,-12,0);
+  let y = make_quantity(8,-1,0);
+  let z = make_quantity(1,0,0);
+  let q = w.sub(x);
+  let r = q.multiply(y);
+  assert_eq!(r, make_quantity(-114692096000000, -13, 0));
+}
+
+#[test]
 fn quantities_base_float() {
     let x = 1.2;
     let y = 1.1;
