@@ -223,3 +223,7 @@ p a {
   line-height: 24px;
   color: #777;
 }
+
+#time-slider {
+  width: 1000px;
+}

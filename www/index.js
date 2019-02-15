@@ -45,7 +45,7 @@ let time_travel = document.createElement("div");
 time_travel.setAttribute("class", "controls");
 
 let time_slider = document.createElement("input");
-time_slider.setAttribute("id", "time slider");
+time_slider.setAttribute("id", "time-slider");
 time_slider.setAttribute("min", "1");
 time_slider.setAttribute("max", "100");
 time_slider.setAttribute("value", "100");
