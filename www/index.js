@@ -30,21 +30,6 @@ clear_core.setAttribute("id", "clear core");
 clear_core.innerHTML =  "Clear Core";
 controls.appendChild(clear_core);
 
-let toggle_core = document.createElement("button");
-toggle_core.setAttribute("id", "toggle core");
-toggle_core.innerHTML =  "Pause";
-controls.appendChild(toggle_core);
-
-let step_back = document.createElement("button");
-step_back.setAttribute("id", "step back");
-step_back.innerHTML =  "Step Back";
-controls.appendChild(step_back);
-
-let step_forward = document.createElement("button");
-step_forward.setAttribute("id", "step forward");
-step_forward.innerHTML =  "Step Forward";
-controls.appendChild(step_forward);
-
 let start_timer = document.createElement("button");
 start_timer.setAttribute("id", "start timer");
 start_timer.innerHTML =  "Start Timer";
@@ -53,6 +38,48 @@ controls.appendChild(start_timer);
 let txn = document.createElement("button");
 txn.setAttribute("id", "txn");
 txn.innerHTML =  "Add Txn";
+
+// ## Time Travel
+
+let time_travel = document.createElement("div");
+time_travel.setAttribute("class", "controls");
+
+let time_slider = document.createElement("input");
+time_slider.setAttribute("id", "time slider");
+time_slider.setAttribute("min", "1");
+time_slider.setAttribute("max", "100");
+time_slider.setAttribute("value", "100");
+time_slider.setAttribute("type", "range");
+time_travel.appendChild(time_slider);
+
+let last_slider_value = 100;
+time_slider.oninput = function() {
+  mech_core.pause();
+  let current_value = this.value;
+  // Time travel forward
+  if (current_value > last_slider_value) {
+    mech_core.step_forward_one();
+  // Time travel backward
+  } else if (current_value < last_slider_value) {
+    mech_core.step_back_one();
+  }
+  last_slider_value = current_value;
+}
+
+let step_back = document.createElement("button");
+step_back.setAttribute("id", "step back");
+step_back.innerHTML =  "<";
+time_travel.appendChild(step_back);
+
+let toggle_core = document.createElement("button");
+toggle_core.setAttribute("id", "toggle core");
+toggle_core.innerHTML =  "Pause";
+time_travel.appendChild(toggle_core);
+
+let step_forward = document.createElement("button");
+step_forward.setAttribute("id", "step forward");
+step_forward.innerHTML =  ">";
+time_travel.appendChild(step_forward);
 
 // ## Editor
 
@@ -124,6 +151,7 @@ container.setAttribute("class","container");
 
 container.appendChild(controls);
 container.appendChild(editor);
+container.appendChild(time_travel);
 
 document.body.appendChild(container);
 
