@@ -188,27 +188,7 @@ function system_timer() {
 }
 
 function render() {
-  //render
-  let canvas = document.getElementById("drawing area");
-  let context = canvas.getContext("2d");
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  let radius = 10;
-  let x = mech_core.get_column(balls,BigInt(1));
-  let y = mech_core.get_column(balls,BigInt(2));
-
-  let i;
-  for (i = 0; i < x.length; i++) {
-    let centerY = Number(y[i]);
-    let centerX = Number(x[i]);
-    context.beginPath();
-    context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
-    context.fillStyle = 'black';
-    context.fill();
-    context.lineWidth = 1;
-    context.strokeStyle = '#000000';
-    context.stroke();
-  }
+  mech_core.render_balls();
 }
 
 document.getElementById("compile").addEventListener("click", function(click) {

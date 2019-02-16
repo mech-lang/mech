@@ -13,6 +13,7 @@ extern crate mech_core;
 extern crate mech_syntax;
 
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
@@ -140,6 +141,38 @@ impl Core {
       }
       output
   }
+
+  pub fn render_balls(&self) -> Result<(), JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let body = document.body().expect("document should have a body");
+
+    let canvas = document.get_element_by_id("drawing area").unwrap();
+    let canvas: web_sys::HtmlCanvasElement = canvas
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .map_err(|_| ())
+                .unwrap();
+    let context = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
+    let radius = 10.0;
+
+    let table_id = Hasher::hash_str("ball");
+    let table = self.core.store.get_table(table_id).unwrap();
+
+    context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
+    for i in 0..table.rows {
+      context.begin_path();
+      context.arc(table.data[0][i as usize].as_float().unwrap(), table.data[1][i as usize].as_float().unwrap(), radius, 0.0, 2.0 * 3.14);
+      context.set_fill_style(&JsValue::from_str("black"));
+      context.fill();
+    }
+
+    Ok(())
+  } 
 
 }
 
