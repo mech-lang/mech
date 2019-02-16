@@ -56,6 +56,13 @@ impl Value {
     }
   }
 
+  pub fn as_float(&self) -> Option<f64> {
+    match self {
+      Value::Number(n) => Some(n.to_float()),
+      _ => None,
+    }
+  }
+
   pub fn as_i64(&self) -> Option<i64> {
     match self {
       Value::Number(n) => Some(n.mantissa()),
