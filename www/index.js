@@ -45,7 +45,8 @@ let time_travel = document.createElement("div");
 time_travel.setAttribute("class", "controls");
 
 let time_slider = document.createElement("input");
-time_slider.setAttribute("id", "time-slider");
+time_slider.setAttribute("id", "time slider");
+time_slider.setAttribute("class", "slider");
 time_slider.setAttribute("min", "1");
 time_slider.setAttribute("max", "100");
 time_slider.setAttribute("value", "100");
@@ -69,16 +70,38 @@ time_slider.oninput = function() {
 let step_back = document.createElement("button");
 step_back.setAttribute("id", "step back");
 step_back.innerHTML =  "<";
+step_back.onclick = function() {
+  mech_core.step_back_one();
+  time_slider.value = time_slider.value - 1;
+  render();
+}
 time_travel.appendChild(step_back);
 
 let toggle_core = document.createElement("button");
 toggle_core.setAttribute("id", "toggle core");
 toggle_core.innerHTML =  "Pause";
+toggle_core.onclick = function() {
+  let toggle_core = document.getElementById("toggle core");
+  let state = toggle_core.innerHTML;
+  if (state == "Resume") {
+    mech_core.resume();
+    toggle_core.innerHTML = "Pause";
+    time_slider.value = time_slider.max;
+  } else {
+    mech_core.pause();
+    toggle_core.innerHTML = "Resume";
+  }
+};
 time_travel.appendChild(toggle_core);
 
 let step_forward = document.createElement("button");
 step_forward.setAttribute("id", "step forward");
 step_forward.innerHTML =  ">";
+step_forward.onclick = function() {
+  mech_core.step_forward_one();
+  time_slider.value = time_slider.value*1 + 1;
+  render();
+}
 time_travel.appendChild(step_forward);
 
 // ## Editor
@@ -214,28 +237,6 @@ document.getElementById("view runtime").addEventListener("click", function() {
 document.getElementById("clear core").addEventListener("click", function() {
   mech_core.clear();
   render();
-});
-
-document.getElementById("step back").addEventListener("click", function() {
-  mech_core.step_back_one();
-  render();
-});
-
-document.getElementById("step forward").addEventListener("click", function() {
-  mech_core.step_forward_one();
-  render();
-});
-
-document.getElementById("toggle core").addEventListener("click", function() {
-  let toggle_core = document.getElementById("toggle core");
-  let state = toggle_core.innerHTML;
-  if (state == "Resume") {
-    mech_core.resume();
-    toggle_core.innerHTML = "Pause";
-  } else {
-    mech_core.pause();
-    toggle_core.innerHTML = "Resume";
-  }
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
