@@ -224,6 +224,8 @@ p a {
   color: #777;
 }
 
-#time-slider {
+.slider {
   width: 1000px;
+  -webkit-appearance: none;
+  background: #d3d3d3;
 }
