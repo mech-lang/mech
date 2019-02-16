@@ -375,9 +375,9 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("Block {:?}", self.name);
+    //println!("Block {:?}", self.name);
     for step in &self.plan {
-      println!("Step: {:?}", step);
+      //println!("Step: {:?}", step);
       match step {
         Constraint::ChangeScan{table, column} => {
           match table {
