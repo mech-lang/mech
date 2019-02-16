@@ -30,7 +30,14 @@ wasm-bindgen-test = "0.2"
 opt-level = "s"
 
 [dependencies.web-sys]
-version = "0.3"
+version = "0.3.14"
 features = [
-  "console",
+  'Document',
+  'Element',
+  'HtmlElement',
+  'HtmlCanvasElement',
+  'CanvasRenderingContext2d',
+  'Node',
+  'Window',
+  'console',
 ]
