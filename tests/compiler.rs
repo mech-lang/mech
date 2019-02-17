@@ -94,6 +94,8 @@ test_math!(math_divide,"#test = 4 / 2", Value::Number(make_quantity(20000,-4,0))
 
 test_math!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
+test_math!(math_constant_collision,"#test = 10000 + 1", Value::from_i64(10001));
+
 test_math!(math_multiple_variable_graph,"block
   a = z * 5
   #test = d * z + a
