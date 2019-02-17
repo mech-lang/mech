@@ -150,6 +150,7 @@ pub trait QuantityMath {
     fn greater_than(self, Quantity) -> bool;
     fn to_string(self) -> String;
     fn to_float(self) -> f64;
+    fn to_u64(self) -> u64;
 }
 
 impl QuantityMath for Quantity {
@@ -210,6 +211,10 @@ impl QuantityMath for Quantity {
 
     fn to_float(self) -> f64 {
         (self.mantissa() as f64) * 10f64.powi(self.range() as i32)
+    }
+
+    fn to_u64(self) -> u64 {
+        self.to_float() as u64
     }
 
     #[inline(always)]
