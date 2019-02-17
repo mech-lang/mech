@@ -108,7 +108,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::Constant{value} => {print!("Constant({:?})\n", value.to_string()); None},
+    Node::Constant{value} => {print!("Constant({})\n", value.to_float()); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
     Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
@@ -844,7 +844,7 @@ impl Compiler {
         constraints.push(Constraint::Identifier{id: *id});
       },
       Node::Constant{value} => {
-        let table = Hasher::hash_string(format!("Constant-{:?}", *value));
+        let table = Hasher::hash_string(format!("Constant-{:?}", value.to_float()));
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
         constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value});
       },
