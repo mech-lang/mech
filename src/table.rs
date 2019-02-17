@@ -51,7 +51,7 @@ impl Value {
 
   pub fn as_u64(&self) -> Option<u64> {
     match self {
-      Value::Number(n) => Some(n.mantissa() as u64),
+      Value::Number(n) => Some(n.to_float() as u64),
       _ => None,
     }
   }
