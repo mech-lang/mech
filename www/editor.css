@@ -17,11 +17,11 @@ label:focus,
 
 @font-face {
   font-family: 'Fira';
-  src: url('../fonts/FiraMono-Regular.ttf');
+  src: url('fonts/FiraMono-Regular.ttf');
 }
 @font-face {
   font-family: 'FiraBold';
-  src: url('../fonts/FiraMono-Bold.ttf');
+  src: url('fonts/FiraMono-Bold.ttf');
 }
 /* --- General --- */
 
