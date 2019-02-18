@@ -1013,7 +1013,7 @@ pub enum Constraint {
   Scan {table: TableId, rows: Option<TableId>, columns: Option<TableId>},
   ChangeScan {table: TableId, column: Index},
   ScanColumn {table: TableId, column: Index},
-  Identifier {id: u64},
+  Identifier {id: u64, text: String},
   Range{table: TableId, start: TableId, end: TableId},
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
@@ -1047,7 +1047,7 @@ impl fmt::Debug for Constraint {
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
-      Constraint::Identifier{id} => write!(f, "Identifier({:#x})", id),
+      Constraint::Identifier{id, text} => write!(f, "Identifier(\"{}\" = {:#x})", text, id),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{from_table, to_table} => write!(f, "Append({:?} -> {:?})", from_table, to_table),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
