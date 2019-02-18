@@ -97,6 +97,16 @@ impl Core {
       for register in block.output_registers.iter() {
         self.output.insert(register.clone());
       }
+      for (constraint_text, constraints) in &block.constraints {
+        for constraint in constraints {
+          match constraint {
+            Constraint::Identifier{id, text} => {
+              self.store.names.insert(id.clone() as u64, text.clone());
+            },
+            _ =>(),
+          };
+        }
+      }
     }
   }
 
