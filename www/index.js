@@ -42,7 +42,7 @@ txn.innerHTML =  "Add Txn";
 // ## Time Travel
 
 let time_travel = document.createElement("div");
-time_travel.setAttribute("class", "controls");
+time_travel.setAttribute("class", "time-travel");
 
 let time_slider = document.createElement("input");
 time_slider.setAttribute("id", "time slider");
@@ -159,24 +159,43 @@ Create ball at click point
 
 let canvas = document.createElement("canvas");
 canvas.setAttribute("class", "canvas");
-canvas.setAttribute("id", "drawing area");
+//canvas.setAttribute("id", "drawing area");
 canvas.setAttribute("width", "500");
-canvas.setAttribute("height", "820");
 canvas.style.backgroundColor = 'rgb(226, 79, 94)';
 
+let drawing_area = document.createElement("div")
+drawing_area.setAttribute("id", "drawing");
+drawing_area.setAttribute("class", "drawing-area");
+
 editor.appendChild(code);
-editor.appendChild(canvas);
+editor.appendChild(drawing_area)
 
-// ## Container
+// ## Editor Container
 
-let container = document.createElement("div");
-container.setAttribute("class","container");
+let editor_container = document.createElement("div");
+editor_container.setAttribute("id","editor container");
+editor_container.setAttribute("class","editor-container");
 
-container.appendChild(controls);
-container.appendChild(editor);
-container.appendChild(time_travel);
+editor_container.appendChild(controls);
+editor_container.appendChild(editor);
+editor_container.appendChild(time_travel);
 
-document.body.appendChild(container);
+// ## Navigation
+
+let nav = document.createElement("div");
+nav.setAttribute("id","navigation");
+nav.setAttribute("class","navigation");
+
+
+// ## Bring it all together
+
+let app = document.createElement("div");
+app.setAttribute("id","app");
+app.setAttribute("class","app");
+app.appendChild(nav);
+app.appendChild(editor_container);
+
+document.body.appendChild(app);
 
 // ## Event handlers
 
@@ -195,19 +214,20 @@ document.getElementById("compile").addEventListener("click", function(click) {
   console.log(click);
   let code = document.getElementById("code");
   mech_core.compile_code(code.value);
-  render();
+  mech_core.add_canvas();
+  //render();
 });
 
-document.getElementById("drawing area").addEventListener("click", function(click) {
+/*document.getElementById("drawing area").addEventListener("click", function(click) {
   console.log(click.layerX, click.layerY);
   mech_core.queue_change("html/event/click",1,1,click.layerX);
   mech_core.queue_change("html/event/click",1,2,click.layerY);
   mech_core.process_transaction();
   render();
-});
+});*/
 
 document.getElementById("view core").addEventListener("click", function() {
-  mech_core.display_core();
+  mech_core.list_global_tables();
 });
 
 document.getElementById("view runtime").addEventListener("click", function() {
