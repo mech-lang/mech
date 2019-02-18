@@ -367,7 +367,7 @@ impl Compiler {
       Node::SetData{children} => {
         let result1 = self.compile_constraint(&children[0]);
         let to = match &result1[0] {
-          Constraint::Identifier{id} => TableId::Global(id.clone()),
+          Constraint::Identifier{id, ..} => TableId::Global(id.clone()),
           _ => TableId::Global(0), 
         };
         let mut select_data_children = vec![];
@@ -432,7 +432,7 @@ impl Compiler {
         let mut to_table_constraints = self.compile_constraint(&children[0]);
         let mut from_table_constraints = self.compile_constraint(&children[1]);
         let to_table = match to_table_constraints[0].clone() {
-          Constraint::Identifier{id} => TableId::Global(id),
+          Constraint::Identifier{id, ..} => TableId::Global(id),
           _ => TableId::Global(0),
         };
         let from_table = match from_table_constraints[0].clone() {
@@ -460,7 +460,7 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
           let alias: u64 = match result[0] {
-            Constraint::Identifier{id} => id,
+            Constraint::Identifier{id, ..} => id,
             _ => 0,
           };
           let table = match &result[1] {
@@ -477,7 +477,7 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
           let to_table: u64 = match result[0] {
-            Constraint::Identifier{id} => {
+            Constraint::Identifier{id, ..} => {
               id
             },
             _ => 0,
@@ -507,7 +507,7 @@ impl Compiler {
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
           match result[0] {
-            Constraint::Identifier{id} => {
+            Constraint::Identifier{id, ..} => {
               column_names.push(Constraint::TableColumn{table: self.table, column_ix: ix as u64 + 1, column_alias: id});
             }
             _ => (),
@@ -517,7 +517,7 @@ impl Compiler {
               Constraint::NewTable{id, rows, columns} => {
                 parameters.push((id.clone(), None, None));
               }
-              Constraint::Identifier{id} => {
+              Constraint::Identifier{id, ..} => {
                 parameters.push((TableId::Local(id.clone()),None, None));
               }
               _ => (),
@@ -565,7 +565,7 @@ impl Compiler {
         for constraint in result {
           i += 1;
           match constraint {
-            Constraint::Identifier{id} => {
+            Constraint::Identifier{id, ..} => {
               constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_alias: id});
             }
             _ => (),
@@ -753,7 +753,7 @@ impl Compiler {
       },
       Node::Table{name, id} => {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
-        constraints.push(Constraint::Identifier{id: *id});
+        constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
       Node::SelectData{id, children} => {
         let mut compiled = vec![];
@@ -766,7 +766,7 @@ impl Compiler {
             Constraint::SelectAll => indices.push(None),
             Constraint::Null => indices.push(None),
             Constraint::Scan{table, ..} => indices.push(Some(table.clone())),
-            Constraint::Identifier{id} => {
+            Constraint::Identifier{id, ..} => {
               // If we have an identifier, it means we're doing a column select
               select_column = *id;
             },
@@ -805,7 +805,7 @@ impl Compiler {
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
-            Constraint::Identifier{id} => {
+            Constraint::Identifier{id, ..} => {
               parameter_registers.push((TableId::Local(id.clone()), None, None));
             },
             Constraint::NewTable{id, rows, columns} => {
@@ -841,7 +841,7 @@ impl Compiler {
         }
       },
       Node::Identifier{name, id} => {
-        constraints.push(Constraint::Identifier{id: *id});
+        constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
       Node::Constant{value} => {
         let table = Hasher::hash_string(format!("Constant-{:?}", value.to_float()));
