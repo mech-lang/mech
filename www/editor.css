@@ -25,6 +25,10 @@ label:focus,
 }
 /* --- General --- */
 
+html {
+  height: 100%;
+}
+
 body {
   font-family: 'Open Sans', 'Times New Roman', serif;
   font-size: 16px;
@@ -36,6 +40,7 @@ body {
   padding:0px;
   margin:0px;
   background-color: rgb(250,250,250);
+  height: 100%;
 }
 p {
   line-height: 1.5;
@@ -79,7 +84,6 @@ button:hover {
 
 .canvas {
   border: 5px #000 solid;
-  margin: 10px;
 }
 
 .navbar {
@@ -136,11 +140,9 @@ button:hover {
 }
 
 .code {
-  height: 800px;
   font-family: 'Fira';
   width: 600px;
-  margin: 10px;
-  border: 5px #000 solid;
+  border: 0px #000 solid;
   resize: none;
   padding: 10px;
   font-size: 18px;
@@ -225,7 +227,46 @@ p a {
 }
 
 .slider {
-  width: 1000px;
+  flex-grow: 1;
+  height: 10px;
   -webkit-appearance: none;
   background: #d3d3d3;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+#navigation {
+  width: 75px;
+  background-color: rgb(23, 8, 32);
+}
+
+.editor-container {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+}
+
+.editor {
+  height: 100%;
+  flex-grow: 1;
+  display: flex;
+  align-items: stretch;
+}
+
+.time-travel {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  margin: 10px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
 }
