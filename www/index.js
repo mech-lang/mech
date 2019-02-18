@@ -220,7 +220,9 @@ document.getElementById("clear core").addEventListener("click", function() {
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
-  setInterval(system_timer, 16);
+  let timer_hash = hash_string("system/timer");
+  let column = mech_core.get_column(timer_hash,BigInt(1));
+  setInterval(system_timer, column[0]);
 });
 
 /*document.getElementById("txn").addEventListener("click", function() {
