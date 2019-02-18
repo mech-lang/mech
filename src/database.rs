@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use table::{Value, Table, Index};
 use indexes::TableIndex;
+use hashbrown::hash_map::{HashMap, Entry};
 
 // ## Changes
 
@@ -116,6 +117,7 @@ impl fmt::Debug for Transaction {
 pub struct Interner {
   pub offset: usize,
   pub tables: TableIndex,
+  pub names: HashMap<u64,String>,
   pub changes: Vec<Change>,
   pub changes_count: usize,
   pub change_pointer: usize, // points at the next available slot in memory that can hold a change
@@ -129,6 +131,7 @@ impl Interner {
     Interner {
       offset: 0,
       tables: TableIndex::new(table_capacity),
+      names: HashMap::new(),
       changes: Vec::with_capacity(change_capacity),
       changes_count: 0,
       change_pointer: 0,
