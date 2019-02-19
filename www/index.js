@@ -122,7 +122,7 @@ Define the environment
   #ball = [|x y vx vy| x x v v]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 1
-  #boundary = [y: 820 x: 500]
+  #html/canvas = [height: 500 width: 500]
 
 ## Update condition
 
@@ -134,17 +134,17 @@ Update the block positions on each tick of the timer
 
 ## Boundary Condition
 
-Keep the balls within the y boundary
+Keep the balls within the canvas height
   ~ #system/timer.tick
-  iy = #ball.y > #boundary.y
-  #ball.y{iy} := #boundary.y
+  iy = #ball.y > #html/canvas.height
+  #ball.y{iy} := #html/canvas.height
   #ball.vy{iy} := -#ball.vy * 0.80
 
-Keep the balls within the x boundary
+Keep the balls within the canvas width
   ~ #system/timer.tick
-  ix = #ball.x > #boundary.x
+  ix = #ball.x > #html/canvas.width
   ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.x
+  #ball.x{ix} := #html/canvas.width
   #ball.x{ixx} := 0
   #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
