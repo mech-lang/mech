@@ -160,7 +160,6 @@ let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
 drawing_area.setAttribute("class", "drawing-area");
 
-editor.appendChild(code);
 editor.appendChild(drawing_area)
 
 // ## Editor Container
@@ -186,6 +185,7 @@ let app = document.createElement("div");
 app.setAttribute("id","app");
 app.setAttribute("class","app");
 app.appendChild(nav);
+app.appendChild(code);
 app.appendChild(editor_container);
 
 document.body.appendChild(app);
