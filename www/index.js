@@ -157,12 +157,6 @@ Create ball at click point
   y = #html/event/click.y
   #ball += [x: x, y: y, vx: 30, vy: 0]`;
 
-let canvas = document.createElement("canvas");
-canvas.setAttribute("class", "canvas");
-//canvas.setAttribute("id", "drawing area");
-canvas.setAttribute("width", "500");
-canvas.style.backgroundColor = 'rgb(226, 79, 94)';
-
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
 drawing_area.setAttribute("class", "drawing-area");
