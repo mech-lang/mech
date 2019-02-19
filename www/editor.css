@@ -144,10 +144,12 @@ button:hover {
   width: 600px;
   border: 0px #000 solid;
   resize: none;
-  padding: 10px;
+  padding: 40px;
   font-size: 18px;
   overflow-wrap: normal;
   overflow-x: auto;
+  background-color: rgb(16, 2, 24);
+  color: rgb(250,250,250);
 }
 
 .navbar-nav:first-child { 
@@ -241,7 +243,7 @@ p a {
 
 #navigation {
   width: 75px;
-  background-color: rgb(23, 8, 32);
+  background-color: rgb(33, 11, 46);
 }
 
 .editor-container {
@@ -269,8 +271,4 @@ p a {
   flex-direction: row;
   align-items: center;
   justify-content: flex-end;
-}
-
-textarea {
-  background-color: rgb(250,250,250);
 }
