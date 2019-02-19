@@ -122,8 +122,7 @@ Define the environment
   #ball = [|x y vx vy| x x v v]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 1
-  #boundary-y = 820
-  #boundary-x = 500
+  #boundary = [y: 820 x: 500]
 
 ## Update condition
 
@@ -137,15 +136,15 @@ Update the block positions on each tick of the timer
 
 Keep the balls within the y boundary
   ~ #system/timer.tick
-  iy = #ball.y > #boundary-y
-  #ball.y{iy} := #boundary-y
+  iy = #ball.y > #boundary.y
+  #ball.y{iy} := #boundary.y
   #ball.vy{iy} := -#ball.vy * 0.80
 
 Keep the balls within the x boundary
   ~ #system/timer.tick
-  ix = #ball.x > #boundary-x
+  ix = #ball.x > #boundary.x
   ixx = #ball.x < 0
-  #ball.x{ix} := #boundary-x
+  #ball.x{ix} := #boundary.x
   #ball.x{ixx} := 0
   #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
