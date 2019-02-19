@@ -143,18 +143,23 @@ impl Core {
   }
 
   pub fn add_canvas(&self) -> Result<(), JsValue> {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let body = document.body().expect("document should have a body");
-    let drawing_area = document.get_element_by_id("drawing").unwrap();
-    let canvas = document.create_element("canvas")?;
-    canvas.set_attribute("id","canvas");
-    canvas.set_attribute("width", "500");
-    canvas.set_attribute("height", "820");
-    canvas.set_attribute("style", "background-color: rgb(226, 79, 94)");
-    drawing_area.append_child(&canvas)?;
-
-    self.render_balls();
+    let table_id = Hasher::hash_str("html/canvas");
+    match self.core.store.get_table(table_id) {
+      Some(table) => {
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
+        let body = document.body().expect("document should have a body");
+        let drawing_area = document.get_element_by_id("drawing").unwrap();
+        let canvas = document.create_element("canvas")?;
+        canvas.set_attribute("id","canvas");
+        canvas.set_attribute("width", &format!("{}", table.data[1][0].as_float().unwrap()));
+        canvas.set_attribute("height", &format!("{}", table.data[0][0].as_float().unwrap()));
+        canvas.set_attribute("style", "background-color: rgb(226, 79, 94)");
+        drawing_area.append_child(&canvas)?;
+        self.render_balls();
+      }
+      _ => (),
+    }
 
     Ok(())
   }
@@ -187,7 +192,6 @@ impl Core {
       context.set_fill_style(&JsValue::from_str("black"));
       context.fill();
     }
-
     Ok(())
   } 
 
