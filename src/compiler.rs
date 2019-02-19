@@ -407,17 +407,18 @@ impl Compiler {
           // A subscript is not specified
           self.compile_constraint(&children[1])
         };
-        let from = match &result2[0] {
-          Constraint::NewTable{id, ..} => id.clone(),
-          Constraint::Scan{table, rows, columns} => table.clone(), // TODO do rows and column
-          _ => TableId::Local(0), 
+        let (from, from_rows, from_columns) = match &result2[0] {
+          Constraint::NewTable{id, ..} => (id.clone(), None, None),
+          Constraint::Scan{table, rows, columns} => (table.clone(), None, None), // TODO do rows and column
+          Constraint::ScanColumn{table, column} => (table.clone(), None, Some(Parameter::Index(column.clone()))),
+          _ => (TableId::Local(0), None, None), 
         };
         if select_data_children.is_empty() {
           select_data_children = vec![None; 2];
         } else if select_data_children.len() == 1 {
           select_data_children.push(None);
         }
-        constraints.push(Constraint::Insert{from: (from, None, None), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
+        constraints.push(Constraint::Insert{from: (from, from_rows, from_columns), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
         constraints.append(&mut result2);
       },
       Node::DataWatch{children} => {
