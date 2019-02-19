@@ -270,3 +270,7 @@ p a {
   align-items: center;
   justify-content: flex-end;
 }
+
+textarea {
+  background-color: rgb(250,250,250);
+}
