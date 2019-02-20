@@ -208,16 +208,15 @@ document.getElementById("compile").addEventListener("click", function(click) {
   let code = document.getElementById("code");
   mech_core.compile_code(code.value);
   mech_core.add_canvas();
+  document.getElementById("drawing canvas").addEventListener("click", function(click) {
+    console.log(click.layerX, click.layerY);
+    mech_core.queue_change("html/event/click",1,1,click.layerX);
+    mech_core.queue_change("html/event/click",1,2,click.layerY);
+    mech_core.process_transaction();
+    render();
+  });
   //render();
 });
-
-/*document.getElementById("drawing area").addEventListener("click", function(click) {
-  console.log(click.layerX, click.layerY);
-  mech_core.queue_change("html/event/click",1,1,click.layerX);
-  mech_core.queue_change("html/event/click",1,2,click.layerY);
-  mech_core.process_transaction();
-  render();
-});*/
 
 document.getElementById("view core").addEventListener("click", function() {
   mech_core.list_global_tables();
