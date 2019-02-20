@@ -151,7 +151,7 @@ impl Core {
         let body = document.body().expect("document should have a body");
         let drawing_area = document.get_element_by_id("drawing").unwrap();
         let canvas = document.create_element("canvas")?;
-        canvas.set_attribute("id","canvas");
+        canvas.set_attribute("id","drawing canvas");
         canvas.set_attribute("width", &format!("{}", table.data[1][0].as_float().unwrap()));
         canvas.set_attribute("height", &format!("{}", table.data[0][0].as_float().unwrap()));
         canvas.set_attribute("style", "background-color: rgb(226, 79, 94)");
@@ -169,7 +169,7 @@ impl Core {
     let document = window.document().expect("should have a document on window");
     let body = document.body().expect("document should have a body");
 
-    let canvas = document.get_element_by_id("canvas").unwrap();
+    let canvas = document.get_element_by_id("drawing canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .map_err(|_| ())
