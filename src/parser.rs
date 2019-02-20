@@ -488,7 +488,7 @@ node!{any, Any, |s|{ alphanumeric(s).or(space_or_tab).or(symbol) }, "Any"}
 node!{comment, Comment, |s|{ comment_sigil(s).repeat(any) }, "CommentSigil"}
 
 node!{root, Root, |s|{ program(s).or(fragment) }, "Root"}
-node!{program, Program, |s|{ node(s).optional(head).and(body) }, "Program"}
+node!{program, Program, |s|{ node(s).optional_repeat(whitespace).optional(head).and(body) }, "Program"}
 node!{head, Head, |s|{ title(s) }, "Head"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
 node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
