@@ -524,7 +524,7 @@ node!{constant, Constant, |s|{ number(s) }, "Constant"}
 node!{number, Number, |s|{ node(s).repeat(digit).optional_repeat(digit_or_comma).optional(floating_point) }, "Number"}
 node!{floating_point, FloatingPoint, |s|{ period(s).repeat(digit) }, "FloatingPoint"}
 node!{digit_or_comma, DigitOrComma, |s|{ comma(s).and(digit).and(digit).and(digit) }, "DigitOrComma"}
-node!{identifier_or_constant, IdentifierOrConstant, |s|{ identifier(s).or(constant) }, "IdentifierOrConstant"}
+node!{identifier_or_constant, IdentifierOrConstant, |s|{ identifier(s).or(constant).or(string) }, "IdentifierOrConstant"}
 node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
 
 node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
