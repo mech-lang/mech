@@ -112,6 +112,7 @@ editor.setAttribute("class", "editor");
 let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
+code.setAttribute("spellcheck", "false");
 code.innerHTML =  `# Bouncing Balls
 
 Define the environment
