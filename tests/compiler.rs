@@ -431,3 +431,5 @@ block
 test_math!(string_table,"
 block
   #test = [\"Hello\"  \"World\"]", Value::from_str("Hello"));
+
+test_math!(string_named_attributes, "#test = [type: \"h1\" text: \"An App\"]", Value::from_str("h1"));
