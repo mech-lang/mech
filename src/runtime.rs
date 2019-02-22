@@ -340,6 +340,16 @@ impl Block {
           };
           self.updated = true;
         },
+        Constraint::Reference{table, destination} => {
+          match self.memory.map.entry(destination) {
+            Entry::Occupied(mut o) => {
+              let table_ref = o.get_mut();
+              table_ref.set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(table));
+            },
+            Entry::Vacant(v) => {    
+            },
+          };
+        },
         Constraint::String{table, row, column, value} => {
           let table_id = match table {
             TableId::Local(id) => id,
@@ -1009,7 +1019,7 @@ pub enum Constraint {
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
-  Reference{table: u64, rows: Vec<u64>, columns: Vec<u64>, destination: (u64, u64, u64)},
+  Reference{table: u64, destination: u64},
   Scan {table: TableId, rows: Option<TableId>, columns: Option<TableId>},
   ChangeScan {table: TableId, column: Index},
   ScanColumn {table: TableId, column: Index},
@@ -1035,7 +1045,7 @@ impl fmt::Debug for Constraint {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Constraint::Reference{table, rows, columns, destination} => write!(f, "Reference(@{:#x}(rows: {:?}, cols: {:?}) -> {:?})", table, rows, columns, destination),
+      Constraint::Reference{table, destination} => write!(f, "Reference(@{:#x} -> {:#x})", table, destination),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
