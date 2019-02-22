@@ -16,7 +16,7 @@ pub enum Value {
   String(String),
   Table(u64),
   Bool(bool),
-  Reference((u64,Vec<u64>,Vec<u64>)),
+  Reference(u64),
   Empty,
 }
 
@@ -89,7 +89,7 @@ impl fmt::Debug for Value {
       &Value::Empty => write!(f, ""),
       &Value::Table(ref x) => write!(f, "{}", x),
       &Value::Bool(ref b) => write!(f, "{}", b),
-      &Value::Reference(ref b) => write!(f, "{:?}", b),
+      &Value::Reference(ref b) => write!(f, "@{:#x}", b),
     }
   }
 }
@@ -104,7 +104,7 @@ impl fmt::Debug for Value {
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum TableId {
   Local(u64),
-  Global(u64)
+  Global(u64),
 }
 
 impl TableId {
