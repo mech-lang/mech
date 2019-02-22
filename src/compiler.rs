@@ -460,6 +460,14 @@ impl Compiler {
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
+          // Remove reference if it exists
+          match result[2] {
+            Constraint::Reference{..} => {
+              result.remove(2);
+              result.remove(1);
+            },
+            _ => (),
+          };
           let alias: u64 = match result[0] {
             Constraint::Identifier{id, ..} => id,
             _ => 0,
@@ -476,7 +484,17 @@ impl Compiler {
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
+        println!("RESULT {:?}", result);
         if result.len() > 2 {
+          // Remove reference if it exists
+          match result[2] {
+            Constraint::Reference{..} => {
+              result.remove(2);
+              result.remove(1);
+            },
+            _ => (),
+          };
+          println!("NEW RESULT {:?}", result);
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id, ..} => {
               id
@@ -555,6 +573,9 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
+        let table_reference = Hasher::hash_string(format!("Reference-{:?}", self.table));
+        constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
+        constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
