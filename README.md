@@ -24,15 +24,15 @@ Mech core does not rely on the Rust standard library, so it can be compiled and 
 # Bouncing Balls
 
 Define the environment
-  #html/event/click = [x: 0 y: 0]
-  #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #system/timer = [resolution: 15]
-  #gravity = 2
-  #boundary = 5000
+  #html/event/click = [|x y|]
+  #ball = [|x y vx vy|]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 1
+  #html/canvas = [height: 500 width: 500]
 
 ## Update condition
 
-Now update the block positions
+Update the block positions on each tick of the timer
   ~ #system/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
@@ -40,26 +40,27 @@ Now update the block positions
 
 ## Boundary Condition
 
-Keep the balls within the y boundary
-  ~ #ball.x
-  iy = #ball.y > #boundary
-  #ball.y[iy] := #boundary
-  #ball.vy[iy] := 0 - 1 * #ball.vy * 80 / 100
+Keep the balls within the canvas height
+  ~ #system/timer.tick
+  iy = #ball.y > #html/canvas.height
+  #ball.y{iy} := #html/canvas.height
+  #ball.vy{iy} := -#ball.vy * 0.80
 
-Keep the balls within the x boundary
-  ~ #ball.y
-  ix = #ball.x > #boundary
+Keep the balls within the canvas width
+  ~ #system/timer.tick
+  ix = #ball.x > #html/canvas.width
   ixx = #ball.x < 0
-  #ball.x[ix] := #boundary
-  #ball.x[ixx] := 0
-  #ball.vx[ix] := 0 - 1 * #ball.vx * 80 / 100
-  #ball.vx[ixx] := 0 - 1 * #ball.vx * 80 / 100
+  #ball.x{ix} := #html/canvas.width
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
 ## Create More Balls
 
-Create ball on click
+Create ball at click point
   ~ #html/event/click.x
-  #ball += [x: 2 y: 3 vx: 40 vy: 0]
+  x = #html/event/click.x
+  y = #html/event/click.y
+  #ball += [x: x, y: y, vx: 30, vy: 0]
 ```
 
 ## License
