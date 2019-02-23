@@ -417,7 +417,7 @@ impl fmt::Debug for Table {
       };
       let mut column_labels: Vec<Value> = Vec::new();
       for i in 1..self.columns + 1 {
-        column_labels.push(Value::from_i64(i as i64));
+        column_labels.push(Value::from_string(format!("{}", i)));
       }
       for (alias, ix) in self.column_aliases.iter() {
         column_labels[*ix as usize - 1] = Value::from_string(format!("{:?} ({:#x})", ix, alias));
