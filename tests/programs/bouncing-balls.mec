@@ -1,19 +1,18 @@
 # Bouncing Balls
 
 Define the environment
-  #html/event/click = [x: 0 y: 0]
-  x = 1:10
-  xx = x * 20
-  vy = x * 0
-  vx = x * 0 + 10
-  #ball = [|x y vx vy| xx xx vx vy]
+  #html/event/click = [|x y|]
+  range = 1:5
+  x = range * 30
+  v = x * 0
+  #ball = [|x y vx vy| x x v v]
   #system/timer = [resolution: 15, tick: 0]
-  #gravity = 2
-  #boundary = 420
+  #gravity = 1
+  #html/canvas = [height: 500 width: 500]
 
 ## Update condition
 
-Now update the block positions
+Update the block positions on each tick of the timer
   ~ #system/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
@@ -21,22 +20,24 @@ Now update the block positions
 
 ## Boundary Condition
 
-Keep the balls within the y boundary
+Keep the balls within the canvas height
   ~ #system/timer.tick
-  iy = #ball.y > #boundary
-  #ball.y{iy} := #boundary
-  #ball.vy{iy} := -#ball.vy
+  iy = #ball.y > #html/canvas.height
+  #ball.y{iy} := #html/canvas.height
+  #ball.vy{iy} := -#ball.vy * 0.80
 
-Keep the balls within the x boundary
+Keep the balls within the canvas width
   ~ #system/timer.tick
-  ix = #ball.x > #boundary
+  ix = #ball.x > #html/canvas.width
   ixx = #ball.x < 0
-  #ball.x{ix} := #boundary
+  #ball.x{ix} := #html/canvas.width
   #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
 ## Create More Balls
 
-Create ball on click
+Create ball at click point
   ~ #html/event/click.x
-  #ball += [x: 10 y: 10 vx: 40 vy: 0]
+  x = #html/event/click.x
+  y = #html/event/click.y
+  #ball += [x: x, y: y, vx: 30, vy: 0]
