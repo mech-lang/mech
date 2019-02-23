@@ -484,7 +484,6 @@ impl Compiler {
       },
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
-        println!("RESULT {:?}", result);
         if result.len() > 2 {
           // Remove reference if it exists
           match result[2] {
@@ -494,7 +493,6 @@ impl Compiler {
             },
             _ => (),
           };
-          println!("NEW RESULT {:?}", result);
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id, ..} => {
               id
