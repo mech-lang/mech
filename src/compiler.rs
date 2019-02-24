@@ -460,14 +460,6 @@ impl Compiler {
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
-          // Remove reference if it exists
-          match result[2] {
-            Constraint::Reference{..} => {
-              result.remove(2);
-              result.remove(1);
-            },
-            _ => (),
-          };
           let alias: u64 = match result[0] {
             Constraint::Identifier{id, ..} => id,
             _ => 0,
@@ -485,14 +477,6 @@ impl Compiler {
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
-          // Remove reference if it exists
-          match result[2] {
-            Constraint::Reference{..} => {
-              result.remove(2);
-              result.remove(1);
-            },
-            _ => (),
-          };
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id, ..} => {
               id
@@ -561,21 +545,35 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
         let mut compiled = vec![];
+        let mut alt_id = 0;
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
               parameters.push((id.clone(), None, None));
             },
+            Constraint::Scan{table, ..} => {
+              match table {
+                TableId::Local(id) => alt_id = *id,
+                TableId::Global(id) => alt_id = *id,
+              };
+            }
             _ => (),
           }
           compiled.append(&mut result);
         }
         let table_reference = Hasher::hash_string(format!("Reference-{:?}", self.table));
-        constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
-        constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
-        constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
+        if parameters.len() > 1 {
+          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
+          constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
+          constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
+        } else if alt_id != 0 {
+          //constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
+          constraints.push(Constraint::Reference{table: alt_id, destination: store_table});
+        } else {
+          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
+        }
         constraints.append(&mut compiled);
         self.table = store_table;
       },
@@ -849,8 +847,10 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
+        if parameter_registers.len() > 1 {
+          constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
+          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
+        }
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
