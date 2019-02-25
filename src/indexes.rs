@@ -130,9 +130,14 @@ impl TableIndex {
   }
 
   pub fn get_mut(&mut self, table_id: u64) -> Option<&mut Table> {
-    match self.map.get_mut(&table_id) {
-      Some(table) => Some(table),
-      None => None,
+    match self.aliases.get(&table_id) {
+      Some(id) => self.map.get_mut(&id),
+      None => {
+        match self.map.get_mut(&table_id) {
+          Some(table) => Some(table),
+          None => None,
+        }
+      },
     }
   }
 
