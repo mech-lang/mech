@@ -460,12 +460,20 @@ impl Compiler {
       Node::VariableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
+          match result[2] {
+            Constraint::Reference{..} => {
+              result.remove(2);
+              result.remove(1);
+            }
+            _ => (),
+          };
           let alias: u64 = match result[0] {
             Constraint::Identifier{id, ..} => id,
             _ => 0,
           };
           let table = match &result[1] {
             Constraint::NewTable{id, rows, columns} => id.clone(),
+            Constraint::AliasTable{table, alias} => table.clone(),
             _ => TableId::Local(0),
           };
           constraints.push(Constraint::AliasTable{table, alias});
@@ -477,6 +485,15 @@ impl Compiler {
       Node::TableDefine{children} => {
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
+          match result[2] {
+            Constraint::Reference{..} => {
+              result.remove(2);
+              result.remove(1);
+            }
+            _ => (),
+          };
+        }
+        if result.len() > 2 {
           let to_table: u64 = match result[0] {
             Constraint::Identifier{id, ..} => {
               id
@@ -486,6 +503,12 @@ impl Compiler {
           let from_table: u64 = match &result[1] {
             Constraint::NewTable{id, rows, columns} => {
               *id.unwrap()
+            },
+            Constraint::AliasTable{table, alias} => {
+              match table {
+                TableId::Local(id) => *id,
+                _ => 0,
+              }
             },
             _ => 0,
           };
@@ -574,9 +597,9 @@ impl Compiler {
           constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
-          constraints.push(Constraint::Reference{table: alt_id, destination: table_reference});
-        } else {
-          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
+          constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+          constraints.push(Constraint::AliasTable{table: TableId::Local(alt_id), alias: self.table});
+          constraints.push(Constraint::NewTable{id: TableId::Local(alt_id), rows: 1, columns: 1});
         }
         constraints.append(&mut compiled);
         self.table = store_table;
