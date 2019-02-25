@@ -551,6 +551,10 @@ impl Compiler {
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
               parameters.push((id.clone(), None, None));
+              match id {
+                TableId::Local(id) => alt_id = *id,
+                TableId::Global(id) => alt_id = *id,
+              };
             },
             Constraint::Scan{table, ..} => {
               match table {
@@ -564,13 +568,13 @@ impl Compiler {
         }
         let table_reference = Hasher::hash_string(format!("Reference-{:?}", self.table));
         if parameters.len() > 1 {
-          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
+          constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
           constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
-          //constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
-          constraints.push(Constraint::Reference{table: alt_id, destination: store_table});
+          constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
+          constraints.push(Constraint::Reference{table: alt_id, destination: table_reference});
         } else {
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 1, columns: 1});
         }
