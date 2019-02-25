@@ -370,7 +370,7 @@ impl Block {
             Some(table_ref) => {
               table_ref.set_column_alias(column_alias, column_ix);
             }
-            None => (),
+            None => (), // TODO Note this as an error
           };
         },
         _ => (),
