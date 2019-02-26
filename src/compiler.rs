@@ -874,10 +874,8 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        if parameter_registers.len() > 1 {
-          constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
-        }
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
