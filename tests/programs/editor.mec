@@ -1,0 +1,12 @@
+# Editor
+
+This program defines the online editor for Mech
+
+block
+  div = "div"
+  h1 = "h1"
+  container = [|type text| 
+                h1   "A Mech Webpage"
+                div  "Hello World"]
+  #app = [|direction contains| 
+           "column"  [container]]
