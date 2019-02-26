@@ -522,7 +522,9 @@ impl Compiler {
         let store_table = self.table;
         let store_column = self.column;
         let store_row = self.row;
+        let store_expression = self.expression;
         self.row = 1;
+        self.expression += 1;
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
@@ -559,6 +561,7 @@ impl Compiler {
         self.row = store_row;
         self.column = store_column;
         self.table = store_table;
+        self.expression = store_expression;
       }
       Node::Binding{children} => {
         let mut result = self.compile_constraints(children);
