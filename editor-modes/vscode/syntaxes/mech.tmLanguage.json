@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Mech",
+	"name": "mech",
 	"patterns": [
 		{
 			"include": "#block"
@@ -12,37 +12,36 @@
 		{
 			"name": "markup.heading",
 			"match": "^\\-"
-		},
-		{
-			"name": "string.quoted",
-			"match": "`[^`]*`"
 		}
 	],
 	"repository": {
 		"block": {
 			"name": "meta.block",
-			"begin": "~~~|```|(^|^ +)(?=(search|bind|commit)\\n)",
-			"end": "~~~|```|(?<=end)\n",
+			"begin": "  |~~~|```|`",
+			"end": "\n|~~~|```|`",
 			"patterns": [
 				{
-					"name": "comment.line",
+					"name": "markup.inserted",
 					"match": "//.+"
 				},
 				{
-					"name": "keyword.control.mech",
-					"match": "^search|end"
+					"name": "constant.regexp",
+					"match": "#"
 				},
 				{
-					"name": "keyword.control.mech",
-					"match": "\\b(search|bind|commit|watch|if|else|then|not)\\b"
+					"name": "string.regexp",
+					"match": "~"
 				},
 				{
-					"name": "variable.other",
-					"match": "(#([A-Z]|[a-z]|/|-)+)"
+					"name": "entity.name.tag.css",
+					"match": "\\|([A-Z]|[a-z]|/|-| )+\\||([A-Z]|[a-z]|/|-)+: "
 				},
 				{
 					"name": "variable.function",
 					"match": "\\S+(?=\\[)"
+				},
+				{"name": "constant.regexp",
+				 "match": "\\[|\\]|{|}"
 				},
 				{
 					"name": "string.quoted.double.mech",
