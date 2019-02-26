@@ -549,7 +549,10 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
+        let table_reference = Hasher::hash_string(format!("Reference-{:?}", self.table));
+        constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
+        constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.append(&mut column_names);
         constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
