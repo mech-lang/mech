@@ -1053,7 +1053,7 @@ impl fmt::Debug for Constraint {
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-      Constraint::Constant{table, row, column, value} => write!(f, "Constant({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
+      Constraint::Constant{table, row, column, value} => write!(f, "Constant({} -> #{:?}({:?}, {:?}))", value.to_float(), table, row, column),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
