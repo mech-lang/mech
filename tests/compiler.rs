@@ -383,7 +383,7 @@ block
 test_math!(program_bouncing_balls,"# Bouncing Balls
 
 Define the environment
-  #html/event/click = [x: 0 y: 0]
+  #html/event/click = [|x y|]
   #ball = [x: 50 y: 9 vx: 40 vy: 9]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 2
