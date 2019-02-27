@@ -432,6 +432,13 @@ impl Compiler {
         let mut result = self.compile_constraints(&children);
         let mut to_table_constraints = self.compile_constraint(&children[0]);
         let mut from_table_constraints = self.compile_constraint(&children[1]);
+        match from_table_constraints[1] {
+          Constraint::Reference{..} => {
+            from_table_constraints.remove(1);
+            from_table_constraints.remove(0);
+          }
+          _ => (),
+        };
         let to_table = match to_table_constraints[0].clone() {
           Constraint::Identifier{id, ..} => TableId::Global(id),
           _ => TableId::Global(0),
