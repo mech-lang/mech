@@ -613,6 +613,8 @@ impl Compiler {
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
           constraints.push(Constraint::AliasTable{table: TableId::Local(alt_id), alias: self.table});
           constraints.push(Constraint::NewTable{id: TableId::Local(alt_id), rows: 1, columns: 1});
+        } else {
+          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
         }
         constraints.append(&mut compiled);
         self.table = store_table;
