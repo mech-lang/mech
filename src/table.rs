@@ -381,7 +381,11 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let cell_width: usize = 30;
-    let columns = self.columns as usize;
+    let columns: usize = if self.columns > self.column_aliases.len() as u64 {
+      self.columns as usize
+    } else {
+      self.column_aliases.len()
+    };
     let mut table_width: usize = cell_width * columns + columns * 2;
     if table_width < 20 {
       table_width = 20;
@@ -416,7 +420,7 @@ impl fmt::Debug for Table {
         self.rows
       };
       let mut column_labels: Vec<Value> = Vec::new();
-      for i in 1..self.columns + 1 {
+      for i in 1..columns + 1 {
         column_labels.push(Value::from_string(format!("{}", i)));
       }
       for (alias, ix) in self.column_aliases.iter() {
