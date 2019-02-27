@@ -3,7 +3,7 @@
 Define the environment
   #html/event/click = [x: 0 y: 0]
   #ball = [x: 15m y: 9m vx: 40m/s vy: 9m/s]
-  #system/timer = [resolution: 15ms]
+  #system/timer = [resolution: 15ms tick: 0]
   #gravity = 2m/s^2
   #boundary = 5000m
 
@@ -35,4 +35,4 @@ Keep the balls within the x boundary
 
 Create ball on click
   ~ #html/event/click.x
-  #ball += [x: 10m y: 10m vx: 40m/s vy: 0m]
+  #ball += [x: 10m y: 10m vx: 40m/s vy: 0m/s]
