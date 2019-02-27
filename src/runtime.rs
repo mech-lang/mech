@@ -27,6 +27,7 @@ use quantities::{Quantity, ToQuantity, QuantityMath};
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
   pub pipes_map: HashMap<Register, Vec<Address>>,
+  pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
 }
 
@@ -37,6 +38,7 @@ impl Runtime {
       blocks: HashMap::new(),
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
+      tables_map: HashMap::new(),
     }
   }
 
@@ -66,6 +68,10 @@ impl Runtime {
         Some(_column) => block.ready = set_bit(block.ready, ix),
         None => (),
       }*/
+    }
+    // Register all local tables in the tables map
+    for local_table in block.memory.map.keys() {
+      self.tables_map.insert(*local_table, block.id as u64);
     }
     // Mark the block as ready for execution on the next available cycle
     if block.updated && block.input_registers.len() == 0 {
@@ -320,7 +326,7 @@ impl Block {
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Local(id) => {
-              self.memory.insert(Table::new(id, rows, columns));
+              self.memory.insert(Table::new(id, rows, columns));              
             }
             _ => (),
           }
