@@ -229,7 +229,7 @@ impl Compiler {
       Node::Block{children, start, end} => {
         let mut block = Block::new();
         block.text = self.text[start..end].to_string();
-        block.name = format!("Section: {:?}, Block {:?}", self.section, self.block);
+        block.name = format!("{:?},{:?}", self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let mut constraints = Vec::new();
