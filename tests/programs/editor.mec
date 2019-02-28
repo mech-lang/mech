@@ -5,8 +5,10 @@ This program defines the online editor for Mech
 block
   div = "div"
   h1 = "h1"
-  container = [|type text| 
-                h1   "A Mech Webpage"
-                div  "Hello World"]
+  container = [| type text             | 
+       @header | h1   "A Mech Webpage"
+         @body | div  "Hello World"    ]
+
+
   #app = [|direction contains| 
            "column"  [container]]
