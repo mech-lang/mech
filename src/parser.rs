@@ -557,7 +557,7 @@ node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"
 
 node!{data_or_constant, DataOrConstant, |s|{ data(s).or(constant) }, "DataOrConstant"}
 node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
-node!{data, Data, |s| { table(s).or(identifier).optional(index) }, "Data"}
+node!{data, Data, |s| { table(s).or(identifier).optional_repeat(index) }, "Data"}
 node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
 node!{subscript_index, SubscriptIndex, |s| { left_brace(s).repeat(subscript).and(right_brace) }, "Subscript Index"}
 node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
