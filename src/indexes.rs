@@ -99,7 +99,7 @@ impl TableIndex {
     TableIndex {
       map: HashMap::with_capacity(capacity),
       aliases: HashMap::new(),
-      changed_this_round: HashSet::with_capacity(capacity),
+      changed_this_round: HashSet::new(),
     }
   }
 
