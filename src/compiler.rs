@@ -793,22 +793,13 @@ impl Compiler {
             Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
             Constraint::Identifier{id, ..} => {
               // If we have an identifier, it means we're doing a column select
-              select_column = *id;
+              indices.push(Some(Parameter::Index(Index::Alias(id.clone()))));
             },
             _ => (),
           };
           compiled.append(&mut result);
         }
-        // subscript index select
-        if select_column == 0 {
-          while indices.len() < 2 {
-            indices.push(None);
-          }
-          constraints.push(Constraint::Scan{table: id.clone(), indices: indices.clone(), output: TableId::Local(0)});
-        // dot index select
-        } else {
-          constraints.push(Constraint::Scan{table: id.clone(), indices: vec![None, Some(Parameter::Index(Index::Alias(select_column)))], output: TableId::Local(0)});
-        }
+        constraints.push(Constraint::Scan{table: id.clone(), indices: indices.clone(), output: TableId::Local(0)});
         constraints.append(&mut compiled);
       },
       Node::Range{children} => {
