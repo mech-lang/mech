@@ -785,6 +785,7 @@ impl Compiler {
         let mut compiled = vec![];
         let mut indices: Vec<Option<Parameter>> = vec![];
         let mut select_column: u64 = 0;
+        println!("{:?}", children);
         for child in children {
           let mut result = self.compile_constraint(child); 
           match &result[0] {
@@ -938,6 +939,7 @@ impl Compiler {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 2];
               }
+              select_data_children.reverse();
               compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
@@ -949,14 +951,16 @@ impl Compiler {
             Node::DotIndex{column} => {
               match column[0] {
                 Node::Identifier{ref name, ref id} => {
-                  select_data_children.push(Node::Null);
                   select_data_children.push(column[0].clone());
+                  select_data_children.push(Node::Null);
                 }, 
                 _ => (),
               }
             },
             Node::SubscriptIndex{children} => {
-              select_data_children.append(&mut children.clone());
+              let mut reversed = children.clone();
+              reversed.reverse();
+              select_data_children.append(&mut reversed);
             }
             _ => (),
           }
