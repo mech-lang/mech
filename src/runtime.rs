@@ -246,6 +246,7 @@ impl Block {
         Constraint::Range{..} |
         Constraint::ChangeScan{..} |
         Constraint::Append{..} |
+        Constraint::Scan{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
         _ => (),
       }
@@ -1045,7 +1046,6 @@ pub enum Constraint {
   // Output Constraints
   Insert {from: (TableId, Option<Parameter>, Option<Parameter>), to: (TableId, Option<Parameter>, Option<Parameter>)},
   Append {from_table: TableId, to_table: TableId},
-  SelectAll,
   Null,
 }
 
@@ -1069,7 +1069,6 @@ impl fmt::Debug for Constraint {
       Constraint::Append{from_table, to_table} => write!(f, "Append({:?} -> {:?})", from_table, to_table),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
       Constraint::Range{table, start, end} => write!(f, "Range({:?} -> {:?} to {:?})", table, start, end),
-      Constraint::SelectAll => write!(f, "SelectAll"),
       Constraint::Null => write!(f, "Null"),
     }
   }
