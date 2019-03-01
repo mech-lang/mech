@@ -983,14 +983,7 @@ impl Compiler {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 2];
               }
-              while select_data_children.len() > 0 {
-                let mut data_index = vec![];
-                let col = select_data_children.pop();
-                let row = select_data_children.pop();
-                data_index.push(row.unwrap());
-                data_index.push(col.unwrap());
-                compiled.push(Node::SelectData{id: TableId::Global(id), children: data_index.clone()});
-              }
+              compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
               if select_data_children.is_empty() {
