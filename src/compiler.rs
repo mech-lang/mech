@@ -273,7 +273,7 @@ impl Compiler {
                   _ => false,
                 };
               },
-              Constraint::Scan{table, rows, columns} => {
+              Constraint::Scan{table, indices, output} => {
                 match table {
                   TableId::Local(id) => consumes.insert(id),
                   TableId::Global(id) => false, // TODO handle global
@@ -409,7 +409,7 @@ impl Compiler {
         };
         let (from, from_rows, from_columns) = match &result2[0] {
           Constraint::NewTable{id, ..} => (id.clone(), None, None),
-          Constraint::Scan{table, rows, columns} => (table.clone(), None, None), // TODO do rows and column
+          Constraint::Scan{table, indices, output} => (table.clone(), None, None), // TODO do rows and column
           Constraint::ScanColumn{table, column} => (table.clone(), None, Some(Parameter::Index(column.clone()))),
           _ => (TableId::Local(0), None, None), 
         };
@@ -651,16 +651,8 @@ impl Compiler {
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
-            Constraint::Scan{table, rows, columns} => {
-              let rows_parameter = match rows {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              let columns_parameter = match columns {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            Constraint::Scan{table, indices, output} => {
+              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
             Constraint::ScanColumn{table, column} => {
               parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
@@ -698,16 +690,8 @@ impl Compiler {
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
-            Constraint::Scan{table, rows, columns} => {
-              let rows_parameter = match rows {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              let columns_parameter = match columns {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            Constraint::Scan{table, indices, output} => {
+              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
             Constraint::ScanColumn{table, column} => {
               parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
@@ -784,16 +768,8 @@ impl Compiler {
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
-            Constraint::Scan{table, rows, columns} => {
-              let rows_parameter = match rows {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              let columns_parameter = match columns {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            Constraint::Scan{table, indices, output} => {
+              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
             Constraint::ScanColumn{table, column} => {
               parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
@@ -817,15 +793,15 @@ impl Compiler {
       },
       Node::SelectData{id, children} => {
         let mut compiled = vec![];
-        let mut indices: Vec<Option<TableId>> = vec![];
+        let mut indices: Vec<Option<Parameter>> = vec![];
         let mut select_column: u64 = 0;
         for child in children {
           let mut result = self.compile_constraint(child); 
           match &result[0] {
-            Constraint::NewTable{ref id, rows, columns} => indices.push(Some(id.clone())),
+            Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
             Constraint::SelectAll => indices.push(None),
             Constraint::Null => indices.push(None),
-            Constraint::Scan{table, ..} => indices.push(Some(table.clone())),
+            Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
             Constraint::Identifier{id, ..} => {
               // If we have an identifier, it means we're doing a column select
               select_column = *id;
@@ -839,7 +815,7 @@ impl Compiler {
           while indices.len() < 2 {
             indices.push(None);
           }
-          constraints.push(Constraint::Scan{table: id.clone(), rows: indices[0].clone(), columns: indices[1].clone()});
+          constraints.push(Constraint::Scan{table: id.clone(), indices: indices.clone(), output: TableId::Local(0)});
         // dot index select
         } else {
           constraints.push(Constraint::ScanColumn{table: id.clone(), column: Index::Alias(select_column)});
@@ -871,16 +847,8 @@ impl Compiler {
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
-            Constraint::Scan{table, rows, columns} => {
-              let rows_parameter = match rows {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              let columns_parameter = match columns {
-                Some(x) => Some(Parameter::TableId(x.clone())),
-                None => None, 
-              };
-              parameter_registers.push((table.clone(), rows_parameter, columns_parameter));
+            Constraint::Scan{table, indices, output} => {
+              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
             Constraint::ScanColumn{table, column} => {
               parameter_registers.push((table.clone(), None, Some(Parameter::Index(column.clone()))));
