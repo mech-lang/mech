@@ -789,7 +789,6 @@ impl Compiler {
           let mut result = self.compile_constraint(child); 
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
-            Constraint::SelectAll => indices.push(None),
             Constraint::Null => indices.push(None),
             Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
             Constraint::Identifier{id, ..} => {
@@ -816,7 +815,7 @@ impl Compiler {
         constraints.append(&mut self.compile_constraints(children));
       },
       Node::SelectAll => {
-        constraints.push(Constraint::SelectAll);
+        constraints.push(Constraint::Null);
       },
       Node::Attribute{children} => {
         self.column += 1;
