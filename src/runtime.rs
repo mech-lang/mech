@@ -272,7 +272,7 @@ impl Block {
             _ => false,
           };
         },
-        Constraint::Scan{table, rows, columns} => {
+        Constraint::Scan{table, indices, output} => {
           // TODO Update this whole register adding process and marking tables ready
           //self.input_registers.push(Register::input(table, 1));
         },
@@ -395,6 +395,9 @@ impl Block {
     for step in &self.plan {
       //println!("Step: {:?}", step);
       match step {
+        Constraint::Scan{table, indices, output} => {
+          println!("HERE");
+        },
         Constraint::ChangeScan{table, column} => {
           match table {
             TableId::Global(id) => {
@@ -1026,7 +1029,7 @@ pub enum Constraint {
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
   Reference{table: u64, destination: u64},
-  Scan {table: TableId, rows: Option<TableId>, columns: Option<TableId>},
+  Scan {table: TableId, indices: Vec<Option<Parameter>>, output: TableId},
   ChangeScan {table: TableId, column: Index},
   ScanColumn {table: TableId, column: Index},
   Identifier {id: u64, text: String},
@@ -1053,7 +1056,7 @@ impl fmt::Debug for Constraint {
     match self {
       Constraint::Reference{table, destination} => write!(f, "Reference(@{:#x} -> {:#x})", table, destination),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
-      Constraint::Scan{table, rows, columns} => write!(f, "Scan(#{:?}({:?} x {:?}))", table, rows, columns),
+      Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
       Constraint::ScanColumn{table, column} => write!(f, "ScanColumn(#{:?}({:?}))", table, column),
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
