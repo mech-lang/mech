@@ -277,9 +277,9 @@ impl Block {
           //self.input_registers.push(Register::input(table, 1));
         },
         Constraint::ChangeScan{table, column} => {
-          match table {
-            TableId::Global(id) => {
-              self.input_registers.insert(Register{table: id, column});
+          match (table, column) {
+            (TableId::Global(id), Parameter::Index(index)) => {
+              self.input_registers.insert(Register{table: id, column: index});
             },
             _ => (),
           }
@@ -399,9 +399,9 @@ impl Block {
           println!("HERE");
         },
         Constraint::ChangeScan{table, column} => {
-          match table {
-            TableId::Global(id) => {
-              let register = Register{table: *id, column: column.clone()};
+          match (table, column) {
+            (TableId::Global(id), Parameter::Index(index)) => {
+              let register = Register{table: *id, column: index.clone()};
               self.ready.remove(&register);
             }
             _ => (),
@@ -1030,8 +1030,7 @@ pub enum Constraint {
   // Input Constraints
   Reference{table: u64, destination: u64},
   Scan {table: TableId, indices: Vec<Option<Parameter>>, output: TableId},
-  ChangeScan {table: TableId, column: Index},
-  ScanColumn {table: TableId, column: Index},
+  ChangeScan {table: TableId, column: Parameter},
   Identifier {id: u64, text: String},
   Range{table: TableId, start: TableId, end: TableId},
   // Transform Constraints
@@ -1058,7 +1057,6 @@ impl fmt::Debug for Constraint {
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
-      Constraint::ScanColumn{table, column} => write!(f, "ScanColumn(#{:?}({:?}))", table, column),
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
