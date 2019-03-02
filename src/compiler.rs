@@ -253,45 +253,57 @@ impl Compiler {
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
           for constraint in result {
-            constraints.push(constraint.clone());
-            match constraint {
+            match &constraint {
               Constraint::AliasTable{table, alias} => {
-                produces.insert(alias);
+                produces.insert(*alias);
               },
               Constraint::NewTable{id, ..} => {
                 match id {
                   TableId::Local(id) => {
-                    block_produced.insert(id);
-                    produces.insert(id)
+                    block_produced.insert(*id);
+                    produces.insert(*id)
                   },
                   _ => false,
                 };
               },
               Constraint::Append{from_table, to_table} => {
                 match from_table {
-                  TableId::Local(id) => consumes.insert(id),
+                  TableId::Local(id) => consumes.insert(*id),
                   _ => false,
                 };
               },
               Constraint::Scan{table, indices, output} => {
                 match table {
-                  TableId::Local(id) => consumes.insert(id),
+                  TableId::Local(id) => consumes.insert(*id),
                   TableId::Global(id) => false, // TODO handle global
+                };
+                match output {
+                  TableId::Local(id) => produces.insert(*id),
+                  _ => false,
                 };
               },
               Constraint::Insert{from: (from_table, ..), to: (to_table, to_rows, ..)} => {
                 // TODO Handle other cases of from and parameters
                 match to_rows {
-                  Some(Parameter::TableId(TableId::Local(id))) => consumes.insert(id),
+                  Some(Parameter::TableId(TableId::Local(id))) => consumes.insert(*id),
                   _ => false,
                 };
                 match to_table {
-                  TableId::Global(id) => produces.insert(id),
+                  TableId::Global(id) => produces.insert(*id),
                   _ => false,
                 };
               },
               _ => (),
             }
+            constraints.push(constraint.clone());
+          }
+          println!("Consumes:");
+          for consume in &consumes {
+            println!("{:#x}", consume);
+          }
+          println!("Produces:");
+          for produce in &produces {
+            println!("{:#x}", produce);
           }
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
@@ -337,6 +349,7 @@ impl Compiler {
           }
         }).collect::<Vec<_>>();
         plan.append(&mut now_satisfied);
+        println!("PLAN {:?}", plan);
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (constraint_text, _, _, step_constraints) = step;
@@ -784,23 +797,31 @@ impl Compiler {
       Node::SelectData{id, children} => {
         let mut compiled = vec![];
         let mut indices: Vec<Option<Parameter>> = vec![];
-        let mut select_column: u64 = 0;
+        let mut scan_id = id.clone();
         for child in children {
           let mut result = self.compile_constraint(child); 
           match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
             Constraint::Null => indices.push(None),
             Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
-            Constraint::Identifier{id, ..} => {
-              // If we have an identifier, it means we're doing a column select
-              indices.push(Some(Parameter::Index(Index::Alias(id.clone()))));
-            },
+            Constraint::Identifier{id, ..} => indices.push(Some(Parameter::Index(Index::Alias(id.clone())))),
             _ => (),
           };
           compiled.append(&mut result);
+          if indices.len() == 2 {
+            //println!("{:?}", indices);
+            compiled.reverse();
+            constraints.append(&mut compiled);
+            let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
+            constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
+            //constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
+            scan_id = TableId::Local(scan_output);
+            //println!("{:?}", constraints);
+            indices.clear();
+            compiled.clear();
+          }
+          constraints.reverse();
         }
-        constraints.push(Constraint::Scan{table: id.clone(), indices: indices.clone(), output: TableId::Local(0)});
-        constraints.append(&mut compiled);
       },
       Node::Range{children} => {
         constraints.append(&mut self.compile_constraints(children));
@@ -834,8 +855,10 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
+        //if parameter_registers.len() > 1 {
+          constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
+          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
+        //}
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
