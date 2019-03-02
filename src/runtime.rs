@@ -392,12 +392,98 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    //println!("Block {:?}", self.name);
+    println!("Block {:?}", self);
     for step in &self.plan {
-      //println!("Step: {:?}", step);
+      println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
-          println!("HERE");
+          continue;
+          println!("Doing Scan {:?} {:?}", table, indices);
+          let out_table = output;
+          {
+            let table_ref = match table {
+              TableId::Local(id) => self.memory.get(*id).unwrap(),
+              TableId::Global(id) => store.get_table(*id).unwrap(),
+            };
+
+            let row_ixes: &Vec<Value> = match &indices[0] {
+              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+              _ => &self.rhs_rows_empty,
+            };
+            let column_ixes: &Vec<Value> = match &indices[1] {
+              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+              Some(Parameter::Index(index)) => {
+                let ix = match table_ref.get_column_index(&index) {
+                  Some(ix) => ix,
+                  None => 0,
+                };
+                self.lhs_columns_empty.push(Value::from_u64(ix));
+                &self.lhs_columns_empty
+              },
+              _ => &self.lhs_rows_empty,
+            };
+            println!("{:?}", table_ref);
+            println!("{:?}", row_ixes);
+            println!("{:?}", column_ixes);
+            let width  = if column_ixes.is_empty() { table_ref.columns }
+                        else { column_ixes.len() as u64 };      
+            let height = if row_ixes.is_empty() { table_ref.rows }
+                        else { row_ixes.len() as u64 };
+            self.scratch.grow_to_fit(height, width);
+            let mut iix = 0;
+            let mut actual_width = 0;
+            let mut actual_height = 0;
+            for i in 0..width as usize {
+              let mut column_mask = true;
+              let cix = if column_ixes.is_empty() { i }
+                        else { 
+                          match column_ixes[i] {
+                            Value::Number(n) => n.mantissa() as usize - 1,
+                            Value::Bool(true) => i,
+                            _ => {
+                              column_mask = false;
+                              0
+                            },  
+                          }
+                        };
+              let mut jix = 0;
+              for j in 0..height as usize {
+                let mut row_mask = true;
+                let rix = if row_ixes.is_empty() { j }
+                          else { 
+                            match row_ixes[j] {
+                              Value::Number(n) => n.mantissa() as usize - 1,
+                              Value::Bool(true) => j,
+                              _ => {
+                                row_mask = false;
+                                0
+                              }, 
+                            }
+                          };
+                if column_mask == true && row_mask == true {
+                  self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
+                  jix += 1;
+                  actual_height = jix;
+                }
+              }
+              if column_mask == true {
+                iix += 1;
+                actual_width = iix;
+              }
+            }
+            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
+          }
+          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+          out.rows = self.scratch.rows;
+          out.columns = self.scratch.columns;
+          out.data = self.scratch.data.clone();
+          self.scratch.clear();
+          self.rhs_columns_empty.clear();
+          self.lhs_columns_empty.clear();
+          self.rhs_rows_empty.clear();
+          self.lhs_rows_empty.clear();
         },
         Constraint::ChangeScan{table, column} => {
           match (table, column) {
@@ -1060,7 +1146,7 @@ impl fmt::Debug for Constraint {
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
       Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
-      Constraint::Constant{table, row, column, value} => write!(f, "Constant({} -> #{:?}({:?}, {:?}))", value.to_float(), table, row, column),
+      Constraint::Constant{table, row, column, value} => write!(f, "Constant({} -> #{:?})", value.to_float(), table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?}({:?}, {:?}))", value, table, row, column),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
