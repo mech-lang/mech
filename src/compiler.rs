@@ -435,7 +435,7 @@ impl Compiler {
       },
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
-        match &result[0] {
+        match &result[1] {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices[1].clone().unwrap()}),
           _ => (),
         }
@@ -814,7 +814,7 @@ impl Compiler {
             constraints.append(&mut compiled);
             let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
             constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
-            //constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
+            constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
             scan_id = TableId::Local(scan_output);
             //println!("{:?}", constraints);
             indices.clear();
@@ -855,10 +855,10 @@ impl Compiler {
           }
           compiled.append(&mut result);
         }
-        //if parameter_registers.len() > 1 {
+        if parameter_registers.len() > 1 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
           constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
-        //}
+        }
         constraints.append(&mut compiled);
       },
       Node::Column{children} => {
