@@ -276,6 +276,12 @@ impl Block {
         Constraint::Scan{table, indices, output} => {
           // TODO Update this whole register adding process and marking tables ready
           //self.input_registers.push(Register::input(table, 1));
+          match table {
+            TableId::Global(id) => {
+              self.input_registers.insert(Register{table: id, column: Index::Index(0)});
+            },
+            _ => (),
+          }
         },
         Constraint::ChangeScan{table, column} => {
           match (table, column) {
@@ -392,7 +398,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("Block {:?}", self);
     for step in &self.plan {
       println!("Step: {:?}", step);
       match step {
