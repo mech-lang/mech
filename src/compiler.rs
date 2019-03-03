@@ -297,14 +297,6 @@ impl Compiler {
             }
             constraints.push(constraint.clone());
           }
-          println!("Consumes:");
-          for consume in &consumes {
-            println!("{:#x}", consume);
-          }
-          println!("Produces:");
-          for produce in &produces {
-            println!("{:#x}", produce);
-          }
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
@@ -349,7 +341,6 @@ impl Compiler {
           }
         }).collect::<Vec<_>>();
         plan.append(&mut now_satisfied);
-        println!("PLAN {:?}", plan);
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (constraint_text, _, _, step_constraints) = step;
@@ -446,6 +437,7 @@ impl Compiler {
         let mut from_table_constraints = self.compile_constraint(&children[1]);
         match from_table_constraints[1] {
           Constraint::Reference{..} => {
+            from_table_constraints.remove(2);
             from_table_constraints.remove(1);
             from_table_constraints.remove(0);
           }
@@ -481,6 +473,7 @@ impl Compiler {
         if result.len() > 2 {
           match result[2] {
             Constraint::Reference{..} => {
+              result.remove(3);
               result.remove(2);
               result.remove(1);
             }
@@ -506,6 +499,7 @@ impl Compiler {
         if result.len() > 2 {
           match result[2] {
             Constraint::Reference{..} => {
+              result.remove(3);
               result.remove(2);
               result.remove(1);
             }
@@ -573,6 +567,7 @@ impl Compiler {
         let table_reference = Hasher::hash_string(format!("Reference-{:?}", self.table));
         constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
         constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+        constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.append(&mut column_names);
         constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
@@ -618,11 +613,13 @@ impl Compiler {
         if parameters.len() > 1 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+          constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
           constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
+          constraints.push(Constraint::CopyTable{from_table: alt_id, to_table: self.table });
           constraints.push(Constraint::AliasTable{table: TableId::Local(alt_id), alias: self.table});
           constraints.push(Constraint::NewTable{id: TableId::Local(alt_id), rows: 1, columns: 1});
         } else {
@@ -809,14 +806,12 @@ impl Compiler {
           };
           compiled.append(&mut result);
           if indices.len() == 2 {
-            //println!("{:?}", indices);
             compiled.reverse();
             constraints.append(&mut compiled);
             let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
             constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
             constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
             scan_id = TableId::Local(scan_output);
-            //println!("{:?}", constraints);
             indices.clear();
             compiled.clear();
           }
