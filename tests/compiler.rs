@@ -424,12 +424,30 @@ block
 
 // ## Strings
 
-test_math!(string_basic,"
+test_math!(string_basic,r#"
 block
-  #test = \"Hello World\"", Value::from_str("Hello World"));
+  #test = "Hello World""#, Value::from_str("Hello World"));
 
-test_math!(string_table,"
+test_math!(string_table,r#"
 block
-  #test = [\"Hello\"  \"World\"]", Value::from_str("Hello"));
+  #test = ["Hello" "World"]"#, Value::from_str("Hello"));
 
-test_math!(string_named_attributes, "#test = [type: \"h1\" text: \"An App\"]", Value::from_str("h1"));
+test_math!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::from_str("h1"));
+
+// ## Nesting
+
+test_math!(nesting_basic,r#"
+block
+  x = [#app{1,2}{1,1}]
+  y = [#app{1,2}{2,1}]
+  #test = x + y
+
+block
+  div = "div"
+  h1 = "h1"
+  container = [|type text| 
+                123   "A Mech Webpage"
+                456   "Hello World"]
+  #app = [|direction contains| 
+           "column"  [container]
+           "row"     [container]]"#, Value::from_u64(579));
