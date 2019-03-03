@@ -464,3 +464,15 @@ block
   #app = [|direction contains| 
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(314));
+
+test_mech!(nesting_math,r#"
+block
+  #test = #app{2,2}{1,2}{1,1} * 10
+
+block
+  x = 314
+  container = [|type text| 
+                123   [x]]
+  #app = [|direction contains| 
+           "column"  [container]
+           "row"     [container]]"#, Value::from_u64(3140));
