@@ -451,3 +451,16 @@ block
   #app = [|direction contains| 
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(579));
+
+
+test_mech!(nesting_triple,r#"
+block
+  #test = [#app{2,2}{1,2}{1,1}]
+
+block
+  x = 314
+  container = [|type text| 
+                123   [x]]
+  #app = [|direction contains| 
+           "column"  [container]
+           "row"     [container]]"#, Value::from_u64(314));
