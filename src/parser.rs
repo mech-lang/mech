@@ -499,7 +499,7 @@ node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
 node!{text, Text, |s|{ word(s).optional(punctuation).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
 node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
-node!{punctuation, Punctuation, |s|{ period(s).or(exclamation).or(comma).or(colon) }, "Punctuation"}
+node!{punctuation, Punctuation, |s|{ period(s).or(exclamation).or(comma).or(colon).or(semicolon).or(question) }, "Punctuation"}
 node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
 node!{space_or_tab, SpaceOrTab, |s|{ space(s).or(tab) }, "SpaceOrTab"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
