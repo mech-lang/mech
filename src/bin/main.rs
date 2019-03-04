@@ -33,25 +33,89 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"
-# Editor
+  let input = String::from("# Bouncing Balls
 
-This program defines the online editor for Mech
+Define the environment
+  #html/event/click = [|x y|]
+  #ball = [x: 50 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 2
+  #boundary = [x: 60 y: 60]
 
+## Update condition
+
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the y boundary
+  ~ #ball.y
+  iy = #ball.y > #boundary.y
+  #ball.y{iy} := #boundary.y
+  #ball.vy{iy} := -#ball.vy * 80 / 100
+
+Keep the balls within the x boundary
+  ~ #ball.x
+  ix = #ball.x > #boundary.x
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary.x
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
+
+## Create More Balls
+
+Create ball on click
+  ~ #html/event/click.x
+  #ball += [x: 10 y: 10 vx: 40 vy: 0]
+  
 block
-  x = [#app{1,2}{1,1}]
-  y = [#app{1,2}{2,1}]
-  #test = x + y
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}
+  
+## Bouncing Balls
 
+Define the environment
+  #html/event/click = [|x y|]
+  #ball = [x: 50 y: 9 vx: 40 vy: 9]
+  #system/timer = [resolution: 15, tick: 0]
+  #gravity = 2
+  #boundary = [x: 60 y: 60]
+
+## Update condition
+
+Now update the block positions
+  ~ #system/timer.tick
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the y boundary
+  ~ #ball.y
+  iy = #ball.y > #boundary.y
+  #ball.y{iy} := #boundary.y
+  #ball.vy{iy} := -#ball.vy * 80 / 100
+
+Keep the balls within the x boundary
+  ~ #ball.x
+  ix = #ball.x > #boundary.x
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary.x
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
+
+## Create More Balls
+
+Create ball on click
+  ~ #html/event/click.x
+  #ball += [x: 10 y: 10 vx: 40 vy: 0]
+  
 block
-  div = "div"
-  h1 = "h1"
-  container = [|type text| 
-                123   "A Mech Webpage"
-                456   "Hello World"]
-  #app = [|direction contains| 
-           "column"  [container]
-           "row"     [container]]"#);
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}");
   let value = Value::Number(make_quantity(780000,-4,0));
 
   //compile_test(input.clone(), value);
@@ -62,11 +126,11 @@ block
   compiler.compile_string(input.clone());
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
-  core.step();
-  println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  //core.step();
+  //println!("{:?}", core);
+  //println!("{:?}", core.runtime);
 
   
   /*

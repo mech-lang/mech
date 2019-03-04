@@ -211,14 +211,19 @@ impl Compiler {
     let mut parser = Parser::new();
     self.text = input.clone();
     lexer.add_string(input.clone());
+    println!("Lexing");
     let tokens = lexer.get_tokens();
     parser.text = input;
     parser.add_tokens(&mut tokens.clone());
+    println!("Parsing");
     parser.build_parse_tree();
     self.parse_tree = parser.parse_tree.clone();
+    println!("Compiling");
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
+    println!("Building blocks");
     self.compile_blocks(ast);
+    println!("Done");
     &self.blocks
   }
 
@@ -764,7 +769,6 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
-        println!("PARAMETERS {:?}", parameters);
         let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
