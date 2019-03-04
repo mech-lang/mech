@@ -494,6 +494,10 @@ block
 
 // ## Functions
 
-test_mech!(function_basic,r#"
+test_mech!(function_sin_degrees,r#"
 block
   #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
+
+test_mech!(function_cos_degrees,r#"
+block
+  #test = math/cos(degrees: 0)"#, Value::Number(make_quantity(100000000000000,-14,0)));
