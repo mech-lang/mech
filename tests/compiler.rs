@@ -491,3 +491,9 @@ block
   #app = [|direction contains| 
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(50));
+
+// ## Functions
+
+test_mech!(function_basic,r#"
+block
+  #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
