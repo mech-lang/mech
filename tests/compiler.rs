@@ -476,3 +476,18 @@ block
   #app = [|direction contains| 
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(3140));
+
+test_mech!(nesting_math_select_range,r#"
+block
+  x = #app{2,2}{1,2}{:,1} * 10
+  y = x{2,1}
+  z = x{3,1}
+  #test = y + z
+
+block
+  x = 1:10
+  container = [|type text| 
+                123   [x]]
+  #app = [|direction contains| 
+           "column"  [container]
+           "row"     [container]]"#, Value::from_u64(50));
