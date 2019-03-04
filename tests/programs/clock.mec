@@ -1,0 +1,24 @@
+# Clock
+
+Create a timer that ticks every second. This is the time source.
+  #system/timer = [resolution: 1000, tick: 0]
+
+Set up a clock hands table. Degrees is the deflection from noon.
+x and y are the coordinates of the end point of the clock hand.
+  #clock-hands = [|degrees length  stroke    x y |
+                   0       30      "#023963" 0 0
+                   0       40      "#023963" 0 0
+                   0       40      "#ce0b46" 0 0 ]
+
+## Update the clock
+
+Calculate clock hand angles every time the clock ticks
+  ~ #system/timer.tick 
+  #clock-hands{1}.degrees := 30 * #system/timer.hours
+  #clock-hands{2}.degrees := 6 * #system/timer.minutes
+  #clock-hands{3}.degrees := 6 * #system/timer.seconds
+
+Calculate x and y endpoints
+  ~ #clock-hands.degrees
+  #clock-hands.x := 50 + (30 * math/sin(degrees: #clock-hands.degrees))
+  #clock-hands.y := 50 - (30 * math/cos(degrees: #clock-hands.degrees))
