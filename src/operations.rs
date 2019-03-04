@@ -32,6 +32,7 @@ pub enum Function {
   Power,
   HorizontalConcatenate,
   VerticalConcatenate,
+  Sin,
   Undefined
 }
 
