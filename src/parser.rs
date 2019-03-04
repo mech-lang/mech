@@ -596,6 +596,7 @@ leaf!{equal, Token::Equal}
 leaf!{less_than, Token::LessThan}
 leaf!{greater_than, Token::GreaterThan}
 leaf!{exclamation, Token::Exclamation}
+leaf!{question, Token::Question}
 leaf!{plus, Token::Plus}
 leaf!{dash, Token::Dash}
 leaf!{asterisk, Token::Asterisk}

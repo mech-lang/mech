@@ -1588,6 +1588,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     122 => Some('z'),
     124 => Some('|'),
     126 => Some('~'),
+    63 => Some('?'),
     65 => Some('A'),
     66 => Some('B'),
     67 => Some('C'),

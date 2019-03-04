@@ -28,6 +28,7 @@ pub enum Token {
   LessThan,
   GreaterThan,
   Exclamation,
+  Question,
   Period,
   Colon,
   Comma,
@@ -100,6 +101,7 @@ impl Lexer {
       } else if match_char(&bytes, '<', self) { self.push_token(Token::LessThan);
       } else if match_char(&bytes, '>', self) { self.push_token(Token::GreaterThan);
       } else if match_char(&bytes, '!', self) { self.push_token(Token::Exclamation);
+      } else if match_char(&bytes, '?', self) { self.push_token(Token::Question);
       } else if match_char(&bytes, '.', self) { self.push_token(Token::Period);      
       } else if match_char(&bytes, ';', self) { self.push_token(Token::Semicolon);
       } else if match_char(&bytes, ':', self) { self.push_token(Token::Colon);
