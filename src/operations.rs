@@ -33,6 +33,7 @@ pub enum Function {
   HorizontalConcatenate,
   VerticalConcatenate,
   Sin,
+  Cos,
   Undefined
 }
 

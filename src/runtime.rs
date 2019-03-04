@@ -20,7 +20,7 @@ use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath};
-use libm::sin;
+use libm::{sin, cos};
 
 // ## Runtime
 
@@ -631,7 +631,7 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
-          else if *operation == Function::Sin {
+          else if *operation == Function::Sin || *operation == Function::Cos {
             let argument = match &parameters[0] {
               (TableId::Local(argument), _, _) => *argument,
               _ => 0,
@@ -672,15 +672,26 @@ impl Block {
                 for j in 0..rhs_height as usize {
                   let rrix = if rhs_rows.is_empty() { j }
                             else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
-                  match (argument, &rhs.data[rcix][rrix]) {
+                  let pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+                  match (operation, argument, &rhs.data[rcix][rrix]) {
                     // degrees
-                    (0x72dacac9, Value::Number(x)) => {
-                      let result = sin(x.to_float() * 3.141592653589793 / 180.0);
+                    (Function::Sin, 0x72dacac9, Value::Number(x)) => {
+                      let result = sin(x.to_float() * pi / 180.0);
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     // radians
-                    (0x69d7cfd3, Value::Number(x)) => {
+                    (Function::Sin, 0x69d7cfd3, Value::Number(x)) => {
                       let result = sin(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // degrees
+                    (Function::Cos, 0x72dacac9, Value::Number(x)) => {
+                      let result = cos(x.to_float() * pi / 180.0);
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // radians
+                    (Function::Cos, 0x69d7cfd3, Value::Number(x)) => {
+                      let result = cos(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     _ => (),
