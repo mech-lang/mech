@@ -120,6 +120,7 @@ pub enum Node {
   SpaceOrTab{ children: Vec<Node> },
   NewLine{ children: Vec<Node> },
   Text{ children: Vec<Node> },
+  Punctuation{ children: Vec<Node> },
   L1Infix{ children: Vec<Node> },
   L2Infix{ children: Vec<Node> },
   L3Infix{ children: Vec<Node> },
@@ -213,6 +214,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
+    Node::Punctuation{children} => {print!("Punctuation\n"); Some(children)},
     Node::L1Infix{children} => {print!("L1Infix\n"); Some(children)},
     Node::L2Infix{children} => {print!("L2Infix\n"); Some(children)},
     Node::L3Infix{children} => {print!("L3Infix\n"); Some(children)},
@@ -494,9 +496,10 @@ node!{program, Program, |s|{ node(s).optional_repeat(whitespace).optional(head).
 node!{head, Head, |s|{ title(s) }, "Head"}
 node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
 node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
-node!{text, Text, |s|{ word(s).optional(space).optional(text) }, "Text"}
+node!{text, Text, |s|{ word(s).optional(punctuation).optional(space).optional(text) }, "Text"}
 node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
 node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
+node!{punctuation, Punctuation, |s|{ period(s).or(exclamation).or(comma).or(colon) }, "Punctuation"}
 node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
 node!{space_or_tab, SpaceOrTab, |s|{ space(s).or(tab) }, "SpaceOrTab"}
 node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}

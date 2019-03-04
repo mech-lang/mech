@@ -1458,6 +1458,7 @@ impl Compiler {
         compiled.push(result[1].clone());
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Punctuation{children} |
       parser::Node::DigitOrComma{children} |
       parser::Node::Comment{children} |
       parser::Node::CommentSigil{children} |
