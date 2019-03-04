@@ -487,7 +487,7 @@ impl fmt::Debug for Parser {
 // These nodes represent interior connections in the parse tree.
 
 node!{comment_sigil, CommentSigil, |s|{ slash(s).and(slash) }, "CommentSigil"}
-node!{symbol, Symbol, |s|{ plus(s).or(hashtag).or(left_bracket).or(right_bracket).or(colon).or(comma).or(equal).or(slash).or(greater_than).or(less_than).or(tilde).or(left_brace).or(right_brace).or(asterisk).or(period) }, "Symbol"} // TODO fill out rest
+node!{symbol, Symbol, |s|{ plus(s).or(hashtag).or(left_bracket).or(right_bracket).or(equal).or(slash).or(greater_than).or(less_than).or(tilde).or(left_brace).or(right_brace).or(asterisk).or(punctuation) }, "Symbol"} // TODO fill out rest
 node!{any, Any, |s|{ alphanumeric(s).or(space_or_tab).or(symbol) }, "Any"}
 node!{comment, Comment, |s|{ comment_sigil(s).repeat(any) }, "CommentSigil"}
 
