@@ -17,6 +17,7 @@ extern crate hashbrown;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
+extern crate libm;
 
 use alloc::vec::Vec;
 use core::fmt;
