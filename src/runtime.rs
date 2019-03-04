@@ -20,6 +20,7 @@ use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath};
+use libm::sin;
 
 // ## Runtime
 
@@ -623,6 +624,69 @@ impl Block {
                 }
                 self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
               }
+            }
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            out.rows = self.scratch.rows;
+            out.columns = self.scratch.columns;
+            out.data = self.scratch.data.clone();
+            self.scratch.clear();
+          }
+          else if *operation == Function::Sin {
+            let argument = match &parameters[0] {
+              (TableId::Local(argument), _, _) => *argument,
+              _ => 0,
+            };
+            let (value_table, value_rows, value_columns) = &parameters[1];            
+            let out_table = &output[0];
+            {
+              let rhs = match value_table {
+                TableId::Local(id) => self.memory.get(*id).unwrap(),
+                TableId::Global(id) => store.get_table(*id).unwrap(),
+              };
+              let rhs_rows: &Vec<Value> = match value_rows {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_rows_empty,
+              };
+              let rhs_columns: &Vec<Value> = match value_columns {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                Some(Parameter::Index(index)) => {
+                  let ix = match rhs.get_column_index(index) {
+                    Some(ix) => ix,
+                    None => 0,
+                  };
+                  self.rhs_columns_empty.push(Value::from_u64(ix));
+                  &self.rhs_columns_empty
+                },
+                _ => &self.rhs_columns_empty,
+              };
+              let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
+                               else { rhs_columns.len() as u64 };     
+              let rhs_height = if rhs_rows.is_empty() { rhs.rows }
+                               else { rhs_rows.len() as u64 }; 
+              self.scratch.grow_to_fit(rhs_height, rhs_width);        
+              for i in 0..rhs_width as usize {
+                let rcix = if rhs_columns.is_empty() { i }
+                          else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
+                for j in 0..rhs_height as usize {
+                  let rrix = if rhs_rows.is_empty() { j }
+                            else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
+                  match (argument, &rhs.data[rcix][rrix]) {
+                    // degrees
+                    (0x72dacac9, Value::Number(x)) => {
+                      let result = sin(x.to_float() * 3.141592653589793 / 180.0);
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // radians
+                    (0x69d7cfd3, Value::Number(x)) => {
+                      let result = sin(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    _ => (),
+                  }
+                }
+              } 
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
