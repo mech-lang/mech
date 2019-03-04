@@ -754,6 +754,7 @@ impl Compiler {
           "*" => Function::Multiply,
           "/" => Function::Divide,
           "^" => Function::Power,
+          "math/sin" => Function::Sin,
           _ => Function::Undefined,
         };
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
@@ -762,12 +763,22 @@ impl Compiler {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }     
+        println!("PARAMETERS {:?}", parameters);
         let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
+            Constraint::Identifier{id, ..} => {
+              parameter_registers.push((TableId::Local(*id),None, None));
+              match &parameter[1] {
+                Constraint::NewTable{id, rows, columns} => {
+                  parameter_registers.push((id.clone(), None, None));
+                },
+                _ => (),
+              }
+            },
             Constraint::NewTable{id, rows, columns} => {
               parameter_registers.push((id.clone(), None, None));
             },
@@ -1416,6 +1427,19 @@ impl Compiler {
           _ => String::from(""),
         };        
         compiled.push(Node::Function{name, children: vec![input.clone()]});
+      },
+      parser::Node::Function{children} => {
+        let mut result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        let mut function_name: String = "".to_string();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            Node::Identifier{name, id} => function_name = name,
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Function{name: function_name, children: children.clone()});
       },
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
