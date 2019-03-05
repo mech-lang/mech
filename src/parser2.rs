@@ -204,6 +204,11 @@ named!(inline_table<CompleteStr, Node>,
 
 // ### Statements
 
+named!(variable_define<CompleteStr, Node>,
+  do_parse!(
+    variable: identifier >> space >> equal >> space >> expression: expression >>
+    (Node::VariableDefine { children: vec![variable, expression] })));
+
 named!(table_define<CompleteStr, Node>,
   do_parse!(
     table: table >> space >> equal >> space >> expression: expression >>
@@ -216,12 +221,12 @@ named!(watch_operator<CompleteStr, Node>,
 
 named!(data_watch<CompleteStr, Node>,
   do_parse!(
-    watch_operator >> space >> watch: data >>
+    watch_operator >> space >> watch: alt!(variable_define | data) >>
     (Node::DataWatch { children: vec![watch] })));
 
 named!(statement<CompleteStr, Node>,
   do_parse!(
-    statement: alt!(table_define | data_watch) >>
+    statement: alt!(table_define | variable_define | data_watch) >>
     (Node::Statement { children: vec![statement] })));
 
 // ### Expressions
@@ -233,7 +238,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(constant | inline_table) >>
+    expression: alt!(constant | inline_table | data) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
