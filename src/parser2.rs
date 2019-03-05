@@ -15,6 +15,7 @@ use alloc::vec::Vec;
 pub struct Parser {
   pub tokens: Vec<Token>,
   pub parse_tree: Node,
+  pub unparsed: String,
   pub text: String,
 }
 
@@ -24,6 +25,7 @@ impl Parser {
     Parser {
       text: String::from(""),
       tokens: Vec::new(),
+      unparsed: String::from(""),
       parse_tree: Node::Root{ children: Vec::new()  },
     }
   }
@@ -34,7 +36,13 @@ impl Parser {
 
   pub fn parse(&mut self, text: &str) {
     let parse_tree = program(CompleteStr(text));
-    println!("{:?}", parse_tree);
+    match parse_tree {
+      Ok((rest, tree)) => {
+        self.unparsed = rest.to_string();
+        self.parse_tree = tree;
+      },
+      _ => (), 
+    }
   }
    
 }
@@ -115,7 +123,7 @@ named!(number<CompleteStr, Node>,
 
 named!(text<CompleteStr, Node>,
   do_parse!(
-    word: many1!(alt!(word | space)) >>
+    word: many1!(alt!(word | space | number)) >>
     (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>,
@@ -123,7 +131,7 @@ named!(identifier<CompleteStr, Node>,
     identifier: map!(tuple!(count!(word,1), many0!(alt!(dash | slash | word | number))), |tuple| {
       let (mut word, mut rest) = tuple;
       word.append(&mut rest);
-      vec![Node::Identifier{children: word}]
+      word
     }) >>
     (Node::Identifier{children: identifier})));
 
@@ -132,22 +140,57 @@ named!(whitespace<CompleteStr, Node>,
     many0!(space) >> new_line_char >>
     (Node::Null)));
 
+named!(constant<CompleteStr, Node>,
+  do_parse!(
+    constant: alt!(string | number) >>
+    (Node::Constant{children: vec![constant]})));
+
 // ## Blocks
+
+
+// ### Tables
 
 named!(table<CompleteStr, Node>,
   do_parse!(
     hashtag >> table_identifier: identifier >>
     (Node::Table { children: vec![table_identifier] })));
 
+named!(binding<CompleteStr, Node>,
+  do_parse!(
+    binding_id: identifier >> colon >> many0!(space) >> 
+    bound: alt!(identifier | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+    (Node::Binding { children: vec![binding_id, bound] })));
+
+named!(inline_table<CompleteStr, Node>,
+  do_parse!(
+    left_bracket >> bindings: many1!(binding) >> right_bracket >>
+    (Node::InlineTable { children: bindings })));
+
+// ### Statements
+
 named!(table_define<CompleteStr, Node>,
   do_parse!(
-    table: table >>
-    (Node::TableDefine { children: vec![table] })));
+    table: table >> space >> equal >> space >> expression: expression >>
+    (Node::TableDefine { children: vec![table, expression] })));
 
 named!(statement<CompleteStr, Node>,
   do_parse!(
     statement: table_define >>
     (Node::Statement { children: vec![statement] })));
+
+// ### Expressions
+
+named!(string<CompleteStr, Node>,
+  do_parse!(
+    quote >> text: text >> quote >>
+    (Node::String { children: vec![text] })));
+
+named!(expression<CompleteStr, Node>,
+  do_parse!(
+    expression: alt!(string | inline_table) >>
+    (Node::Expression { children: vec![expression] })));
+
+// ### Block Basics
 
 named!(constraint<CompleteStr, Node>,
   do_parse!(
