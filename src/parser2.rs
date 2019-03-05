@@ -204,6 +204,16 @@ named!(inline_table<CompleteStr, Node>,
 
 // ### Statements
 
+named!(set_operator<CompleteStr, Node>,
+  do_parse!(
+    tag!(":=") >> 
+    (Node::Null)));
+
+named!(set_data<CompleteStr, Node>,
+  do_parse!(
+    table: data >> space >> set_operator >> space >> expression: expression >>
+    (Node::SetData { children: vec![table, expression] })));
+
 named!(variable_define<CompleteStr, Node>,
   do_parse!(
     variable: identifier >> space >> equal >> space >> expression: expression >>
@@ -226,10 +236,69 @@ named!(data_watch<CompleteStr, Node>,
 
 named!(statement<CompleteStr, Node>,
   do_parse!(
-    statement: alt!(table_define | variable_define | data_watch) >>
+    statement: alt!(table_define | variable_define | data_watch | set_data) >>
     (Node::Statement { children: vec![statement] })));
 
 // ### Expressions
+
+// #### Math Expressions
+
+named!(l1_infix<CompleteStr, Node>,
+  do_parse!(
+    space >> op: alt!(plus | dash) >> space >> l2: l2 >>
+    (Node::L1Infix { children: vec![op, l2] })));
+
+named!(l2_infix<CompleteStr, Node>,
+  do_parse!(
+    space >> op: alt!(asterisk | slash) >> space >> l3: l3 >>
+    (Node::L2Infix { children: vec![op, l3] })));
+
+named!(l3_infix<CompleteStr, Node>,
+  do_parse!(
+    space >> op: caret >> space >> l4: l4 >>
+    (Node::L3Infix { children: vec![op, l4] })));
+
+named!(l4<CompleteStr, Node>,
+  do_parse!(
+    l4: alt!(data | constant) >>
+    (Node::L4 { children: vec![l4] })));
+
+named!(l3<CompleteStr, Node>,
+  do_parse!(
+    l4: map!(tuple!(l4, many0!(l3_infix)), |tuple| {
+      let (mut l, mut infix) = tuple;
+      let mut math = vec![l];
+      math.append(&mut infix);
+      math
+    }) >>
+    (Node::L3 { children: l4 })));
+
+named!(l2<CompleteStr, Node>,
+  do_parse!(
+    l3: map!(tuple!(l3, many0!(l2_infix)), |tuple| {
+      let (mut l, mut infix) = tuple;
+      let mut math = vec![l];
+      math.append(&mut infix);
+      math
+    }) >>
+    (Node::L2 { children: l3 })));
+
+named!(l1<CompleteStr, Node>,
+  do_parse!(
+    l2: map!(tuple!(l2, many0!(l1_infix)), |tuple| {
+      let (mut l, mut infix) = tuple;
+      let mut math = vec![l];
+      math.append(&mut infix);
+      math
+    }) >>
+    (Node::L1 { children: l2 })));
+
+named!(math_expression<CompleteStr, Node>,
+  do_parse!(
+    l1: l1 >>
+    (Node::MathExpression { children: vec![l1] })));
+
+// #### Other Expressions
 
 named!(string<CompleteStr, Node>,
   do_parse!(
@@ -238,7 +307,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(constant | inline_table | data) >>
+    expression: alt!(constant | inline_table | math_expression) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
