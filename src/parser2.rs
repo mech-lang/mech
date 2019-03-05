@@ -106,16 +106,12 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 named!(word<CompleteStr, Node>,
   do_parse!(
     bytes: nom_alpha1 >>
-    (Node::Word{children: bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect()})
-  )
-);
+    (Node::Word{children: bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect()})));
 
 named!(number<CompleteStr, Node>,
   do_parse!(
     bytes: nom_digit1 >>
-    (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})
-  )
-);
+    (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(text<CompleteStr, Node>,
   do_parse!(
@@ -128,104 +124,68 @@ named!(identifier<CompleteStr, Node>,
       let (mut word, mut rest) = tuple;
       word.append(&mut rest);
       vec![Node::Identifier{children: word}]
-    })
-      
-       >>
-    (
-        Node::Identifier{children: identifier}
-    )
-  )
-);
+    }) >>
+    (Node::Identifier{children: identifier})));
 
 named!(whitespace<CompleteStr, Node>,
   do_parse!(
-    many0!(space) >>
-    new_line_char >>
-    (Node::Null)
-  )
-);
+    many0!(space) >> new_line_char >>
+    (Node::Null)));
 
 // ## Blocks
 
 named!(table<CompleteStr, Node>,
   do_parse!(
-    hashtag >>
-    table_identifier: identifier >>
-    (Node::Table { children: vec![table_identifier] })
-  )
-);
+    hashtag >> table_identifier: identifier >>
+    (Node::Table { children: vec![table_identifier] })));
 
 named!(table_define<CompleteStr, Node>,
   do_parse!(
     table: table >>
-    (Node::TableDefine { children: vec![table] })
-  )
-);
+    (Node::TableDefine { children: vec![table] })));
 
 named!(statement<CompleteStr, Node>,
   do_parse!(
     statement: table_define >>
-    (Node::Statement { children: vec![statement] })
-  )
-);
+    (Node::Statement { children: vec![statement] })));
 
 named!(constraint<CompleteStr, Node>,
   do_parse!(
     space >> space >>
     statement_or_expression: statement >>
-    (Node::Constraint { children: vec![statement_or_expression] })
-  )
-);
+    (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>,
   do_parse!(
     constraints: many1!(constraint) >>
-    (Node::Block { children: constraints })
-  )
-);
+    (Node::Block { children: constraints })));
 
 // ## Markdown
 
 named!(title<CompleteStr, Node>,
   do_parse!(
-    tag: hashtag >>
-    space: space >>
-    text: text >>
-    newline: new_line_char >>
-    (Node::Title { children: vec![tag, space, text] })
-  )
-);
+    tag: hashtag >> space: space >> text: text >> newline: new_line_char >>
+    (Node::Title { children: vec![tag, space, text] })));
 
 named!(paragraph<CompleteStr, Node>,
   do_parse!(
-    text: text >>
-    many0!(whitespace) >>
-    (Node::Paragraph { children: vec![text] })
-  )
-);
+    text: text >> many0!(whitespace) >>
+    (Node::Paragraph { children: vec![text] })));
 
 named!(section<CompleteStr, Node>,
   do_parse!(
     prose_or_code: many0!(alt!(block | paragraph)) >>
-    (Node::Section { children: prose_or_code })
-  )
-);
+    (Node::Section { children: prose_or_code })));
 
 named!(body<CompleteStr, Node>,
   do_parse!(
     many0!(whitespace) >>
     sections: many1!(section) >>
-    (Node::Body { children: sections })
-  )
-);
+    (Node::Body { children: sections })));
 
 // ## Start Here
 
 named!(program<CompleteStr, Node>,
   do_parse!(
-    title: title >>
-    body: body >>
-    opt!(whitespace) >>
-    (Node::Root { children: vec![title, body] })
-  )
-);
+    title: title >> body: body >> opt!(whitespace) >>
+    (Node::Root { children: vec![title, body] })));
