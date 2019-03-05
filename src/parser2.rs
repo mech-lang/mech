@@ -147,6 +147,42 @@ named!(constant<CompleteStr, Node>,
 
 // ## Blocks
 
+// ### Data
+
+named!(select_all<CompleteStr, Node>,
+  do_parse!(
+    colon >> 
+    (Node::SelectAll{children: vec![]})));
+
+named!(subscript<CompleteStr, Node>,
+  do_parse!(
+    subscript: alt!(select_all | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+    (Node::SubscriptIndex{children: vec![subscript]})));
+
+named!(subscript_index<CompleteStr, Node>,
+  do_parse!(
+    left_brace >> subscripts: many1!(subscript) >> right_brace >>
+    (Node::SubscriptIndex{children: subscripts})));
+
+named!(dot_index<CompleteStr, Node>,
+  do_parse!(
+    period >> column_name: identifier >> 
+    (Node::DotIndex{children: vec![column_name]})));
+
+named!(index<CompleteStr, Node>,
+  do_parse!(
+    index: alt!(dot_index | subscript_index) >>
+    (Node::Index{children: vec![index]})));
+
+named!(data<CompleteStr, Node>,
+  do_parse!(
+    data: map!(tuple!(alt!(table | identifier), many0!(index)), |tuple| {
+      let (mut source, mut indices) = tuple;
+      let mut data = vec![source];
+      data.append(&mut indices);
+      data
+    }) >>
+    (Node::Data { children: data })));
 
 // ### Tables
 
@@ -173,9 +209,19 @@ named!(table_define<CompleteStr, Node>,
     table: table >> space >> equal >> space >> expression: expression >>
     (Node::TableDefine { children: vec![table, expression] })));
 
+named!(watch_operator<CompleteStr, Node>,
+  do_parse!(
+    tilde >> 
+    (Node::Null)));
+
+named!(data_watch<CompleteStr, Node>,
+  do_parse!(
+    watch_operator >> space >> watch: data >>
+    (Node::DataWatch { children: vec![watch] })));
+
 named!(statement<CompleteStr, Node>,
   do_parse!(
-    statement: table_define >>
+    statement: alt!(table_define | data_watch) >>
     (Node::Statement { children: vec![statement] })));
 
 // ### Expressions
@@ -207,8 +253,13 @@ named!(block<CompleteStr, Node>,
 
 named!(title<CompleteStr, Node>,
   do_parse!(
-    tag: hashtag >> space: space >> text: text >> newline: new_line_char >>
-    (Node::Title { children: vec![tag, space, text] })));
+    hashtag >> space >> text: text >> many0!(whitespace) >>
+    (Node::Title { children: vec![text] })));
+
+named!(subtitle<CompleteStr, Node>,
+  do_parse!(
+    hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
+    (Node::Subtitle { children: vec![text] })));
 
 named!(paragraph<CompleteStr, Node>,
   do_parse!(
@@ -217,8 +268,17 @@ named!(paragraph<CompleteStr, Node>,
 
 named!(section<CompleteStr, Node>,
   do_parse!(
-    prose_or_code: many0!(alt!(block | paragraph)) >>
-    (Node::Section { children: prose_or_code })));
+    section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph))), |tuple| {
+      let (mut section_title, mut section_body) = tuple;
+      let mut section = vec![];
+      match section_title {
+        Some(subtitle) => section.push(subtitle),
+        _ => (),
+      };
+      section.append(&mut section_body);
+      section
+    }) >>
+    (Node::Section { children: section })));
 
 named!(body<CompleteStr, Node>,
   do_parse!(
