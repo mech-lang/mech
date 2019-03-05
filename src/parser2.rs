@@ -187,7 +187,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(string | inline_table) >>
+    expression: alt!(constant | inline_table) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
@@ -195,7 +195,7 @@ named!(expression<CompleteStr, Node>,
 named!(constraint<CompleteStr, Node>,
   do_parse!(
     space >> space >>
-    statement_or_expression: statement >>
+    statement_or_expression: statement >> opt!(new_line_char) >>
     (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>,
