@@ -1,8 +1,8 @@
 extern crate mech_syntax;
 extern crate mech_core;
 
-use mech_syntax::lexer::Lexer;
-use mech_syntax::parser::{Parser, ParseStatus, Node};
+use mech_syntax::lexer::{Lexer, Token};
+use mech_syntax::parser::{ParseStatus, Node};
 use mech_syntax::compiler::Compiler;
 use mech_core::Block;
 use mech_core::{Change, Transaction};
@@ -11,7 +11,7 @@ use mech_core::Hasher;
 use mech_core::Core;
 use mech_core::make_quantity;
 use std::time::{Duration, SystemTime};
-
+use mech_syntax::parser2::Parser;
 
 fn compile_test(input: String, test: Value) {
   let mut compiler = Compiler::new();
@@ -32,6 +32,18 @@ fn compile_test(input: String, test: Value) {
   
 }
 
+fn main() {
+  let mut parser = Parser::new();
+  parser.parse("# Bouncing Balls
+
+
+This is a paragraph
+Paragraph second
+  #table-stuff123");
+}
+
+
+/*
 fn main() {
   let input = String::from("# Clock
 
@@ -102,3 +114,4 @@ Calculate x and y endpoints
   println!("{:?}", core);*/
 
 }
+*/
