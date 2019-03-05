@@ -351,7 +351,7 @@ named!(section<CompleteStr, Node>,
       };
       section.append(&mut section_body);
       section
-    }) >>
+    }) >> many0!(whitespace) >>
     (Node::Section { children: section })));
 
 named!(body<CompleteStr, Node>,
