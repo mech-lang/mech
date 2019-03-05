@@ -136,6 +136,7 @@ pub enum Node {
   Any{children: Vec<Node>},
   Symbol{children: Vec<Node>},
   Token{token: Token, byte: u8},
+  Null,
 }
 
 impl fmt::Debug for Node {
@@ -229,7 +230,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
     Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
-    Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
+    Node::Token{token, byte} => {print!("Token({:?} ({:?}))\n", token, byte); None},
     Node::CommentSigil{children} => {print!("CommentSigil\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::Any{children} => {print!("Any\n"); Some(children)},
@@ -438,6 +439,13 @@ impl Parser {
       tokens: Vec::new(),
       parse_tree: Node::Root{ children: Vec::new()  },
     }
+  }
+
+  pub fn clear(&mut self) {
+    self.status = ParseStatus::Ready;
+    self.text = String::from("");
+    self.tokens.clear();
+    self.parse_tree = Node::Root{ children: Vec::new()  };
   }
 
   pub fn add_tokens(&mut self, tokens: &mut Vec<Token>) {
