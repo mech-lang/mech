@@ -1273,7 +1273,7 @@ impl Compiler {
       },
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
-        match &result[1] {
+        match &result[0] {
           Node::Identifier{name, id} => compiled.push(Node::Table{name: name.to_string(), id: *id}),
           _ => (),
         };
@@ -1335,8 +1335,7 @@ impl Compiler {
       },
       parser::Node::Title{children} => {
         let mut result = self.compile_nodes(children);
-        // space space #
-        let node = match &result[2] {
+        let node = match &result[0] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
         };
@@ -1344,8 +1343,7 @@ impl Compiler {
       },
       parser::Node::Subtitle{children} => {
         let mut result = self.compile_nodes(children);
-        // space space # #
-        let node = match &result[3] {
+        let node = match &result[0] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
         };
@@ -1387,6 +1385,7 @@ impl Compiler {
               let character = byte_to_char(byte).unwrap();
               word.push(character);
             },
+            Node::String{text} => word.push_str(&text),
             _ => compiled.push(node),
           }
         }
@@ -1449,7 +1448,7 @@ impl Compiler {
       },
       parser::Node::String{children} => {
         let mut result = self.compile_nodes(children);
-        let string = result[1].clone();
+        let string = result[0].clone();
         compiled.push(string);
       },
       parser::Node::ParentheticalExpression{children} => {
