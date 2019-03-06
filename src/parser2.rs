@@ -215,6 +215,40 @@ named!(binding<CompleteStr, Node>,
     bound: alt!(identifier | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
     (Node::Binding { children: vec![binding_id, bound] })));
 
+named!(table_column<CompleteStr, Node>,
+  do_parse!(
+    many0!(alt!(space | tab)) >> item: alt!(data | expression | quantity) >> opt!(comma) >> opt!(alt!(space | tab)) >>
+    (Node::Column { children: vec![item] })));
+
+named!(table_row<CompleteStr, Node>,
+  do_parse!(
+    many0!(alt!(space | tab)) >> columns: many1!(table_column) >> opt!(semicolon) >> opt!(new_line_char) >>
+    (Node::TableRow { children: columns })));
+
+named!(attribute<CompleteStr, Node>,
+  do_parse!(
+    identifier: identifier >> many0!(space) >> opt!(comma) >> many0!(space) >>
+    (Node::Attribute { children: vec![identifier] })));
+
+named!(table_header<CompleteStr, Node>,
+  do_parse!(
+    bar >> attributes: many1!(attribute) >> bar >> many0!(space) >> opt!(new_line_char) >>
+    (Node::TableHeader { children: attributes })));
+
+named!(anonymous_table<CompleteStr, Node>,
+  do_parse!(
+    left_bracket >> many0!(space) >> table: map!(tuple!(opt!(table_header),many0!(table_row)),|tuple|{
+      let (table_header, mut table_rows) = tuple;
+      let mut table = vec![];
+      match table_header {
+        Some(table_header) => table.push(table_header),
+        _ => (),
+      };
+      table.append(&mut table_rows);
+      table
+    }) >> right_bracket >>
+    (Node::AnonymousTable { children: table })));
+
 named!(inline_table<CompleteStr, Node>,
   do_parse!(
     left_bracket >> bindings: many1!(binding) >> right_bracket >>
@@ -384,7 +418,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(string | range | filter_expression | logic_expression | inline_table | math_expression) >>
+    expression: alt!(string | range | filter_expression | logic_expression | inline_table | anonymous_table | math_expression) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
