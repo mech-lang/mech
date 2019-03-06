@@ -222,6 +222,16 @@ named!(inline_table<CompleteStr, Node>,
 
 // ### Statements
 
+named!(add_row_operator<CompleteStr, Node>,
+  do_parse!(
+    tag!("+=") >>
+    (Node::Null)));
+
+named!(add_row<CompleteStr, Node>,
+  do_parse!(
+    table: data >> space >> add_row_operator >> space >> inline: inline_table >>
+    (Node::AddRow { children: vec![table, inline] })));
+
 named!(set_operator<CompleteStr, Node>,
   do_parse!(
     tag!(":=") >> 
@@ -254,7 +264,7 @@ named!(data_watch<CompleteStr, Node>,
 
 named!(statement<CompleteStr, Node>,
   do_parse!(
-    statement: alt!(table_define | variable_define | data_watch | set_data) >>
+    statement: alt!(table_define | variable_define | data_watch | set_data | add_row) >>
     (Node::Statement { children: vec![statement] })));
 
 // ### Expressions
