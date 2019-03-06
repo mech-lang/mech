@@ -175,7 +175,7 @@ named!(select_all<CompleteStr, Node>,
 named!(subscript<CompleteStr, Node>,
   do_parse!(
     subscript: alt!(select_all | constant | expression) >> many0!(space) >> opt!(comma) >> many0!(space) >>
-    (Node::SubscriptIndex{children: vec![subscript]})));
+    (Node::Subscript{children: vec![subscript]})));
 
 named!(subscript_index<CompleteStr, Node>,
   do_parse!(
@@ -367,10 +367,15 @@ named!(logic_operator<CompleteStr, Node>,
 
 named!(logic_expression<CompleteStr, Node>,
   do_parse!(
-    lhs: alt!(data | constant) >> space >> op: logic_operator >> space >> rhs: alt!(data | constant) >>
-    (Node::LogicExpression { children: vec![lhs, op, rhs] })));
+    start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
+    (Node::Range { children: vec![start,end] })));
 
 // #### Other Expressions
+
+named!(range<CompleteStr, Node>,
+  do_parse!(
+    quote >> text: text >> quote >>
+    (Node::String { children: vec![text] })));
 
 named!(string<CompleteStr, Node>,
   do_parse!(
@@ -379,7 +384,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(filter_expression | logic_expression | inline_table | math_expression) >>
+    expression: alt!(string | range | filter_expression | logic_expression | inline_table | math_expression) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
@@ -441,8 +446,17 @@ named!(fragment<CompleteStr, Node>,
 
 named!(program<CompleteStr, Node>,
   do_parse!(
-    title: title >> body: body >> opt!(whitespace) >>
-    (Node::Program { children: vec![title, body] })));
+    program: map!(tuple!(opt!(title),body), |tuple| {
+      let (title, body) = tuple;
+      let mut program = vec![];
+      match title {
+        Some(title) => program.push(title),
+        None => (),
+      };
+      program.push(body);
+      program
+    } ) >> opt!(whitespace) >>
+    (Node::Program { children: program })));
 
 named!(parse_mech<CompleteStr, Node>,
   do_parse!(
