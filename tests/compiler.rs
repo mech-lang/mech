@@ -190,7 +190,11 @@ block
 
 // ## Ranges
 
-test_mech!(range_basic,"#test = 5 : 14", Value::from_i64(5));
+test_mech!(range_basic,r#"
+block
+  #test = #range{1,1} + #range{2,1}
+block
+  #range = 5 : 14"#, Value::from_i64(11));
 
 // ## Subscripts
 
