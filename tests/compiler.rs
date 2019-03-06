@@ -211,13 +211,13 @@ block
   #test = x{z, :}", Value::from_i64(12));
 
 test_mech!(subscript_logical_greater,"
-  block
+block
   x = 10:20
   z = x > 15
   #test = x{z, :}", Value::from_i64(16));
 
 test_mech!(subscript_logical_less,"
-  block
+block
   x = 10:20
   z = x < 15
   #test = x{z, :}", Value::from_i64(10));
