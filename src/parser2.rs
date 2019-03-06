@@ -140,9 +140,27 @@ named!(whitespace<CompleteStr, Node>,
     many0!(space) >> new_line_char >>
     (Node::Null)));
 
+named!(floating_point<CompleteStr, Node>,
+  do_parse!(
+    period >> float: number >>
+    (Node::FloatingPoint{children: vec![float]})));
+
+named!(quantity<CompleteStr, Node>,
+  do_parse!(
+    quantity: map!(tuple!(number, opt!(floating_point)),|tuple| {
+      let (front, floating_point) = tuple;
+      let mut quantity = vec![front];
+      match floating_point {
+        Some(point) => quantity.push(point),
+        _ => (),
+      };
+      quantity
+    }) >>
+    (Node::Quantity{children: quantity})));
+
 named!(constant<CompleteStr, Node>,
   do_parse!(
-    constant: alt!(string | number) >>
+    constant: alt!(string | quantity) >>
     (Node::Constant{children: vec![constant]})));
 
 // ## Blocks
@@ -260,7 +278,7 @@ named!(l3_infix<CompleteStr, Node>,
 
 named!(l4<CompleteStr, Node>,
   do_parse!(
-    l4: alt!(data | constant) >>
+    l4: alt!(data | quantity) >>
     (Node::L4 { children: vec![l4] })));
 
 named!(l3<CompleteStr, Node>,
