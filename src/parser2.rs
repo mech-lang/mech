@@ -89,8 +89,8 @@ leaf!{right_parenthesis, ")", Token::RightParenthesis}
 leaf!{left_brace, "{", Token::LeftBrace}
 leaf!{right_brace, "}", Token::RightBrace}
 leaf!{equal, "=", Token::Equal}
-leaf!{less_than, "<", Token::LessThan}
-leaf!{greater_than, ">", Token::GreaterThan}
+leaf!{left_angle, "<", Token::LessThan}
+leaf!{right_angle, ">", Token::GreaterThan}
 leaf!{exclamation, "!", Token::Exclamation}
 leaf!{question, "?", Token::Question}
 leaf!{plus, "+", Token::Plus}
@@ -156,7 +156,7 @@ named!(select_all<CompleteStr, Node>,
 
 named!(subscript<CompleteStr, Node>,
   do_parse!(
-    subscript: alt!(select_all | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+    subscript: alt!(select_all | constant | expression) >> many0!(space) >> opt!(comma) >> many0!(space) >>
     (Node::SubscriptIndex{children: vec![subscript]})));
 
 named!(subscript_index<CompleteStr, Node>,
@@ -298,6 +298,50 @@ named!(math_expression<CompleteStr, Node>,
     l1: l1 >>
     (Node::MathExpression { children: vec![l1] })));
 
+// #### Filter Expressions
+
+named!(less_than<CompleteStr, Node>,
+  do_parse!(
+    tag!("<") >> 
+    (Node::LessThan)));
+
+named!(greater_than<CompleteStr, Node>,
+  do_parse!(
+    tag!(">") >> 
+    (Node::GreaterThan)));
+
+named!(comparator<CompleteStr, Node>,
+  do_parse!(
+    comparator: alt!(less_than | greater_than) >>
+    (Node::Comparator { children: vec![comparator] })));
+
+named!(filter_expression<CompleteStr, Node>,
+  do_parse!(
+    lhs: alt!(data | constant) >> space >> comp: comparator >> space >> rhs: alt!(data | constant) >>
+    (Node::FilterExpression { children: vec![lhs, comp, rhs] })));
+
+// #### Logic Expressions
+
+named!(or<CompleteStr, Node>,
+  do_parse!(
+    bar >>
+    (Node::Or)));
+
+named!(and<CompleteStr, Node>,
+  do_parse!(
+    ampersand >>
+    (Node::And)));
+
+named!(logic_operator<CompleteStr, Node>,
+  do_parse!(
+    operator: alt!(and | or) >>
+    (Node::LogicOperator { children: vec![operator] })));
+
+named!(logic_expression<CompleteStr, Node>,
+  do_parse!(
+    lhs: alt!(data | constant) >> space >> op: logic_operator >> space >> rhs: alt!(data | constant) >>
+    (Node::LogicExpression { children: vec![lhs, op, rhs] })));
+
 // #### Other Expressions
 
 named!(string<CompleteStr, Node>,
@@ -307,7 +351,7 @@ named!(string<CompleteStr, Node>,
 
 named!(expression<CompleteStr, Node>,
   do_parse!(
-    expression: alt!(constant | inline_table | math_expression) >>
+    expression: alt!(filter_expression | logic_expression | inline_table | math_expression) >>
     (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
