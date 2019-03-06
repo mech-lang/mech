@@ -7,7 +7,7 @@ use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, Qu
 use mech_core::Hasher;
 use parser;
 use lexer::Lexer;
-use parser::{Parser, ParseStatus};
+use parser2::Parser;
 use lexer::Token;
 use alloc::fmt;
 use alloc::string::String;
@@ -207,14 +207,11 @@ impl Compiler {
   }
 
   pub fn compile_string(&mut self, input: String) -> &Vec<Block> {   
-    let mut lexer = Lexer::new();
-    let mut parser = Parser::new();
     self.text = input.clone();
-    lexer.add_string(input.clone());
-    let tokens = lexer.get_tokens();
-    parser.text = input;
-    parser.add_tokens(&mut tokens.clone());
-    parser.build_parse_tree();
+    let mut parser = Parser::new();
+    parser.parse(&input);
+    //println!("{:?}", parser.parse_tree);
+    //println!("{:?}", parser.unparsed);
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
@@ -713,7 +710,7 @@ impl Compiler {
           constraints.append(&mut p.clone());
         }  
       },      
-      Node::Range{children} => {
+      Node::Range{children} => {        
         let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
         let mut arguments = vec![];
         let mut compiled = vec![];
@@ -828,9 +825,6 @@ impl Compiler {
           }
           constraints.reverse();
         }
-      },
-      Node::Range{children} => {
-        constraints.append(&mut self.compile_constraints(children));
       },
       Node::SelectAll => {
         constraints.push(Constraint::Null);
@@ -1030,14 +1024,7 @@ impl Compiler {
       },
       parser::Node::Range{children} => {
         let result = self.compile_nodes(children);
-        let mut children: Vec<Node> = Vec::new();
-        for node in result {
-          match node {
-            Node::Token{..} => (),
-            _ => children.push(node),
-          }
-        }
-        compiled.push(Node::Range{children});
+        compiled.push(Node::Range{children: result});
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
@@ -1432,8 +1419,8 @@ impl Compiler {
       parser::Node::L2Infix{children} |
       parser::Node::L3Infix{children} => {
         let result = self.compile_nodes(children);
-        let operator = &result[1].clone();
-        let input = &result[3].clone();
+        let operator = &result[0].clone();
+        let input = &result[1].clone();
         let name: String = match operator {
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
