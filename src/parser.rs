@@ -136,6 +136,10 @@ pub enum Node {
   Any{children: Vec<Node>},
   Symbol{children: Vec<Node>},
   Token{token: Token, byte: u8},
+  LessThan,
+  GreaterThan,
+  And,
+  Or,
   Null,
 }
 
@@ -235,6 +239,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::Any{children} => {print!("Any\n"); Some(children)},
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
+    Node::LessThan => {print!("LessThan\n",); None},
+    Node::GreaterThan => {print!("GreaterThan\n",); None},
+    Node::And => {print!("And\n",); None},
+    Node::Or => {print!("Or\n",); None},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
