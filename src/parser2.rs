@@ -142,8 +142,8 @@ named!(whitespace<CompleteStr, Node>,
 
 named!(floating_point<CompleteStr, Node>,
   do_parse!(
-    period >> float: number >>
-    (Node::FloatingPoint{children: vec![float]})));
+    period >> bytes: nom_digit1 >>
+    (Node::FloatingPoint{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(quantity<CompleteStr, Node>,
   do_parse!(

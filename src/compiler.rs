@@ -1279,6 +1279,19 @@ impl Compiler {
         };
       },  
       // Quantities
+      parser::Node::Quantity{children} => {
+        let mut result = self.compile_nodes(children);
+        let mut quantity = make_quantity(0,0,0);
+        for node in result {
+          match node {
+            Node::Constant{value} => {
+              quantity = quantity.add(value);
+            },
+            _ => (),
+          }
+        }
+        compiled.push(Node::Constant{value: quantity});
+      },
       parser::Node::Number{children} => {
         let mut value: u64 = 0;
         let mut result = self.compile_nodes(children);
