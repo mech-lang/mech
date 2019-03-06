@@ -28,7 +28,7 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
-  FilterExpression{ name: String, children: Vec<Node> },
+  FilterExpression{ comparator: Comparator, children: Vec<Node> },
   LogicExpression{ name: String, children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
@@ -58,6 +58,8 @@ pub enum Node {
   Constant {value: Quantity},
   String{ text: String },
   Token{ token: Token, byte: u8 },
+  LessThan,
+  GreaterThan,
   SelectAll,
   Null,
 }
@@ -102,7 +104,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::FilterExpression{name, children} => {print!("FilterExpression({:?})\n", name); Some(children)},
+    Node::FilterExpression{comparator, children} => {print!("FilterExpression({:?})\n", comparator); Some(children)},
     Node::LogicExpression{name, children} => {print!("LogicExpression({:?})\n", name); Some(children)},
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
@@ -114,6 +116,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
     Node::SelectAll => {print!("SelectAll\n"); None},
+    Node::LessThan => {print!("LessThan\n"); None},
+    Node::GreaterThan => {print!("GreaterThan\n"); None},
     Node::Null => {print!("Null\n"); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -638,12 +642,7 @@ impl Compiler {
           }
         }
       },
-      Node::FilterExpression{name, children} => {
-        let comparator = match name.as_ref() {
-          ">" => Comparator::GreaterThan,
-          "<" => Comparator::LessThan,
-          _ => Comparator::Undefined,
-        };
+      Node::FilterExpression{comparator, children} => {
         self.table = Hasher::hash_string(format!("FilterExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
         let mut parameters: Vec<Vec<Constraint>> = vec![];
@@ -669,7 +668,7 @@ impl Compiler {
           };
         }
         constraints.push(Constraint::NewTable{id: output.clone(), rows: 0, columns: 0});
-        constraints.push(Constraint::Filter{comparator, lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
+        constraints.push(Constraint::Filter{comparator: comparator.clone(), lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }  
@@ -1081,16 +1080,16 @@ impl Compiler {
       },
       parser::Node::FilterExpression{children} => {
         let result = self.compile_nodes(children);
+        let mut comparator = Comparator::Undefined;
         let mut children: Vec<Node> = Vec::new();
-        let mut name = String::new();
         for node in result {
           match node {
-            Node::Token{token: Token::Space, ..} => (), 
-            Node::Token{token, byte} => name = byte_to_char(byte).unwrap().to_string(),
+            Node::LessThan => comparator = Comparator::LessThan,
+            Node::GreaterThan => comparator = Comparator::GreaterThan,
             _ => children.push(node),
           }
         }
-        compiled.push(Node::FilterExpression{name, children});
+        compiled.push(Node::FilterExpression{comparator, children});
       },
       parser::Node::LogicExpression{children} => {
         let result = self.compile_nodes(children);
@@ -1454,6 +1453,13 @@ impl Compiler {
       parser::Node::ParentheticalExpression{children} => {
         let mut result = self.compile_nodes(children);
         compiled.push(result[1].clone());
+      },
+      parser::Node::Comparator{children} => {
+        match children[0] {
+          parser::Node::LessThan => compiled.push(Node::LessThan),
+          parser::Node::GreaterThan => compiled.push(Node::GreaterThan),
+          _ => (),
+        }
       },
       // Pass through nodes. These will just be omitted
       parser::Node::Punctuation{children} |
