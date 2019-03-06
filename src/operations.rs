@@ -135,7 +135,7 @@ binary_math!{undefined, add}
 // ## Comparators
 
 #[repr(u8)]
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Comparator {
   LessThan,
   GreaterThan,
