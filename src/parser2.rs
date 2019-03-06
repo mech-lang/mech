@@ -35,7 +35,7 @@ impl Parser {
   }
 
   pub fn parse(&mut self, text: &str) {
-    let parse_tree = program(CompleteStr(text));
+    let parse_tree = parse_mech(CompleteStr(text));
     match parse_tree {
       Ok((rest, tree)) => {
         self.unparsed = rest.to_string();
@@ -434,7 +434,17 @@ named!(body<CompleteStr, Node>,
 
 // ## Start Here
 
+named!(fragment<CompleteStr, Node>,
+  do_parse!(
+    statement_or_expression: alt!(statement | expression) >>
+    (Node::Fragment { children: vec![statement_or_expression] })));
+
 named!(program<CompleteStr, Node>,
   do_parse!(
     title: title >> body: body >> opt!(whitespace) >>
-    (Node::Root { children: vec![title, body] })));
+    (Node::Program { children: vec![title, body] })));
+
+named!(parse_mech<CompleteStr, Node>,
+  do_parse!(
+    program: alt!(program | fragment) >>
+    (Node::Root { children: vec![program] })));
