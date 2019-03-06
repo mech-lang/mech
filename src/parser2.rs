@@ -441,8 +441,8 @@ named!(body<CompleteStr, Node>,
 
 named!(fragment<CompleteStr, Node>,
   do_parse!(
-    statement_or_expression: alt!(statement | expression) >>
-    (Node::Fragment { children: vec![statement_or_expression] })));
+    statement: statement >>
+    (Node::Fragment { children: vec![statement] })));
 
 named!(program<CompleteStr, Node>,
   do_parse!(
@@ -460,5 +460,5 @@ named!(program<CompleteStr, Node>,
 
 named!(parse_mech<CompleteStr, Node>,
   do_parse!(
-    program: alt!(program | fragment) >>
+    program: alt!(fragment | program) >>
     (Node::Root { children: vec![program] })));
