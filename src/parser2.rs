@@ -401,15 +401,15 @@ named!(logic_operator<CompleteStr, Node>,
 
 named!(logic_expression<CompleteStr, Node>,
   do_parse!(
-    start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
-    (Node::Range { children: vec![start,end] })));
+    lhs: math_expression >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: math_expression >>
+    (Node::LogicExpression { children: vec![lhs, op, rhs] })));
 
 // #### Other Expressions
 
 named!(range<CompleteStr, Node>,
   do_parse!(
-    quote >> text: text >> quote >>
-    (Node::String { children: vec![text] })));
+    start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
+    (Node::Range { children: vec![start,end] })));
 
 named!(string<CompleteStr, Node>,
   do_parse!(
