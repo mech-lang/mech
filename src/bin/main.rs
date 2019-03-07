@@ -34,12 +34,24 @@ fn compile_test(input: String, test: Value) {
 
 fn main() {
   let mut parser = Parser::new();
-  parser.parse("# Bouncing Balls
+  let mut compiler = Compiler::new();
+  let mut core = Core::new(1_000_000, 250);
+  let input = r#"
+block
+  #test.x{1} := 77
 
-
-This is a paragraph
-Paragraph second
-  #table-stuff123");
+block
+  #test = [|x|
+            9]"#;
+  compiler.compile_string(input.to_string());
+  println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.syntax_tree);
+  let ast = compiler.syntax_tree.clone();
+  compiler.compile_blocks(ast);
+  core.register_blocks(compiler.blocks.clone());
+  //core.step();
+  println!("{:?}", core);
+  println!("{:?}", core.runtime);
 }
 
 
