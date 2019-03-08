@@ -1309,6 +1309,7 @@ impl Compiler {
           match node {
             Node::String{text} => text_node.push_str(&text),
             Node::Token{token: Token::Space, ..} => text_node.push(' '),
+            Node::Constant{value} => text_node.push_str(&format!("{}", value.to_float())),
             _ => (),
           }
         }
@@ -1339,7 +1340,7 @@ impl Compiler {
               word.push(character);
             },
             Node::String{text} => word.push_str(&text),
-            Node::Constant{value} => word.push_str(&format!("{}", value)),
+            Node::Constant{value} => word.push_str(&format!("{}", value.to_float())),
             _ => compiled.push(node),
           }
         }
