@@ -344,8 +344,12 @@ named!(number<CompleteStr, Node>, do_parse!(
   bytes: nom_digit1 >>
   (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
+named!(punctuation<CompleteStr, Node>, do_parse!(
+  punctuation: alt!(period | exclamation | question | comma | colon | semicolon) >>
+  (Node::Punctuation{children: vec![punctuation]})));
+
 named!(text<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number)) >>
+  word: many1!(alt!(word | space | number | punctuation)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
