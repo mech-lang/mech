@@ -256,7 +256,7 @@ comparator!{compare_undefined, greater_than}
 // ## Logic
 
 #[repr(u8)]
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Logic {
   And,
   Or,
