@@ -313,6 +313,11 @@ named!(statement<CompleteStr, Node>,
 
 // #### Math Expressions
 
+named!(negation<CompleteStr, Node>,
+  do_parse!(
+    dash >> negated: alt!(data | constant) >>
+    (Node::Negation { children: vec![negated] })));
+
 named!(function<CompleteStr, Node>,
   do_parse!(
     function_nodes: map!(tuple!(identifier, left_parenthesis, many1!(binding), right_parenthesis),|tuple|{
@@ -340,7 +345,7 @@ named!(l3_infix<CompleteStr, Node>,
 
 named!(l4<CompleteStr, Node>,
   do_parse!(
-    l4: alt!(function | data | quantity) >>
+    l4: alt!(function | data | quantity | negation) >>
     (Node::L4 { children: vec![l4] })));
 
 named!(l3<CompleteStr, Node>,

@@ -1397,7 +1397,7 @@ impl Compiler {
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
         let mut input = vec![Node::Constant{value: 0}];
-        input.push(result[1].clone());
+        input.push(result[0].clone());
         compiled.push(Node::Function{ name: "-".to_string(), children: input });
       },
       parser::Node::String{children} => {
