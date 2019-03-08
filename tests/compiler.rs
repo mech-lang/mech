@@ -2,8 +2,7 @@
 extern crate mech_syntax;
 extern crate mech_core;
 
-use mech_syntax::lexer::Lexer;
-use mech_syntax::parser::{Parser, ParseStatus, Node};
+use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
 use mech_core::{Hasher, Core, Index, Value, make_quantity};
 

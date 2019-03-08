@@ -1,8 +1,8 @@
 extern crate mech_syntax;
 extern crate mech_core;
 
-use mech_syntax::lexer::{Lexer, Token};
-use mech_syntax::parser::{ParseStatus, Node};
+use mech_syntax::lexer::Token;
+use mech_syntax::parser::Node;
 use mech_syntax::compiler::Compiler;
 use mech_core::Block;
 use mech_core::{Change, Transaction};
@@ -11,11 +11,11 @@ use mech_core::Hasher;
 use mech_core::Core;
 use mech_core::make_quantity;
 use std::time::{Duration, SystemTime};
-use mech_syntax::parser2::Parser;
+use mech_syntax::parser::Parser;
 
 fn compile_test(input: String, test: Value) {
   let mut compiler = Compiler::new();
-  let mut core = Core::new(10, 10);
+  let mut core = Core::new(1_000_000, 250);
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
   core.step();
@@ -31,7 +31,7 @@ fn compile_test(input: String, test: Value) {
   }
   
 }
-
+/*
 fn main() {
   let mut parser = Parser::new();
   let mut compiler = Compiler::new();
@@ -49,43 +49,32 @@ block
   let ast = compiler.syntax_tree.clone();
   compiler.compile_blocks(ast);
   core.register_blocks(compiler.blocks.clone());
-  //core.step();
+  core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime);
-}
+
+      let table = Hasher::hash_str("test");
+    let row = Index::Index(1);
+    let column = Index::Index(1);
+    let actual = core.index(table, &row, &column);
+}*/
+
+
+
+fn main() {
+  let input = String::from("
+block
+  #test.x{1} := 77
+
+block
+  #test = [|x|
+            9]");
+  let value = Value::Number(make_quantity(77,0,0));
+
+  compile_test(input.clone(), value);
 
 
 /*
-fn main() {
-  let input = String::from("# Clock
-
-Create a timer that ticks every second. This is the time source.
-  #system/timer = [resolution: 1000, tick: 0]
-
-Set up a clock hands table. Degrees is the deflection from noon.
-x and y are the coordinates of the end point of the clock hand
-  #clock-hands = [|degrees length stroke     x y |
-                   0       30     \"#023963\" 0 0
-                   0       40     \"#023963\" 0 0
-                   0       40     \"#ce0b46\" 0 0 ]
-
-## Update the clock
-
-Calculate clock hand angles every time the clock ticks
-  ~ #system/timer.tick 
-  #clock-hands{1}.degrees := 30 * #system/timer.hours
-  #clock-hands{2}.degrees := 6 * #system/timer.minutes
-  #clock-hands{3}.degrees := 6 * #system/timer.seconds
-
-Calculate x and y endpoints
-  ~ #clock-hands.degrees
-  #clock-hands.x := 50 + (30 * math/sin(degrees: #clock-hands.degrees))
-  #clock-hands.y := 50 - (30 * math/cos(degrees: #clock-hands.degrees))");
-  let value = Value::Number(make_quantity(780000,-4,0));
-
-  //compile_test(input.clone(), value);
-
-
   let mut compiler = Compiler::new();
   let mut core = Core::new(1_000_000, 250);
   compiler.compile_string(input.clone());
@@ -95,7 +84,7 @@ Calculate x and y endpoints
   //println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  println!("{:?}", core.runtime);*/
 
   
   /*
@@ -126,4 +115,3 @@ Calculate x and y endpoints
   println!("{:?}", core);*/
 
 }
-*/

@@ -1,52 +1,18 @@
-// # Parer
+// # Parser
 
 // ## Prelude
 
 use lexer::Token;
-use lexer::Token::{HashTag, Alpha, Period, LeftBracket, RightBracket, Newline,
-                   Digit, Space, Equal, Plus, EndOfStream, Dash, Asterisk, Slash};
 use mech_core::{Hasher, Function};
 use alloc::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
+use nom::alpha1 as nom_alpha1;
+use nom::digit1 as nom_digit1;
+use nom::AtEof as eof;
+use nom::types::CompleteStr;
 
-// ## Helper Macros
-
-macro_rules! leaf {
-  ($func:ident, $token:expr) => (
-    pub fn $func(s: &mut ParseState) -> &mut ParseState {
-      let result = token(s, $token);
-      result
-    }
-  )
-}
-
-macro_rules! node {
-  ($func:ident, $node:tt, $production:expr, $label: expr) => (
-    pub fn $func(s: &mut ParseState) -> &mut ParseState {
-      let old_depth = s.depth.clone();
-      s.depth += 1; 
-      // spacer(s.depth); println!($label);
-      let previous = s.last_match.clone();
-      let old_position = s.position;
-      let result = $production(s);
-      let node = Node::$node{ children: result.node_stack.drain(previous..).collect() };
-      if result.ok() {
-        result.node_stack.push(node);
-        result.last_match = result.node_stack.len();
-        // spacer(old_depth + 1); print!($label); println!(" √");
-      } else { 
-        // spacer(old_depth + 1); print!($label); println!(" X");
-        result.position = old_position;
-        result.last_match = previous;
-      }
-      result.depth = old_depth;
-      result
-    }
-  )
-}
-
-// ## Node
+// ## Parser Node
 
 #[derive(Clone, PartialEq)]
 pub enum Node {
@@ -271,172 +237,11 @@ pub fn spacer(width: usize) {
 
 // ## Parser
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum ParseStatus {
-  Ready,
-  Parsing,
-  Error(ParseError),
-  Complete,
-}
-
-#[derive(Debug, Clone)]
-pub struct ParseState {
-  pub status: ParseStatus,
-  pub text: String,
-  pub token_stack: Vec<Token>,
-  pub node_stack: Vec<Node>,
-  last_match: usize,
-  pub position: usize,
-  pub committed: usize,
-  depth: usize,
-}
-
-impl ParseState {
-  pub fn new() -> ParseState {
-    ParseState {
-      status: ParseStatus::Parsing,
-      text: String::from(""),
-      node_stack: Vec::new(), 
-      token_stack: Vec::new(),
-      last_match: 0,
-      position: 0,
-      committed: 0,
-      depth: 0,
-    }
-  }
-
-  pub fn ok(&self) -> bool {
-    if self.status == ParseStatus::Parsing {
-      true
-    } else {
-      false
-    }
-  }
-
-  pub fn and<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState 
-  {
-    if !self.ok() {
-      self
-    } else {
-      let mut before = self.clone();
-      // spacer(self.depth); println!("And");
-      let result = production(self);
-      result.depth = before.depth;
-      result
-    }
-  }
-
-  pub fn or<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState 
-  {
-    if self.ok() {
-      self
-    } else {
-      let mut before = self.clone();
-      let old_depth = self.depth.clone();
-      let previous = self.last_match.clone();
-      let old_position = self.position;
-
-
-      self.depth += 1;
-      // spacer(self.depth); println!("OR");
-      self.status = ParseStatus::Parsing;
-      let result = production(self);
-
-      if result.ok() {
-        result.last_match = result.node_stack.len();
-      } else { 
-        result.position = old_position;
-        result.last_match = previous;
-      }      
-      result
-    }
-  }
-
-  pub fn optional<F>(&mut self, production: F) -> &mut ParseState
-    where F: Fn(&mut ParseState) -> &mut ParseState 
-  {
-    let before_depth = self.depth;
-    self.depth += 1;
-    // spacer(self.depth); println!("Optional");
-    if self.ok() {
-      let result = production(self);
-      if result.ok() {
-        return result
-      } else {
-        result.status = ParseStatus::Parsing;
-        result.depth = before_depth;
-        return result
-      }
-    } else {
-      self.depth = before_depth;
-      return self
-    }
-  }
-
-  pub fn repeat<F>(&mut self, production: F) -> &mut ParseState 
-    where F: Fn(&mut ParseState) -> &mut ParseState
-  {
-    self.depth += 1; 
-    let before_depth = self.depth;
-    // spacer(self.depth); println!("Repeat");
-    let mut once = false;
-    let mut result = self;
-    let start_pos = result.last_match.clone();
-    while result.ok() {
-      let result = production(result);
-      if result.ok() {
-        result.depth = before_depth;
-        once = true;
-      }
-    }
-    if once {
-      result.status = ParseStatus::Parsing;
-      let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
-      result.node_stack.push(node);
-      result.last_match = result.node_stack.len();
-    }
-    result
-  }
-
-  pub fn optional_repeat<F>(&mut self, production: F) -> &mut ParseState 
-    where F: Fn(&mut ParseState) -> &mut ParseState
-  {
-    self.depth += 1; 
-    let before_status = self.status.clone();
-    let before_depth = self.depth;
-    // spacer(self.depth); println!("Optional Repeat");
-    let mut result = self;
-    let start_pos = result.last_match.clone();
-    while result.ok() {
-      let result = production(result);
-      if result.ok() {
-        result.depth = before_depth;
-      }
-    }
-    let node = Node::Repeat{ children: result.node_stack.drain(start_pos..).collect() };
-    result.status = before_status;
-    result.node_stack.push(node);
-    result.last_match = result.node_stack.len();
-    result
-  }
-
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ParseError {
-  pub position: usize,
-  pub token: Token,
-  pub code: u64,
-  pub node_stack: Vec<Node>,
-}
-
 #[derive(Clone)]
 pub struct Parser {
-  pub status: ParseStatus,
   pub tokens: Vec<Token>,
   pub parse_tree: Node,
+  pub unparsed: String,
   pub text: String,
 }
 
@@ -444,39 +249,27 @@ impl Parser {
 
   pub fn new() -> Parser {
     Parser {
-      status: ParseStatus::Ready,
       text: String::from(""),
       tokens: Vec::new(),
+      unparsed: String::from(""),
       parse_tree: Node::Root{ children: Vec::new()  },
     }
-  }
-
-  pub fn clear(&mut self) {
-    self.status = ParseStatus::Ready;
-    self.text = String::from("");
-    self.tokens.clear();
-    self.parse_tree = Node::Root{ children: Vec::new()  };
   }
 
   pub fn add_tokens(&mut self, tokens: &mut Vec<Token>) {
     self.tokens.append(tokens);
   }
 
-  pub fn build_parse_tree(&mut self) {
-    let mut s = ParseState::new();
-    s.text = self.text.clone();
-    s.token_stack.append(&mut self.tokens);
-    let result = root(&mut s).or(program);
-    
-    //println!("{:?}",result);
-    if result.ok() {
-      self.status = ParseStatus::Ready;
-      self.parse_tree = result.node_stack.pop().unwrap();
-    } else {
-      self.status = result.status.clone();
+  pub fn parse(&mut self, text: &str) {
+    let parse_tree = parse_mech(CompleteStr(text));
+    match parse_tree {
+      Ok((rest, tree)) => {
+        self.unparsed = rest.to_string();
+        self.parse_tree = tree;
+      },
+      _ => (), 
     }
   }
-   
 }
 
 impl fmt::Debug for Parser {
@@ -485,7 +278,6 @@ impl fmt::Debug for Parser {
     
     write!(f, "┌───────────────────────────────────────┐\n").unwrap();
     write!(f, "│ Parser\n").unwrap();
-    write!(f, "│ Status: {:?}\n", self.status).unwrap();
     write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
     write!(f, "├───────────────────────────────────────┤\n").unwrap();
     for (ix, token) in self.tokens.iter().enumerate() {
@@ -500,165 +292,386 @@ impl fmt::Debug for Parser {
   }
 }
 
-// ## Parse Nodes
-
-// These nodes represent interior connections in the parse tree.
-
-node!{comment_sigil, CommentSigil, |s|{ slash(s).and(slash) }, "CommentSigil"}
-node!{symbol, Symbol, |s|{ plus(s).or(hashtag).or(left_bracket).or(right_bracket).or(equal).or(slash).or(greater_than).or(less_than).or(tilde).or(left_brace).or(right_brace).or(asterisk).or(punctuation) }, "Symbol"} // TODO fill out rest
-node!{any, Any, |s|{ alphanumeric(s).or(space_or_tab).or(symbol) }, "Any"}
-node!{comment, Comment, |s|{ comment_sigil(s).repeat(any) }, "CommentSigil"}
-
-node!{root, Root, |s|{ program(s).or(fragment) }, "Root"}
-node!{program, Program, |s|{ node(s).optional_repeat(whitespace).optional(head).and(body) }, "Program"}
-node!{head, Head, |s|{ title(s) }, "Head"}
-node!{title, Title, |s|{ hashtag(s).and(space).and(text).optional_repeat(whitespace) }, "Title"}
-node!{paragraph, Paragraph, |s|{ text(s).repeat(whitespace) }, "Paragraph"}
-node!{text, Text, |s|{ word(s).optional(punctuation).optional(space).optional(text) }, "Text"}
-node!{word, Word, |s|{ node(s).repeat(alphanumeric) }, "Word"}
-node!{alphanumeric, Alphanumeric, |s|{ alpha(s).or(digit) }, "Alphanumeric"}
-node!{punctuation, Punctuation, |s|{ period(s).or(exclamation).or(comma).or(colon).or(semicolon).or(question) }, "Punctuation"}
-node!{whitespace, Whitespace, |s|{ node(s).optional_repeat(space).and(newline) }, "Whitespace"}
-node!{space_or_tab, SpaceOrTab, |s|{ space(s).or(tab) }, "SpaceOrTab"}
-node!{body, Body, |s|{ node(s).repeat(section) }, "Body"}
-node!{section, Section, |s|{ node(s).optional(subtitle).optional_repeat(whitespace).repeat(prose_or_code)}, "Section"}
-node!{subtitle, Subtitle, |s|{ hashtag(s).and(hashtag).and(space).and(text).repeat(whitespace) }, "Subtitle"}
-node!{prose_or_code, ProseOrCode, |s|{ block(s).or(paragraph).optional_repeat(whitespace) }, "ProseOrCode"}
-
-node!{string, String, |s|{ quote(s).and(text).and(quote) }, "String"}
-
-node!{fragment, Fragment, |s|{ statement_or_expression(s).or(end) }, "Fragment"}
-node!{statement_or_expression, StatementOrExpression, |s|{ statement(s).or(expression) }, "StatementOrExpression"}
-node!{expression, Expression, |s|{ filter_expression(s).or(string).or(range).or(logic_expression).or(inline_table).or(anonymous_table).or(math_expression) }, "Expression"}
-node!{statement, Statement, |s|{ table_define(s).or(add_row).or(variable_define).or(data_watch).or(set_data) }, "Statement"}
-
-node!{block, Block, |s|{ node(s).repeat(constraint) }, "Block"}
-node!{constraint, Constraint, |s|{ space(s).and(space).optional(statement_or_expression).optional(comment).optional_repeat(newline) }, "Constraint"}
-
-node!{set_data, SetData, |s|{ table(s).optional(index).and(space).and(set_operator).and(space).and(expression) }, "SetData"}
-node!{set_operator, SetOperator, |s|{ colon(s).and(equal) }, "SetOperator"}
-node!{add_operator, AddOperator, |s|{ plus(s).and(equal) }, "AddOperator"}
-node!{watch_operator, WatchOperator, |s|{ tilde(s) }, "WatchOperator"}
-node!{data_watch, DataWatch, |s|{ watch_operator(s).and(space).and(data) }, "DataWatch"}
-node!{variable_define, VariableDefine, |s|{ identifier(s).and(space).and(equal).and(space).and(expression) }, "VariableDefine"}
-node!{table_define, TableDefine, |s|{ table(s).and(space).and(equal).and(space).and(expression) }, "TableDefine"}
-node!{add_row, AddRow, |s|{ table(s).and(space).and(add_operator).and(space).and(expression) }, "AddRow"}
-node!{constant, Constant, |s|{ number(s) }, "Constant"}
-node!{number, Number, |s|{ node(s).repeat(digit).optional_repeat(digit_or_comma).optional(floating_point) }, "Number"}
-node!{floating_point, FloatingPoint, |s|{ period(s).repeat(digit) }, "FloatingPoint"}
-node!{digit_or_comma, DigitOrComma, |s|{ comma(s).and(digit).and(digit).and(digit) }, "DigitOrComma"}
-node!{identifier_or_constant, IdentifierOrConstant, |s|{ data(s).or(identifier).or(constant).or(string).or(inline_table) }, "IdentifierOrConstant"}
-node!{newline_or_end, NewLineOrEnd, |s|{ newline(s).or(end) }, "NewLineOrEnd"}
-
-node!{l1_infix, L1Infix, |s|{ space(s).and(plus).or(dash).and(space).and(l2) }, "L1Infix"}
-node!{l2_infix, L2Infix, |s|{ space(s).and(asterisk).or(slash).and(space).and(l3) }, "L2Infix"}
-node!{l3_infix, L3Infix, |s|{ space(s).and(caret).and(space).and(l4) }, "L3Infix"}
-
-node!{l1, L1, |s|{ l2(s).optional_repeat(l1_infix) }, "L1"}
-node!{l2, L2, |s|{ l3(s).optional_repeat(l2_infix) }, "L2"}
-node!{l3, L3, |s|{ l4(s).optional_repeat(l3_infix) }, "L3"}
-node!{l4, L4, |s|{ function(s).or(data).or(constant).or(negation).or(parenthetical_expression) }, "L4"}
-
-node!{negation, Negation, |s|{ dash(s).and(data).or(constant) }, "Negation"}
-node!{parenthetical_expression, ParentheticalExpression, |s|{ left_parenthesis(s).and(l1).and(right_parenthesis) }, "ParentheticalExpression"}
-
-node!{function, Function, |s|{ identifier(s).and(left_parenthesis).repeat(binding).and(right_parenthesis) }, "Function"}
-
-node!{inline_table, InlineTable, |s|{ left_bracket(s).repeat(binding).and(right_bracket) }, "InlineTable"}
-
-node!{anonymous_table, AnonymousTable, |s|{ left_bracket(s).optional_repeat(space).optional(table_header).optional_repeat(table_row).and(right_bracket) }, "AnonymousTable"}
-node!{binding, Binding, |s|{ identifier(s).and(colon).optional_repeat(space).and(identifier_or_constant).optional_repeat(space).optional(comma).optional_repeat(space) }, "Binding"}
-node!{attribute, Attribute, |s|{ identifier(s).optional_repeat(space).optional(comma).optional_repeat(space) }, "Attribute"}
-node!{table_header, TableHeader, |s|{ node(s).and(bar).repeat(attribute).and(bar).optional_repeat(space).optional(newline) }, "TableHeader"}
-node!{table_row, TableRow, |s|{ node(s).optional_repeat(space_or_tab).repeat(column).optional(semicolon).optional(newline) }, "TableRow"}
-node!{column, Column, |s|{ node(s).optional_repeat(space_or_tab).and(data).or(expression).or(number).optional(comma).optional(space_or_tab) }, "Column"}
-node!{math_expression, MathExpression, |s|{ l1(s) }, "MathExpression"}
-
-node!{logic_expression, LogicExpression, |s|{ data_or_constant(s).and(space).and(logic_operator).and(space).and(data_or_constant)  }, "LogicExpression"}
-node!{logic_operator, LogicOperator, |s|{ ampersand(s).or(bar) }, "LogicOperator"}
-
-node!{filter_expression, FilterExpression, |s|{ data_or_constant(s).and(space).and(comparator).and(space).and(data_or_constant) }, "FilterExpression"}
-node!{comparator, Comparator, |s|{ greater_than(s).or(less_than) }, "Comparator"}
-
-node!{data_or_constant, DataOrConstant, |s|{ data(s).or(constant) }, "DataOrConstant"}
-node!{equality, Equality, |s| { data(s).and(space).and(equal).and(space).and(expression) }, "Equality"}
-node!{data, Data, |s| { table(s).or(identifier).optional_repeat(index) }, "Data"}
-node!{index, Index, |s| { dot_index(s).or(subscript_index) }, "Index"}
-node!{subscript_index, SubscriptIndex, |s| { left_brace(s).repeat(subscript).and(right_brace) }, "Subscript Index"}
-node!{subscript_list, SubscriptList, |s| { node(s).repeat(subscript) }, "SubscriptList"} 
-node!{subscript, Subscript, |s| { select_all(s).or(range).or(expression).optional_repeat(space).optional(comma).optional_repeat(space)   }, "Subscript"} 
-node!{range, Range, |s| { math_expression(s).optional_repeat(space).and(colon).optional_repeat(space).and(math_expression) }, "Range"}
-node!{select_all, SelectAll, |s| { colon(s) }, "SelectAll"}
-node!{dot_index, DotIndex, |s| { period(s).and(identifier).optional(subscript_index) }, "Dot Index"}
-node!{table, Table, |s| { hashtag(s).and(table_identifier) }, "Table"}
-node!{identifier_character, IdentifierCharacter, |s| { alphanumeric(s).or(slash).or(dash) }, "IdentifierCharacter"}
-node!{identifier, Identifier, |s| { alpha(s).optional_repeat(identifier_character) }, "Identifier"}
-node!{table_identifier, TableIdentifier, |s| { alpha(s).optional_repeat(identifier_character) }, "TableIdentifier"}
-node!{newline, NewLine, |s| { node(s).optional(carriage_return).and(new_line_char) }, "NewLine"}
-
-// ## Parse Leaves
-
-leaf!{alpha, Token::Alpha}
-leaf!{digit, Token::Digit}
-leaf!{hashtag, Token::HashTag}
-leaf!{period, Token::Period}
-leaf!{colon, Token::Colon}
-leaf!{comma, Token::Comma}
-leaf!{left_bracket, Token::LeftBracket}
-leaf!{right_bracket, Token::RightBracket}
-leaf!{left_parenthesis, Token::LeftParenthesis}
-leaf!{right_parenthesis, Token::RightParenthesis}
-leaf!{left_brace, Token::LeftBrace}
-leaf!{right_brace, Token::RightBrace}
-leaf!{equal, Token::Equal}
-leaf!{less_than, Token::LessThan}
-leaf!{greater_than, Token::GreaterThan}
-leaf!{exclamation, Token::Exclamation}
-leaf!{question, Token::Question}
-leaf!{plus, Token::Plus}
-leaf!{dash, Token::Dash}
-leaf!{asterisk, Token::Asterisk}
-leaf!{slash, Token::Slash}
-leaf!{caret, Token::Caret}
-leaf!{space, Token::Space}
-leaf!{tab, Token::Tab}
-leaf!{tilde, Token::Tilde}
-leaf!{grave, Token::Grave}
-leaf!{bar, Token::Bar}
-leaf!{quote, Token::Quote}
-leaf!{ampersand, Token::Ampersand}
-leaf!{semicolon, Token::Semicolon}
-leaf!{new_line_char, Token::Newline}
-leaf!{carriage_return, Token::CarriageReturn}
-leaf!{end, Token::EndOfStream}
-
-// A dummy node that returns itself.
-pub fn node(s: &mut ParseState) -> &mut ParseState {
-  s
+macro_rules! leaf {
+  ($name:ident, $byte:expr, $token:expr) => (
+    named!($name<CompleteStr, Node>,
+      do_parse!(
+        byte: tag!($byte) >> 
+        (Node::Token{token: $token, byte: (byte.as_bytes())[0]})
+      )
+    );
+  )
 }
 
-// Matches a token from the lexer step.
-pub fn token(s: &mut ParseState, token: Token) -> &mut ParseState {
-  s.depth += 1; 
-  // spacer(s.depth); print!("Token: [{:?}] = {:?}?", s.token_stack[s.position], token);
-  if s.token_stack[s.position] == token {
-    let byte = if s.position < s.text.len() {
-      s.text.as_bytes()[s.position]
-    } else {
-      0
+leaf!{hashtag, "#", Token::HashTag}
+leaf!{period, ".", Token::Period}
+leaf!{colon, ":", Token::Colon}
+leaf!{comma, ",", Token::Comma}
+leaf!{left_bracket, "[", Token::LeftBracket}
+leaf!{right_bracket, "]", Token::RightBracket}
+leaf!{left_parenthesis, "(", Token::LeftParenthesis}
+leaf!{right_parenthesis, ")", Token::RightParenthesis}
+leaf!{left_brace, "{", Token::LeftBrace}
+leaf!{right_brace, "}", Token::RightBrace}
+leaf!{equal, "=", Token::Equal}
+leaf!{left_angle, "<", Token::LessThan}
+leaf!{right_angle, ">", Token::GreaterThan}
+leaf!{exclamation, "!", Token::Exclamation}
+leaf!{question, "?", Token::Question}
+leaf!{plus, "+", Token::Plus}
+leaf!{dash, "-", Token::Dash}
+leaf!{asterisk, "*", Token::Asterisk}
+leaf!{slash, "/", Token::Slash}
+leaf!{caret, "^", Token::Caret}
+leaf!{space, " ", Token::Space}
+leaf!{tab, "\t", Token::Tab}
+leaf!{tilde, "~", Token::Tilde}
+leaf!{grave, "`", Token::Grave}
+leaf!{bar, "|", Token::Bar}
+leaf!{quote, "\"", Token::Quote}
+leaf!{ampersand, "&", Token::Ampersand}
+leaf!{semicolon, ";", Token::Semicolon}
+leaf!{new_line_char, "\n", Token::Newline}
+leaf!{carriage_return, "\r", Token::CarriageReturn}
+
+// ## The Basics
+
+named!(word<CompleteStr, Node>, do_parse!(
+  bytes: nom_alpha1 >>
+  (Node::Word{children: bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect()})));
+
+named!(number<CompleteStr, Node>, do_parse!(
+  bytes: nom_digit1 >>
+  (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
+
+named!(text<CompleteStr, Node>, do_parse!(
+  word: many1!(alt!(word | space | number)) >>
+  (Node::Text{children: word})));
+
+named!(identifier<CompleteStr, Node>, do_parse!(
+  identifier: map!(tuple!(count!(word,1), many0!(alt!(dash | slash | word | number))), |tuple| {
+    let (mut word, mut rest) = tuple;
+    word.append(&mut rest);
+    word
+  }) >>
+  (Node::Identifier{children: identifier})));
+
+named!(whitespace<CompleteStr, Node>, do_parse!(
+  many0!(space) >> new_line_char >>
+  (Node::Null)));
+
+named!(floating_point<CompleteStr, Node>, do_parse!(
+  period >> bytes: nom_digit1 >>
+  (Node::FloatingPoint{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
+
+named!(quantity<CompleteStr, Node>, do_parse!(
+  quantity: map!(tuple!(number, opt!(floating_point)),|tuple| {
+    let (front, floating_point) = tuple;
+    let mut quantity = vec![front];
+    match floating_point {
+      Some(point) => quantity.push(point),
+      _ => (),
     };
-    match token {
-      Token::EndOfStream => (),
-      _ => {
-        s.position += 1;
-        s.last_match += 1;
-      },
+    quantity
+  }) >>
+  (Node::Quantity{children: quantity})));
+
+named!(constant<CompleteStr, Node>, do_parse!(
+  constant: alt!(string | quantity) >>
+  (Node::Constant{children: vec![constant]})));
+
+// ## Blocks
+
+// ### Data
+
+named!(select_all<CompleteStr, Node>, do_parse!(
+  colon >> 
+  (Node::SelectAll{children: vec![]})));
+
+named!(subscript<CompleteStr, Node>, do_parse!(
+  subscript: alt!(select_all | constant | expression) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+  (Node::Subscript{children: vec![subscript]})));
+
+named!(subscript_index<CompleteStr, Node>, do_parse!(
+  left_brace >> subscripts: many1!(subscript) >> right_brace >>
+  (Node::SubscriptIndex{children: subscripts})));
+
+named!(dot_index<CompleteStr, Node>, do_parse!(
+  period >> index: map!(tuple!(identifier,opt!(subscript_index)),|tuple|{
+    let (identifier, subscript) = tuple;
+    let mut index = vec![identifier];
+    match subscript {
+      Some(subscript) => index.push(subscript),
+      None => (),
     };
-    s.node_stack.push(Node::Token{token, byte});
-    // spacer(0); println!(" √");
-  } else {
-    s.status = ParseStatus::Error(ParseError{code: 1, position: s.position, token: s.token_stack[s.position].clone(), node_stack: s.node_stack.clone() });
-    // spacer(0); println!(" X");
-  }
-  s
-}
+    index
+  }) >>
+  (Node::DotIndex{children: index})));
+
+named!(index<CompleteStr, Node>, do_parse!(
+  index: alt!(dot_index | subscript_index) >>
+  (Node::Index{children: vec![index]})));
+
+named!(data<CompleteStr, Node>, do_parse!(
+  data: map!(tuple!(alt!(table | identifier), many0!(index)), |tuple| {
+    let (mut source, mut indices) = tuple;
+    let mut data = vec![source];
+    data.append(&mut indices);
+    data
+  }) >>
+  (Node::Data { children: data })));
+
+// ### Tables
+
+named!(table<CompleteStr, Node>, do_parse!(
+  hashtag >> table_identifier: identifier >>
+  (Node::Table { children: vec![table_identifier] })));
+
+named!(binding<CompleteStr, Node>, do_parse!(
+binding_id: identifier >> colon >> many0!(space) >> 
+bound: alt!(identifier | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+(Node::Binding { children: vec![binding_id, bound] })));
+
+named!(table_column<CompleteStr, Node>, do_parse!(
+  many0!(alt!(space | tab)) >> item: alt!(data | expression | quantity) >> opt!(comma) >> opt!(alt!(space | tab)) >>
+  (Node::Column { children: vec![item] })));
+
+named!(table_row<CompleteStr, Node>,
+do_parse!(
+  many0!(alt!(space | tab)) >> columns: many1!(table_column) >> opt!(semicolon) >> opt!(new_line_char) >>
+  (Node::TableRow { children: columns })));
+
+named!(attribute<CompleteStr, Node>, do_parse!(
+  identifier: identifier >> many0!(space) >> opt!(comma) >> many0!(space) >>
+  (Node::Attribute { children: vec![identifier] })));
+
+named!(table_header<CompleteStr, Node>, do_parse!(
+  bar >> attributes: many1!(attribute) >> bar >> many0!(space) >> opt!(new_line_char) >>
+  (Node::TableHeader { children: attributes })));
+
+named!(anonymous_table<CompleteStr, Node>, do_parse!(
+  left_bracket >> many0!(space) >> table: map!(tuple!(opt!(table_header),many0!(table_row)),|tuple|{
+    let (table_header, mut table_rows) = tuple;
+    let mut table = vec![];
+    match table_header {
+      Some(table_header) => table.push(table_header),
+      _ => (),
+    };
+    table.append(&mut table_rows);
+    table
+  }) >> right_bracket >>
+  (Node::AnonymousTable { children: table })));
+
+named!(inline_table<CompleteStr, Node>, do_parse!(
+  left_bracket >> bindings: many1!(binding) >> right_bracket >>
+  (Node::InlineTable { children: bindings })));
+
+// ### Statements
+
+named!(add_row_operator<CompleteStr, Node>, do_parse!(tag!("+=") >> (Node::Null)));
+
+named!(add_row<CompleteStr, Node>, do_parse!(
+  table: table >> space >> add_row_operator >> space >> inline: inline_table >>
+  (Node::AddRow { children: vec![table, inline] })));
+
+named!(set_operator<CompleteStr, Node>, do_parse!(tag!(":=") >> (Node::Null)));
+
+named!(set_data<CompleteStr, Node>, do_parse!(
+  table: data >> space >> set_operator >> space >> expression: expression >>
+  (Node::SetData { children: vec![table, expression] })));
+
+named!(variable_define<CompleteStr, Node>, do_parse!(
+  variable: identifier >> space >> equal >> space >> expression: expression >>
+  (Node::VariableDefine { children: vec![variable, expression] })));
+
+named!(table_define<CompleteStr, Node>, do_parse!(
+  table: table >> space >> equal >> space >> expression: expression >>
+  (Node::TableDefine { children: vec![table, expression] })));
+
+named!(watch_operator<CompleteStr, Node>, do_parse!(
+  tilde >> 
+  (Node::Null)));
+
+named!(data_watch<CompleteStr, Node>, do_parse!(
+  watch_operator >> space >> watch: alt!(variable_define | data) >>
+  (Node::DataWatch { children: vec![watch] })));
+
+named!(statement<CompleteStr, Node>, do_parse!(
+  statement: alt!(table_define | variable_define | data_watch | set_data | add_row) >>
+  (Node::Statement { children: vec![statement] })));
+
+// ### Expressions
+
+// #### Math Expressions
+
+named!(parenthetical_expression<CompleteStr, Node>, do_parse!(
+  left_parenthesis >> l1: l1 >> right_parenthesis >>
+  (Node::ParentheticalExpression { children: vec![l1] })));
+
+named!(negation<CompleteStr, Node>, do_parse!(
+  dash >> negated: alt!(data | constant) >>
+  (Node::Negation { children: vec![negated] })));
+
+named!(function<CompleteStr, Node>, do_parse!(
+  function_nodes: map!(tuple!(identifier, left_parenthesis, many1!(binding), right_parenthesis),|tuple|{
+    let (identifier, _, mut bindings, _) = tuple;
+    let mut function = vec![identifier];
+    function.append(&mut bindings);
+    function
+  }) >>
+  (Node::Function { children: function_nodes })));
+
+named!(l1_infix<CompleteStr, Node>, do_parse!(
+  space >> op: alt!(plus | dash) >> space >> l2: l2 >>
+  (Node::L1Infix { children: vec![op, l2] })));
+
+named!(l2_infix<CompleteStr, Node>, do_parse!(
+  space >> op: alt!(asterisk | slash) >> space >> l3: l3 >>
+  (Node::L2Infix { children: vec![op, l3] })));
+
+named!(l3_infix<CompleteStr, Node>, do_parse!(
+  space >> op: caret >> space >> l4: l4 >>
+  (Node::L3Infix { children: vec![op, l4] })));
+
+named!(l4<CompleteStr, Node>, do_parse!(
+  l4: alt!(function | data | quantity | negation | parenthetical_expression) >>
+  (Node::L4 { children: vec![l4] })));
+
+named!(l3<CompleteStr, Node>, do_parse!(
+  l4: map!(tuple!(l4, many0!(l3_infix)), |tuple| {
+    let (mut l, mut infix) = tuple;
+    let mut math = vec![l];
+    math.append(&mut infix);
+    math
+  }) >>
+  (Node::L3 { children: l4 })));
+
+named!(l2<CompleteStr, Node>, do_parse!(
+  l3: map!(tuple!(l3, many0!(l2_infix)), |tuple| {
+    let (mut l, mut infix) = tuple;
+    let mut math = vec![l];
+    math.append(&mut infix);
+    math
+  }) >>
+  (Node::L2 { children: l3 })));
+
+named!(l1<CompleteStr, Node>, do_parse!(
+  l2: map!(tuple!(l2, many0!(l1_infix)), |tuple| {
+    let (mut l, mut infix) = tuple;
+    let mut math = vec![l];
+    math.append(&mut infix);
+    math
+  }) >>
+  (Node::L1 { children: l2 })));
+
+named!(math_expression<CompleteStr, Node>, do_parse!(
+  l1: l1 >>
+  (Node::MathExpression { children: vec![l1] })));
+
+// #### Filter Expressions
+
+named!(less_than<CompleteStr, Node>, do_parse!(tag!("<") >> (Node::LessThan)));
+
+named!(greater_than<CompleteStr, Node>, do_parse!(tag!(">") >> (Node::GreaterThan)));
+
+named!(comparator<CompleteStr, Node>, do_parse!(
+  comparator: alt!(less_than | greater_than) >>
+  (Node::Comparator { children: vec![comparator] })));
+
+named!(filter_expression<CompleteStr, Node>, do_parse!(
+  lhs: alt!(data | constant) >> space >> comp: comparator >> space >> rhs: alt!(data | constant) >>
+  (Node::FilterExpression { children: vec![lhs, comp, rhs] })));
+
+// #### Logic Expressions
+
+named!(or<CompleteStr, Node>, do_parse!(bar >> (Node::Or)));
+
+named!(and<CompleteStr, Node>, do_parse!(ampersand >> (Node::And)));
+
+named!(logic_operator<CompleteStr, Node>, do_parse!(
+  operator: alt!(and | or) >>
+  (Node::LogicOperator { children: vec![operator] })));
+
+named!(logic_expression<CompleteStr, Node>, do_parse!(
+  lhs: math_expression >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: math_expression >>
+  (Node::LogicExpression { children: vec![lhs, op, rhs] })));
+
+// #### Other Expressions
+
+named!(range<CompleteStr, Node>, do_parse!(
+  start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
+  (Node::Range { children: vec![start,end] })));
+
+named!(string<CompleteStr, Node>, do_parse!(
+  quote >> text: text >> quote >>
+  (Node::String { children: vec![text] })));
+
+named!(expression<CompleteStr, Node>, do_parse!(
+  expression: alt!(string | range | filter_expression | logic_expression | inline_table | anonymous_table | math_expression) >>
+  (Node::Expression { children: vec![expression] })));
+
+// ### Block Basics
+
+named!(constraint<CompleteStr, Node>, do_parse!(
+  space >> space >>
+  statement_or_expression: statement >> opt!(new_line_char) >>
+  (Node::Constraint { children: vec![statement_or_expression] })));
+
+named!(block<CompleteStr, Node>, do_parse!(
+  constraints: many1!(constraint) >>
+  (Node::Block { children: constraints })));
+
+// ## Markdown
+
+named!(title<CompleteStr, Node>, do_parse!(
+  hashtag >> space >> text: text >> many0!(whitespace) >>
+  (Node::Title { children: vec![text] })));
+
+named!(subtitle<CompleteStr, Node>, do_parse!(
+  hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
+  (Node::Subtitle { children: vec![text] })));
+
+named!(paragraph<CompleteStr, Node>, do_parse!(
+  text: text >> many0!(whitespace) >>
+  (Node::Paragraph { children: vec![text] })));
+
+named!(section<CompleteStr, Node>, do_parse!(
+  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph))), |tuple| {
+    let (mut section_title, mut section_body) = tuple;
+    let mut section = vec![];
+    match section_title {
+      Some(subtitle) => section.push(subtitle),
+      _ => (),
+    };
+    section.append(&mut section_body);
+    section
+  }) >> many0!(whitespace) >>
+  (Node::Section { children: section })));
+
+named!(body<CompleteStr, Node>, do_parse!(
+  many0!(whitespace) >>
+  sections: many1!(section) >>
+  (Node::Body { children: sections })));
+
+// ## Start Here
+
+named!(fragment<CompleteStr, Node>, do_parse!(
+  statement: statement >>
+  (Node::Fragment { children: vec![statement] })));
+
+named!(program<CompleteStr, Node>, do_parse!(
+  program: map!(tuple!(opt!(title),body), |tuple| {
+    let (title, body) = tuple;
+    let mut program = vec![];
+    match title {
+      Some(title) => program.push(title),
+      None => (),
+    };
+    program.push(body);
+    program
+  } ) >> opt!(whitespace) >>
+  (Node::Program { children: program })));
+
+named!(parse_mech<CompleteStr, Node>, do_parse!(
+  program: alt!(fragment | program) >>
+  (Node::Root { children: vec![program] })));
