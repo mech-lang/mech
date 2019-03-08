@@ -617,12 +617,11 @@ named!(expression<CompleteStr, Node>, do_parse!(
 // ### Block Basics
 
 named!(constraint<CompleteStr, Node>, do_parse!(
-  space >> space >>
-  statement_or_expression: statement >> opt!(new_line_char) >>
+  space >> space >> statement_or_expression: statement >>
   (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>, do_parse!(
-  constraints: many1!(constraint) >>
+  constraints: many1!(constraint) >> many0!(space) >> new_line_char >>
   (Node::Block { children: constraints })));
 
 // ## Markdown
@@ -653,8 +652,7 @@ named!(section<CompleteStr, Node>, do_parse!(
   (Node::Section { children: section })));
 
 named!(body<CompleteStr, Node>, do_parse!(
-  many0!(whitespace) >>
-  sections: many1!(section) >>
+  many0!(whitespace) >> sections: many1!(section) >>
   (Node::Body { children: sections })));
 
 // ## Start Here
