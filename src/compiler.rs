@@ -372,71 +372,32 @@ impl Compiler {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
-        let result1 = self.compile_constraint(&children[0]);
-        let to = match &result1[0] {
-          Constraint::Identifier{id, ..} => TableId::Global(id.clone()),
-          _ => TableId::Global(0), 
+        let mut result1 = self.compile_constraint(&children[0]);
+        result1.remove(0);
+        let scan = result1.remove(0);
+        let (to, to_rows, to_columns) = match scan {
+          Constraint::Scan{table, indices, ..} => (table, indices[0].clone(), indices[1].clone()),
+          _ => (TableId::Global(0), None, None), 
         };
-        let mut select_data_children = vec![];
-        let mut result2: Vec<Constraint> = if children.len() == 3 {
-          // A subscript is specified
-          // Get the subscripts for the destination
-          let mut subscript_result = self.compile_constraint(&children[2]);
-          match &children[1] {
-            Node::DotIndex{column} => {
-              for subscript in column {
-                match subscript {
-                  Node::Identifier{name, id} => select_data_children.push(Some(Parameter::Index(Index::Alias(id.clone())))),
-                  Node::SubscriptIndex{children} => {
-                    for child in children {
-                      match child {
-                        Node::SelectData{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
-                        Node::Expression{..} => {
-                          let mut expression_result = self.compile_constraint(child);
-                          match &expression_result[0] {
-                            Constraint::NewTable{id, ..} => select_data_children.push(Some(Parameter::TableId(id.clone()))),
-                            _ => (),
-                          }
-                          subscript_result.append(&mut expression_result);
-                        },
-                        _ => (),
-                      }
-                    }
-                  },
-                  _ => (),
-                };
-              }
-            },
-            _ => (),
-          }
-          subscript_result
-        } else {
-          // A subscript is not specified
-          self.compile_constraint(&children[1])
-        };
+        let mut result2 = self.compile_constraint(&children[1]);
         let (from, from_rows, from_columns) = match &result2[0] {
           Constraint::NewTable{id, ..} => (id.clone(), None, None),
           Constraint::Scan{table, indices, output} => (table.clone(), indices[0].clone(), indices[1].clone()),
           _ => (TableId::Local(0), None, None), 
         };
-        if select_data_children.is_empty() {
-          select_data_children = vec![None; 2];
-        } else if select_data_children.len() == 1 {
-          select_data_children.push(None);
-        }
-        constraints.push(Constraint::Insert{from: (from, from_rows, from_columns), to: (to, select_data_children[1].clone(), select_data_children[0].clone())});
+        constraints.push(Constraint::Insert{from: (from, from_rows, from_columns), to: (to, to_rows, to_columns)});
+        constraints.append(&mut result1);
         constraints.append(&mut result2);
       },
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
-        
-        match &result[0] {
+        match &result[1] {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices[1].clone().unwrap()}),
           _ => (),
         }
       },
       Node::AddRow{children} => {
-        let mut result = self.compile_constraints(&children);
+        //let mut result = self.compile_constraints(&children);
         let mut to_table_constraints = self.compile_constraint(&children[0]);
         let mut from_table_constraints = self.compile_constraint(&children[1]);
         match from_table_constraints[1] {
@@ -823,6 +784,9 @@ impl Compiler {
           constraints.reverse();
         }
       },
+      Node::SubscriptIndex{children} => {
+        constraints.append(&mut self.compile_constraints(children));
+      },
       Node::SelectAll => {
         constraints.push(Constraint::Null);
       },
@@ -959,13 +923,12 @@ impl Compiler {
               compiled.push(Node::SelectData{id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{column} => {
-              match column[0] {
-                Node::Identifier{ref name, ref id} => {
-                  select_data_children.push(column[0].clone());
-                  select_data_children.push(Node::Null);
-                }, 
-                _ => (),
+              let mut reversed = column.clone();
+              if column.len() == 1 {
+                reversed.push(Node::Null);
               }
+              reversed.reverse();
+              select_data_children.append(&mut reversed);
             },
             Node::SubscriptIndex{children} => {
               let mut reversed = children.clone();
@@ -1024,7 +987,6 @@ impl Compiler {
         compiled.push(Node::Range{children: result});
       },
       parser::Node::SetData{children} => {
-        println!("SetData");
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
@@ -1235,15 +1197,9 @@ impl Compiler {
         compiled.append(&mut self.compile_nodes(children));
       },
       parser::Node::DotIndex{children} => {
-        let result = self.compile_nodes(children);
-        let mut columns: Vec<Node> = Vec::new();
-        for node in result {
-          match node {
-            Node::Token{token, byte} => (),
-            _ => columns.push(node),
-          };
-        }
-        compiled.push(Node::DotIndex{column: columns});
+        let mut result = self.compile_nodes(children);
+        result.reverse();
+        compiled.push(Node::DotIndex{column: result});
       },
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
