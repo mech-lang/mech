@@ -313,6 +313,16 @@ named!(statement<CompleteStr, Node>,
 
 // #### Math Expressions
 
+named!(function<CompleteStr, Node>,
+  do_parse!(
+    function_nodes: map!(tuple!(identifier, left_parenthesis, many1!(binding), right_parenthesis),|tuple|{
+      let (identifier, _, mut bindings, _) = tuple;
+      let mut function = vec![identifier];
+      function.append(&mut bindings);
+      function
+    }) >>
+    (Node::Function { children: function_nodes })));
+
 named!(l1_infix<CompleteStr, Node>,
   do_parse!(
     space >> op: alt!(plus | dash) >> space >> l2: l2 >>
@@ -330,7 +340,7 @@ named!(l3_infix<CompleteStr, Node>,
 
 named!(l4<CompleteStr, Node>,
   do_parse!(
-    l4: alt!(data | quantity) >>
+    l4: alt!(function | data | quantity) >>
     (Node::L4 { children: vec![l4] })));
 
 named!(l3<CompleteStr, Node>,
