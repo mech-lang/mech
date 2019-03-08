@@ -617,11 +617,11 @@ named!(expression<CompleteStr, Node>, do_parse!(
 // ### Block Basics
 
 named!(constraint<CompleteStr, Node>, do_parse!(
-  space >> space >> statement_or_expression: statement >>
+  space >> space >> statement_or_expression: statement >> many0!(space) >> opt!(new_line_char) >>
   (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>, do_parse!(
-  constraints: many1!(constraint) >> many0!(space) >> new_line_char >>
+  constraints: many1!(constraint) >> many0!(space) >>
   (Node::Block { children: constraints })));
 
 // ## Markdown
