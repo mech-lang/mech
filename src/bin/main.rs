@@ -33,10 +33,10 @@ fn compile_test(input: String, test: Value) {
 fn main() {
   let input = String::from("# Clock
 
-Create a timer that ticks every second. This is the time source.
+Create a timer that ticks every second This is the time source
   #system/timer = [resolution: 1000, tick: 0]
 
-Set up a clock hands table. Degrees is the deflection from noon.
+Set up a clock hands table Degrees is the deflection from noon
 x and y are the coordinates of the end point of the clock hand
   #clock-hands = [|degrees length stroke     x y |
                    0       30     \"023963\" 0 0
@@ -64,7 +64,7 @@ Calculate x and y endpoints
   let mut core = Core::new(1_000_000, 250);
   compiler.compile_string(input.clone());
   core.register_blocks(compiler.blocks.clone());
-  //println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
   core.step();
