@@ -420,7 +420,7 @@ Create ball on click
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
   
 block
-  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::Number(make_quantity(780000,-4,0)));
+  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::Number(make_quantity(1180000,-4,0)));
 
 // ## Strings
 
