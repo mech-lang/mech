@@ -270,8 +270,11 @@ impl Block {
         },
         Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
           match to_table {
-            TableId::Global(id) => self.output_registers.insert(Register::new(id, Index::Index(0))),
-            _ => false,
+            TableId::Global(id) => {
+              self.input_registers.insert(Register::new(id, Index::Index(0)));
+              self.output_registers.insert(Register::new(id, Index::Index(0)));
+            }, 
+            _ => (),
           };
         },
         Constraint::Scan{table, indices, output} => {
@@ -400,7 +403,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      //println!("Step: {:?}", step);
+      println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -793,7 +796,6 @@ impl Block {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
                 TableId::Global(id) => store.get_table(*id).unwrap(),
             };
-            
             let rhs = match rhs_table {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
@@ -929,7 +931,6 @@ impl Block {
           self.scratch.clear();
         },
         Constraint::Insert{from, to} => {
-          
           let (from_table, from_rows, from_columns) = from;
           let (to_table, to_rows, to_columns) = to;
 
@@ -1010,7 +1011,7 @@ impl Block {
 
           let to_is_scalar = to_width == 1 && to_height == 1;
           let from_is_scalar = from_width == 1 && from_height == 1;
-
+println!("{:?}", to_row_values);
           // TODO MAKE THIS REAL
           if from_is_scalar {
             for i in 0..to_width as usize {
@@ -1033,6 +1034,17 @@ impl Block {
                                             };
                     self.block_changes.push(change);
                   },
+                  Value::Number(index) => {
+                    let ix = index.mantissa() as usize - 1;
+                    if ix == j {
+                      let change = Change::Set{table: to_table_id.clone(), 
+                                              row: Index::Index(j as u64 + 1), 
+                                              column: Index::Index(cix as u64 + 1),
+                                              value: from.data[0][0].clone() 
+                                              };
+                      self.block_changes.push(change); 
+                    }
+                  }
                   _ => (),
                 }
               }
