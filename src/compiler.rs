@@ -1407,7 +1407,7 @@ impl Compiler {
       },
       parser::Node::ParentheticalExpression{children} => {
         let mut result = self.compile_nodes(children);
-        compiled.push(result[1].clone());
+        compiled.push(result[0].clone());
       },
       parser::Node::Comparator{children} => {
         match children[0] {

@@ -313,6 +313,11 @@ named!(statement<CompleteStr, Node>,
 
 // #### Math Expressions
 
+named!(parenthetical_expression<CompleteStr, Node>,
+  do_parse!(
+    left_parenthesis >> l1: l1 >> right_parenthesis >>
+    (Node::ParentheticalExpression { children: vec![l1] })));
+
 named!(negation<CompleteStr, Node>,
   do_parse!(
     dash >> negated: alt!(data | constant) >>
@@ -345,7 +350,7 @@ named!(l3_infix<CompleteStr, Node>,
 
 named!(l4<CompleteStr, Node>,
   do_parse!(
-    l4: alt!(function | data | quantity | negation) >>
+    l4: alt!(function | data | quantity | negation | parenthetical_expression) >>
     (Node::L4 { children: vec![l4] })));
 
 named!(l3<CompleteStr, Node>,
