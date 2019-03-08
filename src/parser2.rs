@@ -184,8 +184,16 @@ named!(subscript_index<CompleteStr, Node>,
 
 named!(dot_index<CompleteStr, Node>,
   do_parse!(
-    period >> column_name: identifier >> 
-    (Node::DotIndex{children: vec![column_name]})));
+    period >> index: map!(tuple!(identifier,opt!(subscript_index)),|tuple|{
+      let (identifier, subscript) = tuple;
+      let mut index = vec![identifier];
+      match subscript {
+        Some(subscript) => index.push(subscript),
+        None => (),
+      };
+      index
+    }) >>
+    (Node::DotIndex{children: index})));
 
 named!(index<CompleteStr, Node>,
   do_parse!(
@@ -263,7 +271,7 @@ named!(add_row_operator<CompleteStr, Node>,
 
 named!(add_row<CompleteStr, Node>,
   do_parse!(
-    table: data >> space >> add_row_operator >> space >> inline: inline_table >>
+    table: table >> space >> add_row_operator >> space >> inline: inline_table >>
     (Node::AddRow { children: vec![table, inline] })));
 
 named!(set_operator<CompleteStr, Node>,
