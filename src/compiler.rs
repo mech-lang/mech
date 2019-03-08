@@ -368,7 +368,6 @@ impl Compiler {
   }
 
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
-    
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
@@ -924,10 +923,10 @@ impl Compiler {
             },
             Node::DotIndex{column} => {
               let mut reversed = column.clone();
+              reversed.reverse();
               if column.len() == 1 {
                 reversed.push(Node::Null);
               }
-              reversed.reverse();
               select_data_children.append(&mut reversed);
             },
             Node::SubscriptIndex{children} => {
