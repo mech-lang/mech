@@ -40,7 +40,6 @@ macro_rules! test_mech {
         },
         None => assert_eq!(0,1),
       }
-      
     }
   )
 }
@@ -224,6 +223,14 @@ block
 
 // ## Set
 
+test_mech!(set_column_simple,"
+block
+  #test.x{1} := 77
+
+block
+  #test = [|x|
+            9]", Value::from_i64(77));
+
 test_mech!(set_column_logical,"
 block
   ix = x > 0
@@ -258,7 +265,7 @@ block
   #gravity = 2
 
 block
-  #system/timer.tick
+  ~ #system/timer.tick
   #ball.y := #ball.vy + #gravity
 
 block
