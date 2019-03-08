@@ -429,7 +429,7 @@ named!(table<CompleteStr, Node>, do_parse!(
 
 named!(binding<CompleteStr, Node>, do_parse!(
 binding_id: identifier >> colon >> many0!(space) >> 
-bound: alt!(identifier | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
+bound: alt!(data | identifier | constant) >> many0!(space) >> opt!(comma) >> many0!(space) >>
 (Node::Binding { children: vec![binding_id, bound] })));
 
 named!(table_column<CompleteStr, Node>, do_parse!(
