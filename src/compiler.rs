@@ -716,7 +716,7 @@ impl Compiler {
         for child in children {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
-        }     
+        }
         let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
