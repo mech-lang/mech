@@ -403,7 +403,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      println!("Step: {:?}", step);
+      //println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -1011,7 +1011,6 @@ impl Block {
 
           let to_is_scalar = to_width == 1 && to_height == 1;
           let from_is_scalar = from_width == 1 && from_height == 1;
-println!("{:?}", to_row_values);
           // TODO MAKE THIS REAL
           if from_is_scalar {
             for i in 0..to_width as usize {
@@ -1035,10 +1034,10 @@ println!("{:?}", to_row_values);
                     self.block_changes.push(change);
                   },
                   Value::Number(index) => {
-                    let ix = index.mantissa() as usize - 1;
-                    if ix == j {
+                    let ix = index.mantissa() as usize;
+                    if ix <= to.rows as usize {
                       let change = Change::Set{table: to_table_id.clone(), 
-                                              row: Index::Index(j as u64 + 1), 
+                                              row: Index::Index(ix as u64), 
                                               column: Index::Index(cix as u64 + 1),
                                               value: from.data[0][0].clone() 
                                               };
