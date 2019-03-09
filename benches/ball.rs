@@ -57,7 +57,7 @@ fn balls_10e3(b:&mut Bencher) {
 
 Define the environment
   #ball = [|x y |
-           1:1,000 1:1,000]
+           1:1000 1:1000]
   #vx = 3
   #vy = 3
   #system/timer = [resolution: 15, tick: 0]
@@ -100,7 +100,7 @@ fn balls_10e4(b:&mut Bencher) {
 
 Define the environment
   #ball = [|x y |
-           1:10,000 1:10,000]
+           1:10000 1:10000]
   #vx = 3
   #vy = 3
   #system/timer = [resolution: 15, tick: 0]
@@ -143,7 +143,7 @@ fn balls_10e5(b:&mut Bencher) {
 
 Define the environment
   #ball = [|x y |
-           1:100,000 1:100,000]
+           1:100000 1:100000]
   #vx = 3
   #vy = 3
   #system/timer = [resolution: 15, tick: 0]
