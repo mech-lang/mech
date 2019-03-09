@@ -379,6 +379,37 @@ block
 
 // ## Full programs
 
+test_mech!(program_Clock,r#"# Clock
+
+Create a timer that ticks every second. This is the time source.
+  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+
+Set up a clock hands table. Degrees is the deflection from noon.
+x and y are the coordinates of the end point of the clock hand.
+  #clock-hands = [|degrees length stroke    x y |
+                   0       30     "023963" 0 0
+                   0       40     "023963" 0 0
+                   0       40     "ce0b46" 0 0 ]
+
+## Update the clock
+
+Calculate clock hand angles every time the clock ticks.
+  ~ #system/timer.tick 
+  time = [#system/timer.hours; #system/timer.minutes; #system/timer.seconds]
+  multiplier = [30; 6; 6]
+  #clock-hands.degrees := multiplier * time
+  
+Calculate x and y endpoints
+  angle = #clock-hands.degrees
+  #clock-hands.x := 50 + (30 * math/sin(degrees: angle))
+  #clock-hands.y := 50 - (30 * math/cos(degrees: angle))
+  
+test
+  x = #clock-hands{1,1} + #clock-hands{2,1} + #clock-hands{3,1}
+  y = #clock-hands{1,4} + #clock-hands{2,4} + #clock-hands{3,4}
+  z = #clock-hands{1,5} + #clock-hands{2,5} + #clock-hands{3,5}
+  #test = x + y + z"#, Value::Number(make_quantity(83250606066446,-11,0)));
+
 test_mech!(program_bouncing_balls,"# Bouncing Balls
 
 Define the environment
