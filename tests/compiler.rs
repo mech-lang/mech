@@ -524,10 +524,15 @@ block
 
 // ## Functions
 
-test_mech!(function_sin_degrees,r#"
+test_mech!(function_math_sin_degrees,r#"
 block
   #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
 
-test_mech!(function_cos_degrees,r#"
+test_mech!(function_math_cos_degrees,r#"
 block
   #test = math/cos(degrees: 0)"#, Value::Number(make_quantity(100000000000000,-14,0)));
+
+test_mech!(function_stat_sum,r#"
+block
+  x = [1;2;3;4;5]
+  #test = stat/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
