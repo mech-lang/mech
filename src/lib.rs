@@ -154,7 +154,7 @@ impl Core {
         canvas.set_attribute("id","drawing canvas");
         canvas.set_attribute("width", &format!("{}", table.data[1][0].as_float().unwrap()));
         canvas.set_attribute("height", &format!("{}", table.data[0][0].as_float().unwrap()));
-        canvas.set_attribute("style", "background-color: rgb(226, 79, 94)");
+        canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
         drawing_area.append_child(&canvas)?;
         self.render_balls();
       }
@@ -182,15 +182,44 @@ impl Core {
         .unwrap();
     let radius = 10.0;
 
-    let table_id = Hasher::hash_str("ball");
+    let table_id = Hasher::hash_str("html/canvas");
     let table = self.core.store.get_table(table_id).unwrap();
+    let elements_table_id = table.data[2][0].as_u64().unwrap();
+    let elements_table = self.core.store.get_table(elements_table_id).unwrap();
 
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for i in 0..table.rows {
+    for i in 0..elements_table.rows {
       context.begin_path();
-      context.arc(table.data[0][i as usize].as_float().unwrap(), table.data[1][i as usize].as_float().unwrap(), radius, 0.0, 2.0 * 3.14);
-      context.set_fill_style(&JsValue::from_str("black"));
-      context.fill();
+      match elements_table.data[0][i as usize] {
+        Value::String(ref shape) => {
+          match shape.as_ref() {
+            "circle" => {
+              let x = elements_table.data[1][i as usize].as_float().unwrap();
+              let y = elements_table.data[2][i as usize].as_float().unwrap();
+              let radius = elements_table.data[3][i as usize].as_float().unwrap();
+              context.arc(x, y, radius, 0.0, 2.0 * 3.14);
+              context.set_fill_style(&JsValue::from_str("#0B79CE"));
+              context.fill();  
+            },
+            "line" => {
+              let x1 = elements_table.data[1][i as usize].as_float().unwrap();
+              let y1 = elements_table.data[2][i as usize].as_float().unwrap();
+              let x2 = elements_table.data[4][i as usize].as_float().unwrap();
+              let y2 = elements_table.data[5][i as usize].as_float().unwrap();
+              
+              context.begin_path();
+              context.move_to(x1, y1);
+              context.line_to(x2, y2);
+              context.close_path();
+              context.stroke();
+            },
+            _ => (),
+          }
+        },    
+        _ => (),    
+      }
+
+
     }
     Ok(())
   } 
