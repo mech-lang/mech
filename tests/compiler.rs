@@ -190,9 +190,9 @@ block
 
 test_mech!(range_basic,r#"
 block
-  #test = #range{1,1} + #range{2,1}
+  #test = stat/sum(column: #range)
 block
-  #range = 5 : 14"#, Value::from_i64(11));
+  #range = 5 : 14"#, Value::from_i64(95));
 
 // ## Subscripts
 
@@ -405,9 +405,9 @@ Calculate x and y endpoints
   #clock-hands.y := 50 - (30 * math/cos(degrees: angle))
   
 test
-  x = #clock-hands{1,1} + #clock-hands{2,1} + #clock-hands{3,1}
-  y = #clock-hands{1,4} + #clock-hands{2,4} + #clock-hands{3,4}
-  z = #clock-hands{1,5} + #clock-hands{2,5} + #clock-hands{3,5}
+  x = stat/sum(column: #clock-hands{:,1})
+  y = stat/sum(column: #clock-hands{:,4})
+  z = stat/sum(column: #clock-hands{:,5})
   #test = x + y + z"#, Value::Number(make_quantity(83250606066446,-11,0)));
 
 test_mech!(program_bouncing_balls,"# Bouncing Balls
