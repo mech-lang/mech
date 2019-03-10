@@ -32,8 +32,9 @@ pub enum Function {
   Power,
   HorizontalConcatenate,
   VerticalConcatenate,
-  Sin,
-  Cos,
+  MathSin,
+  MathCos,
+  StatSum,
   Undefined
 }
 
