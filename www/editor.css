@@ -147,6 +147,7 @@ button:hover {
   padding: 40px;
   font-size: 18px;
   overflow-wrap: normal;
+  white-space: nowrap;
   overflow-x: auto;
   background-color: rgb(16, 2, 24);
   color: rgb(250,250,250);
