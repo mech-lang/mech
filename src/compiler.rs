@@ -707,8 +707,9 @@ impl Compiler {
           "*" => Function::Multiply,
           "/" => Function::Divide,
           "^" => Function::Power,
-          "math/sin" => Function::Sin,
-          "math/cos" => Function::Cos,
+          "math/sin" => Function::MathSin,
+          "math/cos" => Function::MathCos,
+          "stat/sum" => Function::StatSum,
           _ => Function::Undefined,
         };
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
