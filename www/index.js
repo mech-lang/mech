@@ -146,7 +146,7 @@ Set up clock drawing elements
   x = #clock-hands.x
   y = #clock-hands.y
   #clock = [|shape    cx cy radius x y stroke fill|
-             "circle" 150 150 100     0 0 0     "0B79CE"
+             "circle" 150 150 100  0 0 0     "0B79CE"
              #clock-hands.type center center t x y #clock-hands.stroke t]
 
 Do the draw 
