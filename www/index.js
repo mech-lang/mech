@@ -113,49 +113,44 @@ let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
 code.setAttribute("spellcheck", "false");
-code.innerHTML =  `# Bouncing Balls
+code.innerHTML =  `# Clock
 
-Define the environment
-  #html/event/click = [|x y|]
-  range = 1:5
-  x = range * 30
-  v = x * 0
-  #ball = [|x y vx vy| x x v v]
-  #system/timer = [resolution: 15, tick: 0]
-  #gravity = 1
-  #html/canvas = [height: 500 width: 500]
+Create a timer that ticks every second. This is the time source.
+  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
 
-## Update condition
+Set up a clock hands table. Degrees is the deflection from noon.
+x and y are the coordinates of the end point of the clock hand.
+  #clock-hands = [|degrees x y type    stroke |
+                   0       0 0 "line"  "023963"
+                   0       0 0 "line"  "023963"
+                   0       0 0 "line"  "ce0b46"]
 
-Update the block positions on each tick of the timer
-  ~ #system/timer.tick
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
+## Update the clock
 
-## Boundary Condition
+Calculate clock hand angles every time the clock ticks.
+  ~ #system/timer.tick 
+  time = [#system/timer.hours; #system/timer.minutes; #system/timer.seconds]
+  multiplier = [30; 6; 6]
+  #clock-hands.degrees := multiplier * time
+  
+Calculate x and y endpoints
+  angle = #clock-hands.degrees
+  #clock-hands.x := 150 + (75 * math/sin(degrees: angle))
+  #clock-hands.y := 150 - (75 * math/cos(degrees: angle))
+  
+## Drawing
 
-Keep the balls within the canvas height
-  ~ #system/timer.tick
-  iy = #ball.y > #html/canvas.height
-  #ball.y{iy} := #html/canvas.height
-  #ball.vy{iy} := -#ball.vy * 0.80
+Set up clock drawing elements
+  t = [0;0;0]
+  center = [150; 150; 150]
+  x = #clock-hands.x
+  y = #clock-hands.y
+  #clock = [|shape    cx cy radius x y stroke fill|
+             "circle" 150 150 100     0 0 0     "0B79CE"
+             #clock-hands.type center center t x y #clock-hands.stroke t]
 
-Keep the balls within the canvas width
-  ~ #system/timer.tick
-  ix = #ball.x > #html/canvas.width
-  ixx = #ball.x < 0
-  #ball.x{ix} := #html/canvas.width
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 0.80
-
-## Create More Balls
-
-Create ball at click point
-  ~ #html/event/click.x
-  x = #html/event/click.x
-  y = #html/event/click.y
-  #ball += [x: x, y: y, vx: 30, vy: 0]`;
+Do the draw 
+  #html/canvas = [width: 300 height: 300 contains: [#clock]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
@@ -192,9 +187,12 @@ app.appendChild(editor_container);
 document.body.appendChild(app);
 
 // ## Event handlers
-
 function system_timer() {
+  var d = new Date();
   mech_core.queue_change("system/timer",1,2,time);
+  mech_core.queue_change("system/timer",1,3,d.getHours() - 12);
+  mech_core.queue_change("system/timer",1,4,d.getMinutes());
+  mech_core.queue_change("system/timer",1,5,d.getSeconds());
   mech_core.process_transaction();
   time = time + 1;
   render();
@@ -220,6 +218,7 @@ document.getElementById("compile").addEventListener("click", function(click) {
 });
 
 document.getElementById("view core").addEventListener("click", function() {
+  mech_core.display_core();
   mech_core.list_global_tables();
 });
 
