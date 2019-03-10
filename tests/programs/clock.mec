@@ -5,10 +5,10 @@ Create a timer that ticks every second. This is the time source.
 
 Set up a clock hands table. Degrees is the deflection from noon.
 x and y are the coordinates of the end point of the clock hand.
-  #clock-hands = [|degrees length stroke    x y |
-                   0       30     "#023963" 0 0
-                   0       40     "#023963" 0 0
-                   0       40     "#ce0b46" 0 0 ]
+  #clock-hands = [|degrees x y type    stroke |
+                   0       0 0 "line"  "023963"
+                   0       0 0 "line"  "023963"
+                   0       0 0 "line"  "ce0b46"]
 
 ## Update the clock
 
@@ -20,5 +20,19 @@ Calculate clock hand angles every time the clock ticks.
   
 Calculate x and y endpoints
   angle = #clock-hands.degrees
-  #clock-hands.x := 50 + (30 * math/sin(degrees: angle))
-  #clock-hands.y := 50 - (30 * math/cos(degrees: angle))
+  #clock-hands.x := 150 + (75 * math/sin(degrees: angle))
+  #clock-hands.y := 150 - (75 * math/cos(degrees: angle))
+  
+## Drawing
+
+Set up clock drawing elements
+  t = [0;0;0]
+  center = [150; 150; 150]
+  x = #clock-hands.x
+  y = #clock-hands.y
+  #clock = [|shape    cx cy radius x y stroke fill|
+             "circle" 150 150 100     0 0 0     "0B79CE"
+             #clock-hands.type center center t x y #clock-hands.stroke t]
+
+Do the draw 
+  #html/canvas = [width: 300 height: 300 contains: [#clock]]
