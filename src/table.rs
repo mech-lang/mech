@@ -45,6 +45,7 @@ impl Value {
   pub fn as_quantity(&self) -> Option<Quantity> {
     match self {
       Value::Number(n) => Some(*n),
+      Value::Empty => Some(0.to_quantity()),
       _ => None,
     }
   }
