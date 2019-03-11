@@ -142,6 +142,38 @@ impl Core {
       output
   }
 
+  pub fn add_application(&self) -> Result<(), JsValue> {
+    let table_id = Hasher::hash_str("app/main");
+    match self.core.store.get_table(table_id) {
+      Some(app_table) => {
+
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
+        let body = document.body().expect("document should have a body");
+        let drawing_area = document.get_element_by_id("drawing").unwrap();
+        let mut app = document.create_element("div")?;
+        let contents_id = app_table.data[1][0].as_u64().unwrap();
+        let contents_table = self.core.store.get_table(contents_id).unwrap();
+        for i in 0..contents_table.rows {
+          let tag = &contents_table.data[0][i as usize].as_string().unwrap();
+          let value = &contents_table.data[1][i as usize].as_string().unwrap();
+          let mut element = document.create_element(tag)?;
+          element.set_inner_html(value);
+          app.append_child(&element)?;
+        }
+        drawing_area.append_child(&app)?;
+      }
+      _ => (),
+    }
+
+    Ok(())
+  }
+
+  fn draw_contents(&self) -> Result<(), JsValue> {
+      Ok(())
+
+  }
+
   pub fn add_canvas(&self) -> Result<(), JsValue> {
     let table_id = Hasher::hash_str("html/canvas");
     match self.core.store.get_table(table_id) {
