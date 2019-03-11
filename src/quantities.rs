@@ -93,8 +93,11 @@ impl ToQuantity for f64 {
     } else {
       let exp_log = 2f64.powi(exponent as i32).log10();
       let real_exponent = exp_log.floor() as i64 + 1;
-      let real_mantissa = (sign as f64 * ((mantissa as f64) * 10f64.powf(exp_log.fract()))) as i64;
+      let real_mantissa = (((mantissa as f64) * 10f64.powf(exp_log.fract()))) as i64;
       let mut result = real_mantissa.to_quantity();
+      if sign < 0 {
+          result = result.negate();
+      }
       let cur = result.range();
       result.set_range(cur + real_exponent);
       result
@@ -242,6 +245,9 @@ impl QuantityMath for Quantity {
             } else {
                 (other_range, my_range, other_mant, my_mant)
             };
+            if a_range - b_range > 17 {
+                return make_quantity(a_mant,a_range,0)
+            }
             let range_delta = (a_range - b_range) as u64;
             let (neue, actual_delta) = decrease_range(a_mant, range_delta);
             if actual_delta == range_delta {
