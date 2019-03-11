@@ -31,30 +31,9 @@ fn compile_test(input: String, test: Value) {
 
 
 fn main() {
-  let input = String::from("# Clock
-
-Create a timer that ticks every second This is the time source
-  #system/timer = [resolution: 1000, tick: 0]
-
-Set up a clock hands table Degrees is the deflection from noon
-x and y are the coordinates of the end point of the clock hand
-  #clock-hands = [|degrees length stroke     x y |
-                   0       30     \"023963\" 0 0
-                   0       40     \"023963\" 0 0
-                   0       40     \"ce0b46\" 0 0 ]
-
-## Update the clock
-
-Calculate clock hand angles every time the clock ticks
-  ~ #system/timer.tick 
-  #clock-hands.degrees{1} := 30 * #system/timer.hours
-  #clock-hands.degrees{2} := 6 * #system/timer.minutes
-  #clock-hands.degrees{3} := 6 * #system/timer.seconds
-
-Calculate x and y endpoints
-  ~ #clock-hands.degrees
-  #clock-hands.x := 50 + (30 * math/sin(degrees: #clock-hands.degrees))
-  #clock-hands.y := 50 - (30 * math/cos(degrees: #clock-hands.degrees))");
+  let input = String::from(r#"
+block
+  #a = math/sin(degrees: 210)"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -64,13 +43,12 @@ Calculate x and y endpoints
   let mut core = Core::new(1_000_000, 250);
   compiler.compile_string(input.clone());
   core.register_blocks(compiler.blocks.clone());
-  println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.syntax_tree);
-  //println!("{:?}", core.runtime);
+  //println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime);
-
   
   /*
   let now = SystemTime::now();
