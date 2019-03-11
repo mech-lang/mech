@@ -10,7 +10,7 @@ Set up a clock hands table. Degrees is the deflection from noon.
                    0       0 0 "#ce0b46" ]
 
 Calculate clock hand angles every time the clock ticks.
-  #clock-hands.degrees := [30 6 6]' * [#system/timer.hours{1, 3:5}]'
+  #clock-hands.degrees := [30 6 6]' * [#system/timer{1, 3:5}]'
   
 Calculate x and y endpoints
   degrees = #clock-hands.degrees
