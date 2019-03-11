@@ -528,6 +528,10 @@ test_mech!(function_math_sin_degrees,r#"
 block
   #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
 
+test_mech!(function_math_sin_210,r#"
+block
+  #test = math/sin(degrees: 210)"#, Value::Number(make_quantity(-50000000000000,-14,0)));
+
 test_mech!(function_math_cos_degrees,r#"
 block
   #test = math/cos(degrees: 0)"#, Value::Number(make_quantity(100000000000000,-14,0)));
