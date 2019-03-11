@@ -113,44 +113,16 @@ let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
 code.setAttribute("spellcheck", "false");
-code.innerHTML =  `# Clock
+code.innerHTML =  `# Editor
 
-Create a timer that ticks every second. This is the time source.
-  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+This program defines the online editor for Mech.
 
-Set up a clock hands table. Degrees is the deflection from noon.
-x and y are the coordinates of the end point of the clock hand.
-  #clock-hands = [|degrees x y type    stroke |
-                   0       0 0 "line"  "023963"
-                   0       0 0 "line"  "023963"
-                   0       0 0 "line"  "ce0b46"]
-
-## Update the clock
-
-Calculate clock hand angles every time the clock ticks.
-  ~ #system/timer.tick 
-  time = [#system/timer.hours; #system/timer.minutes; #system/timer.seconds]
-  multiplier = [30; 6; 6]
-  #clock-hands.degrees := multiplier * time
-  
-Calculate x and y endpoints
-  angle = #clock-hands.degrees
-  #clock-hands.x := 150 + (75 * math/sin(degrees: angle))
-  #clock-hands.y := 150 - (75 * math/cos(degrees: angle))
-  
-## Drawing
-
-Set up clock drawing elements
-  t = [0;0;0]
-  center = [150; 150; 150]
-  x = #clock-hands.x
-  y = #clock-hands.y
-  #clock = [|shape    cx cy radius x y stroke fill|
-             "circle" 150 150 100  0 0 0     "0B79CE"
-             #clock-hands.type center center t x y #clock-hands.stroke t]
-
-Do the draw 
-  #html/canvas = [width: 300 height: 300 contains: [#clock]]`;
+block
+  container = [|type text| 
+                "h1"   "A Mech Webpage"
+                "div"  "Hello World"]
+  #app/main = [|direction contains| 
+               "column"  [container]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
@@ -206,6 +178,8 @@ document.getElementById("compile").addEventListener("click", function(click) {
   console.log(click);
   let code = document.getElementById("code");
   mech_core.compile_code(code.value);
+  mech_core.add_application();
+  /*
   mech_core.add_canvas();
   document.getElementById("drawing canvas").addEventListener("click", function(click) {
     console.log(click.layerX, click.layerY);
@@ -213,7 +187,7 @@ document.getElementById("compile").addEventListener("click", function(click) {
     mech_core.queue_change("html/event/click",1,2,click.layerY);
     mech_core.process_transaction();
     render();
-  });
+  });*/
   //render();
 });
 
