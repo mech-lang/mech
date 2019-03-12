@@ -156,10 +156,26 @@ impl Core {
         let contents_table = self.core.store.get_table(contents_id).unwrap();
         for i in 0..contents_table.rows {
           let tag = &contents_table.data[0][i as usize].as_string().unwrap();
-          let value = &contents_table.data[1][i as usize].as_string().unwrap();
-          let mut element = document.create_element(tag)?;
-          element.set_inner_html(value);
-          app.append_child(&element)?;
+          match tag.as_ref() {
+            "div" => {
+              let value = &contents_table.data[1][i as usize].as_string().unwrap();
+              let mut div = document.create_element(tag)?;
+              div.set_inner_html(value);
+              div.set_attribute("class","well");
+              app.append_child(&div)?;
+            },
+            "img" => {
+              let value = &contents_table.data[1][i as usize].as_string().unwrap();
+              let mut img = web_sys::HtmlImageElement::new().unwrap();
+              img.set_src(value);
+              img.set_attribute("class","logo");
+              app.append_child(&img)?;
+            },
+            _ => (),
+          }
+          
+          
+
         }
         drawing_area.append_child(&app)?;
       }
