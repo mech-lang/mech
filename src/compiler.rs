@@ -1308,7 +1308,7 @@ impl Compiler {
         for node in result {
           match node {
             Node::String{text} => text_node.push_str(&text),
-            Node::Token{token: Token::Space, ..} => text_node.push(' '),
+            Node::Token{token, byte} => text_node.push_str(&format!("{}",byte_to_char(byte).unwrap())),
             Node::Constant{value} => text_node.push_str(&format!("{}", value.to_float())),
             _ => (),
           }
@@ -1513,6 +1513,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     42 => Some('*'),
     43 => Some('+'),
     45 => Some('-'),
+    46 => Some('.'),
     47 => Some('/'),
     48 => Some('0'),
     49 => Some('1'),
@@ -1524,6 +1525,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     55 => Some('7'),
     56 => Some('8'),
     57 => Some('9'),
+    58 => Some(':'),
     60 => Some('<'),
     61 => Some('='),
     62 => Some('>'),
