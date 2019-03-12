@@ -113,16 +113,17 @@ let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
 code.setAttribute("spellcheck", "false");
-code.innerHTML =  `# Editor
-
-This program defines the online editor for Mech.
-
+code.innerHTML =  `
 block
-  container = [|type text| 
-                "h1"   "A Mech Webpage"
-                "div"  "Hello World"]
+  wrapper = [|type class container|
+              "div" "black-bar" " "
+              "div" "navbar" " "
+              "div" "well" [content]]
+  content = [|type class contains| 
+              "img" "none" "http://mech-lang.org/img/logo.png"
+              "div" "none" "Mech is a language for developing data driven reactive systems"]
   #app/main = [|direction contains| 
-               "column"  [container]]`;
+                "column"  [wrapper]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
@@ -162,7 +163,7 @@ document.body.appendChild(app);
 function system_timer() {
   var d = new Date();
   mech_core.queue_change("system/timer",1,2,time);
-  mech_core.queue_change("system/timer",1,3,d.getHours() - 12);
+  mech_core.queue_change("system/timer",1,3,d.getHours() % 12);
   mech_core.queue_change("system/timer",1,4,d.getMinutes());
   mech_core.queue_change("system/timer",1,5,d.getSeconds());
   mech_core.process_transaction();
