@@ -154,29 +154,7 @@ impl Core {
         let mut app = document.create_element("div")?;
         let contents_id = app_table.data[1][0].as_u64().unwrap();
         let contents_table = self.core.store.get_table(contents_id).unwrap();
-        for i in 0..contents_table.rows {
-          let tag = &contents_table.data[0][i as usize].as_string().unwrap();
-          match tag.as_ref() {
-            "div" => {
-              let value = &contents_table.data[1][i as usize].as_string().unwrap();
-              let mut div = document.create_element(tag)?;
-              div.set_inner_html(value);
-              div.set_attribute("class","well");
-              app.append_child(&div)?;
-            },
-            "img" => {
-              let value = &contents_table.data[1][i as usize].as_string().unwrap();
-              let mut img = web_sys::HtmlImageElement::new().unwrap();
-              img.set_src(value);
-              img.set_attribute("class","logo");
-              app.append_child(&img)?;
-            },
-            _ => (),
-          }
-          
-          
-
-        }
+        self.draw_contents(&contents_table, &mut app);
         drawing_area.append_child(&app)?;
       }
       _ => (),
@@ -185,9 +163,38 @@ impl Core {
     Ok(())
   }
 
-  fn draw_contents(&self) -> Result<(), JsValue> {
-      Ok(())
-
+  fn draw_contents(&self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
+    for row in 0..table.rows as usize {
+      let tag = &table.data[0][row].as_string().unwrap();
+      match tag.as_ref() {
+        "div" => {
+          let window = web_sys::window().expect("no global `window` exists");
+          let document = window.document().expect("should have a document on window");
+          let mut div = document.create_element("div")?;
+          let class = &table.data[1][row].as_string().unwrap();
+          div.set_attribute("class",class);
+          match &table.data[2][row] {
+            Value::String(value) => div.set_inner_html(&value),
+            Value::Reference(reference) => {
+              let referenced_table = self.core.store.get_table(*reference).unwrap();
+              self.draw_contents(&referenced_table, &mut div);
+            }
+            _ => (),
+          };
+          container.append_child(&div)?;
+        },
+        "img" => {
+          let class = &table.data[1][row].as_string().unwrap();
+          let value = &table.data[2][row].as_string().unwrap();
+          let mut img = web_sys::HtmlImageElement::new().unwrap();
+          img.set_src(value);
+          img.set_attribute("class","logo");
+          container.append_child(&img)?;
+        },
+        _ => (),
+      }
+    }
+    Ok(())
   }
 
   pub fn add_canvas(&self) -> Result<(), JsValue> {
@@ -278,9 +285,13 @@ impl Core {
     let body = document.body().expect("document should have a body");
     let table_list_div = document.create_element("div")?;
     let table_list = document.create_element("ul")?;
-    for (table_name, table) in self.core.store.tables.map.iter() {
+    for (table_id, table) in self.core.store.tables.map.iter() {
       let table_list_item = document.create_element("li")?;
-      table_list_item.set_inner_html(self.core.store.names.get(table_name).unwrap());
+      let table_name = match self.core.store.names.get(table_id) {
+        Some(name) => name,
+        None => "",
+      };
+      table_list_item.set_inner_html(table_name);
       table_list.append_child(&table_list_item)?;
     }
     table_list_div.append_child(&table_list)?;
