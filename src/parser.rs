@@ -353,7 +353,7 @@ named!(symbol<CompleteStr, Node>, do_parse!(
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number | punctuation | symbol | dash | hashtag)) >>
+  word: many0!(alt!(word | space | number | punctuation | symbol | dash | hashtag)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
