@@ -56,6 +56,8 @@ block
        _ 7]
   #test = stat/sum(column: x{:,1})",Value::from_i64(5));
 
+test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i64(123));
+
 // ## Table
 
 compile_string!(table, "#table");
