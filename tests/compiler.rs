@@ -462,6 +462,10 @@ test_mech!(string_table,r#"
 block
   #test = ["Hello" "World"]"#, Value::from_str("Hello"));
 
+test_mech!(string_empty,r#"
+block
+  #test = ["" "World"]"#, Value::from_str(""));
+
 test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::from_str("h1"));
 
 // ## Nesting
