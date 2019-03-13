@@ -231,7 +231,6 @@ impl Core {
 
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
     for i in 0..elements_table.rows as usize {
-      context.begin_path();
       match elements_table.data[0][i as usize] {
         Value::String(ref shape) => {
           match shape.as_ref() {
@@ -239,6 +238,7 @@ impl Core {
               let x = elements_table.data[1][i].as_float().unwrap();
               let y = elements_table.data[2][i].as_float().unwrap();
               let radius = elements_table.data[3][i].as_float().unwrap();
+              context.begin_path();
               context.arc(x, y, radius, 0.0, 2.0 * 3.14);
               context.set_fill_style(&JsValue::from_str("#0B79CE"));
               context.fill();  
@@ -248,7 +248,6 @@ impl Core {
               let y1 = elements_table.data[2][i].as_float().unwrap();
               let x2 = elements_table.data[4][i].as_float().unwrap();
               let y2 = elements_table.data[5][i].as_float().unwrap();
-              
               context.begin_path();
               context.move_to(x1, y1);
               context.line_to(x2, y2);
@@ -258,10 +257,15 @@ impl Core {
             "image" => {
               let mut img = web_sys::HtmlImageElement::new().unwrap();
               let image_source = elements_table.data[7][i].as_string().unwrap();
+              let rotation = elements_table.data[3][i].as_float().unwrap();
               let x = elements_table.data[1][i].as_float().unwrap();
               let y = elements_table.data[2][i].as_float().unwrap();
               img.set_src(&image_source.to_owned());
-              context.draw_image_with_html_image_element(&img, x, y);
+              context.save();
+              context.translate(x, y);
+              context.rotate(rotation * 3.141592654 / 180.0);
+              context.draw_image_with_html_image_element(&img, 0.0, 0.0);
+              context.restore();
             },
             _ => (),
           }
