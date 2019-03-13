@@ -22,6 +22,7 @@ pub enum Token {
   Space,
   Plus,
   Dash,
+  Underscore,
   Asterisk,
   Slash,
   Equal,

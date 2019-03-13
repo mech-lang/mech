@@ -62,6 +62,7 @@ pub enum Node {
   And,
   Or,
   SelectAll,
+  Empty,
   Null,
 }
 
@@ -119,6 +120,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectAll => {print!("SelectAll\n"); None},
     Node::LessThan => {print!("LessThan\n"); None},
     Node::GreaterThan => {print!("GreaterThan\n"); None},
+    Node::Empty => {print!("Empty\n"); None},
     Node::Null => {print!("Null\n"); None},
     _ => {print!("Unhandled Node"); None},
   };  
@@ -828,6 +830,11 @@ impl Compiler {
           constraints.append(&mut result);
         }
       },
+      Node::Empty => {
+        let table = Hasher::hash_str("Empty");
+        constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
+        constraints.push(Constraint::Empty{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1)});
+      },
       Node::Identifier{name, id} => {
         constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
@@ -1006,6 +1013,9 @@ impl Compiler {
           }
         }
         compiled.push(Node::Column{children});
+      },
+      parser::Node::Empty => {
+        compiled.push(Node::Empty);
       },
       parser::Node::Binding{children} => {
         let result = self.compile_nodes(children);

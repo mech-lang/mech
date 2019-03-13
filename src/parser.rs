@@ -107,6 +107,7 @@ pub enum Node {
   GreaterThan,
   And,
   Or,
+  Empty,
   Null,
 }
 
@@ -320,6 +321,7 @@ leaf!{exclamation, "!", Token::Exclamation}
 leaf!{question, "?", Token::Question}
 leaf!{plus, "+", Token::Plus}
 leaf!{dash, "-", Token::Dash}
+leaf!{underscore, "_", Token::Underscore}
 leaf!{asterisk, "*", Token::Asterisk}
 leaf!{slash, "/", Token::Slash}
 leaf!{caret, "^", Token::Caret}
@@ -388,6 +390,10 @@ named!(constant<CompleteStr, Node>, do_parse!(
   constant: alt!(string | quantity) >>
   (Node::Constant{children: vec![constant]})));
 
+named!(empty<CompleteStr, Node>, do_parse!(
+  underscore >>
+  (Node::Empty)));
+
 // ## Blocks
 
 // ### Data
@@ -441,7 +447,7 @@ bound: alt!(data | identifier | constant | expression) >> many0!(space) >> opt!(
 (Node::Binding { children: vec![binding_id, bound] })));
 
 named!(table_column<CompleteStr, Node>, do_parse!(
-  many0!(alt!(space | tab)) >> item: alt!(data | expression | quantity) >> opt!(comma) >> opt!(alt!(space | tab)) >>
+  many0!(alt!(space | tab)) >> item: alt!(empty | data | expression | quantity) >> opt!(comma) >> opt!(alt!(space | tab)) >>
   (Node::Column { children: vec![item] })));
 
 named!(table_row<CompleteStr, Node>,
