@@ -72,9 +72,11 @@ impl Value {
     }
   }
 
-  pub fn as_string(&self) -> Option<&String> {
+  pub fn as_string(&self) -> Option<String> {
     match self {
-      Value::String(n) => Some(n),
+      Value::String(n) => Some(n.to_string()),
+      Value::Number(q) => Some(format!("{:?}",q.to_float())),
+      Value::Reference(r) => Some(format!("{:?}", r)),
       _ => None,
     }
   }
