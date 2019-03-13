@@ -1,0 +1,30 @@
+# Mech Website
+
+This is where the main website structure is defined
+  wrapper = [|type  class         container|
+              "div" "black-bar"   ""
+              "div" "navbar"      ""
+              "div" "container"   [content]
+              "div" "clock-frame" [#drawing]]
+  content = [|type  class  contains| 
+              "img" "logo" "http://mech-lang.org/img/logo.png"
+              "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
+  #app/main = [|direction contains| 
+                "column"  [wrapper]]
+                
+## Robot Arm Drawing
+
+Create a timer that ticks every second. This is the time source.
+  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+  
+## Drawing
+
+Set up the robot arm linkages
+  #robot-arm = [|shape   cx  cy  radius x y stroke fill|
+                 "image" 610 130 75     0 0 ""     "http://mech-lang.org/img/robotarm/link2.png"
+                 "image" 210 300 -45    0 0 ""     "http://mech-lang.org/img/robotarm/link1.png"
+                 "image" 300 375 0      0 0 ""     "http://mech-lang.org/img/robotarm/link0.png"
+                 "image" 970 400 140    0 0 ""     "http://mech-lang.org/img/robotarm/gripper.png"]
+
+Do the draw 
+  #drawing = [type: "canvas" class: "" width: 1500 height: 750 contains: [#robot-arm]]
