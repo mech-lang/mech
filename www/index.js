@@ -158,9 +158,9 @@ Set up clock drawing elements
   center = [150; 150; 150]
   x = #clock-hands.x
   y = #clock-hands.y
-  #clock = [|shape    cx cy radius x y stroke fill|
-             "image" 300 225 0 0 0 "" "http://mech-lang.org/img/robotarm/link0.png"
-             "image" 390 0 0 0 0 "" "http://mech-lang.org/img/robotarm/link1.png"]
+  #clock = [|shape    cx  cy  radius x y stroke fill|
+             "image"  210 300 -45 0 0 "" "http://mech-lang.org/img/robotarm/link1.png"
+             "image"  300 375 0 0 0 "" "http://mech-lang.org/img/robotarm/link0.png"]
 
 Do the draw 
   #html/canvas = [type: "canvas" class: "" width: 1500 height: 750 contains: [#clock]]`;
@@ -230,7 +230,7 @@ document.getElementById("compile").addEventListener("click", function(click) {
     mech_core.process_transaction();
     render();
   });*/
-  //render();
+  render();
 });
 
 document.getElementById("view core").addEventListener("click", function() {
