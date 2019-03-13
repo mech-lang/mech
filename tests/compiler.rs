@@ -49,6 +49,13 @@ compile_string!(empty, "");
 
 compile_string!(constant_digit, "1");
 
+test_mech!(constant_empty, "
+block
+  x = [1 2
+       4 _
+       _ 7]
+  #test = stat/sum(column: x{:,1})",Value::from_i64(5));
+
 // ## Table
 
 compile_string!(table, "#table");
@@ -544,3 +551,10 @@ test_mech!(function_stat_sum,r#"
 block
   x = [1;2;3;4;5]
   #test = stat/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
+
+test_mech!(function_add_functions,r#"
+block
+  x = [1 2
+       4 _
+       _ 7]
+  #test = stat/sum(column: x{:,1}) + stat/sum(column: x{:,2})"#, Value::from_i64(14));

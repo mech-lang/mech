@@ -692,17 +692,20 @@ impl Compiler {
         let store_table = self.table;
         self.row = 1;
         self.column = 1;
+        self.expression += 1;
         self.table = Hasher::hash_string(format!("MathExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut result = self.compile_constraints(children);
         // If the math expression is just a constant, we don't need a new internal table for it.
         //constraints.push(Constraint::Reference{table: self.table, rows: vec![0], columns: vec![1], destination: (store_table, store_row as u64, store_col as u64)});
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
         constraints.append(&mut result);
         self.row = store_row;
         self.column = store_col;
         self.table = store_table;
       },
       Node::Function{name, children} => {
+        self.expression += 1;
+        self.table = Hasher::hash_string(format!("Function{:?},{:?}-{:?}", self.section, self.block, self.expression));
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});        
         let operation = match name.as_ref() {
           "+" => Function::Add,
           "-" => Function::Subtract,
