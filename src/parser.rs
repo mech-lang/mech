@@ -353,7 +353,7 @@ named!(symbol<CompleteStr, Node>, do_parse!(
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
-  word: many0!(alt!(word | space | number | punctuation | symbol | dash | hashtag)) >>
+  word: many1!(alt!(word | space | number | punctuation | symbol | dash | hashtag)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
@@ -611,8 +611,8 @@ named!(range<CompleteStr, Node>, do_parse!(
   (Node::Range { children: vec![start,end] })));
 
 named!(string<CompleteStr, Node>, do_parse!(
-  quote >> text: text >> quote >>
-  (Node::String { children: vec![text] })));
+  quote >> text: many0!(text) >> quote >>
+  (Node::String { children: text })));
 
 named!(expression<CompleteStr, Node>, do_parse!(
   expression: alt!(string | range | filter_expression | logic_expression | inline_table | anonymous_table | math_expression) >>

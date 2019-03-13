@@ -1403,7 +1403,11 @@ impl Compiler {
       },
       parser::Node::String{children} => {
         let mut result = self.compile_nodes(children);
-        let string = result[0].clone();
+        let string = if result.len() > 0 {
+          result[0].clone()
+        } else {
+          Node::String{text: String::new()}
+        };
         compiled.push(string);
       },
       parser::Node::ParentheticalExpression{children} => {
