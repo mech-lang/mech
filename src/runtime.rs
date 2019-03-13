@@ -342,6 +342,21 @@ impl Block {
             _ => (),
           }
         },
+        Constraint::Empty{table, row, column} => {
+          let table_id = match table {
+            TableId::Local(id) => id,
+            _ => 0,
+          };
+          match self.memory.map.entry(table_id) {
+            Entry::Occupied(mut o) => {
+              let table_ref = o.get_mut();
+              table_ref.set_cell(&row, &column, Value::Empty);
+            },
+            Entry::Vacant(v) => {    
+            },
+          };
+          self.updated = true;
+        },
         Constraint::Constant{table, row, column, value} => {
           let table_id = match table {
             TableId::Local(id) => id,
@@ -403,7 +418,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      //println!("Step: {:?}", step);
+      println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -1233,6 +1248,7 @@ pub enum Constraint {
   // Output Constraints
   Insert {from: (TableId, Option<Parameter>, Option<Parameter>), to: (TableId, Option<Parameter>, Option<Parameter>)},
   Append {from_table: TableId, to_table: TableId},
+  Empty{table: TableId, row: Index, column: Index},
   Null,
 }
 
@@ -1256,6 +1272,7 @@ impl fmt::Debug for Constraint {
       Constraint::Append{from_table, to_table} => write!(f, "Append({:?} -> {:?})", from_table, to_table),
       Constraint::TableColumn{table, column_ix, column_alias}  => write!(f, "TableColumn(#{:#x}({:#x}) -> {:#x})",  table, column_ix, column_alias),
       Constraint::Range{table, start, end} => write!(f, "Range({:?} -> {:?} to {:?})", table, start, end),
+      Constraint::Empty{table, row, column} => write!(f, "Empty -> #{:?} {:?} {:?}", table, row, column),
       Constraint::Null => write!(f, "Null"),
     }
   }
