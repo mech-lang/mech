@@ -159,17 +159,16 @@ impl Core {
       }
       _ => (),
     }
-
     Ok(())
   }
 
   fn draw_contents(&self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
     for row in 0..table.rows as usize {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
         "div" => {
-          let window = web_sys::window().expect("no global `window` exists");
-          let document = window.document().expect("should have a document on window");
           let mut div = document.create_element("div")?;
           let class = &table.data[1][row].as_string().unwrap();
           div.set_attribute("class",class);
@@ -187,9 +186,25 @@ impl Core {
           let class = &table.data[1][row].as_string().unwrap();
           let value = &table.data[2][row].as_string().unwrap();
           let mut img = web_sys::HtmlImageElement::new().unwrap();
+          img.set_attribute("class", class);
           img.set_src(value);
-          img.set_attribute("class","logo");
           container.append_child(&img)?;
+        },
+        "canvas" => { 
+          let canvas = document.create_element("canvas")?;
+          let elements_id_str = &table.data[4][row].as_string().unwrap();
+          let elements_id = &table.data[4][row].as_u64().unwrap();
+          canvas.set_attribute("id","drawing canvas");
+          canvas.set_attribute("elements",elements_id_str);
+          canvas.set_attribute("width", &format!("{}", table.data[2][row].as_float().unwrap()));
+          canvas.set_attribute("height", &format!("{}", table.data[3][row].as_float().unwrap()));
+          canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
+          let canvas: web_sys::HtmlCanvasElement = canvas
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .map_err(|_| ())
+                .unwrap();
+          self.render_canvas(&canvas);
+          container.append_child(&canvas)?;
         },
         _ => (),
       }
@@ -197,38 +212,8 @@ impl Core {
     Ok(())
   }
 
-  pub fn add_canvas(&self) -> Result<(), JsValue> {
-    let table_id = Hasher::hash_str("html/canvas");
-    match self.core.store.get_table(table_id) {
-      Some(table) => {
-        let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("should have a document on window");
-        let body = document.body().expect("document should have a body");
-        let drawing_area = document.get_element_by_id("drawing").unwrap();
-        let canvas = document.create_element("canvas")?;
-        canvas.set_attribute("id","drawing canvas");
-        canvas.set_attribute("width", &format!("{}", table.data[1][0].as_float().unwrap()));
-        canvas.set_attribute("height", &format!("{}", table.data[0][0].as_float().unwrap()));
-        canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
-        drawing_area.append_child(&canvas)?;
-        self.render_balls();
-      }
-      _ => (),
-    }
+  pub fn render_canvas(&self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
 
-    Ok(())
-  }
-
-  pub fn render_balls(&self) -> Result<(), JsValue> {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let body = document.body().expect("document should have a body");
-
-    let canvas = document.get_element_by_id("drawing canvas").unwrap();
-    let canvas: web_sys::HtmlCanvasElement = canvas
-                .dyn_into::<web_sys::HtmlCanvasElement>()
-                .map_err(|_| ())
-                .unwrap();
     let context = canvas
         .get_context("2d")
         .unwrap()
@@ -236,37 +221,47 @@ impl Core {
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
     let radius = 10.0;
-
     let table_id = Hasher::hash_str("html/canvas");
     let table = self.core.store.get_table(table_id).unwrap();
-    let elements_table_id = table.data[2][0].as_u64().unwrap();
+
+    // Get the elements table for this canvas
+    let elements = canvas.get_attribute("elements").unwrap();
+    let elements_table_id: u64 = elements.parse::<u64>().unwrap();
     let elements_table = self.core.store.get_table(elements_table_id).unwrap();
 
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for i in 0..elements_table.rows {
+    for i in 0..elements_table.rows as usize {
       context.begin_path();
       match elements_table.data[0][i as usize] {
         Value::String(ref shape) => {
           match shape.as_ref() {
             "circle" => {
-              let x = elements_table.data[1][i as usize].as_float().unwrap();
-              let y = elements_table.data[2][i as usize].as_float().unwrap();
-              let radius = elements_table.data[3][i as usize].as_float().unwrap();
+              let x = elements_table.data[1][i].as_float().unwrap();
+              let y = elements_table.data[2][i].as_float().unwrap();
+              let radius = elements_table.data[3][i].as_float().unwrap();
               context.arc(x, y, radius, 0.0, 2.0 * 3.14);
               context.set_fill_style(&JsValue::from_str("#0B79CE"));
               context.fill();  
             },
             "line" => {
-              let x1 = elements_table.data[1][i as usize].as_float().unwrap();
-              let y1 = elements_table.data[2][i as usize].as_float().unwrap();
-              let x2 = elements_table.data[4][i as usize].as_float().unwrap();
-              let y2 = elements_table.data[5][i as usize].as_float().unwrap();
+              let x1 = elements_table.data[1][i].as_float().unwrap();
+              let y1 = elements_table.data[2][i].as_float().unwrap();
+              let x2 = elements_table.data[4][i].as_float().unwrap();
+              let y2 = elements_table.data[5][i].as_float().unwrap();
               
               context.begin_path();
               context.move_to(x1, y1);
               context.line_to(x2, y2);
               context.close_path();
               context.stroke();
+            },
+            "image" => {
+              let mut img = web_sys::HtmlImageElement::new().unwrap();
+              let image_source = elements_table.data[7][i].as_string().unwrap();
+              let x = elements_table.data[1][i].as_float().unwrap();
+              let y = elements_table.data[2][i].as_float().unwrap();
+              img.set_src(&image_source.to_owned());
+              context.draw_image_with_html_image_element(&img, x, y);
             },
             _ => (),
           }
