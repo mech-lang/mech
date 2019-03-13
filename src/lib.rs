@@ -220,9 +220,6 @@ impl Core {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-    let radius = 10.0;
-    let table_id = Hasher::hash_str("html/canvas");
-    let table = self.core.store.get_table(table_id).unwrap();
 
     // Get the elements table for this canvas
     let elements = canvas.get_attribute("elements").unwrap();
