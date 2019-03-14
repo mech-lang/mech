@@ -418,7 +418,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner) {
     for step in &self.plan {
-      println!("Step: {:?}", step);
+      //println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
