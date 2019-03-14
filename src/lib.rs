@@ -84,12 +84,12 @@ impl Core {
     log!("{:?}", self.core.runtime);
   }
 
-  pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: u32) {
+  pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
     let table_id = Hasher::hash_string(table);
     let change = Change::Set{table: table_id, 
                              row: Index::Index(row as u64), 
                              column: Index::Index(column as u64),
-                             value: Value::from_u64(value as u64),
+                             value: Value::from_i64(value as i64),
                             };
     self.changes.push(change);
   }
