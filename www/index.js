@@ -113,57 +113,61 @@ let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
 code.setAttribute("spellcheck", "false");
-code.innerHTML =  `
-block
-  wrapper = [|type class container|
-              "div" "black-bar" ""
-              "div" "navbar" ""
-              "div" "container" [content]
-              "div" "clock-frame" [#html/canvas]]
-  content = [|type class contains| 
+code.innerHTML =  `# Mech Website
+
+This is where the main website structure is defined
+  wrapper = [|type  class         container|
+              "div" "black-bar"   _
+              "div" "navbar"      _
+              "div" "container"   [content]
+              "div" "clock-frame" [#drawing]]
+  content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
   #app/main = [|direction contains| 
                 "column"  [wrapper]]
                 
-## Clock
+## Robot Arm Drawing
 
 Create a timer that ticks every second. This is the time source.
-  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
-
-Set up a clock hands table. Degrees is the deflection from noon.
-x and y are the coordinates of the end point of the clock hand.
-  #clock-hands = [|degrees x y type    stroke |
-                    0       0 0 "line"  "023963"
-                    0       0 0 "line"  "023963"
-                    0       0 0 "line"  "ce0b46"]
-
-## Update the clock
-
-Calculate clock hand angles every time the clock ticks.
-  ~ #system/timer.tick 
-  time = [#system/timer.hours; #system/timer.minutes; #system/timer.seconds]
-  multiplier = [30; 6; 6]
-  #clock-hands.degrees := multiplier * time
+  #system/timer = [resolution: 50, tick: 0, hours: 2, minutes: 32, seconds: 47]
   
-Calculate x and y endpoints
-  angle = #clock-hands.degrees
-  #clock-hands.x := 150 + (75 * math/sin(degrees: angle))
-  #clock-hands.y := 150 - (75 * math/cos(degrees: angle))
-  
+Link dimensions
+  #ld = [|width height|
+          308   338
+          131   334
+          141   361
+          219   448]
+
 ## Drawing
 
-Set up clock drawing elements
-  t = [0;0;0]
-  center = [150; 150; 150]
-  x = #clock-hands.x
-  y = #clock-hands.y
-  #clock = [|shape    cx  cy  radius x y stroke fill|
-             "image"  210 300 -45 0 0 "" "http://mech-lang.org/img/robotarm/link1.png"
-             "image"  300 375 0 0 0 "" "http://mech-lang.org/img/robotarm/link0.png"]
+Set up the robot arm linkages
+  x0 = 400
+  y0 = 550
+  angle1 = -45
+  angle2 = 60
+  angle3 = 170
+  h1 = 106
+  h2 = 200
+  h3 = 170
+  y1 = (y0 - 100) - h1 * math/cos(degrees: angle1)
+  x1 = x0 + h1 * math/sin(degrees: angle1)
+  y2 = y1 - h1 * math/cos(degrees: angle1)
+  x2 = x1 + h1 * math/sin(degrees: angle1)
+  y3 = y2 - h2 * math/cos(degrees: angle2)
+  x3 = x2 + h2 * math/sin(degrees: angle2)
+  y4 = y3 - h2 * math/cos(degrees: angle2)
+  x4 = x3 + h2 * math/sin(degrees: angle2)
+  y5 = y4 - h3 * math/cos(degrees: angle3)
+  x5 = x4 + h3 * math/sin(degrees: angle3)
+  #robot-arm = [|shape   cx cy radius x y stroke fill|
+                 "image" x3 y3 angle2 _ _ _      "http://mech-lang.org/img/robotarm/link2.png"
+                 "image" x1 y1 angle1 _ _ _      "http://mech-lang.org/img/robotarm/link1.png"
+                 "image" x0 y0 0      _ _ _      "http://mech-lang.org/img/robotarm/link0.png"
+                 "image" x5 y5 angle3 _ _ _      "http://mech-lang.org/img/robotarm/gripper.png"]
 
 Do the draw 
-  #html/canvas = [type: "canvas" class: "" width: 1500 height: 750 contains: [#clock]]`;
+  #drawing = [type: "canvas" class: _ width: 1500 height: 750 contains: [#robot-arm]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
