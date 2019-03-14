@@ -95,7 +95,11 @@ fn quantities_base_float() {
     assert_eq!(x.to_quantity().to_float(), x);
     assert_eq!(y.to_quantity().to_float(), y);
     assert_eq!(z.to_quantity().to_float(), z);
-    println!("{}", x.to_quantity().to_string());
-    println!("{}", y.to_quantity().to_string());
-    println!("{}", z.to_quantity().to_string());
+}
+
+#[test]
+fn quantities_add_large_neg_small() {
+    let x = make_quantity(30292178951320,-11,0);
+    let y = make_quantity(30,0,0);
+    assert_eq!(x.sub(y), make_quantity(27292178951320,-11,0));
 }

@@ -119,9 +119,11 @@ pub fn decrease_range(mantissa:i64, range_delta:u64) -> (i64, u64) {
     let thing:u64 = (1 as u64) << remaining_space;
     let remaining_10 = (thing as f64).log10().floor() as u64;
     if range_delta <= remaining_10 {
-        (mantissa * 10u64.pow(range_delta as u32) as i64, range_delta)
+        let new_mantissa = mantissa * 10u64.pow(range_delta as u32) as i64;
+        (new_mantissa, range_delta)
     } else {
-        (mantissa * 10u64.pow(remaining_10 as u32) as i64, range_delta)
+        let new_mantissa = mantissa * 10u64.pow(remaining_10 as u32) as i64;
+        (new_mantissa, remaining_10)
     }
 }
 
@@ -249,15 +251,20 @@ impl QuantityMath for Quantity {
                 return make_quantity(a_mant,a_range,0)
             }
             let range_delta = (a_range - b_range) as u64;
-            let (neue, actual_delta) = decrease_range(a_mant, range_delta);
+            let sign = if a_mant < 0 {
+                -1
+            } else {
+                1
+            };
+            let (new_mantissa, actual_delta) = decrease_range(a_mant * sign, range_delta);
             if actual_delta == range_delta {
-                let added = neue + b_mant;
+                let added = sign * new_mantissa + b_mant;
                 let mut added_quantity = added.to_quantity();
                 added_quantity.set_range(b_range + added_quantity.range());
                 added_quantity
             } else {
                 let (b_neue, _) = increase_range(b_mant, actual_delta);
-                let mut added = (neue + b_neue).to_quantity();
+                let mut added = (new_mantissa + b_neue).to_quantity();
                 added.set_range(a_range - actual_delta as i64);
                 added
             }
