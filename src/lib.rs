@@ -259,8 +259,6 @@ impl Core {
               let y = elements_table.data[2][i].as_float().unwrap();
               img.set_src(&image_source.to_owned());
               context.save();
-              let cx = canvas.width() as f64 / 2.0;
-              let cy = canvas.height() as f64 / 2.0;
               let ix = img.width() as f64 / 2.0;
               let iy = img.height() as f64 / 2.0;
               context.translate(x, y);
