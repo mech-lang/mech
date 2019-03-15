@@ -1,30 +1,61 @@
 # Mech Website
 
 This is where the main website structure is defined
-  wrapper = [|type  class         container|
-              "div" "black-bar"   ""
-              "div" "navbar"      ""
-              "div" "container"   [content]
-              "div" "clock-frame" [#drawing]]
+  wrapper = [|type     class       container  parameters|
+              "div"    "black-bar" _          _
+              "div"    "navbar"    _          _
+              "div"    "container" [content]  _
+              "div"    "robot-arm" [#drawing] _
+              "slider" _           _          [#angle1]]
   content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
-  #app/main = [|direction contains| 
+  #app/main = [|direction contains|
                 "column"  [wrapper]]
                 
 ## Robot Arm Drawing
 
-Create a timer that ticks every second. This is the time source.
-  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+Create a time source for the animation.
+  #system/timer = [resolution: 50, tick: 0, hours: 2, minutes: 32, seconds: 47]
   
+Link dimensions
+  #ld = [|width height|
+          308   338
+          131   334
+          141   361
+          219   448]
+
 ## Drawing
 
+Set joint angles
+  #angle1 = [min: -120 max: 120 value: -45]
+  #angle2 = [min: -120 max: 120 value: 60]
+  #angle3 = [min: -120 max: 120 value: 170]
+
 Set up the robot arm linkages
-  #robot-arm = [|shape   cx  cy  radius x y stroke fill|
-                 "image" 610 130 75     0 0 ""     "http://mech-lang.org/img/robotarm/link2.png"
-                 "image" 210 300 -45    0 0 ""     "http://mech-lang.org/img/robotarm/link1.png"
-                 "image" 300 375 0      0 0 ""     "http://mech-lang.org/img/robotarm/link0.png"
-                 "image" 970 400 140    0 0 ""     "http://mech-lang.org/img/robotarm/gripper.png"]
+  x0 = 400
+  y0 = 550
+  angle1 = #angle1.value
+  angle2 = #angle2.value
+  angle3 = #angle3.value
+  h1 = 106
+  h2 = 200
+  h3 = 170
+  y1 = (y0 - 100) - h1 * math/cos(degrees: angle1)
+  x1 = x0 + h1 * math/sin(degrees: angle1)
+  y2 = y1 - h1 * math/cos(degrees: angle1)
+  x2 = x1 + h1 * math/sin(degrees: angle1)
+  y3 = y2 - h2 * math/cos(degrees: angle2)
+  x3 = x2 + h2 * math/sin(degrees: angle2)
+  y4 = y3 - h2 * math/cos(degrees: angle2)
+  x4 = x3 + h2 * math/sin(degrees: angle2)
+  y5 = y4 - h3 * math/cos(degrees: angle3)
+  x5 = x4 + h3 * math/sin(degrees: angle3)
+  #robot-arm = [|shape   cx cy radius x y stroke fill|
+                 "image" x3 y3 angle2 _ _ _      "http://mech-lang.org/img/robotarm/link2.png"
+                 "image" x1 y1 angle1 _ _ _      "http://mech-lang.org/img/robotarm/link1.png"
+                 "image" x0 y0 0      _ _ _      "http://mech-lang.org/img/robotarm/link0.png"
+                 "image" x5 y5 angle3 _ _ _      "http://mech-lang.org/img/robotarm/gripper.png"]
 
 Do the draw 
-  #drawing = [type: "canvas" class: "" width: 1500 height: 750 contains: [#robot-arm]]
+  #drawing = [type: "canvas" class: _ width: 1500 height: 750 contains: [#robot-arm]]
