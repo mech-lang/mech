@@ -146,7 +146,6 @@ impl Core {
     let table_id = Hasher::hash_str("app/main");
     match self.core.store.get_table(table_id) {
       Some(app_table) => {
-
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         let body = document.body().expect("document should have a body");
@@ -189,6 +188,41 @@ impl Core {
           img.set_attribute("class", class);
           img.set_src(value);
           container.append_child(&img)?;
+        },
+        "slider" => {
+          let mut slider = document.create_element("input")?;
+          let mut slider: web_sys::HtmlInputElement = slider
+                .dyn_into::<web_sys::HtmlInputElement>()
+                .map_err(|_| ())
+                .unwrap();
+          //let min = &table.data[1][row].as_string().unwrap();
+          //let max = &table.data[2][row].as_string().unwrap();
+          slider.set_min("-50");
+          slider.set_max("50");
+          slider.set_type("range");
+          {
+            let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+              match event.target() {
+                Some(target) => {
+                  let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
+                  let table_id = Hasher::hash_str("angle1");
+                  let slider_value = slider.value().parse::<i64>().unwrap();
+                  let change = Change::Set{
+                    table: table_id, 
+                    row: Index::Index(1), 
+                    column: Index::Index(1),
+                    value: Value::from_i64(slider_value),
+                  };
+                  let txn = Transaction::from_change(change);
+                  //self.core.process_transaction(&txn);
+                },
+                _ => (),
+              }
+            }) as Box<dyn FnMut(_)>);
+            slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+            closure.forget();
+          }
+          container.append_child(&slider)?;
         },
         "canvas" => { 
           let canvas = document.create_element("canvas")?;
