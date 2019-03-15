@@ -50,7 +50,6 @@ impl Core {
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
 
-
   pub fn clear(&mut self) {
     self.core.clear();
     log!("Core Cleared");
@@ -142,17 +141,27 @@ impl Core {
       output
   }
 
-  pub fn add_application(&self) -> Result<(), JsValue> {
+  pub fn add_application(&mut self) -> Result<(), JsValue> {
     let table_id = Hasher::hash_str("app/main");
-    match self.core.store.get_table(table_id) {
+    let core = &mut self.core as *mut mech_core::Core;
+    let table;
+    // TODO Make this safe
+    unsafe {
+      table = (*core).store.get_table(table_id);
+    }
+    match table {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         let body = document.body().expect("document should have a body");
         let drawing_area = document.get_element_by_id("drawing").unwrap();
-        let mut app = document.create_element("div")?;
+        let mut app = document.create_element("div")?; 
         let contents_id = app_table.data[1][0].as_u64().unwrap();
-        let contents_table = self.core.store.get_table(contents_id).unwrap();
+        let contents_table;
+        // TODO Make this safe
+        unsafe {
+          contents_table = (*core).store.get_table(contents_id).unwrap();       
+        }
         self.draw_contents(&contents_table, &mut app);
         drawing_area.append_child(&app)?;
       }
@@ -161,7 +170,9 @@ impl Core {
     Ok(())
   }
 
-  fn draw_contents(&self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
+  fn draw_contents(&mut self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
+    let core = &mut self.core as *mut mech_core::Core;
+    let changes = &mut self.changes as *mut Vec<Change>;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     for row in 0..table.rows as usize {
@@ -174,7 +185,11 @@ impl Core {
           match &table.data[2][row] {
             Value::String(value) => div.set_inner_html(&value),
             Value::Reference(reference) => {
-              let referenced_table = self.core.store.get_table(*reference).unwrap();
+              let referenced_table;
+              // TODO Make this safe
+              unsafe {
+                referenced_table = (*core).store.get_table(*reference).unwrap();
+              }
               self.draw_contents(&referenced_table, &mut div);
             }
             _ => (),
@@ -214,7 +229,10 @@ impl Core {
                     value: Value::from_i64(slider_value),
                   };
                   let txn = Transaction::from_change(change);
-                  //self.core.process_transaction(&txn);
+                  // TODO Make this safe
+                  unsafe {
+                    (*core).process_transaction(&txn);
+                  }
                 },
                 _ => (),
               }
