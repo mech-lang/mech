@@ -215,11 +215,17 @@ impl Core {
                 .dyn_into::<web_sys::HtmlInputElement>()
                 .map_err(|_| ())
                 .unwrap();
-          //let min = &table.data[1][row].as_string().unwrap();
-          //let max = &table.data[2][row].as_string().unwrap();
-          slider.set_min("-50");
-          slider.set_max("50");
+          let parameters_id_str = &table.data[3][row].as_string().unwrap();
+          let parameters_id = &table.data[3][row].as_u64().unwrap();
+          let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+          let min = &parameters_table.data[0][0].as_string().unwrap();
+          let max = &parameters_table.data[1][0].as_string().unwrap();
+          let value = &parameters_table.data[2][0].as_string().unwrap();
           slider.set_type("range");
+          slider.set_min(min);
+          slider.set_max(max);
+          slider.set_value(value);
+          slider.set_attribute("parameters", parameters_id_str);
           {
             let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
               match event.target() {
@@ -227,10 +233,11 @@ impl Core {
                   let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
                   let table_id = Hasher::hash_str("angle1");
                   let slider_value = slider.value().parse::<i64>().unwrap();
+                  let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
                   let change = Change::Set{
-                    table: table_id, 
+                    table: parameters_id, 
                     row: Index::Index(1), 
-                    column: Index::Index(1),
+                    column: Index::Index(3),
                     value: Value::from_i64(slider_value),
                   };
                   let txn = Transaction::from_change(change);
