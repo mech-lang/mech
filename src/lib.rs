@@ -12,6 +12,9 @@ extern crate web_sys;
 extern crate mech_core;
 extern crate mech_syntax;
 
+use std::collections::HashMap;
+use std::cell::Cell;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
@@ -30,6 +33,7 @@ macro_rules! log {
 pub struct Core {
   core: mech_core::Core,
   changes: Vec<Change>,
+  images: HashMap<u64, web_sys::HtmlImageElement>,
 }
 
 #[wasm_bindgen]
@@ -39,6 +43,7 @@ impl Core {
     Core {
       core: mech_core::Core::new(100_000,100),
       changes: Vec::new(),
+      images: HashMap::new(),
     }
   }
 
@@ -264,7 +269,7 @@ impl Core {
     Ok(())
   }
 
-  pub fn render_canvas(&self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
+  pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
 
     let context = canvas
         .get_context("2d")
@@ -277,6 +282,7 @@ impl Core {
     let elements = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements.parse::<u64>().unwrap();
     let elements_table = self.core.store.get_table(elements_table_id).unwrap();
+    let context = Rc::new(context);
 
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
     for i in 0..elements_table.rows as usize {
@@ -317,6 +323,29 @@ impl Core {
               context.rotate(rotation * 3.141592654 / 180.0);
               context.draw_image_with_html_image_element(&img, -ix, -iy);
               context.restore();
+              /*TODO This flickers, so we need to use an animation frame
+              let source_hash = Hasher::hash_string(image_source);
+              let source = Rc::new(source_hash);
+              let images_store = &mut self.images as *mut HashMap<u64, web_sys::HtmlImageElement>;
+              {
+                let context = context.clone();
+                let closure = Closure::wrap(Box::new(move || {
+                  context.save();
+                  context.translate(x, y);
+                  context.rotate(rotation * 3.141592654 / 180.0);
+                  let img;
+                  unsafe {
+                    img = (*images_store).get(&*source).unwrap();
+                  }
+                  let ix = img.width() as f64 / 2.0;
+                  let iy = img.height() as f64 / 2.0;
+                  context.draw_image_with_html_image_element(&img, -ix, -iy);
+                  context.restore();
+                }) as Box<FnMut()>);
+                img.set_onload(Some(closure.as_ref().unchecked_ref()));
+                self.images.insert(source_hash, img);
+                closure.forget();
+              }*/
             },
             _ => (),
           }
