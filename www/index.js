@@ -116,21 +116,23 @@ code.setAttribute("spellcheck", "false");
 code.innerHTML =  `# Mech Website
 
 This is where the main website structure is defined
-  wrapper = [|type     class         container|
-              "div"    "black-bar"   _
-              "div"    "navbar"      _
-              "div"    "container"   [content]
-              "div"    "clock-frame" [#drawing]
-              "slider" _             _]
+  wrapper = [|type     class         container  parameters|
+              "div"    "black-bar"   _          _
+              "div"    "navbar"      _          _
+              "div"    "container"   [content]  _
+              "div"    "robot-arm" [#drawing] _
+              "slider" _             _          [#angle1]
+              "slider" _             _          [#angle2]
+              "slider" _             _          [#angle3]]
   content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
-  #app/main = [|direction contains| 
+  #app/main = [|direction contains|
                 "column"  [wrapper]]
                 
 ## Robot Arm Drawing
 
-Create a timer that ticks every second. This is the time source.
+Create a time source for the animation.
   #system/timer = [resolution: 50, tick: 0, hours: 2, minutes: 32, seconds: 47]
   
 Link dimensions
@@ -143,16 +145,16 @@ Link dimensions
 ## Drawing
 
 Set joint angles
-  #angle1 = -45
-  #angle2 = 60
-  #angle3 = 170
+  #angle1 = [min: -120 max: 120 value: -45]
+  #angle2 = [min: -120 max: 120 value: 60]
+  #angle3 = [min: -120 max: 120 value: 170]
 
 Set up the robot arm linkages
   x0 = 400
   y0 = 550
-  angle1 = #angle1
-  angle2 = #angle2
-  angle3 = #angle3
+  angle1 = #angle1.value
+  angle2 = #angle2.value
+  angle3 = #angle3.value
   h1 = 106
   h2 = 200
   h3 = 170
@@ -187,55 +189,8 @@ let editor_container = document.createElement("div");
 editor_container.setAttribute("id","editor container");
 editor_container.setAttribute("class","editor-container");
 
-let angle_slider = document.createElement("input");
-angle_slider.setAttribute("id", "angle1slider");
-angle_slider.setAttribute("class", "slider");
-angle_slider.setAttribute("min", "-120");
-angle_slider.setAttribute("max", "120");
-angle_slider.setAttribute("value", "-45");
-angle_slider.setAttribute("type", "range");
-
-angle_slider.oninput = function() {
-  let current_value = this.value;
-  mech_core.queue_change("angle1",1,1,Number(current_value));
-  mech_core.process_transaction();
-}
-
-let angle_slider2 = document.createElement("input");
-angle_slider2.setAttribute("id", "angle2slider");
-angle_slider2.setAttribute("class", "slider");
-angle_slider2.setAttribute("min", "-120");
-angle_slider2.setAttribute("max", "120");
-angle_slider2.setAttribute("value", "65");
-angle_slider2.setAttribute("type", "range");
-
-angle_slider2.oninput = function() {
-  let current_value = this.value;
-  mech_core.queue_change("angle2",1,1,Number(current_value));
-  mech_core.process_transaction();
-  console.log(current_value);
-}
-
-let angle_slider3 = document.createElement("input");
-angle_slider3.setAttribute("id", "angle3slider");
-angle_slider3.setAttribute("class", "slider");
-angle_slider3.setAttribute("min", "0");
-angle_slider3.setAttribute("max", "180");
-angle_slider3.setAttribute("value", "170");
-angle_slider3.setAttribute("type", "range");
-
-angle_slider3.oninput = function() {
-  let current_value = this.value;
-  mech_core.queue_change("angle3",1,1,Number(current_value));
-  mech_core.process_transaction();
-  console.log(current_value);
-}
-
 editor_container.appendChild(controls);
 editor_container.appendChild(editor);
-editor_container.appendChild(angle_slider);
-editor_container.appendChild(angle_slider2);
-editor_container.appendChild(angle_slider3);
 editor_container.appendChild(time_travel);
 
 // ## Navigation
