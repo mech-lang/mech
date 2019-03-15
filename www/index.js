@@ -116,11 +116,12 @@ code.setAttribute("spellcheck", "false");
 code.innerHTML =  `# Mech Website
 
 This is where the main website structure is defined
-  wrapper = [|type  class         container|
-              "div" "black-bar"   _
-              "div" "navbar"      _
-              "div" "container"   [content]
-              "div" "clock-frame" [#drawing]]
+  wrapper = [|type     class         container|
+              "div"    "black-bar"   _
+              "div"    "navbar"      _
+              "div"    "container"   [content]
+              "div"    "clock-frame" [#drawing]
+              "slider" _             _]
   content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
@@ -198,7 +199,6 @@ angle_slider.oninput = function() {
   let current_value = this.value;
   mech_core.queue_change("angle1",1,1,Number(current_value));
   mech_core.process_transaction();
-  console.log(current_value);
 }
 
 let angle_slider2 = document.createElement("input");
@@ -287,7 +287,7 @@ document.getElementById("compile").addEventListener("click", function(click) {
     mech_core.process_transaction();
     render();
   });*/
-  render();
+  //render();
 });
 
 document.getElementById("view core").addEventListener("click", function() {
