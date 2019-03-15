@@ -160,7 +160,7 @@ impl Core {
         let document = window.document().expect("should have a document on window");
         let body = document.body().expect("document should have a body");
         let drawing_area = document.get_element_by_id("drawing").unwrap();
-        let mut app = document.create_element("div")?; 
+        let mut app = document.create_element("div")?;
         let contents_id = app_table.data[1][0].as_u64().unwrap();
         let contents_table;
         // TODO Make this safe
@@ -180,15 +180,22 @@ impl Core {
     let changes = &mut self.changes as *mut Vec<Change>;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
+            log!("{:?}", table);
+
     for row in 0..table.rows as usize {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
         "div" => {
           let mut div = document.create_element("div")?;
-          let class = &table.data[1][row].as_string().unwrap();
-          div.set_attribute("class",class);
+          match &table.data[1][row].as_string() {
+            Some(class) => {
+              div.set_attribute("class",class);
+            },
+            _ => (),
+          }
           match &table.data[2][row] {
             Value::String(value) => div.set_inner_html(&value),
+            Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
             Value::Reference(reference) => {
               let referenced_table;
               // TODO Make this safe
