@@ -93,6 +93,15 @@ impl Core {
   pub fn render(&mut self) {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
+    let canvas = document.get_element_by_id("drawing canvas").unwrap();
+    let canvas: web_sys::HtmlCanvasElement = canvas
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .map_err(|_| ())
+                .unwrap();
+    self.render_canvas(&canvas);
+    /*
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
     for (table_id, index) in self.core.runtime.changed_this_round.drain() {
       match self.nodes.get(&table_id) {
         Some(nodes) => {
@@ -109,7 +118,7 @@ impl Core {
         },
         _ => (),
       }
-    }
+    }*/
   }
 
   pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
@@ -293,12 +302,17 @@ impl Core {
         },
         "canvas" => { 
           let canvas = document.create_element("canvas")?;
-          let elements_id_str = &table.data[4][row].as_string().unwrap();
-          let elements_id = &table.data[4][row].as_u64().unwrap();
+          let elements_id_str = &table.data[2][row].as_string().unwrap();
+          let elements_id = &table.data[2][row].as_u64().unwrap();
+          let parameters_id = &table.data[3][row].as_u64().unwrap();
+          let parameters_table;
+          unsafe {
+            parameters_table = (*core).store.get_table(*parameters_id).unwrap();
+          }
           canvas.set_attribute("id","drawing canvas");
           canvas.set_attribute("elements",elements_id_str);
-          canvas.set_attribute("width", &format!("{}", table.data[2][row].as_float().unwrap()));
-          canvas.set_attribute("height", &format!("{}", table.data[3][row].as_float().unwrap()));
+          canvas.set_attribute("width", &parameters_table.data[0][0].as_string().unwrap());
+          canvas.set_attribute("height",&parameters_table.data[1][0].as_string().unwrap());
           canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
           let canvas: web_sys::HtmlCanvasElement = canvas
                 .dyn_into::<web_sys::HtmlCanvasElement>()
