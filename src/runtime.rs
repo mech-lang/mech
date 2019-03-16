@@ -441,6 +441,7 @@ impl Block {
             };
             let id = match table_ref.data[0][0] {
               Value::Reference(id) => {
+                self.ready.insert(Register::new(id, Index::Index(0)));
                 self.input_registers.insert(Register::new(id, Index::Index(0)));
                 store.get_table(id)
               },
