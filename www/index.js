@@ -113,48 +113,48 @@ let code = document.createElement("textarea");
 code.setAttribute("class", "code");
 code.setAttribute("id", "code");
 code.setAttribute("spellcheck", "false");
+/*
+code.innerHTML =  `# Mech Website
+
+Slider definition
+  #slider = [type: "slider" class: _ contains: _ parameters: [min: 0 max: 50 value: 25]]
+
+Text definition
+  value = #slider{1,4}{1,3}
+  #text = [type: "div" class: _ contains: value parameters: _]
+  
+Draw to screen
+  container = [#slider; #text]
+  #app/main = [direction: "column" contains: [container]]`;
+*/
+
 code.innerHTML =  `# Mech Website
 
 This is where the main website structure is defined
-  wrapper = [|type     class         container  parameters|
-              "div"    "black-bar"   _          _
-              "div"    "navbar"      _          _
-              "div"    "container"   [content]  _
-              "div"    "robot-arm" [#drawing] _
-              "slider" _             _          [#angle1]
-              "slider" _             _          [#angle2]
-              "slider" _             _          [#angle3]]
+  wrapper = [|type  class         contains|
+              "div" "black-bar"   _
+              "div" "navbar"      _
+              "div" "container"   [content]
+              "div" _             [#robot-animation]]
   content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
-  #app/main = [|direction contains|
+  #app/main = [|direction contains| 
                 "column"  [wrapper]]
                 
 ## Robot Arm Drawing
 
-Create a time source for the animation.
+Create a timer that ticks every second. This is the time source.
   #system/timer = [resolution: 50, tick: 0, hours: 2, minutes: 32, seconds: 47]
-  
-Link dimensions
-  #ld = [|width height|
-          308   338
-          131   334
-          141   361
-          219   448]
 
 ## Drawing
-
-Set joint angles
-  #angle1 = [min: -120 max: 120 value: -45]
-  #angle2 = [min: -120 max: 120 value: 60]
-  #angle3 = [min: -120 max: 120 value: 170]
 
 Set up the robot arm linkages
   x0 = 400
   y0 = 550
-  angle1 = #angle1.value
-  angle2 = #angle2.value
-  angle3 = #angle3.value
+  angle1 = #slider1{1,4}{1,3}
+  angle2 = #slider2{1,4}{1,3}
+  angle3 = #slider3{1,4}{1,3}
   h1 = 106
   h2 = 200
   h3 = 170
@@ -175,7 +175,16 @@ Set up the robot arm linkages
                  "image" x5 y5 angle3 _ _ _      "http://mech-lang.org/img/robotarm/gripper.png"]
 
 Do the draw 
-  #drawing = [type: "canvas" class: _ width: 1500 height: 750 contains: [#robot-arm]]`;
+  #drawing = [type: "canvas" class: _ contains: [#robot-arm] parameters: [width: 1500 height: 750]]
+  
+Animation controls  
+  #slider1 = [type: "slider" class: _ contains: _ parameters: [min: -120 max: 120 value: -45]]
+  #slider2 = [type: "slider" class: _ contains: _ parameters: [min: -120 max: 120 value: 60]]
+  #slider3 = [type: "slider" class: _ contains: _ parameters: [min: -90 max: 200 value: 170]]
+
+Compose animation and controls
+  composed-drawing = [#slider1; #slider2; #slider3; #drawing]
+  #robot-animation = [type: "div" class: _ contains: [composed-drawing]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
