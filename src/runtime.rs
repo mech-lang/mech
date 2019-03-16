@@ -30,6 +30,7 @@ pub struct Runtime {
   pub pipes_map: HashMap<Register, Vec<Address>>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
+  pub changed_this_round: HashSet<(u64, Index)>,
 }
 
 impl Runtime {
@@ -40,6 +41,7 @@ impl Runtime {
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
       tables_map: HashMap::new(),
+      changed_this_round: HashSet::new(),
     }
   }
 
@@ -56,7 +58,7 @@ impl Runtime {
       block.id = self.blocks.len() + 1;
     }
     // Take the input registers from the block and add them to the pipes map
-    for (ix, register) in block.input_registers.iter().enumerate() {
+    for register in block.input_registers.iter() {
       let table = register.table;
       let column = register.column.clone();
       let new_address = Address{block: block.id, register: register.clone()};
@@ -101,9 +103,19 @@ impl Runtime {
       for block_id in self.ready_blocks.drain() {
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
+        // Register any new inputs
+        for register in block.input_registers.iter() {
+          let table = register.table;
+          let column = register.column.clone();
+          let new_address = Address{block: block.id, register: register.clone()};
+          let listeners = self.pipes_map.entry(register.clone()).or_insert(vec![]);
+          listeners.push(new_address);
+        }
       }
       // Queue up the next blocks based on tables that changed during this round.
+      println!("{:?}", store.tables.changed_this_round);
       for (table, column) in store.tables.changed_this_round.drain() {
+        self.changed_this_round.insert((table.clone(), column.clone()));
         let register = Register::new(table,column);
         match self.pipes_map.get(&register) {
           Some(register_addresses) => {
@@ -429,6 +441,7 @@ impl Block {
             };
             let id = match table_ref.data[0][0] {
               Value::Reference(id) => {
+                self.input_registers.insert(Register::new(id, Index::Index(0)));
                 store.get_table(id)
               },
               _ => None,
