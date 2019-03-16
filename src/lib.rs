@@ -34,6 +34,7 @@ pub struct Core {
   core: mech_core::Core,
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
+  nodes: HashMap<u64, Vec<u64>>,
 }
 
 #[wasm_bindgen]
@@ -44,6 +45,7 @@ impl Core {
       core: mech_core::Core::new(100_000,100),
       changes: Vec::new(),
       images: HashMap::new(),
+      nodes: HashMap::new(),
     }
   }
 
@@ -86,6 +88,28 @@ impl Core {
 
   pub fn display_runtime(&mut self) {
     log!("{:?}", self.core.runtime);
+  }
+
+  pub fn render(&mut self) {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    for (table_id, index) in self.core.runtime.changed_this_round.drain() {
+      match self.nodes.get(&table_id) {
+        Some(nodes) => {
+          for node in nodes {
+            let element = document.get_element_by_id(&format!("{}",node));
+            match element {
+              Some(html_element) => {
+                let table = self.core.store.get_table(table_id).unwrap();
+                html_element.set_inner_html(&table.data[2][1].as_string().unwrap());
+              },
+              _ => (),
+            }
+          }
+        },
+        _ => (),
+      }
+    }
   }
 
   pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
@@ -177,16 +201,21 @@ impl Core {
 
   fn draw_contents(&mut self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
     let core = &mut self.core as *mut mech_core::Core;
+    let wasm_core = self as *mut Core;
     let changes = &mut self.changes as *mut Vec<Change>;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
-            log!("{:?}", table);
-
     for row in 0..table.rows as usize {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
         "div" => {
+          let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
           let mut div = document.create_element("div")?;
+          unsafe {
+            let nodes = (*wasm_core).nodes.entry(table.id).or_insert(vec![]);
+            nodes.push(element_id);
+          }
+          div.set_id(&format!("{:?}",element_id));
           match &table.data[1][row].as_string() {
             Some(class) => {
               div.set_attribute("class",class);
@@ -251,6 +280,7 @@ impl Core {
                   // TODO Make this safe
                   unsafe {
                     (*core).process_transaction(&txn);
+                    (*wasm_core).render();
                   }
                 },
                 _ => (),
