@@ -247,7 +247,8 @@ impl QuantityMath for Quantity {
             } else {
                 (other_range, my_range, other_mant, my_mant)
             };
-            if a_range - b_range > 17 {
+            // A is so much bigger than b, we just take a
+            if a_range - b_range > 15 {
                 return make_quantity(a_mant,a_range,0)
             }
             let range_delta = (a_range - b_range) as u64;
