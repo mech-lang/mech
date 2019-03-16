@@ -13,6 +13,7 @@ extern crate mech_core;
 extern crate mech_syntax;
 
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -92,13 +93,21 @@ impl Core {
 
   pub fn render(&mut self) {
     let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let canvas = document.get_element_by_id("drawing canvas").unwrap();
-    let canvas: web_sys::HtmlCanvasElement = canvas
+    let wasm_core = self as *mut Core;
+    let closure = Closure::wrap(Box::new(move || {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let canvas = document.get_element_by_id("drawing canvas").unwrap();
+      let canvas: web_sys::HtmlCanvasElement = canvas
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .map_err(|_| ())
                 .unwrap();
-    self.render_canvas(&canvas);
+      unsafe {
+        (*wasm_core).render_canvas(&canvas);
+      }
+    }) as Box<FnMut()>);
+    window.request_animation_frame(closure.as_ref().unchecked_ref());
+    closure.forget();
     /*
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
@@ -328,7 +337,7 @@ impl Core {
   }
 
   pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-
+    let wasm_core = self as *mut Core;
     let context = canvas
         .get_context("2d")
         .unwrap()
@@ -368,42 +377,38 @@ impl Core {
               context.stroke();
             },
             "image" => {
-              let mut img = web_sys::HtmlImageElement::new().unwrap();
               let image_source = elements_table.data[7][i].as_string().unwrap();
-              let rotation = elements_table.data[3][i].as_float().unwrap();
-              let x = elements_table.data[1][i].as_float().unwrap();
-              let y = elements_table.data[2][i].as_float().unwrap();
-              img.set_src(&image_source.to_owned());
-              context.save();
-              let ix = img.width() as f64 / 2.0;
-              let iy = img.height() as f64 / 2.0;
-              context.translate(x, y);
-              context.rotate(rotation * 3.141592654 / 180.0);
-              context.draw_image_with_html_image_element(&img, -ix, -iy);
-              context.restore();
-              /*TODO This flickers, so we need to use an animation frame
-              let source_hash = Hasher::hash_string(image_source);
-              let source = Rc::new(source_hash);
-              let images_store = &mut self.images as *mut HashMap<u64, web_sys::HtmlImageElement>;
-              {
-                let context = context.clone();
-                let closure = Closure::wrap(Box::new(move || {
+              let source_hash = Hasher::hash_string(image_source.clone());
+              match self.images.entry(source_hash) {
+                Entry::Occupied(img_entry) => {
+                  let img = img_entry.get();
+                  let rotation = elements_table.data[3][i].as_float().unwrap();
+                  let x = elements_table.data[1][i].as_float().unwrap();
+                  let y = elements_table.data[2][i].as_float().unwrap();
+                  let ix = img.width() as f64 / 2.0;
+                  let iy = img.height() as f64 / 2.0;
+                  // Draw it
                   context.save();
                   context.translate(x, y);
                   context.rotate(rotation * 3.141592654 / 180.0);
-                  let img;
-                  unsafe {
-                    img = (*images_store).get(&*source).unwrap();
-                  }
-                  let ix = img.width() as f64 / 2.0;
-                  let iy = img.height() as f64 / 2.0;
                   context.draw_image_with_html_image_element(&img, -ix, -iy);
                   context.restore();
-                }) as Box<FnMut()>);
-                img.set_onload(Some(closure.as_ref().unchecked_ref()));
-                self.images.insert(source_hash, img);
-                closure.forget();
-              }*/
+                },
+                Entry::Vacant(v) => {
+                  let mut img = web_sys::HtmlImageElement::new().unwrap();
+                  img.set_src(&image_source.to_owned());
+                  {
+                    let closure = Closure::wrap(Box::new(move || {
+                      unsafe {
+                        (*wasm_core).render();
+                      }
+                    }) as Box<FnMut()>);
+                    img.set_onload(Some(closure.as_ref().unchecked_ref()));
+                    v.insert(img);
+                    closure.forget();
+                  }
+                },
+              }
             },
             _ => (),
           }
