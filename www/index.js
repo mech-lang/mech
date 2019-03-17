@@ -41,6 +41,22 @@ txn.innerHTML =  "Add Txn";
 
 // ## Time Travel
 
+function resume() {
+  let toggle_core = document.getElementById("toggle core");
+  let time_slider = document.getElementById("time slider");
+  mech_core.resume();
+  toggle_core.innerHTML = "Pause";
+  time_slider.value = time_slider.max;
+  render();
+}
+
+function pause() {
+  let toggle_core = document.getElementById("toggle core");
+  mech_core.pause();
+  toggle_core.innerHTML = "Resume";
+  render();
+}
+
 let time_travel = document.createElement("div");
 time_travel.setAttribute("class", "time-travel");
 
@@ -55,7 +71,7 @@ time_travel.appendChild(time_slider);
 
 let last_slider_value = 100;
 time_slider.oninput = function() {
-  mech_core.pause();
+  pause();
   let current_value = this.value;
   // Time travel forward
   if (current_value > last_slider_value) {
@@ -65,12 +81,14 @@ time_slider.oninput = function() {
     mech_core.step_back_one();
   }
   last_slider_value = current_value;
+  render();
 }
 
 let step_back = document.createElement("button");
 step_back.setAttribute("id", "step back");
 step_back.innerHTML =  "<";
 step_back.onclick = function() {
+  pause();
   mech_core.step_back_one();
   time_slider.value = time_slider.value - 1;
   render();
@@ -84,13 +102,11 @@ toggle_core.onclick = function() {
   let toggle_core = document.getElementById("toggle core");
   let state = toggle_core.innerHTML;
   if (state == "Resume") {
-    mech_core.resume();
-    toggle_core.innerHTML = "Pause";
-    time_slider.value = time_slider.max;
+    resume();
   } else {
-    mech_core.pause();
-    toggle_core.innerHTML = "Resume";
+    pause();
   }
+  render();
 };
 time_travel.appendChild(toggle_core);
 
@@ -98,6 +114,7 @@ let step_forward = document.createElement("button");
 step_forward.setAttribute("id", "step forward");
 step_forward.innerHTML =  ">";
 step_forward.onclick = function() {
+  pause();
   mech_core.step_forward_one();
   time_slider.value = time_slider.value*1 + 1;
   render();
