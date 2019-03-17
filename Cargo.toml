@@ -45,5 +45,6 @@ features = [
   'CanvasRenderingContext2d',
   'Node',
   'Window',
+  'HtmlCollection',
   'console',
 ]
