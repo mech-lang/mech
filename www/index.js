@@ -233,8 +233,7 @@ function system_timer() {
 }
 
 function render() {
-  let canvas = document.getElementById("drawing canvas");
-  mech_core.render_canvas(canvas);
+  mech_core.render();
 }
 
 document.getElementById("compile").addEventListener("click", function(click) {
