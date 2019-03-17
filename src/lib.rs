@@ -379,10 +379,13 @@ impl Core {
               let x = parameters_table.data[0][0].as_float().unwrap();
               let y = parameters_table.data[1][0].as_float().unwrap();
               let radius = parameters_table.data[2][0].as_float().unwrap();
+              let fill = parameters_table.data[3][0].as_string().unwrap();
+              context.save();
               context.begin_path();
               context.arc(x, y, radius, 0.0, 2.0 * 3.14);
-              context.set_fill_style(&JsValue::from_str("#0B79CE"));
+              context.set_fill_style(&JsValue::from_str(&fill));
               context.fill();  
+              context.restore();
             },
             "line" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
@@ -391,11 +394,15 @@ impl Core {
               let y1 = parameters_table.data[1][0].as_float().unwrap();
               let x2 = parameters_table.data[2][0].as_float().unwrap();
               let y2 = parameters_table.data[3][0].as_float().unwrap();
+              let stroke = parameters_table.data[4][0].as_string().unwrap();
+              context.save();
               context.begin_path();
               context.move_to(x1, y1);
               context.line_to(x2, y2);
               context.close_path();
+              context.set_stroke_style(&JsValue::from_str(&stroke));
               context.stroke();
+              context.restore();
             },
             "image" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
