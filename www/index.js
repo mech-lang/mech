@@ -210,9 +210,9 @@ Create a timer that ticks every second. This is the time source.
 
 Set up a clock hands table. Degrees is the deflection from noon.
   #clock-hands = [|degrees x y stroke|
-                  0       0 0 "023963"
-                  0       0 0 "023963"
-                  0       0 0 "ce0b46"]
+                  0       0 0 "#023963"
+                  0       0 0 "#023963"
+                  0       0 0 "#ce0b46"]
 
 ## Update the clock
 
@@ -230,7 +230,7 @@ Calculate x and y endpoints
 
 Set up clock drawing elements
   #clock = [|shape    parameters|
-             "circle" [cx: 150 cy: 150 radius: 100 fill: "0B79CE"]
+             "circle" [cx: 150 cy: 150 radius: 100 fill: "#0B79CE"]
              "line"   [x1: 150 y1: 150 x2: #clock-hands{1,2} y2: #clock-hands{1,3} stroke: #clock-hands{1,4}]
              "line"   [x1: 150 y1: 150 x2: #clock-hands{2,2} y2: #clock-hands{2,3} stroke: #clock-hands{2,4}]
              "line"   [x1: 150 y1: 150 x2: #clock-hands{3,2} y2: #clock-hands{3,3} stroke: #clock-hands{3,4}]]
