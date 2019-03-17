@@ -465,8 +465,3 @@ impl Core {
   }
 
 }
-
-#[wasm_bindgen]
-pub fn hash_string(input: String) -> u64 {
-    Hasher::hash_string(input)
-} 

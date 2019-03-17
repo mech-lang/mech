@@ -1,8 +1,7 @@
-import {Core, hash_string} from "mech-wasm";
+import {Core} from "mech-wasm";
 
 let mech_core = Core.new();
 
-let balls = hash_string("ball");
 let time = 1;
 
 // ## Controls
