@@ -367,24 +367,24 @@ impl Core {
     let context = Rc::new(context);
 
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for i in 0..elements_table.rows as usize {
-      match elements_table.data[0][i as usize] {
+    for row in 0..elements_table.rows as usize {
+      match elements_table.data[0][row] {
         Value::String(ref shape) => {
           match shape.as_ref() {
             "circle" => {
-              let x = elements_table.data[1][i].as_float().unwrap();
-              let y = elements_table.data[2][i].as_float().unwrap();
-              let radius = elements_table.data[3][i].as_float().unwrap();
+              let x = elements_table.data[1][row].as_float().unwrap();
+              let y = elements_table.data[2][row].as_float().unwrap();
+              let radius = elements_table.data[3][row].as_float().unwrap();
               context.begin_path();
               context.arc(x, y, radius, 0.0, 2.0 * 3.14);
               context.set_fill_style(&JsValue::from_str("#0B79CE"));
               context.fill();  
             },
             "line" => {
-              let x1 = elements_table.data[1][i].as_float().unwrap();
-              let y1 = elements_table.data[2][i].as_float().unwrap();
-              let x2 = elements_table.data[4][i].as_float().unwrap();
-              let y2 = elements_table.data[5][i].as_float().unwrap();
+              let x1 = elements_table.data[1][row].as_float().unwrap();
+              let y1 = elements_table.data[2][row].as_float().unwrap();
+              let x2 = elements_table.data[4][row].as_float().unwrap();
+              let y2 = elements_table.data[5][row].as_float().unwrap();
               context.begin_path();
               context.move_to(x1, y1);
               context.line_to(x2, y2);
@@ -392,14 +392,16 @@ impl Core {
               context.stroke();
             },
             "image" => {
-              let image_source = elements_table.data[7][i].as_string().unwrap();
+              let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
+              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+              let image_source = parameters_table.data[3][0].as_string().unwrap();
               let source_hash = Hasher::hash_string(image_source.clone());
               match self.images.entry(source_hash) {
                 Entry::Occupied(img_entry) => {
                   let img = img_entry.get();
-                  let rotation = elements_table.data[3][i].as_float().unwrap();
-                  let x = elements_table.data[1][i].as_float().unwrap();
-                  let y = elements_table.data[2][i].as_float().unwrap();
+                  let rotation = parameters_table.data[2][0].as_float().unwrap();
+                  let x = parameters_table.data[0][0].as_float().unwrap();
+                  let y = parameters_table.data[1][0].as_float().unwrap();
                   let ix = img.width() as f64 / 2.0;
                   let iy = img.height() as f64 / 2.0;
                   // Draw it
