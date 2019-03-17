@@ -83,12 +83,18 @@ impl Core {
     log!("Core Time -{}", self.core.offset);
   }
 
-  pub fn display_core(&mut self) {
+  pub fn display_core(&self) {
     log!("{:?}", self.core);
   }
 
-  pub fn display_runtime(&mut self) {
+  pub fn display_runtime(&self) {
     log!("{:?}", self.core.runtime);
+  }
+
+  pub fn display_changes(&self) {
+    for change in &self.core.store.changes {
+      log!("{:?}", change);
+    }
   }
 
   pub fn render(&mut self) {
