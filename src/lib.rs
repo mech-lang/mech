@@ -184,9 +184,9 @@ impl Core {
             ));
           },
           Change::NewTable{id, rows, columns} => {
-            self.store.process_transaction(&Transaction::from_change(
+            /*self.store.process_transaction(&Transaction::from_change(
               Change::RemoveTable{id: *id, rows: *rows, columns: *columns}
-            ));
+            ));*/
           },
           _ => (),
         };
