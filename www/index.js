@@ -185,14 +185,14 @@ Set up the robot arm linkages
   x4 = x3 + h2 * math/sin(degrees: angle2)
   y5 = y4 - h3 * math/cos(degrees: angle3)
   x5 = x4 + h3 * math/sin(degrees: angle3)
-  #robot-arm = [|shape   cx cy radius x y stroke fill|
-                 "image" x3 y3 angle2 _ _ _      "http://mech-lang.org/img/robotarm/link2.png"
-                 "image" x1 y1 angle1 _ _ _      "http://mech-lang.org/img/robotarm/link1.png"
-                 "image" x0 y0 0      _ _ _      "http://mech-lang.org/img/robotarm/link0.png"
-                 "image" x5 y5 angle3 _ _ _      "http://mech-lang.org/img/robotarm/gripper.png"]
+  #arm = [|shape   parameters|
+           "image" [x: x3 y: y3 rotation: angle2 image: "http://mech-lang.org/img/robotarm/link2.png"]
+           "image" [x: x1 y: y1 rotation: angle1 image: "http://mech-lang.org/img/robotarm/link1.png"]
+           "image" [x: x0 y: y0 rotation: 0 image: "http://mech-lang.org/img/robotarm/link0.png"]
+           "image" [x: x5 y: y5 rotation: angle3 image: "http://mech-lang.org/img/robotarm/gripper.png"]]
 
 Do the draw 
-  #drawing = [type: "canvas" class: _ contains: [#robot-arm] parameters: [width: 1500 height: 750]]
+  #drawing = [type: "canvas" class: _ contains: [#arm] parameters: [width: 1500 height: 750]]
   
 Animation controls  
   #slider1 = [type: "slider" class: _ contains: _ parameters: [min: -120 max: 120 value: -45]]
