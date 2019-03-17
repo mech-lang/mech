@@ -97,13 +97,17 @@ impl Core {
     let closure = Closure::wrap(Box::new(move || {
       let window = web_sys::window().expect("no global `window` exists");
       let document = window.document().expect("should have a document on window");
-      let canvas = document.get_element_by_id("drawing canvas").unwrap();
-      let canvas: web_sys::HtmlCanvasElement = canvas
-                .dyn_into::<web_sys::HtmlCanvasElement>()
-                .map_err(|_| ())
-                .unwrap();
-      unsafe {
-        (*wasm_core).render_canvas(&canvas);
+      let canvases = document.get_elements_by_tag_name("canvas");
+      for i in 0..canvases.length() {
+        let canvas = canvases.get_with_index(i);
+        let canvas: web_sys::HtmlCanvasElement = canvas
+                  .unwrap()
+                  .dyn_into::<web_sys::HtmlCanvasElement>()
+                  .map_err(|_| ())
+                  .unwrap();
+        unsafe {
+          (*wasm_core).render_canvas(&canvas);
+        }
       }
     }) as Box<FnMut()>);
     window.request_animation_frame(closure.as_ref().unchecked_ref());
@@ -256,14 +260,17 @@ impl Core {
           container.append_child(&div)?;
         },
         "img" => {
+          let element_id = Hasher::hash_string(format!("img-{:?}-{:?}", table.id, row));
           let class = &table.data[1][row].as_string().unwrap();
           let value = &table.data[2][row].as_string().unwrap();
           let mut img = web_sys::HtmlImageElement::new().unwrap();
           img.set_attribute("class", class);
+          img.set_id(&format!("{:?}",element_id));
           img.set_src(value);
           container.append_child(&img)?;
         },
         "slider" => {
+          let element_id = Hasher::hash_string(format!("slider-{:?}-{:?}", table.id, row));
           let mut slider = document.create_element("input")?;
           let mut slider: web_sys::HtmlInputElement = slider
                 .dyn_into::<web_sys::HtmlInputElement>()
@@ -275,6 +282,7 @@ impl Core {
           let min = &parameters_table.data[0][0].as_string().unwrap();
           let max = &parameters_table.data[1][0].as_string().unwrap();
           let value = &parameters_table.data[2][0].as_string().unwrap();
+          slider.set_id(&format!("{:?}", element_id));
           slider.set_type("range");
           slider.set_min(min);
           slider.set_max(max);
@@ -310,6 +318,7 @@ impl Core {
           container.append_child(&slider)?;
         },
         "canvas" => { 
+          let element_id = Hasher::hash_string(format!("canvas-{:?}-{:?}", table.id, row));
           let canvas = document.create_element("canvas")?;
           let elements_id_str = &table.data[2][row].as_string().unwrap();
           let elements_id = &table.data[2][row].as_u64().unwrap();
@@ -318,7 +327,7 @@ impl Core {
           unsafe {
             parameters_table = (*core).store.get_table(*parameters_id).unwrap();
           }
-          canvas.set_attribute("id","drawing canvas");
+          canvas.set_id(&format!("{:?}",element_id));
           canvas.set_attribute("elements",elements_id_str);
           canvas.set_attribute("width", &parameters_table.data[0][0].as_string().unwrap());
           canvas.set_attribute("height",&parameters_table.data[1][0].as_string().unwrap());
