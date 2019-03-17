@@ -322,8 +322,7 @@ document.getElementById("clear core").addEventListener("click", function() {
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
-  let timer_hash = hash_string("system/timer");
-  let column = mech_core.get_column(timer_hash,BigInt(1));
+  let column = mech_core.get_column("system/timer", 1);
   setInterval(system_timer, column[0]);
 });
 
