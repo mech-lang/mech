@@ -31,6 +31,7 @@ mod table;
 mod indexes;
 mod operations;
 mod quantities;
+mod errors;
 
 // ## Exported Modules
 
@@ -40,6 +41,7 @@ pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Comparator, Logic, Parameter};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
+pub use self::errors::{Error};
 
 
 // ## Core
