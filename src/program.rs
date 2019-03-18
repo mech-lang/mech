@@ -11,7 +11,7 @@ use std::mem;
 use std::fs::{OpenOptions, File, canonicalize};
 use std::io::{Write, BufReader, BufWriter};
 
-use mech_core::{Core, Transaction, Change};
+use mech_core::{Core, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{TableIndex, Hasher};
@@ -29,6 +29,7 @@ pub struct Program {
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
+  pub errors: Vec<Error>,
 }
 
 impl Program {
@@ -44,7 +45,8 @@ impl Program {
       capacity,
       mech,
       incoming, 
-      outgoing 
+      outgoing,
+      errors: Vec::new(),
     }
   }
 
@@ -52,6 +54,9 @@ impl Program {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
     self.mech.register_blocks(compiler.blocks);
+    println!("{:?}", self.mech);
+    self.errors.append(&mut self.mech.runtime.errors.clone());
+    println!("{:?}", self.errors);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(1), column: Index::Index(1), value: Value::from_str(&input.clone())});
     self.outgoing.send(RunLoopMessage::Transaction(txn));
