@@ -36,6 +36,7 @@ pub struct Core {
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
   nodes: HashMap<u64, Vec<u64>>,
+  roots: HashSet<String>,
 }
 
 #[wasm_bindgen]
@@ -47,6 +48,7 @@ impl Core {
       changes: Vec::new(),
       images: HashMap::new(),
       nodes: HashMap::new(),
+      roots: HashSet::new(),
     }
   }
 
@@ -60,6 +62,13 @@ impl Core {
 
   pub fn clear(&mut self) {
     self.core.clear();
+    for root in self.roots.iter() {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let root_node = document.get_element_by_id(root).unwrap();
+      let mech_node = root_node.first_child().unwrap();
+      root_node.remove_child(&mech_node);
+    }
     log!("Core Cleared");
   }
 
@@ -214,16 +223,20 @@ impl Core {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         let body = document.body().expect("document should have a body");
-        let drawing_area = document.get_element_by_id("drawing").unwrap();
-        let mut app = document.create_element("div")?;
-        let contents_id = app_table.data[1][0].as_u64().unwrap();
-        let contents_table;
-        // TODO Make this safe
-        unsafe {
-          contents_table = (*core).store.get_table(contents_id).unwrap();       
+        for row in 0..app_table.rows as usize {
+          let root_id = app_table.data[0][row].as_string().unwrap();
+          self.roots.insert(root_id.clone());
+          let contents_id = app_table.data[2][row].as_u64().unwrap();
+          let contents_table;
+          let mut app = document.create_element("div")?;
+          let drawing_area = document.get_element_by_id(&root_id).unwrap();
+          // TODO Make this safe
+          unsafe {
+            contents_table = (*core).store.get_table(contents_id).unwrap();       
+          }
+          self.draw_contents(&contents_table, &mut app);
+          drawing_area.append_child(&app)?;
         }
-        self.draw_contents(&contents_table, &mut app);
-        drawing_area.append_child(&app)?;
       }
       _ => (),
     }
