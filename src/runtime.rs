@@ -113,7 +113,6 @@ impl Runtime {
         }
       }
       // Queue up the next blocks based on tables that changed during this round.
-      println!("{:?}", store.tables.changed_this_round);
       for (table, column) in store.tables.changed_this_round.drain() {
         self.changed_this_round.insert((table.clone(), column.clone()));
         let register = Register::new(table,column);
