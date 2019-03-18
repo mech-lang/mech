@@ -41,7 +41,7 @@ pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Comparator, Logic, Parameter};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
-pub use self::errors::{Error};
+pub use self::errors::{Error, ErrorType};
 
 
 // ## Core
@@ -268,6 +268,8 @@ impl fmt::Debug for Core {
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
     write!(f, "│   Input: {:?}\n", self.input).unwrap();
     write!(f, "│   Output: {:?}\n", self.output).unwrap();
+    write!(f, "│   Errors:\n").unwrap();
+    write!(f, "│     {:?}\n", self.runtime.errors).unwrap();
     write!(f, "└────────────────────┘\n").unwrap();
     for table in self.store.tables.map.values() {
       write!(f, "{:?}", table).unwrap();
