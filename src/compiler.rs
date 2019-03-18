@@ -168,6 +168,7 @@ pub struct Compiler {
   pub current_line: usize,
   pub current_col: usize,
   pub errors: Vec<u64>,
+  pub unparsed: String,
 }
 
 impl Compiler {
@@ -187,6 +188,7 @@ impl Compiler {
       current_char: 0,
       current_line: 1,
       current_col: 1,
+      unparsed: String::new(),
       text: String::new(),
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
@@ -218,8 +220,7 @@ impl Compiler {
     self.text = input.clone();
     let mut parser = Parser::new();
     parser.parse(&input);
-    //println!("{:?}", parser.parse_tree);
-    //println!("{:?}", parser.unparsed);
+    self.unparsed = parser.unparsed;
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
