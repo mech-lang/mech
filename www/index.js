@@ -144,7 +144,7 @@ Draw to screen
   #app/main = [direction: "column" contains: [container]]`;
 */
 
-/*code.innerHTML =  `# Mech Website
+code.innerHTML =  `# Mech Website
 
 This is where the main website structure is defined
   wrapper = [|type  class         contains|
@@ -155,8 +155,7 @@ This is where the main website structure is defined
   content = [|type  class  contains| 
               "img" "logo" "http://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
-  #app/main = [|direction contains| 
-                "column"  [wrapper]]
+  #app/main = [root: "drawing" direction: "column" contains: [wrapper]]
                 
 ## Robot Arm Drawing
 
@@ -201,8 +200,8 @@ Animation controls
 Compose animation and controls
   composed-drawing = [#slider1; #slider2; #slider3; #drawing]
   #robot-animation = [type: "div" class: _ contains: [composed-drawing]]`;
-  */
 
+  /*
  code.innerHTML =  `# Clock
 
 Create a timer that ticks every second. This is the time source.
@@ -238,6 +237,7 @@ Set up clock drawing elements
 Do the draw 
   clock-canvas = [type: "canvas" class: _ contains: [#clock] parameters: [width: 300 height: 300]]
   #app/main = [root: "drawing" direction: "column" contains: [clock-canvas]]`;
+*/
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
