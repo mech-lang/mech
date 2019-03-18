@@ -6,8 +6,9 @@ use table::{Value, Table, Index};
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::fmt;
-use hashbrown::hash_map::HashMap;
+use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
+use errors::ErrorType;
 
 // ## Hasher
 
@@ -113,8 +114,16 @@ impl TableIndex {
     self.map.len()
   }
 
-  pub fn add_alias(&mut self, table: u64, alias: u64) {
-    self.aliases.insert(alias, table);
+  pub fn add_alias(&mut self, table: u64, alias: u64) -> Result<(),ErrorType> {
+    match self.aliases.entry(alias) {
+      Entry::Occupied(_) => {
+        Err(ErrorType::DuplicateAlias)
+      },
+      Entry::Vacant(v) => {    
+        v.insert(table);
+        Ok(())
+      },
+    }
   }
 
   pub fn get(&self, table_id: u64) -> Option<&Table> {
