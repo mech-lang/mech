@@ -237,7 +237,7 @@ Set up clock drawing elements
 
 Do the draw 
   clock-canvas = [type: "canvas" class: _ contains: [#clock] parameters: [width: 300 height: 300]]
-  #app/main = [direction: "column" contains: [clock-canvas]]`;
+  #app/main = [root: "drawing" direction: "column" contains: [clock-canvas]]`;
 
 let drawing_area = document.createElement("div")
 drawing_area.setAttribute("id", "drawing");
@@ -317,7 +317,7 @@ document.getElementById("view runtime").addEventListener("click", function() {
 
 document.getElementById("clear core").addEventListener("click", function() {
   mech_core.clear();
-  render();
+  //render();
 });
 
 document.getElementById("start timer").addEventListener("click", function() {
