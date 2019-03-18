@@ -560,3 +560,14 @@ block
        4 _
        _ 7]
   #test = stat/sum(column: x{:,1}) + stat/sum(column: x{:,2})"#, Value::from_i64(14));
+
+// ## Errors
+
+test_mech!(error_duplicate_alias, r#"
+block
+  #test = 5
+
+block
+  x = 1
+  x = 3
+  #test := 7"#, Value::from_i64(5));
