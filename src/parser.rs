@@ -366,8 +366,16 @@ named!(identifier<CompleteStr, Node>, do_parse!(
   }) >>
   (Node::Identifier{children: identifier})));
 
+named!(carriage_newline<CompleteStr, Node>, do_parse!(
+  tag!("\r\n") >>
+  (Node::Null)));
+
+named!(newline<CompleteStr, Node>, do_parse!(
+  alt!(new_line_char | carriage_newline) >>
+  (Node::Null)));
+
 named!(whitespace<CompleteStr, Node>, do_parse!(
-  many0!(space) >> new_line_char >>
+  many0!(space) >> newline >>
   (Node::Null)));
 
 named!(floating_point<CompleteStr, Node>, do_parse!(
@@ -452,7 +460,7 @@ named!(table_column<CompleteStr, Node>, do_parse!(
 
 named!(table_row<CompleteStr, Node>,
 do_parse!(
-  many0!(alt!(space | tab)) >> columns: many1!(table_column) >> opt!(semicolon) >> opt!(new_line_char) >>
+  many0!(alt!(space | tab)) >> columns: many1!(table_column) >> opt!(semicolon) >> opt!(newline) >>
   (Node::TableRow { children: columns })));
 
 named!(attribute<CompleteStr, Node>, do_parse!(
@@ -460,7 +468,7 @@ named!(attribute<CompleteStr, Node>, do_parse!(
   (Node::Attribute { children: vec![identifier] })));
 
 named!(table_header<CompleteStr, Node>, do_parse!(
-  bar >> attributes: many1!(attribute) >> bar >> many0!(space) >> opt!(new_line_char) >>
+  bar >> attributes: many1!(attribute) >> bar >> many0!(space) >> opt!(newline) >>
   (Node::TableHeader { children: attributes })));
 
 named!(anonymous_table<CompleteStr, Node>, do_parse!(
@@ -627,7 +635,7 @@ named!(expression<CompleteStr, Node>, do_parse!(
 // ### Block Basics
 
 named!(constraint<CompleteStr, Node>, do_parse!(
-  space >> space >> statement_or_expression: statement >> many0!(space) >> opt!(new_line_char) >>
+  space >> space >> statement_or_expression: statement >> many0!(space) >> opt!(newline) >>
   (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>, do_parse!(
