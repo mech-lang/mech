@@ -21,6 +21,7 @@ use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath};
 use libm::{sin, cos};
+use errors::Error;
 
 // ## Runtime
 
@@ -31,6 +32,7 @@ pub struct Runtime {
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
   pub changed_this_round: HashSet<(u64, Index)>,
+  pub errors: Vec<Error>,
 }
 
 impl Runtime {
@@ -42,6 +44,7 @@ impl Runtime {
       pipes_map: HashMap::new(),
       tables_map: HashMap::new(),
       changed_this_round: HashSet::new(),
+      errors: Vec::new(),
     }
   }
 
@@ -76,8 +79,11 @@ impl Runtime {
     for local_table in block.memory.map.keys() {
       self.tables_map.insert(*local_table, block.id as u64);
     }
+    // Register all errors on the block with the runtime
+    self.errors.append(&mut block.errors.clone());
+
     // Mark the block as ready for execution on the next available cycle
-    if block.updated && block.input_registers.len() == 0 {
+    if block.updated && block.input_registers.len() == 0 && block.errors.len() == 0 {
       self.ready_blocks.insert(block.id);
     }
     // Add the block to our list of blocks
@@ -209,6 +215,7 @@ pub struct Block {
   pub input_registers: HashSet<Register>,
   pub output_registers: HashSet<Register>,
   pub constraints: Vec<(String, Vec<Constraint>)>,
+  pub errors: Vec<Error>,
   memory: TableIndex,
   scratch: Table,
   lhs_rows_empty: Vec<Value>,
@@ -232,6 +239,7 @@ impl Block {
       output_registers: HashSet::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
+      errors: Vec::new(),
       scratch: Table::new(0,0,0),
       // allocate empty indices so we don't have to do this on each iteration
       lhs_rows_empty: Vec::new(),
@@ -309,7 +317,19 @@ impl Block {
         Constraint::AliasTable{table, alias} => {
           // TODO Raise an error here if the alias already exists
           match table {
-            TableId::Local(id) => self.memory.add_alias(id, alias),
+            TableId::Local(id) => {
+              match self.memory.add_alias(id, alias) {
+                Err(mech_error) => {
+                  self.errors.push(Error{
+                    block: self.id as u64,
+                    line: 0,
+                    column: 0,
+                    error_id: mech_error,
+                  });
+                },
+                _ => (),
+              }
+            },
             TableId::Global(id) => (), // TODO Add global alias here
           }
         },
@@ -422,9 +442,13 @@ impl Block {
   }
 
   pub fn is_ready(&self) -> bool {
-    let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
-    // The block is ready if all input registers are ready i.e. the length of the set diff is 0
-    set_diff.len() == 0
+    if self.errors.len() > 0 {
+      false
+    } else {
+      let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
+      // The block is ready if all input registers are ready i.e. the length of the set diff is 0
+      set_diff.len() == 0
+    }    
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
@@ -1197,6 +1221,9 @@ impl fmt::Debug for Block {
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ \n{}\n",self.text).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
+    write!(f, "│ Errors:\n").unwrap();
+    write!(f, "│ {:?}\n", self.errors).unwrap();
+    write!(f, "├────────────────────────────────────────┤\n").unwrap();
     write!(f, "│ Ready: {:?} ({:?})\n", self.is_ready(), self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
@@ -1279,7 +1306,7 @@ impl fmt::Debug for Constraint {
       Constraint::Constant{table, row, column, value} => write!(f, "Constant({} -> #{:?})", value.to_float(), table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
-      Constraint::AliasTable{table, alias} => write!(f, "AliasLocalTable({:?} -> {:#x})", table, alias),
+      Constraint::AliasTable{table, alias} => write!(f, "AliasTable({:?} -> {:#x})", table, alias),
       Constraint::Identifier{id, text} => write!(f, "Identifier(\"{}\" = {:#x})", text, id),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
       Constraint::Append{from_table, to_table} => write!(f, "Append({:?} -> {:?})", from_table, to_table),
