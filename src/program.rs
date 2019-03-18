@@ -54,13 +54,11 @@ impl Program {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
     self.mech.register_blocks(compiler.blocks);
-    println!("{:?}", self.mech);
     self.errors.append(&mut self.mech.runtime.errors.clone());
-    println!("{:?}", self.errors);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(1), column: Index::Index(1), value: Value::from_str(&input.clone())});
     self.outgoing.send(RunLoopMessage::Transaction(txn));
-    //self.mech.step();
+    self.mech.step();
   }
 
   pub fn clear(&mut self) {
