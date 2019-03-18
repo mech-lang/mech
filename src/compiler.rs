@@ -5,6 +5,7 @@
 use mech_core::{Block, Constraint, Index, TableId};
 use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
+use mech_core::ErrorType;
 use parser;
 use parser::Parser;
 use lexer::Token;
