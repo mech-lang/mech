@@ -5,6 +5,7 @@
 #[derive(Clone, Debug)]
 pub struct Error { 
   pub block: u64,
+  pub constraint: usize,
   pub line: usize,
   pub column: usize,
   pub error_id: ErrorType,
@@ -13,6 +14,6 @@ pub struct Error {
 
 #[derive(Clone, Debug)]
 pub enum ErrorType {
-  MissingAttribute,
-  DuplicateAlias,
+  MissingAttribute(u64),
+  DuplicateAlias(u64),
 }
