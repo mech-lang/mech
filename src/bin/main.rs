@@ -31,9 +31,15 @@ fn compile_test(input: String, test: Value) {
 
 
 fn main() {
-  let input = String::from(r#"
+  let input = String::from(r#"# A Test Program
+
 block
-  #a = math/sin(degrees: 210)"#);
+  #test = 5
+
+block
+  x = 1
+  x = 3
+  #test := 7"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -45,25 +51,23 @@ block
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.syntax_tree);
-  println!("{:?}", core.runtime);
+  //println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime);
   
+  
+  //let now = SystemTime::now();
+  let change = Change::Set{table: 0x132537277, 
+                            row: Index::Index(1), 
+                            column: Index::Index(3),
+                            value: Value::from_u64(42),
+                          };
+  let txn = Transaction::from_change(change.clone());
+  core.process_transaction(&txn);
+  //println!("{:?}", core);
+  //println!("{:?}", core.runtime);
   /*
-  let now = SystemTime::now();
-  let n = 100;
-  for i in 0..n {
-    let table_id = Hasher::hash_str("system/timer");
-    let change = Change::Set{table: table_id, 
-                              row: Index::Index(1 as u64), 
-                              column: Index::Index(2 as u64),
-                              value: Value::from_u64(i as u64),
-                            };
-    let txn = Transaction::from_change(change.clone());
-    core.process_transaction(&txn);
-  }
-  println!("{:?}", core);
   match now.elapsed() {
     Ok(elapsed) => {
       // it prints '2'
@@ -74,7 +78,7 @@ block
       // an error occurred!
       println!("Error: {:?}", e);
     }
-  }
-  println!("{:?}", core);*/
+  }*/
+  //println!("{:?}", core);
 
 }

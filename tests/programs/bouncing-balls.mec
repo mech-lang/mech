@@ -2,7 +2,8 @@
 
 Define the environment
   #html/event/click = [|x y|]
-  #ball = [|x y vx vy|]
+  #ball = [|x y vx vy|
+            0 0 0 0]
   #system/timer = [resolution: 15, tick: 0]
   #gravity = 1
   #boundary = [x: 500 y: 500]
