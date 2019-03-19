@@ -153,7 +153,7 @@ This is where the main website structure is defined
               "div" "container"   [content]
               "div" _             [#robot-animation]]
   content = [|type  class  contains| 
-              "img" "logo" "http://mech-lang.org/img/logo.png"
+              "img" "logo" "https://mech-lang.org/img/logo.png"
               "div" "well" "Mech is a language for developing data-driven reactive systems like animations games and robots. It makes composing transforming and distributing data easy allowing you to focus on the essential complexity of your work."]
   #app/main = [root: "drawing" direction: "column" contains: [wrapper]]
                 
@@ -184,10 +184,10 @@ Set up the robot arm linkages
   y5 = y4 - h3 * math/cos(degrees: angle3)
   x5 = x4 + h3 * math/sin(degrees: angle3)
   #arm = [|shape   parameters|
-           "image" [x: x3 y: y3 rotation: angle2 image: "http://mech-lang.org/img/robotarm/link2.png"]
-           "image" [x: x1 y: y1 rotation: angle1 image: "http://mech-lang.org/img/robotarm/link1.png"]
-           "image" [x: x0 y: y0 rotation: 0 image: "http://mech-lang.org/img/robotarm/link0.png"]
-           "image" [x: x5 y: y5 rotation: angle3 image: "http://mech-lang.org/img/robotarm/gripper.png"]]
+           "image" [x: x3 y: y3 rotation: angle2 image: "https://mech-lang.org/img/robotarm/link2.png"]
+           "image" [x: x1 y: y1 rotation: angle1 image: "https://mech-lang.org/img/robotarm/link1.png"]
+           "image" [x: x0 y: y0 rotation: 0 image: "https://mech-lang.org/img/robotarm/link0.png"]
+           "image" [x: x5 y: y5 rotation: angle3 image: "https://mech-lang.org/img/robotarm/gripper.png"]]
 
 Do the draw 
   #drawing = [type: "canvas" class: _ contains: [#arm] parameters: [width: 1500 height: 750]]
