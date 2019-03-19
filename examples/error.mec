@@ -1,0 +1,14 @@
+# Error Example
+
+block
+  #test = 5
+
+block
+  x = 1
+  x = 3
+  #test := 7
+
+block
+  #test := 7
+  y = 1
+  y = 3
