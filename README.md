@@ -16,11 +16,18 @@ The language runtime. It's a small dataflow engine that accepts transactions of 
 
 ## Contents
 
-- table - defines a `Table`, the core data structure of Mech. Also defines a `Value`, which unifies the various data types (Number, String, Bool, Table).
-- database - defines a `Database` of tables. Databases accept `Transactions`, which is are sets of `Changes` to the database.
-- indexes - defines the various indexes used to quickly look up information in the database
-- runtime - defines a `Runtime`, which orchestrates the compute graph; and `Blocks`, which comprise the compute graph.
-- operations - defines the primitive operations that can be performed by nodes in the compute network.
+- **table** - defines a `Table`, the core data structure of Mech. Also defines a `Value`, which unifies the various data types (Number, String, Bool, Reference).
+- **database** - defines a `Database` of tables. Databases accept `Transactions`, which is are sets of `Changes` to the database.
+- **runtime** - defines a `Runtime`, which orchestrates the compute graph; and `Blocks`, which comprise the compute graph.
+- **indexes** - defines the various indexes used to quickly look up information in the database
+- **operations** - defines the primitive operations that can be performed by nodes in the compute network.
+- **errors** - defines an `Error`, which holds the information necessary to track and render error messages.
+
+## Project Status
+
+Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
+
+Feel free to use the language for your own satisfaction, but please don't use it for anything important.
 
 ## License
 
