@@ -117,7 +117,7 @@ impl TableIndex {
   pub fn add_alias(&mut self, table: u64, alias: u64) -> Result<(),ErrorType> {
     match self.aliases.entry(alias) {
       Entry::Occupied(_) => {
-        Err(ErrorType::DuplicateAlias)
+        Err(ErrorType::DuplicateAlias(alias))
       },
       Entry::Vacant(v) => {    
         v.insert(table);
