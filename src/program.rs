@@ -250,7 +250,6 @@ impl ProgramRunner {
     let mut program = self.program;
     let persistence_channel = self.persistence_channel;
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
-      println!("{} Starting run loop.", name);
       let mut paused = false;
       'runloop: loop {
         match (program.incoming.recv(), paused) {
