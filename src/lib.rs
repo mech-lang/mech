@@ -458,8 +458,6 @@ impl Core {
         },    
         _ => (),    
       }
-
-
     }
     Ok(())
   } 
@@ -472,11 +470,10 @@ impl Core {
     let table_list = document.create_element("ul")?;
     for (table_id, table) in self.core.store.tables.map.iter() {
       let table_list_item = document.create_element("li")?;
-      let table_name = match self.core.store.names.get(table_id) {
-        Some(name) => name,
-        None => "",
+      match self.core.store.names.get(table_id) {
+        Some(name) => {table_list_item.set_inner_html(table_name);},
+        None => (),
       };
-      table_list_item.set_inner_html(table_name);
       table_list.append_child(&table_list_item)?;
     }
     table_list_div.append_child(&table_list)?;
