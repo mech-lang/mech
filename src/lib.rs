@@ -471,7 +471,7 @@ impl Core {
     for (table_id, table) in self.core.store.tables.map.iter() {
       let table_list_item = document.create_element("li")?;
       match self.core.store.names.get(table_id) {
-        Some(name) => {table_list_item.set_inner_html(table_name);},
+        Some(name) => {table_list_item.set_inner_html(name);},
         None => (),
       };
       table_list.append_child(&table_list_item)?;
