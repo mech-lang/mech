@@ -44,7 +44,7 @@ fn add_two_vectors_10e3(b:&mut Bencher) {
   let mut compiler = Compiler::new();
   let input = String::from("
 block
-  x = 1:1,000
+  x = 1:1000
   z = x + x");
   compiler.compile_string(input);
   b.iter(|| {
