@@ -1,6 +1,5 @@
 // # Mech
 
-
 /*
  Mech Server is a wrapper around the mech runtime. It provides interfaces for 
  controlling the runtime, sending it transactions, and responding to changes.
