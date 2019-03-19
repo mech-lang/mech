@@ -273,16 +273,16 @@ impl Block {
     }
 
     // Do any work we can up front
-    for constraint in constraints {
+    for (constraint_ix, constraint) in constraints.iter().enumerate() {
       match constraint {
         Constraint::CopyTable{from_table, to_table} => {
-          self.output_registers.insert(Register::new(to_table, Index::Index(0)));
+          self.output_registers.insert(Register::new(*to_table, Index::Index(0)));
         },
         Constraint::Append{from_table, to_table} => {
           match to_table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register::new(id, Index::Index(0)));
-              self.output_registers.insert(Register::new(id, Index::Index(0)));
+              self.input_registers.insert(Register::new(*id, Index::Index(0)));
+              self.output_registers.insert(Register::new(*id, Index::Index(0)));
             }
             _ => (),
           };
@@ -290,8 +290,8 @@ impl Block {
         Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
           match to_table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register::new(id, Index::Index(0)));
-              self.output_registers.insert(Register::new(id, Index::Index(0)));
+              self.input_registers.insert(Register::new(*id, Index::Index(0)));
+              self.output_registers.insert(Register::new(*id, Index::Index(0)));
             }, 
             _ => (),
           };
@@ -301,7 +301,7 @@ impl Block {
           //self.input_registers.push(Register::input(table, 1));
           match table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register{table: id, column: Index::Index(0)});
+              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
             },
             _ => (),
           }
@@ -309,7 +309,7 @@ impl Block {
         Constraint::ChangeScan{table, column} => {
           match (table, column) {
             (TableId::Global(id), Parameter::Index(index)) => {
-              self.input_registers.insert(Register{table: id, column: index});
+              self.input_registers.insert(Register{table: *id, column: index.clone()});
             },
             _ => (),
           }
@@ -318,10 +318,11 @@ impl Block {
           // TODO Raise an error here if the alias already exists
           match table {
             TableId::Local(id) => {
-              match self.memory.add_alias(id, alias) {
+              match self.memory.add_alias(*id, *alias) {
                 Err(mech_error) => {
                   self.errors.push(Error{
                     block: self.id as u64,
+                    constraint: self.constraints.len(),
                     line: 0,
                     column: 0,
                     error_id: mech_error,
@@ -337,7 +338,7 @@ impl Block {
           for (table, rows, columns) in parameters {
             match table {
               TableId::Global(id) => {
-                self.input_registers.insert(Register{table: id, column: Index::Index(0)});
+                self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
               },
               _ => (),
             }
@@ -349,8 +350,8 @@ impl Block {
           match lhs_table {
             TableId::Global(id) => {
               match lhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: id, column: index}),
-                _ => self.input_registers.insert(Register{table: id, column: Index::Index(0)}),
+                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: *id, column: index.clone()}),
+                _ => self.input_registers.insert(Register{table: *id, column: Index::Index(0)}),
               };
             }
             _ => (),
@@ -358,8 +359,8 @@ impl Block {
           match rhs_table {
             TableId::Global(id) => {
               match rhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: id, column: index}),
-                _ => self.input_registers.insert(Register{table: id, column: Index::Index(0)}),
+                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: *id, column: index.clone()}),
+                _ => self.input_registers.insert(Register{table: *id, column: Index::Index(0)}),
               };
             }
             _ => (),
@@ -368,14 +369,14 @@ impl Block {
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Local(id) => {
-              self.memory.insert(Table::new(id, rows, columns));              
+              self.memory.insert(Table::new(*id, *rows, *columns));              
             }
             _ => (),
           }
         },
         Constraint::Empty{table, row, column} => {
           let table_id = match table {
-            TableId::Local(id) => id,
+            TableId::Local(id) => *id,
             _ => 0,
           };
           match self.memory.map.entry(table_id) {
@@ -390,13 +391,13 @@ impl Block {
         },
         Constraint::Constant{table, row, column, value} => {
           let table_id = match table {
-            TableId::Local(id) => id,
+            TableId::Local(id) => *id,
             _ => 0,
           };
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_quantity(value));
+              table_ref.set_cell(&row, &column, Value::from_quantity(*value));
             },
             Entry::Vacant(v) => {    
             },
@@ -404,10 +405,10 @@ impl Block {
           self.updated = true;
         },
         Constraint::Reference{table, destination} => {
-          match self.memory.map.entry(destination) {
+          match self.memory.map.entry(*destination) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(table));
+              table_ref.set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(*table));
             },
             Entry::Vacant(v) => {    
             },
@@ -415,13 +416,13 @@ impl Block {
         },
         Constraint::String{table, row, column, value} => {
           let table_id = match table {
-            TableId::Local(id) => id,
+            TableId::Local(id) => *id,
             _ => 0,
           };
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_string(value));
+              table_ref.set_cell(&row, &column, Value::from_string(value.to_string()));
             },
             Entry::Vacant(v) => {    
             },
@@ -429,9 +430,9 @@ impl Block {
           self.updated = true;
         },
         Constraint::TableColumn{table, column_ix, column_alias} => {
-          match self.memory.get_mut(table) {
+          match self.memory.get_mut(*table) {
             Some(table_ref) => {
-              table_ref.set_column_alias(column_alias, column_ix);
+              table_ref.set_column_alias(*column_alias, *column_ix);
             }
             None => (), // TODO Note this as an error
           };
