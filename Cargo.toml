@@ -9,6 +9,7 @@ repository = "https://github.com/mech-lang/core"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
 license = "Apache-2.0"
+readme = "README.md"
 
 [badges]
 gitlab = { repository = "mech-lang/core", branch = "master" }
