@@ -4,7 +4,11 @@
 
 Mech is a language for developing **data-driven**, **reactive** systems like animations, games, and robots. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your problem. 
 
-Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twitter [@MechLang](https://twitter.com/MechLang), or join the mailing list: [talk@mech-lang.org](https://mech-lang.org/page/community/).
+You can try Mech online at [try.mech-lang.org](https://try.mech-lang.org).
+
+Usage and installation instructions can be found in the [documentation](https://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
+
+Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twitter [@MechLang](https://twitter.com/MechLang), get live help on our [Gitter channel](https://gitter.im/mech-lang/community), or join the [mailing list](https://groups.google.com/forum/#!forum/mechtalk).
 
 # Mech Syntax
 
@@ -12,10 +16,20 @@ A toolchain for compiling textual syntax into Mech blocks.
 
 ## Contents
 
-- lexer - converts raw text into tokens
-- parser - converts tokens into a parse tree
-- compiler - converts a parse tree into a syntax tree
-- formatter - converts a parse tree into text
+- **lexer** - defines a `Token`, which represents a character class.
+- **parser** - converts text into a parse tree, with tokens as leaves.
+- **compiler** - converts a parse tree to a syntax tree. Also handles converting a syntax tree to block constraints.
+- **formatter** - converts a parse tree into formatted text.
+
+This branch also contains various editor modes that enable syntax highlighting in popular IDEs. Modes are available for:
+
+- VS Code
+
+## Project Status
+
+Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
+
+Feel free to use the language for your own satisfaction, but please don't use it for anything important.
 
 ## License
 
