@@ -1,0 +1,13 @@
+# Mech Tutorial for Programmers
+
+Welcome to the Mech programming language. This tutorial is intended for developers who are familiar with imperative programming languages like C, Javascript, or Python. Mech follows a different paradigm, known as dataflow, so we will point out the differences and similarities between the familiar and unfamiliar throught this tutorial.
+
+This tutorial will assume you've downloaded and installed Mech using the instructions found on the [main repository](https://github.com/mech-lang/mech), and you are using the Mech REPL.
+
+## Introduction to Mech
+
+
+
+## Part 1
+
+## Part 2
