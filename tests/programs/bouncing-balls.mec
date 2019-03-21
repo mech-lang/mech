@@ -1,12 +1,11 @@
 # Bouncing Balls
 
 Define the environment
-  #html/event/click = [|x y|]
-  #ball = [|x y vx vy|
-            0 0 0 0]
-  #system/timer = [resolution: 15, tick: 0]
+  #ball = [|x   y   vx vy|
+            10  10  20  0]
+  #system/timer = [resolution: 15, tick: 0, hours: 0, minutes: 0, seconds: 0]
   #gravity = 1
-  #boundary = [x: 500 y: 500]
+  #boundary = [width: 500 height: 500]
 
 ## Update condition
 
@@ -19,29 +18,22 @@ Update the block positions on each tick of the timer
 ## Boundary Condition
 
 Keep the balls within the boundary height
-  iy = #ball.y > #boundary.y
-  #ball.y{iy} := #boundary.x
+  ~ #ball.y
+  iy = #ball.y > #boundary.height
+  #ball.y{iy} := #boundary.height
   #ball.vy{iy} := -#ball.vy * 0.80
 
 Keep the balls within the boundary width
-  ix = #ball.x > #boundary.x
+  ~ #ball.x
+  ix = #ball.x > #boundary.width
   ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.y
+  #ball.x{ix} := #boundary.width
   #ball.x{ixx} := 0
   #ball.vx{ix | ixx} := -#ball.vx * 0.80
 
-## Create More Balls
-
-Create ball at click point
-  x = #html/event/click.x
-  y = #html/event/click.y
-  #ball += [x: x, y: y, vx: 30, vy: 0]
-
 ## Drawing
 
-Add the balls as to the canvas
-  x = #ball.x
-  y = #ball.y
-  elements = [|type     cx cy radius x y stroke fill     |
-               "circle" x  y  10     _ _ _      "#000000"]
-  #html/canvas = [height: #boundary.x width: #boundary.y contains: [elements]]
+Set up clock drawing elements
+  ball = [shape: "circle" parameters: [cx: #ball.x cy: #ball.y radius: 10 fill: "#000000"]]
+  canvas = [type: "canvas" class: _ contains: [ball] parameters: [width: #boundary.width height: #boundary.height]]
+  #app/main = [root: "drawing" direction: "column" contains: [canvas]]
