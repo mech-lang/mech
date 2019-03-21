@@ -32,4 +32,4 @@ Set up clock drawing elements
 
 Do the draw 
   clock-canvas = [type: "canvas" class: _ contains: [#clock] parameters: [width: 300 height: 300]]
-  #app/main = [direction: "column" contains: [clock-canvas]]
+  #app/main = [root: "drawing" direction: "column" contains: [clock-canvas]]
