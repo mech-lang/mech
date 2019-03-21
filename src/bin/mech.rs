@@ -83,17 +83,35 @@ fn main() {
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
   } else {
-    'REPL: loop {
-      let core = mech::Core::new(100000,100);
+    let mut mech_core = mech::Core::new(100000,100);
+    'REPL: loop {      
       // If we're not serving, go into a REPL
       print!("{}", Yellow.paint("~> "));
       let mut input = String::new();
 
       io::stdin().read_line(&mut input).unwrap();
-      if input.trim() == "quit" {
-        break 'REPL;
-      } else {
-        println!("You typed: {}", input.trim());
+
+      // Handle built in commands
+      match input.trim() {
+        "help" => {
+          println!("Available commands are: help, quit, core, runtime");
+        },
+        "quit" | "exit" => {
+          break 'REPL;
+        },
+        "core" => {
+          println!("{:?}", mech_core);
+        }
+        "runtime" => {
+          println!("{:?}", mech_core.runtime);
+        }
+        _ => {
+          let mut compiler = mech::Compiler::new();
+          compiler.compile_string(input.trim().to_string());
+          println!("Compiled {} blocks.", compiler.blocks.len());
+          mech_core.register_blocks(compiler.blocks);
+          mech_core.step();
+        }
       }
     }
   }
