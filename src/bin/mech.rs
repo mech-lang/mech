@@ -10,6 +10,7 @@
 extern crate core;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
+use std::io;
 
 extern crate clap;
 use clap::{Arg, App};
@@ -31,11 +32,15 @@ fn main() {
   let matches = App::new("Mech")
     .version("0.0.1")
     .author("Corey Montella")
-    .about("Hosts Mech on an HTTP server. Default values for options are in parentheses.")
+    .about("The Mech REPL. Default values for options are in parentheses.")
     .arg(Arg::with_name("mech_file_paths")
       .help("The files and folders from which to load .mec files")
       .required(false)
       .multiple(true))
+    .arg(Arg::with_name("serve")
+      .short("s")
+      .long("serve")
+      .help("Starts a Mech HTTP and websocket server (false)"))
     .arg(Arg::with_name("port")
       .short("p")
       .long("port")
@@ -45,7 +50,7 @@ fn main() {
     .arg(Arg::with_name("http-port")
       .short("t")
       .long("http-port")
-      .value_name("PORT")
+      .value_name("HTTPPORT")
       .help("Sets the port for the HTTP server (8081)")
       .takes_value(true))
     .arg(Arg::with_name("address")
@@ -58,13 +63,14 @@ fn main() {
       .short("r")
       .long("persist")
       .value_name("PERSIST")
-      .help("The path for the file to load from and persist changes")
+      .help("The path for the file to load from and persist changes (current working directory)")
       .takes_value(true))
     .get_matches();
 
   let wport = matches.value_of("port").unwrap_or("3012");
   let hport = matches.value_of("http-port").unwrap_or("8081");
   let address = matches.value_of("address").unwrap_or("127.0.0.1");
+  let serve = matches.is_present("serve");
   let http_address = format!("{}:{}",address,hport);
   let websocket_address = format!("{}:{}",address,wport);
   let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
@@ -73,6 +79,22 @@ fn main() {
   println!("\n {}",  BrightBlack.paint("╔════════════════╗"));
   println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH"), BrightBlack.paint("║"));
   println!(" {}\n",  BrightBlack.paint("╚════════════════╝"));
-  mech_server::http_server(http_address);
-  mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
+  if serve {
+    mech_server::http_server(http_address);
+    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
+  } else {
+    'REPL: loop {
+      let core = mech::Core::new(100000,100);
+      // If we're not serving, go into a REPL
+      print!("{}", Yellow.paint("~> "));
+      let mut input = String::new();
+
+      io::stdin().read_line(&mut input).unwrap();
+      if input.trim() == "quit" {
+        break 'REPL;
+      } else {
+        println!("You typed: {}", input.trim());
+      }
+    }
+  }
 }
