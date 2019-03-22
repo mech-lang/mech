@@ -83,8 +83,9 @@ fn main() {
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
   } else {
-    let mut mech_core = mech::Core::new(100000,100);
-    'REPL: loop {      
+    let mech_client = ClientHandler::new("Mech REPL", None, None, None);
+    'REPL: loop {
+
       // If we're not serving, go into a REPL
       print!("{}", Yellow.paint("~> "));
       let mut input = String::new();
@@ -94,25 +95,35 @@ fn main() {
       // Handle built in commands
       match input.trim() {
         "help" => {
-          println!("Available commands are: help, quit, core, runtime");
+          println!("Available commands are: help, quit, core, runtime, pause, resume");
         },
         "quit" | "exit" => {
           break 'REPL;
         },
         "core" => {
-          println!("{:?}", mech_core);
+          //println!("{:?}", mech_core);
         }
         "runtime" => {
-          println!("{:?}", mech_core.runtime);
-        }
+          //println!("{:?}", mech_core.runtime);
+        },
+        "pause" => {mech_client.running.send(RunLoopMessage::Pause);},
+        "resume" => {mech_client.running.send(RunLoopMessage::Resume);},
+        "" => {
+          continue;
+        },
         _ => {
-          let mut compiler = mech::Compiler::new();
-          compiler.compile_string(input.trim().to_string());
-          println!("Compiled {} blocks.", compiler.blocks.len());
-          mech_core.register_blocks(compiler.blocks);
-          mech_core.step();
+          mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
         }
       }
+
+      // Get a response from the thread
+      match mech_client.running.receive() {
+        (Ok(RunLoopMessage::Pause)) => {
+          println!("MECH PAUSED");
+        },
+        _ => (),
+      };
+
     }
   }
 }
