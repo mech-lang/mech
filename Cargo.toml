@@ -11,3 +11,4 @@ mech-program = {git = "https://gitlab.com/mech-lang/program"}
 mech-system = {git = "https://gitlab.com/mech-lang/system"}
 clap = "2.31.2"
 term-painter = "0.2.4"
+nom = "4.2.2"

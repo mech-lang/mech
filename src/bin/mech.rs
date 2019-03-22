@@ -23,9 +23,29 @@ extern crate mech;
 use mech::{ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
 use mech::ClientHandler;
 
+#[macro_use]
+extern crate nom;
+use nom::alpha1 as nom_alpha1;
+use nom::digit1 as nom_digit1;
+use nom::AtEof as eof;
+use nom::types::CompleteStr;
+
 extern crate mech_server;
 
-// ## Server Entry
+
+#[derive(Debug, Clone)]
+pub enum ReplCommand {
+  Help,
+  Quit,
+  Pause,
+  Resume,
+  Stop,
+  Table(u64),
+  Code(String),
+  Empty,
+}
+
+// ## Mech Entry
 
 fn main() {
 
@@ -98,28 +118,33 @@ fn main() {
       io::stdin().read_line(&mut input).unwrap();
 
       // Handle built in commands
-      match input.trim() {
-        "help" => {
-          println!("Available commands are: help, quit, core, runtime, pause, resume");
-          continue;
+      match parse_repl_command(CompleteStr(input.trim())) {
+        Ok((rest, command)) => {
+          match command {
+            ReplCommand::Help => {
+              println!("Available commands are: help, quit, core, runtime, pause, resume");
+              continue;
+            },
+            ReplCommand::Quit => {
+              break 'REPL;
+            },
+            /*"core" => {
+              //println!("{:?}", mech_core);
+            }
+            "runtime" => {
+              //println!("{:?}", mech_core.runtime);
+            },*/
+            ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
+            ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
+            ReplCommand::Empty => {
+              continue;
+            },
+            _ => {
+              mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
+            }
+          }
         },
-        "quit" | "exit" => {
-          break 'REPL;
-        },
-        "core" => {
-          //println!("{:?}", mech_core);
-        }
-        "runtime" => {
-          //println!("{:?}", mech_core.runtime);
-        },
-        "pause" => {mech_client.running.send(RunLoopMessage::Pause);},
-        "resume" => {mech_client.running.send(RunLoopMessage::Resume);},
-        "" => {
-          continue;
-        },
-        _ => {
-          mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
-        }
+        _ => (), 
       }
 
       // Get a response from the thread
@@ -139,3 +164,25 @@ fn main() {
     }
   }
 }
+
+named!(none<CompleteStr, ReplCommand>, do_parse!(
+ tag!("") >> (ReplCommand::Empty)));
+
+named!(space<CompleteStr, ReplCommand>, do_parse!(
+  many1!(tag!(" ")) >> (ReplCommand::Empty)));
+
+named!(empty<CompleteStr, ReplCommand>, do_parse!(
+  alt!(none | space) >> (ReplCommand::Empty)));
+
+named!(resume<CompleteStr, ReplCommand>, do_parse!(
+  tag!("resume") >> (ReplCommand::Pause)));
+
+named!(pause<CompleteStr, ReplCommand>, do_parse!(
+  tag!("pause") >> (ReplCommand::Pause)));
+
+named!(quit<CompleteStr, ReplCommand>, do_parse!(
+  tag!("quit") >> (ReplCommand::Quit)));
+
+named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
+  command: alt!(quit | pause | resume | empty) >>
+  (command)));
