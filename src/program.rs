@@ -15,7 +15,7 @@ use std::sync::Arc;
 use mech_core::{Core, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
-use mech_core::{TableIndex, Hasher};
+use mech_core::{Table, TableIndex, Hasher};
 use mech_syntax::compiler::Compiler;
 use super::Watcher;
 
@@ -70,6 +70,8 @@ impl Program {
 
 // ## Run Loop
 
+// Run loop messages are sent to the run loop from the client
+
 #[derive(Debug, Clone)]
 pub enum RunLoopMessage {
   Stop,
@@ -82,10 +84,23 @@ pub enum RunLoopMessage {
   Code(String),
 }
 
+// Client messages are sent to the client from the run loop
+
+#[derive(Debug, Clone)]
+pub enum ClientMessage {
+  Stop,
+  Pause,
+  Resume,
+  Time(usize),
+  NewBlocks(usize),
+  Table(Table),
+  Block(Block),
+}
+
 pub struct RunLoop {
   thread: JoinHandle<()>,
   outgoing: Sender<RunLoopMessage>,
-  incoming: Receiver<RunLoopMessage>,
+  incoming: Receiver<ClientMessage>,
 }
 
 impl RunLoop {
@@ -108,7 +123,7 @@ impl RunLoop {
     }
   }
 
-  pub fn receive(&self) -> Result<RunLoopMessage,&str> {
+  pub fn receive(&self) -> Result<ClientMessage,&str> {
     match self.incoming.recv() {
       Ok(message) => Ok(message),
       Err(_) => Err("Failed to send message"),
@@ -278,37 +293,39 @@ impl ProgramRunner {
             //println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
           },
           (Ok(RunLoopMessage::Stop), _) => { 
-            client_outgoing.send(RunLoopMessage::Stop);
+            client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
-            client_outgoing.send(RunLoopMessage::Pause);
+            client_outgoing.send(ClientMessage::Pause);
           },
           (Ok(RunLoopMessage::Resume), true) => {
             paused = false;
             program.mech.resume();
-            client_outgoing.send(RunLoopMessage::Resume);
+            client_outgoing.send(ClientMessage::Resume);
           },
           (Ok(RunLoopMessage::StepBack), _) => {
             if !paused {
               paused = true;
             }
             program.mech.step_back_one();
-            client_outgoing.send(RunLoopMessage::StepBack);
+            client_outgoing.send(ClientMessage::Time(program.mech.offset));
           }
           (Ok(RunLoopMessage::StepForward), true) => {
             program.mech.step_forward_one();
-            client_outgoing.send(RunLoopMessage::StepForward);
+            client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             //program.clear();
+            let block_count = program.mech.runtime.blocks.len();
             program.compile_string(code);
+            let new_block_count = program.mech.runtime.blocks.len();
+            client_outgoing.send(ClientMessage::NewBlocks(new_block_count - block_count));
             //println!("{:?}", program.mech.runtime);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
-            client_outgoing.send(RunLoopMessage::Clear);
           },
           (Err(_), _) => break 'runloop,
           _ => (),
