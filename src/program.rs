@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet, Bound, BTreeMap};
 use std::mem;
 use std::fs::{OpenOptions, File, canonicalize};
 use std::io::{Write, BufReader, BufWriter};
+use std::sync::Arc;
 
 use mech_core::{Core, Transaction, Change, Error};
 use mech_core::{Value, Index};
@@ -78,6 +79,7 @@ pub enum RunLoopMessage {
   Resume,
   Clear,
   Transaction(Transaction),
+  Core(Arc<Core>),
   Code(String),
 }
 
@@ -277,6 +279,7 @@ impl ProgramRunner {
             //println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
           },
           (Ok(RunLoopMessage::Stop), _) => { 
+            client_outgoing.send(RunLoopMessage::Stop);
             break 'runloop;
           },
           (Ok(RunLoopMessage::Pause), false) => { 
@@ -286,15 +289,18 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Resume), true) => {
             paused = false;
             program.mech.resume();
+            client_outgoing.send(RunLoopMessage::Reume);
           },
           (Ok(RunLoopMessage::StepBack), _) => {
             if !paused {
               paused = true;
             }
             program.mech.step_back_one();
+            client_outgoing.send(RunLoopMessage::StepBack);
           }
           (Ok(RunLoopMessage::StepForward), true) => {
             program.mech.step_forward_one();
+            client_outgoing.send(RunLoopMessage::StepForward);
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             //program.clear();
@@ -303,6 +309,7 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear()
+            client_outgoing.send(RunLoopMessage::Clear);
           },
           (Err(_), _) => break 'runloop,
           _ => (),
