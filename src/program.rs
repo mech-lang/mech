@@ -84,6 +84,7 @@ pub enum RunLoopMessage {
 pub struct RunLoop {
   thread: JoinHandle<()>,
   outgoing: Sender<RunLoopMessage>,
+  incoming: Receiver<RunLoopMessage>,
 }
 
 impl RunLoop {
@@ -102,6 +103,13 @@ impl RunLoop {
   pub fn send(&self, msg: RunLoopMessage) -> Result<(),&str> {
     match self.outgoing.send(msg) {
       Ok(_) => Ok(()),
+      Err(_) => Err("Failed to send message"),
+    }
+  }
+
+  pub fn receive(&self) -> Result<RunLoopMessage,&str> {
+    match self.incoming.recv() {
+      Ok(message) => Ok(message),
       Err(_) => Err("Failed to send message"),
     }
   }
@@ -154,7 +162,7 @@ impl Persister {
     let file = match File::open(path) {
       Ok(f) => f,
       Err(_) => {
-        println!("Unable to load db: {}", path);
+        //println!("Unable to load db: {}", path);
         return;
       }
     };
@@ -166,7 +174,7 @@ impl Persister {
           self.loaded.push(change);
         },
         Err(info) => {
-          println!("ran out {:?}", info);
+          //println!("ran out {:?}", info);
           break;
         }
       }
@@ -209,6 +217,7 @@ impl ProgramRunner {
     let mut program = Program::new(name, capacity);
 
     // Start a persister
+    /*
     let persist_name = format!("{}.mdb", name);
     let mut persister = Persister::new(&persist_name);
     persister.load(&persist_name);
@@ -218,13 +227,14 @@ impl ProgramRunner {
     //println!("{} Applying {} stored changes...", BrightCyan.paint(format!("[{}]", name)), changes.len());    
     for change in changes {
       program.mech.process_transaction(&Transaction::from_change(change));
-    }
+    }*/
     
     ProgramRunner {
       name: name.to_owned(),
       program,
       // TODO Use the persistence file specified by the user
-      persistence_channel: Some(persister.get_channel()),
+      //persistence_channel: Some(persister.get_channel()),
+      persistence_channel: None,
     }
   }
 
@@ -247,6 +257,7 @@ impl ProgramRunner {
   pub fn run(self) -> RunLoop {
     let name = self.name;
     let outgoing = self.program.outgoing.clone();
+    let (client_outgoing, incoming) = mpsc::channel();
     let mut program = self.program;
     let persistence_channel = self.persistence_channel;
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
@@ -270,17 +281,15 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
-            println!("{} Run loop paused.", name);            
+            client_outgoing.send(RunLoopMessage::Pause);
           },
           (Ok(RunLoopMessage::Resume), true) => {
             paused = false;
-            println!("{} Run loop resumed.", name);
             program.mech.resume();
           },
           (Ok(RunLoopMessage::StepBack), _) => {
             if !paused {
               paused = true;
-              println!("{} Run loop paused.", name);
             }
             program.mech.step_back_one();
           }
@@ -288,13 +297,11 @@ impl ProgramRunner {
             program.mech.step_forward_one();
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
-            println!("{} Loading code\n{:?}", name, code);
-            program.clear();
+            //program.clear();
             program.compile_string(code);
-            println!("{:?}", program.mech.runtime);
+            //println!("{:?}", program.mech.runtime);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
-            println!("{} Clearing program.", name);
             program.clear()
           },
           (Err(_), _) => break 'runloop,
@@ -304,9 +311,8 @@ impl ProgramRunner {
       if let Some(channel) = persistence_channel {
         channel.send(PersisterMessage::Stop);
       }
-      println!("{} Run loop closed.", name);
     }).unwrap();
-    RunLoop { thread, outgoing }
+    RunLoop { thread, outgoing, incoming }
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {
