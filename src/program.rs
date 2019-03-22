@@ -79,7 +79,6 @@ pub enum RunLoopMessage {
   Resume,
   Clear,
   Transaction(Transaction),
-  Core(Arc<Core>),
   Code(String),
 }
 
@@ -289,7 +288,7 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Resume), true) => {
             paused = false;
             program.mech.resume();
-            client_outgoing.send(RunLoopMessage::Reume);
+            client_outgoing.send(RunLoopMessage::Resume);
           },
           (Ok(RunLoopMessage::StepBack), _) => {
             if !paused {
@@ -308,7 +307,7 @@ impl ProgramRunner {
             //println!("{:?}", program.mech.runtime);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
-            program.clear()
+            program.clear();
             client_outgoing.send(RunLoopMessage::Clear);
           },
           (Err(_), _) => break 'runloop,
