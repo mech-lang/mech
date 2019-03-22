@@ -9,5 +9,5 @@ extern crate mech_program;
 
 pub use mech_core::Core;
 pub use mech_syntax::compiler::Compiler;
-pub use mech_program::{ProgramRunner, RunLoop, RunLoopMessage};
+pub use mech_program::{ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
 pub use mech_server::client::{ClientHandler};
