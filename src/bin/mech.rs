@@ -20,7 +20,7 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 
 extern crate mech;
-use mech::{ProgramRunner, RunLoop, RunLoopMessage};
+use mech::{ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
 use mech::ClientHandler;
 
 extern crate mech_server;
@@ -76,14 +76,19 @@ fn main() {
   let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
   let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-  println!("\n {}",  BrightBlack.paint("╔════════════════╗"));
-  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH"), BrightBlack.paint("║"));
-  println!(" {}\n",  BrightBlack.paint("╚════════════════╝"));
+  println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
+  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH v0.0.1"), BrightBlack.paint("║"));
+  println!(" {}\n",  BrightBlack.paint("╚═══════════════════════╝"));
   if serve {
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
   } else {
-    let mech_client = ClientHandler::new("Mech REPL", None, None, None);
+    let paths = if mech_paths.is_empty() {
+      None
+    } else {
+      Some(&mech_paths)
+    };
+    let mech_client = ClientHandler::new("Mech REPL", None, paths, None);
     'REPL: loop {
 
       // If we're not serving, go into a REPL
@@ -96,6 +101,7 @@ fn main() {
       match input.trim() {
         "help" => {
           println!("Available commands are: help, quit, core, runtime, pause, resume");
+          continue;
         },
         "quit" | "exit" => {
           break 'REPL;
@@ -118,8 +124,14 @@ fn main() {
 
       // Get a response from the thread
       match mech_client.running.receive() {
-        (Ok(RunLoopMessage::Pause)) => {
-          println!("MECH PAUSED");
+        (Ok(ClientMessage::Pause)) => {
+          println!("{} Paused", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+        },
+        (Ok(ClientMessage::Resume)) => {
+          println!("{} Resumed", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+        },
+        (Ok(ClientMessage::NewBlocks(count))) => {
+          println!("Compiled {} blocks.", count);
         },
         _ => (),
       };
