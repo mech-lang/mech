@@ -39,7 +39,7 @@ impl Program {
     let mut mech = Core::new(capacity, 100);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
-    mech.process_transaction(&txn);
+    //mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
       watchers: HashMap::new(),
@@ -54,11 +54,15 @@ impl Program {
   pub fn compile_string(&mut self, input: String) {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
-    self.mech.register_blocks(compiler.blocks);
+    for mut block in compiler.blocks {
+      block.id = self.mech.runtime.blocks.len() + 1;
+      self.mech.runtime.ready_blocks.insert(block.id);
+      self.mech.register_blocks(vec![block]);
+    }
     self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(1), column: Index::Index(1), value: Value::from_str(&input.clone())});
-    self.outgoing.send(RunLoopMessage::Transaction(txn));
+    //self.outgoing.send(RunLoopMessage::Transaction(txn));
     self.mech.step();
   }
 
@@ -94,6 +98,7 @@ pub enum ClientMessage {
   Stop,
   Pause,
   Resume,
+  Clear,
   Time(usize),
   NewBlocks(usize),
   Table(Option<Table>),
@@ -334,6 +339,7 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
+            client_outgoing.send(ClientMessage::Clear);
           },
           (Ok(RunLoopMessage::PrintCore), _) => {
             println!("{:?}", program.mech);
