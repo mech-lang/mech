@@ -328,12 +328,9 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
-            //program.clear();
             let block_count = program.mech.runtime.blocks.len();
             program.compile_string(code);
-            let new_block_count = program.mech.runtime.blocks.len();
-            client_outgoing.send(ClientMessage::NewBlocks(new_block_count - block_count));
-            //println!("{:?}", program.mech.runtime);
+            client_outgoing.send(ClientMessage::Done);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
