@@ -80,6 +80,8 @@ pub enum RunLoopMessage {
   Pause,
   Resume,
   Clear,
+  PrintCore,
+  PrintRuntime,
   Table(u64),
   Transaction(Transaction),
   Code(String),
@@ -96,6 +98,7 @@ pub enum ClientMessage {
   NewBlocks(usize),
   Table(Option<Table>),
   Block(Block),
+  Done,
 }
 
 pub struct RunLoop {
@@ -334,6 +337,14 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
+          },
+          (Ok(RunLoopMessage::PrintCore), _) => {
+            println!("{:?}", program.mech);
+            client_outgoing.send(ClientMessage::Done);
+          },
+          (Ok(RunLoopMessage::PrintRuntime), _) => {
+            println!("{:?}", program.mech.runtime);
+            client_outgoing.send(ClientMessage::Done);
           },
           (Err(_), _) => break 'runloop,
           _ => (),
