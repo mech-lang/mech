@@ -20,7 +20,7 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 
 extern crate mech;
-use mech::{Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
+use mech::{Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::ClientHandler;
 
 #[macro_use]
@@ -125,7 +125,7 @@ fn main() {
         Ok((CompleteStr(""), command)) => {
           match command {
             ReplCommand::Help => {
-              println!("Available commands are: help, quit, runtime, pause, resume");
+              println!("Available commands are: help, quit, core, runtime, pause, resume");
               continue;
             },
             ReplCommand::Quit => {
@@ -146,17 +146,33 @@ fn main() {
               println!("Empty");
               continue;
             },
-            this => {
+            _ => {
               continue;
-              //mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
             }
           }
         },
         err => {
-          if input.trim() != "" {
-            println!("{} Unknown Command: {:?}", Red.paint("Error:"), input.trim());
+          if input.trim() == "" {
+            continue;
           }
-          continue;
+          // Try parsing mech code
+          let mut parser = Parser::new();
+          parser.parse(input.trim());
+          if parser.unparsed == "" {
+            mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
+          // Try parsing it as an anonymous statement
+          } else {
+            let command = format!("#ans = {}", input.trim());
+            let mut parser = Parser::new();
+            parser.parse(&command);
+            if parser.unparsed == "" { 
+              mech_client.running.send(RunLoopMessage::Code(command));
+            } else {
+                println!("{} Unknown Command: {:?}", Red.paint("Error:"), input.trim());
+              continue;
+            }
+
+          }
         }, 
       }
 
