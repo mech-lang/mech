@@ -20,7 +20,7 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 
 extern crate mech;
-use mech::{ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
+use mech::{Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage};
 use mech::ClientHandler;
 
 #[macro_use]
@@ -118,7 +118,8 @@ fn main() {
       io::stdin().read_line(&mut input).unwrap();
 
       // Handle built in commands
-      match parse_repl_command(CompleteStr(input.trim())) {
+      let parse = parse_repl_command(CompleteStr(input.trim()));
+      match parse {
         Ok((rest, command)) => {
           match command {
             ReplCommand::Help => {
@@ -127,6 +128,9 @@ fn main() {
             },
             ReplCommand::Quit => {
               break 'REPL;
+            },
+            ReplCommand::Table(id) => {
+              mech_client.running.send(RunLoopMessage::Table(id));
             },
             /*"core" => {
               //println!("{:?}", mech_core);
@@ -139,16 +143,20 @@ fn main() {
             ReplCommand::Empty => {
               continue;
             },
-            _ => {
-              mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
+            this => {
+              continue;
+              //mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
             }
           }
         },
-        _ => (), 
+        err => println!("{:?}", err), 
       }
 
       // Get a response from the thread
       match mech_client.running.receive() {
+        (Ok(ClientMessage::Table(table))) => {
+          println!("{:?}", table);
+        },
         (Ok(ClientMessage::Pause)) => {
           println!("{} Paused", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
         },
@@ -165,8 +173,16 @@ fn main() {
   }
 }
 
+named!(word<CompleteStr, String>, do_parse!(
+  bytes: nom_alpha1 >>
+  (bytes.to_string())));
+
+named!(table<CompleteStr, ReplCommand>, do_parse!(
+  tag!("#") >> identifier: map!(word, |word| { Hasher::hash_string(word) }) >>
+  (ReplCommand::Table(identifier))));
+
 named!(none<CompleteStr, ReplCommand>, do_parse!(
- tag!("") >> (ReplCommand::Empty)));
+  tag!("") >> (ReplCommand::Empty)));
 
 named!(space<CompleteStr, ReplCommand>, do_parse!(
   many1!(tag!(" ")) >> (ReplCommand::Empty)));
@@ -184,5 +200,5 @@ named!(quit<CompleteStr, ReplCommand>, do_parse!(
   tag!("quit") >> (ReplCommand::Quit)));
 
 named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
-  command: alt!(quit | pause | resume | empty) >>
+  command: alt!(quit | pause | resume | table | empty) >>
   (command)));
