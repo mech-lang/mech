@@ -40,6 +40,8 @@ pub enum ReplCommand {
   Pause,
   Resume,
   Stop,
+  PrintCore,
+  PrintRuntime,
   Table(u64),
   Code(String),
   Empty,
@@ -120,10 +122,10 @@ fn main() {
       // Handle built in commands
       let parse = parse_repl_command(CompleteStr(input.trim()));
       match parse {
-        Ok((rest, command)) => {
+        Ok((CompleteStr(""), command)) => {
           match command {
             ReplCommand::Help => {
-              println!("Available commands are: help, quit, core, runtime, pause, resume");
+              println!("Available commands are: help, quit, runtime, pause, resume");
               continue;
             },
             ReplCommand::Quit => {
@@ -132,15 +134,16 @@ fn main() {
             ReplCommand::Table(id) => {
               mech_client.running.send(RunLoopMessage::Table(id));
             },
-            /*"core" => {
-              //println!("{:?}", mech_core);
-            }
-            "runtime" => {
-              //println!("{:?}", mech_core.runtime);
-            },*/
+            ReplCommand::PrintCore => {
+              mech_client.running.send(RunLoopMessage::PrintCore);
+            },
+            ReplCommand::PrintRuntime => {
+              mech_client.running.send(RunLoopMessage::PrintRuntime);
+            },
             ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
             ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
             ReplCommand::Empty => {
+              println!("Empty");
               continue;
             },
             this => {
@@ -149,7 +152,12 @@ fn main() {
             }
           }
         },
-        err => println!("{:?}", err), 
+        err => {
+          if input.trim() != "" {
+            println!("Unknown Command: {:?}", input.trim());
+          }
+          continue;
+        }, 
       }
 
       // Get a response from the thread
@@ -181,17 +189,14 @@ named!(table<CompleteStr, ReplCommand>, do_parse!(
   tag!("#") >> identifier: map!(word, |word| { Hasher::hash_string(word) }) >>
   (ReplCommand::Table(identifier))));
 
-named!(none<CompleteStr, ReplCommand>, do_parse!(
-  tag!("") >> (ReplCommand::Empty)));
-
 named!(space<CompleteStr, ReplCommand>, do_parse!(
   many1!(tag!(" ")) >> (ReplCommand::Empty)));
 
 named!(empty<CompleteStr, ReplCommand>, do_parse!(
-  alt!(none | space) >> (ReplCommand::Empty)));
+  space >> (ReplCommand::Empty)));
 
 named!(resume<CompleteStr, ReplCommand>, do_parse!(
-  tag!("resume") >> (ReplCommand::Pause)));
+  tag!("resume") >> (ReplCommand::Resume)));
 
 named!(pause<CompleteStr, ReplCommand>, do_parse!(
   tag!("pause") >> (ReplCommand::Pause)));
@@ -199,6 +204,12 @@ named!(pause<CompleteStr, ReplCommand>, do_parse!(
 named!(quit<CompleteStr, ReplCommand>, do_parse!(
   tag!("quit") >> (ReplCommand::Quit)));
 
+named!(core<CompleteStr, ReplCommand>, do_parse!(
+  tag!("core") >> (ReplCommand::PrintCore)));
+
+named!(runtime<CompleteStr, ReplCommand>, do_parse!(
+  tag!("runtime") >> (ReplCommand::PrintRuntime)));
+
 named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
-  command: alt!(quit | pause | resume | table | empty) >>
+  command: alt!(quit | pause | resume | table | core | runtime | empty) >>
   (command)));
