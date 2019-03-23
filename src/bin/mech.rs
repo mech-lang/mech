@@ -114,7 +114,7 @@ fn main() {
     'REPL: loop {
 
       // If we're not serving, go into a REPL
-      print!("{}", Yellow.paint("~> "));
+      print!("{}", Yellow.paint(">: "));
       let mut input = String::new();
 
       io::stdin().read_line(&mut input).unwrap();
@@ -154,7 +154,7 @@ fn main() {
         },
         err => {
           if input.trim() != "" {
-            println!("Unknown Command: {:?}", input.trim());
+            println!("{} Unknown Command: {:?}", Red.paint("Error:"), input.trim());
           }
           continue;
         }, 
