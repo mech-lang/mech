@@ -42,6 +42,7 @@ pub enum ReplCommand {
   Stop,
   PrintCore,
   PrintRuntime,
+  Clear,
   Table(u64),
   Code(String),
   Empty,
@@ -134,6 +135,9 @@ fn main() {
             ReplCommand::Table(id) => {
               mech_client.running.send(RunLoopMessage::Table(id));
             },
+            ReplCommand::Clear => {
+              mech_client.running.send(RunLoopMessage::Clear);
+            },
             ReplCommand::PrintCore => {
               mech_client.running.send(RunLoopMessage::PrintCore);
             },
@@ -187,6 +191,9 @@ fn main() {
         (Ok(ClientMessage::Resume)) => {
           println!("{} Resumed", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
         },
+        (Ok(ClientMessage::Clear)) => {
+          println!("{} Cleared", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+        },
         (Ok(ClientMessage::NewBlocks(count))) => {
           println!("Compiled {} blocks.", count);
         },
@@ -223,9 +230,15 @@ named!(quit<CompleteStr, ReplCommand>, do_parse!(
 named!(core<CompleteStr, ReplCommand>, do_parse!(
   tag!("core") >> (ReplCommand::PrintCore)));
 
+named!(clear<CompleteStr, ReplCommand>, do_parse!(
+  tag!("clear") >> (ReplCommand::Clear)));
+
 named!(runtime<CompleteStr, ReplCommand>, do_parse!(
   tag!("runtime") >> (ReplCommand::PrintRuntime)));
 
+named!(help<CompleteStr, ReplCommand>, do_parse!(
+  tag!("help") >> (ReplCommand::Help)));
+
 named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
-  command: alt!(quit | pause | resume | table | core | runtime | empty) >>
+  command: alt!(help | quit | pause | resume | table | core | clear | runtime | empty) >>
   (command)));
