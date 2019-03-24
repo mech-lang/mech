@@ -31,6 +31,7 @@ pub struct Program {
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
   pub errors: Vec<Error>,
+  programs: u64,
 }
 
 impl Program {
@@ -39,19 +40,32 @@ impl Program {
     let mut mech = Core::new(capacity, 100);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
-    //mech.process_transaction(&txn);
+    mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
       watchers: HashMap::new(),
       capacity,
       mech,
-      incoming, 
+      incoming,
       outgoing,
       errors: Vec::new(),
+      programs: 0,
     }
   }
 
-  pub fn compile_string(&mut self, input: String) {
+  pub fn compile_program(&mut self, input: String) {
+    let mut compiler = Compiler::new();
+    compiler.compile_string(input.clone());
+    self.mech.register_blocks(compiler.blocks);
+    self.errors.append(&mut self.mech.runtime.errors.clone());
+    let mech_code = Hasher::hash_str("mech/code");
+    self.programs += 1;
+    let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    self.outgoing.send(RunLoopMessage::Transaction(txn));
+    self.mech.step();
+  }
+
+  pub fn compile_fragment(&mut self, input: String) {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
     for mut block in compiler.blocks {
@@ -61,8 +75,9 @@ impl Program {
     }
     self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = Hasher::hash_str("mech/code");
-    let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(1), column: Index::Index(1), value: Value::from_str(&input.clone())});
-    //self.outgoing.send(RunLoopMessage::Transaction(txn));
+    self.programs += 1;
+    let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    self.outgoing.send(RunLoopMessage::Transaction(txn));
     self.mech.step();
   }
 
@@ -264,7 +279,7 @@ impl ProgramRunner {
   }
 
   pub fn load_program(&mut self, input: String) {
-    self.program.compile_string(input);
+    self.program.compile_program(input);
   }
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
@@ -334,7 +349,7 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             let block_count = program.mech.runtime.blocks.len();
-            program.compile_string(code);
+            program.compile_fragment(code);
             client_outgoing.send(ClientMessage::Done);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
