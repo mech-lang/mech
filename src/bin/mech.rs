@@ -20,8 +20,9 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 
 extern crate mech;
-use mech::{Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Table, Value, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::ClientHandler;
+use mech::QuantityMath;
 
 #[macro_use]
 extern crate nom;
@@ -183,7 +184,10 @@ fn main() {
       // Get a response from the thread
       match mech_client.running.receive() {
         (Ok(ClientMessage::Table(table))) => {
-          println!("{:?}", table);
+          match table {
+            Some(ref table_ref) => print_table(table_ref),
+            None => (),
+          }
         },
         (Ok(ClientMessage::Pause)) => {
           println!("{} Paused", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
@@ -201,6 +205,59 @@ fn main() {
       };
 
     }
+  }
+}
+
+fn print_table(table: &Table) {
+  // Get the length of each column
+  let mut column_widths = vec![0; table.columns as usize];
+  for column in 0..table.columns as usize {
+    for row in 0..table.rows as usize {
+      let value = match &table.data[column][row] {
+        Value::Number(q) => format!("{}", q.to_float()),
+        q => format!("{:?}", q),
+      };
+      if value.len() > column_widths[column] {
+        column_widths[column] = value.len();
+      }
+    }
+  }
+  // Print the top border
+  print!("┌");
+  for i in 0 .. table.columns as usize - 1 {
+    print_repeated_char("─", column_widths[i]);
+    print!("┬");
+  }
+  print_repeated_char("─", column_widths[column_widths.len() - 1]);
+  print!("┐\n");
+  // Print each row
+  for row in 0..table.rows as usize {
+    print!("│");
+    for column in 0..table.columns as usize {
+      let content_string = match &table.data[column][row] {
+        Value::Number(q) => format!("{}", q.to_float()),
+        q => format!("{:?}", q),
+      };
+      print!("{}", content_string);
+      // print padding
+      print_repeated_char(" ", column_widths[column] - content_string.len());
+      print!("│");
+    }
+    print!("\n");
+  }  
+  // Print the bottom border
+  print!("└");
+  for i in 0 .. table.columns as usize - 1 {
+    print_repeated_char("─", column_widths[i]);
+    print!("┴");
+  }
+  print_repeated_char("─", column_widths[column_widths.len() - 1]);
+  print!("┘\n");
+}
+
+fn print_repeated_char(to_print: &str, n: usize) {
+  for _ in 0..n {
+    print!("{}", to_print);
   }
 }
 
