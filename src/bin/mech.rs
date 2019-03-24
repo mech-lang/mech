@@ -265,8 +265,22 @@ named!(word<CompleteStr, String>, do_parse!(
   bytes: nom_alpha1 >>
   (bytes.to_string())));
 
+named!(slash<CompleteStr, String>, do_parse!(
+  tag!("/") >> ("/".to_string())));
+
+named!(dash<CompleteStr, String>, do_parse!(
+  tag!("-") >> ("-".to_string())));
+
+named!(identifier<CompleteStr, String>, do_parse!(
+  identifier: map!(tuple!(count!(word,1), many0!(alt!(dash | slash | word))), |tuple| {
+    let (mut word, mut rest) = tuple;
+    word.append(&mut rest);
+    let word = word.iter().fold(String::new(), |mut word, next| {word.push_str(next); word});
+    word
+  }) >> (identifier)));
+
 named!(table<CompleteStr, ReplCommand>, do_parse!(
-  tag!("#") >> identifier: map!(word, |word| { Hasher::hash_string(word) }) >>
+  tag!("#") >> identifier: map!(identifier, |identifier| { Hasher::hash_string(identifier) }) >>
   (ReplCommand::Table(identifier))));
 
 named!(space<CompleteStr, ReplCommand>, do_parse!(
