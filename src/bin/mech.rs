@@ -106,6 +106,7 @@ fn main() {
   if serve {
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
+  // If we're not serving, go into a REPL
   } else {
     let paths = if mech_paths.is_empty() {
       None
@@ -115,7 +116,7 @@ fn main() {
     let mech_client = ClientHandler::new("Mech REPL", None, paths, None);
     'REPL: loop {
 
-      // If we're not serving, go into a REPL
+      // Print a prompt
       print!("{}", Yellow.paint(">: "));
       let mut input = String::new();
 
@@ -176,7 +177,6 @@ fn main() {
                 println!("{} Unknown Command: {:?}", Red.paint("Error:"), input.trim());
               continue;
             }
-
           }
         }, 
       }
