@@ -1,8 +1,7 @@
 # Robot Arm Drawing
 
 This is where the main website structure is defined
-  #app/main = [|direction contains| 
-                "column"  [#robot-animation]]
+  #app/main = [root: "drawing" direction: "column" contains: [#robot-animation]]
                 
 ## Drawing
 
