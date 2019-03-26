@@ -26,3 +26,7 @@ We can find the average GPA
   count = stat/sum(column: (#students.gpa * 0 + 1))
   #average-gpa = stat/sum(column: #students.gpa) / count
 
+This block counts the number of students, sums their GPA, and then computes the average gpa. Within a block, expressions are computed in the order they are written, as with the imperative model. But blocks themselves execute in an order determined by the data on which they depend. For example, let's say the GPA of a student changes:
+  #students.gpa{3} := 3.8
+
+Since this GPA changed, every block that depends on this GPA will update as well. This is the essence of a dataflow language; although we cannot specify control flow as in an imperative language, we can specify the data flow, and this in turn causes execution to happen as defined by our set of blocks. Within a block, statments are executed in the order they are written.
