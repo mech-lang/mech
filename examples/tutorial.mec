@@ -2,12 +2,27 @@
 
 Welcome to the Mech programming language. This tutorial is intended for developers who are familiar with imperative programming languages like C, Javascript, or Python. Mech follows a different paradigm, known as dataflow, so we will point out the differences and similarities between the familiar and unfamiliar throught this tutorial.
 
-This tutorial will assume you've downloaded and installed Mech using the instructions found on the [main repository](https://github.com/mech-lang/mech), and you are using the Mech REPL.
+This tutorial will assume you've downloaded and installed Mech using the instructions found on the [main repository](https://github.com/mech-lang/mech).
 
 ## Introduction to Mech
 
+Mech programs are built out of tables and blocks. A `Table` is a two-dimensional grid of cells, and is the one and only data structure in Mech. Inside each cell of a table we can put a `Value` that can be either a `Number`, `String`, `Boolean`, or a table. 
 
+Here, we define a table representing a group of students
+  #students = [|name     age major       gpa|
+                "Harold" 18  "Chemistry" 2.8
+                "Yang"   19  "Physics"   3.2
+                "Lisa"   19  "Comp Sci"  3.9]
 
-## Part 1
+This code creates a table called "students", which is global in scope as denoted by the hashtag `#`. The table has three columns ("name", "age", and "gpa") and three rows.
 
-## Part 2
+Mech programs are composed of blocks of code like the one above. A block is indented from normal next with (at least) two spaces, and continues until the next regular paragraph. Each block of code has three functions
+
+- To select zero or more columns from the global table store
+- To apply a series of transforms to the selected columns
+- To write new or transformed columns to the global table store
+
+We can find the average GPA
+  count = stat/sum(column: (#students.gpa * 0 + 1))
+  #average-gpa = stat/sum(column: #students.gpa) / count
+
