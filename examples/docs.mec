@@ -40,20 +40,24 @@ Get the 2nd row, 3rd column:
 Grab every row or column with the : operator
   #slice3 = #two-by-three{:,3}
 
-Slice a range of columns
-  #slice4 = #two-by-three{1,2:3}
-
 Access a named column
-  #slice5 = #with-columns.height
+  #slice4 = #with-columns.height
 
 Or a specific row of a column
-  #slice6 = #with-columns.height{2}
+  #slice5 = #with-columns.height{2}
 
 But you can still use indexes on tables with named columns
-  #slice7 = #with-columns{2,3}
+  #slice6 = #with-columns{2,3}
 
 Access the value of a nested table by chaining {} operators
-  #slice8 = #nested-table{2}{1}
+  #slice7 = #nested-table{2}{1}
+
+You can use the result of an expression as an index as well. For example, you can use a range
+  #slice8 = #two-by-three{1,2:3}
+
+Or the result of a math expression
+  x = [1;2]
+  #slice9{:,x + 1} 
 
 ## Math
 
@@ -93,3 +97,6 @@ Aggregates operate on a column, but the result is a single cell
   x = [30; 60; 90; 180; 240; 360]
   #result9 = stat/sum(column: x)
 
+Functions can be used with normal math expressions
+  count = stat/sum(column: (#two-by-three * 0 + 1))
+  #result10 = stat/sum(column: #two-by-three) / count
