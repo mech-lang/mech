@@ -17,8 +17,15 @@ This repository serves as a table of contents for the constellation of tools and
 
 1. [Core](https://gitlab.com/mech-lang/core) - The language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
 2. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
-3. [Server](https://gitlab.com/mech-lang/server) - A server that hosts Mech for any websocket client
-4. [Notebook](https://gitlab.com/mech-lang/notebook) - A browser-based interface that connects to a Mech server. Meant for performing calculations and drawing graphs.
+3. [Program](https://gitlab.com/mech-lang/program) - Organizes Mech cores into a coordinated program. Handles reading files, interfacing with libraries, and persisting changes top disk.
+4. [Server](https://gitlab.com/mech-lang/server) - Provides a server and client for hosting Mech programs and a browser-based editor on a websocket.
+5. [Notebook](https://gitlab.com/mech-lang/notebook) / [Mech-wasm](https://github.com/mech-lang/wasm) - A hosted editor for writing Mech applications.
+
+## Documentation
+
+Right now, most Mech features and syntax are undocumented. You can find some minimal documentation [here](https://mech-lang.org/page/learn/), and also the beginning of a tutorial [here](https://github.com/mech-lang/mech/blob/master/examples/tutorial.mec).
+
+Documenation and tooling will be a focus of the next release (v0.0.2).
 
 ## Building from Source
 
