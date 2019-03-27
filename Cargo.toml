@@ -2,13 +2,24 @@
 name = "mech"
 version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Main crate for the Mech programming language. Provides a REPL and hosted editor."
+documentation = "https://mech-lang.org/page/learn/"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/server"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[badges]
+gitlab = { repository = "mech-lang/server", branch = "master" }
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 mech-core = "0.0.1"
 mech-syntax = "0.0.1"
-mech-server = {git = "https://gitlab.com/mech-lang/server"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
-mech-system = {git = "https://gitlab.com/mech-lang/system"}
+mech-server = "0.0.1"
+mech-program = "0.0.1"
 clap = "2.31.2"
 term-painter = "0.2.4"
 nom = "4.2.2"
