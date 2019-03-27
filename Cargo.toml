@@ -3,8 +3,8 @@ name = "mech-syntax"
 version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
-documentation = "https://mech-lang.org/page/learn/"
-homepage = "https://mech-lang.org"
+documentation = "http://mech-lang.org/page/learn/"
+homepage = "http://mech-lang.org"
 repository = "https://github.com/mech-lang/syntax"
 keywords = ["mech", "language", "programming", "parser", "compiler"]
 categories = ["no-std", "science::robotics", "science", "parser-implementations"]
@@ -16,6 +16,6 @@ gitlab = { repository = "mech-lang/syntax", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.0.1"
+mech-core = {path = "../core"}
 hashbrown = "0.1.8"
 nom = "4.2.2"
