@@ -2,6 +2,18 @@
 name = "mech-program"
 version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Organizes Mech cores into a coordinated program. Handles reading files, interfacing with libraries, and persisting changes top disk."
+documentation = "https://mech-lang.org/page/learn/"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/program"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[badges]
+gitlab = { repository = "mech-lang/program", branch = "master" }
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 time = "0.1.39"
