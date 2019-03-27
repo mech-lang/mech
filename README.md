@@ -14,6 +14,18 @@ Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twi
 
 A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser. Provides the start of a very basic library for manipulting and updating DOM nodes.
 
+## Contents
+
+Supported elements (more to come):
+
+- img
+- div
+- slider
+- canvas
+  - image
+  - circle
+  - line
+
 ## Project Status
 
 Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
