@@ -4,7 +4,7 @@
 
 Mech is a language for developing **data-driven**, **reactive** systems like animations, games, and robots. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your problem. 
 
-You can try Mech online at [try.mech-lang.org](https://try.mech-lang.org).
+You can try Mech online at [try.mech-lang.org](http://try.mech-lang.org).
 
 Usage and installation instructions can be found in the [documentation](http://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
 
