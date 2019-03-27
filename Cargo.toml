@@ -7,7 +7,7 @@ documentation = "https://mech-lang.org/page/learn/"
 homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/program"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
-categories = ["science::robotics", "science", "game-engines"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
