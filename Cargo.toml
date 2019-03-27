@@ -5,14 +5,14 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Main crate for the Mech programming language. Provides a REPL and hosted editor."
 documentation = "https://mech-lang.org/page/learn/"
 homepage = "https://mech-lang.org"
-repository = "https://github.com/mech-lang/server"
+repository = "https://github.com/mech-lang/mech"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "mech-lang/server", branch = "master" }
+gitlab = { repository = "mech-lang/mech", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
