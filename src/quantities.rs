@@ -4,8 +4,9 @@
 // R: Range [-64, 63]
 // S: mantissa Sign bit
 // M: Mantissa [-2^48, 2^48 - 1]
-// Credit: Josh Cole, who implemented this for Eve v0.4
-// Adapted and Extended for Mech by Corey Montella
+// Credit: Chris Granger, who implemented this for Eve v0.4
+// Also credit to Josh Cole for coming up with the spec
+// Adapted and extended for Mech by Corey Montella
 
 extern crate num;
 use self::num::Float;
