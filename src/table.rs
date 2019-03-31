@@ -14,7 +14,6 @@ use hashbrown::hash_map::{HashMap, Entry};
 pub enum Value {
   Number(Quantity),
   String(String),
-  Table(u64),
   Bool(bool),
   Reference(u64),
   Empty,
@@ -89,7 +88,6 @@ impl fmt::Debug for Value {
       &Value::Number(x) => write!(f, "{}", x.to_string()),
       &Value::String(ref x) => write!(f, "{}", x),
       &Value::Empty => write!(f, ""),
-      &Value::Table(ref x) => write!(f, "{}", x),
       &Value::Bool(ref b) => write!(f, "{}", b),
       &Value::Reference(ref b) => write!(f, "@{:#x}", b),
     }
