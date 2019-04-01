@@ -205,6 +205,17 @@ impl Core {
     }
   }
 
+  pub fn set_time(&mut self, time: usize) {
+    let current_time = self.offset;
+    if current_time > time {
+      let dt = current_time - time;
+      self.step_forward(dt); 
+    } else if current_time < time {
+      let dt = time - current_time;
+      self.step_backward(dt); 
+    }
+  }
+
   pub fn step_forward_one(&mut self) {
     let time = self.store.offset;
     let transactions = self.transaction_boundaries.len();
