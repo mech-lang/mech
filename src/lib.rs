@@ -471,13 +471,16 @@ impl Core {
     for (table_id, table) in self.core.store.tables.map.iter() {
       let table_list_item = document.create_element("li")?;
       match self.core.store.names.get(table_id) {
-        Some(name) => {table_list_item.set_inner_html(name);},
+        Some(name) => {
+          table_list_item.set_inner_html(name);
+          table_list.append_child(&table_list_item)?;
+        },
         None => (),
       };
-      table_list.append_child(&table_list_item)?;
+      
     }
     table_list_div.append_child(&table_list)?;
-    body.append_child(&table_list_div)?;
+    //body.append_child(&table_list_div)?;
     Ok(())
   }
 
