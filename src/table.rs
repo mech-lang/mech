@@ -155,7 +155,7 @@ impl fmt::Debug for Index {
 
 // ### Table
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
 pub struct Table {
   pub id: u64,
   pub rows: u64,
