@@ -96,6 +96,11 @@ impl Core {
     log!("Core Time -{}", self.core.offset);
   }
 
+  pub fn set_time(&mut self, time: usize) {
+    self.core.set_time(time);
+    log!("Core Time -{}", self.core.offset);
+  }
+
   pub fn display_core(&self) {
     log!("{:?}", self.core);
   }
