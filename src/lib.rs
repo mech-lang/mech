@@ -66,8 +66,12 @@ impl Core {
       let window = web_sys::window().expect("no global `window` exists");
       let document = window.document().expect("should have a document on window");
       let root_node = document.get_element_by_id(root).unwrap();
-      let mech_node = root_node.first_child().unwrap();
-      root_node.remove_child(&mech_node);
+      'remove_nodes: loop {
+        match root_node.first_child() {
+          Some(mech_node) => root_node.remove_child(&mech_node),
+          None => break 'remove_nodes,
+        };
+      }
     }
     log!("Core Cleared");
   }
