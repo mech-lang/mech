@@ -17,6 +17,7 @@ extern crate hashbrown;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde;
 extern crate libm;
 
 use alloc::vec::Vec;
@@ -36,7 +37,7 @@ mod errors;
 // ## Exported Modules
 
 pub use self::database::{Transaction, Change, Interner};
-pub use self::table::{Value, Index, TableId, Table};
+pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Comparator, Logic, Parameter};
 pub use self::runtime::{Runtime, Block, Constraint, Register};
