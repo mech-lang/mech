@@ -234,6 +234,8 @@ impl QuantityMath for Quantity {
         let other_range = other.range();
         if self.mantissa() == 0 {
             return other
+        } else if other.mantissa() == 0 {
+            return self
         }
         if my_range == other_range {
             let add = self.mantissa() + other.mantissa();

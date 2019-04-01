@@ -103,3 +103,12 @@ fn quantities_add_large_neg_small() {
     let y = make_quantity(30,0,0);
     assert_eq!(x.sub(y), make_quantity(27292178951320,-11,0));
 }
+
+#[test]
+fn quantities_adding_zero() {
+    let zero = make_quantity(0,0,0);
+    let offset = make_quantity(49825176195110, -11, 0);
+    assert_eq!(offset.add(zero), offset);
+    assert_eq!(zero.add(offset), offset);
+}
+
