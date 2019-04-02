@@ -20,10 +20,10 @@ use hashbrown::hash_set::{HashSet};
 pub enum Node {
   Root{ children: Vec<Node> },
   Fragment{ children: Vec<Node>, start: usize, end: usize },
-  Program{ children: Vec<Node> },
+  Program{title: Option<String>, children: Vec<Node> },
   Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
-  Section{ children: Vec<Node> },
+  Section{title: Option<String>, children: Vec<Node> },
   Block{ children: Vec<Node>, start: usize, end: usize },
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
@@ -80,7 +80,7 @@ pub fn print_recurse(node: &Node, level: usize) {
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
     Node::Fragment{children, ..} => {print!("Fragment\n"); Some(children)},
-    Node::Program{children} => {print!("Program\n"); Some(children)},
+    Node::Program{title, children} => {print!("Program({:?})\n", title); Some(children)},
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
@@ -93,7 +93,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
-    Node::Section{children} => {print!("Section\n"); Some(children)},
+    Node::Section{title, children} => {print!("Section({:?})\n", title); Some(children)},
     Node::Block{children, ..} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
@@ -146,6 +146,10 @@ pub fn spacer(width: usize) {
   }
   print!("├");
 }
+
+// ## Program
+
+// Define a program struct that has everything we need to render a mech program.
 
 // ## Compiler
 
@@ -230,6 +234,8 @@ impl Compiler {
     self.compile_blocks(ast);
     &self.blocks
   }
+
+  //pub fn compile_programs()
 
   pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
@@ -361,12 +367,12 @@ impl Compiler {
         let result = self.compile_children(children);
         self.blocks = result;
       },
-      Node::Program{children} => {
+      Node::Program{title, children} => {
         blocks.append(&mut self.compile_children(children));
         self.program += 1;
       },
       Node::Body{children} => {blocks.append(&mut self.compile_children(children));},
-      Node::Section{children} => {
+      Node::Section{title, children} => {
         blocks.append(&mut self.compile_children(children));
         self.section += 1;
         self.block = 1;
@@ -900,7 +906,15 @@ impl Compiler {
       },
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Program{children: result});
+        let mut children = vec![];
+        let mut title = None;
+        for node in result {
+          match node {
+            Node::Title{text} => title = Some(text),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Program{title, children});
       },
       parser::Node::Head{children} => {
         let result = self.compile_nodes(children);
@@ -912,7 +926,15 @@ impl Compiler {
       },
       parser::Node::Section{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::Section{children: result});
+        let mut children = vec![];
+        let mut title = None;
+        for node in result {
+          match node {
+            Node::Title{text} => title = Some(text),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::Section{title, children});
       },
       parser::Node::Block{children} => {
         let start = self.current_char;
