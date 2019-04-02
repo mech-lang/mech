@@ -351,11 +351,11 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(hashtag | ampersand | slash) >>
+  punctuation: alt!(ampersand | slash) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number | punctuation | symbol | dash | hashtag)) >>
+  word: many1!(alt!(word | space | number | punctuation | symbol | dash)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
@@ -693,5 +693,5 @@ named!(program<CompleteStr, Node>, do_parse!(
   (Node::Program { children: program })));
 
 named!(parse_mech<CompleteStr, Node>, do_parse!(
-  program: alt!(fragment | program) >>
-  (Node::Root { children: vec![program] })));
+  program: alt!(many1!(fragment) | many1!(program)) >>
+  (Node::Root { children: program })));

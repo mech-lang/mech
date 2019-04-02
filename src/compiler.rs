@@ -163,6 +163,7 @@ pub struct Compiler {
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
   pub section: usize,
+  pub program: usize,
   pub block: usize,
   pub current_char: usize,
   pub current_line: usize,
@@ -184,6 +185,7 @@ impl Compiler {
       row: 0,
       table: 0,
       section: 1,
+      program: 1,
       block: 1,
       current_char: 0,
       current_line: 1,
@@ -206,6 +208,7 @@ impl Compiler {
     self.row = 0;
     self.table = 0;
     self.section = 1;
+    self.program = 1;
     self.block = 1;
     self.current_char = 0;
     self.current_line = 1;
@@ -235,7 +238,7 @@ impl Compiler {
       Node::Block{children, start, end} => {
         let mut block = Block::new();
         block.text = self.text[start..end].to_string();
-        block.name = format!("{:?},{:?}", self.section, self.block);
+        block.name = format!("{:?},{:?},{:?}", self.program, self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
         let mut constraints = Vec::new();
@@ -358,7 +361,10 @@ impl Compiler {
         let result = self.compile_children(children);
         self.blocks = result;
       },
-      Node::Program{children} => {blocks.append(&mut self.compile_children(children));},
+      Node::Program{children} => {
+        blocks.append(&mut self.compile_children(children));
+        self.program += 1;
+      },
       Node::Body{children} => {blocks.append(&mut self.compile_children(children));},
       Node::Section{children} => {
         blocks.append(&mut self.compile_children(children));
