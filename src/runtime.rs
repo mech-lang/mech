@@ -28,7 +28,7 @@ use errors::Error;
 #[derive(Clone)]
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
-  pub pipes_map: HashMap<Register, Vec<Address>>,
+  pub pipes_map: HashMap<Register, HashSet<Address>>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
   pub changed_this_round: HashSet<(u64, Index)>,
@@ -65,8 +65,8 @@ impl Runtime {
       let table = register.table;
       let column = register.column.clone();
       let new_address = Address{block: block.id, register: register.clone()};
-      let listeners = self.pipes_map.entry(register.clone()).or_insert(vec![]);
-      listeners.push(new_address);
+      let listeners = self.pipes_map.entry(register.clone()).or_insert(HashSet::new());
+      listeners.insert(new_address);
 
       // Set the register as ready if the referenced column exists
       /*
@@ -114,8 +114,8 @@ impl Runtime {
           let table = register.table;
           let column = register.column.clone();
           let new_address = Address{block: block.id, register: register.clone()};
-          let listeners = self.pipes_map.entry(register.clone()).or_insert(vec![]);
-          listeners.push(new_address);
+          let listeners = self.pipes_map.entry(register.clone()).or_insert(HashSet::new());
+          listeners.insert(new_address);
         }
       }
       // Queue up the next blocks based on tables that changed during this round.
@@ -124,7 +124,7 @@ impl Runtime {
         let register = Register::new(table,column);
         match self.pipes_map.get(&register) {
           Some(register_addresses) => {
-            for register_address in register_addresses {
+            for register_address in register_addresses.iter() {
               let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
               block.ready.insert(register_address.register.clone());
               if block.is_ready() {
@@ -167,7 +167,7 @@ impl fmt::Debug for Runtime {
 
 // ## Blocks
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Address {
   pub block: usize,
   pub register: Register,
