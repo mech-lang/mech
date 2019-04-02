@@ -41,8 +41,8 @@ pub struct Core {
 
 #[wasm_bindgen]
 impl Core {
-
   pub fn new() -> Core {
+    let mech_code = Hasher::hash_str("mech/code");
     Core {
       core: mech_core::Core::new(100_000,100),
       changes: Vec::new(),
@@ -53,10 +53,16 @@ impl Core {
   }
 
   pub fn compile_code(&mut self, code: String) {
+    let mech_code = Hasher::hash_str("mech/code");
+    let changes = vec![
+      Change::NewTable{id: mech_code, rows: 1, columns: 1},
+      Change::Set{table: mech_code, row: mech_core::Index::Index(1), column: mech_core::Index::Index(1), value: Value::from_str(&code)},
+    ];
     let mut compiler = Compiler::new();
     compiler.compile_string(code);
     self.core.register_blocks(compiler.blocks.clone());
     self.core.step();
+    self.core.process_transaction(&Transaction::from_changeset(changes));
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
 
