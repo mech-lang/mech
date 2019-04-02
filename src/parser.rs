@@ -351,7 +351,7 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | slash) >>
+  punctuation: alt!(ampersand | slash | hashtag) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
@@ -653,8 +653,16 @@ named!(subtitle<CompleteStr, Node>, do_parse!(
   (Node::Subtitle { children: vec![text] })));
 
 named!(paragraph<CompleteStr, Node>, do_parse!(
-  text: text >> many0!(whitespace) >>
-  (Node::Paragraph { children: vec![text] })));
+  paragraph: map!(tuple!(word, opt!(text)), |tuple| {
+    let (mut word, mut text) = tuple;
+    let mut paragraph = vec![word];
+    match text {
+      Some(text) => paragraph.push(text),
+      _ => (),
+    };
+    paragraph
+  }) >> many0!(whitespace) >>
+  (Node::Paragraph { children: paragraph })));
 
 named!(section<CompleteStr, Node>, do_parse!(
   section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph))), |tuple| {

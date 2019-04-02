@@ -1303,10 +1303,15 @@ impl Compiler {
       // String-like nodes
       parser::Node::Paragraph{children} => {
         let mut result = self.compile_nodes(children);
-        let node = match &result[0] {
-          Node::String{text} => Node::Paragraph{text: text.clone()},
-          _ => Node::Null,
-        };
+        let mut paragraph = "".to_string();
+        for node in result {
+          match &node {
+            Node::String{text} => {paragraph = paragraph + text;},
+            _ => (),
+          };
+        }
+
+        let node = Node::Paragraph{text: paragraph.clone()};
         compiled.push(node);
       },
       parser::Node::Title{children} => {
