@@ -615,7 +615,7 @@ named!(logic_operator<CompleteStr, Node>, do_parse!(
   (Node::LogicOperator { children: vec![operator] })));
 
 named!(logic_expression<CompleteStr, Node>, do_parse!(
-  lhs: math_expression >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: math_expression >>
+  lhs: alt!(filter_expression | data | constant) >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: alt!(filter_expression | data | constant) >>
   (Node::LogicExpression { children: vec![lhs, op, rhs] })));
 
 // #### Other Expressions
@@ -629,7 +629,7 @@ named!(string<CompleteStr, Node>, do_parse!(
   (Node::String { children: text })));
 
 named!(expression<CompleteStr, Node>, do_parse!(
-  expression: alt!(string | range | filter_expression | logic_expression | inline_table | anonymous_table | math_expression) >>
+  expression: alt!(string | range | logic_expression | filter_expression | inline_table | anonymous_table | math_expression) >>
   (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
