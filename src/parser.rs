@@ -615,7 +615,7 @@ named!(logic_operator<CompleteStr, Node>, do_parse!(
   (Node::LogicOperator { children: vec![operator] })));
 
 named!(logic_expression<CompleteStr, Node>, do_parse!(
-  lhs: alt!(filter_expression | data | constant) >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: alt!(filter_expression | data | constant) >>
+  lhs: alt!(filter_expression | data | constant) >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: alt!(logic_expression | filter_expression | data | constant) >>
   (Node::LogicExpression { children: vec![lhs, op, rhs] })));
 
 // #### Other Expressions

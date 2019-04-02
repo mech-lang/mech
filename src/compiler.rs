@@ -615,6 +615,7 @@ impl Compiler {
         }
       },
       Node::FilterExpression{comparator, children} => {
+        self.expression += 1;
         self.table = Hasher::hash_string(format!("FilterExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
         let mut parameters: Vec<Vec<Constraint>> = vec![];
@@ -646,6 +647,7 @@ impl Compiler {
         }  
       },
       Node::LogicExpression{operator, children} => {
+        self.expression += 1;
         self.table = Hasher::hash_string(format!("LogicExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
         let mut parameters: Vec<Vec<Constraint>> = vec![];

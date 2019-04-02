@@ -375,6 +375,18 @@ block
            8 9 10
            11 12 13]", Value::from_i64(8));
 
+test_mech!(logic_and_composed,"
+block
+  ix = #foo.x > 5 & #foo.x < 11 & #foo.y > 9
+  #test = #foo{ix, 1}
+
+block
+  #foo = [|x y z|
+           5 6 7
+           8 9 10
+           9 10 11
+           11 12 13]", Value::from_i64(9));
+
 test_mech!(logic_or,"
 block
   ix1 = #foo.x < 7
