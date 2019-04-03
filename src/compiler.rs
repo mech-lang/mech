@@ -151,6 +151,24 @@ pub fn spacer(width: usize) {
 
 // Define a program struct that has everything we need to render a mech program.
 
+#[derive(Debug)]
+pub struct Program {
+  title: Option<String>,
+  sections: Vec<Section>,
+}
+
+#[derive(Debug)]
+pub struct Section {
+  title: Option<String>,
+  elements: Vec<Element>,
+}
+
+#[derive(Debug)]
+pub enum Element {
+  Block(Block),
+  Paragraph(String),
+}
+
 // ## Compiler
 
 #[derive(Debug)]
@@ -223,7 +241,7 @@ impl Compiler {
     self.errors.clear();
   }
 
-  pub fn compile_string(&mut self, input: String) -> &Vec<Block> {   
+  pub fn compile_string(&mut self, input: String) -> Vec<Program> {   
     self.text = input.clone();
     let mut parser = Parser::new();
     parser.parse(&input);
@@ -231,15 +249,79 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    self.compile_blocks(ast);
-    &self.blocks
+    self.compile(ast)
   }
 
-  //pub fn compile_programs()
 
-  pub fn compile_blocks(&mut self, node: Node) -> Vec<Block> {
-    let mut blocks: Vec<Block> = Vec::new();
-    match node {
+  pub fn compile(&mut self, input: Node) -> Vec<Program> {
+    let mut programs = Vec::new();
+    match input {
+      Node::Root{children} => {
+        for child in children {
+          match child {
+            Node::Program{..} => programs.push(self.compile_program(child).unwrap()),
+            //Node::Fragment{..} => self.compile_fragment(child),
+            _ => (),
+          };
+        }
+      },
+      _ => (),
+    };
+    programs
+  }
+
+
+  pub fn compile_program(&mut self, input: Node) -> Option<Program> {
+    let program = match input {
+      Node::Program{title, children} => {
+        let mut sections = vec![];
+        for child in children {
+          match self.compile_section(child) {
+            Some(section) => sections.push(section),
+            _ => (),
+          };
+        }
+        let program = Program{title, sections};
+        Some(program)
+      },
+      _ => None,
+    };
+    self.program += 1;
+    self.section = 1;
+    program
+  }
+
+  pub fn compile_section(&mut self, input: Node) -> Option<Section> {
+    let section = match input {
+      Node::Section{title, children} => {
+        let mut elements = vec![];
+        for child in children {
+          match self.compile_element(child) {
+            Some(element) => elements.push(element),
+            _ => (),
+          };
+        }
+        let section = Section{title, elements};
+        Some(section)
+      },
+      _ => None,
+    };
+    self.section += 1;
+    self.block = 1;
+    section
+  }
+
+  pub fn compile_element(&mut self, input: Node) -> Option<Element> {
+    let element = match input {
+      Node::Paragraph{text} => Some(Element::Paragraph(text)),
+      Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
+      _ => None,
+    };
+    element
+  }
+
+  pub fn compile_block(&mut self, node: Node) -> Option<Block> {
+    let block = match node {
       Node::Fragment{children, start, end} |
       Node::Block{children, start, end} => {
         let mut block = Block::new();
@@ -361,25 +443,11 @@ impl Compiler {
           let (constraint_text, _, _, step_constraints) = step;
           block.add_constraints((constraint_text, step_constraints));
         }
-        blocks.push(block);
+        Some(block)
       },
-      Node::Root{children} => {
-        let result = self.compile_children(children);
-        self.blocks = result;
-      },
-      Node::Program{title, children} => {
-        blocks.append(&mut self.compile_children(children));
-        self.program += 1;
-      },
-      Node::Body{children} => {blocks.append(&mut self.compile_children(children));},
-      Node::Section{title, children} => {
-        blocks.append(&mut self.compile_children(children));
-        self.section += 1;
-        self.block = 1;
-      },
-      _ => (),
-    }
-    blocks
+      _ => None,
+    };
+    block
   }
 
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
@@ -882,14 +950,6 @@ impl Compiler {
     compiled
   }
 
-  pub fn compile_children(&mut self, nodes: Vec<Node>) -> Vec<Block> {
-    let mut compiled = Vec::new();
-    for node in nodes {
-      compiled.append(&mut self.compile_blocks(node));
-    }
-    compiled
-  }
-
   pub fn build_syntax_tree(&mut self, node: parser::Node) -> Vec<Node> {
     let mut compiled = Vec::new();
     self.depth += 1;
@@ -919,10 +979,6 @@ impl Compiler {
       parser::Node::Head{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Head{children: result});
-      },
-      parser::Node::Body{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Body{children: result});
       },
       parser::Node::Section{children} => {
         let result = self.compile_nodes(children);
@@ -1479,6 +1535,7 @@ impl Compiler {
         }
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Body{children} |
       parser::Node::Punctuation{children} |
       parser::Node::DigitOrComma{children} |
       parser::Node::Comment{children} |
