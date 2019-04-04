@@ -1,4 +1,4 @@
-use mech_core::{Block, Constraint};
+use mech_core::{Block, Constraint, TableId};
 use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use super::compiler::Node;
 use hashbrown::hash_map::{HashMap, Entry};
@@ -63,7 +63,11 @@ impl Formatter {
         for child in children {
           code = self.write_node(child);
         }
-        code = format!("#{}", name);
+        let formatted_name = match id {
+          TableId::Local(..) => format!("{}", name),
+          TableId::Global(..) => format!("#{}", name),
+        };
+        code = formatted_name;
       }
       Node::AnonymousTableDefine{children} => {
         let table_contents = self.write_node(&children[0]);
@@ -82,7 +86,7 @@ impl Formatter {
       Node::Block{children, ..} => { 
         for child in children {
           let constraint = self.write_node(child);
-          code = format!("{}\n  {}", code, constraint);
+          code = format!("{}{}\n", code, constraint);
         }
       },
       _ => (),
