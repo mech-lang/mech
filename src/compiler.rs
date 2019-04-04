@@ -153,8 +153,8 @@ pub fn spacer(width: usize) {
 
 #[derive(Clone, PartialEq)]
 pub struct Program {
-  title: Option<String>,
-  sections: Vec<Section>,
+  pub title: Option<String>,
+  pub sections: Vec<Section>,
 }
 
 impl fmt::Debug for Program {
@@ -170,8 +170,8 @@ impl fmt::Debug for Program {
 
 #[derive(Clone, PartialEq)]
 pub struct Section {
-  title: Option<String>,
-  elements: Vec<Element>,
+  pub title: Option<String>,
+  pub elements: Vec<Element>,
 }
 
 impl fmt::Debug for Section {
@@ -187,7 +187,7 @@ impl fmt::Debug for Section {
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
-  Block(Block),
+  Block(usize),
   Paragraph(String),
 }
 
@@ -196,7 +196,7 @@ impl fmt::Debug for Element {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Element::Paragraph(string) => write!(f, "{:?}", string),
-      Element::Block(block) => write!(f, "  Block({:#x})", block.id),
+      Element::Block(block_id) => write!(f, "  Block({:#x})", block_id),
     };
     Ok(())
   }
@@ -366,7 +366,7 @@ impl Compiler {
     element
   }
 
-  pub fn compile_block(&mut self, node: Node) -> Option<Block> {
+  pub fn compile_block(&mut self, node: Node) -> Option<usize> {
     let block = match node {
       Node::Fragment{children, start, end} |
       Node::Block{children, start, end} => {
@@ -490,7 +490,7 @@ impl Compiler {
           block.add_constraints((constraint_text, step_constraints));
         }
         self.blocks.push(block.clone());
-        Some(block)
+        Some(block.id)
       },
       _ => None,
     };
