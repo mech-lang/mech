@@ -639,7 +639,7 @@ named!(constraint<CompleteStr, Node>, do_parse!(
   (Node::Constraint { children: vec![statement_or_expression] })));
 
 named!(block<CompleteStr, Node>, do_parse!(
-  constraints: many1!(constraint) >> many0!(space) >>
+  constraints: many1!(constraint) >> many0!(whitespace) >>
   (Node::Block { children: constraints })));
 
 // ## Markdown
