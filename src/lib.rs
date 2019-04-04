@@ -21,7 +21,7 @@ use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
-use mech_syntax::compiler::Compiler;
+use mech_syntax::compiler::{Compiler, Node};
 use mech_core::{Transaction, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
 macro_rules! log {
@@ -41,10 +41,9 @@ pub struct Core {
 
 #[wasm_bindgen]
 impl Core {
-  pub fn new() -> Core {
-    let mech_code = Hasher::hash_str("mech/code");
+  pub fn new(changes: usize, tables: usize) -> Core {
     Core {
-      core: mech_core::Core::new(100_000,100),
+      core: mech_core::Core::new(changes,tables),
       changes: Vec::new(),
       images: HashMap::new(),
       nodes: HashMap::new(),
