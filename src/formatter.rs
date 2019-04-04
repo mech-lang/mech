@@ -51,6 +51,18 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         code = format!("#{} = {}", lhs, rhs);
       },
+      Node::SelectData{name, id, children} => {
+        for child in children {
+          code = self.write_node(child);
+        }
+        code = format!("#{}", name);
+      }
+      Node::AnonymousTableDefine{children} => {
+        let table_contents = self.write_node(&children[0]);
+        code = format!("[{}]", table_contents);
+      }
+      Node::TableRow{children} |
+      Node::Column{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::Statement{children} |
