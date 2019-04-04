@@ -151,6 +151,7 @@ pub fn spacer(width: usize) {
 
 // Define a program struct that has everything we need to render a mech program.
 
+#[derive(Clone, PartialEq)]
 pub struct Program {
   title: Option<String>,
   sections: Vec<Section>,
@@ -167,6 +168,7 @@ impl fmt::Debug for Program {
   }
 }
 
+#[derive(Clone, PartialEq)]
 pub struct Section {
   title: Option<String>,
   elements: Vec<Element>,
@@ -183,6 +185,7 @@ impl fmt::Debug for Section {
   }
 }
 
+#[derive(Clone, PartialEq)]
 pub enum Element {
   Block(Block),
   Paragraph(String),
