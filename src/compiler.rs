@@ -204,6 +204,7 @@ impl fmt::Debug for Element {
 #[derive(Debug)]
 pub struct Compiler {
   pub blocks: Vec<Block>,
+  pub programs: Vec<Program>,
   pub constraints: Vec<Constraint>,
   depth: usize,
   row: usize,
@@ -229,6 +230,7 @@ impl Compiler {
   pub fn new() -> Compiler {
     Compiler {
       blocks: Vec::new(),
+      programs: Vec::new(),
       constraints: Vec::new(),
       node_stack: Vec::new(),
       depth: 0,
@@ -252,6 +254,7 @@ impl Compiler {
 
   pub fn clear(&mut self) {
     self.blocks.clear();
+    self.programs.clear();
     self.constraints.clear();
     self.node_stack.clear();
     self.depth = 0;
@@ -279,9 +282,10 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    self.compile(ast)
+    let programs = self.compile(ast);
+    self.programs = programs.clone();
+    programs
   }
-
 
   pub fn compile(&mut self, input: Node) -> Vec<Program> {
     let mut programs = Vec::new();
