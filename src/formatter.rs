@@ -46,10 +46,18 @@ impl Formatter {
       Node::Table{name, id} => {
         code = name.clone();
       },
+      Node::Identifier{name, id} => {
+        code = name.clone();
+      },
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("#{} = {}", lhs, rhs);
+      },
+      Node::VariableDefine{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("{} = {}", lhs, rhs);
       },
       Node::SelectData{name, id, children} => {
         for child in children {
@@ -66,10 +74,15 @@ impl Formatter {
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::Statement{children} |
-      Node::Constraint{children, ..} | 
-      Node::Block{children, ..} => { 
+      Node::Constraint{children, ..} => { 
         for child in children {
           code = self.write_node(child);
+        }
+      },
+      Node::Block{children, ..} => { 
+        for child in children {
+          let constraint = self.write_node(child);
+          code = format!("{}\n  {}", code, constraint);
         }
       },
       _ => (),
