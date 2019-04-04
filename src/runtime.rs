@@ -204,7 +204,7 @@ impl fmt::Debug for Register {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Block {
   pub id: usize,
   pub name: String,
@@ -1267,7 +1267,7 @@ pub struct Pipe {
 // example, Scan constraints could bring data into the block, and a Join 
 // constraint could match elements from one table to another.
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Constraint {
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},

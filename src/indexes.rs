@@ -87,7 +87,7 @@ impl Hasher {
 
 // ## Table Index
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct TableIndex {
   pub map: HashMap<u64, Table>,
   pub aliases: HashMap<u64, u64>,

@@ -2,7 +2,7 @@
 
 // Defines a struct for errors and an enum which enumerates the error types
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Error { 
   pub block: u64,
   pub constraint: usize,
@@ -12,7 +12,7 @@ pub struct Error {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ErrorType {
   MissingAttribute(u64),
   DuplicateAlias(u64),
