@@ -34,7 +34,7 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
-  SelectData{ id: TableId, children: Vec<Node> },
+  SelectData{name: String, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -100,7 +100,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
-    Node::SelectData{id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
+    Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::Range{children} => {print!("Range\n"); Some(children)},
@@ -889,7 +889,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
-      Node::SelectData{id, children} => {
+      Node::SelectData{name, id, children} => {
         let mut compiled = vec![];
         let mut indices: Vec<Option<Parameter>> = vec![];
         let mut scan_id = id.clone();
@@ -1054,14 +1054,14 @@ impl Compiler {
                 select_data_children = vec![Node::Null; 2];
               }
               select_data_children.reverse();
-              compiled.push(Node::SelectData{id: TableId::Global(id), children: select_data_children.clone()});
+              compiled.push(Node::SelectData{name, id: TableId::Global(id), children: select_data_children.clone()});
             }, 
             Node::Identifier{name, id} => {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 2];
               }
               select_data_children.reverse();
-              compiled.push(Node::SelectData{id: TableId::Local(id), children: select_data_children.clone()});
+              compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{column} => {
               let mut reversed = column.clone();
