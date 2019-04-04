@@ -151,22 +151,52 @@ pub fn spacer(width: usize) {
 
 // Define a program struct that has everything we need to render a mech program.
 
-#[derive(Debug)]
 pub struct Program {
   title: Option<String>,
   sections: Vec<Section>,
 }
 
-#[derive(Debug)]
+impl fmt::Debug for Program {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "Program: {}\n", self.title.clone().unwrap_or("".to_string()));
+    for section in &self.sections {
+      write!(f, "  {:?}\n", section);
+    }
+    Ok(())
+  }
+}
+
 pub struct Section {
   title: Option<String>,
   elements: Vec<Element>,
 }
 
-#[derive(Debug)]
+impl fmt::Debug for Section {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "Section: {}\n", self.title.clone().unwrap_or("".to_string()));
+    for element in &self.elements {
+      write!(f, "    {:?}\n", element);
+    }
+    Ok(())
+  }
+}
+
 pub enum Element {
   Block(Block),
   Paragraph(String),
+}
+
+impl fmt::Debug for Element {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      Element::Paragraph(string) => write!(f, "{:?}", string),
+      Element::Block(block) => write!(f, "  Block({:#x})", block.id),
+    };
+    Ok(())
+  }
 }
 
 // ## Compiler
@@ -260,7 +290,7 @@ impl Compiler {
         for child in children {
           match child {
             Node::Program{..} => programs.push(self.compile_program(child).unwrap()),
-            //Node::Fragment{..} => self.compile_fragment(child),
+            Node::Fragment{..} => programs.push(self.compile_fragment(child).unwrap()),
             _ => (),
           };
         }
@@ -270,6 +300,15 @@ impl Compiler {
     programs
   }
 
+  pub fn compile_fragment(&mut self, input: Node) -> Option<Program> {
+    let block = self.compile_block(input).unwrap();
+    let program = Program{title: None, sections: vec![
+      Section {title: None, elements: vec![Element::Block(block)]}
+    ]};
+    self.program += 1;
+    self.section = 1;
+    Some(program)
+  }
 
   pub fn compile_program(&mut self, input: Node) -> Option<Program> {
     let program = match input {
@@ -443,6 +482,7 @@ impl Compiler {
           let (constraint_text, _, _, step_constraints) = step;
           block.add_constraints((constraint_text, step_constraints));
         }
+        self.blocks.push(block.clone());
         Some(block)
       },
       _ => None,
