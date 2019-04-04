@@ -13,6 +13,7 @@ use alloc::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
+use super::formatter::Formatter;
 
 // ## Compiler Nodes
 
@@ -187,7 +188,7 @@ impl fmt::Debug for Section {
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
-  Block(usize),
+  Block((usize, Node)),
   Paragraph(String),
 }
 
@@ -196,7 +197,7 @@ impl fmt::Debug for Element {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Element::Paragraph(string) => write!(f, "{:?}", string),
-      Element::Block(block_id) => write!(f, "  Block({:#x})", block_id),
+      Element::Block((block_id, node)) => write!(f, "  Block({:#x})", block_id),
     };
     Ok(())
   }
@@ -366,12 +367,13 @@ impl Compiler {
     element
   }
 
-  pub fn compile_block(&mut self, node: Node) -> Option<usize> {
-    let block = match node {
+  pub fn compile_block(&mut self, node: Node) -> Option<(usize, Node)> {
+    let block = match node.clone() {
       Node::Fragment{children, start, end} |
       Node::Block{children, start, end} => {
         let mut block = Block::new();
-        block.text = self.text[start..end].to_string();
+        let mut formatter = Formatter::new();
+        block.text = formatter.format(&node);
         block.name = format!("{:?},{:?},{:?}", self.program, self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
@@ -381,12 +383,7 @@ impl Compiler {
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
         for constraint_node in children {
-          let constraint_text = match constraint_node.clone() {
-            Node::Constraint{children, start, end} => {
-              self.text[start..end].to_string()
-            },
-            _ => "".to_string()
-          };
+          let constraint_text = formatter.format(&constraint_node);
           let mut result = self.compile_constraint(&constraint_node);
           // ----------------------------------------------------------------------------------------------------------
           // Planner
@@ -490,7 +487,7 @@ impl Compiler {
           block.add_constraints((constraint_text, step_constraints));
         }
         self.blocks.push(block.clone());
-        Some(block.id)
+        Some((block.id, node))
       },
       _ => None,
     };

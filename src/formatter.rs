@@ -1,4 +1,6 @@
 use mech_core::{Block, Constraint};
+use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use super::compiler::Node;
 use hashbrown::hash_map::{HashMap, Entry};
 
 // # Formatter
@@ -20,13 +22,47 @@ impl Formatter {
     }
   }
 
-  pub fn format(&mut self, block: Block) -> String {
+  pub fn format(&mut self, block_ast: &Node) -> String {
+    let code = self.write_node(block_ast);
+    code
+  }
 
-    for (text, steps) in block.constraints {
-      println!("{:?} {:?}", text, steps);
+  pub fn write_node(&mut self, node: &Node) -> String {
+    let mut code = String::new();
+    match node {
+      Node::Constant{value} => {
+        code = format!("{:?}", value.to_float());
+      },
+      Node::Function{name, children} => {
+        match name.as_ref() {
+          "*" | "+" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} {} {}", lhs, name, rhs);
+          },
+          _ => (),
+        }
+      },
+      Node::Table{name, id} => {
+        code = name.clone();
+      },
+      Node::TableDefine{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("#{} = {}", lhs, rhs);
+      },
+      Node::MathExpression{children} |
+      Node::Expression{children} |
+      Node::Statement{children} |
+      Node::Constraint{children, ..} | 
+      Node::Block{children, ..} => { 
+        for child in children {
+          code = self.write_node(child);
+        }
+      },
+      _ => (),
     }
-
-    String::new()
+    code
   }
 
 }
