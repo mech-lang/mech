@@ -73,6 +73,18 @@ impl Formatter {
         let table_contents = self.write_node(&children[0]);
         code = format!("[{}]", table_contents);
       }
+      Node::InlineTable{children} => {
+        for child in children {
+          let binding = self.write_node(&child);
+          code = format!("{}{} ", code, binding);
+        }
+        code = format!("[{}]", code);
+      }
+      Node::Binding{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("{}: {}", lhs, rhs);
+      }
       Node::TableRow{children} |
       Node::Column{children} |
       Node::MathExpression{children} |
