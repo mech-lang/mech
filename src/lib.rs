@@ -21,7 +21,7 @@ use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
-use mech_syntax::compiler::{Compiler, Node};
+use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{Transaction, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
 macro_rules! log {
@@ -33,6 +33,7 @@ macro_rules! log {
 #[wasm_bindgen]
 pub struct Core {
   core: mech_core::Core,
+  programs: Vec<Program>,
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
   nodes: HashMap<u64, Vec<u64>>,
@@ -44,6 +45,7 @@ impl Core {
   pub fn new(changes: usize, tables: usize) -> Core {
     Core {
       core: mech_core::Core::new(changes,tables),
+      programs: Vec::new(),
       changes: Vec::new(),
       images: HashMap::new(),
       nodes: HashMap::new(),
@@ -62,7 +64,66 @@ impl Core {
     self.core.register_blocks(compiler.blocks.clone());
     self.core.step();
     self.core.process_transaction(&Transaction::from_changeset(changes));
+    log!("{:?}", compiler.programs);
+    self.programs = compiler.programs.clone();
+    self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
+  }
+
+  pub fn render_program(&mut self) -> Result<(), JsValue>  {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let body = document.body().expect("document should have a body");
+    for program in &self.programs {
+      let mut rendered_program = document.create_element("div")?;
+      rendered_program.set_attribute("class", "mech-program");
+      let mut title = document.create_element("h1")?;
+      title.set_inner_html(&program.title.clone().unwrap());
+      rendered_program.append_child(&title)?;
+      for section in &program.sections {
+        let mut rendered_section = document.create_element("div")?;
+        match &section.title {
+          Some(title_text) => {
+            let mut title = document.create_element("h2")?;
+            title.set_inner_html(&title_text.clone());
+            rendered_section.append_child(&title);
+          },
+          _ => (),
+        }
+        for element in &section.elements {
+          match element {
+            Element::Paragraph(text) => {
+              let mut paragraph = document.create_element("p")?;
+              paragraph.set_inner_html(text);
+              rendered_section.append_child(&paragraph);
+            },
+            Element::Block((block_id, block_ast)) => {
+              let mut code = document.create_element("div")?;
+              let mut code_text = document.create_element("pre")?;
+              code_text.set_attribute("class","mech-code");
+              let block = &self.core.runtime.blocks.get(block_id).unwrap();
+              code_text.set_inner_html(&block.text);
+              code.append_child(&code_text);
+              // Add output to the block if we have it
+              let view_id = Hasher::hash_str("block/view");
+              match block.get_table(view_id) {
+                Some(table) => {
+                  let mut view = document.create_element("div")?;
+                  view.set_attribute("class", "mech-view");
+                  view.set_inner_html(&table.data[0][0].as_string().unwrap());
+                  code.append_child(&view);
+                }
+                _ => (),
+              }
+              rendered_section.append_child(&code);
+            },
+          }
+        }
+        rendered_program.append_child(&rendered_section)?;
+      }
+      body.append_child(&rendered_program)?;
+    }
+    Ok(())
   }
 
   pub fn clear(&mut self) {
