@@ -37,6 +37,7 @@ pub struct Core {
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
   nodes: HashMap<u64, Vec<u64>>,
+  views: HashSet<u64>,
   roots: HashSet<String>,
 }
 
@@ -49,6 +50,7 @@ impl Core {
       changes: Vec::new(),
       images: HashMap::new(),
       nodes: HashMap::new(),
+      views: HashSet::new(),
       roots: HashSet::new(),
     }
   }
@@ -110,6 +112,8 @@ impl Core {
                 Some(table) => {
                   let mut view = document.create_element("div")?;
                   view.set_attribute("class", "mech-view");
+                  view.set_id(&format!("{}",block_id));
+                  self.views.insert(*block_id as u64);
                   view.set_inner_html(&table.data[0][0].as_string().unwrap());
                   code.append_child(&view);
                 }
@@ -187,6 +191,8 @@ impl Core {
     let closure = Closure::wrap(Box::new(move || {
       let window = web_sys::window().expect("no global `window` exists");
       let document = window.document().expect("should have a document on window");
+
+      // render canvases
       let canvases = document.get_elements_by_tag_name("canvas");
       for i in 0..canvases.length() {
         let canvas = canvases.get_with_index(i);
@@ -202,6 +208,18 @@ impl Core {
     }) as Box<FnMut()>);
     window.request_animation_frame(closure.as_ref().unchecked_ref());
     closure.forget();
+
+    // render views
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let view_id = Hasher::hash_str("block/view");
+    for view in self.views.iter() {
+      let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
+      let block = &self.core.runtime.blocks.get(&(*view as usize)).unwrap();
+      let table = block.get_table(view_id).unwrap();
+      view_node.set_inner_html(&format!("{}", table.data[0][0].as_string().unwrap()))
+    }
+
     /*
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
