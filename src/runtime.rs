@@ -250,6 +250,10 @@ impl Block {
     }
   }
 
+  pub fn get_table(&self, table_id: u64) -> Option<&Table> {
+    self.memory.get(table_id)
+  } 
+
   pub fn add_constraints(&mut self, constraint_tuple: (String, Vec<Constraint>)) {
     self.constraints.push(constraint_tuple.clone());
     let (constraint_text, constraints) = constraint_tuple;
