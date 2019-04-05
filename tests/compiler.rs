@@ -480,9 +480,10 @@ Keep the balls within the x boundary
 Create ball on click
   ~ #html/event/click.x
   #ball += [x: 10 y: 10 vx: 40 vy: 0]
-  
-block
-  #test = #ball{1,1} + #ball{1,3} + #ball{2,1} + #ball{2,3}", Value::Number(make_quantity(1180000,-4,0)));
+
+test
+  x = #ball.x + #ball.y
+  #test = stat/sum(column: x)", Value::Number(make_quantity(138,0,0)));
 
 // ## Strings
 
