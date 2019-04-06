@@ -51,12 +51,32 @@ impl Formatter {
       },
       Node::Function{name, children} => {
         match name.as_ref() {
-          "*" | "+" | "-" | "/" => {
+          "*" | "+" | "/" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
             code = format!("{} {} {}", lhs, name, rhs);
           },
-          _ => (),
+          "-" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            if lhs == "<span class=\"highlight-constant\">0.0</span>" {
+              code = format!("{}{}", name, rhs);
+            } else {
+              code = format!("{} {} {}", lhs, name, rhs);
+            }
+          }
+          _ => {
+            node_type = "function";
+            for (ix, child) in children.iter().enumerate() {
+              let binding = self.write_node(&child);
+              if ix == children.len() - 1 {
+                code = format!("{}{}",code, binding);
+              } else {
+                code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+              }
+            }
+            code = format!("{}({})", name, code);
+          }
         }
       },
       Node::Table{name, id} => {
@@ -68,7 +88,7 @@ impl Formatter {
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
-        code = format!("#{} = {}", lhs, rhs);
+        code = format!("<span class=\"highlight-bracket\">#</span>{} = {}", lhs, rhs);
       },
       Node::SetData{children} => {
         let lhs = self.write_node(&children[0]);
@@ -80,6 +100,10 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         code = format!("{} = {}", lhs, rhs);
       },
+      Node::String{text} => {
+        node_type = "string";
+        code = format!("\"{}\"", text);
+      },
       Node::SelectData{name, id, children} => {
         for child in children {
           let written_child = self.write_node(child);
@@ -87,7 +111,7 @@ impl Formatter {
         }
         let formatted_name = match id {
           TableId::Local(..) => format!("{}", name),
-          TableId::Global(..) => format!("#{}", name),
+          TableId::Global(..) => format!("<span class=\"highlight-bracket\">#</span>{}", name),
         };
         code = format!("{}{}",formatted_name, code);
       }
@@ -97,30 +121,37 @@ impl Formatter {
           if ix == children.len() - 1 {
             code = format!("{}{}",code, written_child);
           } else {
-            code = format!("{}{}, ",code, written_child);
+            code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, written_child);
           }
         }
-        code = format!("{{{}}}", code);
+        code = format!("<span class=\"highlight-bracket\">{{{}}}</span>", code);
       }
       Node::AnonymousTableDefine{children} => {
         let table_contents = self.write_node(&children[0]);
         if self.rows == 1 && self.cols == 1 {
           code = format!("{}", table_contents);
         } else {
-          code = format!("[{}]", table_contents);
+          code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", table_contents);
         }
       }
+      Node::SelectAll => {
+        code = ":".to_string();
+      }
       Node::InlineTable{children} => {
-        for child in children {
+        for (ix, child) in children.iter().enumerate() {
           let binding = self.write_node(&child);
-          code = format!("{}{} ", code, binding);
+          if ix == children.len() - 1 {
+            code = format!("{}{}",code, binding);
+          } else {
+            code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+          }
         }
-        code = format!("[{}]", code);
+        code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
       }
       Node::Binding{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
-        code = format!("{}: {}", lhs, rhs);
+        code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-clear\">{}</span>", lhs, rhs);
       }
       Node::DataWatch{children} => {
         let table = self.write_node(&children[0]);
