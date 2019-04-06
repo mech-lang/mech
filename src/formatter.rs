@@ -91,26 +91,35 @@ impl Formatter {
       },
       Node::Table{name, id} => {
         code = name.clone();
+        if self.html {
+          code = format!("<span class=\"highlight-bracket\">#</span>{}", code)
+        }
+        else {
+          code = format!("#{}", code)
+        }
       },
       Node::Identifier{name, id} => {
         code = name.clone();
       },
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
-        let prefix = format!("{} = ", lhs);
-        self.indent = prefix.len() + 2;
+        self.indent = if self.html {
+          lhs.len() + 2 - 37
+        } else {
+          lhs.len() + 2
+        };
         let rhs = self.write_node(&children[1]);
-        if self.html {
-          code = format!("<span class=\"highlight-bracket\">#</span>{}{}", prefix, rhs)
-        }
-        else {
-          code = format!("#{}{}", prefix, rhs)
-        }
+        code = format!("{} = {}", lhs, rhs)
       },
       Node::SetData{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("{} := {}", lhs, rhs);
+      },
+      Node::AddRow{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("{} += {}", lhs, rhs);
       },
       Node::VariableDefine{children} => {
         let lhs = self.write_node(&children[0]);
@@ -159,6 +168,15 @@ impl Formatter {
           code = format!("{{{}}}", code);
         }
         
+      }
+      Node::DotIndex{children} => {
+        let mut reversed = children.clone();
+        reversed.reverse();
+        for child in reversed {
+          let written_child = self.write_node(&child);
+          code = format!("{}{}", code, written_child);
+        }
+        code = format!(".{}", code);
       }
       Node::AnonymousTableDefine{children} => {
         self.rows = 0;
