@@ -373,7 +373,7 @@ impl Compiler {
       Node::Block{children, start, end} => {
         let mut block = Block::new();
         let mut formatter = Formatter::new();
-        block.text = formatter.format(&node);
+        block.text = formatter.format(&node, false);
         block.name = format!("{:?},{:?},{:?}", self.program, self.section, self.block);
         block.id = Hasher::hash_string(block.name.clone()) as usize;
         self.block += 1;
@@ -383,7 +383,7 @@ impl Compiler {
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
         for constraint_node in children {
-          let constraint_text = formatter.format(&constraint_node);
+          let constraint_text = formatter.format(&constraint_node, false);
           let mut result = self.compile_constraint(&constraint_node);
           // ----------------------------------------------------------------------------------------------------------
           // Planner
