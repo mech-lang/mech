@@ -160,6 +160,7 @@ pub trait QuantityMath {
     fn less_than(self, Quantity) -> bool;
     fn greater_than(self, Quantity) -> bool;
     fn to_string(self) -> String;
+    fn format(self) -> String;
     fn to_float(self) -> f64;
     fn to_u64(self) -> u64;
 }
@@ -218,6 +219,19 @@ impl QuantityMath for Quantity {
 
     fn to_string(self) -> String {
         format!("{}e{}", self.mantissa(), self.range())
+    }
+
+    fn format(self) -> String {
+        let mantissa_string = format!("{}", self.mantissa());
+        let decimal_ix = (mantissa_string.len() as i64 + self.range()) as usize;
+        let first = &mantissa_string[..decimal_ix];
+        let second = &mantissa_string[decimal_ix..];
+        let mut decimal = "";
+        if second.len() != 0 {
+            decimal = "."
+        }
+        let as_string = format!("{}{}{}", first, decimal, second);
+        as_string
     }
 
     fn to_float(self) -> f64 {
