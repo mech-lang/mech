@@ -13,6 +13,7 @@ pub struct Formatter{
   identifiers: HashMap<u64, String>,
   rows: usize,
   cols: usize,
+  indent: usize,
 }
 
 impl Formatter {
@@ -23,6 +24,7 @@ impl Formatter {
       identifiers: HashMap::new(),
       rows: 0,
       cols: 0,
+      indent: 0,
     }
   }
 
@@ -87,8 +89,10 @@ impl Formatter {
       },
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
+        let prefix = format!("{} = ", lhs);
+        self.indent = prefix.len() + 1 - 31;
         let rhs = self.write_node(&children[1]);
-        code = format!("<span class=\"highlight-bracket\">#</span>{} = {}", lhs, rhs);
+        code = format!("<span class=\"highlight-bracket\">#</span>{}{}", prefix, rhs);
       },
       Node::SetData{children} => {
         let lhs = self.write_node(&children[0]);
@@ -97,8 +101,9 @@ impl Formatter {
       },
       Node::VariableDefine{children} => {
         let lhs = self.write_node(&children[0]);
+        let prefix = format!("{} = ", lhs);
         let rhs = self.write_node(&children[1]);
-        code = format!("{} = {}", lhs, rhs);
+        code = format!("{}{}", prefix, rhs);
       },
       Node::String{text} => {
         node_type = "string";
@@ -127,11 +132,16 @@ impl Formatter {
         code = format!("<span class=\"highlight-bracket\">{{{}}}</span>", code);
       }
       Node::AnonymousTableDefine{children} => {
-        let table_contents = self.write_node(&children[0]);
+        self.rows = 0;
+        self.cols = 0;
+        for child in children {
+          let written_child = self.write_node(&child);
+          code = format!("{}{}", code, written_child);
+        }
         if self.rows == 1 && self.cols == 1 {
-          code = format!("{}", table_contents);
+          code = format!("{}", code);
         } else {
-          code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", table_contents);
+          code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
         }
       }
       Node::SelectAll => {
@@ -157,12 +167,28 @@ impl Formatter {
         let table = self.write_node(&children[0]);
         code = format!("~ {}", table);
       }
+      Node::TableHeader{children} => {
+        self.rows += 1;
+        node_type = "parameter";
+        for child in children {
+          let written_child = self.write_node(child);
+          code = format!("{}{} ",code, written_child);
+        }
+        code = format!("|{}|\n",code);
+      }
       Node::TableRow{children} => {
         self.rows += 1;
         self.cols = 0;
         for child in children {
-          code = self.write_node(child);
+          let written_child = self.write_node(child);
+          code = format!("{}{} ", code, written_child)
         }
+        let indent = if self.rows != 1 {
+          repeat_char(" ", self.indent)
+        } else {
+          "".to_string()
+        };
+        code = format!("{}{}\n", indent, code)
       }
       Node::Column{children} => {
         self.cols += 1;
@@ -170,6 +196,7 @@ impl Formatter {
           code = self.write_node(child);
         }
       }
+      Node::Attribute{children} |
       Node::SubscriptIndex{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
@@ -191,4 +218,12 @@ impl Formatter {
     code
   }
 
+}
+
+fn repeat_char(to_print: &str, n: usize) -> String {
+  let mut result = "".to_string();
+  for _ in 0..n {
+    result = format!("{}{}", result, to_print);
+  }
+  result
 }
