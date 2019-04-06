@@ -163,9 +163,13 @@ impl Formatter {
       Node::AnonymousTableDefine{children} => {
         self.rows = 0;
         self.cols = 0;
-        for child in children {
+        for (ix, child) in children.iter().enumerate() {
+          let mut newline = "";
           let written_child = self.write_node(&child);
-          code = format!("{}{}", code, written_child);
+          if ix != children.len() - 1 {
+            newline = "\n";
+          }
+          code = format!("{}{}{}", code, written_child, newline);
         }
         if self.rows == 1 && self.cols == 1 {
           code = format!("{}", code);
@@ -178,6 +182,7 @@ impl Formatter {
         }
       }
       Node::SelectAll => {
+        node_type = "function";
         code = ":".to_string();
       }
       Node::InlineTable{children} => {
@@ -219,21 +224,25 @@ impl Formatter {
           let written_child = self.write_node(child);
           code = format!("{}{} ",code, written_child);
         }
-        code = format!("|{}|\n",code);
+        code = format!("|{}|",code);
       }
       Node::TableRow{children} => {
         self.rows += 1;
         self.cols = 0;
-        for child in children {
+        for (ix, child) in children.iter().enumerate() {
+          let mut space = "";
           let written_child = self.write_node(child);
-          code = format!("{}{} ", code, written_child)
+          if ix != children.len() - 1 {
+            space = " ";
+          }
+          code = format!("{}{}{}", code, written_child, space)
         }
         let indent = if self.rows != 1 {
           repeat_char(" ", self.indent)
         } else {
           "".to_string()
         };
-        code = format!("{}{}\n", indent, code)
+        code = format!("{}{}", indent, code)
       }
       Node::Column{children} => {
         self.cols += 1;
