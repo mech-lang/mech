@@ -14,6 +14,7 @@ pub struct Formatter{
   rows: usize,
   cols: usize,
   indent: usize,
+  html: bool,
 }
 
 impl Formatter {
@@ -25,10 +26,12 @@ impl Formatter {
       rows: 0,
       cols: 0,
       indent: 0,
+      html: false,
     }
   }
 
-  pub fn format(&mut self, block_ast: &Node) -> String {
+  pub fn format(&mut self, block_ast: &Node, html: bool) -> String {
+    self.html = html;
     let code = self.write_node(block_ast);
     code
   }
@@ -61,7 +64,7 @@ impl Formatter {
           "-" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
-            if lhs == "<span class=\"highlight-constant\">0.0</span>" {
+            if lhs == "<span class=\"highlight-constant\">0.0</span>" || lhs == "0.0" {
               code = format!("{}{}", name, rhs);
             } else {
               code = format!("{} {} {}", lhs, name, rhs);
@@ -74,7 +77,12 @@ impl Formatter {
               if ix == children.len() - 1 {
                 code = format!("{}{}",code, binding);
               } else {
-                code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+                if self.html {
+                  code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+                } else {
+                  code = format!("{}{}, ",code, binding);
+                }
+                
               }
             }
             code = format!("{}({})", name, code);
@@ -90,9 +98,14 @@ impl Formatter {
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         let prefix = format!("{} = ", lhs);
-        self.indent = prefix.len() + 1 - 31;
+        self.indent = prefix.len() + 2;
         let rhs = self.write_node(&children[1]);
-        code = format!("<span class=\"highlight-bracket\">#</span>{}{}", prefix, rhs);
+        if self.html {
+          code = format!("<span class=\"highlight-bracket\">#</span>{}{}", prefix, rhs)
+        }
+        else {
+          code = format!("#{}{}", prefix, rhs)
+        }
       },
       Node::SetData{children} => {
         let lhs = self.write_node(&children[0]);
@@ -116,7 +129,14 @@ impl Formatter {
         }
         let formatted_name = match id {
           TableId::Local(..) => format!("{}", name),
-          TableId::Global(..) => format!("<span class=\"highlight-bracket\">#</span>{}", name),
+          TableId::Global(..) => {
+            if self.html {
+              format!("<span class=\"highlight-bracket\">#</span>{}", name)
+            }
+            else {
+              format!("#{}", name)
+            }
+          },
         };
         code = format!("{}{}",formatted_name, code);
       }
@@ -126,10 +146,19 @@ impl Formatter {
           if ix == children.len() - 1 {
             code = format!("{}{}",code, written_child);
           } else {
-            code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, written_child);
+            if self.html {
+              code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, written_child);
+            } else {
+              code = format!("{}{}, ",code, written_child);
+            }
           }
         }
-        code = format!("<span class=\"highlight-bracket\">{{{}}}</span>", code);
+        if self.html {
+          code = format!("<span class=\"highlight-bracket\">{{{}}}</span>", code);
+        } else {
+          code = format!("{{{}}}", code);
+        }
+        
       }
       Node::AnonymousTableDefine{children} => {
         self.rows = 0;
@@ -141,7 +170,11 @@ impl Formatter {
         if self.rows == 1 && self.cols == 1 {
           code = format!("{}", code);
         } else {
-          code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
+          if self.html {
+            code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
+          } else {
+            code = format!("[{}]", code);
+          }
         }
       }
       Node::SelectAll => {
@@ -153,15 +186,27 @@ impl Formatter {
           if ix == children.len() - 1 {
             code = format!("{}{}",code, binding);
           } else {
-            code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+            if self.html {
+              code = format!("{}{}<span class=\"highlight-clear\">, </span>",code, binding);
+            } else {
+              code = format!("{}{}, ",code, binding);
+            }
           }
         }
-        code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
+        if self.html {
+          code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
+        } else {
+          code = format!("[{}]", code);
+        };
       }
       Node::Binding{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
-        code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-clear\">{}</span>", lhs, rhs);
+        if self.html {
+          code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-clear\">{}</span>", lhs, rhs);
+        } else {
+          code = format!("{}: {}", lhs, rhs);
+        };
       }
       Node::DataWatch{children} => {
         let table = self.write_node(&children[0]);
@@ -214,7 +259,9 @@ impl Formatter {
       },
       _ => (),
     }
-    code = format!("<span class=\"highlight-{}\">{}</span>", node_type, code);
+    if self.html && node_type != "" {
+      code = format!("<span class=\"highlight-{}\">{}</span>", node_type, code);
+    }
     code
   }
 
