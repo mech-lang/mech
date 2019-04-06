@@ -40,7 +40,7 @@ pub enum Node {
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
-  DotIndex { column: Vec<Node>},
+  DotIndex { children: Vec<Node>},
   SubscriptIndex { children: Vec<Node> },
   Range { children: Vec<Node> },
   VariableDefine {children: Vec<Node> },
@@ -101,7 +101,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
-    Node::DotIndex{column} => {print!("DotIndex[column: {:?}]\n", column); None},
+    Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::Range{children} => {print!("Range\n"); Some(children)},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
@@ -894,15 +894,24 @@ impl Compiler {
         let mut indices: Vec<Option<Parameter>> = vec![];
         let mut scan_id = id.clone();
         for child in children {
-          let mut result = self.compile_constraint(child); 
-          match &result[0] {
-            Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
-            Constraint::Null => indices.push(None),
-            Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
-            Constraint::Identifier{id, ..} => indices.push(Some(Parameter::Index(Index::Alias(id.clone())))),
+          match child {
+            Node::DotIndex{children} |
+            Node::SubscriptIndex{children} => {
+              for child in children {
+                let mut result = self.compile_constraint(child);
+                match &result[0] {
+                  Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
+                  Constraint::Null => indices.push(None),
+                  Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
+                  Constraint::Identifier{id, ..} => indices.push(Some(Parameter::Index(Index::Alias(id.clone())))),
+                  _ => (),
+                };
+                compiled.append(&mut result);
+              }
+            }
+            Node::Null => indices.push(None),
             _ => (),
-          };
-          compiled.append(&mut result);
+          }
           if indices.len() == 2 {
             compiled.reverse();
             constraints.append(&mut compiled);
@@ -913,8 +922,8 @@ impl Compiler {
             indices.clear();
             compiled.clear();
           }
-          constraints.reverse();
         }
+        constraints.reverse();
       },
       Node::SubscriptIndex{children} => {
         constraints.append(&mut self.compile_constraints(children));
@@ -1047,6 +1056,7 @@ impl Compiler {
         let mut reversed = result.clone();
         reversed.reverse();
         let mut select_data_children: Vec<Node> = vec![];
+        
         for node in reversed {
           match node {
             Node::Table{name, id} => {
@@ -1060,21 +1070,21 @@ impl Compiler {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 2];
               }
-              select_data_children.reverse();
+              //select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
-            Node::DotIndex{column} => {
-              let mut reversed = column.clone();
-              reversed.reverse();
-              if column.len() == 1 {
-                reversed.push(Node::Null);
-              }
-              select_data_children.append(&mut reversed);
-            },
-            Node::SubscriptIndex{children} => {
+            Node::DotIndex{children} => {
               let mut reversed = children.clone();
-              reversed.reverse();
-              select_data_children.append(&mut reversed);
+              if children.len() == 1 {
+                reversed.push(Node::Null);
+                reversed.reverse();
+              }
+              select_data_children.push(Node::DotIndex{children: reversed});
+            },
+            Node::SubscriptIndex{..} => {
+              /*let mut reversed = children.clone();
+              reversed.reverse();*/
+              select_data_children.push(node.clone());
             }
             _ => (),
           }
@@ -1343,7 +1353,7 @@ impl Compiler {
       parser::Node::DotIndex{children} => {
         let mut result = self.compile_nodes(children);
         result.reverse();
-        compiled.push(Node::DotIndex{column: result});
+        compiled.push(Node::DotIndex{children: result});
       },
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
