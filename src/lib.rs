@@ -21,6 +21,7 @@ use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
+use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{Transaction, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
@@ -100,11 +101,13 @@ impl Core {
               rendered_section.append_child(&paragraph);
             },
             Element::Block((block_id, block_ast)) => {
+              let mut formatter = Formatter::new();
               let mut code = document.create_element("div")?;
               let mut code_text = document.create_element("pre")?;
               code_text.set_attribute("class","mech-code");
               let block = &self.core.runtime.blocks.get(block_id).unwrap();
-              code_text.set_inner_html(&block.text);
+              let html = formatter.format(block_ast, true);
+              code_text.set_inner_html(&html);
               code.append_child(&code_text);
               // Add output to the block if we have it
               let view_id = Hasher::hash_str("block/view");
