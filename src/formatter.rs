@@ -42,7 +42,7 @@ impl Formatter {
     match node {
       Node::Constant{value} => {
         node_type = "constant";
-        code = format!("{:?}", value.to_float());
+        code = format!("{}", value.format());
       },
       Node::LogicExpression{operator, children} => {
         let lhs = self.write_node(&children[0]);
@@ -64,7 +64,7 @@ impl Formatter {
           "-" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
-            if lhs == "<span class=\"highlight-constant\">0.0</span>" || lhs == "0.0" {
+            if lhs == "<span class=\"highlight-constant\">0</span>" || lhs == "0" {
               code = format!("{}{}", name, rhs);
             } else {
               code = format!("{} {} {}", lhs, name, rhs);
@@ -215,7 +215,11 @@ impl Formatter {
       }
       Node::DataWatch{children} => {
         let table = self.write_node(&children[0]);
-        code = format!("~ {}", table);
+        if self.html {
+          code = format!("<span class=\"highlight-watch\">~</span> {}", table);
+        } else {
+          code = format!("~ {}", table);
+        };
       }
       Node::TableHeader{children} => {
         self.rows += 1;
