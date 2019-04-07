@@ -44,6 +44,10 @@ impl Formatter {
         node_type = "constant";
         code = format!("{}", value.format());
       },
+      Node::Empty => {
+        node_type = "empty";
+        code = "_".to_string();
+      },
       Node::LogicExpression{operator, children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
