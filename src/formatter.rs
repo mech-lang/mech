@@ -123,9 +123,9 @@ impl Formatter {
       },
       Node::VariableDefine{children} => {
         let lhs = self.write_node(&children[0]);
-        let prefix = format!("{} = ", lhs);
+        self.indent = lhs.len() + 4;
         let rhs = self.write_node(&children[1]);
-        code = format!("{}{}", prefix, rhs);
+        code = format!("{} = {}", lhs, rhs);
       },
       Node::String{text} => {
         node_type = "string";
@@ -163,7 +163,7 @@ impl Formatter {
           }
         }
         if self.html {
-          code = format!("<span class=\"highlight-bracket\">{{{}}}</span>", code);
+          code = format!("<span class=\"highlight-bracket\">{{</span>{}<span class=\"highlight-bracket\">}}</span>", code);
         } else {
           code = format!("{{{}}}", code);
         }
