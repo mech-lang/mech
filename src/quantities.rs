@@ -224,11 +224,14 @@ impl QuantityMath for Quantity {
     fn format(self) -> String {
         let mantissa_string = format!("{}", self.mantissa());
         let decimal_ix = (mantissa_string.len() as i64 + self.range()) as usize;
-        let first = &mantissa_string[..decimal_ix];
+        let mut first = &mantissa_string[..decimal_ix];
         let second = &mantissa_string[decimal_ix..];
         let mut decimal = "";
         if second.len() != 0 {
             decimal = "."
+        }
+        if first == "" {
+            first = "0";
         }
         let as_string = format!("{}{}{}", first, decimal, second);
         as_string
