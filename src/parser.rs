@@ -308,6 +308,7 @@ leaf!{hashtag, "#", Token::HashTag}
 leaf!{period, ".", Token::Period}
 leaf!{colon, ":", Token::Colon}
 leaf!{comma, ",", Token::Comma}
+leaf!{apostrophe, "'", Token::Apostrophe}
 leaf!{left_bracket, "[", Token::LeftBracket}
 leaf!{right_bracket, "]", Token::RightBracket}
 leaf!{left_parenthesis, "(", Token::LeftParenthesis}
@@ -347,11 +348,11 @@ named!(number<CompleteStr, Node>, do_parse!(
   (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(punctuation<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash) >>
+  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | grave) >>
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | slash | hashtag) >>
+  punctuation: alt!(ampersand | slash | hashtag | equal) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
