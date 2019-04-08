@@ -76,7 +76,7 @@ impl Value {
   pub fn as_string(&self) -> Option<String> {
     match self {
       Value::String(n) => Some(n.to_string()),
-      Value::Number(q) => Some(format!("{:?}",q.to_float())),
+      Value::Number(q) => Some(q.format()),
       Value::Reference(r) => Some(format!("{:?}", r)),
       _ => None,
     }
