@@ -81,7 +81,7 @@ impl Core {
       let mut rendered_program = document.create_element("div")?;
       rendered_program.set_attribute("class", "mech-program");
       let mut title = document.create_element("h1")?;
-      title.set_inner_html(&program.title.clone().unwrap());
+      title.set_inner_html(&format!("# {}", &program.title.clone().unwrap()));
       rendered_program.append_child(&title)?;
       for section in &program.sections {
         let mut rendered_section = document.create_element("div")?;
@@ -117,7 +117,14 @@ impl Core {
                   view.set_attribute("class", "mech-view");
                   view.set_id(&format!("{}",block_id));
                   self.views.insert(*block_id as u64);
-                  view.set_inner_html(&table.data[0][0].as_string().unwrap());
+                  let mut output = "".to_string();
+                  for i in 0..table.rows {
+                    for j in 0..table.columns {
+                      output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                    }
+                    output = format!("{}</br>",output);
+                  }
+                  view.set_inner_html(&output);
                   code.append_child(&view);
                 }
                 _ => (),
