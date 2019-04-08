@@ -113,6 +113,12 @@ impl Formatter {
           lhs.len() + 2
         };
         let rhs = self.write_node(&children[1]);
+        let lhs = if self.html {
+          format!("<span class=\"highlight-variable\">{}</span>", lhs)
+        }
+        else {
+          format!("{}", lhs)
+        };
         code = format!("{} = {}", lhs, rhs)
       },
       Node::SetData{children} => {
@@ -127,8 +133,18 @@ impl Formatter {
       },
       Node::VariableDefine{children} => {
         let lhs = self.write_node(&children[0]);
-        self.indent = lhs.len() + 4;
+        self.indent = if self.html {
+          lhs.len() + 4
+        } else {
+          lhs.len() + 2
+        };
         let rhs = self.write_node(&children[1]);
+        let lhs = if self.html {
+          format!("<span class=\"highlight-variable\">{}</span>", lhs)
+        }
+        else {
+          format!("{}", lhs)
+        };
         code = format!("{} = {}", lhs, rhs);
       },
       Node::String{text} => {
@@ -141,10 +157,17 @@ impl Formatter {
           code = format!("{}{}",code, written_child);
         }
         let formatted_name = match id {
-          TableId::Local(..) => format!("{}", name),
+          TableId::Local(..) => {
+            if self.html {
+              format!("<span class=\"highlight-variable\">{}</span>", name)
+            }
+            else {
+              format!("{}", name)
+            }
+          },
           TableId::Global(..) => {
             if self.html {
-              format!("<span class=\"highlight-bracket\">#</span>{}", name)
+              format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-variable\">{}</span>", name)
             }
             else {
               format!("#{}", name)
@@ -230,7 +253,7 @@ impl Formatter {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         if self.html {
-          code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-clear\">{}</span>", lhs, rhs);
+          code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-variable\">{}</span>", lhs, rhs);
         } else {
           code = format!("{}: {}", lhs, rhs);
         };
