@@ -347,7 +347,7 @@ named!(number<CompleteStr, Node>, do_parse!(
   (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(punctuation<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(period | exclamation | question | comma | colon | semicolon) >>
+  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash) >>
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
@@ -355,7 +355,7 @@ named!(symbol<CompleteStr, Node>, do_parse!(
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number | punctuation | symbol | dash)) >>
+  word: many1!(alt!(word | space | number | punctuation | symbol)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
