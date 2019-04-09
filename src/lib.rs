@@ -77,7 +77,27 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let body = document.body().expect("document should have a body");
+
+    let mut documentation = document.create_element("div")?;
+    documentation.set_attribute("class", "mech-docs");
+    let mut contents = document.create_element("div")?;
+    contents.set_attribute("class", "mech-contents");
+
+
+
     for program in &self.programs {
+      // Make contents entry
+      let mut contents_heading = document.create_element("div")?;
+      contents_heading.set_attribute("class", "mech-contents-heading");
+      contents_heading.set_inner_html(&format!("{}", &program.title.clone().unwrap()));
+      contents.append_child(&contents_heading);
+
+      // Make application area
+      let mut drawing = document.create_element("div")?;
+      drawing.set_attribute("class", "mech-application");
+      drawing.set_id("drawing");
+
+      // Render the program
       let mut rendered_program = document.create_element("div")?;
       rendered_program.set_attribute("class", "mech-program");
       let mut title = document.create_element("h1")?;
@@ -87,6 +107,12 @@ impl Core {
         let mut rendered_section = document.create_element("div")?;
         match &section.title {
           Some(title_text) => {
+            // Make contents entry
+            let mut contents_heading = document.create_element("div")?;
+            contents_heading.set_attribute("class", "mech-contents-sub-heading");
+            contents_heading.set_inner_html(&format!("{}", &title_text.clone()));
+            contents.append_child(&contents_heading);
+            
             let mut title = document.create_element("h2")?;
             title.set_inner_html(&title_text.clone());
             rendered_section.append_child(&title);
@@ -104,7 +130,69 @@ impl Core {
               let mut formatter = Formatter::new();
               let mut code = document.create_element("div")?;
               let mut code_text = document.create_element("pre")?;
+              code_text.set_attribute("contenteditable","true");
               code_text.set_attribute("class","mech-code");
+              code_text.set_attribute("id",&format!("{}",block_id));
+              code_text.set_attribute("spellcheck", "false");
+              {
+                let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                  log!("{} {}", event.offset_x() as f64, event.offset_y() as f64);
+                  log!("{:?}", event.target().unwrap());
+                  let target: web_sys::HtmlElement = event.target()
+                                                          .unwrap()
+                                                          .dyn_into::<web_sys::HtmlElement>()
+                                                          .map_err(|_| ())
+                                                          .unwrap();
+                  log!("{:?}", target.get_attribute("id"));
+                  let window = web_sys::window().expect("no global `window` exists");
+                  let selection = window.get_selection();
+
+                }) as Box<dyn FnMut(_)>);
+                code_text.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
+                closure.forget();
+              }
+              {
+                let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+                  let mut target: web_sys::HtmlElement = event.target()
+                                                              .unwrap()
+                                                              .dyn_into::<web_sys::HtmlElement>()
+                                                              .map_err(|_| ())
+                                                              .unwrap();
+                  //log!("{}", target.inner_text());
+                  /*
+                  var el = document.getElementsByTagName('div')[0];
+                  var range = document.createRange();
+                  var sel = window.getSelection();
+                  range.setStart(el.childNodes[0], 2);
+                  range.collapse(true);
+                  sel.removeAllRanges();
+                  sel.addRange(range);
+                  el.focus();*/
+/*
+                  let window = web_sys::window().expect("no global `window` exists");
+                  let mut selection = window.get_selection().unwrap().unwrap();
+                 
+                  let focus_node = selection.focus_node().unwrap();
+                  let focus_offset = selection.focus_offset();
+
+                  log!("{:?}", focus_node);
+                  
+                  let mut compiler = Compiler::new();
+                  let block_ast = compiler.compile_block_string(target.inner_text());
+                  let mut formatter = Formatter::new();
+                  let html = formatter.format(&block_ast, true);
+                  target.set_inner_html(&html);
+
+                  let mut range = web_sys::Range::new().unwrap();
+                  range.set_start(&focus_node, focus_offset);
+                  range.collapse();                                                    
+                  selection.remove_all_ranges();
+                  selection.add_range(&range);*/
+
+                }) as Box<dyn FnMut(_)>);
+                code_text.add_event_listener_with_callback("keyup", closure.as_ref().unchecked_ref())?;
+                closure.forget();
+              }
               let block = &self.core.runtime.blocks.get(block_id).unwrap();
               let html = formatter.format(block_ast, true);
               code_text.set_inner_html(&html);
@@ -135,7 +223,10 @@ impl Core {
         }
         rendered_program.append_child(&rendered_section)?;
       }
-      body.append_child(&rendered_program)?;
+      documentation.append_child(&contents);
+      documentation.append_child(&rendered_program)?;
+      documentation.append_child(&drawing)?;
+      body.append_child(&documentation)?;
     }
     Ok(())
   }
