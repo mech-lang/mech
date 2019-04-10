@@ -56,6 +56,8 @@ pub enum Node {
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Paragraph{ text: String },
+  UnorderedList{ children: Vec<Node> },
+  ListItem{ children: Vec<Node> },
   Constant {value: Quantity},
   String{ text: String },
   Token{ token: Token, byte: u8 },
@@ -116,6 +118,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::Constant{value} => {print!("Constant({})\n", value.to_float()); None},
     Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
+    Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
+    Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
@@ -189,6 +193,7 @@ impl fmt::Debug for Section {
 #[derive(Clone, PartialEq)]
 pub enum Element {
   Block((usize, Node)),
+  List(Node),
   Paragraph(String),
 }
 
@@ -197,6 +202,7 @@ impl fmt::Debug for Element {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Element::Paragraph(string) => write!(f, "{:?}", string),
+      Element::List(node) => write!(f, "{:?}", node),
       Element::Block((block_id, node)) => write!(f, "  Block({:#x})", block_id),
     };
     Ok(())
@@ -371,6 +377,7 @@ impl Compiler {
   pub fn compile_element(&mut self, input: Node) -> Option<Element> {
     let element = match input {
       Node::Paragraph{text} => Some(Element::Paragraph(text)),
+      Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       _ => None,
     };
@@ -1456,6 +1463,14 @@ impl Compiler {
 
         let node = Node::Paragraph{text: paragraph.clone()};
         compiled.push(node);
+      },
+      parser::Node::UnorderedList{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::UnorderedList{children: result});
+      },
+      parser::Node::ListItem{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::ListItem{children: result});
       },
       parser::Node::Title{children} => {
         let mut result = self.compile_nodes(children);
