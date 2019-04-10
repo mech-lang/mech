@@ -96,6 +96,24 @@ impl Runtime {
     }
   }
 
+  pub fn remove_block(&mut self, block_id: &usize) {
+    {
+      let block = self.blocks.get(block_id).unwrap();
+      // Remove listeners
+      for register in block.input_registers.iter() {
+        let mut listeners = self.pipes_map.get_mut(&register).unwrap();
+        let address = Address{block: block_id.clone(), register: register.clone()};
+        listeners.remove(&address);
+      }
+      // Register all local tables in the tables map
+      for local_table in block.memory.map.keys() {
+        self.tables_map.remove(local_table);
+      }
+      self.ready_blocks.remove(block_id);
+    }
+    self.blocks.remove(&block_id);
+  }
+
   // We've just interned some changes, and now we react to them by running the 
   // block graph. The graph is run until the tables reach a steady state or 
   // we hit the max_iteration limit

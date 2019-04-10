@@ -114,6 +114,10 @@ impl Core {
     }
   }
 
+  pub fn remove_block(&mut self, block_id: &usize) {
+    self.runtime.remove_block(&block_id);
+  }
+
   pub fn last_transaction(&self) -> usize {
     if self.transaction_boundaries.len() <= 1 {
       0
