@@ -111,9 +111,27 @@ impl Core {
             let mut contents_heading = document.create_element("div")?;
             contents_heading.set_attribute("class", "mech-contents-sub-heading");
             contents_heading.set_inner_html(&format!("{}", &title_text.clone()));
+            {
+              let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                let window = web_sys::window().expect("no global `window` exists");
+                let document = window.document().expect("should have a document on window");
+                //let root_node = document.get_element_by_id(root).unwrap();
+                let target: web_sys::HtmlElement = event.target()
+                                        .unwrap()
+                                        .dyn_into::<web_sys::HtmlElement>()
+                                        .map_err(|_| ())
+                                        .unwrap();
+                let heading = document.get_element_by_id(&target.inner_text()).unwrap();
+                heading.scroll_into_view();
+
+              }) as Box<dyn FnMut(_)>);
+              contents_heading.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+              closure.forget();
+            }
             contents.append_child(&contents_heading);
             
             let mut title = document.create_element("h2")?;
+            title.set_attribute("id", &title_text.clone());
             title.set_inner_html(&title_text.clone());
             rendered_section.append_child(&title);
           },
