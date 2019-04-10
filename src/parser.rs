@@ -359,7 +359,7 @@ named!(number<CompleteStr, Node>, do_parse!(
   (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(punctuation<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | grave | left_parenthesis | right_parenthesis | left_bracket | right_bracket | left_brace | right_brace) >>
+  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | grave | left_parenthesis | right_parenthesis | left_bracket | right_bracket | left_brace | right_brace | left_angle | right_angle) >>
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
@@ -368,6 +368,10 @@ named!(symbol<CompleteStr, Node>, do_parse!(
 
 named!(text<CompleteStr, Node>, do_parse!(
   word: many1!(alt!(word | space | number | punctuation | symbol)) >>
+  (Node::Text{children: word})));
+
+named!(paragraph_text<CompleteStr, Node>, do_parse!(
+  word: many1!(alt!(word | space | number | punctuation | symbol | quote)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
@@ -665,7 +669,7 @@ named!(subtitle<CompleteStr, Node>, do_parse!(
   (Node::Subtitle { children: vec![text] })));
 
 named!(paragraph<CompleteStr, Node>, do_parse!(
-  paragraph: map!(tuple!(word, opt!(text)), |tuple| {
+  paragraph: map!(tuple!(word, opt!(paragraph_text)), |tuple| {
     let (mut word, mut text) = tuple;
     let mut paragraph = vec![word];
     match text {
@@ -675,6 +679,10 @@ named!(paragraph<CompleteStr, Node>, do_parse!(
     paragraph
   }) >> many0!(whitespace) >>
   (Node::Paragraph { children: paragraph })));
+
+named!(web_address<CompleteStr, Node>, do_parse!(
+  hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
+  (Node::Subtitle { children: vec![text] })));
 
 named!(section<CompleteStr, Node>, do_parse!(
   section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph))), |tuple| {
