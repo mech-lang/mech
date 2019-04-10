@@ -78,6 +78,8 @@ pub enum Node {
   NewLineOrEnd{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
+  UnorderedList{ children: Vec<Node> },
+  ListItem{ children: Vec<Node> },
   String{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
@@ -141,6 +143,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
+    Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
+    Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::String{children} => {print!("String\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
@@ -680,12 +684,20 @@ named!(paragraph<CompleteStr, Node>, do_parse!(
   }) >> many0!(whitespace) >>
   (Node::Paragraph { children: paragraph })));
 
+named!(unordered_list<CompleteStr, Node>, do_parse! (
+  list_items: many1!(list_item) >> opt!(whitespace) >>
+  (Node::UnorderedList{children: list_items})));
+
+named!(list_item<CompleteStr, Node>, do_parse! (
+  dash >> space >> list_item: text >> newline >>
+  (Node::ListItem{children: vec![list_item]})));
+
 named!(web_address<CompleteStr, Node>, do_parse!(
   hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
   (Node::Subtitle { children: vec![text] })));
 
 named!(section<CompleteStr, Node>, do_parse!(
-  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph))), |tuple| {
+  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph | unordered_list))), |tuple| {
     let (mut section_title, mut section_body) = tuple;
     let mut section = vec![];
     match section_title {
