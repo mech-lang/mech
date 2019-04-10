@@ -271,6 +271,17 @@ impl Parser {
       _ => (), 
     }
   }
+
+  pub fn parse_block(&mut self, text: &str) {
+    let parse_tree = parse_block(CompleteStr(text));
+    match parse_tree {
+      Ok((rest, tree)) => {
+        self.unparsed = rest.to_string();
+        self.parse_tree = tree;
+      },
+      _ => (), 
+    }
+  }
 }
 
 impl fmt::Debug for Parser {
@@ -704,3 +715,11 @@ named!(program<CompleteStr, Node>, do_parse!(
 named!(parse_mech<CompleteStr, Node>, do_parse!(
   program: alt!(many1!(fragment) | many1!(program)) >>
   (Node::Root { children: program })));
+
+named!(raw_constraint<CompleteStr, Node>, do_parse!(
+  statement_or_expression: statement >> many0!(space) >> opt!(newline) >>
+  (Node::Constraint { children: vec![statement_or_expression] })));
+
+named!(parse_block<CompleteStr, Node>, do_parse!(
+  constraints: many1!(raw_constraint) >> many0!(whitespace) >>
+  (Node::Block { children: constraints })));
