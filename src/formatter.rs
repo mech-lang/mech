@@ -318,7 +318,7 @@ impl Formatter {
       _ => (),
     }
     if self.html && node_type != "" {
-      code = format!("<span class=\"highlight-{}\">{}</span>", node_type, code);
+      code = format!("<span class=\"highlight-{}\" id=\"{}\">{}</span>", node_type, node_type, code);
     }
     code
   }
