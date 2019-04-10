@@ -689,7 +689,7 @@ named!(unordered_list<CompleteStr, Node>, do_parse! (
   (Node::UnorderedList{children: list_items})));
 
 named!(list_item<CompleteStr, Node>, do_parse! (
-  dash >> space >> list_item: text >> newline >>
+  dash >> space >> list_item: paragraph_text >> opt!(newline) >>
   (Node::ListItem{children: vec![list_item]})));
 
 named!(web_address<CompleteStr, Node>, do_parse!(
