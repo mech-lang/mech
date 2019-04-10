@@ -126,6 +126,25 @@ impl Core {
               paragraph.set_inner_html(text);
               rendered_section.append_child(&paragraph);
             },
+            Element::List(Node::UnorderedList{children}) => {
+              let mut unordered_list = document.create_element("ul")?;
+              for child in children {
+                let mut list_item = document.create_element("li")?;
+                let mut item = document.create_element("div")?;
+                match child {
+                  Node::ListItem{children} => {
+                    match &children[0] {
+                      Node::String{ref text} => item.set_inner_html(&text),
+                      _ => (),
+                    }
+                  },
+                  _ => (),
+                }
+                list_item.append_child(&item);
+                unordered_list.append_child(&list_item);
+              }
+              rendered_section.append_child(&unordered_list);
+            },
             Element::Block((block_id, block_ast)) => {
               let mut formatter = Formatter::new();
               let mut code = document.create_element("div")?;
@@ -246,6 +265,7 @@ impl Core {
               }
               rendered_section.append_child(&code);
             },
+            _ => (),
           }
         }
         rendered_program.append_child(&rendered_section)?;
