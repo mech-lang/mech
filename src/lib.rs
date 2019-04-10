@@ -181,7 +181,6 @@ impl Core {
                       (*core).remove_block(&block_id);
                       (*core).register_blocks(vec![new_block.clone()]);
                       (*core).step();
-                      log!("{:?}", (*core).runtime);
                       (*wasm_core).render();
                     }
                     //let mut formatter = Formatter::new();
