@@ -84,7 +84,7 @@ impl Core {
     contents.set_attribute("class", "mech-contents");
 
 
-
+    let wasm_core = self as *mut Core;
     for program in &self.programs {
       // Make contents entry
       let mut contents_heading = document.create_element("div")?;
@@ -132,10 +132,18 @@ impl Core {
               let mut code_text = document.create_element("pre")?;
               code_text.set_attribute("contenteditable","true");
               code_text.set_attribute("class","mech-code");
-              code_text.set_attribute("id",&format!("{}",block_id));
+              code_text.set_attribute("block-id",&format!("{}",block_id));
               code_text.set_attribute("spellcheck", "false");
               {
                 let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                  /*if pressed.get() {
+
+                    
+
+                  }*/
+
+                  /*
+
                   log!("{} {}", event.offset_x() as f64, event.offset_y() as f64);
                   log!("{:?}", event.target().unwrap());
                   let target: web_sys::HtmlElement = event.target()
@@ -145,19 +153,43 @@ impl Core {
                                                           .unwrap();
                   log!("{:?}", target.get_attribute("id"));
                   let window = web_sys::window().expect("no global `window` exists");
-                  let selection = window.get_selection();
+                  let selection = window.get_selection();*/
 
                 }) as Box<dyn FnMut(_)>);
                 code_text.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
                 closure.forget();
               }
               {
+                let core = &mut self.core as *mut mech_core::Core;
                 let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+
                   let mut target: web_sys::HtmlElement = event.target()
                                                               .unwrap()
                                                               .dyn_into::<web_sys::HtmlElement>()
                                                               .map_err(|_| ())
                                                               .unwrap();
+                  let block_id = target.get_attribute("block-id").unwrap().parse::<usize>().unwrap();;
+
+
+                  if event.key_code() == 13 && event.ctrl_key() {
+                    let mut compiler = Compiler::new();
+                    let block_ast = compiler.compile_block_string(target.inner_text());
+                    compiler.compile_block(block_ast);
+                    let mut new_block = &mut compiler.blocks[0];
+                    new_block.id = block_id;
+                    unsafe {
+                      (*core).remove_block(&block_id);
+                      (*core).register_blocks(vec![new_block.clone()]);
+                      (*core).step();
+                      log!("{:?}", (*core).runtime);
+                      (*wasm_core).render();
+                    }
+                    //let mut formatter = Formatter::new();
+                    //let html = formatter.format(&block_ast, true);
+                    //target.set_inner_html(&html);
+                  }
+
+
                   //log!("{}", target.inner_text());
                   /*
                   var el = document.getElementsByTagName('div')[0];
@@ -177,11 +209,7 @@ impl Core {
 
                   log!("{:?}", focus_node);
                   
-                  let mut compiler = Compiler::new();
-                  let block_ast = compiler.compile_block_string(target.inner_text());
-                  let mut formatter = Formatter::new();
-                  let html = formatter.format(&block_ast, true);
-                  target.set_inner_html(&html);
+
 
                   let mut range = web_sys::Range::new().unwrap();
                   range.set_start(&focus_node, focus_offset);
