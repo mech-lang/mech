@@ -1,7 +1,8 @@
 extern crate mech_syntax;
 extern crate mech_core;
 
-use mech_syntax::compiler::Compiler;
+use mech_syntax::compiler::{Compiler, Node, Element};
+use mech_syntax::formatter::Formatter;
 use mech_core::Block;
 use mech_core::{Change, Transaction};
 use mech_core::{Value, Index};
@@ -31,40 +32,50 @@ fn compile_test(input: String, test: Value) {
 
 
 fn main() {
-  let input = String::from(r#"# A Test Program
+  let input = String::from(r#"# This is the title
+  
+This is some text
 
-block
-  #test = 5
+- now we have a list
+- this is the second list item
+- list item number 3
 
-block
-  x = 1
-  x = 3
-  #test := 7"#);
+And now we have some more text"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
-
+  println!("HERE");
 
   let mut compiler = Compiler::new();
-  let mut core = Core::new(1_000_000, 250);
-  compiler.compile_string(input.clone());
-  core.register_blocks(compiler.blocks.clone());
+  let mut formatter = Formatter::new();
+  let mut core = Core::new(1_000, 250);
+  let block = compiler.compile_string(input.clone());
+ 
+
+  //core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.unparsed);
+  println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
-  core.step();
-  println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  //core.step();
+  //println!("{:?}", core);
+  //println!("{:?}", core.runtime);
+  /*let block_ast = match &programs[0].sections[0].elements[1] {
+  Element::Block((id, node)) => node,
+    _ => &Node::Null,
+  };
+  formatter.format(&block_ast);*/
   
   
   //let now = SystemTime::now();
-  let change = Change::Set{table: 0x132537277, 
+  /*let change = Change::Set{table: 0x132537277, 
                             row: Index::Index(1), 
                             column: Index::Index(3),
                             value: Value::from_u64(42),
                           };
   let txn = Transaction::from_change(change.clone());
-  core.process_transaction(&txn);
+
+  core.process_transaction(&txn);*/
   //println!("{:?}", core);
   //println!("{:?}", core.runtime);
   /*
