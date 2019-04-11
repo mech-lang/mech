@@ -68,7 +68,7 @@ impl Formatter {
           "-" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
-            if lhs == "<span class=\"highlight-constant\">0</span>" || lhs == "0" {
+            if lhs == "<span class=\"highlight-constant\" id=\"constant\">0</span>" || lhs == "0" {
               code = format!("{}{}", name, rhs);
             } else {
               code = format!("{} {} {}", lhs, name, rhs);
