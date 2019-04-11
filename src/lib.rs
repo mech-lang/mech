@@ -86,6 +86,30 @@ impl Core {
 
     let wasm_core = self as *mut Core;
     for program in &self.programs {
+
+      // Make controls area
+      let mut controls = document.create_element("div")?;
+      controls.set_attribute("class", "mech-controls");
+      controls.set_id("mech-controls");
+
+      // Code
+      let mut code_button = document.create_element("a")?;
+      code_button.set_attribute("class", "mech-control ion-pound");
+      code_button.set_attribute("href", "/#/docs/index.mec");
+      controls.append_child(&code_button);
+
+      // Tables
+      let mut tables_button = document.create_element("a")?;
+      tables_button.set_attribute("class", "mech-control ion-grid");
+      tables_button.set_attribute("href", "/#/tables/index.mec");
+      controls.append_child(&tables_button);
+
+      // Documentation
+      let mut docs_button = document.create_element("a")?;
+      docs_button.set_attribute("class", "mech-control ion-ios-bookmarks");
+      docs_button.set_attribute("href", "/#/docs/index.mec");
+      controls.append_child(&docs_button);
+      
       // Make contents entry
       let mut contents_heading = document.create_element("div")?;
       contents_heading.set_attribute("class", "mech-contents-heading");
@@ -123,7 +147,6 @@ impl Core {
                                         .unwrap();
                 let heading = document.get_element_by_id(&target.inner_text()).unwrap();
                 heading.scroll_into_view();
-
               }) as Box<dyn FnMut(_)>);
               contents_heading.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
               closure.forget();
@@ -288,6 +311,7 @@ impl Core {
         }
         rendered_program.append_child(&rendered_section)?;
       }
+      documentation.append_child(&controls);
       documentation.append_child(&contents);
       documentation.append_child(&rendered_program)?;
       documentation.append_child(&drawing)?;
