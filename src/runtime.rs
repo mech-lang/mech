@@ -20,7 +20,7 @@ use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath};
-use libm::{sin, cos};
+use libm::{sin, cos, fmod};
 use errors::Error;
 
 // ## Runtime
@@ -761,7 +761,13 @@ impl Block {
                     }
                     // degrees
                     (Function::MathSin, 0x72dacac9, Value::Number(x)) => {
-                      let result = sin(x.to_float() * pi / 180.0);
+                      let result = match fmod(x.to_float(), 360.0) {
+                        0.0 => 0.0,
+                        90.0 => 1.0,
+                        180.0 => 0.0,
+                        270.0 => -1.0,
+                        _ => sin(x.to_float() * pi / 180.0),
+                      };
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     // radians
@@ -771,7 +777,13 @@ impl Block {
                     },
                     // degrees
                     (Function::MathCos, 0x72dacac9, Value::Number(x)) => {
-                      let result = cos(x.to_float() * pi / 180.0);
+                      let result = match fmod(x.to_float(), 360.0) {
+                        0.0 => 1.0,
+                        90.0 => 0.0,
+                        180.0 => -1.0,
+                        270.0 => 0.0,
+                        _ => cos(x.to_float() * pi / 180.0),
+                      };
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     // radians
