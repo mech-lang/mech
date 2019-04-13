@@ -218,23 +218,32 @@ impl QuantityMath for Quantity {
     }
 
     fn to_string(self) -> String {
-        format!("{}e{}", self.mantissa(), self.range())
+        self.format()
     }
 
     fn format(self) -> String {
         let mantissa_string = format!("{}", self.mantissa());
-        let decimal_ix = (mantissa_string.len() as i64 + self.range()) as usize;
-        let mut first = &mantissa_string[..decimal_ix];
-        let second = &mantissa_string[decimal_ix..];
-        let mut decimal = "";
-        if second.len() != 0 {
-            decimal = "."
+        let decimal_ix = (mantissa_string.len() as i64 + self.range()) as isize;
+        if decimal_ix < 0 {
+            let mut as_string = "0.".to_string();
+            for i in 0..-1*decimal_ix {
+                as_string = format!("{}0", as_string);
+            }
+            as_string = format!("{}{}", as_string, mantissa_string);
+            as_string
+        } else {
+            let mut first = &mantissa_string[..decimal_ix as usize];
+            let second = &mantissa_string[decimal_ix as usize ..];
+            let mut decimal = "";
+            if second.len() != 0 {
+                decimal = "."
+            }
+            if first == "" {
+                first = "0";
+            }
+            let as_string = format!("{}{}{}", first, decimal, second);
+            as_string
         }
-        if first == "" {
-            first = "0";
-        }
-        let as_string = format!("{}{}{}", first, decimal, second);
-        as_string
     }
 
     fn to_float(self) -> f64 {
