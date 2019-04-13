@@ -112,3 +112,9 @@ fn quantities_adding_zero() {
     assert_eq!(zero.add(offset), offset);
 }
 
+#[test]
+fn quantities_division_different_ranges() {
+    let x = make_quantity(282743338860,-9,0);
+    let y = make_quantity(180,0,0);
+    assert_eq!(x.divide(y), make_quantity(15707963270000,-13,0));
+}

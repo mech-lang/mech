@@ -218,6 +218,7 @@ impl QuantityMath for Quantity {
     }
 
     fn to_string(self) -> String {
+        println!("{}e{}", self.mantissa(), self.range());
         self.format()
     }
 
@@ -317,7 +318,7 @@ impl QuantityMath for Quantity {
 
     fn divide(self, other:Quantity) -> Quantity {
         let result = self.mantissa() * 10000 / other.mantissa();
-        make_quantity(result, -4, 0)
+        make_quantity(result, -4 + self.range(), 0)
     }
 
     fn less_than(self, other: Quantity) -> bool {
