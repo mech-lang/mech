@@ -108,9 +108,9 @@ impl Formatter {
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         self.indent = if self.html {
-          lhs.len() + 2 - 37
+          lhs.len() + 3 - 37
         } else {
-          lhs.len() + 2
+          lhs.len() + 3
         };
         let rhs = self.write_node(&children[1]);
         let lhs = if self.html {
@@ -206,6 +206,8 @@ impl Formatter {
         code = format!(".{}", code);
       }
       Node::AnonymousTableDefine{children} => {
+        let rows = self.rows;
+        let cols = self.cols;
         self.rows = 0;
         self.cols = 0;
         for (ix, child) in children.iter().enumerate() {
@@ -225,6 +227,8 @@ impl Formatter {
             code = format!("[{}]", code);
           }
         }
+        self.rows = rows;
+        self.cols = cols;
       }
       Node::SelectAll => {
         node_type = "function";
