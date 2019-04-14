@@ -304,6 +304,7 @@ impl Core {
                 }
                 _ => (),
               }
+              // Add a chart if we have it
               rendered_section.append_child(&code);
             },
             _ => (),
@@ -417,7 +418,14 @@ impl Core {
       let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
       let block = &self.core.runtime.blocks.get(&(*view as usize)).unwrap();
       let table = block.get_table(view_id).unwrap();
-      view_node.set_inner_html(&format!("{}", table.data[0][0].as_string().unwrap()))
+      let mut output = "".to_string();
+      for i in 0..table.rows {
+        for j in 0..table.columns {
+          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+        }
+        output = format!("{}</br>",output);
+      }
+      view_node.set_inner_html(&output);
     }
 
     /*
