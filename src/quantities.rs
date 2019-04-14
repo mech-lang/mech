@@ -218,7 +218,6 @@ impl QuantityMath for Quantity {
     }
 
     fn to_string(self) -> String {
-        println!("{}e{}", self.mantissa(), self.range());
         self.format()
     }
 
