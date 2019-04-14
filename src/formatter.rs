@@ -93,6 +93,11 @@ impl Formatter {
           }
         }
       },
+      Node::Range{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("{}:{}", lhs, rhs);
+      }
       Node::Table{name, id} => {
         code = name.clone();
         if self.html {
