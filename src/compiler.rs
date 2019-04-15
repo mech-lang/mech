@@ -386,7 +386,7 @@ impl Compiler {
 
   pub fn compile_element(&mut self, input: Node) -> Option<Element> {
     let element = match input {
-      Node::Paragraph{..} => Some(Element::List(input)),
+      Node::Paragraph{..} => Some(Element::Paragraph(input)),
       Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       _ => None,
