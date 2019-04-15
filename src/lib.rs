@@ -166,24 +166,8 @@ impl Core {
               let mut paragraph = render_paragraph(node)?;
               rendered_section.append_child(&paragraph);
             },
-            Element::List(Node::UnorderedList{children}) => {
-              let mut unordered_list = document.create_element("ul")?;
-              for child in children {
-                let mut list_item = document.create_element("li")?;
-                match child {
-                  Node::ListItem{children} => {
-                    match &children[0] {
-                      Node::Paragraph{..} => {
-                        let mut paragraph = render_paragraph(&children[0])?;
-                        list_item.append_child(&paragraph);
-                      },
-                      _ => (),
-                    }
-                  },
-                  _ => (),
-                }
-                unordered_list.append_child(&list_item);
-              }
+            Element::List(node) => {
+              let mut unordered_list = render_unordered_list(node)?;
               rendered_section.append_child(&unordered_list);
             },
             Element::Block((block_id, block_ast)) => {
@@ -832,8 +816,8 @@ impl Core {
 
 }
 
-fn render_paragraph(paragraph: &Node) -> Result<web_sys::Element, JsValue> {
-  match paragraph {
+fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> {
+  match paragraph_node {
     Node::Paragraph{children} => {
       let window = web_sys::window().expect("no global `window` exists");
       let document = window.document().expect("should have a document on window");
@@ -850,6 +834,34 @@ fn render_paragraph(paragraph: &Node) -> Result<web_sys::Element, JsValue> {
       }
       Ok(paragraph)
     }
-    _ => Err(wasm_bindgen::JsValue::from_str("Expected paragraph")),
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
+  }
+}
+
+fn render_unordered_list(unordered_list_node: &Node) -> Result<web_sys::Element, JsValue> {
+  match unordered_list_node {
+    Node::UnorderedList{children} => {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let mut unordered_list = document.create_element("ul")?;
+      for child in children {
+        let mut list_item = document.create_element("li")?;
+        match child {
+          Node::ListItem{children} => {
+            match &children[0] {
+              Node::Paragraph{..} => {
+                let mut paragraph = render_paragraph(&children[0])?;
+                list_item.append_child(&paragraph);
+              },
+              _ => (),
+            }
+          },
+          _ => (),
+        }
+        unordered_list.append_child(&list_item);
+      }
+      Ok(unordered_list)
+    },
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected Unordered List")),
   }
 }
