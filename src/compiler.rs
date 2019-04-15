@@ -344,6 +344,35 @@ impl Compiler {
     Some(program)
   }
 
+  pub fn compile_paragraph(&mut self, input: Node) -> Option<Node> { 
+    let result = Some(input.clone());
+    match input {
+      Node::Paragraph{children}  => {
+        for child in children {
+          match child {
+            Node::InlineMechCode{children} => {
+
+              let name = "inline_view".to_string();
+              let id = Hasher::hash_string(name.clone());
+              let block_tree = Node::Block{children: vec![
+                            Node::Constraint{children: vec![
+                              Node::Statement{children: vec![
+                                Node::TableDefine{children: vec![
+                                  Node::Table{name, id}, 
+                                  children[0].clone()]}]}]}]};
+              let block = self.compile_block(block_tree);
+
+
+            }
+            _ => (),
+          }
+        }
+      }
+      _ => (),
+    }
+    result
+  }
+
   pub fn compile_program(&mut self, input: Node) -> Option<Program> {
     let program = match input {
       Node::Program{title, children} => {
@@ -386,7 +415,7 @@ impl Compiler {
 
   pub fn compile_element(&mut self, input: Node) -> Option<Element> {
     let element = match input {
-      Node::Paragraph{..} => Some(Element::Paragraph(input)),
+      Node::Paragraph{..} => Some(Element::Paragraph(self.compile_paragraph(input).unwrap())),
       Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       _ => None,
