@@ -816,6 +816,36 @@ impl Core {
 
 }
 
+fn render_inline_mech(inline_mech_node: &Node) -> Result<web_sys::Element, JsValue> {
+  match inline_mech_node {
+    Node::InlineMechCode{children} => {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let mut inline_code = document.create_element("span")?;
+      inline_code.set_attribute("class", "mech-inline-code");
+      // define the rest of the block
+      let name = "inline_view".to_string();
+      let id = Hasher::hash_string(name.clone());
+      let block_tree = Node::Block{children: vec![
+                    Node::Constraint{children: vec![
+                      Node::Statement{children: vec![
+                        Node::TableDefine{children: vec![
+                          Node::Table{name, id}, 
+                          children[0].clone()]}]}]}]};
+      let mut compiler = Compiler::new();
+      let block = compiler.compile_block(block_tree);
+      log!("{:?}", compiler.blocks);
+      for child in children {
+        match child {
+          _ => (),
+        }
+      }
+      Ok(inline_code)
+    }
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
+  }  
+}
+
 fn render_inline_code(inline_code_node: &Node) -> Result<web_sys::Element, JsValue> {
   match inline_code_node {
     Node::InlineCode{children} => {
@@ -854,6 +884,9 @@ fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> 
             let mut inline_code = render_inline_code(&child)?;
             paragraph.append_child(&inline_code);         
           },
+          Node::InlineMechCode{..} => {
+            let block = render_inline_mech(&child)?;
+          }
           _ => (),
         }
       }
