@@ -824,17 +824,6 @@ fn render_inline_mech(inline_mech_node: &Node) -> Result<web_sys::Element, JsVal
       let mut inline_code = document.create_element("span")?;
       inline_code.set_attribute("class", "mech-inline-code");
       // define the rest of the block
-      let name = "inline_view".to_string();
-      let id = Hasher::hash_string(name.clone());
-      let block_tree = Node::Block{children: vec![
-                    Node::Constraint{children: vec![
-                      Node::Statement{children: vec![
-                        Node::TableDefine{children: vec![
-                          Node::Table{name, id}, 
-                          children[0].clone()]}]}]}]};
-      let mut compiler = Compiler::new();
-      let block = compiler.compile_block(block_tree);
-      log!("{:?}", compiler.blocks);
       for child in children {
         match child {
           _ => (),
