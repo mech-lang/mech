@@ -52,12 +52,8 @@ pub enum Node {
   TableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node>, start: usize, end: usize },
-  Title{ text: String },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
-  Paragraph{ text: String },
-  UnorderedList{ children: Vec<Node> },
-  ListItem{ children: Vec<Node> },
   Constant {value: Quantity},
   String{ text: String },
   Token{ token: Token, byte: u8 },
@@ -67,6 +63,15 @@ pub enum Node {
   Or,
   SelectAll,
   Empty,
+  // Markdown
+  Title{ text: String },
+  ParagraphText{ text: String },
+  Paragraph{ children: Vec<Node> },
+  UnorderedList{ children: Vec<Node> },
+  ListItem{ children: Vec<Node> },
+  InlineCode{ children: Vec<Node> },
+  // Mechdown
+  InlineMechCode{ children: Vec<Node> },
   Null,
 }
 
@@ -115,11 +120,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
-    Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::Constant{value} => {print!("Constant({})\n", value.to_float()); None},
-    Node::Paragraph{text} => {print!("Paragraph({:?})\n", text); None},
-    Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
-    Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
@@ -128,6 +129,15 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::GreaterThan => {print!("GreaterThan\n"); None},
     Node::Empty => {print!("Empty\n"); None},
     Node::Null => {print!("Null\n"); None},
+    // Markdown Nodes
+    Node::Title{text} => {print!("Title({:?})\n", text); None},
+    Node::ParagraphText{text} => {print!("ParagraphText({:?})\n", text); None},
+    Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
+    Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
+    Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
+    Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
+    // Extended Mechdown
+    Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
@@ -194,14 +204,14 @@ impl fmt::Debug for Section {
 pub enum Element {
   Block((usize, Node)),
   List(Node),
-  Paragraph(String),
+  Paragraph(Node),
 }
 
 impl fmt::Debug for Element {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Element::Paragraph(string) => write!(f, "{:?}", string),
+      Element::Paragraph(node) => write!(f, "{:?}", node),
       Element::List(node) => write!(f, "{:?}", node),
       Element::Block((block_id, node)) => write!(f, "  Block({:#x})", block_id),
     };
@@ -376,7 +386,7 @@ impl Compiler {
 
   pub fn compile_element(&mut self, input: Node) -> Option<Element> {
     let element = match input {
-      Node::Paragraph{text} => Some(Element::Paragraph(text)),
+      Node::Paragraph{..} => Some(Element::List(input)),
       Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       _ => None,
@@ -1451,7 +1461,7 @@ impl Compiler {
         compiled.push(Node::Constant{value: quantity});
       },
       // String-like nodes
-      parser::Node::Paragraph{children} => {
+      parser::Node::ParagraphText{children} => {
         let mut result = self.compile_nodes(children);
         let mut paragraph = "".to_string();
         for node in result {
@@ -1461,8 +1471,20 @@ impl Compiler {
           };
         }
 
-        let node = Node::Paragraph{text: paragraph.clone()};
+        let node = Node::ParagraphText{text: paragraph.clone()};
         compiled.push(node);
+      },
+      parser::Node::InlineCode{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::InlineCode{children: result});
+      },
+      parser::Node::InlineMechCode{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::InlineMechCode{children: result});
+      },
+      parser::Node::Paragraph{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Paragraph{children: result});
       },
       parser::Node::UnorderedList{children} => {
         let result = self.compile_nodes(children);

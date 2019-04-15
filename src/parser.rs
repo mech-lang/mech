@@ -78,6 +78,14 @@ pub enum Node {
   NewLineOrEnd{ children: Vec<Node> },
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
+  ParagraphText{ children: Vec<Node> },
+  InlineMechCode{ children: Vec<Node> },
+  InlineCode{ children: Vec<Node> },
+  Bold{ children: Vec<Node> },
+  Italic{ children: Vec<Node> },
+  Hyperlink{ children: Vec<Node> },
+  BlockQuote{ children: Vec<Node> },
+  CodeBlock{ children: Vec<Node> },
   UnorderedList{ children: Vec<Node> },
   ListItem{ children: Vec<Node> },
   String{ children: Vec<Node> },
@@ -143,6 +151,14 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
+    Node::ParagraphText{children} => {print!("ParagraphText\n"); Some(children)},
+    Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
+    Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
+    Node::Bold{children} => {print!("Bold\n"); Some(children)},
+    Node::Italic{children} => {print!("Italic\n"); Some(children)},
+    Node::Hyperlink{children} => {print!("Hyperlink\n"); Some(children)},
+    Node::BlockQuote{children} => {print!("BlockQuote\n"); Some(children)},
+    Node::CodeBlock{children} => {print!("CodeBlock\n"); Some(children)},
     Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
     Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::String{children} => {print!("String\n"); Some(children)},
@@ -363,7 +379,7 @@ named!(number<CompleteStr, Node>, do_parse!(
   (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(punctuation<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | grave | left_parenthesis | right_parenthesis | left_bracket | right_bracket | left_brace | right_brace | left_angle | right_angle) >>
+  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace) >>
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
@@ -374,8 +390,12 @@ named!(text<CompleteStr, Node>, do_parse!(
   word: many1!(alt!(word | space | number | punctuation | symbol)) >>
   (Node::Text{children: word})));
 
-named!(paragraph_text<CompleteStr, Node>, do_parse!(
+named!(paragraph_rest<CompleteStr, Node>, do_parse!(
   word: many1!(alt!(word | space | number | punctuation | symbol | quote)) >>
+  (Node::Text{children: word})));
+
+  named!(paragraph_starter<CompleteStr, Node>, do_parse!(
+  word: many1!(alt!(word | number | punctuation | symbol | quote)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
@@ -672,8 +692,16 @@ named!(subtitle<CompleteStr, Node>, do_parse!(
   hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
   (Node::Subtitle { children: vec![text] })));
 
-named!(paragraph<CompleteStr, Node>, do_parse!(
-  paragraph: map!(tuple!(word, opt!(paragraph_text)), |tuple| {
+named!(inline_code<CompleteStr, Node>, do_parse!(
+  grave >> text: text >> grave >> opt!(space) >>
+  (Node::InlineCode { children: vec![text] })));
+
+named!(inline_mech_code<CompleteStr, Node>, do_parse!(
+  left_bracket >> left_bracket >> expression: expression >> right_bracket >> right_bracket >> opt!(space) >>
+  (Node::InlineMechCode { children: vec![expression] })));
+
+named!(paragraph_text<CompleteStr, Node>, do_parse!(
+  paragraph: map!(tuple!(paragraph_starter, opt!(paragraph_rest)), |tuple| {
     let (mut word, mut text) = tuple;
     let mut paragraph = vec![word];
     match text {
@@ -682,14 +710,18 @@ named!(paragraph<CompleteStr, Node>, do_parse!(
     };
     paragraph
   }) >> many0!(whitespace) >>
-  (Node::Paragraph { children: paragraph })));
+  (Node::ParagraphText { children: paragraph })));
+
+named!(paragraph<CompleteStr, Node>, do_parse!(
+  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >>
+  (Node::Paragraph { children: paragraph_elements })));
 
 named!(unordered_list<CompleteStr, Node>, do_parse! (
   list_items: many1!(list_item) >> opt!(whitespace) >>
   (Node::UnorderedList{children: list_items})));
 
 named!(list_item<CompleteStr, Node>, do_parse! (
-  dash >> space >> list_item: paragraph_text >> opt!(newline) >>
+  dash >> space >> list_item: paragraph >> opt!(newline) >>
   (Node::ListItem{children: vec![list_item]})));
 
 named!(web_address<CompleteStr, Node>, do_parse!(
