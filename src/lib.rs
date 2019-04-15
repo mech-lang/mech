@@ -816,6 +816,27 @@ impl Core {
 
 }
 
+fn render_inline_code(inline_code_node: &Node) -> Result<web_sys::Element, JsValue> {
+  match inline_code_node {
+    Node::InlineCode{children} => {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let mut inline_code = document.create_element("span")?;
+      inline_code.set_attribute("class", "mech-inline-code");
+      for child in children {
+        match child {
+          Node::String{text} => {
+            inline_code.set_inner_html(&text);
+          },
+          _ => (),
+        }
+      }
+      Ok(inline_code)
+    }
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
+  }
+}
+
 fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> {
   match paragraph_node {
     Node::Paragraph{children} => {
@@ -828,6 +849,10 @@ fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> 
             let mut paragraph_text = document.create_element("span")?;
             paragraph_text.set_inner_html(&text);
             paragraph.append_child(&paragraph_text);
+          },
+          Node::InlineCode{..} => {
+            let mut inline_code = render_inline_code(&child)?;
+            paragraph.append_child(&inline_code);         
           },
           _ => (),
         }
