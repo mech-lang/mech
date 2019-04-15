@@ -162,26 +162,26 @@ impl Core {
         }
         for element in &section.elements {
           match element {
-            Element::Paragraph(text) => {
-              let mut paragraph = document.create_element("p")?;
-              paragraph.set_inner_html(text);
+            Element::Paragraph(node) => {
+              let mut paragraph = render_paragraph(node)?;
               rendered_section.append_child(&paragraph);
             },
             Element::List(Node::UnorderedList{children}) => {
               let mut unordered_list = document.create_element("ul")?;
               for child in children {
                 let mut list_item = document.create_element("li")?;
-                let mut item = document.create_element("div")?;
                 match child {
                   Node::ListItem{children} => {
                     match &children[0] {
-                      Node::String{ref text} => item.set_inner_html(&text),
+                      Node::Paragraph{..} => {
+                        let mut paragraph = render_paragraph(&children[0])?;
+                        list_item.append_child(&paragraph);
+                      },
                       _ => (),
                     }
                   },
                   _ => (),
                 }
-                list_item.append_child(&item);
                 unordered_list.append_child(&list_item);
               }
               rendered_section.append_child(&unordered_list);
@@ -830,4 +830,26 @@ impl Core {
     Ok(())
   }
 
+}
+
+fn render_paragraph(paragraph: &Node) -> Result<web_sys::Element, JsValue> {
+  match paragraph {
+    Node::Paragraph{children} => {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let mut paragraph = document.create_element("p")?;
+      for child in children {
+        match child {
+          Node::ParagraphText{text} => {
+            let mut paragraph_text = document.create_element("span")?;
+            paragraph_text.set_inner_html(&text);
+            paragraph.append_child(&paragraph_text);
+          },
+          _ => (),
+        }
+      }
+      Ok(paragraph)
+    }
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected paragraph")),
+  }
 }
