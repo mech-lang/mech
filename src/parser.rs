@@ -395,7 +395,7 @@ named!(paragraph_rest<CompleteStr, Node>, do_parse!(
   (Node::Text{children: word})));
 
   named!(paragraph_starter<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | number | quote | left_angle | right_angle)) >>
+  word: many1!(alt!(word | number | quote | left_angle | right_angle | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis)) >>
   (Node::Text{children: word})));
 
 named!(identifier<CompleteStr, Node>, do_parse!(
