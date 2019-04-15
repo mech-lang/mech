@@ -20,12 +20,12 @@ use super::formatter::Formatter;
 #[derive(Clone, PartialEq)]
 pub enum Node {
   Root{ children: Vec<Node> },
-  Fragment{ children: Vec<Node>, start: usize, end: usize },
+  Fragment{ children: Vec<Node> },
   Program{title: Option<String>, children: Vec<Node> },
   Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
   Section{title: Option<String>, children: Vec<Node> },
-  Block{ children: Vec<Node>, start: usize, end: usize },
+  Block{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
@@ -51,7 +51,7 @@ pub enum Node {
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
   AddRow {children: Vec<Node> },
-  Constraint{ children: Vec<Node>, start: usize, end: usize },
+  Constraint{ children: Vec<Node> },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Constant {value: Quantity},
@@ -396,8 +396,8 @@ impl Compiler {
 
   pub fn compile_block(&mut self, node: Node) -> Option<(usize, Node)> {
     let block = match node.clone() {
-      Node::Fragment{children, start, end} |
-      Node::Block{children, start, end} => {
+      Node::Fragment{children} |
+      Node::Block{children} => {
         let mut block = Block::new();
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -1039,10 +1039,8 @@ impl Compiler {
         self.syntax_tree = Node::Root{children: result};        
       },
       parser::Node::Fragment{children} => {
-        let start = self.current_char;
         let result = self.compile_nodes(children);
-        let end = self.current_char;
-        compiled.push(Node::Fragment{children: result, start, end});
+        compiled.push(Node::Fragment{children: result});
       },
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
@@ -1073,11 +1071,8 @@ impl Compiler {
         compiled.push(Node::Section{title, children});
       },
       parser::Node::Block{children} => {
-        println!("Compiling Block");
-        let start = self.current_char;
         let result = self.compile_nodes(children);
-        let end = self.current_char;
-        compiled.push(Node::Block{children: result, start, end});
+        compiled.push(Node::Block{children: result});
       },
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
@@ -1202,9 +1197,7 @@ impl Compiler {
         compiled.push(Node::Binding{children});
       },
       parser::Node::Constraint{children} => {
-        let start = self.current_char;
         let result = self.compile_nodes(children);
-        let end = self.current_char;
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
@@ -1214,7 +1207,7 @@ impl Compiler {
           }
         }
         if !children.is_empty() {
-          compiled.push(Node::Constraint{children, start, end});
+          compiled.push(Node::Constraint{children});
         }
       },
       parser::Node::SelectExpression{children} => {
