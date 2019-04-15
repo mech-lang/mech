@@ -15,6 +15,7 @@ pub struct Formatter{
   cols: usize,
   indent: usize,
   html: bool,
+  nested: bool,
 }
 
 impl Formatter {
@@ -27,6 +28,7 @@ impl Formatter {
       cols: 0,
       indent: 0,
       html: false,
+      nested: false,
     }
   }
 
@@ -211,10 +213,12 @@ impl Formatter {
         code = format!(".{}", code);
       }
       Node::AnonymousTableDefine{children} => {
+        let nested = self.nested;
         let rows = self.rows;
         let cols = self.cols;
         self.rows = 0;
         self.cols = 0;
+        self.nested = true;
         for (ix, child) in children.iter().enumerate() {
           let mut newline = "";
           let written_child = self.write_node(&child);
@@ -223,7 +227,8 @@ impl Formatter {
           }
           code = format!("{}{}{}", code, written_child, newline);
         }
-        if self.rows == 1 && self.cols == 1 {
+        self.nested = nested;
+        if self.rows == 1 && self.cols == 1 && !self.nested {
           code = format!("{}", code);
         } else {
           if self.html {
