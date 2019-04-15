@@ -245,6 +245,8 @@ impl Formatter {
         code = ":".to_string();
       }
       Node::InlineTable{children} => {
+        let nested = self.nested;
+        self.nested = true;
         for (ix, child) in children.iter().enumerate() {
           let binding = self.write_node(&child);
           if ix == children.len() - 1 {
@@ -257,6 +259,7 @@ impl Formatter {
             }
           }
         }
+        self.nested = nested;
         if self.html {
           code = format!("<span class=\"highlight-bracket\">[</span>{}<span class=\"highlight-bracket\">]</span>", code);
         } else {
