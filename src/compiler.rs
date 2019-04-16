@@ -70,6 +70,7 @@ pub enum Node {
   UnorderedList{ children: Vec<Node> },
   ListItem{ children: Vec<Node> },
   InlineCode{ children: Vec<Node> },
+  CodeBlock{ children: Vec<Node> },
   // Mechdown
   InlineMechCode{ children: Vec<Node> },
   Null,
@@ -136,6 +137,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
+    Node::CodeBlock{children} => {print!("CodeBlock\n"); Some(children)},
     // Extended Mechdown
     Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
     _ => {print!("Unhandled Node"); None},
@@ -1501,6 +1503,10 @@ impl Compiler {
       parser::Node::InlineCode{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::InlineCode{children: result});
+      },
+      parser::Node::CodeBlock{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::CodeBlock{children: result});
       },
       parser::Node::InlineMechCode{children} => {
         let result = self.compile_nodes(children);
