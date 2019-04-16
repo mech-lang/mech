@@ -164,7 +164,7 @@ impl Core {
           match element {
             Element::Paragraph(node) => {
               let mut paragraph = render_paragraph(node)?;
-              rendered_section.append_child(&paragraph);
+              rendered_section.append_child(&paragraph);             
             },
             Element::List(node) => {
               let mut unordered_list = render_unordered_list(node)?;
@@ -346,6 +346,15 @@ impl Core {
       documentation.append_child(&rendered_program)?;
       documentation.append_child(&drawing)?;
       body.append_child(&documentation)?;
+      // Register inline views
+      let inline_view_elements = document.get_elements_by_class_name("mech-inline-mech-view");
+      for ix in 0..inline_view_elements.length() {
+        let view = inline_view_elements.item(ix).unwrap();
+        let id = view.id().parse::<u64>().unwrap();
+        let view_table = self.core.store.get_table(id).unwrap();
+        let data = &view_table.data[0][0];
+        view.set_inner_html(&data.as_string().unwrap());
+      }
     }
     Ok(())
   }
@@ -821,15 +830,29 @@ fn render_inline_mech(inline_mech_node: &Node) -> Result<web_sys::Element, JsVal
     Node::InlineMechCode{children} => {
       let window = web_sys::window().expect("no global `window` exists");
       let document = window.document().expect("should have a document on window");
-      let mut inline_code = document.create_element("span")?;
-      inline_code.set_attribute("class", "mech-inline-code");
+      let mut inline_mech = document.create_element("span")?;
+      inline_mech.set_attribute("class", "mech-inline-mech");
       // define the rest of the block
       for child in children {
         match child {
-          _ => (),
+          _ => {
+            let mut formatter = Formatter::new();
+            let formatted_inline_block = formatter.format(child, true);
+            let block_id = formatter.format(child, false);
+            let id = Hasher::hash_str(&block_id);
+            let mut inline_code = document.create_element("span")?;
+            inline_code.set_attribute("class", "mech-inline-mech-code");
+            inline_code.set_inner_html(&formatted_inline_block);
+            inline_mech.append_child(&inline_code);
+
+            let mut inline_view = document.create_element("span")?;
+            inline_view.set_attribute("class", "mech-inline-mech-view");
+            inline_view.set_attribute("id", &format!("{}",id));
+            inline_mech.append_child(&inline_view);
+          },
         }
       }
-      Ok(inline_code)
+      Ok(inline_mech)
     }
     _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
   }  
@@ -874,7 +897,8 @@ fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> 
             paragraph.append_child(&inline_code);         
           },
           Node::InlineMechCode{..} => {
-            let block = render_inline_mech(&child)?;
+            let inline_mech = render_inline_mech(&child)?;
+            paragraph.append_child(&inline_mech);         
           }
           _ => (),
         }
