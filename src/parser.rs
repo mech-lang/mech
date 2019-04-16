@@ -724,12 +724,12 @@ named!(list_item<CompleteStr, Node>, do_parse! (
   dash >> space >> list_item: paragraph >> opt!(newline) >>
   (Node::ListItem{children: vec![list_item]})));
 
-named!(web_address<CompleteStr, Node>, do_parse!(
-  hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
-  (Node::Subtitle { children: vec![text] })));
+named!(code_block<CompleteStr, Node>, do_parse!(
+  grave >> grave >> grave >> newline >> text: many1!(alt!(text | whitespace | quote)) >> grave >> grave >> grave >> newline >>
+  (Node::CodeBlock { children: text })));
 
 named!(section<CompleteStr, Node>, do_parse!(
-  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | paragraph | unordered_list))), |tuple| {
+  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | code_block | paragraph | unordered_list))), |tuple| {
     let (mut section_title, mut section_body) = tuple;
     let mut section = vec![];
     match section_title {
