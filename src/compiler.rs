@@ -229,6 +229,7 @@ pub struct Compiler {
   depth: usize,
   row: usize,
   column: usize,
+  element: usize,
   table: u64,
   expression: usize,
   pub text: String,
@@ -258,6 +259,7 @@ impl Compiler {
       column: 0,
       row: 0,
       table: 0,
+      element: 0,
       section: 1,
       program: 1,
       block: 1,
@@ -281,6 +283,7 @@ impl Compiler {
     self.expression = 0;
     self.column = 0;
     self.row = 0;
+    self.element = 0;
     self.table = 0;
     self.section = 1;
     self.program = 1;
@@ -344,15 +347,16 @@ impl Compiler {
     Some(program)
   }
 
-  pub fn compile_paragraph(&mut self, input: Node) -> Option<Node> { 
+  pub fn compile_paragraph(&mut self, input: Node) -> Option<Node> {
     let result = Some(input.clone());
     match input {
       Node::Paragraph{children}  => {
-        for child in children {
+        for child in &children {
           match child {
             Node::InlineMechCode{children} => {
-
-              let name = "inline_view".to_string();
+              self.element += 1;
+              let mut formatter = Formatter::new();
+              let name = formatter.format(&children[0], false);
               let id = Hasher::hash_string(name.clone());
               let block_tree = Node::Block{children: vec![
                             Node::Constraint{children: vec![
@@ -361,8 +365,6 @@ impl Compiler {
                                   Node::Table{name, id}, 
                                   children[0].clone()]}]}]}]};
               let block = self.compile_block(block_tree);
-
-
             }
             _ => (),
           }
