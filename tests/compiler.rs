@@ -603,3 +603,73 @@ block
   x = 1
   x = 3
   #test := 7"#, Value::from_i64(5));
+
+// ## Markdown
+
+test_mech!(markdown_program_title, r#"# Title
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_no_program_title, r#"paragraph
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_section_title, r#"# Title
+
+Paragraph
+
+## Section
+
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_inline_code, r#"# Title
+
+Paragraph including `inline code`
+
+## Section
+
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_list, r#"# Title
+
+Paragraph including `inline code`
+
+## Section
+
+- Item 1
+- Item 2
+- Item 3
+
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_list_inline_code, r#"# Title
+
+Paragraph including `inline code`
+
+## Section
+
+- Item `some code`
+- Item `some code`
+- Item `some code`
+
+  #test = 123"#, Value::from_i64(123));
+
+test_mech!(markdown_code_block, r#"# Title
+
+Paragraph including `inline code`
+
+## Section
+
+```
+A regular code block
+```
+
+  #test = 123"#, Value::from_i64(123));
+
+// ## Mechdown (Markdown extensions for Mech)
+
+test_mech!(mechdown_inline_mech_code, r#"# Title
+
+Paragraph including `inline mech code` is [[#test]]
+
+## Section
+
+  #test = 123"#, Value::from_i64(123));
