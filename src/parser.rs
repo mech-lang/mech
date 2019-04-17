@@ -727,11 +727,11 @@ named!(list_item<CompleteStr, Node>, do_parse! (
   (Node::ListItem{children: vec![list_item]})));
 
 named!(formatted_text<CompleteStr, Node>, do_parse!(
-  formatted: many0!(alt!(paragraph_rest | new_line_char)) >>
+  formatted: many0!(alt!(paragraph_rest | carriage_return | new_line_char)) >>
   (Node::FormattedText { children: formatted })));
 
 named!(code_block<CompleteStr, Node>, do_parse!(
-  grave >> grave >> grave >> newline >> text: formatted_text >> grave >> grave >> grave >> newline >>
+  grave >> grave >> grave >> newline >> text: formatted_text >> grave >> grave >> grave >> newline >> many0!(whitespace) >>
   (Node::CodeBlock { children: vec![text] })));
 
 named!(section<CompleteStr, Node>, do_parse!(

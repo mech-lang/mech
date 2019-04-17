@@ -214,9 +214,9 @@ impl fmt::Debug for Element {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Element::Paragraph(node) => write!(f, "{:?}", node),
-      Element::List(node) => write!(f, "{:?}", node),
-      Element::CodeBlock(node) => write!(f, "{:?}", node),
+      Element::Paragraph(node) => write!(f, "Paragraph: {:?}", node),
+      Element::List(node) => write!(f, "List: {:?}", node),
+      Element::CodeBlock(node) => write!(f, "CodeBlock: {:?}", node),
       Element::Block((block_id, node)) => write!(f, "  Block({:#x})", block_id),
     };
     Ok(())
@@ -1753,6 +1753,7 @@ fn byte_to_digit(byte: u8) -> Option<u64> {
 fn byte_to_char(byte: u8) -> Option<char> {
   match byte {
     10 => Some('\n'),
+    13 => Some('\r'),
     32 => Some(' '),
     33 => Some('!'),
     34 => Some('"'),
