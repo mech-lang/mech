@@ -79,6 +79,7 @@ pub enum Node {
   Alphanumeric{ children: Vec<Node> },
   Paragraph{ children: Vec<Node> },
   ParagraphText{ children: Vec<Node> },
+  FormattedText{ children: Vec<Node> },
   InlineMechCode{ children: Vec<Node> },
   InlineCode{ children: Vec<Node> },
   Bold{ children: Vec<Node> },
@@ -152,6 +153,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::ParagraphText{children} => {print!("ParagraphText\n"); Some(children)},
+    Node::FormattedText{children} => {print!("FormattedText\n"); Some(children)},
     Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
     Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
     Node::Bold{children} => {print!("Bold\n"); Some(children)},
@@ -724,9 +726,13 @@ named!(list_item<CompleteStr, Node>, do_parse! (
   dash >> space >> list_item: paragraph >> opt!(newline) >>
   (Node::ListItem{children: vec![list_item]})));
 
+named!(formatted_text<CompleteStr, Node>, do_parse!(
+  formatted: many0!(alt!(paragraph_rest | new_line_char)) >>
+  (Node::FormattedText { children: formatted })));
+
 named!(code_block<CompleteStr, Node>, do_parse!(
-  grave >> grave >> grave >> newline >> text: many1!(alt!(text | whitespace | quote)) >> grave >> grave >> grave >> newline >>
-  (Node::CodeBlock { children: text })));
+  grave >> grave >> grave >> newline >> text: formatted_text >> grave >> grave >> grave >> newline >>
+  (Node::CodeBlock { children: vec![text] })));
 
 named!(section<CompleteStr, Node>, do_parse!(
   section: map!(tuple!(opt!(subtitle), many0!(alt!(block | code_block | paragraph | unordered_list))), |tuple| {
