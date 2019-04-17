@@ -206,6 +206,7 @@ impl fmt::Debug for Section {
 pub enum Element {
   Block((usize, Node)),
   List(Node),
+  CodeBlock(Node),
   Paragraph(Node),
 }
 
@@ -215,6 +216,7 @@ impl fmt::Debug for Element {
     match self {
       Element::Paragraph(node) => write!(f, "{:?}", node),
       Element::List(node) => write!(f, "{:?}", node),
+      Element::CodeBlock(node) => write!(f, "{:?}", node),
       Element::Block((block_id, node)) => write!(f, "  Block({:#x})", block_id),
     };
     Ok(())
@@ -422,6 +424,7 @@ impl Compiler {
       Node::Paragraph{..} => Some(Element::Paragraph(self.compile_paragraph(input).unwrap())),
       Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
+      Node::CodeBlock{..} => Some(Element::CodeBlock(input)),
       _ => None,
     };
     element
