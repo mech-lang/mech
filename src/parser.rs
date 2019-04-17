@@ -383,7 +383,7 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | slash | hashtag | equal | tilde | plus | asterisk | caret) >>
+  punctuation: alt!(ampersand | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
@@ -709,11 +709,11 @@ named!(paragraph_text<CompleteStr, Node>, do_parse!(
       _ => (),
     };
     paragraph
-  }) >> many0!(whitespace) >>
+  }) >> many0!(space) >>
   (Node::ParagraphText { children: paragraph })));
 
 named!(paragraph<CompleteStr, Node>, do_parse!(
-  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >>
+  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >> newline >> many0!(whitespace) >>
   (Node::Paragraph { children: paragraph_elements })));
 
 named!(unordered_list<CompleteStr, Node>, do_parse! (
