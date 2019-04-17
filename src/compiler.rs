@@ -1543,6 +1543,7 @@ impl Compiler {
         };
         compiled.push(node);
       },
+      parser::Node::FormattedText{children} |
       parser::Node::Text{children} => {
         let mut result = self.compile_nodes(children);
         let mut text_node = String::new();
