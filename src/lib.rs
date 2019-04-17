@@ -67,7 +67,6 @@ impl Core {
     self.core.register_blocks(compiler.blocks.clone());
     self.core.step();
     self.core.process_transaction(&Transaction::from_changeset(changes));
-    log!("{:?}", compiler.programs);
     self.programs = compiler.programs.clone();
     self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
@@ -169,6 +168,10 @@ impl Core {
             Element::List(node) => {
               let mut unordered_list = render_unordered_list(node)?;
               rendered_section.append_child(&unordered_list);
+            },
+            Element::CodeBlock(node) => {
+              let mut code_block = render_code_block(node)?;
+              rendered_section.append_child(&code_block);
             },
             Element::Block((block_id, block_ast)) => {
               let mut formatter = Formatter::new();
@@ -906,6 +909,29 @@ fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> 
       Ok(paragraph)
     }
     _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
+  }
+}
+
+fn render_code_block(code_block_node: &Node) -> Result<web_sys::Element, JsValue> {
+  match code_block_node {
+    Node::CodeBlock{children} => {
+      let window = web_sys::window().expect("no global `window` exists");
+      let document = window.document().expect("should have a document on window");
+      let mut code_block = document.create_element("pre")?;
+      code_block.set_attribute("class", "mech-code-block");
+      for child in children {
+        let mut code = document.create_element("span")?;
+        match child {
+          Node::String{text} => {
+            code.set_inner_html(&text);
+          },
+          _ => (),
+        }
+        code_block.append_child(&code);
+      }
+      Ok(code_block)
+    },
+    _ => Err(wasm_bindgen::JsValue::from_str("Expected Code Block")),
   }
 }
 
