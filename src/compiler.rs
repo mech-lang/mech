@@ -73,6 +73,7 @@ pub enum Node {
   CodeBlock{ children: Vec<Node> },
   // Mechdown
   InlineMechCode{ children: Vec<Node> },
+  MechCodeBlock{ children: Vec<Node> },
   Null,
 }
 
@@ -140,6 +141,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::CodeBlock{children} => {print!("CodeBlock\n"); Some(children)},
     // Extended Mechdown
     Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
+    Node::MechCodeBlock{children} => {print!("MechCodeBlock\n"); Some(children)},
     _ => {print!("Unhandled Node"); None},
   };  
   match children {
@@ -1510,6 +1512,10 @@ impl Compiler {
       parser::Node::CodeBlock{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::CodeBlock{children: result});
+      },
+      parser::Node::MechCodeBlock{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::MechCodeBlock{children: result});
       },
       parser::Node::InlineMechCode{children} => {
         let result = self.compile_nodes(children);

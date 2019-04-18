@@ -87,6 +87,7 @@ pub enum Node {
   Hyperlink{ children: Vec<Node> },
   BlockQuote{ children: Vec<Node> },
   CodeBlock{ children: Vec<Node> },
+  MechCodeBlock{ children: Vec<Node> },
   UnorderedList{ children: Vec<Node> },
   ListItem{ children: Vec<Node> },
   String{ children: Vec<Node> },
@@ -156,6 +157,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::FormattedText{children} => {print!("FormattedText\n"); Some(children)},
     Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
     Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
+    Node::MechCodeBlock{children} => {print!("MechCodeBlock\n"); Some(children)},
     Node::Bold{children} => {print!("Bold\n"); Some(children)},
     Node::Italic{children} => {print!("Italic\n"); Some(children)},
     Node::Hyperlink{children} => {print!("Hyperlink\n"); Some(children)},
@@ -699,10 +701,6 @@ named!(inline_code<CompleteStr, Node>, do_parse!(
   grave >> text: text >> grave >> opt!(space) >>
   (Node::InlineCode { children: vec![text] })));
 
-named!(inline_mech_code<CompleteStr, Node>, do_parse!(
-  left_bracket >> left_bracket >> expression: expression >> right_bracket >> right_bracket >> opt!(space) >>
-  (Node::InlineMechCode { children: vec![expression] })));
-
 named!(paragraph_text<CompleteStr, Node>, do_parse!(
   paragraph: map!(tuple!(paragraph_starter, opt!(paragraph_rest)), |tuple| {
     let (mut word, mut text) = tuple;
@@ -735,8 +733,20 @@ named!(code_block<CompleteStr, Node>, do_parse!(
   grave >> grave >> grave >> newline >> text: formatted_text >> grave >> grave >> grave >> newline >> many0!(whitespace) >>
   (Node::CodeBlock { children: vec![text] })));
 
+// Mechdown
+
+named!(inline_mech_code<CompleteStr, Node>, do_parse!(
+  left_bracket >> left_bracket >> expression: expression >> right_bracket >> right_bracket >> opt!(space) >>
+  (Node::InlineMechCode { children: vec![expression] })));
+
+named!(mech_code_block<CompleteStr, Node>, do_parse!(
+  grave >> grave >> grave >> tag!("mech:") >> directive: word >> newline >> mech_block: block >> grave >> grave >> grave >> newline >> many0!(whitespace) >>
+  (Node::MechCodeBlock { children: vec![directive, mech_block] })));
+
+// ## Start Here
+
 named!(section<CompleteStr, Node>, do_parse!(
-  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | code_block | paragraph | unordered_list))), |tuple| {
+  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | code_block | mech_code_block | paragraph | unordered_list))), |tuple| {
     let (mut section_title, mut section_body) = tuple;
     let mut section = vec![];
     match section_title {
@@ -751,8 +761,6 @@ named!(section<CompleteStr, Node>, do_parse!(
 named!(body<CompleteStr, Node>, do_parse!(
   many0!(whitespace) >> sections: many1!(section) >>
   (Node::Body { children: sections })));
-
-// ## Start Here
 
 named!(fragment<CompleteStr, Node>, do_parse!(
   statement: statement >>
