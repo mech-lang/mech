@@ -3,14 +3,14 @@
 Define the environment
   #ball = [|x   y   vx vy|
             10  10  20  0]
-  #system/timer = [resolution: 15, tick: 0, hours: 0, minutes: 0, seconds: 0]
+  #time/timer = [resolution: 15, tick: 0, hours: 0, minutes: 0, seconds: 0]
   #gravity = 1
   #boundary = [width: 500 height: 500]
 
 ## Update condition
 
 Update the block positions on each tick of the timer
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity

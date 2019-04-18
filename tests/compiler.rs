@@ -148,13 +148,13 @@ block
 test_mech!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
-  #system/timer = [resolution: 1000]
+  #time/timer = [resolution: 1000]
   #gravity = 10
 
 Now update the block positions
   x = #ball.x + #ball.vx
   y = #ball.y + #ball.vy
-  dt = #system/timer.resolution
+  dt = #time/timer.resolution
   #test = x + y * dt", Value::from_i64(18033));
 
 test_mech!(math_add_columns,"
@@ -269,11 +269,11 @@ block
 test_mech!(set_second_omit_row_subscript,"
 block
   #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #system/timer = [resolution: 15 tick: 0]
+  #time/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
 block
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.y := #ball.vy + #gravity
 
 block
@@ -285,7 +285,7 @@ block
             1 2 3 4
             5 6 7 8
             9 10 11 12]
-  #system/timer = [resolution: 15 tick: 0]
+  #time/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
 block
@@ -303,7 +303,7 @@ block
             1 2 3 4
             5 6 7 8
             9 10 11 12]
-  #system/timer = [resolution: 15 tick: 0]
+  #time/timer = [resolution: 15 tick: 0]
   #gravity = 2
 
 block
@@ -403,10 +403,10 @@ block
 // ## Change scan
 
 test_mech!(change_scan_simple,"block
-  #system/timer = [tick: 0]
+  #time/timer = [tick: 0]
 
 block
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #test = 3", Value::from_i64(3));
 
 // ## Full programs
@@ -414,7 +414,7 @@ block
 test_mech!(program_Clock,r#"# Clock
 
 Create a timer that ticks every second. This is the time source.
-  #system/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+  #time/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
 
 Set up a clock hands table. Degrees is the deflection from noon.
 x and y are the coordinates of the end point of the clock hand.
@@ -426,8 +426,8 @@ x and y are the coordinates of the end point of the clock hand.
 ## Update the clock
 
 Calculate clock hand angles every time the clock ticks.
-  ~ #system/timer.tick 
-  time = [#system/timer.hours; #system/timer.minutes; #system/timer.seconds]
+  ~ #time/timer.tick 
+  time = [#time/timer.hours; #time/timer.minutes; #time/timer.seconds]
   multiplier = [30; 6; 6]
   #clock-hands.degrees := multiplier * time
   
@@ -447,14 +447,14 @@ test_mech!(program_bouncing_balls,"# Bouncing Balls
 Define the environment
   #html/event/click = [|x y|]
   #ball = [x: 50 y: 9 vx: 40 vy: 9]
-  #system/timer = [resolution: 15, tick: 0]
+  #time/timer = [resolution: 15, tick: 0]
   #gravity = 2
   #boundary = [x: 60 y: 60]
 
 ## Update condition
 
 Now update the block positions
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
