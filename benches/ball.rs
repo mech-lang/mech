@@ -17,14 +17,14 @@ Define the environment
            1:100 1:100]
   #vx = 3
   #vy = 3
-  #system/timer = [resolution: 15, tick: 0]
+  #time/timer = [resolution: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
 ## Update condition
 
 Now update the block positions
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #vx
   #ball.y := #ball.y + #vy
 
@@ -60,14 +60,14 @@ Define the environment
            1:1000 1:1000]
   #vx = 3
   #vy = 3
-  #system/timer = [resolution: 15, tick: 0]
+  #time/timer = [resolution: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
 ## Update condition
 
 Now update the block positions
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #vx
   #ball.y := #ball.y + #vy
 
@@ -103,14 +103,14 @@ Define the environment
            1:10000 1:10000]
   #vx = 3
   #vy = 3
-  #system/timer = [resolution: 15, tick: 0]
+  #time/timer = [resolution: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
 ## Update condition
 
 Now update the block positions
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #vx
   #ball.y := #ball.y + #vy
 
@@ -146,14 +146,14 @@ Define the environment
            1:100000 1:100000]
   #vx = 3
   #vy = 3
-  #system/timer = [resolution: 15, tick: 0]
+  #time/timer = [resolution: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
 ## Update condition
 
 Now update the block positions
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #vx
   #ball.y := #ball.y + #vy
 

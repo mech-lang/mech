@@ -3,7 +3,7 @@
 ## The Game
 
 game setup
-  #system/timer = [resolution: 15 tick: 0 hours: 0 minutes: 0 seconds: 0]
+  #time/timer = [resolution: 15 tick: 0 hours: 0 minutes: 0 seconds: 0]
   #app/main = [root: "drawing" direction: _ contains: [#game]]
 
 game area
@@ -28,7 +28,7 @@ block
   #ball = [x: 20 y: 20 vx: 1 vy: 3]
 
 update ball position
-  ~ #system/timer.tick
+  ~ #time/timer.tick
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
 
