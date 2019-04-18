@@ -337,6 +337,7 @@ macro_rules! leaf {
   )
 }
 
+leaf!{at, "@", Token::At}
 leaf!{hashtag, "#", Token::HashTag}
 leaf!{period, ".", Token::Period}
 leaf!{colon, ":", Token::Colon}
@@ -385,7 +386,7 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
+  punctuation: alt!(ampersand | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
