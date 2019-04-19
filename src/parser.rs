@@ -714,7 +714,7 @@ named!(paragraph_text<CompleteStr, Node>, do_parse!(
   (Node::ParagraphText { children: paragraph })));
 
 named!(paragraph<CompleteStr, Node>, do_parse!(
-  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >> newline >> many0!(whitespace) >>
+  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >> opt!(newline) >> many0!(whitespace) >>
   (Node::Paragraph { children: paragraph_elements })));
 
 named!(unordered_list<CompleteStr, Node>, do_parse! (
