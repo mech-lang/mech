@@ -17,7 +17,7 @@ Define the environment
            1:100 1:100]
   #vx = 3
   #vy = 3
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
@@ -60,7 +60,7 @@ Define the environment
            1:1000 1:1000]
   #vx = 3
   #vy = 3
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
@@ -103,7 +103,7 @@ Define the environment
            1:10000 1:10000]
   #vx = 3
   #vy = 3
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 
@@ -146,7 +146,7 @@ Define the environment
            1:100000 1:100000]
   #vx = 3
   #vy = 3
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 60
 

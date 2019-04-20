@@ -3,7 +3,7 @@
 ## The Game
 
 game setup
-  #time/timer = [resolution: 15 tick: 0 hours: 0 minutes: 0 seconds: 0]
+  #time/timer = [period: 15 tick: 0 hours: 0 minutes: 0 seconds: 0]
   #app/main = [root: "drawing" direction: _ contains: [#game]]
 
 game area
