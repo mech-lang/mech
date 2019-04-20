@@ -32,34 +32,31 @@ fn compile_test(input: String, test: Value) {
 
 
 fn main() {
-  let input = String::from(r#"# This is the title
-  
-This is some text
+  let input = String::from(r#"# Hello World
 
-- now we have a list
-- this is the second list item
-- list item number 3
+This is a paragraph
 
-And now we have some more text"#);
+Great deal."#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
-  println!("HERE");
 
   let mut compiler = Compiler::new();
   let mut formatter = Formatter::new();
   let mut core = Core::new(1_000, 250);
-  let block = compiler.compile_string(input.clone());
+  let programs = compiler.compile_string(input.clone());
+
+  println!("{:?}", programs);
  
 
-  //core.register_blocks(compiler.blocks.clone());
-  //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.unparsed);
+  core.register_blocks(compiler.blocks.clone());
+  println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.unparsed);
   println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
-  //core.step();
-  //println!("{:?}", core);
-  //println!("{:?}", core.runtime);
+  core.step();
+  println!("{:?}", core);
+  println!("{:?}", core.runtime);
   /*let block_ast = match &programs[0].sections[0].elements[1] {
   Element::Block((id, node)) => node,
     _ => &Node::Null,

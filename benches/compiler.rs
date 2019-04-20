@@ -15,7 +15,7 @@ fn compile_create_tables(b:&mut Bencher) {
 Define the environment
   #html/event/click = [x: 0 y: 0]
   #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 5000");
     compiler.compile_string(input);
@@ -32,7 +32,7 @@ fn compile_ball_program(b:&mut Bencher) {
 Define the environment
   #html/event/click = [x: 0 y: 0]
   #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = 5000
 

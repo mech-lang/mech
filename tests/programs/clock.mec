@@ -1,7 +1,7 @@
 # Clock
 
 Create a timer that ticks every second. This is the time source.
-  #time/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+  #time/timer = [period: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
 
 Set up a clock hands table. Degrees is the deflection from noon.
   #clock-hands = [|degrees x y stroke|

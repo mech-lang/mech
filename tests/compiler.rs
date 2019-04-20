@@ -148,7 +148,7 @@ block
 test_mech!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
-  #time/timer = [resolution: 1000]
+  #time/timer = [period: 1000]
   #gravity = 10
 
 Now update the block positions
@@ -269,7 +269,7 @@ block
 test_mech!(set_second_omit_row_subscript,"
 block
   #ball = [x: 15 y: 9 vx: 40 vy: 9]
-  #time/timer = [resolution: 15 tick: 0]
+  #time/timer = [period: 15 tick: 0]
   #gravity = 2
 
 block
@@ -285,7 +285,7 @@ block
             1 2 3 4
             5 6 7 8
             9 10 11 12]
-  #time/timer = [resolution: 15 tick: 0]
+  #time/timer = [period: 15 tick: 0]
   #gravity = 2
 
 block
@@ -303,7 +303,7 @@ block
             1 2 3 4
             5 6 7 8
             9 10 11 12]
-  #time/timer = [resolution: 15 tick: 0]
+  #time/timer = [period: 15 tick: 0]
   #gravity = 2
 
 block
@@ -414,7 +414,7 @@ block
 test_mech!(program_Clock,r#"# Clock
 
 Create a timer that ticks every second. This is the time source.
-  #time/timer = [resolution: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
+  #time/timer = [period: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
 
 Set up a clock hands table. Degrees is the deflection from noon.
 x and y are the coordinates of the end point of the clock hand.
@@ -447,7 +447,7 @@ test_mech!(program_bouncing_balls,"# Bouncing Balls
 Define the environment
   #html/event/click = [|x y|]
   #ball = [x: 50 y: 9 vx: 40 vy: 9]
-  #time/timer = [resolution: 15, tick: 0]
+  #time/timer = [period: 15, tick: 0]
   #gravity = 2
   #boundary = [x: 60 y: 60]
 
