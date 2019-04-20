@@ -759,6 +759,12 @@ impl Block {
                       self.scratch.data[0][0] = Value::Number(previous.add(*x));
                       self.scratch.shrink_to_fit(1,1);
                     }
+                    // row
+                    (Function::StatSum, 0x776f72, Value::Number(x)) => {
+                      let previous = self.scratch.data[0][0].as_quantity().unwrap();
+                      self.scratch.data[0][0] = Value::Number(previous.add(*x));
+                      self.scratch.shrink_to_fit(1,1);
+                    }
                     // degrees
                     (Function::MathSin, 0x72dacac9, Value::Number(x)) => {
                       let result = match fmod(x.to_float(), 360.0) {
