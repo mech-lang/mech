@@ -676,3 +676,10 @@ Paragraph including `inline mech code` is [[#test]]
 ## Section
 
   #test = 123"#, Value::from_i64(123));
+
+// ## Comments
+
+test_mech!(comment_line, r#"
+block
+  // This is a comment
+  #test = 123"#, Value::from_i64(123));
