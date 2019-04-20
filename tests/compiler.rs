@@ -154,7 +154,7 @@ Define the environment
 Now update the block positions
   x = #ball.x + #ball.vx
   y = #ball.y + #ball.vy
-  dt = #time/timer.resolution
+  dt = #time/timer.period
   #test = x + y * dt", Value::from_i64(18033));
 
 test_mech!(math_add_columns,"
@@ -183,8 +183,11 @@ block
 
 test_mech!(math_vector_plus_scalar,"
 block
-  x = 3:6
-  #test = x + 5", Value::from_i64(8));
+  x = [1 2 3]
+  #x = x + 1
+
+block
+  #test = stat/sum(row: #x)", Value::from_i64(9));
 
 test_mech!(math_negation_double_negative,"
 block
