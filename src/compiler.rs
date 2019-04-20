@@ -50,6 +50,7 @@ pub enum Node {
   TableHeader {children: Vec<Node> },
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
+  Comment {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Constraint{ children: Vec<Node> },
   Identifier{ name: String, id: u64 },
@@ -116,6 +117,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
+    Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
     Node::FilterExpression{comparator, children} => {print!("FilterExpression({:?})\n", comparator); Some(children)},
     Node::LogicExpression{operator, children} => {print!("LogicExpression({:?})\n", operator); Some(children)},
@@ -1517,6 +1519,10 @@ impl Compiler {
         let result = self.compile_nodes(children);
         compiled.push(Node::MechCodeBlock{children: result});
       },
+      parser::Node::Comment{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Comment{children: result});
+      },
       parser::Node::InlineMechCode{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::InlineMechCode{children: result});
@@ -1681,7 +1687,6 @@ impl Compiler {
       parser::Node::Punctuation{children} |
       parser::Node::DigitOrComma{children} |
       parser::Node::Comment{children} |
-      parser::Node::CommentSigil{children} |
       parser::Node::Any{children} |
       parser::Node::Symbol{children} |
       parser::Node::AddOperator{children} |
