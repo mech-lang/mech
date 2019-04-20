@@ -102,7 +102,7 @@ macro_rules! binary_math {
       // Operate with scalar on the right
       } else if rhs_is_scalar {
         out.grow_to_fit(lhs_height, lhs_width);        
-        for i in 0..rhs_width as usize {
+        for i in 0..lhs_width as usize {
           let lcix = if lhs_columns.is_empty() { i }
                      else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
           let rcix = if rhs_columns.is_empty() { 0 }
@@ -227,7 +227,7 @@ macro_rules! comparator {
       // Operate with scalar on the right
       } else if rhs_is_scalar {
         out.grow_to_fit(lhs_height, lhs_width);        
-        for i in 0..rhs_width as usize {
+        for i in 0..lhs_width as usize {
           let lcix = if lhs_columns.is_empty() { i }
                     else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
           let rcix = if rhs_columns.is_empty() { 0 }
@@ -340,7 +340,7 @@ macro_rules! logic {
       // Operate with scalar on the right
       } else if rhs_is_scalar {
         out.grow_to_fit(lhs_height, lhs_width);        
-        for i in 0..rhs_width as usize {
+        for i in 0..lhs_width as usize {
           let lcix = if lhs_columns.is_empty() { i }
                     else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
           let rcix = if rhs_columns.is_empty() { 0 }
