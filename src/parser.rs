@@ -535,6 +535,12 @@ named!(inline_table<CompleteStr, Node>, do_parse!(
 
 // ### Statements
 
+named!(comment_sigil<CompleteStr, Node>, do_parse!(tag!("//") >> (Node::Null)));
+
+named!(comment<CompleteStr, Node>, do_parse!(
+  comment_sigil >> comment: text >>
+  (Node::Comment { children: vec![comment] })));
+
 named!(add_row_operator<CompleteStr, Node>, do_parse!(tag!("+=") >> (Node::Null)));
 
 named!(add_row<CompleteStr, Node>, do_parse!(
@@ -564,7 +570,7 @@ named!(data_watch<CompleteStr, Node>, do_parse!(
   (Node::DataWatch { children: vec![watch] })));
 
 named!(statement<CompleteStr, Node>, do_parse!(
-  statement: alt!(table_define | variable_define | data_watch | set_data | add_row) >>
+  statement: alt!(table_define | variable_define | data_watch | set_data | add_row | comment) >>
   (Node::Statement { children: vec![statement] })));
 
 // ### Expressions
