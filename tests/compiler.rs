@@ -677,6 +677,15 @@ Paragraph including `inline mech code` is [[#test]]
 
   #test = 123"#, Value::from_i64(123));
 
+test_mech!(mechdown_block_directives, r#"
+block
+  #test = 1
+
+```mech:pending
+  #test := 2
+```
+"#, Value::from_i64(1));
+
 // ## Comments
 
 test_mech!(comment_line, r#"
