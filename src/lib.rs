@@ -23,7 +23,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Transaction, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -357,6 +357,21 @@ impl Core {
         let view_table = self.core.store.get_table(id).unwrap();
         let data = &view_table.data[0][0];
         view.set_inner_html(&data.as_string().unwrap());
+      }
+      // Set pending blocks
+      let mech_code_blocks = document.get_elements_by_class_name("mech-code");
+      for ix in 0..mech_code_blocks.length() {
+        let code_block = mech_code_blocks.item(ix).unwrap();
+        let block_id = code_block.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
+        let block = self.core.runtime.blocks.get(&block_id).unwrap();
+        match block.state {
+          BlockState::Pending => {
+            let class = code_block.get_attribute("class").unwrap();
+            let class = format!("{} pending", class);
+            code_block.set_attribute("class", &class);
+          }
+          _ =>()
+        }
       }
     }
     Ok(())
