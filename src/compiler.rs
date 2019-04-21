@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Block, Constraint, Index, TableId};
+use mech_core::{Block, BlockState, Constraint, Index, TableId};
 use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
 use mech_core::ErrorType;
@@ -429,6 +429,21 @@ impl Compiler {
       Node::UnorderedList{..} => Some(Element::List(input)),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       Node::CodeBlock{..} => Some(Element::CodeBlock(input)),
+      Node::MechCodeBlock{ref children} => {
+        let (block_id, node) = self.compile_block(children[1].clone()).unwrap();
+        // set the block's state based on the provided flag
+        match children[0] {
+          Node::String{ref text} => {
+            match text.as_ref() {
+              "pending" => self.blocks.last_mut().unwrap().state = BlockState::Pending,
+              "disabled" => self.blocks.last_mut().unwrap().state = BlockState::Disabled,
+              _ => (),
+            }
+          }
+          _ => (),
+        }
+        Some(Element::Block((block_id, node)))
+      },
       _ => None,
     };
     element
