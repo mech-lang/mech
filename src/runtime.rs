@@ -223,8 +223,18 @@ impl fmt::Debug for Register {
 }
 
 #[derive(Clone, PartialEq)]
+pub enum BlockState {
+  Ready,
+  Updated,
+  Pending,
+  Disabled,
+  New,
+}
+
+#[derive(Clone, PartialEq)]
 pub struct Block {
   pub id: usize,
+  pub state: BlockState,
   pub name: String,
   pub text: String,
   pub ready: HashSet<Register>,
@@ -251,6 +261,7 @@ impl Block {
       name: String::from(""),
       text: String::from(""),
       ready: HashSet::with_capacity(1),
+      state: BlockState::New,
       updated: false,
       plan: Vec::new(),
       input_registers: HashSet::with_capacity(1),
@@ -465,7 +476,7 @@ impl Block {
   }
 
   pub fn is_ready(&self) -> bool {
-    if self.errors.len() > 0 {
+    if self.errors.len() > 0 || self.state == BlockState::Pending {
       false
     } else {
       let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
