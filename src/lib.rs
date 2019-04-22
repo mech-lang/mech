@@ -39,6 +39,7 @@ pub struct Core {
   images: HashMap<u64, web_sys::HtmlImageElement>,
   nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
+  inline_views: HashSet<u64>,
   roots: HashSet<String>,
 }
 
@@ -52,6 +53,7 @@ impl Core {
       images: HashMap::new(),
       nodes: HashMap::new(),
       views: HashSet::new(),
+      inline_views: HashSet::new(),
       roots: HashSet::new(),
     }
   }
@@ -354,6 +356,7 @@ impl Core {
       for ix in 0..inline_view_elements.length() {
         let view = inline_view_elements.item(ix).unwrap();
         let id = view.id().parse::<u64>().unwrap();
+        self.inline_views.insert(id);
         let view_table = self.core.store.get_table(id).unwrap();
         let data = &view_table.data[0][0];
         view.set_inner_html(&data.as_string().unwrap());
@@ -399,6 +402,7 @@ impl Core {
     self.images.clear();
     self.nodes.clear();
     self.views.clear();
+    self.inline_views.clear();
     self.roots.clear();
     log!("Core Cleared");
   }
@@ -481,6 +485,17 @@ impl Core {
         }
         output = format!("{}</br>",output);
       }
+      view_node.set_inner_html(&output);
+    }
+
+    // render inlineviews
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let view_id = Hasher::hash_str("block/view");
+    for view in self.inline_views.iter() {
+      let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
+      let table = &self.core.store.tables.get(*view).unwrap();
+      let mut output = format!("{}", &table.data[0][0].as_string().unwrap());
       view_node.set_inner_html(&output);
     }
 
