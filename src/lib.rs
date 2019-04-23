@@ -81,35 +81,13 @@ impl Core {
 
     let mut documentation = document.create_element("div")?;
     documentation.set_attribute("class", "mech-docs");
+    documentation.set_attribute("id", "mech-docs");
     let mut contents = document.create_element("div")?;
     contents.set_attribute("class", "mech-contents");
 
 
     let wasm_core = self as *mut Core;
     for program in &self.programs {
-
-      // Make controls area
-      let mut controls = document.create_element("div")?;
-      controls.set_attribute("class", "mech-controls");
-      controls.set_id("mech-controls");
-
-      // Code
-      let mut code_button = document.create_element("a")?;
-      code_button.set_attribute("class", "mech-control ion-pound");
-      code_button.set_attribute("href", "/#/docs/index.mec");
-      controls.append_child(&code_button);
-
-      // Tables
-      let mut tables_button = document.create_element("a")?;
-      tables_button.set_attribute("class", "mech-control ion-grid");
-      tables_button.set_attribute("href", "/#/tables/index.mec");
-      controls.append_child(&tables_button);
-
-      // Documentation
-      let mut docs_button = document.create_element("a")?;
-      docs_button.set_attribute("class", "mech-control ion-ios-bookmarks");
-      docs_button.set_attribute("href", "/#/docs/index.mec");
-      controls.append_child(&docs_button);
       
       // Make contents entry
       let mut contents_heading = document.create_element("div")?;
@@ -346,11 +324,19 @@ impl Core {
         }
         rendered_program.append_child(&rendered_section)?;
       }
-      documentation.append_child(&controls);
+      //documentation.append_child(&controls);
       documentation.append_child(&contents);
       documentation.append_child(&rendered_program)?;
-      documentation.append_child(&drawing)?;
-      body.append_child(&documentation)?;
+      //documentation.append_child(&drawing)?;
+     
+      let editor_containter = document.get_element_by_id("mech-editor-container").unwrap();
+      editor_containter.append_child(&documentation)?;
+
+      // Create drawing area
+      let mut drawing = document.create_element("div")?;
+      drawing.set_attribute("id", "drawing");
+      editor_containter.append_child(&drawing);
+
       // Register inline views
       let inline_view_elements = document.get_elements_by_class_name("mech-inline-mech-view");
       for ix in 0..inline_view_elements.length() {
@@ -601,13 +587,17 @@ impl Core {
           let contents_id = app_table.data[2][row].as_u64().unwrap();
           let contents_table;
           let mut app = document.create_element("div")?;
-          let drawing_area = document.get_element_by_id(&root_id).unwrap();
-          // TODO Make this safe
-          unsafe {
-            contents_table = (*core).store.get_table(contents_id).unwrap();       
+          match document.get_element_by_id(&root_id) {
+            Some(drawing_area) => {
+              // TODO Make this safe
+              unsafe {
+                contents_table = (*core).store.get_table(contents_id).unwrap();       
+              }
+              self.draw_contents(&contents_table, &mut app);
+              drawing_area.append_child(&app)?;
+            }
+            _ => (),
           }
-          self.draw_contents(&contents_table, &mut app);
-          drawing_area.append_child(&app)?;
         }
       }
       _ => (),
