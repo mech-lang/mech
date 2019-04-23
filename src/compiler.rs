@@ -363,16 +363,36 @@ impl Compiler {
           match child {
             Node::InlineMechCode{children} => {
               self.element += 1;
+              self.expression += 1;
               let mut formatter = Formatter::new();
               let name = formatter.format(&children[0], false);
+              let name = format!("mech/inline/{}", Hasher::hash_string(name.clone()));
               let id = Hasher::hash_string(name.clone());
               let block_tree = Node::Block{children: vec![
                             Node::Constraint{children: vec![
                               Node::Statement{children: vec![
                                 Node::TableDefine{children: vec![
-                                  Node::Table{name, id}, 
+                                  Node::Table{name, id},
                                   children[0].clone()]}]}]}]};
               let block = self.compile_block(block_tree);
+            }
+            _ => (),
+          }
+        }
+      }
+      _ => (),
+    }
+    result
+  }
+
+  pub fn compile_unordered_list(&mut self, input: Node) -> Option<Node> {
+    let result = Some(input.clone());
+    match input {
+      Node::UnorderedList{children}  => {
+        for child in &children {
+          match child {
+            Node::ListItem{children} => {
+              self.compile_paragraph(children[0].clone());
             }
             _ => (),
           }
@@ -424,9 +444,10 @@ impl Compiler {
   }
 
   pub fn compile_element(&mut self, input: Node) -> Option<Element> {
+    self.element += 1;
     let element = match input {
       Node::Paragraph{..} => Some(Element::Paragraph(self.compile_paragraph(input).unwrap())),
-      Node::UnorderedList{..} => Some(Element::List(input)),
+      Node::UnorderedList{..} => Some(Element::List(self.compile_unordered_list(input).unwrap())),
       Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
       Node::CodeBlock{..} => Some(Element::CodeBlock(input)),
       Node::MechCodeBlock{ref children} => {
