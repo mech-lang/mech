@@ -871,8 +871,9 @@ fn render_inline_mech(inline_mech_node: &Node) -> Result<web_sys::Element, JsVal
           _ => {
             let mut formatter = Formatter::new();
             let formatted_inline_block = formatter.format(child, true);
-            let block_id = formatter.format(child, false);
-            let id = Hasher::hash_str(&block_id);
+            let name = formatter.format(child, false);
+            let name = format!("mech/inline/{}", Hasher::hash_string(name.clone()));
+            let id = Hasher::hash_string(name.clone());
             let mut inline_code = document.create_element("span")?;
             inline_code.set_attribute("class", "mech-inline-mech-code");
             inline_code.set_inner_html(&formatted_inline_block);
