@@ -79,6 +79,24 @@ impl Core {
     let document = window.document().expect("should have a document on window");
     let body = document.body().expect("document should have a body");
 
+    // Add an event listener to mech-app that removes modals on mouse click
+    {
+      let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
+        match document.get_element_by_id("mech-modal") {
+          Some(modal) => {
+            let parent = modal.parent_node().unwrap();
+            parent.remove_child(&modal);
+          },
+          _ => (),
+        };
+      }) as Box<dyn FnMut(_)>);
+      let app = document.get_element_by_id("mech-app").unwrap();
+      app.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
+      closure.forget();
+    }
+
     let mut documentation = document.create_element("div")?;
     documentation.set_attribute("class", "mech-docs");
     documentation.set_attribute("id", "mech-docs");
@@ -103,6 +121,7 @@ impl Core {
       // Render the program
       let mut rendered_program = document.create_element("div")?;
       rendered_program.set_attribute("class", "mech-program");
+      rendered_program.set_attribute("id", "mech-program");
       let mut title = document.create_element("h1")?;
       title.set_inner_html(&format!("# {}", &program.title.clone().unwrap()));
       rendered_program.append_child(&title)?;
@@ -163,25 +182,52 @@ impl Core {
               code_text.set_attribute("spellcheck", "false");
               {
                 let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                  /*if pressed.get() {
 
-                    
-
-                  }*/
-
-                  /*
-
+                
                   log!("{} {}", event.offset_x() as f64, event.offset_y() as f64);
+                  log!("{} {}", event.x() as f64, event.y() as f64);
+                  log!("{} {}", event.screen_x() as f64, event.screen_y() as f64);
+                  log!("{} {}", event.client_x() as f64, event.client_y() as f64);
                   log!("{:?}", event.target().unwrap());
                   let target: web_sys::HtmlElement = event.target()
                                                           .unwrap()
                                                           .dyn_into::<web_sys::HtmlElement>()
                                                           .map_err(|_| ())
                                                           .unwrap();
-                  log!("{:?}", target.get_attribute("id"));
-                  let window = web_sys::window().expect("no global `window` exists");
-                  let selection = window.get_selection();*/
+                  log!("{:?}", target.get_attribute("class"));
+                  log!("{:?}", target.inner_text());
 
+                  // close previous modal
+                  /*unsafe {
+                    (*core).remove_block(&block_id);
+                    (*core).register_blocks(vec![new_block.clone()]);
+                    (*core).step();
+                    (*wasm_core).render();
+                  }
+                  match self.modal {
+                    _ => (),
+                  }; */
+
+                  let window = web_sys::window().expect("no global `window` exists");
+                  let document = window.document().expect("should have a document on window");
+
+                  match document.get_element_by_id("mech-modal") {
+                    Some(modal) => {
+                      let parent = modal.parent_node().unwrap();
+                      parent.remove_child(&modal);
+                    },
+                    _ => (),
+                  };
+
+                  let mut table_inspector = document.create_element("div").unwrap();
+                  table_inspector.set_attribute("class", "mech-table-inspector");
+                  table_inspector.set_attribute("id", "mech-modal");
+                  table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - 75, event.client_y() - 160));
+                  table_inspector.set_inner_html(&target.inner_text());
+                  let mut app = document.get_element_by_id("mech-app").unwrap();
+                  app.append_child(&table_inspector);
+                  //let selection = window.get_selection();*/
+                  event.stop_propagation();
                 }) as Box<dyn FnMut(_)>);
                 code_text.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
                 closure.forget();
