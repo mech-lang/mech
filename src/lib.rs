@@ -182,35 +182,13 @@ impl Core {
               code_text.set_attribute("spellcheck", "false");
               {
                 let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-
-                
-                  log!("{} {}", event.offset_x() as f64, event.offset_y() as f64);
-                  log!("{} {}", event.x() as f64, event.y() as f64);
-                  log!("{} {}", event.screen_x() as f64, event.screen_y() as f64);
-                  log!("{} {}", event.client_x() as f64, event.client_y() as f64);
-                  log!("{:?}", event.target().unwrap());
                   let target: web_sys::HtmlElement = event.target()
                                                           .unwrap()
                                                           .dyn_into::<web_sys::HtmlElement>()
                                                           .map_err(|_| ())
                                                           .unwrap();
-                  log!("{:?}", target.get_attribute("class"));
-                  log!("{:?}", target.inner_text());
-
-                  // close previous modal
-                  /*unsafe {
-                    (*core).remove_block(&block_id);
-                    (*core).register_blocks(vec![new_block.clone()]);
-                    (*core).step();
-                    (*wasm_core).render();
-                  }
-                  match self.modal {
-                    _ => (),
-                  }; */
-
                   let window = web_sys::window().expect("no global `window` exists");
                   let document = window.document().expect("should have a document on window");
-
                   match document.get_element_by_id("mech-modal") {
                     Some(modal) => {
                       let parent = modal.parent_node().unwrap();
