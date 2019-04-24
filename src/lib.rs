@@ -181,14 +181,26 @@ impl Core {
               code_text.set_attribute("block-id",&format!("{}",block_id));
               code_text.set_attribute("spellcheck", "false");
               {
+                let core = &mut self.core as *mut mech_core::Core;
                 let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                  event.stop_propagation();
                   let target: web_sys::HtmlElement = event.target()
                                                           .unwrap()
                                                           .dyn_into::<web_sys::HtmlElement>()
                                                           .map_err(|_| ())
                                                           .unwrap();
+                  let block_id = target.parent_node().unwrap()
+                                                     .dyn_into::<web_sys::HtmlElement>()
+                                                     .map_err(|_| ())
+                                                     .unwrap()
+                                                     .get_attribute("block-id")
+                                                     .unwrap_or("0".to_string())
+                                                     .parse::<usize>().unwrap();
+
                   let window = web_sys::window().expect("no global `window` exists");
                   let document = window.document().expect("should have a document on window");
+
+                  // Remove previous modal
                   match document.get_element_by_id("mech-modal") {
                     Some(modal) => {
                       let parent = modal.parent_node().unwrap();
@@ -197,15 +209,49 @@ impl Core {
                     _ => (),
                   };
 
-                  let mut table_inspector = document.create_element("div").unwrap();
-                  table_inspector.set_attribute("class", "mech-table-inspector");
-                  table_inspector.set_attribute("id", "mech-modal");
-                  table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - 75, event.client_y() - 160));
-                  table_inspector.set_inner_html(&target.inner_text());
-                  let mut app = document.get_element_by_id("mech-app").unwrap();
-                  app.append_child(&table_inspector);
-                  //let selection = window.get_selection();*/
-                  event.stop_propagation();
+                  // Get the table data
+                  let table_id = Hasher::hash_str(&target.inner_text());
+                  let data = if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-local-variable"{ 
+                    let mut output = "".to_string();
+                    unsafe {
+                      let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
+                      for i in 0..table.rows {
+                        for j in 0..table.columns {
+                          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                        }
+                        output = format!("{}</br>",output);
+                      }
+                    }
+                    output
+                  } else if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-global-variable" {
+                    let mut output = "".to_string();
+                    unsafe {
+                      let table = (*core).store.get_table(table_id).unwrap();
+                      for i in 0..table.rows {
+                        for j in 0..table.columns {
+                          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                        }
+                        output = format!("{}</br>",output);
+                      }
+                    }
+                    output
+                  } else {
+                    "".to_string()
+                  };
+
+                  if data != "" {
+                    // Set new modal
+                    let mut table_inspector = document.create_element("div").unwrap();
+                    table_inspector.set_attribute("class", "mech-table-inspector");
+                    table_inspector.set_attribute("id", "mech-modal");
+                    table_inspector.set_attribute("block-id", &format!("{:?}", block_id));
+                    table_inspector.set_attribute("table-id", &format!("{:?}", table_id));
+                    table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - 75, event.client_y() - 160));
+                    table_inspector.set_inner_html(&data);
+                    let mut app = document.get_element_by_id("mech-app").unwrap();
+                    app.append_child(&table_inspector);
+                  }
+                  
                 }) as Box<dyn FnMut(_)>);
                 code_text.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
                 closure.forget();
@@ -219,7 +265,7 @@ impl Core {
                                                               .dyn_into::<web_sys::HtmlElement>()
                                                               .map_err(|_| ())
                                                               .unwrap();
-                  let block_id = target.get_attribute("block-id").unwrap().parse::<usize>().unwrap();;
+                  let block_id = target.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
 
 
                   if event.key_code() == 13 && event.ctrl_key() {
