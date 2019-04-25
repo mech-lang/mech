@@ -211,10 +211,11 @@ impl Core {
 
                   // Get the table data
                   let table_id = Hasher::hash_str(&target.inner_text());
-                  let data = 
+                  let table_name = target.inner_text();
+                  let (data, scope) = 
                   // Format local variable
                   if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-local-variable"{ 
-                    let mut output = format!("<h3>{}</h3><table>", target.inner_text());
+                    let mut output = format!("<h3>{}</h3><table>", table_name);
                     unsafe {
                       let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
                       for i in 0..table.rows {
@@ -228,10 +229,10 @@ impl Core {
                       }
                       output = format!("{}</table>",output);
                     }
-                    output
+                    (output, "local")
                   // Format global variable
                   } else if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-global-variable" {
-                    let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", target.inner_text());
+                    let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
                     unsafe {
                       let table = (*core).store.get_table(table_id).unwrap();
                       for i in 0..table.rows {
@@ -245,9 +246,9 @@ impl Core {
                       }
                       output = format!("{}</table>",output);
                     }
-                    output
+                    (output, "global")
                   } else {
-                    "".to_string()
+                    ("".to_string(), "")
                   };
 
                   if data != "" {
@@ -259,8 +260,11 @@ impl Core {
                     modal.set_attribute("id", "mech-modal");
                     let mut table_inspector = document.create_element("div").unwrap();
                     table_inspector.set_attribute("class", "mech-table-inspector");
+                    table_inspector.set_attribute("id", "mech-table-inspector");
                     table_inspector.set_attribute("block-id", &format!("{:?}", block_id));
                     table_inspector.set_attribute("table-id", &format!("{:?}", table_id));
+                    table_inspector.set_attribute("table-name", &table_name);
+                    table_inspector.set_attribute("table-scope", &scope);
                     table_inspector.set_inner_html(&data);
                     modal.append_child(&table_inspector);
                     let mut app = document.get_element_by_id("mech-app").unwrap();
@@ -582,6 +586,53 @@ impl Core {
       let mut output = format!("{}", &table.data[0][0].as_string().unwrap());
       view_node.set_inner_html(&output);
     }
+
+    // render 
+    match document.get_element_by_id("mech-table-inspector") {
+      Some(table_inspector) => {
+        //log!("{:?}", self.core.runtime.changed_this_round);
+        match table_inspector.get_attribute("table-scope").unwrap_or("".to_string()).as_ref() {
+          "local" => {
+            let table_name = table_inspector.get_attribute("table-name").unwrap();
+            let table_id = table_inspector.get_attribute("table-id").unwrap().parse::<u64>().unwrap();
+            let block_id = table_inspector.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
+            let table = self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
+            let mut output = format!("<h3>{}</h3><table>", table_name);
+            for i in 0..table.rows {
+              output = format!("{}<tr>",output);
+              for j in 0..table.columns {
+                output = format!("{}<td>",output);
+                output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                output = format!("{}</td>",output);
+              }
+              output = format!("{}</tr>",output);
+            }
+            output = format!("{}</table>",output);            
+            table_inspector.set_inner_html(&output);
+          },
+          "global" => {
+            let table_name = table_inspector.get_attribute("table-name").unwrap();
+            let table_id = table_inspector.get_attribute("table-id").unwrap().parse::<u64>().unwrap();
+            let table = self.core.store.get_table(table_id).unwrap();
+            let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
+            for i in 0..table.rows {
+              output = format!("{}<tr>",output);
+              for j in 0..table.columns {
+                output = format!("{}<td>",output);
+                output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                output = format!("{}</td>",output);
+              }
+              output = format!("{}</tr>",output);
+            }
+            output = format!("{}</table>",output);            
+            table_inspector.set_inner_html(&output);
+          },
+          _ => log!("Unknown"),
+        };
+      }
+      _ => (),
+    }
+    
 
     /*
     let window = web_sys::window().expect("no global `window` exists");
