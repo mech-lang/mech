@@ -212,7 +212,7 @@ impl Core {
                   // Get the table data
                   let table_id = Hasher::hash_str(&target.inner_text());
                   let data = if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-local-variable"{ 
-                    let mut output = format!("{}<br/><table>", target.inner_text());
+                    let mut output = format!("<h3>{}</h3><table>", target.inner_text());
                     unsafe {
                       let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
                       for i in 0..table.rows {
@@ -228,7 +228,7 @@ impl Core {
                     }
                     output
                   } else if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-global-variable" {
-                    let mut output = format!("#{}<br/><table>", target.inner_text());
+                    let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", target.inner_text());
                     unsafe {
                       let table = (*core).store.get_table(table_id).unwrap();
                       for i in 0..table.rows {
@@ -261,7 +261,17 @@ impl Core {
                     let mut app = document.get_element_by_id("mech-app").unwrap();
                     app.append_child(&table_inspector);
                     log!("{:?} {:?}", table_inspector.offset_width(), table_inspector.offset_height());
-                    table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - table_inspector.offset_width() / 2, event.client_y() - table_inspector.offset_height()));
+                    let x = if event.client_x() - table_inspector.offset_width() / 2 > 0 {
+                      event.client_x() - table_inspector.offset_width() / 2
+                    } else {
+                      0
+                    };
+                    let y = if event.client_y() - table_inspector.offset_height() > 0 {
+                      event.client_y() - table_inspector.offset_height()
+                    } else {
+                      0
+                    };
+                    table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;", x, y));
                   }
                   
                 }) as Box<dyn FnMut(_)>);
