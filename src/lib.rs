@@ -96,7 +96,10 @@ impl Core {
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
     self.runtime.register_blocks(blocks, &mut self.store);
     for (id, block) in self.runtime.blocks.iter() {
-      // TODO Collect unsatisfied input
+      // Collect input
+      for register in block.input_registers.iter() {
+        self.input.insert(register.clone());
+      }
       // Collect output
       for register in block.output_registers.iter() {
         self.output.insert(register.clone());
