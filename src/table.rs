@@ -173,6 +173,10 @@ impl Aliases {
     }
   }
 
+  pub fn len(&self) -> usize {
+    self.0.len()
+  } 
+
   pub fn insert(&mut self, key: u64, value: u64) {
     self.0.insert(key,value);
   } 
