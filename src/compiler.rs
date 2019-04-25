@@ -830,6 +830,7 @@ impl Compiler {
           match constraint {
             Constraint::Identifier{id, ..} => {
               constraints.push(Constraint::TableColumn{table: self.table, column_ix: i, column_alias: id});
+              constraints.push(constraint);             
             }
             _ => (),
           }
