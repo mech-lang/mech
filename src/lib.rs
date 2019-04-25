@@ -299,12 +299,12 @@ impl Core {
                     unsafe {
                       (*core).remove_block(&block_id);
                       (*core).register_blocks(vec![new_block.clone()]);
+                      (*core).runtime.ready_blocks.insert(block_id);
                       (*core).step();
                       (*wasm_core).render();
                     }
-                    //let mut formatter = Formatter::new();
-                    //let html = formatter.format(&block_ast, true);
-                    //target.set_inner_html(&html);
+                    target.set_attribute("state","ready");
+                    target.set_attribute("class","mech-code");
                   }
 
 
@@ -450,6 +450,7 @@ impl Core {
             let class = code_block.get_attribute("class").unwrap();
             let class = format!("{} pending", class);
             code_block.set_attribute("class", &class);
+            code_block.set_attribute("state","pending");
           }
           _ =>()
         }
