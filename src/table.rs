@@ -79,6 +79,10 @@ impl Value {
       Value::Number(q) => Some(q.format()),
       Value::Reference(r) => Some(format!("{:?}", r)),
       Value::Empty => Some("".to_string()),
+      Value::Bool(t) => match t {
+        true => Some("true".to_string()),
+        false => Some("false".to_string()),
+      },
       _ => None,
     }
   }
