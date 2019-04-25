@@ -271,8 +271,8 @@ impl Core {
                     } else {
                       0
                     };
-                    let y = if event.client_y() - modal.offset_height() > 0 {
-                      event.client_y() - modal.offset_height()
+                    let y = if event.client_y() - modal.offset_height() - 10 > 0 {
+                      event.client_y() - modal.offset_height() - 10
                     } else {
                       0
                     };
