@@ -78,6 +78,7 @@ impl Value {
       Value::String(n) => Some(n.to_string()),
       Value::Number(q) => Some(q.format()),
       Value::Reference(r) => Some(format!("{:?}", r)),
+      Value::Empty => Some("".to_string()),
       _ => None,
     }
   }
