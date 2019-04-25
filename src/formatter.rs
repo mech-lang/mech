@@ -77,7 +77,7 @@ impl Formatter {
             }
           }
           _ => {
-            node_type = "function";
+            //node_type = "function";
             for (ix, child) in children.iter().enumerate() {
               let binding = self.write_node(&child);
               if ix == children.len() - 1 {
@@ -91,7 +91,11 @@ impl Formatter {
                 
               }
             }
-            code = format!("{}({})", name, code);
+            code = if self.html {
+              format!("<span class=\"highlight-function-name\">{}</span>({})", name, code)
+            } else {
+              format!("{}({})", name, code)
+            }
           }
         }
       },
@@ -103,7 +107,7 @@ impl Formatter {
       Node::Table{name, id} => {
         code = name.clone();
         if self.html {
-          code = format!("<span class=\"highlight-bracket\">#</span>{}", code)
+          code = format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", code)
         }
         else {
           code = format!("#{}", code)
@@ -115,13 +119,13 @@ impl Formatter {
       Node::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         self.indent = if self.html {
-          lhs.len() + 3 - 37
+          lhs.len() + 3 - 37 - 47
         } else {
           lhs.len() + 3
         };
         let rhs = self.write_node(&children[1]);
         let lhs = if self.html {
-          format!("<span class=\"highlight-variable\">{}</span>", lhs)
+          format!("{}", lhs)
         }
         else {
           format!("{}", lhs)
@@ -147,7 +151,7 @@ impl Formatter {
         };
         let rhs = self.write_node(&children[1]);
         let lhs = if self.html {
-          format!("<span class=\"highlight-variable\">{}</span>", lhs)
+          format!("<span class=\"highlight-local-variable\">{}</span>", lhs)
         }
         else {
           format!("{}", lhs)
@@ -166,7 +170,7 @@ impl Formatter {
         let formatted_name = match id {
           TableId::Local(..) => {
             if self.html {
-              format!("<span class=\"highlight-variable\">{}</span>", name)
+              format!("<span class=\"highlight-local-variable\">{}</span>", name)
             }
             else {
               format!("{}", name)
@@ -174,7 +178,7 @@ impl Formatter {
           },
           TableId::Global(..) => {
             if self.html {
-              format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-variable\">{}</span>", name)
+              format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", name)
             }
             else {
               format!("#{}", name)
@@ -270,7 +274,7 @@ impl Formatter {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         if self.html {
-          code = format!("<span class=\"highlight-parameter\">{}:</span> <span class=\"highlight-variable\">{}</span>", lhs, rhs);
+          code = format!("<span class=\"highlight-parameter\">{}:</span> {}", lhs, rhs);
         } else {
           code = format!("{}: {}", lhs, rhs);
         };
