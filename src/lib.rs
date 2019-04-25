@@ -218,6 +218,20 @@ impl Core {
                     let mut output = format!("<h3>{}</h3><table>", table_name);
                     unsafe {
                       let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
+                      if table.column_aliases.len() > 0 {
+                        output = format!("{}<tr>",output);
+                        for alias in table.column_index_to_alias.iter() {
+                          match alias {
+                            Some(alias_id) => {
+                              output = format!("{}<th>",output);
+                              output = format!("{} {}",output,(*core).store.names.get(&alias_id).unwrap());
+                              output = format!("{}</th>",output);
+                            },
+                            _ => (),
+                          }
+                        }
+                        output = format!("{}</tr>",output);
+                      }
                       for i in 0..table.rows {
                         output = format!("{}<tr>",output);
                         for j in 0..table.columns {
@@ -235,6 +249,20 @@ impl Core {
                     let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
                     unsafe {
                       let table = (*core).store.get_table(table_id).unwrap();
+                      if table.column_aliases.len() > 0 {
+                        output = format!("{}<tr>",output);
+                        for alias in table.column_index_to_alias.iter() {
+                          match alias {
+                            Some(alias_id) => {
+                              output = format!("{}<th>",output);
+                              output = format!("{} {}",output,(*core).store.names.get(&alias_id).unwrap());
+                              output = format!("{}</th>",output);
+                            },
+                            _ => (),
+                          }
+                        }
+                        output = format!("{}</tr>",output);
+                      }
                       for i in 0..table.rows {
                         output = format!("{}<tr>",output);
                         for j in 0..table.columns {
@@ -598,6 +626,20 @@ impl Core {
             let block_id = table_inspector.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
             let table = self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
             let mut output = format!("<h3>{}</h3><table>", table_name);
+            if table.column_aliases.len() > 0 {
+              output = format!("{}<tr>",output);
+              for alias in table.column_index_to_alias.iter() {
+                match alias {
+                  Some(alias_id) => {
+                    output = format!("{}<th>",output);
+                    output = format!("{} {}",output, self.core.store.names.get(&alias_id).unwrap());
+                    output = format!("{}</th>",output);
+                  },
+                  _ => (),
+                }
+              }
+              output = format!("{}</tr>",output);
+            }
             for i in 0..table.rows {
               output = format!("{}<tr>",output);
               for j in 0..table.columns {
@@ -615,6 +657,20 @@ impl Core {
             let table_id = table_inspector.get_attribute("table-id").unwrap().parse::<u64>().unwrap();
             let table = self.core.store.get_table(table_id).unwrap();
             let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
+            if table.column_aliases.len() > 0 {
+              output = format!("{}<tr>",output);
+              for alias in table.column_index_to_alias.iter() {
+                match alias {
+                  Some(alias_id) => {
+                    output = format!("{}<th>",output);
+                    output = format!("{} {}",output, self.core.store.names.get(&alias_id).unwrap());
+                    output = format!("{}</th>",output);
+                  },
+                  _ => (),
+                }
+              }
+              output = format!("{}</tr>",output);
+            }
             for i in 0..table.rows {
               output = format!("{}<tr>",output);
               for j in 0..table.columns {
