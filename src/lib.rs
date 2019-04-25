@@ -212,27 +212,35 @@ impl Core {
                   // Get the table data
                   let table_id = Hasher::hash_str(&target.inner_text());
                   let data = if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-local-variable"{ 
-                    let mut output = "".to_string();
+                    let mut output = format!("{}<br/><table>", target.inner_text());
                     unsafe {
                       let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
                       for i in 0..table.rows {
+                        output = format!("{}<tr>",output);
                         for j in 0..table.columns {
+                          output = format!("{}<td>",output);
                           output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                          output = format!("{}</td>",output);
                         }
-                        output = format!("{}</br>",output);
+                        output = format!("{}</tr>",output);
                       }
+                      output = format!("{}</table>",output);
                     }
                     output
                   } else if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-global-variable" {
-                    let mut output = "".to_string();
+                    let mut output = format!("#{}<br/><table>", target.inner_text());
                     unsafe {
                       let table = (*core).store.get_table(table_id).unwrap();
                       for i in 0..table.rows {
+                        output = format!("{}<tr>",output);
                         for j in 0..table.columns {
+                          output = format!("{}<td>",output);
                           output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+                          output = format!("{}</td>",output);
                         }
-                        output = format!("{}</br>",output);
+                        output = format!("{}</tr>",output);
                       }
+                      output = format!("{}</table>",output);
                     }
                     output
                   } else {
@@ -241,15 +249,19 @@ impl Core {
 
                   if data != "" {
                     // Set new modal
-                    let mut table_inspector = document.create_element("div").unwrap();
+                    let mut table_inspector = document.create_element("div").unwrap()
+                                                                            .dyn_into::<web_sys::HtmlElement>()
+                                                                            .map_err(|_| ())
+                                                                            .unwrap();
                     table_inspector.set_attribute("class", "mech-table-inspector");
                     table_inspector.set_attribute("id", "mech-modal");
                     table_inspector.set_attribute("block-id", &format!("{:?}", block_id));
                     table_inspector.set_attribute("table-id", &format!("{:?}", table_id));
-                    table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - 75, event.client_y() - 160));
                     table_inspector.set_inner_html(&data);
                     let mut app = document.get_element_by_id("mech-app").unwrap();
                     app.append_child(&table_inspector);
+                    log!("{:?} {:?}", table_inspector.offset_width(), table_inspector.offset_height());
+                    table_inspector.set_attribute("style", &format!("left: {}px; top: {}px;",event.client_x() - table_inspector.offset_width() / 2, event.client_y() - table_inspector.offset_height()));
                   }
                   
                 }) as Box<dyn FnMut(_)>);
