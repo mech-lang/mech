@@ -55,5 +55,6 @@ features = [
   'Range',
   'HtmlCollection',
   'WebSocket',
+  'MessageEvent',
   'console',
 ]
