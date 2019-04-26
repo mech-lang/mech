@@ -32,6 +32,18 @@ macro_rules! log {
     }
 }
 
+// ## Client Message
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum WebsocketClientMessage {
+  Listening(Vec<u64>),
+  Control(u8),
+  Code(String),
+  Table(usize),
+  RemoveBlock(usize),
+  Transaction(Transaction),
+}
+
 #[wasm_bindgen]
 pub struct Core {
   core: mech_core::Core,
@@ -776,13 +788,14 @@ impl Core {
         let txn = Transaction::from_changeset(self.changes.clone());
         //log!("{:?}", txn);
         self.core.process_transaction(&txn);
-        for change in &self.changes {
+        'change_loop: for change in &self.changes {
           match change {
              Change::Set{table, row, column, value} => {
                match self.remote_tables.get(table) {
                  Some(ws) => {
-                   let txn_msg = serde_json::to_string(&txn).unwrap();
+                   let txn_msg = serde_json::to_string(&WebsocketClientMessage::Transaction(txn.clone())).unwrap();
                    ws.send_with_str(&txn_msg);
+                   break 'change_loop;
                  }
                  _ =>(),
                };
