@@ -11,6 +11,7 @@ extern crate core;
 extern crate web_sys;
 extern crate mech_core;
 extern crate mech_syntax;
+extern crate serde_json;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -42,6 +43,7 @@ pub struct Core {
   inline_views: HashSet<u64>,
   roots: HashSet<String>,
   websocket: Option<web_sys::WebSocket>,
+  remote_tables: HashMap::<u64, web_sys::WebSocket>,
 }
 
 #[wasm_bindgen]
@@ -57,6 +59,7 @@ impl Core {
       inline_views: HashSet::new(),
       roots: HashSet::new(),
       websocket: None,
+      remote_tables: HashMap::new(),
     }
   }
 
@@ -68,7 +71,12 @@ impl Core {
       let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
         log!("Opened {:?}", event.time_stamp());
         unsafe {
-          //(*wasm_core).websocket.unwrap().send_with_str("FROM THE RUST");
+          let mut message_data: Vec<u64> = Vec::new();
+          for input_register in (*wasm_core).core.input.iter() {
+            message_data.push(input_register.table);
+          }
+          let json_msg = serde_json::to_string(&message_data).unwrap();
+          //(*wasm_core).websocket.clone().unwrap().send_with_str(&json_msg);
         }
       }) as Box<dyn FnMut(_)>);
       ws.set_onopen(Some(&closure.as_ref().unchecked_ref()));
@@ -77,10 +85,12 @@ impl Core {
     // Set On Messaged
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::MessageEvent| {
-        log!("Messaged {:?}", event.data());
+        let deserialized: Result<Vec<u64>, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
         unsafe {
-          //(*wasm_core).websocket.unwrap().send_with_str("FROM THE RUST Rust");
-          (*wasm_core).websocket.clone().unwrap().send_with_str("FROM THE RUST Rust");
+          for table_id in deserialized.unwrap() {
+            let ws = (*wasm_core).websocket.clone().unwrap().clone();
+            (*wasm_core).remote_tables.insert(table_id.clone(), ws);
+          }
         }
       }) as Box<dyn FnMut(_)>);
       ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
@@ -766,6 +776,21 @@ impl Core {
         let txn = Transaction::from_changeset(self.changes.clone());
         //log!("{:?}", txn);
         self.core.process_transaction(&txn);
+        for change in &self.changes {
+          match change {
+             Change::Set{table, row, column, value} => {
+               match self.remote_tables.get(table) {
+                 Some(ws) => {
+                   let txn_msg = serde_json::to_string(&txn).unwrap();
+                   ws.send_with_str(&txn_msg);
+                 }
+                 _ =>(),
+               };
+             },
+            _ => (),
+          }
+
+        }
     }
     self.changes.clear();
   }
