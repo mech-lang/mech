@@ -41,6 +41,7 @@ pub struct Core {
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
   roots: HashSet<String>,
+  websocket: Option<web_sys::WebSocket>,
 }
 
 #[wasm_bindgen]
@@ -55,7 +56,45 @@ impl Core {
       views: HashSet::new(),
       inline_views: HashSet::new(),
       roots: HashSet::new(),
+      websocket: None,
     }
+  }
+
+  pub fn connect_remote_core(&mut self, address: String) {
+    let mut ws = web_sys::WebSocket::new(&address).unwrap();
+    let wasm_core = self as *mut Core;
+    // Set On Opened
+    {
+      let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+        log!("Opened {:?}", event.time_stamp());
+        unsafe {
+          //(*wasm_core).websocket.unwrap().send_with_str("FROM THE RUST");
+        }
+      }) as Box<dyn FnMut(_)>);
+      ws.set_onopen(Some(&closure.as_ref().unchecked_ref()));
+      closure.forget();
+    }
+    // Set On Messaged
+    {
+      let closure = Closure::wrap(Box::new(move |event: web_sys::MessageEvent| {
+        log!("Messaged {:?}", event.data());
+        unsafe {
+          //(*wasm_core).websocket.unwrap().send_with_str("FROM THE RUST Rust");
+          (*wasm_core).websocket.clone().unwrap().send_with_str("FROM THE RUST Rust");
+        }
+      }) as Box<dyn FnMut(_)>);
+      ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
+      closure.forget();
+    }
+    // Set On Close
+    {
+      let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+        log!("Closed");
+      }) as Box<dyn FnMut(_)>);
+      ws.set_onclose(Some(&closure.as_ref().unchecked_ref()));
+      closure.forget();
+    }
+    self.websocket = Some(ws);
   }
 
   pub fn compile_code(&mut self, code: String) {
