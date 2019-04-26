@@ -55,7 +55,7 @@ pub struct Core {
   inline_views: HashSet<u64>,
   roots: HashSet<String>,
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashMap<u64, web_sys::WebSocket>,
+  remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
 }
 
 #[wasm_bindgen]
@@ -103,7 +103,8 @@ impl Core {
             Ok(WebsocketClientMessage::Listening(remote_tables)) => {
               for table_id in remote_tables {
                 let ws = (*wasm_core).websocket.clone().unwrap().clone();
-                (*wasm_core).remote_tables.insert(table_id.clone(), ws);
+                let (ws, remote_tables) = (*wasm_core).remote_tables.entry(1).or_insert((ws, HashSet::new()));
+                remote_tables.insert(table_id.clone());
               }
             },
             Ok(WebsocketClientMessage::Transaction(txn)) => {
@@ -793,23 +794,28 @@ impl Core {
 
   pub fn process_transaction(&mut self) {
     if !self.core.paused {
-        let txn = Transaction::from_changeset(self.changes.clone());
-        self.core.process_transaction(&txn);
-        'change_loop: for change in &self.changes {
+      let txn = Transaction::from_changeset(self.changes.clone());
+      let pre_changes = self.core.store.len();
+      self.core.process_transaction(&txn);
+
+      for (id, (ws, remote_tables)) in self.remote_tables.iter() {
+        let mut changes: Vec<Change> = Vec::new();
+        for i in pre_changes..self.core.store.len() {
+          let change = &self.core.store.changes[i-1];
           match change {
-             Change::Set{table, row, column, value} => {
-               match self.remote_tables.get(table) {
-                 Some(ws) => {
-                   let txn_msg = serde_json::to_string(&WebsocketClientMessage::Transaction(txn.clone())).unwrap();
-                   ws.send_with_str(&txn_msg);
-                   break 'change_loop;
-                 }
-                 _ =>(),
-               };
-             },
-            _ => (),
-          }
+            Change::Set{table, ..} => {
+              match remote_tables.contains(&table) {
+                true => changes.push(change.clone()),
+                _ => (),
+              }
+            }
+            _ => ()
+          } 
         }
+        let txn = Transaction::from_changeset(changes);
+        let txn_msg = serde_json::to_string(&WebsocketClientMessage::Transaction(txn.clone())).unwrap();
+        ws.send_with_str(&txn_msg);
+      }
     }
     self.changes.clear();
   }
