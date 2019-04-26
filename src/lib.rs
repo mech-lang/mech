@@ -43,7 +43,7 @@ pub struct Core {
   inline_views: HashSet<u64>,
   roots: HashSet<String>,
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashMap::<u64, web_sys::WebSocket>,
+  remote_tables: HashMap<u64, web_sys::WebSocket>,
 }
 
 #[wasm_bindgen]
