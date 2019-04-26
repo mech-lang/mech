@@ -35,7 +35,7 @@ impl fmt::Debug for Change {
   
 // ## Transaction
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Transaction {
   pub tables: Vec<Change>,
   pub adds: Vec<Change>,
