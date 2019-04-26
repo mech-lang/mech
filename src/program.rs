@@ -12,7 +12,7 @@ use std::fs::{OpenOptions, File, canonicalize};
 use std::io::{Write, BufReader, BufWriter};
 use std::sync::Arc;
 
-use mech_core::{Core, Transaction, Change, Error};
+use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher};
@@ -32,6 +32,7 @@ pub struct Program {
   pub outgoing: Sender<RunLoopMessage>,
   pub errors: Vec<Error>,
   programs: u64,
+  pub listeners: HashSet<u64>,
 }
 
 impl Program {
@@ -50,6 +51,7 @@ impl Program {
       outgoing,
       errors: Vec::new(),
       programs: 0,
+      listeners: HashSet::new(),
     }
   }
 
@@ -101,6 +103,7 @@ pub enum RunLoopMessage {
   Clear,
   PrintCore,
   PrintRuntime,
+  Listening(Vec<u64>),
   Table(u64),
   Transaction(Transaction),
   Code(String),
@@ -117,6 +120,7 @@ pub enum ClientMessage {
   Time(usize),
   NewBlocks(usize),
   Table(Option<Table>),
+  Transaction(Transaction),
   Block(Block),
   Done,
 }
@@ -315,6 +319,30 @@ impl ProgramRunner {
             //program.compile_string(String::from(text.clone()));
             //println!("{:?}", program.mech);
             //println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            let mut changes: Vec<Change> = Vec::new();
+            for i in pre_changes..program.mech.store.len() {
+              let change = &program.mech.store.changes[i-1];
+              match change {
+                Change::Set{table, ..} => {
+                  match program.listeners.get(&table) {
+                    Some(_) => changes.push(change.clone()),
+                    _ => (),
+                  }
+                }
+                _ => ()
+              } 
+            }
+            let txn = Transaction::from_changeset(changes);
+            client_outgoing.send(ClientMessage::Transaction(txn));
+          },
+          (Ok(RunLoopMessage::Listening(table_ids)), _) => {
+            for table_id in table_ids {
+              match program.mech.output.get(&Register::new(table_id, Index::Index(0))) {
+                Some(_) => {program.listeners.insert(table_id);}, // We produce a table for which they're listening, so let's mark that
+                _ => (),
+              }
+            }
+            client_outgoing.send(ClientMessage::Done);
           },
           (Ok(RunLoopMessage::Stop), _) => { 
             client_outgoing.send(ClientMessage::Stop);
