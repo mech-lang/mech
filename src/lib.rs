@@ -87,8 +87,8 @@ impl Core {
           for input_register in (*wasm_core).core.input.iter() {
             message_data.push(input_register.table);
           }
-          let json_msg = serde_json::to_string(&message_data).unwrap();
-          //(*wasm_core).websocket.clone().unwrap().send_with_str(&json_msg);
+          let json_msg = serde_json::to_string(&WebsocketClientMessage::Listening(message_data)).unwrap();
+          (*wasm_core).websocket.clone().unwrap().send_with_str(&json_msg);
         }
       }) as Box<dyn FnMut(_)>);
       ws.set_onopen(Some(&closure.as_ref().unchecked_ref()));
@@ -97,12 +97,21 @@ impl Core {
     // Set On Messaged
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::MessageEvent| {
-        let deserialized: Result<Vec<u64>, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
+        let deserialized: Result<WebsocketClientMessage, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
         unsafe {
-          for table_id in deserialized.unwrap() {
-            let ws = (*wasm_core).websocket.clone().unwrap().clone();
-            (*wasm_core).remote_tables.insert(table_id.clone(), ws);
+          match deserialized {
+            Ok(WebsocketClientMessage::Listening(remote_tables)) => {
+              for table_id in remote_tables {
+                let ws = (*wasm_core).websocket.clone().unwrap().clone();
+                (*wasm_core).remote_tables.insert(table_id.clone(), ws);
+              }
+            },
+            Ok(WebsocketClientMessage::Transaction(txn)) => {
+              (*wasm_core).core.process_transaction(&txn);
+            },
+            _ => (),
           }
+
         }
       }) as Box<dyn FnMut(_)>);
       ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
@@ -111,7 +120,6 @@ impl Core {
     // Set On Close
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-        log!("Closed");
       }) as Box<dyn FnMut(_)>);
       ws.set_onclose(Some(&closure.as_ref().unchecked_ref()));
       closure.forget();
@@ -786,7 +794,6 @@ impl Core {
   pub fn process_transaction(&mut self) {
     if !self.core.paused {
         let txn = Transaction::from_changeset(self.changes.clone());
-        //log!("{:?}", txn);
         self.core.process_transaction(&txn);
         'change_loop: for change in &self.changes {
           match change {
@@ -802,7 +809,6 @@ impl Core {
              },
             _ => (),
           }
-
         }
     }
     self.changes.clear();
