@@ -797,7 +797,6 @@ impl Core {
       let txn = Transaction::from_changeset(self.changes.clone());
       let pre_changes = self.core.store.len();
       self.core.process_transaction(&txn);
-
       for (id, (ws, remote_tables)) in self.remote_tables.iter() {
         let mut changes: Vec<Change> = Vec::new();
         for i in pre_changes..self.core.store.len() {
@@ -971,7 +970,6 @@ impl Core {
               match event.target() {
                 Some(target) => {
                   let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                  let table_id = Hasher::hash_str("angle1");
                   let slider_value = slider.value().parse::<i64>().unwrap();
                   let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
                   let change = Change::Set{
@@ -980,10 +978,11 @@ impl Core {
                     column: Index::Index(3),
                     value: Value::from_i64(slider_value),
                   };
-                  let txn = Transaction::from_change(change);
+                  //let txn = Transaction::from_change(change);
                   // TODO Make this safe
                   unsafe {
-                    (*core).process_transaction(&txn);
+                    (*wasm_core).changes.push(change);
+                    (*wasm_core).process_transaction();
                     (*wasm_core).render();
                   }
                 },
