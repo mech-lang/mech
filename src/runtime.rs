@@ -222,10 +222,11 @@ impl fmt::Debug for Register {
   }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BlockState {
   Ready,
   Error,
+  Unsatisfied,
   Updated,
   Pending,
   Disabled,
@@ -482,13 +483,18 @@ impl Block {
 
   }
 
-  pub fn is_ready(&self) -> bool {
+  pub fn is_ready(&mut self) -> bool {
     if self.state == BlockState::Error || self.state == BlockState::Pending {
       false
     } else {
       let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
       // The block is ready if all input registers are ready i.e. the length of the set diff is 0
-      set_diff.len() == 0
+      if set_diff.len() == 0 {
+        true
+      } else {
+        self.state = BlockState::Unsatisfied;
+        false
+      }
     }    
   }
 
@@ -1283,7 +1289,8 @@ impl fmt::Debug for Block {
     write!(f, "│ Errors:\n").unwrap();
     write!(f, "│ {:?}\n", self.errors).unwrap();
     write!(f, "├────────────────────────────────────────┤\n").unwrap();
-    write!(f, "│ Ready: {:?} ({:?})\n", self.is_ready(), self.ready).unwrap();
+    write!(f, "│ State: {:?}\n", self.state).unwrap();
+    write!(f, "│ Ready: {:?}\n", self.ready).unwrap();
     write!(f, "│ Updated: {:?}\n", self.updated).unwrap();
     write!(f, "│ Input: {:?}\n", self.input_registers.len()).unwrap();
     for (ix, register) in self.input_registers.iter().enumerate() {
