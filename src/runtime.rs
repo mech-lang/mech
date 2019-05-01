@@ -225,6 +225,7 @@ impl fmt::Debug for Register {
 #[derive(Clone, PartialEq)]
 pub enum BlockState {
   Ready,
+  Error,
   Updated,
   Pending,
   Disabled,
@@ -473,6 +474,12 @@ impl Block {
         _ => (),
       }
     }
+
+    if self.errors.len() > 0 {
+      self.state = BlockState::Error;
+    }
+
+
   }
 
   pub fn is_ready(&self) -> bool {
