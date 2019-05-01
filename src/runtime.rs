@@ -483,7 +483,7 @@ impl Block {
   }
 
   pub fn is_ready(&self) -> bool {
-    if self.errors.len() > 0 || self.state == BlockState::Pending {
+    if self.state == BlockState::Error || self.state == BlockState::Pending {
       false
     } else {
       let set_diff: HashSet<Register> = self.input_registers.difference(&self.ready).cloned().collect();
