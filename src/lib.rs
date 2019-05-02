@@ -515,7 +515,13 @@ impl Core {
                 }
                 _ => (),
               }
-              // Add a chart if we have it
+              // Add an error indication if there is one
+              if block.state == BlockState::Error {
+                let mut error_view = document.create_element("div")?;
+                error_view.set_attribute("class", "mech-error-view");
+                error_view.set_inner_html("There was an error!");
+                code.append_child(&error_view);
+              }
               rendered_section.append_child(&code);
             },
             _ => (),
@@ -546,7 +552,7 @@ impl Core {
         let data = &view_table.data[0][0];
         view.set_inner_html(&data.as_string().unwrap());
       }
-      // Set pending blocks
+      // Set block status
       let mech_code_blocks = document.get_elements_by_class_name("mech-code");
       for ix in 0..mech_code_blocks.length() {
         let code_block = mech_code_blocks.item(ix).unwrap();
@@ -558,6 +564,12 @@ impl Core {
             let class = format!("{} pending", class);
             code_block.set_attribute("class", &class);
             code_block.set_attribute("state","pending");
+          }
+          BlockState::Error => {
+            let class = code_block.get_attribute("class").unwrap();
+            let class = format!("{} error", class);
+            code_block.set_attribute("class", &class);
+            code_block.set_attribute("state","error");
           }
           _ =>()
         }
@@ -674,7 +686,7 @@ impl Core {
       view_node.set_inner_html(&output);
     }
 
-    // render inlineviews
+    // render inline views
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let view_id = Hasher::hash_str("block/view");
