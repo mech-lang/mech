@@ -388,7 +388,7 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
   (Node::Punctuation{children: vec![punctuation]})));
 
 named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
+  punctuation: alt!(ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
   (Node::Symbol{children: vec![punctuation]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
