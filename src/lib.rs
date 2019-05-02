@@ -24,7 +24,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -519,7 +519,18 @@ impl Core {
               if block.state == BlockState::Error {
                 let mut error_view = document.create_element("div")?;
                 error_view.set_attribute("class", "mech-error-view");
-                error_view.set_inner_html("There was an error!");
+                log!("{:?}", block.errors);
+                // Write error text
+                for error in &block.errors {
+                  let error_text = match error.error_id {
+                    ErrorType::DuplicateAlias(alias_id) => {
+                      let alias = &self.core.store.names.get(&alias_id).unwrap();
+                      format!("Local table {:?} defined more than once.", alias)
+                    },
+                    _ => "".to_string(),
+                  };
+                  error_view.set_inner_html(&error_text);
+                }
                 code.append_child(&error_view);
               }
               rendered_section.append_child(&code);
