@@ -9,9 +9,10 @@ use mech_core::ErrorType;
 use parser;
 use parser::Parser;
 use lexer::Token;
-use alloc::fmt;
-use alloc::string::String;
-use alloc::vec::Vec;
+#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
 use super::formatter::Formatter;
 

@@ -1,11 +1,12 @@
 // # Syntax
 
-#![feature(alloc)]
+#![cfg_attr(feature = "no-std", no_std)]
+#![cfg_attr(feature = "no-std", alloc)]
 #![feature(drain_filter)]
 
 extern crate mech_core;
-#[macro_use]
-extern crate alloc;
+#[cfg(feature="no-std")] #[macro_use] extern crate alloc;
+#[cfg(not(feature = "no-std"))] extern crate core;
 extern crate hashbrown;
 #[macro_use]
 extern crate nom;

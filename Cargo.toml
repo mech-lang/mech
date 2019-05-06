@@ -15,7 +15,12 @@ readme = "README.md"
 gitlab = { repository = "mech-lang/syntax", branch = "master" }
 maintenance = { status = "actively-developed" }
 
+[features]
+default = []
+no-std = ["mech-core/no-std", "libc"]
+
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-core = {path = "../core"}
 hashbrown = "0.1.8"
 nom = "4.2.2"
+libc = { version = "0.2.54", optional = true }

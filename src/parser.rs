@@ -4,9 +4,10 @@
 
 use lexer::Token;
 use mech_core::{Hasher, Function};
-use alloc::fmt;
-use alloc::string::String;
-use alloc::vec::Vec;
+#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
 use nom::alpha1 as nom_alpha1;
 use nom::digit1 as nom_digit1;
 use nom::AtEof as eof;
