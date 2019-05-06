@@ -2,8 +2,9 @@
 
 // ## Prelude
 
-use alloc::vec::Vec;
-use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(not(feature = "no-std"))] use core::fmt;
 use table::{Table, Value, TableId, Index};
 use quantities::{Quantity, QuantityMath, ToQuantity};
 

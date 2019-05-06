@@ -10,9 +10,10 @@
 // ## Prelude
 
 use table::{Table, TableId, Value, Index};
-use alloc::fmt;
-use alloc::string::String;
-use alloc::vec::Vec;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
+#[cfg(not(feature = "no-std"))] use core::fmt;
 use database::{Transaction, Interner, Change};
 use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;

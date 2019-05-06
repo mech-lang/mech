@@ -7,21 +7,23 @@ systems.
 
 // ## Prelude
 
-#![feature(alloc)]
+#![cfg_attr(feature = "no-std", no_std)]
+#![cfg_attr(feature = "no-std", alloc)]
 #![feature(nll)]
 
-#[macro_use]
-extern crate alloc;
-extern crate core;
+#[cfg(feature="no-std")] #[macro_use] extern crate alloc;
+#[cfg(not(feature = "no-std"))] extern crate core;
 extern crate hashbrown;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate libm;
+#[cfg(feature = "no-std")] extern crate rlibc;
 
-use alloc::vec::Vec;
-use core::fmt;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(not(feature = "no-std"))] use core::fmt;
 use hashbrown::hash_set::HashSet;
 
 // ## Modules

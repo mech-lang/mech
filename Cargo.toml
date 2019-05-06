@@ -15,6 +15,10 @@ readme = "README.md"
 gitlab = { repository = "mech-lang/core", branch = "master" }
 maintenance = { status = "actively-developed" }
 
+[features]
+default = []
+no-std = ["libc"]
+
 [dependencies]
 hashbrown = "0.1.8"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
@@ -22,6 +26,7 @@ serde_derive = "1.0.46"
 num = "0.2.0"
 libm = "0.1.2"
 serde_json = "1.0"
+libc = { version = "0.2.54", optional = true }
 
 [dependencies.rand]
 version = "=0.4"

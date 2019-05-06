@@ -3,9 +3,10 @@
 // ## Prelude
 
 use table::{Value, Table, Index};
-use alloc::string::String;
-use alloc::vec::Vec;
-use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(not(feature = "no-std"))] use core::fmt;
 use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use errors::ErrorType;

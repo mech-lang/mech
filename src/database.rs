@@ -2,8 +2,8 @@
 
 // ## Prelude
 
-use alloc::string::String;
-use alloc::vec::Vec;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
 use core::fmt;
 use table::{Value, Table, Index};
 use indexes::TableIndex;
