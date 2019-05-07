@@ -8,18 +8,18 @@ systems.
 // ## Prelude
 
 #![cfg_attr(feature = "no-std", no_std)]
-#![cfg_attr(feature = "no-std", alloc)]
 #![feature(nll)]
 
+#[cfg(feature = "no-std")] extern crate rlibc;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
+
 extern crate hashbrown;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate libm;
-#[cfg(feature = "no-std")] extern crate rlibc;
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
