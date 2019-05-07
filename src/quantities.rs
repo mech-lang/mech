@@ -8,7 +8,6 @@
 // Also credit to Josh Cole for coming up with the spec
 // Adapted and extended for Mech by Corey Montella
 
-extern crate num;
 use self::num::Float;
 
 const EXTENSION_MASK:u64 = 1 << 63;

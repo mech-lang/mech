@@ -20,6 +20,7 @@ extern crate rand;
 extern crate serde_derive;
 extern crate serde;
 extern crate libm;
+extern crate num;
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
