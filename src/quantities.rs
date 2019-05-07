@@ -9,6 +9,9 @@
 // Adapted and extended for Mech by Corey Montella
 
 use core::mem;
+#[cfg(feature = "no-std")] use alloc::string::String;
+//#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
+#[cfg(feature = "no-std")] use libm::F64Ext;
 
 const EXTENSION_MASK:u64 = 1 << 63;
 const MANTISSA_MASK:u64 = (((1 as u64) << 49) as u64 - 1); // 49 bits at the end
@@ -91,7 +94,7 @@ impl ToQuantity for f64 {
       let result = make_quantity(0,0,0);
       result
     } else {
-      let exp_log = 2f64.powi(exponent as i32).log10();
+      let exp_log = 2f64.powf(exponent as f64).log10();
       let real_exponent = exp_log.floor() as i64 + 1;
       let real_mantissa = (((mantissa as f64) * 10f64.powf(exp_log.fract()))) as i64;
       let mut result = real_mantissa.to_quantity();
@@ -224,7 +227,7 @@ impl QuantityMath for Quantity {
         let mantissa_string = format!("{}", self.mantissa());
         let decimal_ix = (mantissa_string.len() as i64 + self.range()) as isize;
         if decimal_ix < 0 {
-            let mut as_string = "0.".to_string();
+            let mut as_string = String::from("0.");
             for i in 0..-1*decimal_ix {
                 as_string = format!("{}0", as_string);
             }
@@ -246,7 +249,7 @@ impl QuantityMath for Quantity {
     }
 
     fn to_float(self) -> f64 {
-        (self.mantissa() as f64) * 10f64.powi(self.range() as i32)
+        (self.mantissa() as f64) * 10f64.powf(self.range() as f64)
     }
 
     fn to_u64(self) -> u64 {

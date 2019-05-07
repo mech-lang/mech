@@ -158,7 +158,7 @@ impl Runtime {
       iteration_count += 1;
       if iteration_count == max_iterations {
         // TODO Insert an error into the db here instead.
-        println!("Reached iteration limit {:?}", iteration_count);
+        //println!("Reached iteration limit {:?}", iteration_count);
         self.ready_blocks.clear();        
       }
       // Terminate if no blocks are ready to execute next round.
@@ -458,7 +458,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_string(value.to_string()));
+              table_ref.set_cell(&row, &column, Value::from_string(value.clone()));
             },
             Entry::Vacant(v) => {    
             },

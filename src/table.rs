@@ -76,13 +76,13 @@ impl Value {
 
   pub fn as_string(&self) -> Option<String> {
     match self {
-      Value::String(n) => Some(n.to_string()),
+      Value::String(n) => Some(n.clone()),
       Value::Number(q) => Some(q.format()),
       Value::Reference(r) => Some(format!("{:?}", r)),
-      Value::Empty => Some("".to_string()),
+      Value::Empty => Some(String::from("")),
       Value::Bool(t) => match t {
-        true => Some("true".to_string()),
-        false => Some("false".to_string()),
+        true => Some(String::from("true")),
+        false => Some(String::from("false")),
       },
       _ => None,
     }
