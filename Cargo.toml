@@ -17,7 +17,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = []
-no-std = ["libc"]
+no-std = ["rlibc"]
 
 [dependencies]
 hashbrown = "0.1.8"
