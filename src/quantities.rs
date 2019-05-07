@@ -8,7 +8,7 @@
 // Also credit to Josh Cole for coming up with the spec
 // Adapted and extended for Mech by Corey Montella
 
-use self::num::Float;
+use core::mem;
 
 const EXTENSION_MASK:u64 = 1 << 63;
 const MANTISSA_MASK:u64 = (((1 as u64) << 49) as u64 - 1); // 49 bits at the end
@@ -86,7 +86,7 @@ impl ToQuantity for f64 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
     let me = *self;
-    let (mantissa, exponent, sign) = Float::integer_decode(me);
+    let (mantissa, exponent, sign) = integer_decode_f64(me);
     if mantissa == 0 {
       let result = make_quantity(0,0,0);
       result
@@ -338,4 +338,24 @@ impl QuantityMath for Quantity {
             self.to_float() > other.to_float()
         }
     }
+}
+
+fn integer_decode_f64(f: f64) -> (u64, i16, i8) {
+    //println!("BITS {:b}", f as u64);
+    let bits: u64 = unsafe { mem::transmute(f) };
+    //println!("BITS {:b}", bits);
+    let sign: i8 = if bits >> 63 == 0 {
+        1
+    } else {
+        -1
+    };
+    let mut exponent: i16 = ((bits >> 52) & 0x7ff) as i16;
+    let mantissa = if exponent == 0 {
+        (bits & 0xfffffffffffff) << 1
+    } else {
+        (bits & 0xfffffffffffff) | 0x10000000000000
+    };
+    // Exponent bias + mantissa shift
+    exponent -= 1023 + 52;
+    (mantissa, exponent, sign)
 }
