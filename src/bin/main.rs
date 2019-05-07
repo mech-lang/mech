@@ -11,7 +11,6 @@ use hashbrown::hash_map::HashMap;
 use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 
-extern crate serde_json;
 
 fn main() {
   /*
@@ -32,5 +31,7 @@ fn main() {
   let offset = make_quantity(49825176195110, -11, 0);
   let answer = x.divide(angle);
   println!("{:?}", answer.to_string());
+  let foo: f64 = 123.456;
+  let q = foo.to_quantity();
 
 }

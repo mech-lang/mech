@@ -24,7 +24,6 @@ hashbrown = {version = "0.3.0", features = ["nightly"]}
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
 libm = "0.1.2"
-serde_json = "1.0"
 rlibc = { version = "=1.0", optional = true }
 
 [dependencies.rand]
