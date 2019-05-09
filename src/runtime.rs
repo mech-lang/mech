@@ -556,6 +556,7 @@ impl Block {
             let mut iix = 0;
             let mut actual_width = 0;
             let mut actual_height = 0;
+            println!("HERE");
             for i in 0..width as usize {
               let mut column_mask = true;
               let cix = if column_ixes.is_empty() { i }
@@ -585,6 +586,17 @@ impl Block {
                           };
                 if column_mask == true && row_mask == true {
                   //let value = table_ref.data[cix][rix];
+                  // Check bounds
+                  if cix + 1 > table_ref.columns as usize || rix + 1 > table_ref.rows as usize {
+                    self.errors.push(
+                      Error{
+                        block: self.id as u64,
+                        constraint: step.clone(),
+                        error_id: ErrorType::IndexOutOfBounds(((rix as u64 + 1, cix as u64 + 1),(table_ref.rows, table_ref.columns))),
+                      }
+                    );
+                    break 'solve_loop;
+                  }
                   self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
                   jix += 1;
                   actual_height = jix;
@@ -604,6 +616,7 @@ impl Block {
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
+          println!("DONE");
         },
         Constraint::ChangeScan{table, column} => {
           match (table, column) {
