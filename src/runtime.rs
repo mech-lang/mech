@@ -1294,12 +1294,13 @@ impl Block {
       } 
       
     }
-    store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
-    self.block_changes.clear();
-    self.updated = true;
     if self.errors.len() > 0 {
       self.state = BlockState::Error;
+    } else {
+      store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
+      self.updated = true;
     }
+    self.block_changes.clear();
   }
 }
 
