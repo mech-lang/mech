@@ -22,7 +22,7 @@ use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath};
 use libm::{sin, cos, fmod};
-use errors::Error;
+use errors::{Error, ErrorType};
 
 // ## Runtime
 
@@ -358,9 +358,7 @@ impl Block {
                 Err(mech_error) => {
                   self.errors.push(Error{
                     block: self.id as u64,
-                    constraint: self.constraints.len(),
-                    line: 0,
-                    column: 0,
+                    constraint: constraint.clone(),
                     error_id: mech_error,
                   });
                 },
@@ -500,7 +498,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    for step in &self.plan {
+    'solve_loop: for step in &self.plan {
       //println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
@@ -533,7 +531,17 @@ impl Block {
               Some(Parameter::Index(index)) => {
                 let ix = match table_ref.get_column_index(index) {
                   Some(ix) => ix,
-                  None => 0,
+                  // If the attribute is missing, note the error and bail
+                  None => { 
+                    self.errors.push(
+                      Error{
+                        block: self.id as u64,
+                        constraint: step.clone(),
+                        error_id: ErrorType::MissingAttribute(index.clone()),
+                      }
+                    );
+                    break 'solve_loop;
+                  }, 
                 };
                 self.lhs_columns_empty.push(Value::from_u64(ix));
                 &self.lhs_columns_empty
@@ -1276,6 +1284,9 @@ impl Block {
     store.process_transaction(&Transaction::from_changeset(self.block_changes.clone()));
     self.block_changes.clear();
     self.updated = true;
+    if self.errors.len() > 0 {
+      self.state = BlockState::Error;
+    }
   }
 }
 
