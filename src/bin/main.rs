@@ -32,35 +32,12 @@ fn compile_test(input: String, test: Value) {
 
 
 fn main() {
-  let input = String::from(r#"# Pong Game Client (Client)
-
-Start a timer
-  #time/timer = [period: 5000 tick: 0 hours: 0 minutes: 0 seconds: 0]
-
-Draw the game
-  #app/main = [root: "drawing" direction: _ contains: [#game]]
-
-controller slider
-  #paddle-control = [type: "slider" class: _ contains: _ parameters:  [min: 0 max: 300 value: 0]]
-
-game area
-  #game = [|type     class contains    parameters|
-            #paddle-control
-            "canvas" _     [#elements] [width: 400 height: 400]]
-
-define the controller
-  #pong/paddle = #paddle-control{1,4}{1,3}
-
-draw the game area
-  pos = #pong/paddle
-  start = pos
-  end = pos + 100
-  #elements = [|shape    parameters|
-                "circle" [cx: #pong/ball.x cy: #pong/ball.y radius: 10 fill: "000000"]
-                "line"   [x1: start y1: 350 x2: end y2: 350 stroke: "000000"]]
-
-Stub the ball
-  #pong/ball = [x: 0 y: 0]"#);
+  let input = String::from(r#"# An Error Example
+block
+  #x = [1 2 3]
+  
+block
+  #y = #x{1, 4}"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
