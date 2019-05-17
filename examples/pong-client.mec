@@ -13,7 +13,7 @@ game area
             "canvas" _     [#elements] [width: 400 height: 400]]
 
 define the controller
-  #pong/paddle = #paddle-control{1,4}{1,3}
+  #pong/paddle = #paddle-control.parameters.value
 
 draw the game area
   pos = #pong/paddle
