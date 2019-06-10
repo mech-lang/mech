@@ -20,8 +20,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hashbrown = "0.1.8"
-mech-core = {path = "../core"}
-mech-syntax = {path = "../syntax"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 wasm-bindgen = "0.2"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
