@@ -4,6 +4,6 @@ version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [dependencies]
-mech-core = "0.0.1"
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-program = {git = "https://gitlab.com/mech-lang/program"}
 time = "0.1.39"
