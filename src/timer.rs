@@ -18,7 +18,7 @@ pub struct Timer {
 
 impl Timer {
   pub fn new(outgoing: Sender<RunLoopMessage>) -> Timer {
-    Timer { name: "system/timer".to_string(), outgoing, timers: HashMap::new(), columns: 10 }
+    Timer { name: "time/timer".to_string(), outgoing, timers: HashMap::new(), columns: 10 }
   }
 }
 
