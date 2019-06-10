@@ -39,7 +39,7 @@ impl Watcher for Timer {
     for change in diff.names {
       match change {
         Change::RenameColumn{table, column_ix, column_alias} => {
-          let resolution_column = Hasher::hash_str("resolution");
+          let resolution_column = Hasher::hash_str("period");
           if column_alias == resolution_column {
             let outgoing = self.outgoing.clone();
             let system_timer = Hasher::hash_str(&self.get_name());
