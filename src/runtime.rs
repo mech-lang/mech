@@ -556,7 +556,6 @@ impl Block {
             let mut iix = 0;
             let mut actual_width = 0;
             let mut actual_height = 0;
-            println!("HERE");
             for i in 0..width as usize {
               let mut column_mask = true;
               let cix = if column_ixes.is_empty() { i }
@@ -616,7 +615,6 @@ impl Block {
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
-          println!("DONE");
         },
         Constraint::ChangeScan{table, column} => {
           match (table, column) {
