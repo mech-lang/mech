@@ -1,6 +1,6 @@
 [package]
 name = "mech-wasm"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -20,8 +20,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hashbrown = "0.4.0"
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-core = "0.0.2"
+mech-syntax = "0.0.2"
 wasm-bindgen = "0.2"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
