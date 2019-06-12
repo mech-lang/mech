@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network."
 documentation = "http://docs.mech-lang.org"
