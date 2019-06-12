@@ -1,6 +1,6 @@
 [package]
 name = "mech-program"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Organizes Mech cores into a coordinated program. Handles reading files, interfacing with libraries, and persisting changes top disk."
 documentation = "http://docs.mech-lang.org"
@@ -21,5 +21,5 @@ serde = "1.0.46"
 serde_derive = "1.0.46"
 serde_json = "1.0.17"
 bincode = "0.8"
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-core = "0.0.2"
+mech-syntax = "0.0.2"
