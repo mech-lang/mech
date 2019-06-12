@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hashbrown = "0.1.8"
+hashbrown = "0.4.0"
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 wasm-bindgen = "0.2"
