@@ -32,18 +32,6 @@ macro_rules! log {
     }
 }
 
-// ## Client Message
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum WebsocketClientMessage {
-  Listening(Vec<u64>),
-  Control(u8),
-  Code(String),
-  Table(usize),
-  RemoveBlock(usize),
-  Transaction(Transaction),
-}
-
 #[wasm_bindgen]
 pub struct Core {
   core: mech_core::Core,
