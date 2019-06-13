@@ -54,7 +54,7 @@ pub enum ReplCommand {
 fn main() {
 
   let matches = App::new("Mech")
-    .version("0.0.1")
+    .version("0.0.2")
     .author("Corey Montella")
     .about("The Mech REPL. Default values for options are in parentheses.")
     .arg(Arg::with_name("mech_file_paths")
@@ -101,7 +101,7 @@ fn main() {
   let persistence_path = matches.value_of("persistence").unwrap_or("");
 
   println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
-  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH v0.0.1"), BrightBlack.paint("║"));
+  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH v0.0.2"), BrightBlack.paint("║"));
   println!(" {}\n",  BrightBlack.paint("╚═══════════════════════╝"));
   if serve {
     mech_server::http_server(http_address);
