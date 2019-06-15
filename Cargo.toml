@@ -1,0 +1,21 @@
+[package]
+name = "mech-utilities"
+version = "0.0.2"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "General utilities for Mech"
+documentation = "http://docs.mech-lang.org"
+homepage = "http://mech-lang.org"
+repository = "https://github.com/mech-lang/syntax"
+keywords = ["mech"]
+categories = ["no-std", "science::robotics", "science", "parser-implementations"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[badges]
+gitlab = { repository = "mech-lang/utilities", branch = "master" }
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.46"
+mech-core = "0.0.2"
