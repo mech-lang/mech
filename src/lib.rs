@@ -11,6 +11,7 @@ extern crate core;
 extern crate web_sys;
 extern crate mech_core;
 extern crate mech_syntax;
+extern crate mech_utilities;
 extern crate serde_json;
 
 use std::collections::HashMap;
@@ -25,6 +26,7 @@ use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_utilities::WebsocketClientMessage;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
