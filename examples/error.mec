@@ -1,7 +1,0 @@
-block
-  #test = 7
-
-block
-  x = 1
-  x = 2
-  #test := 10
