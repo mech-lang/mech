@@ -4,3 +4,9 @@
 [submodule "assets"]
 	path = assets
 	url = https://gitlab.com/mech-lang/assets.git
+[submodule "examples"]
+	path = examples
+	url = https://gitlab.com/mech-lang/examples.git
+[submodule "docs"]
+	path = docs
+	url = https://gitlab.com/mech-lang/docs.git
