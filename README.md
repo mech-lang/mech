@@ -43,7 +43,7 @@ You will need to install [Rust](https://www.rust-lang.org/learn/get-started) and
 
 ## Project Status
 
-Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
+Mech is currently in the **v0.0.2 alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
 
 Feel free to use the language for your own satisfaction, but please don't use it for anything important.
 
