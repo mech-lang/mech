@@ -332,6 +332,26 @@ impl QuantityMath for Quantity {
         }
     }
 
+    fn less_than_equal(self, other: Quantity) -> bool {
+        if self.is_negative() && !other.is_negative() {
+            false
+        } else if !self.is_negative() && other.is_negative() {
+            true
+        } else {
+            self.to_float() <= other.to_float()
+        }
+    }
+
+    fn greater_than_equal(self, other: Quantity) -> bool {
+        if self.is_negative() && !other.is_negative() {
+            false
+        } else if !self.is_negative() && other.is_negative() {
+            true
+        } else {
+            self.to_float() >= other.to_float()
+        }
+    }
+
     fn greater_than(self, other: Quantity) -> bool {
         if self.is_negative() && !other.is_negative() {
             false
@@ -340,6 +360,14 @@ impl QuantityMath for Quantity {
         } else {
             self.to_float() > other.to_float()
         }
+    }
+
+    fn equal(self, other: Quantity) -> bool {
+        self.to_float() == other.to_float()
+    }
+
+    fn not_equal(self, other: Quantity) -> bool {
+        self.to_float() != other.to_float()
     }
 }
 
