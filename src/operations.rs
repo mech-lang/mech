@@ -141,8 +141,8 @@ binary_math!{undefined, add}
 pub enum Comparator {
   LessThan,
   GreaterThan,
-  LessThanOrEqual,
-  GreaterThanOrEqual,
+  LessThanEqual,
+  GreaterThanEqual,
   Equal,
   NotEqual,
   Undefined
@@ -154,8 +154,8 @@ impl fmt::Debug for Comparator {
     match self {
       Comparator::GreaterThan => write!(f, ">"),
       Comparator::LessThan => write!(f, "<"),
-      Comparator::LessThanOrEqual => write!(f, "<="),
-      Comparator::GreaterThanOrEqual => write!(f, ">="),
+      Comparator::LessThanEqual => write!(f, "<="),
+      Comparator::GreaterThanEqual => write!(f, ">="),
       Comparator::Equal => write!(f, "=="),
       Comparator::NotEqual => write!(f, "!="),
       Comparator::Undefined => write!(f, "Undefined Comparator"),
