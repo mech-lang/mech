@@ -161,6 +161,10 @@ pub trait QuantityMath {
     fn divide(self, Quantity) -> Quantity;
     fn less_than(self, Quantity) -> bool;
     fn greater_than(self, Quantity) -> bool;
+    fn less_than_equal(self, Quantity) -> bool;
+    fn greater_than_equal(self, Quantity) -> bool;
+    fn equal(self, Quantity) -> bool;
+    fn not_equal(self, Quantity) -> bool;
     fn to_string(self) -> String;
     fn format(self) -> String;
     fn to_float(self) -> f64;
