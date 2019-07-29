@@ -27,17 +27,10 @@ fn compile_test(input: String, test: Value) {
     },
     None => assert_eq!(0,1),
   }
-  
 }
 
-
 fn main() {
-  let input = String::from(r#"# An Error Example
-block
-  #x = [1 2 3]
-  
-block
-  #y = #x{1, 4}"#);
+  let input = String::from(r#"#test = 7 > 7"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -51,7 +44,7 @@ block
  
 
   core.register_blocks(compiler.blocks.clone());
-  //println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.unparsed);
   println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
