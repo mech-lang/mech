@@ -239,6 +239,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::LessThan => {print!("LessThan\n",); None},
     Node::GreaterThan => {print!("GreaterThan\n",); None},
+    Node::GreaterThanEqual => {print!("GreaterThanEqual\n",); None},
+    Node::LessThanEqual => {print!("LessThanEqual\n",); None},
+    Node::Equal => {print!("Equal\n",); None},
+    Node::NotEqual => {print!("NotEqual\n",); None},
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
     _ => {print!("Unhandled Node"); None},
@@ -661,7 +665,7 @@ named!(less_than<CompleteStr, Node>, do_parse!(tag!("<") >> (Node::LessThan)));
 named!(greater_than<CompleteStr, Node>, do_parse!(tag!(">") >> (Node::GreaterThan)));
 
 named!(comparator<CompleteStr, Node>, do_parse!(
-  comparator: alt!(less_than | greater_than | greater_than_equal | less_than_equal | equal_to | not_equal) >>
+  comparator: alt!(greater_than_equal | less_than_equal | equal_to | not_equal | less_than | greater_than) >>
   (Node::Comparator { children: vec![comparator] })));
 
 named!(filter_expression<CompleteStr, Node>, do_parse!(
