@@ -156,7 +156,7 @@ impl fmt::Debug for Comparator {
       Comparator::LessThan => write!(f, "<"),
       Comparator::LessThanOrEqual => write!(f, "<="),
       Comparator::GreaterThanOrEqual => write!(f, ">="),
-      Comparator::Equal => write!(f, "="),
+      Comparator::Equal => write!(f, "=="),
       Comparator::NotEqual => write!(f, "!="),
       Comparator::Undefined => write!(f, "Undefined Comparator"),
     }
@@ -251,6 +251,10 @@ macro_rules! comparator {
   )
 }
 
+comparator!{compare_not_equal, not_equal}
+comparator!{compare_equal, equal}
+comparator!{compare_less_than_equal, less_than_equal}
+comparator!{compare_greater_than_equal, greater_than_equal}
 comparator!{compare_greater_than, greater_than}
 comparator!{compare_less_than, less_than}
 comparator!{compare_undefined, greater_than}
