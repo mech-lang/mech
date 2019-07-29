@@ -116,6 +116,10 @@ pub enum Node {
   Symbol{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   Token{token: Token, byte: u8},
+  LessThanEqual,
+  GreaterThanEqual,
+  Equal,
+  NotEqual,
   LessThan,
   GreaterThan,
   And,
@@ -644,12 +648,20 @@ named!(math_expression<CompleteStr, Node>, do_parse!(
 
 // #### Filter Expressions
 
+named!(not_equal<CompleteStr, Node>, do_parse!(tag!("!=") >> (Node::NotEqual)));
+
+named!(equal_to<CompleteStr, Node>, do_parse!(tag!("==") >> (Node::Equal)));
+
+named!(less_than_equal<CompleteStr, Node>, do_parse!(tag!("<=") >> (Node::LessThanEqual)));
+
+named!(greater_than_equal<CompleteStr, Node>, do_parse!(tag!(">=") >> (Node::GreaterThanEqual)));
+
 named!(less_than<CompleteStr, Node>, do_parse!(tag!("<") >> (Node::LessThan)));
 
 named!(greater_than<CompleteStr, Node>, do_parse!(tag!(">") >> (Node::GreaterThan)));
 
 named!(comparator<CompleteStr, Node>, do_parse!(
-  comparator: alt!(less_than | greater_than) >>
+  comparator: alt!(less_than | greater_than | greater_than_equal | less_than_equal | equal_to | not_equal) >>
   (Node::Comparator { children: vec![comparator] })));
 
 named!(filter_expression<CompleteStr, Node>, do_parse!(
