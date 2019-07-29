@@ -61,6 +61,10 @@ pub enum Node {
   Token{ token: Token, byte: u8 },
   LessThan,
   GreaterThan,
+  GreaterThanEqual,
+  LessThanEqual,
+  Equal,
+  NotEqual,
   And,
   Or,
   SelectAll,
@@ -132,6 +136,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectAll => {print!("SelectAll\n"); None},
     Node::LessThan => {print!("LessThan\n"); None},
     Node::GreaterThan => {print!("GreaterThan\n"); None},
+    Node::GreaterThanEqual => {print!("GreaterThanEqual\n"); None},
+    Node::LessThanEqual => {print!("LessThanEqual\n"); None},
+    Node::Equal => {print!("Equal\n"); None},
+    Node::NotEqual => {print!("NotEqual\n"); None},
     Node::Empty => {print!("Empty\n"); None},
     Node::Null => {print!("Null\n"); None},
     // Markdown Nodes
@@ -1300,6 +1308,10 @@ impl Compiler {
           match node {
             Node::LessThan => comparator = Comparator::LessThan,
             Node::GreaterThan => comparator = Comparator::GreaterThan,
+            Node::GreaterThanEqual => comparator = Comparator::GreaterThanEqual,
+            Node::LessThanEqual => comparator = Comparator::LessThanEqual,
+            Node::Equal => comparator = Comparator::Equal,
+            Node::NotEqual => comparator = Comparator::NotEqual,
             _ => children.push(node),
           }
         }
@@ -1709,6 +1721,10 @@ impl Compiler {
       parser::Node::Comparator{children} => {
         match children[0] {
           parser::Node::LessThan => compiled.push(Node::LessThan),
+          parser::Node::LessThanEqual => compiled.push(Node::LessThanEqual),
+          parser::Node::GreaterThanEqual => compiled.push(Node::GreaterThanEqual),
+          parser::Node::Equal => compiled.push(Node::Equal),
+          parser::Node::NotEqual => compiled.push(Node::NotEqual),
           parser::Node::GreaterThan => compiled.push(Node::GreaterThan),
           _ => (),
         }
