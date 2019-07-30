@@ -928,6 +928,10 @@ impl Block {
         },
         Constraint::Filter{comparator, lhs, rhs, output} => {
           let op_fun = match comparator {
+            Comparator::NotEqual => operations::compare_not_equal,
+            Comparator::Equal => operations::compare_equal,
+            Comparator::LessThanEqual => operations::compare_less_than_equal,
+            Comparator::GreaterThanEqual => operations::compare_greater_than_equal,
             Comparator::GreaterThan => operations::compare_greater_than,
             Comparator::LessThan => operations::compare_less_than,
             _ => operations::compare_undefined, 
