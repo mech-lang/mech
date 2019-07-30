@@ -20,7 +20,7 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
-mech-core = "0.0.2"
+mech-core = {git = "http://gitlab.com/mech-lang/core"}
 hashbrown = {version = "0.5.0", features = ["nightly"]}
 nom = { version = "4.2.2"}
 rlibc = { version = "=1.0", optional = true }
