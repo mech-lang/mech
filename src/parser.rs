@@ -445,7 +445,7 @@ named!(quantity<CompleteStr, Node>, do_parse!(
       _ => (),
     };
     quantity
-  }) >>
+  }) >> opt!(identifier) >>
   (Node::Quantity{children: quantity})));
 
 named!(constant<CompleteStr, Node>, do_parse!(
