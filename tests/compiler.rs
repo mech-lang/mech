@@ -220,17 +220,56 @@ block
   z = 3:5
   #test = x{z, :}", Value::from_i64(12));
 
-test_mech!(subscript_logical_greater,"
+// ## Comparators
+
+test_mech!(comparator_greater,"
 block
   x = 10:20
   z = x > 15
   #test = x{z, :}", Value::from_i64(16));
 
-test_mech!(subscript_logical_less,"
+test_mech!(comparator_less,"
 block
   x = 10:20
   z = x < 15
   #test = x{z, :}", Value::from_i64(10));
+
+test_mech!(comparator_greater_than_equal,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x >= #y
+  #test = stat/sum(column: #x{ix,:})", Value::from_i64(5)); 
+
+test_mech!(comparator_less_than_equal,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x <= #y
+  #test = stat/sum(column: #x{ix,:})", Value::from_i64(4)); 
+
+
+test_mech!(comparator_equal,"
+block
+  #x = [1; 2; 3; 2]
+  #y = [2; 1; 3; 2]
+  
+block
+  ix = #x == #y
+  #test = stat/sum(column: #x{ix,:})", Value::from_i64(5)); 
+
+test_mech!(comparator_not_equal,"
+block
+  #x = [1; 2; 3; 2]
+  #y = [2; 1; 3; 2]
+  
+block
+  ix = #x != #y
+  #test = stat/sum(column: #x{ix,:})", Value::from_i64(3)); 
 
 // ## Set
 
