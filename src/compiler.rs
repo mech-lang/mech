@@ -1094,7 +1094,7 @@ impl Compiler {
       Node::Constant{value, unit} => {
         let table = Hasher::hash_string(format!("Constant-{:?}", value.to_float()));
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
-        constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value});
+        constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value, unit: unit.clone()});
       },
       Node::String{text} => {
         let table = Hasher::hash_string(format!("String-{:?}", *text));
