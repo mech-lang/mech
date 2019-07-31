@@ -1488,17 +1488,17 @@ impl Compiler {
       parser::Node::Quantity{children} => {
         let mut result = self.compile_nodes(children);
         let mut quantity = make_quantity(0,0,0);
-        let mut unit = String::from("");
+        let mut unit = None;
         for node in result {
           match node {
             Node::Constant{value, unit} => {
               quantity = quantity.add(value);
             },
-            Node::Identifier{name: word, id} => (),
+            Node::Identifier{name: word, id} => unit = Some(word),
             _ => (),
           }
         }
-        compiled.push(Node::Constant{value: quantity, unit: None});
+        compiled.push(Node::Constant{value: quantity, unit});
       },
       parser::Node::Number{children} => {
         let mut value: u64 = 0;
