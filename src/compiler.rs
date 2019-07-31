@@ -56,7 +56,7 @@ pub enum Node {
   Constraint{ children: Vec<Node> },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
-  Constant {value: Quantity},
+  Constant {value: Quantity, unit: Option<String>},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   LessThan,
@@ -129,7 +129,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
-    Node::Constant{value} => {print!("Constant({})\n", value.to_float()); None},
+    Node::Constant{value, unit} => {print!("Constant({}{:?})\n", value.to_float(), unit); None},
     Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
@@ -1091,7 +1091,7 @@ impl Compiler {
       Node::Identifier{name, id} => {
         constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
-      Node::Constant{value} => {
+      Node::Constant{value, unit} => {
         let table = Hasher::hash_string(format!("Constant-{:?}", value.to_float()));
         constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 1, columns: 1});
         constraints.push(Constraint::Constant{table: TableId::Local(table), row: Index::Index(1), column: Index::Index(1), value: *value});
@@ -1488,15 +1488,17 @@ impl Compiler {
       parser::Node::Quantity{children} => {
         let mut result = self.compile_nodes(children);
         let mut quantity = make_quantity(0,0,0);
+        let mut unit = String::from("");
         for node in result {
           match node {
-            Node::Constant{value} => {
+            Node::Constant{value, unit} => {
               quantity = quantity.add(value);
             },
+            Node::Identifier{name: word, id} => (),
             _ => (),
           }
         }
-        compiled.push(Node::Constant{value: quantity});
+        compiled.push(Node::Constant{value: quantity, unit: None});
       },
       parser::Node::Number{children} => {
         let mut value: u64 = 0;
@@ -1513,7 +1515,7 @@ impl Compiler {
               place += 1;
               value += q;
             },
-            Node::Constant{value} => quantities.push(value),
+            Node::Constant{value, unit} => quantities.push(value),
             _ => (),
           }
         }
@@ -1521,7 +1523,7 @@ impl Compiler {
         for q in quantities {
           quantity = quantity.add(q);
         }
-        compiled.push(Node::Constant{value: quantity});
+        compiled.push(Node::Constant{value: quantity, unit: None});
       },
       parser::Node::FloatingPoint{children} => {
         let mut value: u64 = 0;
@@ -1541,7 +1543,7 @@ impl Compiler {
           }
         }
         let quantity = make_quantity(value as i64,(1 - place as i64),0);
-        compiled.push(Node::Constant{value: quantity});
+        compiled.push(Node::Constant{value: quantity, unit: None});
       },
       // String-like nodes
       parser::Node::ParagraphText{children} => {
@@ -1613,7 +1615,7 @@ impl Compiler {
           match node {
             Node::String{text} => text_node.push_str(&text),
             Node::Token{token, byte} => text_node.push_str(&format!("{}",byte_to_char(byte).unwrap())),
-            Node::Constant{value} => text_node.push_str(&format!("{}", value.to_float())),
+            Node::Constant{value, unit} => text_node.push_str(&format!("{}", value.to_float())),
             _ => (),
           }
         }
@@ -1644,7 +1646,7 @@ impl Compiler {
               word.push(character);
             },
             Node::String{text} => word.push_str(&text),
-            Node::Constant{value} => word.push_str(&format!("{}", value.to_float())),
+            Node::Constant{value, unit} => word.push_str(&format!("{}", value.to_float())),
             _ => compiled.push(node),
           }
         }
@@ -1701,7 +1703,7 @@ impl Compiler {
       },
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
-        let mut input = vec![Node::Constant{value: 0}];
+        let mut input = vec![Node::Constant{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "-".to_string(), children: input });
       },
