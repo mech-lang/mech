@@ -20,7 +20,7 @@ use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
-use quantities::{Quantity, ToQuantity, QuantityMath};
+use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod};
 use errors::{Error, ErrorType};
 
@@ -424,6 +424,8 @@ impl Block {
           self.updated = true;
         },
         Constraint::Constant{table, row, column, value, unit} => {
+          let test = make_quantity(value.mantissa(), value.range(), 15);
+          println!("Quantity: {:?}\n {:#018b}", test.to_float(), test);
           let table_id = match table {
             TableId::Local(id) => *id,
             _ => 0,
