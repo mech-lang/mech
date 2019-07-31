@@ -437,15 +437,19 @@ named!(floating_point<CompleteStr, Node>, do_parse!(
   (Node::FloatingPoint{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
 
 named!(quantity<CompleteStr, Node>, do_parse!(
-  quantity: map!(tuple!(number, opt!(floating_point)),|tuple| {
-    let (front, floating_point) = tuple;
+  quantity: map!(tuple!(number, opt!(floating_point), opt!(identifier)),|tuple| {
+    let (front, floating_point, unit) = tuple;
     let mut quantity = vec![front];
     match floating_point {
       Some(point) => quantity.push(point),
       _ => (),
     };
+    match unit {
+      Some(unit) => quantity.push(unit),
+      _ => (),
+    };
     quantity
-  }) >> opt!(identifier) >>
+  }) >>
   (Node::Quantity{children: quantity})));
 
 named!(constant<CompleteStr, Node>, do_parse!(
