@@ -104,7 +104,7 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         code = format!("{}:{}", lhs, rhs);
       }
-      Node::Table{name, id} => {
+      Node::Table{name, id: _} => {
         code = name.clone();
         if self.html {
           code = format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", code)
@@ -113,7 +113,7 @@ impl Formatter {
           code = format!("#{}", code)
         }
       },
-      Node::Identifier{name, id} => {
+      Node::Identifier{name, id: _} => {
         code = name.clone();
       },
       Node::TableDefine{children} => {
@@ -321,7 +321,6 @@ impl Formatter {
         }
       }
       Node::Attribute{children} |
-      Node::SubscriptIndex{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::Statement{children} |
