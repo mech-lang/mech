@@ -1,6 +1,5 @@
-// |T|DDDDDDD|RRRRRRR|SMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM|
-// T: Type Extension Flag (0 For Typed Math numbers)
-// D: Domain [0, 127]
+// |DDDDDDDD|RRRRRRR|SMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM|
+// D: Domain [0, 254]
 // R: Range [-64, 63]
 // S: mantissa Sign bit
 // M: Mantissa [-2^48, 2^48 - 1]
@@ -13,12 +12,11 @@ use core::mem;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
 
-const EXTENSION_MASK:u64 = 1 << 63;
 const MANTISSA_MASK:u64 = (((1 as u64) << 49) as u64 - 1); // 49 bits at the end
 const META_MASK:u64 = ((1 << 15) as u64 - 1) << 49; // 15 1s at the front
 const OVERFLOW_MASK:u64 = ((1 << 16) as u64 - 1) << 48; // 15 1s at the front
 const RANGE_MASK:u64 = ((1 << 7) as u64 - 1) << 49;
-const SHIFTED_RANGE_DOMAIN_MASK:u64 = ((1 << 7) as u64 - 1);
+const SHIFTED_RANGE_DOMAIN_MASK:u64 = ((1 << 8) as u64 - 1);
 const SHIFTED_FILL:u64 = ((((1 as u64) << 57) as u64 - 1) << 7);
 const SIGN_MASK:u64 = 1 << 48;
 
@@ -45,9 +43,9 @@ impl ToQuantity for i32 {
     fn to_quantity(&self) -> u64 {
         let me = *self;
         if me.is_negative() {
-            me as u64 & MANTISSA_MASK | EXTENSION_MASK
+            me as u64 & MANTISSA_MASK
         } else {
-            me as u64 | EXTENSION_MASK
+            me as u64
         }
     }
 }
@@ -58,9 +56,9 @@ impl ToQuantity for u64 {
         let me = *self;
         if me & META_MASK != 0 {
             let (mantissa, range) = overflow_handler(me);
-            (mantissa as u64) & MANTISSA_MASK | shifted_range(range) |  EXTENSION_MASK
+            (mantissa as u64) & MANTISSA_MASK | shifted_range(range)
         } else {
-            me & MANTISSA_MASK | EXTENSION_MASK
+            me & MANTISSA_MASK
         }
     }
 }
@@ -72,15 +70,15 @@ impl ToQuantity for i64 {
         if me.is_negative() {
             if (me as u64) & META_MASK != META_MASK {
                 let (mantissa, range) = overflow_handler(me.abs() as u64);
-                !(mantissa - 1) & MANTISSA_MASK | shifted_range(range) |  EXTENSION_MASK
+                !(mantissa - 1) & MANTISSA_MASK | shifted_range(range)
             } else {
-                (me as u64) & MANTISSA_MASK | EXTENSION_MASK
+                (me as u64) & MANTISSA_MASK
             }
         } else if (me as u64) & OVERFLOW_MASK != 0 {
             let (mantissa, range) = overflow_handler(me as u64);
-            (mantissa as u64) & MANTISSA_MASK | shifted_range(range) |  EXTENSION_MASK
+            (mantissa as u64) & MANTISSA_MASK | shifted_range(range)
         } else {
-            (me as u64) & MANTISSA_MASK | EXTENSION_MASK
+            (me as u64) & MANTISSA_MASK
         }
     }
 }
@@ -147,8 +145,6 @@ pub fn make_quantity(mantissa:i64, range:i64, domain:u64) -> Quantity {
 }
 
 pub trait QuantityMath {
-    fn is_number(self) -> bool;
-    fn is_other(self) -> bool;
     fn domain(self) -> u64;
     fn range(self) -> i64;
     fn set_range(&mut self, range:i64);
@@ -172,15 +168,6 @@ pub trait QuantityMath {
 }
 
 impl QuantityMath for Quantity {
-    #[inline(always)]
-    fn is_number(self) -> bool {
-        self & EXTENSION_MASK == EXTENSION_MASK
-    }
-
-    #[inline(always)]
-    fn is_other(self) -> bool {
-        self & EXTENSION_MASK == 0
-    }
 
     #[inline(always)]
     fn domain(self) -> u64 {
@@ -196,7 +183,7 @@ impl QuantityMath for Quantity {
             (range | SHIFTED_FILL) as i64
         }
     }
-
+    
     fn set_range(&mut self, range:i64) {
         let range_fill = ((range << 49) as u64) & RANGE_MASK;
         *self &= !RANGE_MASK;
