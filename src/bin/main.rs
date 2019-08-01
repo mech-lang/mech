@@ -13,25 +13,9 @@ use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 
 
 fn main() {
-  /*
-    let mut p = Bar{
-      id: 200,
-      x: Aliases::new(),
-    };
-    p.x.insert(10, 20);
-    p.x.insert(100, 200);
-
-    let serialized = serde_json::to_string(&p).unwrap();
-    println!("{:?}", serialized);
-    let bar: Result<Bar,_> = serde_json::from_str(&serialized);
-    println!("{:?}", bar);*/
-//problem child                 │49825176195110e0              │49825176195110e-11            │85e0                          │0e0             
-  let x = make_quantity(282743338860,-9,0);
-  let angle = make_quantity(180,0,0);
-  let offset = make_quantity(49825176195110, -11, 0);
-  let answer = x.divide(angle);
-  println!("{:?}", answer.to_string());
-  let foo: f64 = 123.456;
-  let q = foo.to_quantity();
-
+  let x = make_quantity(1, 3, 1);
+  //let y = make_quantity(1, 3, 0);
+  println!("{:#010b}", x.domain());
+  //println!("{:#066b}", y);
+  assert_eq!(x.range(), 3);
 }
