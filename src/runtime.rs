@@ -428,12 +428,12 @@ impl Block {
             Some(unit_value) => match unit_value.as_ref() {
               "g"  => (1, 0),
               "kg" => (1, 3),
+              "m" => (2, 0),
               _ => (0, 0),
             },
             _ => (0, 0),
           };
           let test = make_quantity(value.mantissa(), value.range() + scale, domain);
-          println!("{:#066b}", test);
           let table_id = match table {
             TableId::Local(id) => *id,
             _ => 0,
