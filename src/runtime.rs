@@ -424,15 +424,16 @@ impl Block {
           self.updated = true;
         },
         Constraint::Constant{table, row, column, value, unit} => {
-          let unit_id = match unit {
+          let (domain, scale) = match unit {
             Some(unit_value) => match unit_value.as_ref() {
-              "g"  => 1,
-              "kg" => 2,
-              _ => 0,
+              "g"  => (1, 0),
+              "kg" => (1, 3),
+              _ => (0, 0),
             },
-            _ => 0,
+            _ => (0, 0),
           };
-          let test = make_quantity(value.mantissa(), value.range(), unit_id);
+          let test = make_quantity(value.mantissa(), value.range() + scale, domain);
+          println!("{:#066b}", test);
           let table_id = match table {
             TableId::Local(id) => *id,
             _ => 0,
