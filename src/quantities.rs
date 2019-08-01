@@ -151,10 +151,10 @@ pub trait QuantityMath {
     fn mantissa(self) -> i64;
     fn is_negative(self) -> bool;
     fn negate(self) -> Quantity;
-    fn add(self, Quantity) -> Quantity;
-    fn sub(self, Quantity) -> Quantity;
-    fn multiply(self, Quantity) -> Quantity;
-    fn divide(self, Quantity) -> Quantity;
+    fn add(self, Quantity) -> Result<Quantity, ()>;
+    fn sub(self, Quantity) -> Result<Quantity, ()>;
+    fn multiply(self, Quantity) -> Result<Quantity, ()>;
+    fn divide(self, Quantity) -> Result<Quantity, ()>;
     fn less_than(self, Quantity) -> bool;
     fn greater_than(self, Quantity) -> bool;
     fn less_than_equal(self, Quantity) -> bool;
@@ -171,7 +171,7 @@ impl QuantityMath for Quantity {
 
     #[inline(always)]
     fn domain(self) -> u64 {
-        (self >> 56) & SHIFTED_RANGE_DOMAIN_MASK
+        self >> 56
     }
 
     #[inline(always)]
@@ -248,19 +248,24 @@ impl QuantityMath for Quantity {
     }
 
     #[inline(always)]
-    fn add(self, other:Quantity) -> Quantity {
+    fn add(self, other:Quantity) -> Result<Quantity, ()> {
+        // TODO Return self for now... throw an error later
+        if self.domain() != other.domain() {
+            return Err(());
+        }
+
         let my_range = self.range();
         let other_range = other.range();
         if self.mantissa() == 0 {
-            return other
+            return Ok(other)
         } else if other.mantissa() == 0 {
-            return self
+            return Ok(self)
         }
         if my_range == other_range {
             let add = self.mantissa() + other.mantissa();
             let mut add_quantity = add.to_quantity();
             add_quantity.set_range(add_quantity.range() + my_range);
-            add_quantity
+            Ok(add_quantity)
         } else {
             let my_mant = self.mantissa();
             let other_mant = other.mantissa();
@@ -271,7 +276,7 @@ impl QuantityMath for Quantity {
             };
             // A is so much bigger than b, we just take a
             if a_range - b_range > 15 {
-                return make_quantity(a_mant,a_range,0)
+                return Ok(make_quantity(a_mant,a_range,0))
             }
             let range_delta = (a_range - b_range) as u64;
             let sign = if a_mant < 0 {
@@ -284,33 +289,33 @@ impl QuantityMath for Quantity {
                 let added = sign * new_mantissa + b_mant;
                 let mut added_quantity = added.to_quantity();
                 added_quantity.set_range(b_range + added_quantity.range());
-                added_quantity
+                Ok(added_quantity)
             } else {
                 let (b_neue, _) = increase_range(b_mant, actual_delta);
                 let mut added = (new_mantissa + b_neue).to_quantity();
                 added.set_range(a_range - actual_delta as i64);
-                added
+                Ok(added)
             }
         }
     }
 
-    fn sub(self, other:Quantity) -> Quantity {
+    fn sub(self, other:Quantity) -> Result<Quantity, ()> {
         self.add(other.negate())
     }
 
-    fn multiply(self, other:Quantity) -> Quantity {
+    fn multiply(self, other:Quantity) -> Result<Quantity, ()> {
         let result = match self.mantissa().checked_mul(other.mantissa()) {
            Some(result) => { result },
            None => { panic!("QuantityMultiply overflow") }
         };
         let mut quantity = result.to_quantity();
         quantity.set_range(quantity.range() + self.range() + other.range());
-        quantity
+        Ok(quantity)
     }
 
-    fn divide(self, other:Quantity) -> Quantity {
+    fn divide(self, other:Quantity) -> Result<Quantity, ()> {
         let result = self.mantissa() * 10000 / other.mantissa();
-        make_quantity(result, -4 + self.range(), 0)
+        Ok(make_quantity(result, -4 + self.range(), 0))
     }
 
     fn less_than(self, other: Quantity) -> bool {
