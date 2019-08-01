@@ -73,7 +73,10 @@ macro_rules! binary_math {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_quantity(x.$op(*y));
+                match x.$op(*y) {
+                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  _ => (), // Throw an error here
+                }
               },
               _ => (),
             }
@@ -94,7 +97,10 @@ macro_rules! binary_math {
                        else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_quantity(x.$op(*y));
+                match x.$op(*y) {
+                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  _ => (), // Throw an error here
+                }
               },
               _ => (),
             }
@@ -115,7 +121,10 @@ macro_rules! binary_math {
                        else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::from_quantity(x.$op(*y));
+                match x.$op(*y) {
+                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  _ => (), // Throw an error here
+                }
               },
               _ => (),
             }
