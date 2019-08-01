@@ -429,6 +429,7 @@ impl Block {
               "g"  => (1, 0),
               "kg" => (1, 3),
               "m" => (2, 0),
+              "km" => (2, 3),
               _ => (0, 0),
             },
             _ => (0, 0),
@@ -810,14 +811,24 @@ impl Block {
                     // column
                     (Function::StatSum, 0x756cddd0, Value::Number(x)) => {
                       let previous = self.scratch.data[0][0].as_quantity().unwrap();
-                      self.scratch.data[0][0] = Value::Number(previous.add(*x));
-                      self.scratch.shrink_to_fit(1,1);
+                      match previous.add(*x) {
+                        Ok(op_result) => {
+                          self.scratch.data[0][0] = Value::Number(op_result);
+                          self.scratch.shrink_to_fit(1,1);
+                        },
+                        _ => (), // Throw an error here
+                      }
                     }
                     // row
                     (Function::StatSum, 0x776f72, Value::Number(x)) => {
                       let previous = self.scratch.data[0][0].as_quantity().unwrap();
-                      self.scratch.data[0][0] = Value::Number(previous.add(*x));
-                      self.scratch.shrink_to_fit(1,1);
+                      match previous.add(*x) {
+                        Ok(op_result) => {
+                          self.scratch.data[0][0] = Value::Number(op_result);
+                          self.scratch.shrink_to_fit(1,1);
+                        },
+                        _ => (), // Throw an error here
+                      }
                     }
                     // degrees
                     (Function::MathSin, 0x72dacac9, Value::Number(x)) => {
