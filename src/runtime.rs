@@ -424,8 +424,15 @@ impl Block {
           self.updated = true;
         },
         Constraint::Constant{table, row, column, value, unit} => {
-          let test = make_quantity(value.mantissa(), value.range(), 15);
-          println!("Quantity: {:?}\n {:#018b}", test.to_float(), test);
+          let unit_id = match unit {
+            Some(unit_value) => match unit_value.as_ref() {
+              "g"  => 1,
+              "kg" => 2,
+              _ => 0,
+            },
+            _ => 0,
+          };
+          let test = make_quantity(value.mantissa(), value.range(), unit_id);
           let table_id = match table {
             TableId::Local(id) => *id,
             _ => 0,
@@ -433,11 +440,11 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_quantity(*value));
+              table_ref.set_cell(&row, &column, Value::from_quantity(test));
             },
             Entry::Vacant(v) => {    
             },
-          };
+          };  
           self.updated = true;
         },
         Constraint::Reference{table, destination} => {
