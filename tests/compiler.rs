@@ -198,6 +198,12 @@ test_mech!(math_parenthetical_expression_constants,"
 block
   #test = (1 + 2) * 3", Value::from_i64(9));
 
+// ## Units
+
+test_mech!(units_basic_math,"#test = 35g + 10g", Value::from_i64(45));
+
+test_mech!(units_scaling,"#test = 35g + 10kg", Value::from_i64(10035));
+
 // ## Ranges
 
 test_mech!(range_basic,r#"
