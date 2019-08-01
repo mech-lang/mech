@@ -1492,7 +1492,7 @@ impl Compiler {
         for node in result {
           match node {
             Node::Constant{value, unit} => {
-              quantity = quantity.add(value);
+              quantity = quantity.add(value).unwrap();
             },
             Node::Identifier{name: word, id} => unit = Some(word),
             _ => (),
@@ -1521,7 +1521,7 @@ impl Compiler {
         }
         let mut quantity = make_quantity(value as i64,0,0);
         for q in quantities {
-          quantity = quantity.add(q);
+          quantity = quantity.add(q).unwrap();
         }
         compiled.push(Node::Constant{value: quantity, unit: None});
       },
