@@ -7,8 +7,6 @@ fn quantities_base() {
     let x = make_quantity(1, 3, 1);
     let y = make_quantity(1, -3, 1);
     let added = x.add(y);
-    assert!(x.is_number());
-    assert!(!x.is_other());
     assert_eq!(x.mantissa(), 1);
     assert_eq!(y.mantissa(), 1);
     assert_eq!(x.range(), 3);
