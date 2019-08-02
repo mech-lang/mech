@@ -115,6 +115,7 @@ pub enum Node {
   Any{children: Vec<Node>},
   Symbol{children: Vec<Node>},
   StateMachine{children: Vec<Node>},
+  Transitions{children: Vec<Node>},
   Transition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   Token{token: Token, byte: u8},
@@ -240,6 +241,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
+    Node::Transitions{children} => {print!("Transitions\n"); Some(children)},
     Node::Transition{children} => {print!("Transition\n"); Some(children)},
     Node::LessThan => {print!("LessThan\n",); None},
     Node::GreaterThan => {print!("GreaterThan\n",); None},
@@ -683,8 +685,12 @@ named!(filter_expression<CompleteStr, Node>, do_parse!(
 // State Machine
 
 named!(state_machine<CompleteStr, Node>, do_parse!(
-  data >> question >> whitespace >> transitions: many1!(transition) >> whitespace >>
-  (Node::StateMachine { children: transitions })));
+  source: data >> question >> whitespace >> transitions: transitions >> whitespace >>
+  (Node::StateMachine { children: vec![source, transitions] })));
+
+named!(transitions<CompleteStr, Node>, do_parse!(
+  transitions: many1!(transition) >>
+  (Node::Transitions { children:transitions })));
 
 named!(transition<CompleteStr, Node>, do_parse!(
   many1!(space) >> state: alt!(string | constant | empty) >> many1!(space) >> tag!("=>") >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
