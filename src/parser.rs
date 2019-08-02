@@ -680,6 +680,16 @@ named!(filter_expression<CompleteStr, Node>, do_parse!(
   lhs: alt!(data | constant) >> space >> comp: comparator >> space >> rhs: alt!(data | constant) >>
   (Node::FilterExpression { children: vec![lhs, comp, rhs] })));
 
+// State Machine
+
+named!(state_machine<CompleteStr, Node>, do_parse!(
+  data >> question >> whitespace >> transitions: many1!(transition) >> whitespace >>
+  (Node::StateMachine { children: transitions })));
+
+named!(transition<CompleteStr, Node>, do_parse!(
+  many1!(space) >> state: alt!(string | constant | empty) >> many1!(space) >> tag!("=>") >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
+  (Node::Transition { children: vec![state, next] })));
+
 // #### Logic Expressions
 
 named!(or<CompleteStr, Node>, do_parse!(bar >> (Node::Or)));
@@ -705,7 +715,7 @@ named!(string<CompleteStr, Node>, do_parse!(
   (Node::String { children: text })));
 
 named!(expression<CompleteStr, Node>, do_parse!(
-  expression: alt!(string | range | logic_expression | filter_expression | inline_table | anonymous_table | math_expression) >>
+  expression: alt!(state_machine | string | range | logic_expression | filter_expression | inline_table | anonymous_table | math_expression) >>
   (Node::Expression { children: vec![expression] })));
 
 // ### Block Basics
