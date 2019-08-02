@@ -30,7 +30,15 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"#test = 7 > 7"#);
+  let input = String::from(r#"
+block
+  #xyz = 35
+block
+  x = #xyz?
+    1 => 2
+    2 => 1
+
+"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -50,7 +58,7 @@ fn main() {
   //println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
-  println!("{:?}", core.runtime);
+  //println!("{:?}", core.runtime);
   /*let block_ast = match &programs[0].sections[0].elements[1] {
   Element::Block((id, node)) => node,
     _ => &Node::Null,
