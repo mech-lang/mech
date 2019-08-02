@@ -1739,6 +1739,9 @@ impl Compiler {
         }
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::StateMachine{children} |
+      parser::Node::Transition{children} |
+      parser::Node::Transitions{children} |
       parser::Node::Body{children} |
       parser::Node::Punctuation{children} |
       parser::Node::DigitOrComma{children} |
