@@ -661,8 +661,12 @@ impl Core {
                   .dyn_into::<web_sys::HtmlCanvasElement>()
                   .map_err(|_| ())
                   .unwrap();
+        let elements = canvas.get_attribute("elements").unwrap();
+        let elements_table_id: u64 = elements.parse::<u64>().unwrap();
         unsafe {
-          (*wasm_core).render_canvas(&canvas);
+          if (*wasm_core).core.runtime.changed_this_round.contains((&elements, Index::Index(0))) {
+            (*wasm_core).render_canvas(&canvas);
+          }
         }
       }
     }) as Box<FnMut()>);
@@ -698,7 +702,7 @@ impl Core {
       view_node.set_inner_html(&output);
     }
 
-    // render 
+    // render inspector
     match document.get_element_by_id("mech-table-inspector") {
       Some(table_inspector) => {
         //log!("{:?}", self.core.runtime.changed_this_round);
