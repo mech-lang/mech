@@ -70,6 +70,7 @@ pub enum Node {
   SelectAll,
   Empty,
   // Markdown
+  SectionTitle{ text: String },
   Title{ text: String },
   ParagraphText{ text: String },
   Paragraph{ children: Vec<Node> },
@@ -1603,6 +1604,14 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         let node = match &result[0] {
           Node::String{text} => Node::Title{text: text.clone()},
+          _ => Node::Null,
+        };
+        compiled.push(node);
+      },
+      parser::Node::SectionTitle{children} => {
+        let mut result = self.compile_nodes(children);
+        let node = match &result[0] {
+          Node::String{text} => Node::SectionTitle{text: text.clone()},
           _ => Node::Null,
         };
         compiled.push(node);

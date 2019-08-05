@@ -68,6 +68,7 @@ pub enum Node {
   Program{ children: Vec<Node> },
   Title{ children: Vec<Node> },
   Subtitle{ children: Vec<Node> },
+  SectionTitle{ children: Vec<Node> },
   Head{ children: Vec<Node> },
   Body{ children: Vec<Node> },
   Statement{ children: Vec<Node> },
@@ -209,6 +210,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::IdentifierCharacter{children} => {print!("IdentifierCharacter\n"); Some(children)},
     Node::Title{children} => {print!("Title\n"); Some(children)},
     Node::Subtitle{children} => {print!("Subtitle\n"); Some(children)},
+    Node::SectionTitle{children} => {print!("SectionTitle\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::StatementOrExpression{children} => {print!("StatementOrExpression\n"); Some(children)},
@@ -743,6 +745,10 @@ named!(title<CompleteStr, Node>, do_parse!(
 named!(subtitle<CompleteStr, Node>, do_parse!(
   hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
   (Node::Subtitle { children: vec![text] })));
+
+named!(sectiontitle<CompleteStr, Node>, do_parse!(
+  hashtag >> hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
+  (Node::SectionTitle { children: vec![text] })));
 
 named!(inline_code<CompleteStr, Node>, do_parse!(
   grave >> text: text >> grave >> opt!(space) >>
