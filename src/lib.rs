@@ -645,6 +645,71 @@ impl Core {
     }
   }
 
+  pub fn render_view(&mut self, view: u64) -> Result<(), JsValue> {
+
+    let mut output = "".to_string();
+
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let view_id = Hasher::hash_str("block/view");
+    let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
+    let block = &self.core.runtime.blocks.get(&(view as usize)).unwrap();
+    let table = block.get_table(view_id).unwrap();
+
+    let view_type = table.get_column(&Index::Alias(Hasher::hash_str("type")));
+    let x_pts = table.get_column(&Index::Alias(Hasher::hash_str("x")));
+    let y_pts = table.get_column(&Index::Alias(Hasher::hash_str("y")));
+
+    match (view_type, x_pts, y_pts) {
+      (Some(view_type), Some(x_pt_table), Some(y_pt_table)) => { 
+        match view_type[0].as_string().unwrap().as_ref() {
+          // Draw a scatter plot
+          "scatter" => {
+            
+            let mut canvas = view_node.first_child().unwrap();
+            
+            let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()
+                                                            .map_err(|_| ())
+                                                            .unwrap();
+            canvas.set_attribute("width", "700");
+
+            let context = canvas
+                .get_context("2d")
+                .unwrap()
+                .unwrap()
+                .dyn_into::<web_sys::CanvasRenderingContext2d>()
+                .unwrap();
+            let x_data = block.get_table(x_pt_table[0].as_u64().unwrap()).unwrap();
+            let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap();
+
+            for i in 0..x_data.rows as usize {
+              let y = &y_data.data[0][i].as_float().unwrap();
+              let x = &x_data.data[0][i].as_float().unwrap(); {
+                context.save();
+                context.begin_path();
+                context.arc(*x, *y, 2.0, 0.0, 1.0 * 3.14);
+                context.set_fill_style(&JsValue::from_str("#000000"));
+                context.fill();  
+                context.restore();
+              }
+            }
+          },
+          _ => (),
+        }
+      } 
+      _ => {
+        for i in 0..table.rows {
+          for j in 0..table.columns {
+            output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
+          }
+          output = format!("{}</br>",output);
+        }
+        view_node.set_inner_html(&output);
+      },
+    }
+    Ok(())
+  }
+
   pub fn render(&mut self) {
     let window = web_sys::window().expect("no global `window` exists");
     let wasm_core = self as *mut Core;
@@ -678,17 +743,9 @@ impl Core {
     let document = window.document().expect("should have a document on window");
     let view_id = Hasher::hash_str("block/view");
     for view in self.views.iter() {
-      let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
-      let block = &self.core.runtime.blocks.get(&(*view as usize)).unwrap();
-      let table = block.get_table(view_id).unwrap();
-      let mut output = "".to_string();
-      for i in 0..table.rows {
-        for j in 0..table.columns {
-          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
-        }
-        output = format!("{}</br>",output);
+      unsafe {
+        (*wasm_core).render_view(*view);
       }
-      view_node.set_inner_html(&output);
     }
 
     // render inline views
