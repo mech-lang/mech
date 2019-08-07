@@ -726,6 +726,10 @@ impl Core {
                   .dyn_into::<web_sys::HtmlCanvasElement>()
                   .map_err(|_| ())
                   .unwrap();
+        let elements = match canvas.get_attribute("elements") {
+          Some(elements) => elements,
+          _ => continue,
+        };
         let elements = canvas.get_attribute("elements").unwrap();
         let elements_table_id: u64 = elements.parse::<u64>().unwrap();
         unsafe {
