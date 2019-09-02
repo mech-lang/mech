@@ -565,8 +565,8 @@ named!(comment<CompleteStr, Node>, do_parse!(
 named!(add_row_operator<CompleteStr, Node>, do_parse!(tag!("+=") >> (Node::Null)));
 
 named!(add_row<CompleteStr, Node>, do_parse!(
-  table: table >> space >> add_row_operator >> space >> inline: inline_table >>
-  (Node::AddRow { children: vec![table, inline] })));
+  table_id: table >> space >> add_row_operator >> space >> table: alt!(inline_table | anonymous_table) >>
+  (Node::AddRow { children: vec![table_id, table] })));
 
 named!(set_operator<CompleteStr, Node>, do_parse!(tag!(":=") >> (Node::Null)));
 
