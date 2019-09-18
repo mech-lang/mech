@@ -11,6 +11,8 @@ extern crate core;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
 use std::io;
+use std::io::prelude::*;
+use std::fs::File;
 
 extern crate clap;
 use clap::{Arg, App, ArgMatches, SubCommand};
@@ -20,7 +22,7 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 
 extern crate mech;
-use mech::{Table, Value, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Core, Compiler, Table, Value, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::ClientHandler;
 use mech::QuantityMath;
 
@@ -105,6 +107,35 @@ fn main() {
   // The testing framework
   if matches.is_present("test") {
       println!("Testing...");
+      let paths = std::fs::read_dir("./").unwrap();
+
+      for path in paths {
+        let path = path.unwrap().path();
+        match (path.file_name(), path.extension())  {
+          (Some(name), Some(extension)) => {
+            match extension.to_str() {
+              Some("mec") => {
+                let mut f = File::open(name).unwrap();
+
+                let mut buffer = String::new();
+
+                f.read_to_string(&mut buffer);
+
+                // Spin up a mech core and compiler
+                let mut core = Core::new(1000,1000);
+                let mut compiler = Compiler::new();
+                compiler.compile_string(buffer);
+                core.register_blocks(compiler.blocks);
+                core.step();
+
+                println!("{:?}", core);
+              }
+              _ => (),
+            }
+          },
+          _ => (),
+        };
+      }
       std::process::exit(0);
   }
 
