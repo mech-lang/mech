@@ -13,7 +13,7 @@ use std::sync::mpsc::{self, Sender};
 use std::io;
 
 extern crate clap;
-use clap::{Arg, App};
+use clap::{Arg, App, ArgMatches, SubCommand};
 
 extern crate term_painter;
 use term_painter::ToStyle;
@@ -52,9 +52,9 @@ pub enum ReplCommand {
 // ## Mech Entry
 
 fn main() {
-
+  let version = "0.0.3a";
   let matches = App::new("Mech")
-    .version("0.0.2")
+    .version(version)
     .author("Corey Montella")
     .about("The Mech REPL. Default values for options are in parentheses.")
     .arg(Arg::with_name("mech_file_paths")
@@ -89,6 +89,8 @@ fn main() {
       .value_name("PERSIST")
       .help("The path for the file to load from and persist changes (current working directory)")
       .takes_value(true))
+    .subcommand(SubCommand::with_name("test")
+      .about("Execute all tests of a local package"))
     .get_matches();
 
   let wport = matches.value_of("port").unwrap_or("3012");
@@ -100,8 +102,14 @@ fn main() {
   let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
   let persistence_path = matches.value_of("persistence").unwrap_or("");
 
+  // The testing framework
+  if matches.is_present("test") {
+      println!("Testing...");
+      std::process::exit(0);
+  }
+
   println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
-  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint("MECH v0.0.2"), BrightBlack.paint("║"));
+  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint(format!("MECH v{}",version)), BrightBlack.paint("║"));
   println!(" {}\n",  BrightBlack.paint("╚═══════════════════════╝"));
   if serve {
     mech_server::http_server(http_address);
