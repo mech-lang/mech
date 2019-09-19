@@ -93,6 +93,12 @@ fn main() {
       .takes_value(true))
     .subcommand(SubCommand::with_name("test")
       .about("Execute all tests of a local package"))
+    .subcommand(SubCommand::with_name("run")
+      .about("Run a target folder or *.mec file")    
+      .arg(Arg::with_name("run_mech_file_paths")
+        .help("The files and folders to run.")
+        .required(true)
+        .multiple(true)))      
     .get_matches();
 
   let wport = matches.value_of("port").unwrap_or("3012");
@@ -108,7 +114,10 @@ fn main() {
   if matches.is_present("test") {
       println!("Testing...");
       let paths = std::fs::read_dir("./").unwrap();
-
+      let mut passed_all_tests = true;
+      let mut tests_count = 0;
+      let mut tests_passed = 0;
+      let mut tests_failed = 0;
       for path in paths {
         let path = path.unwrap().path();
         match (path.file_name(), path.extension())  {
@@ -127,8 +136,24 @@ fn main() {
                 compiler.compile_string(buffer);
                 core.register_blocks(compiler.blocks);
                 core.step();
+                let test_results_id: u64 = Hasher::hash_str("mech/test");  
 
-                println!("{:?}", core);
+                match core.store.get_table(test_results_id) {
+                  Some(test_results) => {
+                    for i in 0..test_results.rows as usize {
+                      for j in 0..test_results.columns as usize {
+                        tests_count += 1;
+                        if test_results.data[j][i] == Value::Bool(false) {
+                          passed_all_tests = false;
+                          tests_failed += 1;
+                        } else {
+                          tests_passed += 1;
+                        }
+                      }
+                    }
+                  },
+                  _ => (),
+                }
               }
               _ => (),
             }
@@ -136,8 +161,19 @@ fn main() {
           _ => (),
         };
       }
-      std::process::exit(0);
+      if passed_all_tests {
+        println!("Test result: {} | total {} | passed {} | failed {} | ", Green.paint("ok"), tests_count, tests_passed, tests_failed);
+        std::process::exit(0);
+      } else {
+        println!("Test result: {} | total {} | passed {} | failed {} | ", Red.paint("failed"), tests_count, tests_passed, tests_failed);
+        std::process::exit(1);
+      }
+  } else if matches.is_present("run") {
+    let mech_paths = matches.values_of("run_mech_file_paths").map_or(vec![], |files| files.collect());
+    println!("Running {:?}", mech_paths);
+    std::process::exit(0);
   }
+
 
   println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
   println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint(format!("MECH v{}",version)), BrightBlack.paint("║"));
