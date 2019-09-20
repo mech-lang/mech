@@ -25,7 +25,7 @@ This repository serves as a table of contents for the constellation of tools and
 
 Right now, most Mech features and syntax are undocumented. You can find some minimal documentation [here](http://docs.mech-lang.org), and also the beginning of a tutorial [here](https://github.com/mech-lang/mech/blob/master/examples/tutorial.mec).
 
-Documenation and tooling will be a focus of the next release (v0.0.2).
+Documentation and tooling will be a focus of the next release (v0.0.2).
 
 ## Building from Source
 
