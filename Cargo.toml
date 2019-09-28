@@ -21,5 +21,7 @@ serde = "1.0.46"
 serde_derive = "1.0.46"
 serde_json = "1.0.17"
 bincode = "0.8"
-mech-core = "0.0.2"
-mech-syntax = "0.0.2"
+#io_bluetooth = "0.1.0"
+#rumble = {git = "https://github.com/cmontella/rumble"}
+mech-core = {git = "https://github.com/mech-lang/core"}
+mech-syntax = {git = "https://github.com/mech-lang/syntax"}
