@@ -1,6 +1,6 @@
 [package]
-name = "mech-wasm"
-version = "0.0.2"
+name = "mechcorejs"
+version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -20,9 +20,9 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hashbrown = "0.4.0"
-mech-core = "0.0.2"
-mech-syntax = "0.0.2"
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = {path = "../core"}
+mech-syntax = {path = "../syntax"}
+mech-utilities = {path = "../utilities"}
 wasm-bindgen = "0.2"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
@@ -33,30 +33,3 @@ wasm-bindgen-test = "0.2"
 
 [profile.release]
 opt-level = "s"
-
-[dependencies.web-sys]
-version = "0.3.14"
-features = [
-  'Document',
-  'Element',
-  'HtmlElement',
-  'HtmlDivElement',
-  'HtmlImageElement',
-  'HtmlCanvasElement',
-  'HtmlInputElement',
-  'InputEvent',
-  'MouseEvent',
-  'KeyboardEvent',
-  'TouchEvent',
-  'Event',
-  'EventTarget',
-  'CanvasRenderingContext2d',
-  'Node',
-  'Window',
-  'Selection',
-  'Range',
-  'HtmlCollection',
-  'WebSocket',
-  'MessageEvent',
-  'console',
-]
