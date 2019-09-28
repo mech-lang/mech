@@ -20,7 +20,7 @@ default = []
 no-std = ["rlibc"]
 
 [dependencies]
-hashbrown = {version = "0.5.0", features = ["nightly"]}
+hashbrown = {version = "0.6.0", features = ["nightly"]}
 serde = {version = "1.0.96", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.96"
 libm = "0.1.2"
