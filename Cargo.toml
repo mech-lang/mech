@@ -19,10 +19,10 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hashbrown = "0.4.0"
-mech-core = {path = "../core"}
-mech-syntax = {path = "../syntax"}
-mech-utilities = {path = "../utilities"}
+hashbrown = "0.6.0"
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 wasm-bindgen = "0.2"
 serde = {version = "1.0.46", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.46"
