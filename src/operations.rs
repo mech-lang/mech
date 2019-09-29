@@ -33,6 +33,7 @@ pub enum Function {
   Power,
   HorizontalConcatenate,
   VerticalConcatenate,
+  MathRound,
   MathSin,
   MathCos,
   StatSum,
