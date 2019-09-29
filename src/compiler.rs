@@ -954,6 +954,7 @@ impl Compiler {
           "*" => Function::Multiply,
           "/" => Function::Divide,
           "^" => Function::Power,
+          "math/round" => Function::MathRound,
           "math/sin" => Function::MathSin,
           "math/cos" => Function::MathCos,
           "stat/sum" => Function::StatSum,
