@@ -21,7 +21,7 @@ use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
-use libm::{sin, cos, fmod};
+use libm::{sin, cos, fmod, round};
 use errors::{Error, ErrorType};
 
 // ## Runtime
@@ -572,7 +572,7 @@ impl Block {
               let cix = if column_ixes.is_empty() { i }
                         else { 
                           match column_ixes[i] {
-                            Value::Number(n) => n.mantissa() as usize  - 1,
+                            Value::Number(n) => n.to_u64() as usize  - 1,
                             Value::Bool(true) => i,
                             _ => {
                               column_mask = false;
@@ -586,7 +586,7 @@ impl Block {
                 let rix = if row_ixes.is_empty() { j }
                           else { 
                             match row_ixes[j] {
-                              Value::Number(n) => n.mantissa() as usize - 1,
+                              Value::Number(n) => n.to_u64() as usize - 1,
                               Value::Bool(true) => j,
                               _ => {
                                 row_mask = false;
@@ -765,6 +765,7 @@ impl Block {
             self.scratch.clear();
           }
           else if *operation == Function::MathSin || *operation == Function::MathCos ||
+                  *operation == Function::MathRound ||
                   *operation == Function::StatSum {
             let argument = match &parameters[0] {
               (TableId::Local(argument), _, _) => *argument,
@@ -830,6 +831,11 @@ impl Block {
                         _ => (), // Throw an error here
                       }
                     }
+                    // column
+                    (Function::MathRound, 0x756cddd0, Value::Number(x)) => {
+                      let result = round(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
                     // degrees
                     (Function::MathSin, 0x72dacac9, Value::Number(x)) => {
                       let result = match fmod(x.to_float(), 360.0) {
