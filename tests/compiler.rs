@@ -737,3 +737,15 @@ test_mech!(comment_line, r#"
 block
   // This is a comment
   #test = 123"#, Value::from_i64(123));
+
+// ## Recursion
+
+test_mech!(recursive_blocks, r#"
+block
+  #test = #i
+
+block
+  #i = [x: 2]
+
+block
+  #i.x{#i <= 6} := #i.x + 1"#, Value::from_u64(7));
