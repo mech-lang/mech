@@ -44,6 +44,10 @@ impl Value {
     Value::Number(num.to_quantity())
   }
 
+  pub fn from_f64(num: f64) -> Value {
+    Value::Number(num.to_quantity())
+  }
+
   pub fn as_quantity(&self) -> Option<Quantity> {
     match self {
       Value::Number(n) => Some(*n),
