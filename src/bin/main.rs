@@ -32,12 +32,19 @@ fn compile_test(input: String, test: Value) {
 fn main() {
   let input = String::from(r#"
 block
-  #xyz = 35
+  #i = [x: 2]
+  #h = [53; 100; 85]
+  #x = [400; 0; 0; 0; 0; 0]
+ 
 block
-  x = #xyz?
-    1 => 2
-    2 => 1
+  #i.x{#i < 6} := #i.x + 1
 
+block 
+  ~ #i.x
+  i = #i
+  i2 = #i / 2
+  ir = math/round(column: i2)
+  #x{i,:} := #x{i - 1,:} + #h{ir,:}
 "#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -52,9 +59,9 @@ block
  
 
   core.register_blocks(compiler.blocks.clone());
-  println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.unparsed);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
@@ -92,3 +99,29 @@ block
   //println!("{:?}", core);
 
 }
+
+/*
+This program doesn't execute correctly.
+block
+  #i = [x: 2]
+  #h = [53; 100; 85]
+  #p = [|x   y|
+         400 500 
+         0   0
+         0   0
+         0   0]
+  #angle = [10; 20; 30]
+ 
+block
+  #i.x{#i.x <= 6} := #i.x + 1
+
+block 
+  ~ #i.x
+  i = #i
+  i2 = i / 2
+  ir = math/round(column: i2)
+  a = #angle{i2,:}
+  #p.x{i} := #p.x{i - 1} + #h{i2,:} * math/sin(degrees: a)
+  #p.y{i} := #p.y{i - 1} - #h{i2,:} * math/cos(degrees: a)
+
+  */
