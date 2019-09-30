@@ -1,6 +1,6 @@
 [package]
-name = "mechcorejs"
-version = "0.0.1"
+name = "mech-wasm"
+version = "0.0.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -33,3 +33,30 @@ wasm-bindgen-test = "0.2"
 
 [profile.release]
 opt-level = "s"
+
+[dependencies.web-sys]
+version = "0.3.14"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'HtmlDivElement',
+  'HtmlImageElement',
+  'HtmlCanvasElement',
+  'HtmlInputElement',
+  'InputEvent',
+  'MouseEvent',
+  'KeyboardEvent',
+  'TouchEvent',
+  'Event',
+  'EventTarget',
+  'CanvasRenderingContext2d',
+  'Node',
+  'Window',
+  'Selection',
+  'Range',
+  'HtmlCollection',
+  'WebSocket',
+  'MessageEvent',
+  'console',
+]
