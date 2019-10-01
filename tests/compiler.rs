@@ -450,12 +450,24 @@ block
 
 // ## Change scan
 
-test_mech!(change_scan_simple,"block
+test_mech!(change_scan_column,"block
   #time/timer = [tick: 0]
 
 block
   ~ #time/timer.tick
   #test = 3", Value::from_i64(3));
+
+test_mech!(change_scan_simple,"block
+  #i = 2
+  #x = [400; 0; 0]
+ 
+block
+  #test = stat/sum(column: #x)
+
+block 
+  ~ #i
+  i = #i
+  #x{i,:} := #x{i - 1,:} + 1", Value::from_i64(801));
 
 // ## Full programs
 
