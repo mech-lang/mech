@@ -119,12 +119,14 @@ impl Runtime {
   // block graph. The graph is run until the tables reach a steady state or 
   // we hit the max_iteration limit
   pub fn run_network(&mut self, store: &mut Interner, max_iterations: u64) {
+    
     let mut iteration_count = 0; 
     // Note: The way this while loop is written, it's actually a do-while loop.
     // This is a little trick in Rust. This means the network will always run
     // at least one time, and if there are no more ready blocks after that run,
     // the loop will terminate.
     while {
+      println!("{:?}", &self.ready_blocks);
       for block_id in self.ready_blocks.drain() {
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
@@ -343,9 +345,13 @@ impl Block {
           }
         },
         Constraint::ChangeScan{table, column} => {
-          match (table, column) {
-            (TableId::Global(id), Parameter::Index(index)) => {
+          println!("{:?}", &column);
+          match (table, column.as_slice()) {
+            (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
               self.input_registers.insert(Register{table: *id, column: index.clone()});
+            },
+            (TableId::Global(id), [None, None]) => {
+              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
             },
             _ => (),
           }
@@ -509,8 +515,9 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
+    println!("ROUND: {:?}", &self.id);
     'solve_loop: for step in &self.plan {
-      //println!("Step: {:?}", step);
+      println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -628,9 +635,14 @@ impl Block {
           self.lhs_columns_empty.clear();
         },
         Constraint::ChangeScan{table, column} => {
-          match (table, column) {
-            (TableId::Global(id), Parameter::Index(index)) => {
+          println!("{:?}", column);
+          match (table, column.as_slice()) {
+            (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
               let register = Register{table: *id, column: index.clone()};
+              self.ready.remove(&register);
+            }
+            (TableId::Global(id), [None, None]) => {
+              let register = Register{table: *id, column: Index::Index(0)};
               self.ready.remove(&register);
             }
             _ => (),
@@ -1394,7 +1406,7 @@ pub enum Constraint {
   // Input Constraints
   Reference{table: u64, destination: u64},
   Scan {table: TableId, indices: Vec<Option<Parameter>>, output: TableId},
-  ChangeScan {table: TableId, column: Parameter},
+  ChangeScan {table: TableId, column: Vec<Option<Parameter>>},
   Identifier {id: u64, text: String},
   Range{table: TableId, start: TableId, end: TableId},
   // Transform Constraints
