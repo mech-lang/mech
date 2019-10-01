@@ -586,6 +586,10 @@ named!(watch_operator<CompleteStr, Node>, do_parse!(
   tilde >> 
   (Node::Null)));
 
+named!(until_operator<CompleteStr, Node>, do_parse!(
+  tag!("~|") >> 
+  (Node::Null)));
+
 named!(data_watch<CompleteStr, Node>, do_parse!(
   watch_operator >> space >> watch: alt!(variable_define | data) >>
   (Node::DataWatch { children: vec![watch] })));
