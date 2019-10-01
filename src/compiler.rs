@@ -631,7 +631,7 @@ impl Compiler {
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
-          Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices[1].clone().unwrap()}),
+          Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices.clone()}),
           _ => (),
         }
       },
