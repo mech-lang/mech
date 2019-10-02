@@ -543,7 +543,7 @@ Create ball on click
 
 test
   x = #ball.x + #ball.y
-  #test = stat/sum(column: x)", Value::Number(make_quantity(138,0,0)));
+  #test = stat/sum(column: x)", Value::Number(make_quantity(98,0,0)));
 
 // ## Strings
 
