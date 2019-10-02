@@ -126,8 +126,11 @@ impl Runtime {
     // at least one time, and if there are no more ready blocks after that run,
     // the loop will terminate.
     while {
-      println!("{:?}", &self.ready_blocks);
-      for block_id in self.ready_blocks.drain() {
+      let mut ready_blocks: Vec<usize> = self.ready_blocks.drain().map(|arg| {
+        arg.clone()
+      }).collect::<Vec<usize>>();
+      ready_blocks.sort();
+      for block_id in ready_blocks {
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
         block.solve(store);
         // Register any new inputs
@@ -345,7 +348,6 @@ impl Block {
           }
         },
         Constraint::ChangeScan{table, column} => {
-          println!("{:?}", &column);
           match (table, column.as_slice()) {
             (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
               self.input_registers.insert(Register{table: *id, column: index.clone()});
@@ -515,9 +517,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner) {
-    println!("ROUND: {:?}", &self.id);
     'solve_loop: for step in &self.plan {
-      println!("Step: {:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -635,7 +635,6 @@ impl Block {
           self.lhs_columns_empty.clear();
         },
         Constraint::ChangeScan{table, column} => {
-          println!("{:?}", column);
           match (table, column.as_slice()) {
             (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
               let register = Register{table: *id, column: index.clone()};
