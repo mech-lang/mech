@@ -21,7 +21,7 @@ use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
-use libm::{sin, cos, fmod, round};
+use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
 
 // ## Runtime
@@ -777,6 +777,7 @@ impl Block {
           }
           else if *operation == Function::MathSin || *operation == Function::MathCos ||
                   *operation == Function::MathRound ||
+                  *operation == Function::MathFloor ||
                   *operation == Function::StatSum {
             let argument = match &parameters[0] {
               (TableId::Local(argument), _, _) => *argument,
@@ -845,6 +846,11 @@ impl Block {
                     // column
                     (Function::MathRound, 0x756cddd0, Value::Number(x)) => {
                       let result = round(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // column
+                    (Function::MathFloor, 0x756cddd0, Value::Number(x)) => {
+                      let result = floor(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     // degrees

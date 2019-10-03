@@ -34,6 +34,7 @@ pub enum Function {
   HorizontalConcatenate,
   VerticalConcatenate,
   MathRound,
+  MathFloor,
   MathSin,
   MathCos,
   StatSum,
