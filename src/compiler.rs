@@ -1039,6 +1039,17 @@ impl Compiler {
             compiled.clear();
           }
         }
+        // example: #x{1}
+        if indices.len() == 1 {
+          compiled.reverse();
+          constraints.append(&mut compiled);
+          let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
+          constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
+          constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
+          scan_id = TableId::Local(scan_output);
+          indices.clear();
+          compiled.clear();
+        }
         constraints.reverse();
       },
       Node::SubscriptIndex{children} => {
