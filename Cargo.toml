@@ -23,4 +23,4 @@ no-std = ["mech-core/no-std", "rlibc"]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
 hashbrown = {version = "0.6.0", features = ["nightly"]}
 nom = { version = "4.2.2"}
-rlibc = { version = "=1.0", optional = true }
+rlibc = { version = "=1.0", optional = true } 

@@ -626,6 +626,14 @@ block
 
 // ## Functions
 
+test_mech!(function_math_round,r#"
+block
+  #test = math/round(column: 1.5)"#, Value::Number(make_quantity(200000000000000,-14,0)));
+
+test_mech!(function_math_floor,r#"
+block
+  #test = math/floor(column: 1.5)"#, Value::Number(make_quantity(100000000000000,-14,0)));
+
 test_mech!(function_math_sin_degrees,r#"
 block
   #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
