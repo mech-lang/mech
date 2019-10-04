@@ -231,6 +231,11 @@ block
   x = [1 2 3]
   #test = x{2}", Value::from_i64(2));
 
+test_mech!(subscript_single_vert,"
+block
+  x = [1; 2; 3]
+  #test = x{2}", Value::from_i64(2));
+
 // ## Comparators
 
 test_mech!(comparator_greater,"
