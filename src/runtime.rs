@@ -538,33 +538,60 @@ impl Block {
               Some(table) => table,
               None => table_ref
             };
-            let row_ixes: &Vec<Value> = match &indices[0] {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.rhs_rows_empty,
-            };
-            let column_ixes: &Vec<Value> = match &indices[1] {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match table_ref.get_column_index(index) {
-                  Some(ix) => ix,
-                  // If the attribute is missing, note the error and bail
-                  None => { 
-                    self.errors.push(
-                      Error{
-                        block: self.id as u64,
-                        constraint: step.clone(),
-                        error_id: ErrorType::MissingAttribute(index.clone()),
-                      }
-                    );
-                    break 'solve_loop;
-                  }, 
-                };
-                self.lhs_columns_empty.push(Value::from_u64(ix));
-                &self.lhs_columns_empty
-              },
-              _ => &self.lhs_rows_empty,
+            // If we only have one index, it's like this #x{3}
+            let one = vec![Value::from_u64(1)];
+            let (row_ixes, column_ixes) = if indices.len() == 1 {
+              // Get the ixes
+              let ixes: &Vec<Value> = match &indices[0] {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_rows_empty,
+              };
+              // Now the other dimension indes will be one.
+              // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
+              // If #x = [1; 2; 3] then it translates to #x{3,1}
+              let (row_ixes, column_ixes) = match (table_ref.rows, table_ref.columns) {
+                (1, columns) => (&one, ixes),
+                (rows, 1) => (ixes, &one),
+                _ => {
+                  // TODO Report an error here... or do matlab style ind2sub
+                  break 'solve_loop;
+                }
+              };
+              (row_ixes, column_ixes)
+            // Otherwise we have a couple choices:
+            // #x{1,2}
+            // #x.y{1}
+            } else {
+              let row_ixes: &Vec<Value> = match &indices[0] {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_rows_empty,
+              };
+              let column_ixes: &Vec<Value> = match &indices[1] {
+                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+                Some(Parameter::Index(index)) => {
+                  let ix = match table_ref.get_column_index(index) {
+                    Some(ix) => ix,
+                    // If the attribute is missing, note the error and bail
+                    None => { 
+                      self.errors.push(
+                        Error{
+                          block: self.id as u64,
+                          constraint: step.clone(),
+                          error_id: ErrorType::MissingAttribute(index.clone()),
+                        }
+                      );
+                      break 'solve_loop;
+                    }, 
+                  };
+                  self.lhs_columns_empty.push(Value::from_u64(ix));
+                  &self.lhs_columns_empty
+                },
+                _ => &self.lhs_rows_empty,
+              };
+              (row_ixes, column_ixes)
             };
             let width  = if column_ixes.is_empty() { table_ref.columns }
                           else { column_ixes.len() as u64 };      
@@ -647,6 +674,7 @@ impl Block {
             _ => (),
           }
         },
+        // TODO move most of this into Operations.rs
         Constraint::Function{operation, parameters, output} => { 
           
           // Concat Functions  
