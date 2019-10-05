@@ -69,6 +69,12 @@ compile_string!(table_define_data, "#table =  [x y z | 1 2 3]");
 compile_string!(table_define_data_math, "#table = [x      y          z|
                                                    1 * 2, 4 + 7 * 9, 3]");
 
+test_mech!(table_define_inline_expressions, "
+block
+  #x = [x: 1 + 2, y: 2 + 2]
+block
+  #test = #x.x + #x.y", Value::from_i64(7));
+
 test_mech!(table_define_program, "# A Working Program
 
 ## Section Two
