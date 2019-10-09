@@ -113,7 +113,7 @@ impl fmt::Debug for Value {
 
 // ### Table Id
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum TableId {
   Local(u64),
   Global(u64),
@@ -140,7 +140,7 @@ impl fmt::Debug for TableId {
 
 // ### Row or Column Index
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Index {
   Index(u64),
   Alias(u64)
