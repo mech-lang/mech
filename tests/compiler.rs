@@ -303,6 +303,16 @@ block
   #test = [|x|
             9]", Value::from_i64(77));
 
+test_mech!(set_column_single_index,"
+block
+  #x = [400; 0; 0]
+ 
+block 
+  #x{3} := 7
+
+block
+  #test = stat/sum(column: #x)", Value::from_i64(407));
+
 test_mech!(set_column_logical,"
 block
   ix = x > 0
