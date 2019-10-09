@@ -535,10 +535,11 @@ impl Compiler {
                   _ => false,
                 };
               },
-              Constraint::Insert{from: (from_table, ..), to: (to_table, to_rows, ..)} => {
+              Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes, ..)} => {
                 // TODO Handle other cases of from and parameters
+                let to_rows = to_ixes[0];
                 match to_rows {
-                  Some(Parameter::TableId(TableId::Local(id))) => consumes.insert(*id),
+                  Some(Parameter::TableId(TableId::Local(id))) => consumes.insert(id),
                   _ => false,
                 };
                 match to_table {
@@ -608,23 +609,32 @@ impl Compiler {
   }
 
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
+
+    //asdasdasdas
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
         let mut result1 = self.compile_constraint(&children[0]);
+        println!("result1 {:?}", result1);
         result1.remove(0);
         let scan = result1.remove(0);
-        let (to, to_rows, to_columns) = match scan {
-          Constraint::Scan{table, indices, ..} => (table, indices[0].clone(), indices[1].clone()),
-          _ => (TableId::Global(0), None, None), 
+        println!("{:?}", scan);
+        let (to, to_ixes) = match scan {
+          Constraint::Scan{table, indices, ..} => {
+            println!("{:?}", indices);
+            (table, indices.clone())
+          },
+          _ => (TableId::Global(0), vec![None, None]), 
         };
+        println!("HERERERE");
         let mut result2 = self.compile_constraint(&children[1]);
-        let (from, from_rows, from_columns) = match &result2[0] {
-          Constraint::NewTable{id, ..} => (id.clone(), None, None),
-          Constraint::Scan{table, indices, output} => (table.clone(), indices[0].clone(), indices[1].clone()),
-          _ => (TableId::Local(0), None, None), 
+        println!("{:?}",result2);
+        let (from, from_ixes) = match &result2[0] {
+          Constraint::NewTable{id, ..} => (id.clone(), vec![None, None]),
+          Constraint::Scan{table, indices, output} => (table.clone(), indices.clone()),
+          _ => (TableId::Local(0), vec![None, None]), 
         };
-        constraints.push(Constraint::Insert{from: (from, from_rows, from_columns), to: (to, to_rows, to_columns)});
+        constraints.push(Constraint::Insert{from: (from, from_ixes), to: (to, to_ixes)});
         constraints.append(&mut result1);
         constraints.append(&mut result2);
       },
