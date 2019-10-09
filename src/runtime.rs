@@ -1151,8 +1151,8 @@ impl Block {
           self.scratch.clear();
         },
         Constraint::Insert{from, to} => {
-          let (from_table, from_rows, from_columns) = from;
-          let (to_table, to_rows, to_columns) = to;
+          let (from_table, from_ixes) = from;
+          let (to_table, to_ixes) = to;
 
           let from = match from_table {
             TableId::Local(id) => self.memory.get(*id).unwrap(),
@@ -1164,11 +1164,11 @@ impl Block {
             TableId::Global(id) => (store.get_table(*id).unwrap(), id.clone()),
           };
 
-          let from_column_values: &Vec<Value> = match from_columns {
+          let from_column_values: &Vec<Value> = match &from_ixes[1] {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match from.get_column_index(index) {
+              let ix = match from.get_column_index(&index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -1178,11 +1178,11 @@ impl Block {
             _ => &self.rhs_columns_empty,
           };
 
-          let from_row_values: &Vec<Value> = match from_rows {
+          let from_row_values: &Vec<Value> = match &from_ixes[0] {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match from.get_row_index(index) {
+              let ix = match from.get_row_index(&index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -1192,11 +1192,11 @@ impl Block {
             _ => &self.rhs_rows_empty,
           };
 
-          let to_column_values: &Vec<Value> = match to_columns {
+          let to_column_values: &Vec<Value> = match &to_ixes[1] {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match to.get_column_index(index) {
+              let ix = match to.get_column_index(&index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -1206,11 +1206,11 @@ impl Block {
             _ => &self.lhs_columns_empty,
           };
 
-          let to_row_values: &Vec<Value> = match to_rows {
+          let to_row_values: &Vec<Value> = match &to_ixes[0] {
             Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
             Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
             Some(Parameter::Index(index)) => {
-              let ix = match to.get_row_index(index) {
+              let ix = match to.get_row_index(&index) {
                 Some(ix) => ix,
                 None => 0,
               };
@@ -1452,7 +1452,7 @@ pub enum Constraint {
   CopyTable {from_table: u64, to_table: u64},
   AliasTable {table: TableId, alias: u64},
   // Output Constraints
-  Insert {from: (TableId, Option<Parameter>, Option<Parameter>), to: (TableId, Option<Parameter>, Option<Parameter>)},
+  Insert {from: (TableId, Vec<Option<Parameter>>), to: (TableId, Vec<Option<Parameter>>)},
   Append {from_table: TableId, to_table: TableId},
   Empty{table: TableId, row: Index, column: Index},
   Null,
