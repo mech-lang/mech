@@ -1192,32 +1192,59 @@ impl Block {
             _ => &self.rhs_rows_empty,
           };
 
-          let to_column_values: &Vec<Value> = match &to_ixes[1] {
-            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-            Some(Parameter::Index(index)) => {
-              let ix = match to.get_column_index(&index) {
-                Some(ix) => ix,
-                None => 0,
-              };
-              self.lhs_columns_empty.push(Value::from_u64(ix));
-              &self.lhs_columns_empty
-            },
-            _ => &self.lhs_columns_empty,
-          };
 
-          let to_row_values: &Vec<Value> = match &to_ixes[0] {
-            Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-            Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-            Some(Parameter::Index(index)) => {
-              let ix = match to.get_row_index(&index) {
-                Some(ix) => ix,
-                None => 0,
-              };
-              self.lhs_rows_empty.push(Value::from_u64(ix));
-              &self.lhs_rows_empty
-            },
-            _ => &self.lhs_rows_empty,
+         // If we only have one index, it's like this #x{3} := ...
+          let one = vec![Value::from_u64(1)];
+          let (to_row_values, to_column_values) = if to_ixes.len() == 1 {
+            // Get the ixes
+            let ixes: &Vec<Value> = match &to_ixes[0] {
+              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+              _ => &self.rhs_rows_empty,
+            };
+            // Now the other dimension index will be one.
+            // So if it's #x{3} := 7 where #x = [1 2 3], then it translates to #x{1,3} := 7
+            // If #x = [1; 2; 3] then it translates to #x{3,1} := 7
+            let (row_ixes, column_ixes) = match (to.rows, to.columns) {
+              (1, columns) => (&one, ixes),
+              (rows, 1) => (ixes, &one),
+              _ => {
+                // TODO Report an error here... or do matlab style ind2sub
+                break 'solve_loop;
+              }
+            };
+            (row_ixes, column_ixes)
+          // Otherwise we have a couple choices:
+          // #x{1,2}
+          } else {
+            let to_column_values: &Vec<Value> = match &to_ixes[1] {
+              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+              Some(Parameter::Index(index)) => {
+                let ix = match to.get_column_index(&index) {
+                  Some(ix) => ix,
+                  None => 0,
+                };
+                self.lhs_columns_empty.push(Value::from_u64(ix));
+                &self.lhs_columns_empty
+              },
+              _ => &self.lhs_columns_empty,
+            };
+
+            let to_row_values: &Vec<Value> = match &to_ixes[0] {
+              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
+              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
+              Some(Parameter::Index(index)) => {
+                let ix = match to.get_row_index(&index) {
+                  Some(ix) => ix,
+                  None => 0,
+                };
+                self.lhs_rows_empty.push(Value::from_u64(ix));
+                &self.lhs_rows_empty
+              },
+              _ => &self.lhs_rows_empty,
+            };
+            (to_row_values, to_column_values)
           };
 
           let to_width = if to_column_values.is_empty() { to.columns }
