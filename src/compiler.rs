@@ -609,26 +609,19 @@ impl Compiler {
   }
 
   pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
-
-    //asdasdasdas
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
         let mut result1 = self.compile_constraint(&children[0]);
-        println!("result1 {:?}", result1);
         result1.remove(0);
         let scan = result1.remove(0);
-        println!("{:?}", scan);
         let (to, to_ixes) = match scan {
           Constraint::Scan{table, indices, ..} => {
-            println!("{:?}", indices);
             (table, indices.clone())
           },
           _ => (TableId::Global(0), vec![None, None]), 
         };
-        println!("HERERERE");
         let mut result2 = self.compile_constraint(&children[1]);
-        println!("{:?}",result2);
         let (from, from_ixes) = match &result2[0] {
           Constraint::NewTable{id, ..} => (id.clone(), vec![None, None]),
           Constraint::Scan{table, indices, output} => (table.clone(), indices.clone()),
