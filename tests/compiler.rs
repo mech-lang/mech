@@ -303,7 +303,7 @@ block
   #test = [|x|
             9]", Value::from_i64(77));
 
-test_mech!(set_column_single_index,"
+test_mech!(set_single_index,"
 block
   #x = [400; 0; 0]
  
