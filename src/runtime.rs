@@ -768,6 +768,22 @@ impl Block {
                     self.scratch.data[i as usize][j as usize] = table_ref.data[cix][rix].clone();
                   }
                 }
+              // Auto fill scalars to fit
+              } else if height == 1 {
+                let start_col: usize = self.scratch.columns as usize;
+                let end_col: usize = (self.scratch.columns + width) as usize;
+                let start_row: usize = 0;
+                let end_row: usize = self.scratch.rows as usize;
+                self.scratch.grow_to_fit(end_row as u64, end_col as u64);
+                for i in start_col..end_col {
+                  let cix = if column_ixes.is_empty() { i - start_col }
+                            else { column_ixes[i - start_col].as_u64().unwrap() as usize - 1 };
+                  for j in 0..end_row {
+                    let rix: usize = if row_ixes.is_empty() { j }
+                              else { row_ixes[j as usize].as_u64().unwrap() as usize - 1 };
+                    self.scratch.data[i as usize][j as usize] = table_ref.data[cix][0].clone();
+                  }
+                }
               }
               self.lhs_columns_empty.clear();
             }
