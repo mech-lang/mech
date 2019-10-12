@@ -1091,6 +1091,43 @@ impl Core {
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .map_err(|_| ())
                 .unwrap();
+            {
+              let closure = |i| { Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                let window = web_sys::window().expect("no global `window` exists");
+                let document = window.document().expect("should have a document on window");
+                let x = event.offset_x();
+                let y = event.offset_y();
+                let table_id = Hasher::hash_str(i);
+                // TODO Make this safe
+                unsafe {
+                  (*wasm_core).changes.push(Change::Set{
+                    table: table_id, 
+                    row: Index::Index(1), 
+                    column: Index::Index(1),
+                    value: Value::from_i64(x as i64),
+                  });
+                  (*wasm_core).changes.push(Change::Set{
+                    table: table_id, 
+                    row: Index::Index(1), 
+                    column: Index::Index(2),
+                    value: Value::from_i64(y as i64),
+                  });                  
+                  (*wasm_core).process_transaction();
+                  (*wasm_core).render();
+                }
+              }) as Box<dyn FnMut(_)>)
+              };
+              let click_callback = closure("html/event/click");
+              canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
+              let move_callback = closure("html/event/mousemove");
+              canvas.add_event_listener_with_callback("mousemove", move_callback.as_ref().unchecked_ref())?;
+              let down_callback = closure("html/event/mousedown");
+              canvas.add_event_listener_with_callback("mousedown", down_callback.as_ref().unchecked_ref())?;
+            
+              click_callback.forget();
+              move_callback.forget();
+              down_callback.forget();
+            }
           self.render_canvas(&canvas);
           container.append_child(&canvas)?;
         },
@@ -1121,17 +1158,19 @@ impl Core {
           match shape.as_ref() {
             "circle" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();              
-              let x = parameters_table.data[0][0].as_float().unwrap();
-              let y = parameters_table.data[1][0].as_float().unwrap();
-              let radius = parameters_table.data[2][0].as_float().unwrap();
-              let fill = parameters_table.data[3][0].as_string().unwrap();
-              context.save();
-              context.begin_path();
-              context.arc(x, y, radius, 0.0, 2.0 * 3.14);
-              context.set_fill_style(&JsValue::from_str(&fill));
-              context.fill();  
-              context.restore();
+              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+              for i in 0..parameters_table.rows as usize {
+                let x = parameters_table.data[0][i].as_float().unwrap();
+                let y = parameters_table.data[1][i].as_float().unwrap();
+                let radius = parameters_table.data[2][i].as_float().unwrap();
+                let fill = parameters_table.data[3][i].as_string().unwrap();
+                context.save();
+                context.begin_path();
+                context.arc(x, y, radius, 0.0, 2.0 * 3.14);
+                context.set_fill_style(&JsValue::from_str(&fill));
+                context.fill();  
+                context.restore();
+              }
             },
             "line" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
