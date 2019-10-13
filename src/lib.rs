@@ -138,6 +138,31 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let body = document.body().expect("document should have a body");
+    let wasm_core = self as *mut Core;
+
+    {
+      let closure = |i| { Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
+        let key = event.key();
+        let table_id = Hasher::hash_str(i);
+        // TODO Make this safe
+        unsafe {
+          (*wasm_core).changes.push(Change::Set{
+            table: table_id, 
+            row: Index::Index(1), 
+            column: Index::Index(1),
+            value: Value::from_string(key.to_string()),
+          });                 
+          (*wasm_core).process_transaction();
+          (*wasm_core).render();
+        }
+      }) as Box<dyn FnMut(_)>)
+      };
+      let keydown_callback = closure("html/event/keydown");
+      document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
+      keydown_callback.forget();
+    }
 
     // Add an event listener to mech-app that removes modals on mouse click
     {
@@ -385,7 +410,6 @@ impl Core {
                                                               .map_err(|_| ())
                                                               .unwrap();
                   let block_id = target.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
-
 
                   if event.key_code() == 13 && event.ctrl_key() {
                     let mut compiler = Compiler::new();
