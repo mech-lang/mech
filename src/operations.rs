@@ -211,6 +211,9 @@ macro_rules! comparator {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::Bool(x.$op(*y));
               },
+              (Value::String(x), Value::String(y)) => {
+                out.data[i][j] = Value::Bool(x == y);
+              },
               _ => (),
             }
           }
@@ -232,6 +235,9 @@ macro_rules! comparator {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::Bool(x.$op(*y));
               },
+              (Value::String(x), Value::String(y)) => {
+                out.data[i][j] = Value::Bool(x == y);
+              },
               _ => (),
             }
           }
@@ -252,6 +258,9 @@ macro_rules! comparator {
             match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
               (Value::Number(x), Value::Number(y)) => {
                 out.data[i][j] = Value::Bool(x.$op(*y));
+              },
+              (Value::String(x), Value::String(y)) => {
+                out.data[i][j] = Value::Bool(x == y);
               },
               _ => (),
             }
