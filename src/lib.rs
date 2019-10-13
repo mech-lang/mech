@@ -51,8 +51,9 @@ pub struct Core {
 #[wasm_bindgen]
 impl Core {
   pub fn new(changes: usize, tables: usize) -> Core {
+    let mut mech = mech_core::Core::new(changes,tables);
     Core {
-      core: mech_core::Core::new(changes,tables),
+      core: mech,
       programs: Vec::new(),
       changes: Vec::new(),
       images: HashMap::new(),
@@ -135,6 +136,33 @@ impl Core {
   }
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
+
+    let new_table = |s: String, a: Vec<String>| {
+      let mut changes = Vec::new();
+      let table_id = Hasher::hash_string(s.clone());
+      log!("{:?} -> {:0x}",&s, table_id);
+      changes.push(Change::NewTable{
+        id: table_id, 
+        rows: 1, 
+        columns: a.len() as u64,
+      });
+      for (ix, alias) in a.iter().enumerate() {
+        let alias_id = Hasher::hash_str(alias);
+        changes.push(Change::RenameColumn{
+          table: table_id,
+          column_ix: (ix + 1) as u64,
+          column_alias: alias_id
+        });
+      }
+      changes
+    };
+    let mut changes = vec![];
+    changes.append(&mut new_table("html/event/click".to_string(), vec!["x".to_string(),"y".to_string()]));
+    changes.append(&mut new_table("html/event/mousemove".to_string(), vec!["x".to_string(),"y".to_string()]));
+    changes.append(&mut new_table("html/event/mousedown".to_string(), vec!["x".to_string(),"y".to_string()]));
+    let txn = Transaction::from_changeset(changes);
+    self.core.process_transaction(&txn);
+
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let body = document.body().expect("document should have a body");
@@ -284,7 +312,7 @@ impl Core {
 
                   let window = web_sys::window().expect("no global `window` exists");
                   let document = window.document().expect("should have a document on window");
-
+                    
                   // Remove previous modal
                   match document.get_element_by_id("mech-modal") {
                     Some(modal) => {
