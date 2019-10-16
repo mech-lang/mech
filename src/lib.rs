@@ -160,6 +160,7 @@ impl Core {
     changes.append(&mut new_table("html/event/click".to_string(), vec!["x".to_string(),"y".to_string()]));
     changes.append(&mut new_table("html/event/mousemove".to_string(), vec!["x".to_string(),"y".to_string()]));
     changes.append(&mut new_table("html/event/mousedown".to_string(), vec!["x".to_string(),"y".to_string()]));
+    changes.append(&mut new_table("html/event/keydown".to_string(), vec!["key".to_string(),"id".to_string()]));
     let txn = Transaction::from_changeset(changes);
     self.core.process_transaction(&txn);
 
@@ -181,7 +182,13 @@ impl Core {
             row: Index::Index(1), 
             column: Index::Index(1),
             value: Value::from_string(key.to_string()),
-          });                 
+          });    
+          (*wasm_core).changes.push(Change::Set{
+            table: table_id, 
+            row: Index::Index(1), 
+            column: Index::Index(2),
+            value: Value::from_f64(event.time_stamp()),
+          });               
           (*wasm_core).process_transaction();
           (*wasm_core).render();
         }
@@ -793,6 +800,20 @@ impl Core {
     }) as Box<FnMut()>);
     window.request_animation_frame(closure.as_ref().unchecked_ref());
     closure.forget();
+
+    // render nodes
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    for (k,v) in self.nodes.iter() {
+      let div = document.get_element_by_id(&format!("{:?}",v[0])).unwrap();
+      let table = &self.core.store.tables.get(*k).unwrap();
+      match &table.data[2][0] {
+        Value::String(value) => div.set_inner_html(&value),
+        Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
+        _ => (),
+      };
+      log!("{:?}--{:?}",k,v);
+    }
 
     // render views
     let window = web_sys::window().expect("no global `window` exists");
