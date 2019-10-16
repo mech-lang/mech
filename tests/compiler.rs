@@ -495,6 +495,14 @@ block
   i = #i
   #x{i,:} := #x{i - 1,:} + 1", Value::from_i64(801));
 
+test_mech!(change_scan_equality,"block
+  #test = #q * 3
+  ~ #q == 10
+
+block
+  #q = 10", Value::from_i64(30));
+
+
 // ## Full programs
 
 test_mech!(program_Clock,r#"# Clock
@@ -686,6 +694,18 @@ block
        4 _
        _ 7]
   #test = stat/sum(column: x{:,1}) + stat/sum(column: x{:,2})"#, Value::from_i64(14));
+
+test_mech!(function_set_any,r#"
+block
+  x = [1; 2; 3; 4; 5]
+  y = x > 4
+  #test = set/any(column: y)"#, Value::Bool(true));
+
+test_mech!(function_set_any_false,r#"
+block
+  x = [1; 2; 3; 4; 5]
+  y = x > 5
+  #test = set/any(column: y)"#, Value::Bool(false));
 
 // ## Errors
 
