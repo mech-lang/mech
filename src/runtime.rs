@@ -671,6 +671,15 @@ impl Block {
               let register = Register{table: *id, column: Index::Index(0)};
               self.ready.remove(&register);
             }
+            (TableId::Local(id), _) => {
+              // test value at table
+              let table = self.memory.get(*id).unwrap();
+              if table.data[0][0] == Value::Bool(false) {
+                self.block_changes.clear();
+                self.state = BlockState::Unsatisfied;
+                break 'solve_loop;
+              }
+            },
             _ => (),
           }
         },
@@ -822,7 +831,8 @@ impl Block {
           else if *operation == Function::MathSin || *operation == Function::MathCos ||
                   *operation == Function::MathRound ||
                   *operation == Function::MathFloor ||
-                  *operation == Function::StatSum {
+                  *operation == Function::StatSum || 
+                  *operation == Function::SetAny {
             let argument = match &parameters[0] {
               (TableId::Local(argument), _, _) => *argument,
               _ => 0,
@@ -891,6 +901,16 @@ impl Block {
                     (Function::MathRound, 0x756cddd0, Value::Number(x)) => {
                       let result = round(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // column
+                    (Function::SetAny, 0x756cddd0, Value::Bool(x)) => {
+                      let new = match (x, &self.scratch.data[0][0]) {
+                        (false, Value::Empty) => Value::Bool(false),
+                        (true, _) => Value::Bool(true),
+                        (_, Value::Bool(true)) => Value::Bool(true),
+                        (false, _) => Value::Bool(false),
+                      };
+                      self.scratch.data[0][0] = new;
                     },
                     // column
                     (Function::MathFloor, 0x756cddd0, Value::Number(x)) => {
@@ -1395,14 +1415,12 @@ impl Block {
               changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
             }
           }
-          store.process_transaction(&Transaction::from_changeset(changes));
+          self.block_changes.append(&mut changes);
         },
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Global(id) => {
-              store.process_transaction(&Transaction::from_change(
-                Change::NewTable{id: *id, rows: *rows, columns: *columns},
-              ));
+              self.block_changes.push(Change::NewTable{id: *id, rows: *rows, columns: *columns});
             }
             _ => (),
           }
