@@ -38,6 +38,7 @@ pub enum Function {
   MathSin,
   MathCos,
   StatSum,
+  SetAny,
   Undefined
 }
 
