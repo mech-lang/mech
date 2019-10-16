@@ -635,6 +635,25 @@ impl Compiler {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices.clone()}),
+          Constraint::Filter{comparator, lhs, rhs, output} => {
+            let intermediate_table = Hasher::hash_string(format!("inlinescan{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
+            let column = Hasher::hash_str("column");
+            self.table += 1;
+            for x in &result {
+              match x {
+                Constraint::Scan{table: TableId::Global(x), ..} => {
+
+                  constraints.push(Constraint::ChangeScan{table: TableId::Global(x.clone()), column: vec![None, None]});
+                },
+                _ => (),
+              };
+            }
+            constraints.push(Constraint::ChangeScan{table: TableId::Local(intermediate_table), column: vec![None, None]});
+            constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
+            constraints.push(Constraint::Function{operation: Function::SetAny, parameters: vec![(TableId::Local(column), None, None), (output.clone(), None, None)], output: vec![TableId::Local(intermediate_table)]});
+            constraints.push(Constraint::Identifier{id: column, text: "column".to_string()});
+            constraints.append(&mut result);
+          },
           _ => (),
         }
       },
@@ -962,6 +981,7 @@ impl Compiler {
           "math/sin" => Function::MathSin,
           "math/cos" => Function::MathCos,
           "stat/sum" => Function::StatSum,
+          "set/any" => Function::SetAny,
           _ => Function::Undefined,
         };
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
