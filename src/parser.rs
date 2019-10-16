@@ -591,7 +591,7 @@ named!(until_operator<CompleteStr, Node>, do_parse!(
   (Node::Null)));
 
 named!(data_watch<CompleteStr, Node>, do_parse!(
-  watch_operator >> space >> watch: alt!(variable_define | data) >>
+  watch_operator >> space >> watch: alt!(variable_define | filter_expression | logic_expression | data ) >>
   (Node::DataWatch { children: vec![watch] })));
 
 named!(statement<CompleteStr, Node>, do_parse!(
