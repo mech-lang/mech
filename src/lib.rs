@@ -594,13 +594,13 @@ impl Core {
       documentation.append_child(&rendered_program)?;
       //documentation.append_child(&drawing)?;
      
-      let editor_containter = document.get_element_by_id("mech-editor-container").unwrap();
-      editor_containter.append_child(&documentation)?;
+      let editor_container = document.get_element_by_id("mech-editor-container").unwrap();
+      editor_container.append_child(&documentation)?;
 
       // Create drawing area
       let mut drawing = document.create_element("div")?;
       drawing.set_attribute("id", "drawing");
-      editor_containter.append_child(&drawing);
+      editor_container.append_child(&drawing);
 
       // Register inline views
       let inline_view_elements = document.get_elements_by_class_name("mech-inline-mech-view");
