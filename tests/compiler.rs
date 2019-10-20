@@ -399,6 +399,14 @@ block
 block
   #test = #z{1,1} + #z{1,2} + #z{2,1} + #z{1,1}", Value::from_i64(15));
 
+test_mech!(concat_horzcat_autofill,r#"
+block
+  #test = stat/sum(column: #y.type)
+
+block
+  x = ["a"; "b"; "c"; "d"]
+  #y = [type: 1 class: "table" result: x]"#, Value::from_i64(4));
+
 // ## Append
 
 test_mech!(append_row_inline,"
