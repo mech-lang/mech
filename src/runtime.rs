@@ -793,6 +793,23 @@ impl Block {
                     self.scratch.data[i as usize][j as usize] = table_ref.data[cix][0].clone();
                   }
                 }
+              // Scale single row to fit new size
+              } else if self.scratch.rows == 1 {
+                let old_width = self.scratch.columns;
+                let end_col: usize = (self.scratch.columns + width) as usize;
+                self.scratch.grow_to_fit(height, end_col as u64);
+                // copy old stuff
+                for i in 0..old_width as usize {
+                  for j in 1..self.scratch.rows as usize {
+                    self.scratch.data[i][j] = self.scratch.data[i][0].clone();
+                  }
+                }
+                // copy new stuff
+                for i in 0..width as usize {
+                  for j in 0..height as usize {
+                    self.scratch.data[i + old_width as usize][j] = table_ref.data[i][j].clone();
+                  }
+                }
               }
               self.lhs_columns_empty.clear();
             }
