@@ -526,6 +526,9 @@ impl Block {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
             };
+            // TODO fix the way deep references work. This part is hacked and hard coded.
+            // What needs to happen is this: We can recursively next any level of access on tables.
+            // Then we can draw them easily. 
             let id = match table_ref.data[0][0] {
               Value::Reference(id) => {
                 self.ready.insert(Register::new(id, Index::Index(0)));
