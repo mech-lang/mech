@@ -22,4 +22,5 @@ pub enum ErrorType {
   MissingAttribute(Index),
   IndexOutOfBounds(((u64, u64), (u64, u64))),
   DuplicateAlias(u64),
+  DomainMismatch(u64, u64),
 }
