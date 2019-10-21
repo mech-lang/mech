@@ -997,6 +997,7 @@ impl Block {
             let out_table = &output[0];
             // TODO This seems very inefficient. Find a better way to do this. 
             // I'm having trouble getting the borrow checker to understand what I'm doing here
+            let mut errors: Vec<ErrorType> = Vec::new();
             {     
               let lhs = match lhs_table {
                 TableId::Local(id) => self.memory.get(*id).unwrap(),
@@ -1043,15 +1044,32 @@ impl Block {
                 _ => &self.rhs_columns_empty,
               };
               op_fun(lhs, lhs_rows, lhs_columns,
-                     rhs, rhs_rows, rhs_columns, &mut self.scratch);
+                     rhs, rhs_rows, rhs_columns, &mut self.scratch, &mut errors);
             }
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = self.scratch.rows;
-            out.columns = self.scratch.columns;
-            out.data = self.scratch.data.clone();
+            // If there are no errors, copy the data over
+            if errors.len() == 0 {
+              let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+              out.rows = self.scratch.rows;
+              out.columns = self.scratch.columns;
+              out.data = self.scratch.data.clone();
+            } 
+            // Clear scratch no matter what
             self.scratch.clear();
             self.rhs_columns_empty.clear();
             self.lhs_columns_empty.clear();
+            // record error on block and quit the solve loop if there are any errors
+            for error in &errors {
+              self.errors.push(
+                Error{
+                  block: self.id as u64,
+                  constraint: step.clone(),
+                  error_id: error.clone(),
+                }
+              );
+            }
+            if errors.len() > 0 {
+              break 'solve_loop;
+            }
           }
         },
         Constraint::Filter{comparator, lhs, rhs, output} => {

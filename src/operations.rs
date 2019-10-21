@@ -6,6 +6,7 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 use table::{Table, Value, TableId, Index};
+use errors::ErrorType;
 use quantities::{Quantity, QuantityMath, ToQuantity};
 
 /*
@@ -47,7 +48,7 @@ macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
     pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Value>, lhs_columns: &Vec<Value>, 
                       rhs: &Table, rhs_rows: &Vec<Value>, rhs_columns: &Vec<Value>,
-                      out: &mut Table) {
+                      out: &mut Table, errors: &mut Vec<ErrorType>) {
       // Get the math dimensions
       let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
                        else { lhs_columns.len() as u64 };
@@ -78,7 +79,7 @@ macro_rules! binary_math {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
                   Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
-                  _ => (), // Throw an error here
+                  Err(error) => errors.push(error), // Throw an error here
                 }
               },
               _ => (),
@@ -102,7 +103,7 @@ macro_rules! binary_math {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
                   Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
-                  _ => (), // Throw an error here
+                  Err(error) => errors.push(error), // Throw an error here
                 }
               },
               _ => (),
@@ -126,7 +127,7 @@ macro_rules! binary_math {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
                   Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
-                  _ => (), // Throw an error here
+                  Err(error) => errors.push(error), // Throw an error here
                 }
               },
               _ => (),

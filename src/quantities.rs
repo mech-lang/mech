@@ -8,6 +8,7 @@
 // Adapted and extended for Mech by Corey Montella
 
 use core::mem;
+use errors::{Error, ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
@@ -151,10 +152,10 @@ pub trait QuantityMath {
     fn mantissa(self) -> i64;
     fn is_negative(self) -> bool;
     fn negate(self) -> Quantity;
-    fn add(self, Quantity) -> Result<Quantity, ()>;
-    fn sub(self, Quantity) -> Result<Quantity, ()>;
-    fn multiply(self, Quantity) -> Result<Quantity, ()>;
-    fn divide(self, Quantity) -> Result<Quantity, ()>;
+    fn add(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn sub(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn multiply(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn divide(self, Quantity) -> Result<Quantity, ErrorType>;
     fn less_than(self, Quantity) -> bool;
     fn greater_than(self, Quantity) -> bool;
     fn less_than_equal(self, Quantity) -> bool;
@@ -248,10 +249,10 @@ impl QuantityMath for Quantity {
     }
 
     #[inline(always)]
-    fn add(self, other:Quantity) -> Result<Quantity, ()> {
+    fn add(self, other:Quantity) -> Result<Quantity, ErrorType> {
         // TODO Return self for now... throw an error later
         if self.domain() != other.domain() {
-            return Err(());
+            return Err(ErrorType::DomainMismatch(self.domain(), other.domain()));
         }
 
         let my_range = self.range();
@@ -299,11 +300,11 @@ impl QuantityMath for Quantity {
         }
     }
 
-    fn sub(self, other:Quantity) -> Result<Quantity, ()> {
+    fn sub(self, other:Quantity) -> Result<Quantity, ErrorType> {
         self.add(other.negate())
     }
 
-    fn multiply(self, other:Quantity) -> Result<Quantity, ()> {
+    fn multiply(self, other:Quantity) -> Result<Quantity, ErrorType> {
         let result = match self.mantissa().checked_mul(other.mantissa()) {
            Some(result) => { result },
            None => { panic!("QuantityMultiply overflow") }
@@ -313,7 +314,7 @@ impl QuantityMath for Quantity {
         Ok(quantity)
     }
 
-    fn divide(self, other:Quantity) -> Result<Quantity, ()> {
+    fn divide(self, other:Quantity) -> Result<Quantity, ErrorType> {
         let result = self.mantissa() * 10000 / other.mantissa();
         Ok(make_quantity(result, -4 + self.range(), 0))
     }
