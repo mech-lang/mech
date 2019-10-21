@@ -805,15 +805,33 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     for (k,v) in self.nodes.iter() {
-      let div = document.get_element_by_id(&format!("{:?}",v[0])).unwrap();
-      let table = &self.core.store.tables.get(*k).unwrap();
-      match &table.data[2][0] {
-        Value::String(value) => div.set_inner_html(&value),
-        Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
+      match document.get_element_by_id(&format!("{:?}",v[0])) {
+        Some(mut div) => {
+          let table = &self.core.store.tables.get(*k).unwrap();
+          match &table.data[2][0] {
+            Value::String(value) => div.set_inner_html(&value),
+            Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
+            Value::Reference(table_ref) => {
+              let child_nodes = div.children();
+              let child = child_nodes.get_with_index(0).unwrap();
+              if *table_ref != child.id().parse::<u64>().unwrap() {
+                //div.remove_child(&child);
+                unsafe {
+                  let referenced_table: &Table = (*wasm_core).core.store.get_table(*table_ref).unwrap();
+                  //(*wasm_core).draw_contents(&referenced_table, &mut div);
+                }
+              }
+            },
+            _ => (),
+          };
+                          
+        }
+        // TODO Remove old nodes from the table if they aren't in the DOM tree anymore.
         _ => (),
-      };
+      }
       log!("{:?}--{:?}",k,v);
     }
+    log!("Done nodes");
 
     // render views
     let window = web_sys::window().expect("no global `window` exists");
@@ -1059,6 +1077,7 @@ impl Core {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
         "div" => {
+          log!("Doing a div");
           let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
           let mut div = document.create_element("div")?;
           unsafe {
