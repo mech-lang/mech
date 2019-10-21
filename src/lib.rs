@@ -459,8 +459,14 @@ impl Core {
                       (*core).step();
                       (*wasm_core).render();
                     }
-                    target.set_attribute("state","ready");
-                    target.set_attribute("class","mech-code");
+                    if new_block.errors.is_empty() && target.get_attribute("state").unwrap() == "error".to_string() {
+                      target.set_attribute("state","ready");
+                      target.set_attribute("class","mech-code");
+                      let parent = target.parent_node().unwrap();
+                      let error_box = parent.last_child().unwrap();
+                      parent.remove_child(&error_box);
+                    }
+                    // Remove error table.
                   }
 
 
@@ -575,6 +581,14 @@ impl Core {
                     ErrorType::DuplicateAlias(alias_id) => {
                       let alias = &self.core.store.names.get(&alias_id).unwrap();
                       format!("Local table {:?} defined more than once.", alias)
+                    },
+                    ErrorType::DomainMismatch(d1,d2) => {
+                      let get_unit_label = |i| match i {
+                        1 => "weight",
+                        2 => "length",
+                        _ => "",
+                      };
+                      format!("Tried to add units of {} with {}", get_unit_label(d1), get_unit_label(d2))
                     },
                     _ => "".to_string(),
                   };
@@ -831,7 +845,6 @@ impl Core {
       }
       log!("{:?}--{:?}",k,v);
     }
-    log!("Done nodes");
 
     // render views
     let window = web_sys::window().expect("no global `window` exists");
