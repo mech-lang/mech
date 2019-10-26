@@ -590,6 +590,10 @@ named!(until_operator<CompleteStr, Node>, do_parse!(
   tag!("~|") >> 
   (Node::Null)));
 
+named!(as_soon_as<CompleteStr, Node>, do_parse!(
+  tag!("|~") >> 
+  (Node::Null)));
+
 named!(data_watch<CompleteStr, Node>, do_parse!(
   watch_operator >> space >> watch: alt!(variable_define | filter_expression | logic_expression | data ) >>
   (Node::DataWatch { children: vec![watch] })));
@@ -623,8 +627,12 @@ named!(l1_infix<CompleteStr, Node>, do_parse!(
   space >> op: alt!(plus | dash) >> space >> l2: l2 >>
   (Node::L1Infix { children: vec![op, l2] })));
 
+named!(matrix_multiply<CompleteStr, Node>, do_parse!(
+  tag!("**") >> 
+  (Node::Null)));
+
 named!(l2_infix<CompleteStr, Node>, do_parse!(
-  space >> op: alt!(asterisk | slash) >> space >> l3: l3 >>
+  space >> op: alt!(asterisk | slash | matrix_multiply) >> space >> l3: l3 >>
   (Node::L2Infix { children: vec![op, l3] })));
 
 named!(l3_infix<CompleteStr, Node>, do_parse!(
