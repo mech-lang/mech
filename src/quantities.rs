@@ -225,6 +225,12 @@ impl QuantityMath for Quantity {
             }
             as_string = format!("{}{}", as_string, mantissa_string);
             as_string
+        } else if mantissa_string.len() < decimal_ix as usize {
+            let mut as_string = mantissa_string;
+            while as_string.len() < decimal_ix as usize {
+                as_string = format!("{}0", as_string);
+            }
+            as_string
         } else {
             let mut first = &mantissa_string[..decimal_ix as usize];
             let second = &mantissa_string[decimal_ix as usize ..];
