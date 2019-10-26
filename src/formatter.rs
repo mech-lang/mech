@@ -44,7 +44,11 @@ impl Formatter {
     match node {
       Node::Constant{value, unit} => {
         node_type = "constant";
-        code = format!("{}", value.format());
+        let unit_label = match unit {
+          Some(unit_label) => unit_label,
+          None => "",
+        };
+        code = format!("{}{}", value.format(), unit_label);
       },
       Node::Empty => {
         node_type = "empty";
