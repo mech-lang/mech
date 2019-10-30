@@ -54,7 +54,7 @@ pub enum ReplCommand {
 // ## Mech Entry
 
 fn main() {
-  let version = "0.0.3a";
+  let version = "0.0.3";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella")
@@ -171,6 +171,7 @@ fn main() {
   } else if matches.is_present("run") {
     let mech_paths = matches.values_of("run_mech_file_paths").map_or(vec![], |files| files.collect());
     println!("Running {:?}", mech_paths);
+    // TODO - Implement running a folder of .mec files
     std::process::exit(0);
   }
 
