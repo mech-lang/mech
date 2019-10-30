@@ -1,6 +1,6 @@
 [package]
 name = "mech-syntax"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
 documentation = "http://docs.mech-lang.org"
@@ -20,7 +20,7 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-core = "0.0.3"
 hashbrown = {version = "0.6.0", features = ["nightly"]}
 nom = { version = "4.2.2"}
 rlibc = { version = "=1.0", optional = true } 
