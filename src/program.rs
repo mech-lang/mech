@@ -17,6 +17,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher};
 use mech_syntax::compiler::Compiler;
+use mech_utilities::RunLoopMessage;
 use super::Watcher;
 
 use time;
@@ -90,24 +91,6 @@ impl Program {
 }
 
 // ## Run Loop
-
-// Run loop messages are sent to the run loop from the client
-
-#[derive(Debug, Clone)]
-pub enum RunLoopMessage {
-  Stop,
-  StepBack,
-  StepForward,
-  Pause,
-  Resume,
-  Clear,
-  PrintCore,
-  PrintRuntime,
-  Listening(Vec<u64>),
-  Table(u64),
-  Transaction(Transaction),
-  Code(String),
-}
 
 // Client messages are sent to the client from the run loop
 
