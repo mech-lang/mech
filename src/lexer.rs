@@ -1,8 +1,8 @@
 // # Lexer
 
-// Takes a string, produces a list of tokens. It works incrementally, meaning 
-// you can lex an incomplete string to the end, and then add to it to produce
-// more tokens.
+// A list of possible tokens. The lexer used to be its own thing, but most of 
+// the work done here has been moved into the parser. This is all that remains
+// of that distant past.
 
 // ## Tokens
 
