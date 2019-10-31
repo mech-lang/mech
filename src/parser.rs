@@ -93,6 +93,7 @@ pub enum Node {
   UnorderedList{ children: Vec<Node> },
   ListItem{ children: Vec<Node> },
   String{ children: Vec<Node> },
+  StringInterpolation{ children: Vec<Node> },
   Word{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
@@ -175,6 +176,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
     Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
     Node::String{children} => {print!("String\n"); Some(children)},
+    Node::StringInterpolation{children} => {print!("StringInterpolation\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
@@ -407,6 +409,10 @@ named!(punctuation<CompleteStr, Node>, do_parse!(
 named!(symbol<CompleteStr, Node>, do_parse!(
   punctuation: alt!(ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
   (Node::Symbol{children: vec![punctuation]})));
+
+named!(single_text<CompleteStr, Node>, do_parse!(
+  word: alt!(word | space | number | punctuation | symbol) >>
+  (Node::Text{children: vec![word]})));
 
 named!(text<CompleteStr, Node>, do_parse!(
   word: many1!(alt!(word | space | number | punctuation | symbol)) >>
@@ -730,8 +736,12 @@ named!(range<CompleteStr, Node>, do_parse!(
   start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
   (Node::Range { children: vec![start,end] })));
 
+named!(string_interpolation<CompleteStr, Node>, do_parse!(
+  tag!("{{") >> expression: expression >> tag!("}}") >>
+  (Node::StringInterpolation { children: vec![expression] })));
+
 named!(string<CompleteStr, Node>, do_parse!(
-  quote >> text: many0!(text) >> quote >>
+  quote >> text: many0!(alt!(string_interpolation | single_text)) >> quote >>
   (Node::String { children: text })));
 
 named!(expression<CompleteStr, Node>, do_parse!(
