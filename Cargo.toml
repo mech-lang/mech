@@ -1,9 +1,12 @@
 [package]
 name = "mech-system"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Corey Montella <corey@mech-lang.org>"]
+
+[lib]
+crate-type = ["dylib"]
 
 [dependencies]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 time = "0.1.39"
