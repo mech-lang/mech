@@ -741,7 +741,7 @@ named!(string_interpolation<CompleteStr, Node>, do_parse!(
   (Node::StringInterpolation { children: vec![expression] })));
 
 named!(string<CompleteStr, Node>, do_parse!(
-  quote >> text: many0!(alt!(string_interpolation | single_text)) >> quote >>
+  quote >> text: many0!(alt!(string_interpolation | text)) >> quote >>
   (Node::String { children: text })));
 
 named!(expression<CompleteStr, Node>, do_parse!(
