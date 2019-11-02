@@ -17,8 +17,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::RunLoopMessage;
-use super::Watcher;
+use mech_utilities::{RunLoopMessage, Watcher};
 
 use time;
 
