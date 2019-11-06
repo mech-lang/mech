@@ -17,19 +17,25 @@ This repository serves as a table of contents for the constellation of tools and
 
 1. [Core](https://gitlab.com/mech-lang/core) - The language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
 2. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
-3. [Program](https://gitlab.com/mech-lang/program) - Organizes Mech cores into a coordinated program. Handles reading files, interfacing with libraries, and persisting changes top disk.
-4. [Server](https://gitlab.com/mech-lang/server) - Provides a server and client for hosting Mech programs and a browser-based editor on a websocket.
-5. [Notebook](https://gitlab.com/mech-lang/notebook) / [Mech-wasm](https://github.com/mech-lang/wasm) - A hosted editor for writing Mech applications.
+3. [Notebook](https://gitlab.com/mech-lang/notebook) / [Mech-wasm](https://github.com/mech-lang/wasm) - An editor that allows users to write and run programs using the textual syntax.
 
 ## Documentation
 
-Right now, most Mech features and syntax are undocumented. You can find some minimal documentation [here](http://docs.mech-lang.org), and also the beginning of a tutorial [here](https://github.com/mech-lang/mech/blob/master/examples/tutorial.mec).
+Right now, most Mech features and syntax are undocumented. You can find some minimal documentation [here](http://docs.mech-lang.org), and also the beginning of a tutorial [here](http://docs.mech-lang.org/#/docs/tutorial.mec).
 
-Documentation and tooling will be a focus of the next release (v0.0.2).
+## Installation
 
-## Building from Source
+### From Binary
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) and [NodeJS](https://nodejs.org/) before building Mech. When those are installed, follow these instructions:
+You can download the the latest release for your platform [here](https://github.com/mech-lang/mech/releases). Or, if you have Rust's Cargo tool installed you can use the following command:
+
+```bash
+> cargo install mech
+```
+
+### From Source
+
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) and [NodeJS](https://nodejs.org/) before building Mech. When those are installed, follow these instructions:
 
 ```bash
 > git clone https://gitlab.com/mech-lang/mech
@@ -43,7 +49,7 @@ You will need to install [Rust](https://www.rust-lang.org/learn/get-started) and
 
 ## Project Status
 
-Mech is currently in the **v0.0.2 alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
+Mech is currently in the **v0.0.3 alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
 
 Feel free to use the language for your own satisfaction, but please don't use it for anything important.
 
