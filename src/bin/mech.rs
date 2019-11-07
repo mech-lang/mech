@@ -95,7 +95,7 @@ fn main() {
       .about("Execute all tests of a local package"))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")    
-      .arg(Arg::with_name("run_mech_file_paths")
+      .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
         .multiple(true)))      
@@ -111,7 +111,7 @@ fn main() {
   let persistence_path = matches.value_of("persistence").unwrap_or("");
 
   // The testing framework
-  if matches.is_present("test") {
+  if let Some(matches) = matches.subcommand_matches("test") {
       println!("Testing...");
       let paths = std::fs::read_dir("./").unwrap();
       let mut passed_all_tests = true;
@@ -168,13 +168,52 @@ fn main() {
         println!("Test result: {} | total {} | passed {} | failed {} | ", Red.paint("failed"), tests_count, tests_passed, tests_failed);
         std::process::exit(1);
       }
-  } else if matches.is_present("run") {
-    let mech_paths = matches.values_of("run_mech_file_paths").map_or(vec![], |files| files.collect());
+  } else if let Some(matches) = matches.subcommand_matches("run") {
+    let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
     println!("Running {:?}", mech_paths);
     // TODO - Implement running a folder of .mec files
+  
+    for path_str in mech_paths {
+      let path = Path::new(path_str);
+      match (path.file_name(), path.extension())  {
+        (Some(name), Some(extension)) => {
+          match extension.to_str() {
+            Some("mec") => {
+              let mut f = File::open(name).unwrap();
+
+              let mut buffer = String::new();
+
+              f.read_to_string(&mut buffer);
+
+              // Spin up a mech core and compiler
+              let mut core = Core::new(1000,1000);
+              let mut compiler = Compiler::new();
+              compiler.compile_string(buffer);
+              core.register_blocks(compiler.blocks);
+              core.step();
+              let output_id: u64 = Hasher::hash_str("mech/output");  
+
+              match core.store.get_table(output_id) {
+                Some(output_table) => {
+                  for i in 0..output_table.rows as usize {
+                    for j in 0..output_table.columns as usize {
+                      println!("{:?}", output_table.data[j][i]);
+                    }
+                  }
+                },
+                _ => (),
+              }
+            }
+            _ => (),
+          }
+        },
+        _ => (),
+      };
+    }
+
+
     std::process::exit(0);
   }
-
 
   println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
   println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint(format!("MECH v{}",version)), BrightBlack.paint("║"));
