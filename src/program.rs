@@ -269,11 +269,11 @@ impl ProgramRunner {
   }
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
-    let name = Hasher::hash_str(&watcher.get_name());
-    let columns = watcher.get_columns().clone() as u64;
-    self.program.watchers.insert(name, watcher);
-    let watcher_table = Transaction::from_change(Change::NewTable{id: name, rows: 1, columns});
-    self.program.outgoing.send(RunLoopMessage::Transaction(watcher_table));
+    //let name = Hasher::hash_str(&watcher.get_name());
+    //let columns = watcher.get_columns().clone() as u64;
+    //self.program.watchers.insert(name, watcher);
+    //let watcher_table = Transaction::from_change(Change::NewTable{id: name, rows: 1, columns});
+    //self.program.outgoing.send(RunLoopMessage::Transaction(watcher_table));
   }
 
   pub fn add_persist_channel(&mut self, persister:&mut Persister) {
