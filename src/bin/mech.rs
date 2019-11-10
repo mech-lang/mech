@@ -35,6 +35,8 @@ use nom::types::CompleteStr;
 
 extern crate mech_server;
 
+extern crate reqwest;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
@@ -53,7 +55,8 @@ pub enum ReplCommand {
 
 // ## Mech Entry
 
-fn main() {
+fn main() -> Result<(), Box<std::error::Error>> {
+
   let version = "0.0.3";
   let matches = App::new("Mech")
     .version(version)
@@ -175,43 +178,46 @@ fn main() {
   
     for path_str in mech_paths {
       let path = Path::new(path_str);
-      match (path.file_name(), path.extension())  {
-        (Some(name), Some(extension)) => {
-          match extension.to_str() {
-            Some("mec") => {
-              let mut f = File::open(name).unwrap();
 
-              let mut buffer = String::new();
+      let program = if path.to_str().unwrap().starts_with("https") {
+        reqwest::get(path.to_str().unwrap())?.text()?
+      } else {
+        match (path.file_name(), path.extension())  {
+          (Some(name), Some(extension)) => {
+            match extension.to_str() {
+              Some("mec") => {
+                let mut f = File::open(name)?;
 
-              f.read_to_string(&mut buffer);
+                let mut buffer = String::new();
 
-              // Spin up a mech core and compiler
-              let mut core = Core::new(1000,1000);
-              let mut compiler = Compiler::new();
-              compiler.compile_string(buffer);
-              core.register_blocks(compiler.blocks);
-              core.step();
-              let output_id: u64 = Hasher::hash_str("mech/output");  
-
-              match core.store.get_table(output_id) {
-                Some(output_table) => {
-                  for i in 0..output_table.rows as usize {
-                    for j in 0..output_table.columns as usize {
-                      println!("{:?}", output_table.data[j][i]);
-                    }
-                  }
-                },
-                _ => (),
+                f.read_to_string(&mut buffer);
+                buffer
               }
+              _ => "".to_string(),
             }
-            _ => (),
+          },
+          _ => "".to_string(),
+        }
+      };
+      // Spin up a mech core and compiler
+      let mut core = Core::new(1000,1000);
+      let mut compiler = Compiler::new();
+      compiler.compile_string(program);
+      core.register_blocks(compiler.blocks);
+      core.step();
+      let output_id: u64 = Hasher::hash_str("mech/output");  
+
+      match core.store.get_table(output_id) {
+        Some(output_table) => {
+          for i in 0..output_table.rows as usize {
+            for j in 0..output_table.columns as usize {
+              println!("{:?}", output_table.data[j][i]);
+            }
           }
         },
         _ => (),
-      };
+      }
     }
-
-
     std::process::exit(0);
   }
 
@@ -321,6 +327,7 @@ fn main() {
 
     }
   }
+  Ok(())
 }
 
 fn print_table(table: &Table) {
