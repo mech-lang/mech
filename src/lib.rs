@@ -33,18 +33,18 @@ pub extern "C" fn math_cos(x: Value) -> Value {
   Value::from_quantity(result.to_quantity())
 }
 
-/*
-struct Timer {
-    ptr: u32,
-}
-
-impl Watcher for Timer {
-    fn get_name(& self) -> String {
-      "Foo".to_string()
-    }
+#[no_mangle]
+pub extern "C" fn math_round(x: Value) -> Value {
+  let result = match x {
+    Value::Number(n) => Value::from_quantity(round(x.to_float()).to_quantity()),
+    _ => Value::Empty
+  }
 }
 
 #[no_mangle]
-pub fn math_sin(value: u32) -> Box<Watcher> {
-    Box::new(Private { ptr: ptr })
-}*/
+pub extern "C" fn math_floor(x: Value) -> Value {
+  let result = match x {
+    Value::Number(n) => Value::from_quantity(floor(x.to_float()).to_quantity()),
+    _ => Value::Empty
+  }
+}
