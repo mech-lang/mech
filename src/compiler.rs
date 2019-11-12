@@ -650,7 +650,7 @@ impl Compiler {
             }
             constraints.push(Constraint::ChangeScan{table: TableId::Local(intermediate_table), column: vec![None, None]});
             constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-            constraints.push(Constraint::Function{operation: Function::SetAny, parameters: vec![(TableId::Local(column), None, None), (output.clone(), None, None)], output: vec![TableId::Local(intermediate_table)]});
+            constraints.push(Constraint::Function{operation: Function::SetAny, fnstring: "set_any".to_string(), parameters: vec![(TableId::Local(column), None, None), (output.clone(), None, None)], output: vec![TableId::Local(intermediate_table)]});
             constraints.push(Constraint::Identifier{id: column, text: "column".to_string()});
             constraints.append(&mut result);
           },
@@ -796,7 +796,7 @@ impl Compiler {
         constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.append(&mut column_names);
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
+        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, fnstring: "table_horizontal_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
         self.row = store_row;
         self.column = store_column;
@@ -841,7 +841,7 @@ impl Compiler {
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
           constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
-          constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, parameters, output: vec![TableId::Local(self.table)]});
+          constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, fnstring: "table_vertical_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: self.table, destination: table_reference});
@@ -886,7 +886,7 @@ impl Compiler {
             Constraint::Scan{table, indices, output} => {
               parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
-            Constraint::Function{operation, parameters, output} => {
+            Constraint::Function{operation, fnstring, parameters, output} => {
               for o in output {
                 parameter_registers.push((o.clone(), None, None));
               }
@@ -918,7 +918,7 @@ impl Compiler {
             Constraint::Scan{table, indices, output} => {
               parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
-            Constraint::Function{operation, parameters, output} => {
+            Constraint::Function{operation, fnstring, parameters, output} => {
               for o in output {
                 parameter_registers.push((o.clone(), None, None));
               }
@@ -1011,7 +1011,7 @@ impl Compiler {
             Constraint::Scan{table, indices, output} => {
               parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
             },
-            Constraint::Function{operation, parameters, output} => {
+            Constraint::Function{operation, fnstring, parameters, output} => {
               for o in output {
                 parameter_registers.push((o.clone(), None, None));
               }
@@ -1019,7 +1019,7 @@ impl Compiler {
             _ => (),
           };
         }
-        constraints.push(Constraint::Function{operation, parameters: parameter_registers, output});
+        constraints.push(Constraint::Function{operation, fnstring: name.to_string(), parameters: parameter_registers, output});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }
@@ -1109,7 +1109,7 @@ impl Compiler {
         }
         if parameter_registers.len() > 1 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, parameters: parameter_registers, output: vec![TableId::Local(table)]});
+          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, fnstring: "table_horizontal_concatenate".to_string(), parameters: parameter_registers, output: vec![TableId::Local(table)]});
         }
         constraints.append(&mut compiled);
       },
