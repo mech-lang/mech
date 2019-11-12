@@ -2,13 +2,15 @@
 
 // # Prelude
 extern crate bincode;
+extern crate libloading;
 
 use std::sync::mpsc::{Sender, Receiver, SendError};
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc;
 use std::collections::{HashMap, HashSet, Bound, BTreeMap};
+use std::collections::hash_map::Entry;
 use std::mem;
-use std::fs::{OpenOptions, File, canonicalize};
+use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::io::{Write, BufReader, BufWriter};
 use std::sync::Arc;
 
@@ -18,6 +20,9 @@ use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher};
 use mech_syntax::compiler::Compiler;
 use mech_utilities::{RunLoopMessage, Watcher};
+
+use libloading::Library;
+use std::io::copy;
 
 use time;
 
@@ -64,7 +69,6 @@ impl Program {
     self.programs += 1;
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     self.outgoing.send(RunLoopMessage::Transaction(txn));
-    self.mech.step();
   }
 
   pub fn compile_fragment(&mut self, input: String) {
@@ -233,6 +237,7 @@ impl Persister {
 pub struct ProgramRunner {
   pub name: String,
   pub program: Program, 
+  pub mechanisms: HashMap<String, Library>,
   pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -258,14 +263,55 @@ impl ProgramRunner {
     ProgramRunner {
       name: name.to_owned(),
       program,
+      mechanisms: HashMap::new(),
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
       persistence_channel: None,
     }
   }
 
-  pub fn load_program(&mut self, input: String) {
+  pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
     self.program.compile_program(input);
+    create_dir("misms");
+
+    let mut registry: HashMap<&str, &str> = HashMap::new();
+    registry.insert("math", "https://github.com/mech-lang/system-library/releases/download/v0.0.1/mech_system.dll");
+    registry.insert("stat","https://github.com/mech-lang/stat-library/releases/download/v0.0.1/mech_stat.dll");
+
+    for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
+      let m: Vec<_> = fun_name.split('/').collect();
+      match registry.get(m[0]) {
+        Some(path) => {
+
+          fn download_mism(name: &str, path: &str) -> Result<Library,Box<std::error::Error>> {
+            let mism_path = format!("misms/{}.dll", name);
+            // TODO Do path and URL. Right now, assume URL
+            {
+              println!("Downloading: {}", name);
+              let mut response = reqwest::get(path)?;
+              let mut dest = File::create(mism_path.clone())?;
+              copy(&mut response, &mut dest)?;
+            }
+            let mism = Library::new(mism_path).expect("Can't load library");
+            Ok(mism)
+          }
+
+          let mechanism = self.mechanisms.entry(m[0].to_string()).or_insert_with(||{
+            download_mism(m[0], path).unwrap()
+          });       
+          
+          let native_rust = unsafe {
+            let mut s = format!("{}\0", fun_name.replace("/","_"));
+            let m = mechanism.get::<fn(Value)->Value>(s.as_bytes()).expect("Symbol not present");
+            m.into_raw()
+          };
+          *fun = Some(*native_rust);
+        },
+        None => (),
+      }
+    }
+    self.program.mech.step();
+    Ok(())
   }
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
