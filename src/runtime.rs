@@ -32,6 +32,7 @@ pub struct Runtime {
   pub pipes_map: HashMap<Register, HashSet<Address>>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
+  pub functions: HashMap<String, Option<fn(Value)->Value>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -44,6 +45,7 @@ impl Runtime {
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
       tables_map: HashMap::new(),
+      functions: HashMap::new(),
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     }
@@ -76,6 +78,12 @@ impl Runtime {
         None => (),
       }*/
     }
+
+    // Record the functions used in block
+    for fun in &block.functions {
+      self.functions.insert(fun.to_string(), None);
+    }
+
     // Register all local tables in the tables map
     for local_table in block.memory.map.keys() {
       self.tables_map.insert(*local_table, block.id as u64);
@@ -132,7 +140,7 @@ impl Runtime {
       ready_blocks.sort();
       for block_id in ready_blocks {
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
-        block.solve(store);
+        block.solve(store, &self.functions);
         // Register any new inputs
         for register in block.input_registers.iter() {
           let table = register.table;
@@ -252,6 +260,7 @@ pub struct Block {
   pub output_registers: HashSet<Register>,
   pub constraints: Vec<(String, Vec<Constraint>)>,
   pub errors: Vec<Error>,
+  pub functions: HashSet<String>,
   memory: TableIndex,
   scratch: Table,
   lhs_rows_empty: Vec<Value>,
@@ -274,6 +283,7 @@ impl Block {
       plan: Vec::new(),
       input_registers: HashSet::with_capacity(1),
       output_registers: HashSet::with_capacity(1),
+      functions: HashSet::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
       errors: Vec::new(),
@@ -376,7 +386,8 @@ impl Block {
             TableId::Global(id) => (), // TODO Add global alias here
           }
         },
-        Constraint::Function{operation, parameters, output} => {
+        Constraint::Function{operation, fnstring, parameters, output} => {
+          self.functions.insert(fnstring.to_string());
           for (table, rows, columns) in parameters {
             match table {
               TableId::Global(id) => {
@@ -516,7 +527,7 @@ impl Block {
     }    
   }
 
-  pub fn solve(&mut self, store: &mut Interner) {
+  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Value)->Value>>) {
     'solve_loop: for step in &self.plan {
       match step {
         Constraint::Scan{table, indices, output} => {
@@ -687,7 +698,7 @@ impl Block {
           }
         },
         // TODO move most of this into Operations.rs
-        Constraint::Function{operation, parameters, output} => { 
+        Constraint::Function{operation, fnstring, parameters, output} => { 
           
           // Concat Functions  
           if *operation == Function::HorizontalConcatenate {
@@ -937,17 +948,6 @@ impl Block {
                       let result = floor(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
-                    // degrees
-                    (Function::MathSin, 0x72dacac9, Value::Number(x)) => {
-                      let result = match fmod(x.to_float(), 360.0) {
-                        0.0 => 0.0,
-                        90.0 => 1.0,
-                        180.0 => 0.0,
-                        270.0 => -1.0,
-                        _ => sin(x.to_float() * pi / 180.0),
-                      };
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
                     // radians
                     (Function::MathSin, 0x69d7cfd3, Value::Number(x)) => {
                       let result = sin(x.to_float());
@@ -968,6 +968,16 @@ impl Block {
                     (Function::MathCos, 0x69d7cfd3, Value::Number(x)) => {
                       let result = cos(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // degrees
+                    (_, _, Value::Number(x)) => {
+                      let result = match functions.get(fnstring) {
+                        Some(Some(fn_ptr)) => {
+                          fn_ptr(Value::Number(*x))
+                        }
+                        _ => Value::Empty,
+                      };
+                      self.scratch.data[i][j] = result;
                     },
                     _ => (),
                   }
@@ -1544,7 +1554,7 @@ pub enum Constraint {
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Logic {logic: operations::Logic, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
-  Function {operation: operations::Function, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
+  Function {operation: operations::Function, fnstring: String, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: Quantity, unit: Option<String>},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
@@ -1567,7 +1577,7 @@ impl fmt::Debug for Constraint {
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
-      Constraint::Function{operation, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
+      Constraint::Function{operation, fnstring, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
