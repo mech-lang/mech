@@ -10,3 +10,4 @@ crate-type = ["dylib"]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 time = "0.1.39"
+libm = "0.1.2"
