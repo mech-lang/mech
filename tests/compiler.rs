@@ -513,37 +513,6 @@ block
 
 // ## Full programs
 
-test_mech!(program_Clock,r#"# Clock
-
-Create a timer that ticks every second. This is the time source.
-  #time/timer = [period: 1000, tick: 0, hours: 2, minutes: 32, seconds: 47]
-
-Set up a clock hands table. Degrees is the deflection from noon.
-x and y are the coordinates of the end point of the clock hand.
-  #clock-hands = [|degrees length stroke    x y |
-                   0       30     "023963" 0 0
-                   0       40     "023963" 0 0
-                   0       40     "ce0b46" 0 0 ]
-
-## Update the clock
-
-Calculate clock hand angles every time the clock ticks.
-  ~ #time/timer.tick 
-  time = [#time/timer.hours; #time/timer.minutes; #time/timer.seconds]
-  multiplier = [30; 6; 6]
-  #clock-hands.degrees := multiplier * time
-  
-Calculate x and y endpoints
-  angle = #clock-hands.degrees
-  #clock-hands.x := 50 + (30 * math/sin(degrees: angle))
-  #clock-hands.y := 50 - (30 * math/cos(degrees: angle))
-  
-test
-  x = stat/sum(column: #clock-hands{:,1})
-  y = stat/sum(column: #clock-hands{:,4})
-  z = stat/sum(column: #clock-hands{:,5})
-  #test = x + y + z"#, Value::Number(make_quantity(83250606066446,-11,0)));
-
 test_mech!(program_bouncing_balls,"# Bouncing Balls
 
 Define the environment
@@ -662,34 +631,6 @@ block
            "row"     [container]]"#, Value::from_u64(50));
 
 // ## Functions
-
-test_mech!(function_math_round,r#"
-block
-  #test = math/round(column: 1.5)"#, Value::Number(make_quantity(200000000000000,-14,0)));
-
-test_mech!(function_math_floor,r#"
-block
-  #test = math/floor(column: 1.5)"#, Value::Number(make_quantity(100000000000000,-14,0)));
-
-test_mech!(function_math_sin_degrees,r#"
-block
-  #test = math/sin(degrees: 90)"#, Value::Number(make_quantity(100000000000000,-14,0)));
-
-test_mech!(function_math_sin_degrees_180,r#"
-block
-  #test = math/sin(degrees: 180)"#, Value::Number(make_quantity(0,0,0)));
-
-test_mech!(function_math_sin_210,r#"
-block
-  #test = math/sin(degrees: 210)"#, Value::Number(make_quantity(-50000000000000,-14,0)));
-
-test_mech!(function_math_cos_210,r#"
-block
-  #test = math/cos(degrees: 210)"#, Value::Number(make_quantity(-86602540378443,-14,0)));
-
-test_mech!(function_math_cos_degrees,r#"
-block
-  #test = math/cos(degrees: 0)"#, Value::Number(make_quantity(100000000000000,-14,0)));
 
 test_mech!(function_stat_sum,r#"
 block
