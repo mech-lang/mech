@@ -26,3 +26,4 @@ mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 mech-utilities= {git = "https://gitlab.com/mech-lang/utilities"}
 libloading = "0.5"
 lazy_static = "1.4.0"
+reqwest = "0.9.22"

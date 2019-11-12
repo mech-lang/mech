@@ -4,6 +4,8 @@
 #![feature(extern_prelude)]
 
 extern crate core;
+extern crate libloading;
+extern crate reqwest;
 
 #[macro_use]
 extern crate serde_derive;
