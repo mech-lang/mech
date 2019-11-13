@@ -272,10 +272,10 @@ impl ProgramRunner {
 
   pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
     self.program.compile_program(input);
-    create_dir("misms");
+
 
     let mut registry: HashMap<&str, &str> = HashMap::new();
-    registry.insert("math", "https://github.com/mech-lang/system-library/releases/download/v0.0.1/mech_system.dll");
+    registry.insert("math", "https://github.com/mech-lang/math/releases/download/v0.0.1/");
     registry.insert("stat","https://github.com/mech-lang/stat-library/releases/download/v0.0.1/mech_stat.dll");
 
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
@@ -284,22 +284,29 @@ impl ProgramRunner {
         Some(path) => {
 
           fn download_mism(name: &str, path: &str) -> Result<Library,Box<std::error::Error>> {
-            let mism_path = format!("misms/{}.dll", name);
+            create_dir("misms");
+
+            #[cfg(unix)]
+            let mism_name = format!("libmech_{}.so", name);
+            #[cfg(windows)]
+            let mism_name = format!("mech_{}.dll", name);
+            let mism_file_path = format!("misms/{}",mism_name);
             // TODO Do path and URL. Right now, assume URL
             {
               println!("Downloading: {}", name);
-              let mut response = reqwest::get(path)?;
-              let mut dest = File::create(mism_path.clone())?;
+              let mism_url = format!("{}{}", path, mism_name);
+              let mut response = reqwest::get(mism_url.as_str())?;
+              let mut dest = File::create(mism_file_path.clone())?;
               copy(&mut response, &mut dest)?;
             }
-            let mism = Library::new(mism_path).expect("Can't load library");
+            let mism_file_path = format!("misms/{}",mism_name);
+            let mism = Library::new(mism_file_path).expect("Can't load library");
             Ok(mism)
           }
 
           let mechanism = self.mechanisms.entry(m[0].to_string()).or_insert_with(||{
             download_mism(m[0], path).unwrap()
           });       
-          
           let native_rust = unsafe {
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let m = mechanism.get::<fn(Value)->Value>(s.as_bytes()).expect("Symbol not present");
