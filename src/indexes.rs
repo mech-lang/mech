@@ -9,7 +9,7 @@ use table::{Value, Table, Index};
 #[cfg(not(feature = "no-std"))] use core::fmt;
 use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
-use errors::ErrorType;
+use mech_utilities::errors::ErrorType;
 
 // ## Hasher
 
