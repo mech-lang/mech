@@ -5,6 +5,11 @@ extern crate mech_core;
 
 use mech_core::{Transaction, Interner};
 
+// ## Modules
+
+mod errors;
+mod value;
+
 // ## Client Message
 
 #[derive(Serialize, Deserialize, Debug)]
