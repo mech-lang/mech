@@ -20,8 +20,6 @@ extern crate serde_derive;
 extern crate serde;
 extern crate libm;
 extern crate num;
-extern crate mech_utilities;
-extern crate quantity;
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -35,6 +33,8 @@ mod runtime;
 mod table;
 mod indexes;
 mod operations;
+mod quantities;
+mod errors;
 
 // ## Exported Modules
 
@@ -43,6 +43,9 @@ pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Function, Comparator, Logic, Parameter};
 pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};
+pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
+pub use self::errors::{Error, ErrorType};
+
 
 // ## Core
 
