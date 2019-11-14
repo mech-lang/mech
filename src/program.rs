@@ -273,17 +273,16 @@ impl ProgramRunner {
   pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
     self.program.compile_program(input);
 
-
-    let mut registry: HashMap<&str, &str> = HashMap::new();
-    registry.insert("math", "https://github.com/mech-lang/math/releases/download/v0.0.1/");
-    registry.insert("stat","https://github.com/mech-lang/stat-library/releases/download/v0.0.1/mech_stat.dll");
+    let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
+    registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/releases/download/v0.0.1/"));
+    registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
 
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
       match registry.get(m[0]) {
-        Some(path) => {
+        Some((ver, path)) => {
 
-          fn download_mism(name: &str, path: &str) -> Result<Library,Box<std::error::Error>> {
+          fn download_mism(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
             create_dir("misms");
 
             #[cfg(unix)]
@@ -293,7 +292,7 @@ impl ProgramRunner {
             let mism_file_path = format!("misms/{}",mism_name);
             // TODO Do path and URL. Right now, assume URL
             {
-              println!("Downloading: {}", name);
+              println!("Downloading: {} v{}", name, ver);
               let mism_url = format!("{}{}", path, mism_name);
               let mut response = reqwest::get(mism_url.as_str())?;
               let mut dest = File::create(mism_file_path.clone())?;
@@ -305,9 +304,10 @@ impl ProgramRunner {
           }
 
           let mechanism = self.mechanisms.entry(m[0].to_string()).or_insert_with(||{
-            download_mism(m[0], path).unwrap()
+            download_mism(m[0], path, ver).unwrap()
           });       
           let native_rust = unsafe {
+            // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let m = mechanism.get::<fn(Value)->Value>(s.as_bytes()).expect("Symbol not present");
             m.into_raw()
