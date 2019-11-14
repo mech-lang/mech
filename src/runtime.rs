@@ -20,9 +20,9 @@ use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
 use operations::{Function, Comparator, Parameter, Logic};
-use quantity::{Quantity, ToQuantity, QuantityMath, make_quantity};
+use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
-use mech_utilities::errors::ErrorType;
+use errors::{Error, ErrorType};
 
 // ## Runtime
 
@@ -929,6 +929,11 @@ impl Block {
                       }
                     }
                     // column
+                    (Function::MathRound, 0x756cddd0, Value::Number(x)) => {
+                      let result = round(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // column
                     (Function::SetAny, 0x756cddd0, Value::Bool(x)) => {
                       let new = match (x, &self.scratch.data[0][0]) {
                         (false, Value::Empty) => Value::Bool(false),
@@ -938,9 +943,25 @@ impl Block {
                       };
                       self.scratch.data[0][0] = new;
                     },
+                    // column
+                    (Function::MathFloor, 0x756cddd0, Value::Number(x)) => {
+                      let result = floor(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
                     // radians
                     (Function::MathSin, 0x69d7cfd3, Value::Number(x)) => {
                       let result = sin(x.to_float());
+                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // degrees
+                    (Function::MathCos, 0x72dacac9, Value::Number(x)) => {
+                      let result = match fmod(x.to_float(), 360.0) {
+                        0.0 => 1.0,
+                        90.0 => 0.0,
+                        180.0 => -1.0,
+                        270.0 => 0.0,
+                        _ => cos(x.to_float() * pi / 180.0),
+                      };
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
                     // radians
@@ -948,6 +969,7 @@ impl Block {
                       let result = cos(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
                     },
+                    // degrees
                     (_, _, Value::Number(x)) => {
                       let result = match functions.get(fnstring) {
                         Some(Some(fn_ptr)) => {
