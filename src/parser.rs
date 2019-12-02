@@ -8,10 +8,15 @@ use mech_core::{Hasher, Function};
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-use nom::alpha1 as nom_alpha1;
-use nom::digit1 as nom_digit1;
-use nom::AtEof as eof;
-use nom::types::CompleteStr;
+use nom::{
+  IResult,
+  branch::alt,
+  sequence::tuple,
+  combinator::opt,
+  multi::{many1, many0},
+  bytes::complete::{tag},
+  character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
+};
 
 // ## Parser Node
 
@@ -48,7 +53,7 @@ pub enum Node {
   LogicOperator{ children: Vec<Node> },
   LogicExpression{ children: Vec<Node> },
   Range{ children: Vec<Node> },
-  SelectAll{ children: Vec<Node> },
+  SelectAll,
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
@@ -197,7 +202,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::LogicOperator{children} => {print!("LogicOperator\n"); Some(children)},
     Node::LogicExpression{children} => {print!("LogicExpression\n"); Some(children)},
     Node::Range{children} => {print!("Range\n"); Some(children)},
-    Node::SelectAll{children} => {print!("SelectAll\n"); Some(children)},
+    Node::SelectAll => {print!("SelectAll\n"); None},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
@@ -305,7 +310,7 @@ impl Parser {
   }
 
   pub fn parse(&mut self, text: &str) {
-    let parse_tree = parse_mech(CompleteStr(text));
+    let parse_tree = parse_mech(text);
     match parse_tree {
       Ok((rest, tree)) => {
         self.unparsed = rest.to_string();
@@ -316,7 +321,7 @@ impl Parser {
   }
 
   pub fn parse_block(&mut self, text: &str) {
-    let parse_tree = parse_block(CompleteStr(text));
+    let parse_tree = parse_block(text);
     match parse_tree {
       Ok((rest, tree)) => {
         self.unparsed = rest.to_string();
@@ -349,12 +354,10 @@ impl fmt::Debug for Parser {
 
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
-    named!($name<CompleteStr, Node>,
-      do_parse!(
-        byte: tag!($byte) >> 
-        (Node::Token{token: $token, byte: (byte.as_bytes())[0]})
-      )
-    );
+    fn $name(input: &str) -> IResult<&str, Node> {
+      let (input, byte) = tag($byte)(input)?;
+      Ok((input, Node::Token{token: $token, byte: (byte.as_bytes())[0]}))
+    }
   )
 }
 
@@ -394,316 +397,434 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 // ## The Basics
 
-named!(word<CompleteStr, Node>, do_parse!(
-  bytes: nom_alpha1 >>
-  (Node::Word{children: bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect()})));
+fn word(input: &str) -> IResult<&str, Node> {
+  let (input, bytes) = alpha1(input)?;
+  let chars = bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect();
+  Ok((input, Node::Word{children: chars}))
+}
 
-named!(number<CompleteStr, Node>, do_parse!(
-  bytes: nom_digit1 >>
-  (Node::Number{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
+fn number(input: &str) -> IResult<&str, Node> {
+  let (input, bytes) = digit1(input)?;
+  let digits = bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect();
+  Ok((input, Node::Number{children: digits}))
+}
 
-named!(punctuation<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace) >>
-  (Node::Punctuation{children: vec![punctuation]})));
+fn punctuation(input: &str) -> IResult<&str, Node> {
+  let (input, punctuation) = alt((period , exclamation , question , comma , colon , semicolon , dash , apostrophe , left_parenthesis , right_parenthesis , left_angle , right_angle , left_brace , right_brace))(input)?;
+  Ok((input, Node::Punctuation{children: vec![punctuation]}))
+}
 
-named!(symbol<CompleteStr, Node>, do_parse!(
-  punctuation: alt!(ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore) >>
-  (Node::Symbol{children: vec![punctuation]})));
+fn symbol(input: &str) -> IResult<&str, Node> {
+  let (input, punctuation) = alt((ampersand , bar , at , slash , hashtag , equal , tilde , plus , asterisk , caret , underscore))(input)?;
+  Ok((input, Node::Symbol{children: vec![punctuation]}))
+}
 
-named!(single_text<CompleteStr, Node>, do_parse!(
-  word: alt!(word | space | number | punctuation | symbol) >>
-  (Node::Text{children: vec![word]})));
+fn single_text(input: &str) -> IResult<&str, Node> {
+  let (input, word) = alt((word , space , number , punctuation , symbol))(input)?;
+  Ok((input, Node::Text{children: vec![word]}))
+}
 
-named!(text<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number | punctuation | symbol)) >>
-  (Node::Text{children: word})));
+fn text(input: &str) -> IResult<&str, Node> {
+  let (input, word) = many1(alt((word , space , number , punctuation , symbol)))(input)?;
+  Ok((input, Node::Text{children: word}))
+}
 
-named!(paragraph_rest<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | space | number | punctuation | symbol | quote)) >>
-  (Node::Text{children: word})));
+fn paragraph_rest(input: &str) -> IResult<&str, Node> {
+  let (input, word) = many1(alt((word , space , number , punctuation , symbol , quote)))(input)?;
+  Ok((input, Node::Text{children: word}))
+}
 
-  named!(paragraph_starter<CompleteStr, Node>, do_parse!(
-  word: many1!(alt!(word | number | quote | left_angle | right_angle | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis)) >>
-  (Node::Text{children: word})));
+fn paragraph_starter(input: &str) -> IResult<&str, Node> {
+  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, period, exclamation , question , comma , colon , semicolon , left_parenthesis, right_parenthesis)))(input)?;
+  Ok((input, Node::Text{children: word}))
+}
 
-named!(identifier<CompleteStr, Node>, do_parse!(
-  identifier: map!(tuple!(count!(word,1), many0!(alt!(dash | slash | word | number))), |tuple| {
-    let (mut word, mut rest) = tuple;
-    word.append(&mut rest);
-    word
-  }) >>
-  (Node::Identifier{children: identifier})));
+fn identifier(input: &str) -> IResult<&str, Node> {
+  let (input, (word, mut rest)) = tuple((word, many0(alt((word, number, dash, slash)))))(input)?;
+  let mut id = vec![word];
+  id.append(&mut rest);
+  Ok((input, Node::Identifier{children: id}))
+}
 
-named!(carriage_newline<CompleteStr, Node>, do_parse!(
-  tag!("\r\n") >>
-  (Node::Null)));
+fn carriage_newline(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("\r\n")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(newline<CompleteStr, Node>, do_parse!(
-  alt!(new_line_char | carriage_newline) >>
-  (Node::Null)));
+fn newline(input: &str) -> IResult<&str, Node> {
+  let (input, _) = alt((new_line_char, carriage_newline))(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(whitespace<CompleteStr, Node>, do_parse!(
-  many0!(space) >> newline >>
-  (Node::Null)));
+fn whitespace(input: &str) -> IResult<&str, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(floating_point<CompleteStr, Node>, do_parse!(
-  period >> bytes: nom_digit1 >>
-  (Node::FloatingPoint{children: bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect()})));
+fn floating_point(input: &str) -> IResult<&str, Node> {
+  let (input,_) = period(input)?;
+  let (input, bytes) = digit1(input)?;
+  let digits = bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect();
+  Ok((input, Node::FloatingPoint{children: digits}))
+}
 
-named!(quantity<CompleteStr, Node>, do_parse!(
-  quantity: map!(tuple!(number, opt!(floating_point), opt!(identifier)),|tuple| {
-    let (front, floating_point, unit) = tuple;
-    let mut quantity = vec![front];
-    match floating_point {
-      Some(point) => quantity.push(point),
-      _ => (),
-    };
-    match unit {
-      Some(unit) => quantity.push(unit),
-      _ => (),
-    };
-    quantity
-  }) >>
-  (Node::Quantity{children: quantity})));
+fn quantity(input: &str) -> IResult<&str, Node> {
+  let (input, number) = number(input)?;
+  let (input, float) = opt(floating_point)(input)?;
+  let (input, unit) = opt(identifier)(input)?;
+  let mut quantity = vec![number];
+  match float {
+    Some(fp) => quantity.push(fp),
+    _ => (),
+  };
+  match unit {
+    Some(unit) => quantity.push(unit),
+    _ => (),
+  };
+  Ok((input, Node::Quantity{children: quantity}))
+}
 
-named!(constant<CompleteStr, Node>, do_parse!(
-  constant: alt!(string | quantity) >>
-  (Node::Constant{children: vec![constant]})));
+fn constant(input: &str) -> IResult<&str, Node> {
+  let (input, constant) = alt((string, quantity))(input)?;
+  Ok((input, Node::Constant{children: vec![constant]}))
+}
 
-named!(empty<CompleteStr, Node>, do_parse!(
-  underscore >>
-  (Node::Empty)));
+fn empty(input: &str) -> IResult<&str, Node> {
+  let (input, _) = many1(underscore)(input)?;
+  Ok((input, Node::Empty))
+}
 
 // ## Blocks
 
 // ### Data
 
-named!(select_all<CompleteStr, Node>, do_parse!(
-  colon >> 
-  (Node::SelectAll{children: vec![]})));
+fn select_all(input: &str) -> IResult<&str, Node> {
+  let (input, _) = colon(input)?;
+  Ok((input, Node::SelectAll))
+}
 
-named!(subscript<CompleteStr, Node>, do_parse!(
-  subscript: alt!(select_all | constant | expression) >> many0!(space) >> opt!(comma) >> many0!(space) >>
-  (Node::Subscript{children: vec![subscript]})));
+fn subscript(input: &str) -> IResult<&str, Node> {
+  let (input, subscript) = alt((select_all, constant, expression))(input)?;
+  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  Ok((input, Node::Subscript{children: vec![subscript]}))
+}
 
-named!(subscript_index<CompleteStr, Node>, do_parse!(
-  left_brace >> subscripts: many1!(subscript) >> right_brace >>
-  (Node::SubscriptIndex{children: subscripts})));
+fn subscript_index(input: &str) -> IResult<&str, Node> {
+  let (input, _) = left_brace(input)?;
+  let (input, subscripts) = many1(subscript)(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Node::SubscriptIndex{children: subscripts}))
+}
 
-named!(dot_index<CompleteStr, Node>, do_parse!(
-  period >> index: map!(tuple!(identifier,opt!(subscript_index)),|tuple|{
-    let (identifier, subscript) = tuple;
-    let mut index = vec![identifier];
-    match subscript {
-      Some(subscript) => index.push(subscript),
-      None => (),
-    };
-    index
-  }) >>
-  (Node::DotIndex{children: index})));
+fn dot_index(input: &str) -> IResult<&str, Node> {
+  let (input, _) = period(input)?;
+  let (input, identifier) = identifier(input)?;
+  let (input, subscript) = opt(subscript_index)(input)?;
+  let mut index = vec![identifier];
+  match subscript {
+    Some(subscript) => index.push(subscript),
+    None => (),
+  };
+  Ok((input, Node::DotIndex{children: index}))
+}
 
-named!(index<CompleteStr, Node>, do_parse!(
-  index: alt!(dot_index | subscript_index) >>
-  (Node::Index{children: vec![index]})));
+fn index(input: &str) -> IResult<&str, Node> {
+  let (input, index) = alt((dot_index, subscript_index))(input)?;
+  Ok((input, Node::Index{children: vec![index]}))
+}
 
-named!(data<CompleteStr, Node>, do_parse!(
-  data: map!(tuple!(alt!(table | identifier), many0!(index)), |tuple| {
-    let (mut source, mut indices) = tuple;
-    let mut data = vec![source];
-    data.append(&mut indices);
-    data
-  }) >>
-  (Node::Data { children: data })));
+fn data(input: &str) -> IResult<&str, Node> {
+  let (input, source) = alt((table, identifier))(input)?;
+  let (input, mut indices) = many0(index)(input)?;
+  let mut data = vec![source];
+  data.append(&mut indices);
+  Ok((input, Node::Data{children: data}))
+}
 
 // ### Tables
 
-named!(table<CompleteStr, Node>, do_parse!(
-  hashtag >> table_identifier: identifier >>
-  (Node::Table { children: vec![table_identifier] })));
+fn table(input: &str) -> IResult<&str, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, table_identifier) = identifier(input)?;
+  Ok((input, Node::Table{children: vec![table_identifier]}))
+}
 
-named!(binding<CompleteStr, Node>, do_parse!(
-binding_id: identifier >> colon >> many0!(space) >> 
-bound: alt!(empty | expression | identifier | constant ) >> many0!(space) >> opt!(comma) >> many0!(space) >>
-(Node::Binding { children: vec![binding_id, bound] })));
+fn binding(input: &str) -> IResult<&str, Node> {
+  let (input, binding_id) = identifier(input)?;
+  let (input, _) = tuple((colon, space0))(input)?;
+  let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
+  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  Ok((input, Node::Binding{children: vec![binding_id, bound]}))
+}
 
-named!(table_column<CompleteStr, Node>, do_parse!(
-  many0!(alt!(space | tab)) >> item: alt!(empty | data | expression | quantity) >> opt!(comma) >> opt!(alt!(space | tab)) >>
-  (Node::Column { children: vec![item] })));
+fn table_column(input: &str) -> IResult<&str, Node> {
+  let (input, _) = many0(alt((space, tab)))(input)?;
+  let (input, item) = alt((empty, data, expression, quantity))(input)?;
+  let (input, _) = tuple((opt(comma), opt(alt((space, tab)))))(input)?;
+  Ok((input, Node::Column{children: vec![item]}))
+}
 
-named!(table_row<CompleteStr, Node>,
-do_parse!(
-  many0!(alt!(space | tab)) >> columns: many1!(table_column) >> opt!(semicolon) >> opt!(newline) >>
-  (Node::TableRow { children: columns })));
+fn table_row(input: &str) -> IResult<&str, Node> {
+  let (input, _) = many0(alt((space, tab)))(input)?;
+  let (input, columns) = many1(table_column)(input)?;
+  let (input, _) = tuple((opt(semicolon), opt(newline)))(input)?;
+  Ok((input, Node::TableRow{children: columns}))
+}
 
-named!(attribute<CompleteStr, Node>, do_parse!(
-  identifier: identifier >> many0!(space) >> opt!(comma) >> many0!(space) >>
-  (Node::Attribute { children: vec![identifier] })));
+fn attribute(input: &str) -> IResult<&str, Node> {
+  let (input, identifier) = identifier(input)?;
+  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  Ok((input, Node::Attribute{children: vec![identifier]}))
+}
 
-named!(table_header<CompleteStr, Node>, do_parse!(
-  bar >> attributes: many1!(attribute) >> bar >> many0!(space) >> opt!(newline) >>
-  (Node::TableHeader { children: attributes })));
+fn table_header(input: &str) -> IResult<&str, Node> {
+  let (input, _) = bar(input)?;
+  let (input, attributes) = many1(attribute)(input)?;
+  let (input, _) = tuple((bar, space0, opt(newline)))(input)?;
+  Ok((input, Node::TableHeader{children: attributes}))
+}
 
-named!(anonymous_table<CompleteStr, Node>, do_parse!(
-  left_bracket >> many0!(space) >> table: map!(tuple!(opt!(table_header),many0!(table_row)),|tuple|{
-    let (table_header, mut table_rows) = tuple;
-    let mut table = vec![];
-    match table_header {
-      Some(table_header) => table.push(table_header),
-      _ => (),
-    };
-    table.append(&mut table_rows);
-    table
-  }) >> right_bracket >>
-  (Node::AnonymousTable { children: table })));
+fn anonymous_table(input: &str) -> IResult<&str, Node> {
+  let (input, _) = left_bracket(input)?;
+  let (input, _) = space0(input)?;
+  let (input, table_header) = opt(table_header)(input)?;
+  let (input, mut table_rows) = many0(table_row)(input)?;
+  let mut table = vec![];
+  match table_header {
+    Some(table_header) => table.push(table_header),
+    _ => (),
+  };
+  table.append(&mut table_rows);
+  Ok((input, Node::AnonymousTable{children: table}))
+}
 
-named!(inline_table<CompleteStr, Node>, do_parse!(
-  left_bracket >> bindings: many1!(binding) >> right_bracket >>
-  (Node::InlineTable { children: bindings })));
+fn inline_table(input: &str) -> IResult<&str, Node> {
+  let (input, _) = left_bracket(input)?;
+  let (input, bindings) = many1(binding)(input)?;
+  let (input, _) = right_bracket(input)?;
+  Ok((input, Node::InlineTable{children: bindings}))
+}
 
 // ### Statements
 
-named!(comment_sigil<CompleteStr, Node>, do_parse!(tag!("//") >> (Node::Null)));
+fn comment_sigil(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("//")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(comment<CompleteStr, Node>, do_parse!(
-  comment_sigil >> comment: text >>
-  (Node::Comment { children: vec![comment] })));
+fn comment(input: &str) -> IResult<&str, Node> {
+  let (input, _) = comment_sigil(input)?;
+  let (input, comment) = text(input)?;
+  Ok((input, Node::Comment{children: vec![comment]}))
+}
 
-named!(add_row_operator<CompleteStr, Node>, do_parse!(tag!("+=") >> (Node::Null)));
+fn add_row_operator(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("+=")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(add_row<CompleteStr, Node>, do_parse!(
-  table_id: table >> space >> add_row_operator >> space >> table: alt!(inline_table | anonymous_table) >>
-  (Node::AddRow { children: vec![table_id, table] })));
+fn add_row(input: &str) -> IResult<&str, Node> {
+  let (input, table_id) = table(input)?;
+  let (input, _) = tuple((space, add_row_operator, space))(input)?;
+  let (input, table) = alt((inline_table, anonymous_table))(input)?;
+  Ok((input, Node::AddRow{children: vec![table_id, table]}))
+}
 
-named!(set_operator<CompleteStr, Node>, do_parse!(tag!(":=") >> (Node::Null)));
+fn set_operator(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag(":=")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(set_data<CompleteStr, Node>, do_parse!(
-  table: data >> space >> set_operator >> space >> expression: expression >>
-  (Node::SetData { children: vec![table, expression] })));
+fn set_data(input: &str) -> IResult<&str, Node> {
+  let (input, table) = data(input)?;
+  let (input, _) = tuple((space, set_operator, space))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::SetData{children: vec![table, expression]}))
+}
 
-named!(variable_define<CompleteStr, Node>, do_parse!(
-  variable: identifier >> space >> equal >> space >> expression: expression >>
-  (Node::VariableDefine { children: vec![variable, expression] })));
+fn variable_define(input: &str) -> IResult<&str, Node> {
+  let (input, variable) = identifier(input)?;
+  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
+}
 
-named!(table_define<CompleteStr, Node>, do_parse!(
-  table: table >> space >> equal >> space >> expression: expression >>
-  (Node::TableDefine { children: vec![table, expression] })));
+fn table_define(input: &str) -> IResult<&str, Node> {
+  let (input, table) = table(input)?;
+  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::TableDefine{children: vec![table, expression]}))
+}
 
-named!(watch_operator<CompleteStr, Node>, do_parse!(
-  tilde >> 
-  (Node::Null)));
+fn watch_operator(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("~")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(until_operator<CompleteStr, Node>, do_parse!(
-  tag!("~|") >> 
-  (Node::Null)));
+fn until_operator(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("~|")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(as_soon_as<CompleteStr, Node>, do_parse!(
-  tag!("|~") >> 
-  (Node::Null)));
+fn as_soon_as(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("|~")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(data_watch<CompleteStr, Node>, do_parse!(
-  watch_operator >> space >> watch: alt!(variable_define | filter_expression | logic_expression | data ) >>
-  (Node::DataWatch { children: vec![watch] })));
+fn data_watch(input: &str) -> IResult<&str, Node> {
+  let (input, _) = watch_operator(input)?;
+  let (input, _) = space(input)?;
+  let (input, watch) = alt((variable_define, expression, data))(input)?;
+  Ok((input, Node::DataWatch{children: vec![watch]}))
+}
 
-named!(statement<CompleteStr, Node>, do_parse!(
-  statement: alt!(table_define | variable_define | data_watch | set_data | add_row | comment) >>
-  (Node::Statement { children: vec![statement] })));
+fn statement(input: &str) -> IResult<&str, Node> {
+  let (input, _) = watch_operator(input)?;
+  let (input, _) = space(input)?;
+  let (input, statement) = alt((table_define, variable_define, data_watch, set_data, add_row, comment))(input)?;
+  Ok((input, Node::Statement{children: vec![statement]}))
+}
 
 // ### Expressions
 
 // #### Math Expressions
 
-named!(parenthetical_expression<CompleteStr, Node>, do_parse!(
-  left_parenthesis >> l1: l1 >> right_parenthesis >>
-  (Node::ParentheticalExpression { children: vec![l1] })));
+fn parenthetical_expression(input: &str) -> IResult<&str, Node> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, l1) = l1(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  Ok((input, l1))
+}
 
-named!(negation<CompleteStr, Node>, do_parse!(
-  dash >> negated: alt!(data | constant) >>
-  (Node::Negation { children: vec![negated] })));
+fn negation(input: &str) -> IResult<&str, Node> {
+  let (input, _) = dash(input)?;
+  let (input, negated) = alt((data, constant))(input)?;
+  Ok((input, Node::Negation { children: vec![negated] }))
+}
 
-named!(function<CompleteStr, Node>, do_parse!(
-  function_nodes: map!(tuple!(identifier, left_parenthesis, many1!(binding), right_parenthesis),|tuple|{
-    let (identifier, _, mut bindings, _) = tuple;
-    let mut function = vec![identifier];
-    function.append(&mut bindings);
-    function
-  }) >>
-  (Node::Function { children: function_nodes })));
+fn function(input: &str) -> IResult<&str, Node> {
+  let (input, identifier) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, mut bindings) = many1(binding)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let mut function = vec![identifier];
+  function.append(&mut bindings);
+  Ok((input, Node::Function { children: function }))
+}
 
-named!(l1_infix<CompleteStr, Node>, do_parse!(
-  space >> op: alt!(plus | dash) >> space >> l2: l2 >>
-  (Node::L1Infix { children: vec![op, l2] })));
+fn l1(input: &str) -> IResult<&str, Node> {
+  let (input, l2) = l2(input)?;
+  let (input, mut infix) = many0(l1_infix)(input)?;
+  let mut math = vec![l2];
+  math.append(&mut infix);
+  Ok((input, Node::L1 { children: math }))
+}
 
-named!(matrix_multiply<CompleteStr, Node>, do_parse!(
-  tag!("**") >> 
-  (Node::Null)));
+fn l1_infix(input: &str) -> IResult<&str, Node> {
+  let (input, _) = space(input)?;
+  let (input, op) = alt((plus, dash))(input)?;
+  let (input, _) = space(input)?;
+  let (input, l2) = l2(input)?;
+  Ok((input, Node::L1Infix { children: vec![op, l2] }))
+}
 
-named!(l2_infix<CompleteStr, Node>, do_parse!(
-  space >> op: alt!(asterisk | slash | matrix_multiply) >> space >> l3: l3 >>
-  (Node::L2Infix { children: vec![op, l3] })));
+fn matrix_multiply(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("**")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(l3_infix<CompleteStr, Node>, do_parse!(
-  space >> op: caret >> space >> l4: l4 >>
-  (Node::L3Infix { children: vec![op, l4] })));
+fn l2(input: &str) -> IResult<&str, Node> {
+  let (input, l3) = l3(input)?;
+  let (input, mut infix) = many0(l2_infix)(input)?;
+  let mut math = vec![l3];
+  math.append(&mut infix);
+  Ok((input, Node::L2 { children: math }))
+}
 
-named!(l4<CompleteStr, Node>, do_parse!(
-  l4: alt!(function | data | quantity | negation | parenthetical_expression) >>
-  (Node::L4 { children: vec![l4] })));
+fn l2_infix(input: &str) -> IResult<&str, Node> {
+  let (input, _) = space(input)?;
+  let (input, op) = alt((asterisk, slash, matrix_multiply))(input)?;
+  let (input, _) = space(input)?;
+  let (input, l3) = l3(input)?;
+  Ok((input, Node::L2Infix { children: vec![op, l3] }))
+}
 
-named!(l3<CompleteStr, Node>, do_parse!(
-  l4: map!(tuple!(l4, many0!(l3_infix)), |tuple| {
-    let (mut l, mut infix) = tuple;
-    let mut math = vec![l];
-    math.append(&mut infix);
-    math
-  }) >>
-  (Node::L3 { children: l4 })));
+fn l3(input: &str) -> IResult<&str, Node> {
+  let (input, l4) = l4(input)?;
+  let (input, mut infix) = many0(l3_infix)(input)?;
+  let mut math = vec![l4];
+  math.append(&mut infix);
+  Ok((input, Node::L3 { children: math }))
+}
 
-named!(l2<CompleteStr, Node>, do_parse!(
-  l3: map!(tuple!(l3, many0!(l2_infix)), |tuple| {
-    let (mut l, mut infix) = tuple;
-    let mut math = vec![l];
-    math.append(&mut infix);
-    math
-  }) >>
-  (Node::L2 { children: l3 })));
+fn l3_infix(input: &str) -> IResult<&str, Node> {
+  let (input, _) = space(input)?;
+  let (input, op) = caret(input)?;
+  let (input, _) = space(input)?;
+  let (input, l4) = l4(input)?;
+  Ok((input, Node::L3Infix { children: vec![op, l4] }))
+}
 
-named!(l1<CompleteStr, Node>, do_parse!(
-  l2: map!(tuple!(l2, many0!(l1_infix)), |tuple| {
-    let (mut l, mut infix) = tuple;
-    let mut math = vec![l];
-    math.append(&mut infix);
-    math
-  }) >>
-  (Node::L1 { children: l2 })));
+fn l4(input: &str) -> IResult<&str, Node> {
+  let (input, l4) = alt((function,data,quantity,negation,parenthetical_expression))(input)?;
+  Ok((input, Node::L4 { children: vec![l4] }))
+}
 
-named!(math_expression<CompleteStr, Node>, do_parse!(
-  l1: l1 >>
-  (Node::MathExpression { children: vec![l1] })));
+fn math_expression(input: &str) -> IResult<&str, Node> {
+  let (input, l1) = l1(input)?;
+  Ok((input, Node::MathExpression { children: vec![l1] }))
+}
 
 // #### Filter Expressions
 
-named!(not_equal<CompleteStr, Node>, do_parse!(tag!("!=") >> (Node::NotEqual)));
+fn not_equal(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("!=")(input)?;
+  Ok((input, Node::NotEqual))
+}
 
-named!(equal_to<CompleteStr, Node>, do_parse!(tag!("==") >> (Node::Equal)));
+fn equal_to(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("==")(input)?;
+  Ok((input, Node::Equal))
+}
 
-named!(less_than_equal<CompleteStr, Node>, do_parse!(tag!("<=") >> (Node::LessThanEqual)));
+fn greater_than(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag(">")(input)?;
+  Ok((input, Node::GreaterThan))
+}
 
-named!(greater_than_equal<CompleteStr, Node>, do_parse!(tag!(">=") >> (Node::GreaterThanEqual)));
+fn less_than(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("<")(input)?;
+  Ok((input, Node::LessThan))
+}
 
-named!(less_than<CompleteStr, Node>, do_parse!(tag!("<") >> (Node::LessThan)));
+fn greater_than_equal(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag(">=")(input)?;
+  Ok((input, Node::GreaterThanEqual))
+}
 
-named!(greater_than<CompleteStr, Node>, do_parse!(tag!(">") >> (Node::GreaterThan)));
+fn less_than_equal(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("<=")(input)?;
+  Ok((input, Node::LessThanEqual))
+}
 
-named!(comparator<CompleteStr, Node>, do_parse!(
-  comparator: alt!(greater_than_equal | less_than_equal | equal_to | not_equal | less_than | greater_than) >>
-  (Node::Comparator { children: vec![comparator] })));
+fn comparator(input: &str) -> IResult<&str, Node> {
+  let (input, comparator) = alt((greater_than_equal , less_than_equal , equal_to , not_equal , less_than , greater_than))(input)?;
+  Ok((input, Node::Comparator { children: vec![comparator] }))
+}
 
-named!(filter_expression<CompleteStr, Node>, do_parse!(
-  lhs: alt!(data | constant) >> space >> comp: comparator >> space >> rhs: alt!(data | constant) >>
-  (Node::FilterExpression { children: vec![lhs, comp, rhs] })));
+fn filter_expression(input: &str) -> IResult<&str, Node> {
+  let (input, lhs) = alt((data, constant))(input)?;
+  let (input, _) = space(input)?;
+  let (input, comp) = comparator(input)?;
+  let (input, _) = space(input)?;
+  let (input, rhs) = alt((data, constant))(input)?;
+  Ok((input, Node::FilterExpression { children: vec![lhs, comp, rhs] }))
+}
 
 // State Machine
 
+/*
 named!(state_machine<CompleteStr, Node>, do_parse!(
   source: data >> question >> whitespace >> transitions: transitions >> whitespace >>
   (Node::StateMachine { children: vec![source, transitions] })));
@@ -714,154 +835,238 @@ named!(transitions<CompleteStr, Node>, do_parse!(
 
 named!(transition<CompleteStr, Node>, do_parse!(
   many1!(space) >> state: alt!(string | constant | empty) >> many1!(space) >> tag!("=>") >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
-  (Node::Transition { children: vec![state, next] })));
+  (Node::Transition { children: vec![state, next] })));*/
 
 // #### Logic Expressions
 
-named!(or<CompleteStr, Node>, do_parse!(bar >> (Node::Or)));
+fn or(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("|")(input)?;
+  Ok((input, Node::Or))
+}
 
-named!(and<CompleteStr, Node>, do_parse!(ampersand >> (Node::And)));
+fn and(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("&")(input)?;
+  Ok((input, Node::And))
+}
 
-named!(logic_operator<CompleteStr, Node>, do_parse!(
-  operator: alt!(and | or) >>
-  (Node::LogicOperator { children: vec![operator] })));
+fn logic_operator(input: &str) -> IResult<&str, Node> {
+  let (input, operator) = alt((and, or))(input)?;
+  Ok((input, Node::LogicOperator { children: vec![operator] }))
+}
 
-named!(logic_expression<CompleteStr, Node>, do_parse!(
-  lhs: alt!(filter_expression | data | constant) >> many0!(space) >> op: logic_operator >> many0!(space) >> rhs: alt!(logic_expression | filter_expression | data | constant) >>
-  (Node::LogicExpression { children: vec![lhs, op, rhs] })));
+fn logic_expression(input: &str) -> IResult<&str, Node> {
+  let (input, lhs) = alt((filter_expression , data , constant))(input)?;
+  let (input, _) = space1(input)?;
+  let (input, op) = logic_operator(input)?;
+  let (input, _) = space1(input)?;
+  let (input, rhs) = alt((logic_expression , filter_expression , data , constant))(input)?;
+  Ok((input, Node::LogicExpression { children: vec![lhs, op, rhs] }))
+}
 
 // #### Other Expressions
 
-named!(range<CompleteStr, Node>, do_parse!(
-  start: math_expression >> many0!(space) >> colon >> many0!(space) >> end: math_expression >>
-  (Node::Range { children: vec![start,end] })));
+fn range(input: &str) -> IResult<&str, Node> {
+  let (input, start) = math_expression(input)?;
+  let (input, _) = tuple((space0,colon,space0))(input)?;
+  let (input, end) = math_expression(input)?;
+  Ok((input, Node::Range { children: vec![start,end] }))
+}
 
-named!(string_interpolation<CompleteStr, Node>, do_parse!(
-  tag!("{{") >> expression: expression >> tag!("}}") >>
-  (Node::StringInterpolation { children: vec![expression] })));
+fn string_interpolation(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tag("{{")(input)?;
+  let (input, expression) = expression(input)?;
+  let (input, _) = tag("}}")(input)?;
+  Ok((input, Node::StringInterpolation { children: vec![expression] }))
+}
 
-named!(string<CompleteStr, Node>, do_parse!(
-  quote >> text: many0!(alt!(string_interpolation | text)) >> quote >>
-  (Node::String { children: text })));
+fn string(input: &str) -> IResult<&str, Node> {
+  let (input, _) = quote(input)?;
+  let (input, text) = many0(alt((string_interpolation, text)))(input)?;
+  let (input, _) = quote(input)?;
+  Ok((input, Node::String { children: text }))
+}
 
-named!(expression<CompleteStr, Node>, do_parse!(
-  expression: alt!(state_machine | string | range | logic_expression | filter_expression | inline_table | anonymous_table | math_expression) >>
-  (Node::Expression { children: vec![expression] })));
+fn expression(input: &str) -> IResult<&str, Node> {
+  let (input, expression) = alt((string , range , logic_expression , filter_expression , inline_table , anonymous_table , math_expression))(input)?;
+  Ok((input, Node::Expression { children: vec![expression] }))
+}
 
 // ### Block Basics
 
-named!(constraint<CompleteStr, Node>, do_parse!(
-  space >> space >> statement_or_expression: statement >> many0!(space) >> opt!(newline) >>
-  (Node::Constraint { children: vec![statement_or_expression] })));
+fn constraint(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tuple((space,space))(input)?;
+  let (input, statement) = statement(input)?;
+  let (input, _) = tuple((many0(space),opt(newline)))(input)?;
+  Ok((input, Node::Constraint { children: vec![statement] }))
+}
 
-named!(block<CompleteStr, Node>, do_parse!(
-  constraints: many1!(constraint) >> many0!(whitespace) >>
-  (Node::Block { children: constraints })));
+fn block(input: &str) -> IResult<&str, Node> {
+  let (input, constraints) = many1(constraint)(input)?; 
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::Block { children: constraints }))
+}
 
 // ## Markdown
 
-named!(title<CompleteStr, Node>, do_parse!(
-  hashtag >> space >> text: text >> many0!(whitespace) >>
-  (Node::Title { children: vec![text] })));
+fn title(input: &str) -> IResult<&str, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, _) = space1(input)?;
+  let (input, text) = text(input)?; 
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::Title { children: vec![text] }))
+}
 
-named!(subtitle<CompleteStr, Node>, do_parse!(
-  hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
-  (Node::Subtitle { children: vec![text] })));
+fn subtitle(input: &str) -> IResult<&str, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, _) = hashtag(input)?;
+  let (input, _) = space1(input)?;
+  let (input, text) = text(input)?; 
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::Subtitle { children: vec![text] }))
+}
 
-named!(sectiontitle<CompleteStr, Node>, do_parse!(
-  hashtag >> hashtag >> hashtag >> space >> text: text >> many0!(whitespace) >>
-  (Node::SectionTitle { children: vec![text] })));
+fn section_title(input: &str) -> IResult<&str, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, _) = hashtag(input)?;
+  let (input, _) = hashtag(input)?;
+  let (input, _) = space1(input)?;
+  let (input, text) = text(input)?; 
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::SectionTitle { children: vec![text] }))
+}
 
-named!(inline_code<CompleteStr, Node>, do_parse!(
-  grave >> text: text >> grave >> opt!(space) >>
-  (Node::InlineCode { children: vec![text] })));
+fn inline_code(input: &str) -> IResult<&str, Node> {
+  let (input, _) = grave(input)?;
+  let (input, text) = text(input)?; 
+  let (input, _) = grave(input)?;
+  let (input, _) = space0(input)?;
+  Ok((input, Node::InlineCode { children: vec![text] }))
+}
 
-named!(paragraph_text<CompleteStr, Node>, do_parse!(
-  paragraph: map!(tuple!(paragraph_starter, opt!(paragraph_rest)), |tuple| {
-    let (mut word, mut text) = tuple;
-    let mut paragraph = vec![word];
-    match text {
-      Some(text) => paragraph.push(text),
-      _ => (),
-    };
-    paragraph
-  }) >> many0!(space) >>
-  (Node::ParagraphText { children: paragraph })));
+fn paragraph_text(input: &str) -> IResult<&str, Node> {
+  let (input, word) = paragraph_starter(input)?;
+  let (input, text) = opt(paragraph_rest)(input)?; 
+  let mut paragraph = vec![word];
+  match text {
+    Some(text) => paragraph.push(text),
+    _ => (),
+  };
+  Ok((input, Node::ParagraphText { children: paragraph }))
+}
 
-named!(paragraph<CompleteStr, Node>, do_parse!(
-  paragraph_elements: many1!(alt!(inline_mech_code | inline_code | paragraph_text)) >> opt!(newline) >> many0!(whitespace) >>
-  (Node::Paragraph { children: paragraph_elements })));
+fn paragraph(input: &str) -> IResult<&str, Node> {
+  let (input, paragraph_elements) = many1(alt((inline_mech_code, inline_code, paragraph_text)))(input)?;
+  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::Paragraph { children: paragraph_elements }))
+}
 
-named!(unordered_list<CompleteStr, Node>, do_parse! (
-  list_items: many1!(list_item) >> opt!(whitespace) >>
-  (Node::UnorderedList{children: list_items})));
+fn unordered_list(input: &str) -> IResult<&str, Node> {
+  let (input, list_items) = many1(list_item)(input)?;
+  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::UnorderedList { children: list_items }))
+}
 
-named!(list_item<CompleteStr, Node>, do_parse! (
-  dash >> space >> list_item: paragraph >> opt!(newline) >>
-  (Node::ListItem{children: vec![list_item]})));
+fn list_item(input: &str) -> IResult<&str, Node> {
+  let (input, _) = dash(input)?;
+  let (input, _) = space1(input)?;
+  let (input, list_item) = paragraph(input)?;
+  let (input, _) = opt(newline)(input)?;
+  Ok((input, Node::ListItem { children: vec![list_item] }))
+}
 
-named!(formatted_text<CompleteStr, Node>, do_parse!(
-  formatted: many0!(alt!(paragraph_rest | carriage_return | new_line_char)) >>
-  (Node::FormattedText { children: formatted })));
+fn formatted_text(input: &str) -> IResult<&str, Node> {
+  let (input, formatted) = many0(alt((paragraph_rest, carriage_return, new_line_char)))(input)?;
+  Ok((input, Node::FormattedText { children: formatted }))
+}
 
-named!(code_block<CompleteStr, Node>, do_parse!(
-  grave >> grave >> grave >> newline >> text: formatted_text >> grave >> grave >> grave >> newline >> many0!(whitespace) >>
-  (Node::CodeBlock { children: vec![text] })));
+fn code_block(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tuple((grave, grave, grave, newline))(input)?;
+  let (input, text) = formatted_text(input)?;
+  let (input, _) = tuple((grave, grave, grave, newline, many0(whitespace)))(input)?;
+  Ok((input, Node::CodeBlock { children: vec![text] }))
+}
 
 // Mechdown
 
-named!(inline_mech_code<CompleteStr, Node>, do_parse!(
-  left_bracket >> left_bracket >> expression: expression >> right_bracket >> right_bracket >> opt!(space) >>
-  (Node::InlineMechCode { children: vec![expression] })));
+fn inline_mech_code(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tuple((left_bracket,left_bracket))(input)?;
+  let (input, expression) = expression(input)?;
+  let (input, _) = tuple((right_bracket,right_bracket,opt(space)))(input)?;
+  Ok((input, Node::InlineMechCode{ children: vec![expression] }))
+}
 
-named!(mech_code_block<CompleteStr, Node>, do_parse!(
-  grave >> grave >> grave >> tag!("mech:") >> directive: word >> newline >> mech_block: block >> grave >> grave >> grave >> newline >> many0!(whitespace) >>
-  (Node::MechCodeBlock { children: vec![directive, mech_block] })));
+fn mech_code_block(input: &str) -> IResult<&str, Node> {
+  let (input, _) = tuple((grave,grave,grave,tag("mech:")))(input)?;
+  let (input, directive) = opt(text)(input)?;
+  let (input, _) = newline(input)?;
+  let (input, mech_block) = block(input)?;
+  let (input, _) = tuple((grave,grave,grave))(input)?;
+  let (input, _) = newline(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let mut elements = vec![];
+  match directive {
+    Some(directive) => elements.push(directive),
+    _ => (),
+  }
+  elements.push(mech_block);
+  Ok((input, Node::MechCodeBlock{ children: elements }))
+}
 
 // ## Start Here
 
-named!(section<CompleteStr, Node>, do_parse!(
-  section: map!(tuple!(opt!(subtitle), many0!(alt!(block | code_block | mech_code_block | paragraph | unordered_list))), |tuple| {
-    let (mut section_title, mut section_body) = tuple;
-    let mut section = vec![];
-    match section_title {
-      Some(subtitle) => section.push(subtitle),
-      _ => (),
-    };
-    section.append(&mut section_body);
-    section
-  }) >> many0!(whitespace) >>
-  (Node::Section { children: section })));
+fn section(input: &str) -> IResult<&str, Node> {
+  let (input, section_title) = opt(subtitle)(input)?;
+  let (input, mut section_elements) = many0(alt((block , code_block , mech_code_block , paragraph , unordered_list)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let mut section = vec![];
+  match section_title {
+    Some(subtitle) => section.push(subtitle),
+    _ => (),
+  };
+  section.append(&mut section_elements);
+  Ok((input, Node::Section{ children: section }))
+}
 
-named!(body<CompleteStr, Node>, do_parse!(
-  many0!(whitespace) >> sections: many1!(section) >>
-  (Node::Body { children: sections })));
+fn body(input: &str) -> IResult<&str, Node> {
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, sections) = many1(section)(input)?;
+  Ok((input, Node::Body { children: sections }))
+}
 
-named!(fragment<CompleteStr, Node>, do_parse!(
-  statement: statement >>
-  (Node::Fragment { children: vec![statement] })));
+fn fragment(input: &str) -> IResult<&str, Node> {
+  let (input, statement) = statement(input)?;
+  Ok((input, Node::Fragment { children:  vec![statement] }))
+}
 
-named!(program<CompleteStr, Node>, do_parse!(
-  program: map!(tuple!(opt!(title),body), |tuple| {
-    let (title, body) = tuple;
-    let mut program = vec![];
-    match title {
-      Some(title) => program.push(title),
-      None => (),
-    };
-    program.push(body);
-    program
-  } ) >> opt!(whitespace) >>
-  (Node::Program { children: program })));
+pub fn program(input: &str) -> IResult<&str, Node> {
+  let mut program = vec![];
+  let (input, title) = opt(title)(input)?;
+  match title {
+    Some(title) => program.push(title),
+    None => (),
+  };
+  let (input, body) = body(input)?;
+  program.push(body);
+  let (input, _) = opt(whitespace)(input)?;
+  Ok((input, Node::Program { children: program }))
+}
 
-named!(parse_mech<CompleteStr, Node>, do_parse!(
-  program: alt!(many1!(fragment) | many1!(program)) >>
-  (Node::Root { children: program })));
+fn parse_mech(input: &str) -> IResult<&str, Node> {
+  let (input, program) = alt((many1(fragment), many1(program)))(input)?;
+  Ok((input, Node::Root { children:  program }))
+}
 
-named!(raw_constraint<CompleteStr, Node>, do_parse!(
-  statement_or_expression: statement >> many0!(space) >> opt!(newline) >>
-  (Node::Constraint { children: vec![statement_or_expression] })));
+fn raw_constraint(input: &str) -> IResult<&str, Node> {
+  let (input, statement) = statement(input)?;
+  let (input, _) = space0(input)?;
+  let (input, _) = opt(newline)(input)?;
+  Ok((input, Node::Constraint { children:  vec![statement] }))
+}
 
-named!(parse_block<CompleteStr, Node>, do_parse!(
-  constraints: many1!(raw_constraint) >> many0!(whitespace) >>
-  (Node::Block { children: constraints })));
+pub fn parse_block(input: &str) -> IResult<&str, Node> {
+  let (input, constraints) = many1(raw_constraint)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::Block { children:  constraints }))
+}
