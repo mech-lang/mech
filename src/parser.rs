@@ -680,8 +680,6 @@ fn data_watch(input: &str) -> IResult<&str, Node> {
 }
 
 fn statement(input: &str) -> IResult<&str, Node> {
-  let (input, _) = watch_operator(input)?;
-  let (input, _) = space(input)?;
   let (input, statement) = alt((table_define, variable_define, data_watch, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
@@ -767,7 +765,7 @@ fn l3_infix(input: &str) -> IResult<&str, Node> {
 }
 
 fn l4(input: &str) -> IResult<&str, Node> {
-  let (input, l4) = alt((function,data,quantity,negation,parenthetical_expression))(input)?;
+  let (input, l4) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L4 { children: vec![l4] }))
 }
 
