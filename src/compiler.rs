@@ -1275,8 +1275,7 @@ impl Compiler {
         }
         compiled.push(Node::DataWatch{children});
       },
-      parser::Node::SelectAll{children} => {
-        let result = self.compile_nodes(children);
+      parser::Node::SelectAll => {
         compiled.push(Node::SelectAll);
       },
       parser::Node::Range{children} => {
