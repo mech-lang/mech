@@ -590,6 +590,7 @@ fn anonymous_table(input: &str) -> IResult<&str, Node> {
   let (input, _) = space0(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, mut table_rows) = many0(table_row)(input)?;
+  let (input, _) = right_bracket(input)?;
   let mut table = vec![];
   match table_header {
     Some(table_header) => table.push(table_header),
@@ -691,7 +692,7 @@ fn statement(input: &str) -> IResult<&str, Node> {
 fn parenthetical_expression(input: &str) -> IResult<&str, Node> {
   let (input, _) = left_parenthesis(input)?;
   let (input, l1) = l1(input)?;
-  let (input, _) = left_parenthesis(input)?;
+  let (input, _) = right_parenthesis(input)?;
   Ok((input, l1))
 }
 
@@ -894,7 +895,7 @@ fn expression(input: &str) -> IResult<&str, Node> {
 fn constraint(input: &str) -> IResult<&str, Node> {
   let (input, _) = tuple((space,space))(input)?;
   let (input, statement) = statement(input)?;
-  let (input, _) = tuple((many0(space),opt(newline)))(input)?;
+  let (input, _) = tuple((space0,opt(newline)))(input)?;
   Ok((input, Node::Constraint { children: vec![statement] }))
 }
 
@@ -1016,7 +1017,7 @@ fn mech_code_block(input: &str) -> IResult<&str, Node> {
 
 fn section(input: &str) -> IResult<&str, Node> {
   let (input, section_title) = opt(subtitle)(input)?;
-  let (input, mut section_elements) = many0(alt((block , code_block , mech_code_block , paragraph , unordered_list)))(input)?;
+  let (input, mut section_elements) = many1(alt((block , code_block , mech_code_block , paragraph , unordered_list)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut section = vec![];
   match section_title {
@@ -1052,8 +1053,8 @@ pub fn program(input: &str) -> IResult<&str, Node> {
 }
 
 fn parse_mech(input: &str) -> IResult<&str, Node> {
-  let (input, program) = alt((many1(fragment), many1(program)))(input)?;
-  Ok((input, Node::Root { children:  program }))
+  let (input, program) = alt((fragment, program))(input)?;
+  Ok((input, Node::Root { children:  vec![program] }))
 }
 
 fn raw_constraint(input: &str) -> IResult<&str, Node> {
