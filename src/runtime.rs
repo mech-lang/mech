@@ -551,6 +551,7 @@ impl Block {
                 _ => break 'reference_loop,
               };
             }
+            //println!("{:?}", table_ref);
             // If we only have one index, it's like this #x{3}
             let one = vec![Value::from_u64(1)];
             let (row_ixes, column_ixes) = if indices.len() == 1 {
@@ -560,7 +561,7 @@ impl Block {
                 Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
                 _ => &self.rhs_rows_empty,
               };
-              // Now the other dimension indes will be one.
+              // The other dimension index will be one.
               // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
               // If #x = [1; 2; 3] then it translates to #x{3,1}
               let (row_ixes, column_ixes) = match (table_ref.rows, table_ref.columns) {
@@ -654,6 +655,16 @@ impl Block {
                     );
                     break 'solve_loop;
                   }
+                  match table_ref.column_index_to_alias[cix] {
+                    Some(alias) => {
+                      self.scratch.column_aliases.insert(cix as u64 + 1, alias);
+                      if self.scratch.column_index_to_alias.len() < cix + 1 {
+                        self.scratch.column_index_to_alias.resize_with(cix + 1, ||{None});
+                      }
+                      self.scratch.column_index_to_alias[cix] = Some(alias);
+                    },
+                    None => (),
+                  };
                   self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
                   jix += 1;
                   actual_height = jix;
@@ -664,12 +675,16 @@ impl Block {
                 actual_width = iix;
               }
             }
-            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
+            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);            
           }
           let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
           out.rows = self.scratch.rows;
           out.columns = self.scratch.columns;
           out.data = self.scratch.data.clone();
+          println!("{:?}", self.scratch);
+          //out.column_index_to_alias = self.scratch.column_index_to_alias.clone();
+          //out.column_aliases = self.scratch.column_aliases.clone();
+          
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
