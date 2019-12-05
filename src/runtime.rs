@@ -533,25 +533,24 @@ impl Block {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
           {
-            let table_ref = match table {
+            let mut table_ref = match table {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
             };
-            // TODO fix the way deep references work. This part is hacked and hard coded.
-            // What needs to happen is this: We can recursively next any level of access on tables.
-            // Then we can draw them easily. 
-            let id = match table_ref.data[0][0] {
-              Value::Reference(id) => {
-                self.ready.insert(Register::new(id, Index::Index(0)));
-                self.input_registers.insert(Register::new(id, Index::Index(0)));
-                store.get_table(id)
-              },
-              _ => None,
-            };
-            let table_ref = match id {
-              Some(table) => table,
-              None => table_ref
-            };
+            // TODO This is better than before but needs to work for all cases
+            'reference_loop: loop {
+              match table_ref.data[0][0] {
+                Value::Reference(id) => {
+                  self.ready.insert(Register::new(id, Index::Index(0)));
+                  self.input_registers.insert(Register::new(id, Index::Index(0)));
+                  match store.get_table(id) {
+                    Some(table) => table_ref = table,
+                    None => break 'reference_loop,
+                  };
+                },
+                _ => break 'reference_loop,
+              };
+            }
             // If we only have one index, it's like this #x{3}
             let one = vec![Value::from_u64(1)];
             let (row_ixes, column_ixes) = if indices.len() == 1 {
