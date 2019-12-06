@@ -819,29 +819,32 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     for (k,v) in self.nodes.iter() {
-      match document.get_element_by_id(&format!("{:?}",v[0])) {
-        Some(mut div) => {
-          let table = &self.core.store.tables.get(*k).unwrap();
-          match &table.data[2][0] {
-            Value::String(value) => div.set_inner_html(&value),
-            Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
-            Value::Reference(table_ref) => {
-              let child_nodes = div.children();
-              let child = child_nodes.get_with_index(0).unwrap();
-              if *table_ref != child.id().parse::<u64>().unwrap() {
-                //div.remove_child(&child);
-                unsafe {
-                  let referenced_table: &Table = (*wasm_core).core.store.get_table(*table_ref).unwrap();
-                  //(*wasm_core).draw_contents(&referenced_table, &mut div);
+      for node in v {
+        match document.get_element_by_id(&format!("{:?}",node)) {
+          Some(mut div) => {
+            let row = div.get_attribute("row").unwrap().parse::<usize>().unwrap();
+            let table = &self.core.store.tables.get(*k).unwrap();
+            match &table.data[2][row - 1] {
+              Value::String(value) => div.set_inner_html(&value),
+              Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
+              Value::Reference(table_ref) => {
+                let child_nodes = div.children();
+                let child = child_nodes.get_with_index(0).unwrap();
+                if *table_ref != child.id().parse::<u64>().unwrap() {
+                  //div.remove_child(&child);
+                  unsafe {
+                    let referenced_table: &Table = (*wasm_core).core.store.get_table(*table_ref).unwrap();
+                    //(*wasm_core).draw_contents(&referenced_table, &mut div);
+                  }
                 }
-              }
-            },
-            _ => (),
-          };
-                          
+              },
+              _ => (),
+            };
+                            
+          }
+          // TODO Remove old nodes from the table if they aren't in the DOM tree anymore.
+          _ => (),
         }
-        // TODO Remove old nodes from the table if they aren't in the DOM tree anymore.
-        _ => (),
       }
       log!("{:?}--{:?}",k,v);
     }
@@ -1090,7 +1093,6 @@ impl Core {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
         "div" => {
-          log!("Doing a div");
           let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
           let mut div = document.create_element("div")?;
           unsafe {
@@ -1098,6 +1100,7 @@ impl Core {
             nodes.push(element_id);
           }
           div.set_id(&format!("{:?}",element_id));
+          div.set_attribute("row",&format!("{:?}",row + 1));
           match &table.data[1][row].as_string() {
             Some(class) => {
               div.set_attribute("class",class);
