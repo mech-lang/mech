@@ -657,7 +657,7 @@ impl Block {
                   }
                   match table_ref.column_index_to_alias[cix] {
                     Some(alias) => {
-                      self.scratch.column_aliases.insert(cix as u64 + 1, alias);
+                      self.scratch.column_aliases.insert(alias, cix as u64 + 1);
                       if self.scratch.column_index_to_alias.len() < cix + 1 {
                         self.scratch.column_index_to_alias.resize_with(cix + 1, ||{None});
                       }
@@ -675,15 +675,14 @@ impl Block {
                 actual_width = iix;
               }
             }
-            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);            
+            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
           }
           let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
           out.rows = self.scratch.rows;
           out.columns = self.scratch.columns;
           out.data = self.scratch.data.clone();
-          println!("{:?}", self.scratch);
-          //out.column_index_to_alias = self.scratch.column_index_to_alias.clone();
-          //out.column_aliases = self.scratch.column_aliases.clone();
+          out.column_index_to_alias = self.scratch.column_index_to_alias.clone();
+          out.column_aliases = self.scratch.column_aliases.clone();
           
           self.scratch.clear();
           self.rhs_columns_empty.clear();
