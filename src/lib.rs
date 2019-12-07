@@ -1092,9 +1092,9 @@ impl Core {
     for row in 0..table.rows as usize {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
-        "div" => {
+        "div" | "ul" | "li" => {
           let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
-          let mut div = document.create_element("div")?;
+          let mut div = document.create_element(tag.as_ref())?;
           unsafe {
             let nodes = (*wasm_core).nodes.entry(table.id).or_insert(vec![]);
             nodes.push(element_id);
