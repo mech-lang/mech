@@ -653,8 +653,9 @@ impl Compiler {
             Constraint::AliasTable{table, alias} => table.clone(),
             _ => TableId::Local(0),
           };
-          constraints.push(Constraint::AliasTable{table, alias});
+          
           let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
+          constraints.push(Constraint::AliasTable{table: TableId::Local(intermediate_table), alias});
           constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
           constraints.push(Constraint::Function{operation: Function::TableSplit, fnstring: "table_split".to_string(), parameters: vec![(table, None, None)], output: vec![TableId::Local(intermediate_table)]});
         } else {
