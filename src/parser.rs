@@ -13,6 +13,7 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
+  error::{context, convert_error, ErrorKind, ParseError,VerboseError},
   multi::{many1, many0},
   bytes::complete::{tag},
   character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
@@ -58,6 +59,7 @@ pub enum Node {
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
+  SplitData{ children: Vec<Node> },
   AddOperator{ children: Vec<Node> },
   WatchOperator {children: Vec<Node>},
   Equality{ children: Vec<Node> },
@@ -207,6 +209,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
+    Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
     Node::AddOperator{children} => {print!("AddOperator\n"); Some(children)},
     Node::WatchOperator{children} => {print!("WatchOperator\n"); Some(children)},
@@ -316,7 +319,7 @@ impl Parser {
         self.unparsed = rest.to_string();
         self.parse_tree = tree;
       },
-      _ => (), 
+      Err(q) => (), 
     }
   }
 
@@ -354,7 +357,7 @@ impl fmt::Debug for Parser {
 
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
-    fn $name(input: &str) -> IResult<&str, Node> {
+    fn $name(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
       let (input, byte) = tag($byte)(input)?;
       Ok((input, Node::Token{token: $token, byte: (byte.as_bytes())[0]}))
     }
@@ -397,79 +400,79 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 // ## The Basics
 
-fn word(input: &str) -> IResult<&str, Node> {
+fn word(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, bytes) = alpha1(input)?;
   let chars = bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect();
   Ok((input, Node::Word{children: chars}))
 }
 
-fn number(input: &str) -> IResult<&str, Node> {
+fn number(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, bytes) = digit1(input)?;
   let digits = bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect();
   Ok((input, Node::Number{children: digits}))
 }
 
-fn punctuation(input: &str) -> IResult<&str, Node> {
+fn punctuation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, punctuation) = alt((period , exclamation , question , comma , colon , semicolon , dash , apostrophe , left_parenthesis , right_parenthesis , left_angle , right_angle , left_brace , right_brace))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
 
-fn symbol(input: &str) -> IResult<&str, Node> {
+fn symbol(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, punctuation) = alt((ampersand , bar , at , slash , hashtag , equal , tilde , plus , asterisk , caret , underscore))(input)?;
   Ok((input, Node::Symbol{children: vec![punctuation]}))
 }
 
-fn single_text(input: &str) -> IResult<&str, Node> {
+fn single_text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, word) = alt((word , space , number , punctuation , symbol))(input)?;
   Ok((input, Node::Text{children: vec![word]}))
 }
 
-fn text(input: &str) -> IResult<&str, Node> {
+fn text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, word) = many1(alt((word , space , number , punctuation , symbol)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
-fn paragraph_rest(input: &str) -> IResult<&str, Node> {
+fn paragraph_rest(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, word) = many1(alt((word , space , number , punctuation , symbol , quote)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
-fn paragraph_starter(input: &str) -> IResult<&str, Node> {
-  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, period, exclamation , question , comma , colon , semicolon , left_parenthesis, right_parenthesis)))(input)?;
+fn paragraph_starter(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation , question , comma , colon , semicolon , left_parenthesis, right_parenthesis)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
-fn identifier(input: &str) -> IResult<&str, Node> {
+fn identifier(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, (word, mut rest)) = tuple((word, many0(alt((word, number, dash, slash)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
   Ok((input, Node::Identifier{children: id}))
 }
 
-fn carriage_newline(input: &str) -> IResult<&str, Node> {
+fn carriage_newline(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("\r\n")(input)?;
   Ok((input, Node::Null))
 }
 
-fn newline(input: &str) -> IResult<&str, Node> {
+fn newline(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = alt((new_line_char, carriage_newline))(input)?;
   Ok((input, Node::Null))
 }
 
-fn whitespace(input: &str) -> IResult<&str, Node> {
+fn whitespace(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(space)(input)?;
   let (input, _) = newline(input)?;
   Ok((input, Node::Null))
 }
 
-fn floating_point(input: &str) -> IResult<&str, Node> {
+fn floating_point(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input,_) = period(input)?;
   let (input, bytes) = digit1(input)?;
   let digits = bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect();
   Ok((input, Node::FloatingPoint{children: digits}))
 }
 
-fn quantity(input: &str) -> IResult<&str, Node> {
+fn quantity(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, number) = number(input)?;
   let (input, float) = opt(floating_point)(input)?;
   let (input, unit) = opt(identifier)(input)?;
@@ -485,12 +488,12 @@ fn quantity(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Quantity{children: quantity}))
 }
 
-fn constant(input: &str) -> IResult<&str, Node> {
+fn constant(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, constant) = alt((string, quantity))(input)?;
   Ok((input, Node::Constant{children: vec![constant]}))
 }
 
-fn empty(input: &str) -> IResult<&str, Node> {
+fn empty(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many1(underscore)(input)?;
   Ok((input, Node::Empty))
 }
@@ -499,25 +502,25 @@ fn empty(input: &str) -> IResult<&str, Node> {
 
 // ### Data
 
-fn select_all(input: &str) -> IResult<&str, Node> {
+fn select_all(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = colon(input)?;
   Ok((input, Node::SelectAll))
 }
 
-fn subscript(input: &str) -> IResult<&str, Node> {
+fn subscript(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, subscript) = alt((select_all, constant, expression))(input)?;
   let (input, _) = tuple((space0, opt(comma), space0))(input)?;
   Ok((input, Node::Subscript{children: vec![subscript]}))
 }
 
-fn subscript_index(input: &str) -> IResult<&str, Node> {
+fn subscript_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_brace(input)?;
   let (input, subscripts) = many1(subscript)(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, Node::SubscriptIndex{children: subscripts}))
 }
 
-fn dot_index(input: &str) -> IResult<&str, Node> {
+fn dot_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = period(input)?;
   let (input, identifier) = identifier(input)?;
   let (input, subscript) = opt(subscript_index)(input)?;
@@ -529,12 +532,12 @@ fn dot_index(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
-fn index(input: &str) -> IResult<&str, Node> {
+fn index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, index) = alt((dot_index, subscript_index))(input)?;
   Ok((input, Node::Index{children: vec![index]}))
 }
 
-fn data(input: &str) -> IResult<&str, Node> {
+fn data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, source) = alt((table, identifier))(input)?;
   let (input, mut indices) = many0(index)(input)?;
   let mut data = vec![source];
@@ -544,13 +547,13 @@ fn data(input: &str) -> IResult<&str, Node> {
 
 // ### Tables
 
-fn table(input: &str) -> IResult<&str, Node> {
+fn table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, table_identifier) = identifier(input)?;
   Ok((input, Node::Table{children: vec![table_identifier]}))
 }
 
-fn binding(input: &str) -> IResult<&str, Node> {
+fn binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, binding_id) = identifier(input)?;
   let (input, _) = tuple((colon, space0))(input)?;
   let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
@@ -558,34 +561,34 @@ fn binding(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Binding{children: vec![binding_id, bound]}))
 }
 
-fn table_column(input: &str) -> IResult<&str, Node> {
+fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, item) = alt((empty, data, expression, quantity))(input)?;
   let (input, _) = tuple((opt(comma), opt(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
 
-fn table_row(input: &str) -> IResult<&str, Node> {
+fn table_row(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = tuple((opt(semicolon), opt(newline)))(input)?;
   Ok((input, Node::TableRow{children: columns}))
 }
 
-fn attribute(input: &str) -> IResult<&str, Node> {
+fn attribute(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, identifier) = identifier(input)?;
   let (input, _) = tuple((space0, opt(comma), space0))(input)?;
   Ok((input, Node::Attribute{children: vec![identifier]}))
 }
 
-fn table_header(input: &str) -> IResult<&str, Node> {
+fn table_header(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = bar(input)?;
   let (input, attributes) = many1(attribute)(input)?;
   let (input, _) = tuple((bar, space0, opt(newline)))(input)?;
   Ok((input, Node::TableHeader{children: attributes}))
 }
 
-fn anonymous_table(input: &str) -> IResult<&str, Node> {
+fn anonymous_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = space0(input)?;
   let (input, table_header) = opt(table_header)(input)?;
@@ -600,7 +603,7 @@ fn anonymous_table(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::AnonymousTable{children: table}))
 }
 
-fn inline_table(input: &str) -> IResult<&str, Node> {
+fn inline_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_bracket(input)?;
   let (input, bindings) = many1(binding)(input)?;
   let (input, _) = right_bracket(input)?;
@@ -609,79 +612,91 @@ fn inline_table(input: &str) -> IResult<&str, Node> {
 
 // ### Statements
 
-fn comment_sigil(input: &str) -> IResult<&str, Node> {
+fn comment_sigil(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("//")(input)?;
   Ok((input, Node::Null))
 }
 
-fn comment(input: &str) -> IResult<&str, Node> {
+fn comment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = text(input)?;
   Ok((input, Node::Comment{children: vec![comment]}))
 }
 
-fn add_row_operator(input: &str) -> IResult<&str, Node> {
+fn add_row_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("+=")(input)?;
   Ok((input, Node::Null))
 }
 
-fn add_row(input: &str) -> IResult<&str, Node> {
+fn add_row(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, table_id) = table(input)?;
   let (input, _) = tuple((space, add_row_operator, space))(input)?;
   let (input, table) = alt((inline_table, anonymous_table))(input)?;
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
 
-fn set_operator(input: &str) -> IResult<&str, Node> {
+fn set_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag(":=")(input)?;
   Ok((input, Node::Null))
 }
 
-fn set_data(input: &str) -> IResult<&str, Node> {
+fn set_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, table) = data(input)?;
   let (input, _) = tuple((space, set_operator, space))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SetData{children: vec![table, expression]}))
 }
 
-fn variable_define(input: &str) -> IResult<&str, Node> {
+fn split_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, table) = identifier(input)?;
+  let (input, _) = tuple((space, split_operator, space))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::SplitData{children: vec![table, expression]}))
+}
+
+fn variable_define(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, variable) = identifier(input)?;
   let (input, _) = tuple((space, equal, space))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
 }
 
-fn table_define(input: &str) -> IResult<&str, Node> {
+fn table_define(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, table) = table(input)?;
   let (input, _) = tuple((space, equal, space))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::TableDefine{children: vec![table, expression]}))
 }
 
-fn watch_operator(input: &str) -> IResult<&str, Node> {
+fn split_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag(">-")(input)?;
+  Ok((input, Node::Null))
+}
+
+fn watch_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("~")(input)?;
   Ok((input, Node::Null))
 }
 
-fn until_operator(input: &str) -> IResult<&str, Node> {
+fn until_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("~|")(input)?;
   Ok((input, Node::Null))
 }
 
-fn as_soon_as(input: &str) -> IResult<&str, Node> {
+fn as_soon_as(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("|~")(input)?;
   Ok((input, Node::Null))
 }
 
-fn data_watch(input: &str) -> IResult<&str, Node> {
+fn data_watch(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = watch_operator(input)?;
   let (input, _) = space(input)?;
   let (input, watch) = alt((variable_define, expression, data))(input)?;
   Ok((input, Node::DataWatch{children: vec![watch]}))
 }
 
-fn statement(input: &str) -> IResult<&str, Node> {
-  let (input, statement) = alt((table_define, variable_define, data_watch, set_data, add_row, comment))(input)?;
+fn statement(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, statement) = alt((table_define, variable_define, data_watch, split_data, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
@@ -689,20 +704,20 @@ fn statement(input: &str) -> IResult<&str, Node> {
 
 // #### Math Expressions
 
-fn parenthetical_expression(input: &str) -> IResult<&str, Node> {
+fn parenthetical_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, l1) = l1(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, l1))
 }
 
-fn negation(input: &str) -> IResult<&str, Node> {
+fn negation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = dash(input)?;
   let (input, negated) = alt((data, constant))(input)?;
   Ok((input, Node::Negation { children: vec![negated] }))
 }
 
-fn function(input: &str) -> IResult<&str, Node> {
+fn function(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, identifier) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, mut bindings) = many1(binding)(input)?;
@@ -712,7 +727,7 @@ fn function(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Function { children: function }))
 }
 
-fn l1(input: &str) -> IResult<&str, Node> {
+fn l1(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l2) = l2(input)?;
   let (input, mut infix) = many0(l1_infix)(input)?;
   let mut math = vec![l2];
@@ -720,7 +735,7 @@ fn l1(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L1 { children: math }))
 }
 
-fn l1_infix(input: &str) -> IResult<&str, Node> {
+fn l1_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
   let (input, op) = alt((plus, dash))(input)?;
   let (input, _) = space(input)?;
@@ -728,12 +743,12 @@ fn l1_infix(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L1Infix { children: vec![op, l2] }))
 }
 
-fn matrix_multiply(input: &str) -> IResult<&str, Node> {
+fn matrix_multiply(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("**")(input)?;
   Ok((input, Node::Null))
 }
 
-fn l2(input: &str) -> IResult<&str, Node> {
+fn l2(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l3) = l3(input)?;
   let (input, mut infix) = many0(l2_infix)(input)?;
   let mut math = vec![l3];
@@ -741,7 +756,7 @@ fn l2(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L2 { children: math }))
 }
 
-fn l2_infix(input: &str) -> IResult<&str, Node> {
+fn l2_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
   let (input, op) = alt((asterisk, slash, matrix_multiply))(input)?;
   let (input, _) = space(input)?;
@@ -749,7 +764,7 @@ fn l2_infix(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L2Infix { children: vec![op, l3] }))
 }
 
-fn l3(input: &str) -> IResult<&str, Node> {
+fn l3(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l4) = l4(input)?;
   let (input, mut infix) = many0(l3_infix)(input)?;
   let mut math = vec![l4];
@@ -757,7 +772,7 @@ fn l3(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L3 { children: math }))
 }
 
-fn l3_infix(input: &str) -> IResult<&str, Node> {
+fn l3_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
   let (input, op) = caret(input)?;
   let (input, _) = space(input)?;
@@ -765,54 +780,54 @@ fn l3_infix(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::L3Infix { children: vec![op, l4] }))
 }
 
-fn l4(input: &str) -> IResult<&str, Node> {
+fn l4(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l4) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L4 { children: vec![l4] }))
 }
 
-fn math_expression(input: &str) -> IResult<&str, Node> {
+fn math_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l1) = l1(input)?;
   Ok((input, Node::MathExpression { children: vec![l1] }))
 }
 
 // #### Filter Expressions
 
-fn not_equal(input: &str) -> IResult<&str, Node> {
+fn not_equal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("!=")(input)?;
   Ok((input, Node::NotEqual))
 }
 
-fn equal_to(input: &str) -> IResult<&str, Node> {
+fn equal_to(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("==")(input)?;
   Ok((input, Node::Equal))
 }
 
-fn greater_than(input: &str) -> IResult<&str, Node> {
+fn greater_than(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag(">")(input)?;
   Ok((input, Node::GreaterThan))
 }
 
-fn less_than(input: &str) -> IResult<&str, Node> {
+fn less_than(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("<")(input)?;
   Ok((input, Node::LessThan))
 }
 
-fn greater_than_equal(input: &str) -> IResult<&str, Node> {
+fn greater_than_equal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag(">=")(input)?;
   Ok((input, Node::GreaterThanEqual))
 }
 
-fn less_than_equal(input: &str) -> IResult<&str, Node> {
+fn less_than_equal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("<=")(input)?;
   Ok((input, Node::LessThanEqual))
 }
 
-fn comparator(input: &str) -> IResult<&str, Node> {
+fn comparator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, comparator) = alt((greater_than_equal , less_than_equal , equal_to , not_equal , less_than , greater_than))(input)?;
   Ok((input, Node::Comparator { children: vec![comparator] }))
 }
 
-fn filter_expression(input: &str) -> IResult<&str, Node> {
+fn filter_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, lhs) = alt((data, constant))(input)?;
   let (input, _) = space(input)?;
   let (input, comp) = comparator(input)?;
@@ -838,22 +853,22 @@ named!(transition<CompleteStr, Node>, do_parse!(
 
 // #### Logic Expressions
 
-fn or(input: &str) -> IResult<&str, Node> {
+fn or(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("|")(input)?;
   Ok((input, Node::Or))
 }
 
-fn and(input: &str) -> IResult<&str, Node> {
+fn and(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("&")(input)?;
   Ok((input, Node::And))
 }
 
-fn logic_operator(input: &str) -> IResult<&str, Node> {
+fn logic_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, operator) = alt((and, or))(input)?;
   Ok((input, Node::LogicOperator { children: vec![operator] }))
 }
 
-fn logic_expression(input: &str) -> IResult<&str, Node> {
+fn logic_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, lhs) = alt((filter_expression , data , constant))(input)?;
   let (input, _) = space1(input)?;
   let (input, op) = logic_operator(input)?;
@@ -864,42 +879,42 @@ fn logic_expression(input: &str) -> IResult<&str, Node> {
 
 // #### Other Expressions
 
-fn range(input: &str) -> IResult<&str, Node> {
+fn range(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, start) = math_expression(input)?;
   let (input, _) = tuple((space0,colon,space0))(input)?;
   let (input, end) = math_expression(input)?;
   Ok((input, Node::Range { children: vec![start,end] }))
 }
 
-fn string_interpolation(input: &str) -> IResult<&str, Node> {
+fn string_interpolation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("{{")(input)?;
   let (input, expression) = expression(input)?;
   let (input, _) = tag("}}")(input)?;
   Ok((input, Node::StringInterpolation { children: vec![expression] }))
 }
 
-fn string(input: &str) -> IResult<&str, Node> {
+fn string(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = quote(input)?;
   let (input, text) = many0(alt((string_interpolation, text)))(input)?;
   let (input, _) = quote(input)?;
   Ok((input, Node::String { children: text }))
 }
 
-fn expression(input: &str) -> IResult<&str, Node> {
+fn expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, expression) = alt((string , range , logic_expression , filter_expression , inline_table , anonymous_table , math_expression))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 
 // ### Block Basics
 
-fn constraint(input: &str) -> IResult<&str, Node> {
+fn constraint(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((space,space))(input)?;
   let (input, statement) = statement(input)?;
   let (input, _) = tuple((space0,opt(newline)))(input)?;
   Ok((input, Node::Constraint { children: vec![statement] }))
 }
 
-fn block(input: &str) -> IResult<&str, Node> {
+fn block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, constraints) = many1(constraint)(input)?; 
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children: constraints }))
@@ -907,7 +922,7 @@ fn block(input: &str) -> IResult<&str, Node> {
 
 // ## Markdown
 
-fn title(input: &str) -> IResult<&str, Node> {
+fn title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = space1(input)?;
   let (input, text) = text(input)?; 
@@ -915,7 +930,7 @@ fn title(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Title { children: vec![text] }))
 }
 
-fn subtitle(input: &str) -> IResult<&str, Node> {
+fn subtitle(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
   let (input, _) = space1(input)?;
@@ -924,7 +939,7 @@ fn subtitle(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Subtitle { children: vec![text] }))
 }
 
-fn section_title(input: &str) -> IResult<&str, Node> {
+fn section_title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
@@ -934,7 +949,7 @@ fn section_title(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::SectionTitle { children: vec![text] }))
 }
 
-fn inline_code(input: &str) -> IResult<&str, Node> {
+fn inline_code(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = grave(input)?;
   let (input, text) = text(input)?; 
   let (input, _) = grave(input)?;
@@ -942,7 +957,7 @@ fn inline_code(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::InlineCode { children: vec![text] }))
 }
 
-fn paragraph_text(input: &str) -> IResult<&str, Node> {
+fn paragraph_text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, word) = paragraph_starter(input)?;
   let (input, text) = opt(paragraph_rest)(input)?; 
   let mut paragraph = vec![word];
@@ -953,21 +968,21 @@ fn paragraph_text(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::ParagraphText { children: paragraph }))
 }
 
-fn paragraph(input: &str) -> IResult<&str, Node> {
+fn paragraph(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, paragraph_elements) = many1(alt((inline_mech_code, inline_code, paragraph_text)))(input)?;
   let (input, _) = opt(newline)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Paragraph { children: paragraph_elements }))
 }
 
-fn unordered_list(input: &str) -> IResult<&str, Node> {
+fn unordered_list(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, list_items) = many1(list_item)(input)?;
   let (input, _) = opt(newline)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::UnorderedList { children: list_items }))
 }
 
-fn list_item(input: &str) -> IResult<&str, Node> {
+fn list_item(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = dash(input)?;
   let (input, _) = space1(input)?;
   let (input, list_item) = paragraph(input)?;
@@ -975,12 +990,12 @@ fn list_item(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
-fn formatted_text(input: &str) -> IResult<&str, Node> {
+fn formatted_text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, formatted) = many0(alt((paragraph_rest, carriage_return, new_line_char)))(input)?;
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
-fn code_block(input: &str) -> IResult<&str, Node> {
+fn code_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((grave, grave, grave, newline))(input)?;
   let (input, text) = formatted_text(input)?;
   let (input, _) = tuple((grave, grave, grave, newline, many0(whitespace)))(input)?;
@@ -989,14 +1004,14 @@ fn code_block(input: &str) -> IResult<&str, Node> {
 
 // Mechdown
 
-fn inline_mech_code(input: &str) -> IResult<&str, Node> {
+fn inline_mech_code(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((left_bracket,left_bracket))(input)?;
   let (input, expression) = expression(input)?;
   let (input, _) = tuple((right_bracket,right_bracket,opt(space)))(input)?;
   Ok((input, Node::InlineMechCode{ children: vec![expression] }))
 }
 
-fn mech_code_block(input: &str) -> IResult<&str, Node> {
+fn mech_code_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((grave,grave,grave,tag("mech:")))(input)?;
   let (input, directive) = opt(text)(input)?;
   let (input, _) = newline(input)?;
@@ -1015,7 +1030,7 @@ fn mech_code_block(input: &str) -> IResult<&str, Node> {
 
 // ## Start Here
 
-fn section(input: &str) -> IResult<&str, Node> {
+fn section(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, section_title) = opt(subtitle)(input)?;
   let (input, mut section_elements) = many1(alt((block , code_block , mech_code_block , paragraph , unordered_list)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
@@ -1028,18 +1043,18 @@ fn section(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Section{ children: section }))
 }
 
-fn body(input: &str) -> IResult<&str, Node> {
+fn body(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(whitespace)(input)?;
   let (input, sections) = many1(section)(input)?;
   Ok((input, Node::Body { children: sections }))
 }
 
-fn fragment(input: &str) -> IResult<&str, Node> {
+fn fragment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, statement) = statement(input)?;
   Ok((input, Node::Fragment { children:  vec![statement] }))
 }
 
-pub fn program(input: &str) -> IResult<&str, Node> {
+pub fn program(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let mut program = vec![];
   let (input, title) = opt(title)(input)?;
   match title {
@@ -1052,19 +1067,19 @@ pub fn program(input: &str) -> IResult<&str, Node> {
   Ok((input, Node::Program { children: program }))
 }
 
-fn parse_mech(input: &str) -> IResult<&str, Node> {
+fn parse_mech(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, program) = alt((fragment, program))(input)?;
   Ok((input, Node::Root { children:  vec![program] }))
 }
 
-fn raw_constraint(input: &str) -> IResult<&str, Node> {
+fn raw_constraint(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, statement) = statement(input)?;
   let (input, _) = space0(input)?;
   let (input, _) = opt(newline)(input)?;
   Ok((input, Node::Constraint { children:  vec![statement] }))
 }
 
-pub fn parse_block(input: &str) -> IResult<&str, Node> {
+pub fn parse_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, constraints) = many1(raw_constraint)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children:  constraints }))

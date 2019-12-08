@@ -37,6 +37,7 @@ pub enum Node {
   DataWatch{ children: Vec<Node> },
   SelectData{name: String, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
+  SplitData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
@@ -114,6 +115,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Block{children, ..} => {print!("Block\n"); Some(children)},
     Node::Statement{children} => {print!("Statement\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
+    Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
     Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
@@ -631,6 +633,35 @@ impl Compiler {
         constraints.append(&mut result1);
         constraints.append(&mut result2);
       },
+      Node::SplitData{children} => {
+        let mut result = self.compile_constraints(children);
+        if result.len() > 2 {
+          match result[2] {
+            Constraint::Reference{..} => {
+              result.remove(3);
+              result.remove(2);
+              result.remove(1);
+            }
+            _ => (),
+          };
+          let alias: u64 = match result[0] {
+            Constraint::Identifier{id, ..} => id,
+            _ => 0,
+          };
+          let table = match &result[1] {
+            Constraint::NewTable{id, rows, columns} => id.clone(),
+            Constraint::AliasTable{table, alias} => table.clone(),
+            _ => TableId::Local(0),
+          };
+          constraints.push(Constraint::AliasTable{table, alias});
+          let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
+          constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
+          constraints.push(Constraint::Function{operation: Function::TableSplit, fnstring: "table_split".to_string(), parameters: vec![(table, None, None)], output: vec![TableId::Local(intermediate_table)]});
+        } else {
+          // TODO error if there are no children
+        }
+        constraints.append(&mut result);
+      },
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
@@ -982,6 +1013,7 @@ impl Compiler {
           "math/cos" => Function::MathCos,
           "stat/sum" => Function::StatSum,
           "set/any" => Function::SetAny,
+          "table/split" => Function::TableSplit,
           _ => Function::Undefined,
         };
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
@@ -1292,6 +1324,17 @@ impl Compiler {
           }
         }
         compiled.push(Node::SetData{children});
+      },
+      parser::Node::SplitData{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::SplitData{children});
       },
       parser::Node::Column{children} => {
         let result = self.compile_nodes(children);

@@ -141,6 +141,11 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         code = format!("{} := {}", lhs, rhs);
       },
+      Node::SplitData{children} => {
+        let lhs = self.write_node(&children[0]);
+        let rhs = self.write_node(&children[1]);
+        code = format!("{} >- {}", lhs, rhs);
+      },
       Node::AddRow{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
