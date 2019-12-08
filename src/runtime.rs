@@ -10,6 +10,7 @@
 // ## Prelude
 
 use table::{Table, TableId, Value, Index};
+use indexes::Hasher;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
@@ -872,10 +873,42 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
+          else if *operation == Function::TableSplit {
+            let out_table = &output[0];
+            let (in_table, _, _) = &parameters[0];
+            let table_ref = match in_table {
+              TableId::Local(id) => self.memory.get(*id).unwrap(),
+              TableId::Global(id) => store.get_table(*id).unwrap(),
+            };        
+            self.scratch.grow_to_fit(table_ref.rows, 1);
+            let cc = table_ref.columns;
+            let rr = table_ref.rows;
+            let aliases = table_ref.column_aliases.clone();
+            let alias_map = table_ref.column_index_to_alias.clone();
+            let data = table_ref.data.clone();
+            for i in 0..rr as usize {
+              // Create a new table for each row in the original table
+              let id = Hasher::hash_string(format!("table/split-{:?}-{}",in_table, i));
+              let mut new_table = Table::new(id, 1, cc);
+              new_table.column_aliases = aliases.clone();
+              // fill data
+              for j in 0..cc as usize {
+                new_table.data[j][0] = data[j][i].clone();
+              }
+              self.memory.insert(new_table);
+              self.scratch.data[0][i] = Value::Reference(id);
+            }
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            out.rows = self.scratch.rows;
+            out.columns = self.scratch.columns;
+            out.data = self.scratch.data.clone();
+            self.scratch.clear();
+          }
           else if *operation == Function::MathSin || *operation == Function::MathCos ||
                   *operation == Function::MathRound ||
                   *operation == Function::MathFloor ||
-                  *operation == Function::StatSum || 
+                  *operation == Function::StatSum ||
+                  *operation == Function::TableSplit || 
                   *operation == Function::SetAny {
             let argument = match &parameters[0] {
               (TableId::Local(argument), _, _) => *argument,
@@ -960,6 +993,13 @@ impl Block {
                     (Function::MathFloor, 0x756cddd0, Value::Number(x)) => {
                       let result = floor(x.to_float());
                       self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
+                    },
+                    // column
+                    (Function::TableSplit, 0x756cddd0, Value::Number(x)) => {
+                    },
+                    // row
+                    (Function::TableSplit, 0x776f72, Value::Number(x)) => {
+
                     },
                     // radians
                     (Function::MathSin, 0x69d7cfd3, Value::Number(x)) => {

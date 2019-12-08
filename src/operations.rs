@@ -40,6 +40,7 @@ pub enum Function {
   MathCos,
   StatSum,
   SetAny,
+  TableSplit,
   Undefined
 }
 
