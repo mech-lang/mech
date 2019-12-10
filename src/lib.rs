@@ -25,7 +25,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::WebsocketClientMessage;
 
 macro_rules! log {
@@ -301,7 +301,6 @@ impl Core {
               code_text.set_attribute("block-id",&format!("{}",block_id));
               code_text.set_attribute("spellcheck", "false");
               {
-                let core = &mut self.core as *mut mech_core::Core;
                 let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                   event.stop_propagation();
                   let target: web_sys::HtmlElement = event.target()
@@ -335,64 +334,18 @@ impl Core {
                   let (data, scope) = 
                   // Format local variable
                   if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-local-variable"{ 
-                    let mut output = format!("<h3>{}</h3><table>", table_name);
+                    let mut output = format!("<h3>{}</h3>", table_name);
                     unsafe {
-                      let table = (*core).runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
-                      if table.column_aliases.len() > 0 {
-                        output = format!("{}<tr>",output);
-                        for alias in table.column_index_to_alias.iter() {
-                          match alias {
-                            Some(alias_id) => {
-                              output = format!("{}<th>",output);
-                              output = format!("{} {}",output,(*core).store.names.get(&alias_id).unwrap());
-                              output = format!("{}</th>",output);
-                            },
-                            _ => (),
-                          }
-                        }
-                        output = format!("{}</tr>",output);
-                      }
-                      for i in 0..table.rows {
-                        output = format!("{}<tr>",output);
-                        for j in 0..table.columns {
-                          output = format!("{}<td>",output);
-                          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
-                          output = format!("{}</td>",output);
-                        }
-                        output = format!("{}</tr>",output);
-                      }
-                      output = format!("{}</table>",output);
+                      let table_string = (*wasm_core).draw_table(block_id, table_id);
+                      output = format!("{}{}",output, table_string);
                     }
                     (output, "local")
                   // Format global variable
                   } else if target.get_attribute("class").unwrap_or("".to_string()) == "highlight-global-variable" {
                     let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
                     unsafe {
-                      let table = (*core).store.get_table(table_id).unwrap();
-                      if table.column_aliases.len() > 0 {
-                        output = format!("{}<tr>",output);
-                        for alias in table.column_index_to_alias.iter() {
-                          match alias {
-                            Some(alias_id) => {
-                              output = format!("{}<th>",output);
-                              output = format!("{} {}",output,(*core).store.names.get(&alias_id).unwrap());
-                              output = format!("{}</th>",output);
-                            },
-                            _ => (),
-                          }
-                        }
-                        output = format!("{}</tr>",output);
-                      }
-                      for i in 0..table.rows {
-                        output = format!("{}<tr>",output);
-                        for j in 0..table.columns {
-                          output = format!("{}<td>",output);
-                          output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
-                          output = format!("{}</td>",output);
-                        }
-                        output = format!("{}</tr>",output);
-                      }
-                      output = format!("{}</table>",output);
+                      let table_string = (*wasm_core).draw_table(0, table_id);
+                      output = format!("{}{}",output, table_string);
                     }
                     (output, "global")
                   } else {
@@ -827,7 +780,7 @@ impl Core {
             match &table.data[2][row - 1] {
               Value::String(value) => div.set_inner_html(&value),
               Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
-              Value::Reference(table_ref) => {
+              Value::Reference(TableId::Local(table_ref)) => {
                 let child_nodes = div.children();
                 let child = child_nodes.get_with_index(0).unwrap();
                 if *table_ref != child.id().parse::<u64>().unwrap() {
@@ -879,63 +832,13 @@ impl Core {
             let table_name = table_inspector.get_attribute("table-name").unwrap();
             let table_id = table_inspector.get_attribute("table-id").unwrap().parse::<u64>().unwrap();
             let block_id = table_inspector.get_attribute("block-id").unwrap().parse::<usize>().unwrap();
-            let table = self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap();
-            let mut output = format!("<h3>{}</h3><table>", table_name);
-            if table.column_aliases.len() > 0 {
-              output = format!("{}<tr>",output);
-              for alias in table.column_index_to_alias.iter() {
-                match alias {
-                  Some(alias_id) => {
-                    output = format!("{}<th>",output);
-                    output = format!("{} {}",output, self.core.store.names.get(&alias_id).unwrap());
-                    output = format!("{}</th>",output);
-                  },
-                  _ => (),
-                }
-              }
-              output = format!("{}</tr>",output);
-            }
-            for i in 0..table.rows {
-              output = format!("{}<tr>",output);
-              for j in 0..table.columns {
-                output = format!("{}<td>",output);
-                output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
-                output = format!("{}</td>",output);
-              }
-              output = format!("{}</tr>",output);
-            }
-            output = format!("{}</table>",output);            
+            let mut output = format!("<h3>{}</h3>{}", table_name, self.draw_table(block_id, table_id));           
             table_inspector.set_inner_html(&output);
           },
           "global" => {
             let table_name = table_inspector.get_attribute("table-name").unwrap();
             let table_id = table_inspector.get_attribute("table-id").unwrap().parse::<u64>().unwrap();
-            let table = self.core.store.get_table(table_id).unwrap();
-            let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3><table>", table_name);
-            if table.column_aliases.len() > 0 {
-              output = format!("{}<tr>",output);
-              for alias in table.column_index_to_alias.iter() {
-                match alias {
-                  Some(alias_id) => {
-                    output = format!("{}<th>",output);
-                    output = format!("{} {}",output, self.core.store.names.get(&alias_id).unwrap());
-                    output = format!("{}</th>",output);
-                  },
-                  _ => (),
-                }
-              }
-              output = format!("{}</tr>",output);
-            }
-            for i in 0..table.rows {
-              output = format!("{}<tr>",output);
-              for j in 0..table.columns {
-                output = format!("{}<td>",output);
-                output = format!("{} {}", output, &table.data[j as usize][i as usize].as_string().unwrap());
-                output = format!("{}</td>",output);
-              }
-              output = format!("{}</tr>",output);
-            }
-            output = format!("{}</table>",output);            
+            let mut output = format!("<h3><span class=\"highlight-bracket\">#</span>{}</h3>{}", table_name, self.draw_table(0, table_id));           
             table_inspector.set_inner_html(&output);
           },
           _ => log!("Unknown"),
@@ -965,6 +868,43 @@ impl Core {
         _ => (),
       }
     }*/
+  }
+
+  pub fn draw_table(&self, block_id: usize, table_id: u64) -> String { 
+    let table = match block_id {
+      0 => self.core.store.get_table(table_id).unwrap(),
+      _ => self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap(),
+    };
+    let mut output = String::from("<table>");
+    if table.column_aliases.len() > 0 {
+      output = format!("{}<tr>",output);
+      for alias in table.column_index_to_alias.iter() {
+        match alias {
+          Some(alias_id) => {
+            output = format!("{}<th>",output);
+            output = format!("{} {}",output, self.core.store.names.get(&alias_id).unwrap());
+            output = format!("{}</th>",output);
+          },
+          _ => (),
+        }
+      }
+      output = format!("{}</tr>",output);
+    }
+    for i in 0..table.rows {
+      output = format!("{}<tr>",output);
+      for j in 0..table.columns {
+        output = format!("{}<td>",output);
+        let cell_content: String = match &table.data[j as usize][i as usize] {
+          Value::Reference(TableId::Local(r)) => self.draw_table(0, *r),
+          x => x.as_string().unwrap(),
+        };
+        output = format!("{} {}", output, cell_content);
+        output = format!("{}</td>",output);
+      }
+      output = format!("{}</tr>",output);
+    }
+    output = format!("{}</table>",output); 
+    output
   }
 
   pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
@@ -1092,7 +1032,7 @@ impl Core {
     for row in 0..table.rows as usize {
       let tag = &table.data[0][row].as_string().unwrap();
       match tag.as_ref() {
-        "div" | "ul" | "li" => {
+        "div" | "ul" | "li" | "a" => {
           let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
           let mut div = document.create_element(tag.as_ref())?;
           unsafe {
@@ -1110,7 +1050,7 @@ impl Core {
           match &table.data[2][row] {
             Value::String(value) => div.set_inner_html(&value),
             Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
-            Value::Reference(reference) => {
+            Value::Reference(TableId::Local(reference)) => {
               let referenced_table;
               // TODO Make this safe
               unsafe {
