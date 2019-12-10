@@ -112,8 +112,7 @@ impl Formatter {
         code = name.clone();
         if self.html {
           code = format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", code)
-        }
-        else {
+        } else {
           code = format!("#{}", code)
         }
       },
@@ -130,8 +129,7 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         let lhs = if self.html {
           format!("{}", lhs)
-        }
-        else {
+        } else {
           format!("{}", lhs)
         };
         code = format!("{} = {}", lhs, rhs)
@@ -143,7 +141,17 @@ impl Formatter {
       },
       Node::SplitData{children} => {
         let lhs = self.write_node(&children[0]);
+        self.indent = if self.html {
+          lhs.len() + 4
+        } else {
+          lhs.len() + 2
+        };
         let rhs = self.write_node(&children[1]);
+        let lhs = if self.html {
+          format!("<span class=\"highlight-local-variable\">{}</span>", lhs)
+        } else {
+          format!("{}", lhs)
+        };
         code = format!("{} >- {}", lhs, rhs);
       },
       Node::AddRow{children} => {
@@ -161,8 +169,7 @@ impl Formatter {
         let rhs = self.write_node(&children[1]);
         let lhs = if self.html {
           format!("<span class=\"highlight-local-variable\">{}</span>", lhs)
-        }
-        else {
+        } else {
           format!("{}", lhs)
         };
         code = format!("{} = {}", lhs, rhs);
@@ -180,16 +187,14 @@ impl Formatter {
           TableId::Local(..) => {
             if self.html {
               format!("<span class=\"highlight-local-variable\">{}</span>", name)
-            }
-            else {
+            } else {
               format!("{}", name)
             }
           },
           TableId::Global(..) => {
             if self.html {
               format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", name)
-            }
-            else {
+            } else {
               format!("#{}", name)
             }
           },
@@ -214,7 +219,6 @@ impl Formatter {
         } else {
           code = format!("{{{}}}", code);
         }
-        
       }
       Node::DotIndex{children} => {
         let mut reversed = children.clone();
