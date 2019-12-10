@@ -30,22 +30,21 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"
-block
-  #i = [x: 2]
-  #h = [53; 100; 85]
-  #x = [400; 0; 0; 0; 0; 0]
- 
-block
-  #i.x{#i < 6} := #i.x + 1
+  let input = String::from(r#"# Mech Homepage
 
-block 
-  ~ #i.x
-  i = #i
-  i2 = #i / 2
-  ir = math/round(column: i2)
-  #x{i,:} := #x{i - 1,:} + #h{ir,:}
-"#);
+
+
+Sections
+  sections = ["Community"; "Learn"; "Blog"; "Try"]
+  #sections = [type: "div" class: _ contains: sections]
+
+block
+  sections >- #sections
+  li = [type: "li" class: _ contains >- #sections]
+  #ul = [type: "ul" class: _ contains: [li]]
+  
+block
+  #app/main = [root: "drawing" direction: _ contains: [#ul]]"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -60,12 +59,12 @@ block
 
   core.register_blocks(compiler.blocks.clone());
   //println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.unparsed);
-  //println!("{:?}", compiler.syntax_tree);
-  //println!("{:?}", core.runtime);
+  //println!("{:?}", compiler.unparsed);
+  println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
-  //println!("{:?}", core.runtime);
+  println!("{:?}", core.runtime);
   /*let block_ast = match &programs[0].sections[0].elements[1] {
   Element::Block((id, node)) => node,
     _ => &Node::Null,

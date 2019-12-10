@@ -634,6 +634,7 @@ impl Compiler {
         constraints.append(&mut result2);
       },
       Node::SplitData{children} => {
+        self.expression += 1;
         let mut result = self.compile_constraints(children);
         if result.len() > 2 {
           match result[2] {
