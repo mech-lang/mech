@@ -529,6 +529,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Value)->Value>>) {
+    let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
       match step {
         Constraint::Scan{table, indices, output} => {
@@ -538,21 +539,6 @@ impl Block {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
             };
-            // TODO This is better than before but needs to work for all cases
-            'reference_loop: loop {
-              match table_ref.data[0][0] {
-                Value::Reference(id) => {
-                  self.ready.insert(Register::new(id, Index::Index(0)));
-                  self.input_registers.insert(Register::new(id, Index::Index(0)));
-                  match store.get_table(id) {
-                    Some(table) => table_ref = table,
-                    None => break 'reference_loop,
-                  };
-                },
-                _ => break 'reference_loop,
-              };
-            }
-            //println!("{:?}", table_ref);
             // If we only have one index, it's like this #x{3}
             let one = vec![Value::from_u64(1)];
             let (row_ixes, column_ixes) = if indices.len() == 1 {
@@ -684,7 +670,6 @@ impl Block {
           out.data = self.scratch.data.clone();
           out.column_index_to_alias = self.scratch.column_index_to_alias.clone();
           out.column_aliases = self.scratch.column_aliases.clone();
-          
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
@@ -888,7 +873,7 @@ impl Block {
             let data = table_ref.data.clone();
             for i in 0..rr as usize {
               // Create a new table for each row in the original table
-              let id = Hasher::hash_string(format!("table/split-{:?}-{}",in_table, i));
+              let id = Hasher::hash_string(format!("table/split-{:?}-row::{}",in_table, i));
               let mut new_table = Table::new(id, 1, cc);
               new_table.column_aliases = aliases.clone();
               // fill data
@@ -896,7 +881,7 @@ impl Block {
                 new_table.data[j][0] = data[j][i].clone();
               }
               self.memory.insert(new_table);
-              self.scratch.data[0][i] = Value::Reference(id);
+              self.scratch.data[0][i] = Value::Reference(TableId::Local(id));
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
@@ -1506,16 +1491,23 @@ impl Block {
           }
         },
         Constraint::CopyTable{from_table, to_table} => {
-          let from_table_ref = self.memory.get(*from_table).unwrap();
+          let mut from_table_ref = self.memory.get(*from_table).unwrap();
           let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
           for (alias, ix) in from_table_ref.column_aliases.iter() {
             changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
           }
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
             for (row_ix, data) in column.iter().enumerate() {
+              match data {
+                Value::Reference(id) => {
+                  copy_tables.push(*id);
+                }, 
+                _ => (),
+              }
               changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
             }
           }
+          //println!("{:?}", self);
           self.block_changes.append(&mut changes);
         },
         Constraint::NewTable{id, rows, columns} => {
@@ -1530,6 +1522,10 @@ impl Block {
       } 
       
     }
+    for c in copy_tables {
+      self.copy_table(c, c, store);
+    }
+
     if self.errors.len() > 0 {
       self.state = BlockState::Error;
     } else {
@@ -1537,6 +1533,42 @@ impl Block {
       self.updated = true;
     }
     self.block_changes.clear();
+  }
+
+  fn copy_table(&mut self, from_table: TableId, to_table: TableId, store: &Interner) {
+    let mut copy_tables: Vec<TableId> = vec![];
+    let mut from_table_ref = match from_table {
+      TableId::Local(id) => {
+        match self.memory.get(id) {
+          None => store.get_table(id).unwrap(),
+          Some(table) => table,
+        }
+      },
+      TableId::Global(id) => store.get_table(id).unwrap(),
+    };
+    let to_table_id = match to_table {
+      TableId::Local(id) => id,
+      TableId::Global(id) => id,
+    };
+    let mut changes = vec![Change::NewTable{id: to_table_id, rows: from_table_ref.rows, columns: from_table_ref.columns}];
+    for (alias, ix) in from_table_ref.column_aliases.iter() {
+      changes.push(Change::RenameColumn{table: to_table_id, column_ix: *ix, column_alias: *alias});
+    }
+    for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+      for (row_ix, data) in column.iter().enumerate() {
+        match data {
+          Value::Reference(id) => {
+            copy_tables.push(*id);
+          }, 
+          _ => (),
+        }
+        changes.push(Change::Set{table: to_table_id, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
+      }
+    }
+    for c in copy_tables {
+      self.copy_table(c, c, store);
+    }
+    self.block_changes.append(&mut changes);
   }
 }
 
@@ -1599,7 +1631,7 @@ pub enum Constraint {
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
-  Reference{table: u64, destination: u64},
+  Reference{table: TableId, destination: u64},
   Scan {table: TableId, indices: Vec<Option<Parameter>>, output: TableId},
   ChangeScan {table: TableId, column: Vec<Option<Parameter>>},
   Identifier {id: u64, text: String},
@@ -1624,7 +1656,7 @@ impl fmt::Debug for Constraint {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Constraint::Reference{table, destination} => write!(f, "Reference(@{:#x} -> {:#x})", table, destination),
+      Constraint::Reference{table, destination} => write!(f, "Reference({:?} -> {:#x})", table, destination),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),

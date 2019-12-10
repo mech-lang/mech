@@ -18,7 +18,7 @@ pub enum Value {
   Number(Quantity),
   String(String),
   Bool(bool),
-  Reference(u64),
+  Reference(TableId),
   Empty,
 }
 
@@ -59,7 +59,8 @@ impl Value {
   pub fn as_u64(&self) -> Option<u64> {
     match self {
       Value::Number(n) => Some(n.to_float() as u64),
-      Value::Reference(n) => Some(*n),
+      Value::Reference(TableId::Local(n)) => Some(*n),
+      Value::Reference(TableId::Global(n)) => Some(*n),
       _ => None,
     }
   }
@@ -101,7 +102,7 @@ impl fmt::Debug for Value {
       &Value::String(ref x) => write!(f, "{}", x),
       &Value::Empty => write!(f, ""),
       &Value::Bool(ref b) => write!(f, "{}", b),
-      &Value::Reference(ref b) => write!(f, "@{:#x}", b),
+      &Value::Reference(ref b) => write!(f, "{:?}", b),
     }
   }
 }
