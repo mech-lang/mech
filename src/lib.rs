@@ -1030,157 +1030,177 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     for row in 0..table.rows as usize {
-      let tag = &table.data[0][row].as_string().unwrap();
-      match tag.as_ref() {
-        "div" | "ul" | "li" | "a" => {
-          let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
-          let mut div = document.create_element(tag.as_ref())?;
-          unsafe {
-            let nodes = (*wasm_core).nodes.entry(table.id).or_insert(vec![]);
-            nodes.push(element_id);
-          }
-          div.set_id(&format!("{:?}",element_id));
-          div.set_attribute("row",&format!("{:?}",row + 1));
-          match &table.data[1][row].as_string() {
-            Some(class) => {
-              div.set_attribute("class",class);
-            },
-            _ => (),
-          }
-          match &table.data[2][row] {
-            Value::String(value) => div.set_inner_html(&value),
-            Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
-            Value::Reference(TableId::Local(reference)) => {
-              let referenced_table;
-              // TODO Make this safe
-              unsafe {
-                referenced_table = (*core).store.get_table(*reference).unwrap();
-              }
-              self.draw_contents(&referenced_table, &mut div);
-            }
-            _ => (),
-          };
-          container.append_child(&div)?;
-        },
-        "img" => {
-          let element_id = Hasher::hash_string(format!("img-{:?}-{:?}", table.id, row));
-          let class = &table.data[1][row].as_string().unwrap();
-          let value = &table.data[2][row].as_string().unwrap();
-          let mut img = web_sys::HtmlImageElement::new().unwrap();
-          img.set_attribute("class", class);
-          img.set_id(&format!("{:?}",element_id));
-          img.set_src(value);
-          container.append_child(&img)?;
-        },
-        "slider" => {
-          let element_id = Hasher::hash_string(format!("slider-{:?}-{:?}", table.id, row));
-          let mut slider = document.create_element("input")?;
-          let mut slider: web_sys::HtmlInputElement = slider
-                .dyn_into::<web_sys::HtmlInputElement>()
-                .map_err(|_| ())
-                .unwrap();
-          let parameters_id_str = &table.data[3][row].as_string().unwrap();
-          let parameters_id = &table.data[3][row].as_u64().unwrap();
-          let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
-          let min = &parameters_table.data[0][0].as_string().unwrap();
-          let max = &parameters_table.data[1][0].as_string().unwrap();
-          let value = &parameters_table.data[2][0].as_string().unwrap();
-          slider.set_id(&format!("{:?}", element_id));
-          slider.set_type("range");
-          slider.set_min(min);
-          slider.set_max(max);
-          slider.set_value(value);
-          slider.set_attribute("parameters", parameters_id_str);
-          {
-            let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-              match event.target() {
-                Some(target) => {
-                  let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                  let slider_value = slider.value().parse::<i64>().unwrap();
-                  let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
-                  let change = Change::Set{
-                    table: parameters_id, 
-                    row: Index::Index(1), 
-                    column: Index::Index(3),
-                    value: Value::from_i64(slider_value),
-                  };
-                  //let txn = Transaction::from_change(change);
-                  // TODO Make this safe
-                  unsafe {
-                    (*wasm_core).changes.push(change);
-                    (*wasm_core).process_transaction();
-                    (*wasm_core).render();
-                  }
-                },
-                _ => (),
-              }
-            }) as Box<dyn FnMut(_)>);
-            slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
-          }
-          container.append_child(&slider)?;
-        },
-        "canvas" => { 
-          let element_id = Hasher::hash_string(format!("canvas-{:?}-{:?}", table.id, row));
-          let canvas = document.create_element("canvas")?;
-          let elements_id_str = &table.data[2][row].as_string().unwrap();
-          let elements_id = &table.data[2][row].as_u64().unwrap();
-          let parameters_id = &table.data[3][row].as_u64().unwrap();
-          let parameters_table;
-          unsafe {
-            parameters_table = (*core).store.get_table(*parameters_id).unwrap();
-          }
-          canvas.set_id(&format!("{:?}",element_id));
-          canvas.set_attribute("elements",elements_id_str);
-          canvas.set_attribute("width", &parameters_table.data[0][0].as_string().unwrap());
-          canvas.set_attribute("height",&parameters_table.data[1][0].as_string().unwrap());
-          canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
-          let canvas: web_sys::HtmlCanvasElement = canvas
-                .dyn_into::<web_sys::HtmlCanvasElement>()
-                .map_err(|_| ())
-                .unwrap();
-            {
-              let closure = |i| { Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                let window = web_sys::window().expect("no global `window` exists");
-                let document = window.document().expect("should have a document on window");
-                let x = event.offset_x();
-                let y = event.offset_y();
-                let table_id = Hasher::hash_str(i);
-                // TODO Make this safe
+      'column_loop: for j in 0..table.columns as usize {
+        match &table.data[j][row] {
+          Value::String(tag) => {
+            match tag.as_ref() {
+              "div" | "ul" | "li" | "a" => {
+                let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
+                let mut div = document.create_element(tag.as_ref())?;
                 unsafe {
-                  (*wasm_core).changes.push(Change::Set{
-                    table: table_id, 
-                    row: Index::Index(1), 
-                    column: Index::Index(1),
-                    value: Value::from_i64(x as i64),
-                  });
-                  (*wasm_core).changes.push(Change::Set{
-                    table: table_id, 
-                    row: Index::Index(1), 
-                    column: Index::Index(2),
-                    value: Value::from_i64(y as i64),
-                  });                  
-                  (*wasm_core).process_transaction();
-                  (*wasm_core).render();
+                  let nodes = (*wasm_core).nodes.entry(table.id).or_insert(vec![]);
+                  nodes.push(element_id);
                 }
-              }) as Box<dyn FnMut(_)>)
-              };
-              let click_callback = closure("html/event/click");
-              canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
-              let move_callback = closure("html/event/mousemove");
-              canvas.add_event_listener_with_callback("mousemove", move_callback.as_ref().unchecked_ref())?;
-              let down_callback = closure("html/event/mousedown");
-              canvas.add_event_listener_with_callback("mousedown", down_callback.as_ref().unchecked_ref())?;
-            
-              click_callback.forget();
-              move_callback.forget();
-              down_callback.forget();
+                div.set_id(&format!("{:?}",element_id));
+                div.set_attribute("row",&format!("{:?}",row + 1));
+                match &table.data[1][row].as_string() {
+                  Some(class) => {
+                    div.set_attribute("class",class);
+                  },
+                  _ => (),
+                }
+                match &table.data[2][row] {
+                  Value::String(value) => div.set_inner_html(&value),
+                  Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
+                  Value::Reference(TableId::Local(reference)) => {
+                    let referenced_table;
+                    // TODO Make this safe
+                    unsafe {
+                      referenced_table = (*core).store.get_table(*reference).unwrap();
+                    }
+                    self.draw_contents(&referenced_table, &mut div);
+                  }
+                  _ => (),
+                };
+                container.append_child(&div)?;
+              },
+              "img" => {
+                let element_id = Hasher::hash_string(format!("img-{:?}-{:?}", table.id, row));
+                let class = &table.data[1][row].as_string().unwrap();
+                let value = &table.data[2][row].as_string().unwrap();
+                let mut img = web_sys::HtmlImageElement::new().unwrap();
+                img.set_attribute("class", class);
+                img.set_id(&format!("{:?}",element_id));
+                img.set_src(value);
+                container.append_child(&img)?;
+              },
+              "slider" => {
+                let element_id = Hasher::hash_string(format!("slider-{:?}-{:?}", table.id, row));
+                let mut slider = document.create_element("input")?;
+                let mut slider: web_sys::HtmlInputElement = slider
+                      .dyn_into::<web_sys::HtmlInputElement>()
+                      .map_err(|_| ())
+                      .unwrap();
+                let parameters_id_str = &table.data[3][row].as_string().unwrap();
+                let parameters_id = &table.data[3][row].as_u64().unwrap();
+                let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+                let min = &parameters_table.data[0][0].as_string().unwrap();
+                let max = &parameters_table.data[1][0].as_string().unwrap();
+                let value = &parameters_table.data[2][0].as_string().unwrap();
+                slider.set_id(&format!("{:?}", element_id));
+                slider.set_type("range");
+                slider.set_min(min);
+                slider.set_max(max);
+                slider.set_value(value);
+                slider.set_attribute("parameters", parameters_id_str);
+                {
+                  let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+                    match event.target() {
+                      Some(target) => {
+                        let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
+                        let slider_value = slider.value().parse::<i64>().unwrap();
+                        let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
+                        let change = Change::Set{
+                          table: parameters_id, 
+                          row: Index::Index(1), 
+                          column: Index::Index(3),
+                          value: Value::from_i64(slider_value),
+                        };
+                        //let txn = Transaction::from_change(change);
+                        // TODO Make this safe
+                        unsafe {
+                          (*wasm_core).changes.push(change);
+                          (*wasm_core).process_transaction();
+                          (*wasm_core).render();
+                        }
+                      },
+                      _ => (),
+                    }
+                  }) as Box<dyn FnMut(_)>);
+                  slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+                  closure.forget();
+                }
+                container.append_child(&slider)?;
+              },
+              "canvas" => { 
+                let element_id = Hasher::hash_string(format!("canvas-{:?}-{:?}", table.id, row));
+                let canvas = document.create_element("canvas")?;
+                let elements_id_str = &table.data[2][row].as_string().unwrap();
+                let elements_id = &table.data[2][row].as_u64().unwrap();
+                let parameters_id = &table.data[3][row].as_u64().unwrap();
+                let parameters_table;
+                unsafe {
+                  parameters_table = (*core).store.get_table(*parameters_id).unwrap();
+                }
+                canvas.set_id(&format!("{:?}",element_id));
+                canvas.set_attribute("elements",elements_id_str);
+                canvas.set_attribute("width", &parameters_table.data[0][0].as_string().unwrap());
+                canvas.set_attribute("height",&parameters_table.data[1][0].as_string().unwrap());
+                canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
+                let canvas: web_sys::HtmlCanvasElement = canvas
+                      .dyn_into::<web_sys::HtmlCanvasElement>()
+                      .map_err(|_| ())
+                      .unwrap();
+                  {
+                    let closure = |i| { Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                      let window = web_sys::window().expect("no global `window` exists");
+                      let document = window.document().expect("should have a document on window");
+                      let x = event.offset_x();
+                      let y = event.offset_y();
+                      let table_id = Hasher::hash_str(i);
+                      // TODO Make this safe
+                      unsafe {
+                        (*wasm_core).changes.push(Change::Set{
+                          table: table_id, 
+                          row: Index::Index(1), 
+                          column: Index::Index(1),
+                          value: Value::from_i64(x as i64),
+                        });
+                        (*wasm_core).changes.push(Change::Set{
+                          table: table_id, 
+                          row: Index::Index(1), 
+                          column: Index::Index(2),
+                          value: Value::from_i64(y as i64),
+                        });                  
+                        (*wasm_core).process_transaction();
+                        (*wasm_core).render();
+                      }
+                    }) as Box<dyn FnMut(_)>)
+                    };
+                    let click_callback = closure("html/event/click");
+                    canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
+                    let move_callback = closure("html/event/mousemove");
+                    canvas.add_event_listener_with_callback("mousemove", move_callback.as_ref().unchecked_ref())?;
+                    let down_callback = closure("html/event/mousedown");
+                    canvas.add_event_listener_with_callback("mousedown", down_callback.as_ref().unchecked_ref())?;
+                  
+                    click_callback.forget();
+                    move_callback.forget();
+                    down_callback.forget();
+                  }
+                self.render_canvas(&canvas);
+                container.append_child(&canvas)?;
+              },
+              _ => (),
             }
-          self.render_canvas(&canvas);
-          container.append_child(&canvas)?;
-        },
-        _ => (),
-      }
+            break 'column_loop;
+          },
+          Value::Reference(TableId::Local(reference)) => {
+            
+            let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
+            let mut div = document.create_element("div")?;
+            let referenced_table;
+            // TODO Make this safe
+            unsafe {
+              referenced_table = (*core).store.get_table(*reference).unwrap();
+            }
+            log!("{:?}", referenced_table);
+            self.draw_contents(&referenced_table, &mut div);
+            container.append_child(&div)?;
+          }
+          _ => (),
+        };
+      }      
     }
     Ok(())
   }
