@@ -644,11 +644,11 @@ impl Block {
                   }
                   match table_ref.column_index_to_alias.get(cix) {
                     Some(Some(alias)) => {
-                      self.scratch.column_aliases.insert(*alias, cix as u64 + 1);
-                      if self.scratch.column_index_to_alias.len() < cix + 1 {
-                        self.scratch.column_index_to_alias.resize_with(cix + 1, ||{None});
+                      self.scratch.column_aliases.insert(*alias, iix as u64 + 1);
+                      if self.scratch.column_index_to_alias.len() < iix + 1 {
+                        self.scratch.column_index_to_alias.resize_with(iix + 1, ||{None});
                       }
-                      self.scratch.column_index_to_alias[cix] = Some(*alias);
+                      self.scratch.column_index_to_alias[iix] = Some(*alias);
                     },
                     _ => (),
                   };
