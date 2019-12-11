@@ -412,25 +412,25 @@ named!(empty<CompleteStr, ReplCommand>, do_parse!(
   space >> (ReplCommand::Empty)));
 
 named!(resume<CompleteStr, ReplCommand>, do_parse!(
-  tag!("resume") >> (ReplCommand::Resume)));
+  tag!(":resume") >> (ReplCommand::Resume)));
 
 named!(pause<CompleteStr, ReplCommand>, do_parse!(
-  tag!("pause") >> (ReplCommand::Pause)));
+  tag!(":pause") >> (ReplCommand::Pause)));
 
 named!(quit<CompleteStr, ReplCommand>, do_parse!(
-  tag!("quit") >> (ReplCommand::Quit)));
+  tag!(":quit") >> (ReplCommand::Quit)));
 
 named!(core<CompleteStr, ReplCommand>, do_parse!(
-  tag!("core") >> (ReplCommand::PrintCore)));
+  tag!(":core") >> (ReplCommand::PrintCore)));
 
 named!(clear<CompleteStr, ReplCommand>, do_parse!(
-  tag!("clear") >> (ReplCommand::Clear)));
+  tag!(":clear") >> (ReplCommand::Clear)));
 
 named!(runtime<CompleteStr, ReplCommand>, do_parse!(
-  tag!("runtime") >> (ReplCommand::PrintRuntime)));
+  tag!(":runtime") >> (ReplCommand::PrintRuntime)));
 
 named!(help<CompleteStr, ReplCommand>, do_parse!(
-  tag!("help") >> (ReplCommand::Help)));
+  tag!(":help") >> (ReplCommand::Help)));
 
 named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
   command: alt!(help | quit | pause | resume | table | core | clear | runtime | empty) >>
