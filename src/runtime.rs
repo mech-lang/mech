@@ -873,7 +873,7 @@ impl Block {
             let data = table_ref.data.clone();
             for i in 0..rr as usize {
               // Create a new table for each row in the original table
-              let id = Hasher::hash_string(format!("table/split-{:?}-row::{}",in_table, i));
+              let id = Hasher::hash_string(format!("{},table/split-{:?}-row::{},{:?}",i,in_table, i, aliases));
               let mut new_table = Table::new(id, 1, cc);
               new_table.column_aliases = aliases.clone();
               // fill data
