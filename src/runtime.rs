@@ -528,142 +528,167 @@ impl Block {
     }    
   }
 
+  pub fn resolve_subscript(&mut self, store: &mut Interner, table: &TableId, indices: &Vec<(Option<Parameter>, Option<Parameter>)>) -> Table {
+    let mut table_ref = match table {
+      TableId::Local(id) => self.memory.get(*id).unwrap(),
+      TableId::Global(id) => store.get_table(*id).unwrap(),
+    };
+    let mut old: Table;
+    'solve_loop: for index in indices {
+      let one = vec![Value::from_u64(1)];
+      let (row_ixes, column_ixes) = match index {
+        // If we only have one index, it's like this #x{3}
+        (Some(parameter), None) => {
+          // Get the ixes
+          let ixes: &Vec<Value> = match &parameter {
+            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            _ => &self.rhs_rows_empty,
+          };
+          // The other dimension index will be one.
+          // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
+          // If #x = [1; 2; 3] then it translates to #x{3,1}
+          let (row_ixes, column_ixes) = match (table_ref.rows, table_ref.columns) {
+            (1, columns) => (&one, ixes),
+            (rows, 1) => (ixes, &one),
+            _ => {
+              // TODO Report an error here... or do matlab style ind2sub
+              break 'solve_loop;
+            }
+          };
+          (row_ixes, column_ixes)
+        },
+        // Otherwise we have a couple choices:
+        // #x{1,2}
+        // #x.y{1}
+        (Some(row_parameter), Some(column_parameter)) => {
+          let row_ixes: &Vec<Value> = match &row_parameter {
+            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            _ => &self.rhs_rows_empty,
+          };
+          let column_ixes: &Vec<Value> = match &column_parameter {
+            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::Index(index) => {
+              let ix = match table_ref.get_column_index(index) {
+                Some(ix) => ix,
+                // If the attribute is missing, note the error and bail
+                None => { 
+                  /* TODO Fix this
+                  self.errors.push(
+                    Error{
+                      block: self.id as u64,
+                      constraint: step.clone(),
+                      error_id: ErrorType::MissingAttribute(index.clone()),
+                    }
+                  );*/
+                  break 'solve_loop;
+                }, 
+              };
+              self.lhs_columns_empty.push(Value::from_u64(ix));
+              &self.lhs_columns_empty
+            },
+            _ => &self.lhs_rows_empty,
+          };
+          (row_ixes, column_ixes)
+        }
+        _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
+      };
+
+      let width  = if column_ixes.is_empty() { table_ref.columns }
+                    else { column_ixes.len() as u64 };      
+      let height = if row_ixes.is_empty() { table_ref.rows }
+                    else { row_ixes.len() as u64 };
+      self.scratch.grow_to_fit(height, width);
+      let mut iix = 0;
+      let mut actual_width = 0;
+      let mut actual_height = 0;
+      for i in 0..width as usize {
+        let mut column_mask = true;
+        let cix = if column_ixes.is_empty() { i }
+                  else { 
+                    match column_ixes[i] {
+                      Value::Number(n) => n.to_u64() as usize  - 1,
+                      Value::Bool(true) => i,
+                      _ => {
+                        column_mask = false;
+                        0
+                      },  
+                    }
+                  };
+        let mut jix = 0;
+        for j in 0..height as usize {
+          let mut row_mask = true;
+          let rix = if row_ixes.is_empty() { j }
+                    else { 
+                      match row_ixes[j] {
+                        Value::Number(n) => n.to_u64() as usize - 1,
+                        Value::Bool(true) => j,
+                        _ => {
+                          row_mask = false;
+                          0
+                        }, 
+                      }
+                    };
+          if column_mask == true && row_mask == true {
+            //let value = table_ref.data[cix][rix];
+            // Check bounds
+            if cix + 1 > table_ref.columns as usize || rix + 1 > table_ref.rows as usize {
+              /* TODO Fix error
+              self.errors.push(
+                Error{
+                  block: self.id as u64,
+                  constraint: step.clone(),
+                  error_id: ErrorType::IndexOutOfBounds(((rix as u64 + 1, cix as u64 + 1),(table_ref.rows, table_ref.columns))),
+                }
+              );*/
+              break 'solve_loop;
+            }
+            match table_ref.column_index_to_alias.get(cix) {
+              Some(Some(alias)) => {
+                self.scratch.column_aliases.insert(*alias, iix as u64 + 1);
+                if self.scratch.column_index_to_alias.len() < iix + 1 {
+                  self.scratch.column_index_to_alias.resize_with(iix + 1, ||{None});
+                }
+                self.scratch.column_index_to_alias[iix] = Some(*alias);
+              },
+              _ => (),
+            };
+            self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
+            jix += 1;
+            actual_height = jix;
+          }
+        }
+        if column_mask == true {
+          iix += 1;
+          actual_width = iix;
+        }
+      }
+      self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
+      old = self.scratch.clone();
+      table_ref = &old;
+      self.scratch.clear();
+    }
+    self.rhs_columns_empty.clear();
+    self.lhs_columns_empty.clear();
+    let out = self.scratch.clone();
+    self.scratch.clear();
+    out
+  }
+
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Value)->Value>>) {
+    let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
-          {
-            let mut table_ref = match table {
-              TableId::Local(id) => self.memory.get(*id).unwrap(),
-              TableId::Global(id) => store.get_table(*id).unwrap(),
-            };
-            // If we only have one index, it's like this #x{3}
-            let one = vec![Value::from_u64(1)];
-            let (row_ixes, column_ixes) = if indices.len() == 1 {
-              // Get the ixes
-              let ixes: &Vec<Value> = match &indices[0] {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                _ => &self.rhs_rows_empty,
-              };
-              // The other dimension index will be one.
-              // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
-              // If #x = [1; 2; 3] then it translates to #x{3,1}
-              let (row_ixes, column_ixes) = match (table_ref.rows, table_ref.columns) {
-                (1, columns) => (&one, ixes),
-                (rows, 1) => (ixes, &one),
-                _ => {
-                  // TODO Report an error here... or do matlab style ind2sub
-                  break 'solve_loop;
-                }
-              };
-              (row_ixes, column_ixes)
-            // Otherwise we have a couple choices:
-            // #x{1,2}
-            // #x.y{1}
-            } else {
-              let row_ixes: &Vec<Value> = match &indices[0] {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                _ => &self.rhs_rows_empty,
-              };
-              let column_ixes: &Vec<Value> = match &indices[1] {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                Some(Parameter::Index(index)) => {
-                  let ix = match table_ref.get_column_index(index) {
-                    Some(ix) => ix,
-                    // If the attribute is missing, note the error and bail
-                    None => { 
-                      self.errors.push(
-                        Error{
-                          block: self.id as u64,
-                          constraint: step.clone(),
-                          error_id: ErrorType::MissingAttribute(index.clone()),
-                        }
-                      );
-                      break 'solve_loop;
-                    }, 
-                  };
-                  self.lhs_columns_empty.push(Value::from_u64(ix));
-                  &self.lhs_columns_empty
-                },
-                _ => &self.lhs_rows_empty,
-              };
-              (row_ixes, column_ixes)
-            };
-            let width  = if column_ixes.is_empty() { table_ref.columns }
-                          else { column_ixes.len() as u64 };      
-            let height = if row_ixes.is_empty() { table_ref.rows }
-                          else { row_ixes.len() as u64 };
-            self.scratch.grow_to_fit(height, width);
-            let mut iix = 0;
-            let mut actual_width = 0;
-            let mut actual_height = 0;
-            for i in 0..width as usize {
-              let mut column_mask = true;
-              let cix = if column_ixes.is_empty() { i }
-                        else { 
-                          match column_ixes[i] {
-                            Value::Number(n) => n.to_u64() as usize  - 1,
-                            Value::Bool(true) => i,
-                            _ => {
-                              column_mask = false;
-                              0
-                            },  
-                          }
-                        };
-              let mut jix = 0;
-              for j in 0..height as usize {
-                let mut row_mask = true;
-                let rix = if row_ixes.is_empty() { j }
-                          else { 
-                            match row_ixes[j] {
-                              Value::Number(n) => n.to_u64() as usize - 1,
-                              Value::Bool(true) => j,
-                              _ => {
-                                row_mask = false;
-                                0
-                              }, 
-                            }
-                          };
-                if column_mask == true && row_mask == true {
-                  //let value = table_ref.data[cix][rix];
-                  // Check bounds
-                  if cix + 1 > table_ref.columns as usize || rix + 1 > table_ref.rows as usize {
-                    self.errors.push(
-                      Error{
-                        block: self.id as u64,
-                        constraint: step.clone(),
-                        error_id: ErrorType::IndexOutOfBounds(((rix as u64 + 1, cix as u64 + 1),(table_ref.rows, table_ref.columns))),
-                      }
-                    );
-                    break 'solve_loop;
-                  }
-                  match table_ref.column_index_to_alias.get(cix) {
-                    Some(Some(alias)) => {
-                      self.scratch.column_aliases.insert(*alias, iix as u64 + 1);
-                      if self.scratch.column_index_to_alias.len() < iix + 1 {
-                        self.scratch.column_index_to_alias.resize_with(iix + 1, ||{None});
-                      }
-                      self.scratch.column_index_to_alias[iix] = Some(*alias);
-                    },
-                    _ => (),
-                  };
-                  self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
-                  jix += 1;
-                  actual_height = jix;
-                }
-              }
-              if column_mask == true {
-                iix += 1;
-                actual_width = iix;
-              }
-            }
-            self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
+          let scanned;
+          unsafe {
+            scanned = (*block).resolve_subscript(store,table,indices);
           }
+          println!("TABLE {:?}", scanned);
           let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
           out.rows = self.scratch.rows;
           out.columns = self.scratch.columns;
@@ -1273,6 +1298,7 @@ impl Block {
           self.scratch.clear();
         },
         Constraint::Insert{from, to} => {
+          /*
           let (from_table, from_ixes) = from;
           let (to_table, to_ixes) = to;
 
@@ -1467,6 +1493,7 @@ impl Block {
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
           self.lhs_rows_empty.clear();
+          */
         },
         Constraint::Append{from_table, to_table} => {
           let from = match from_table {
@@ -1615,10 +1642,10 @@ impl fmt::Debug for Block {
 
 // Pipes are conduits of records between blocks.
 
-pub struct Pipe {
+/*pub struct Pipe {
   input: Address,
   output: Address,
-}
+}*/
 
 // ## Constraints
 
@@ -1632,7 +1659,7 @@ pub enum Constraint {
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
   // Input Constraints
   Reference{table: TableId, destination: u64},
-  Scan {table: TableId, indices: Vec<Option<Parameter>>, output: TableId},
+  Scan {table: TableId, indices: Vec<(Option<Parameter>, Option<Parameter>)>, output: TableId},
   ChangeScan {table: TableId, column: Vec<Option<Parameter>>},
   Identifier {id: u64, text: String},
   Range{table: TableId, start: TableId, end: TableId},
@@ -1646,7 +1673,7 @@ pub enum Constraint {
   CopyTable {from_table: u64, to_table: u64},
   AliasTable {table: TableId, alias: u64},
   // Output Constraints
-  Insert {from: (TableId, Vec<Option<Parameter>>), to: (TableId, Vec<Option<Parameter>>)},
+  Insert {from: (TableId, Vec<(Option<Parameter>,Option<Parameter>)>), to: (TableId, Vec<(Option<Parameter>,Option<Parameter>)>)},
   Append {from_table: TableId, to_table: TableId},
   Empty{table: TableId, row: Index, column: Index},
   Null,
