@@ -389,7 +389,7 @@ impl Block {
         },
         Constraint::Function{operation, fnstring, parameters, output} => {
           self.functions.insert(fnstring.to_string());
-          for (table, rows, columns) in parameters {
+          for (arg_name, table, indices) in parameters {
             match table {
               TableId::Global(id) => {
                 self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
@@ -722,7 +722,7 @@ impl Block {
           }
         },
         // TODO move most of this into Operations.rs
-        Constraint::Function{operation, fnstring, parameters, output} => { 
+        Constraint::Function{operation, fnstring, parameters, output} => {/* 
           
           // Concat Functions  
           if *operation == Function::HorizontalConcatenate {
@@ -877,11 +877,13 @@ impl Block {
                 self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
               }
             }
+            
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
+            
           }
           else if *operation == Function::TableSplit {
             let out_table = &output[0];
@@ -1144,7 +1146,9 @@ impl Block {
               break 'solve_loop;
             }
           }
-        },
+        
+        
+        */},
         Constraint::Filter{comparator, lhs, rhs, output} => {
           let op_fun = match comparator {
             Comparator::NotEqual => operations::compare_not_equal,
@@ -1297,8 +1301,8 @@ impl Block {
           out.columns = self.scratch.columns;
           self.scratch.clear();
         },
-        Constraint::Insert{from, to} => {
-          /*
+        Constraint::Insert{from, to} => {/*
+          
           let (from_table, from_ixes) = from;
           let (to_table, to_ixes) = to;
 
@@ -1489,12 +1493,12 @@ impl Block {
               }
             }
           }
+          
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
           self.lhs_rows_empty.clear();
-          */
-        },
+        */},
         Constraint::Append{from_table, to_table} => {
           let from = match from_table {
             TableId::Local(id) => self.memory.get(*id).unwrap(),
@@ -1666,7 +1670,7 @@ pub enum Constraint {
   // Transform Constraints
   Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Logic {logic: operations::Logic, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
-  Function {operation: operations::Function, fnstring: String, parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)>, output: Vec<TableId>},
+  Function {operation: operations::Function, fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: Quantity, unit: Option<String>},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
