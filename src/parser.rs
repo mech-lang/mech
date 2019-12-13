@@ -523,12 +523,7 @@ fn subscript_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn dot_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = period(input)?;
   let (input, identifier) = identifier(input)?;
-  let (input, subscript) = opt(subscript_index)(input)?;
   let mut index = vec![identifier];
-  match subscript {
-    Some(subscript) => index.push(subscript),
-    None => (),
-  };
   Ok((input, Node::DotIndex{children: index}))
 }
 

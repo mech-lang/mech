@@ -537,6 +537,7 @@ impl Compiler {
                   _ => false,
                 };
               },
+              /*
               Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes, ..)} => {
                 // TODO Handle other cases of from and parameters
                 let to_rows = to_ixes[0];
@@ -548,7 +549,7 @@ impl Compiler {
                   TableId::Global(id) => produces.insert(*id),
                   _ => false,
                 };
-              },
+              },*/
               _ => (),
             }
             constraints.push(constraint.clone());
@@ -614,6 +615,7 @@ impl Compiler {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
+        /*
         let mut result1 = self.compile_constraint(&children[0]);
         result1.remove(0);
         let scan = result1.remove(0);
@@ -621,7 +623,7 @@ impl Compiler {
           Constraint::Scan{table, indices, ..} => {
             (table, indices.clone())
           },
-          _ => (TableId::Global(0), vec![None, None]), 
+          _ => (TableId::Global(0), vec![(None, None)]), 
         };
         let mut result2 = self.compile_constraint(&children[1]);
         let (from, from_ixes) = match &result2[0] {
@@ -632,6 +634,7 @@ impl Compiler {
         constraints.push(Constraint::Insert{from: (from, from_ixes), to: (to, to_ixes)});
         constraints.append(&mut result1);
         constraints.append(&mut result2);
+        */
       },
       Node::SplitData{children} => {
         self.expression += 1;
@@ -658,7 +661,7 @@ impl Compiler {
           let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
           constraints.push(Constraint::AliasTable{table: TableId::Local(intermediate_table), alias});
           constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-          constraints.push(Constraint::Function{operation: Function::TableSplit, fnstring: "table_split".to_string(), parameters: vec![(table, None, None)], output: vec![TableId::Local(intermediate_table)]});
+          constraints.push(Constraint::Function{operation: Function::TableSplit, fnstring: "table_split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
         } else {
           // TODO error if there are no children
         }
@@ -667,10 +670,9 @@ impl Compiler {
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
-          Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), column: indices.clone()}),
+          //Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), indices: indices.clone()}),
           Constraint::Filter{comparator, lhs, rhs, output} => {
             let intermediate_table = Hasher::hash_string(format!("inlinescan{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
-            let column = Hasher::hash_str("column");
             self.table += 1;
             for x in &result {
               match x {
@@ -683,8 +685,7 @@ impl Compiler {
             }
             constraints.push(Constraint::ChangeScan{table: TableId::Local(intermediate_table), column: vec![None, None]});
             constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-            constraints.push(Constraint::Function{operation: Function::SetAny, fnstring: "set_any".to_string(), parameters: vec![(TableId::Local(column), None, None), (output.clone(), None, None)], output: vec![TableId::Local(intermediate_table)]});
-            constraints.push(Constraint::Identifier{id: column, text: "column".to_string()});
+            constraints.push(Constraint::Function{operation: Function::SetAny, fnstring: "set_any".to_string(), parameters: vec![("column".to_string(), output.clone(), vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
             constraints.append(&mut result);
           },
           _ => (),
@@ -800,7 +801,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
-        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
+        let mut parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
@@ -813,10 +814,10 @@ impl Compiler {
           if result.len() > 1 {
             match &result[1] {
               Constraint::NewTable{id, rows, columns} => {
-                parameters.push((id.clone(), None, None));
+                parameters.push(("".to_string(), id.clone(), vec![(None, None)]));
               }
               Constraint::Identifier{id, ..} => {
-                parameters.push((TableId::Local(id.clone()),None, None));
+                parameters.push(("".to_string(),TableId::Local(id.clone()), vec![(None, None)]));
               }
               _ => (),
             }
@@ -845,14 +846,14 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
+        let mut parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
         let mut compiled = vec![];
         let mut alt_id = 0;
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
-              parameters.push((id.clone(), None, None));
+              parameters.push(("".to_string(), id.clone(), vec![(None, None)]));
               match id {
                 TableId::Local(id) => alt_id = *id,
                 TableId::Global(id) => alt_id = *id,
@@ -901,7 +902,7 @@ impl Compiler {
           }
         }
       },
-      Node::FilterExpression{comparator, children} => {
+      Node::FilterExpression{comparator, children} => {/*
         self.expression += 1;
         self.table = Hasher::hash_string(format!("FilterExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
@@ -932,8 +933,8 @@ impl Compiler {
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }  
-      },
-      Node::LogicExpression{operator, children} => {
+      */},
+      Node::LogicExpression{operator, children} => {/*
         self.expression += 1;
         self.table = Hasher::hash_string(format!("LogicExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut output = TableId::Local(self.table);
@@ -964,8 +965,8 @@ impl Compiler {
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }  
-      },      
-      Node::Range{children} => {        
+      */},      
+      Node::Range{children} => {/*        
         let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
         let mut arguments = vec![];
         let mut compiled = vec![];
@@ -982,7 +983,7 @@ impl Compiler {
           constraints.push(Constraint::Range{table: table_id.clone(), start: arguments[0].clone(), end: arguments[1].clone()});
         }
         constraints.append(&mut compiled);
-      },
+      */},
       Node::MathExpression{children} => {
         let store_row = self.row;
         let store_col = self.column;
@@ -999,7 +1000,7 @@ impl Compiler {
         self.column = store_col;
         self.table = store_table;
       },
-      Node::Function{name, children} => {
+      Node::Function{name, children} => {/*
         self.expression += 1;
         self.table = Hasher::hash_string(format!("Function{:?},{:?}-{:?}", self.section, self.block, self.expression));
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});        
@@ -1057,56 +1058,55 @@ impl Compiler {
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }
-      },
+      */},
       Node::Table{name, id} => {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
       },
       Node::SelectData{name, id, children} => {
         let mut compiled = vec![];
-        let mut indices: Vec<Option<Parameter>> = vec![];
+        let mut indices: Vec<(Option<Parameter>,Option<Parameter>)> = vec![];
         let mut scan_id = id.clone();
+        let mut compile_child = |child: &Node| { 
+          let mut result = self.compile_constraint(&child);
+          let param = match &result[0] {
+            Constraint::NewTable{ref id, rows, columns} => Some(Parameter::TableId(id.clone())),
+            Constraint::Null => None,
+            Constraint::Scan{table, ..} => Some(Parameter::TableId(table.clone())),
+            Constraint::Identifier{id, ..} => Some(Parameter::Index(Index::Alias(id.clone()))),
+            _ => None,
+          };
+          compiled.append(&mut result);
+          param
+        };
         for child in children {
           match child {
-            Node::DotIndex{children} |
-            Node::SubscriptIndex{children} => {
-              for child in children {
-                let mut result = self.compile_constraint(child);
-                match &result[0] {
-                  Constraint::NewTable{ref id, rows, columns} => indices.push(Some(Parameter::TableId(id.clone()))),
-                  Constraint::Null => indices.push(None),
-                  Constraint::Scan{table, ..} => indices.push(Some(Parameter::TableId(table.clone()))),
-                  Constraint::Identifier{id, ..} => indices.push(Some(Parameter::Index(Index::Alias(id.clone())))),
-                  _ => (),
-                };
-                compiled.append(&mut result);
-              }
+            Node::DotIndex{children} => {
+              let tuple = (compile_child(&children[0]), None);
+              indices.push(tuple);
             }
-            Node::Null => indices.push(None),
+            Node::SubscriptIndex{children} => {
+              let tuple = if children.len() == 1 {
+                (compile_child(&children[0]), None)
+              } else if children.len() == 2 {
+                (compile_child(&children[0]), compile_child(&children[1]))
+              } else {
+                (None, None)
+              };
+              indices.push(tuple);
+            }
+            Node::Null => indices.push((None,None)),
             _ => (),
           }
-          if indices.len() == 2 {
-            compiled.reverse();
-            constraints.append(&mut compiled);
-            let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
-            constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
-            constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
-            scan_id = TableId::Local(scan_output);
-            indices.clear();
-            compiled.clear();
-          }
         }
-        // example: #x{1}
-        if indices.len() == 1 {
-          compiled.reverse();
-          constraints.append(&mut compiled);
-          let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
-          constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
-          constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
-          scan_id = TableId::Local(scan_output);
-          indices.clear();
-          compiled.clear();
-        }
+        compiled.reverse();
+        constraints.append(&mut compiled);
+        let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
+        constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
+        constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
+        scan_id = TableId::Local(scan_output);
+        indices.clear();
+        compiled.clear();
         constraints.reverse();
       },
       Node::SubscriptIndex{children} => {
@@ -1122,20 +1122,20 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![]; 
+        let mut parameter_registers: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::Identifier{id, ..} => {
-              parameter_registers.push((TableId::Local(id.clone()), None, None));
+              parameter_registers.push(("".to_string(), TableId::Local(id.clone()), vec![(None, None)]));
             },
             Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push((id.clone(), None, None));
+              parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
             },
             Constraint::Scan{table, indices, output} => {
-              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
+              parameter_registers.push(("".to_string(), table.clone(), indices.clone()));
             },
             _ => (),
           }
