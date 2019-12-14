@@ -529,12 +529,16 @@ impl Block {
   }
 
   pub fn resolve_subscript(&mut self, store: &mut Interner, table: &TableId, indices: &Vec<(Option<Parameter>, Option<Parameter>)>) -> Table {
-    let mut table_ref = match table {
-      TableId::Local(id) => self.memory.get(*id).unwrap(),
-      TableId::Global(id) => store.get_table(*id).unwrap(),
-    };
-    let mut old: Table;
+    let mut old: Table = Table::new(0,0,0);
+    let mut table_id: TableId = table.clone();
     'solve_loop: for index in indices {
+      let mut table_ref = match table_id {
+        TableId::Local(id) => match self.memory.get(id) {
+          Some(id) => id,
+          None => store.get_table(id).unwrap(),
+        },
+        TableId::Global(id) => store.get_table(id).unwrap(),
+      };
       let one = vec![Value::from_u64(1)];
       let (row_ixes, column_ixes) = match index {
         // If we only have one index, it's like this #x{3}
@@ -595,7 +599,6 @@ impl Block {
         }
         _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
       };
-
       let width  = if column_ixes.is_empty() { table_ref.columns }
                     else { column_ixes.len() as u64 };      
       let height = if row_ixes.is_empty() { table_ref.rows }
@@ -667,12 +670,15 @@ impl Block {
       }
       self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
       old = self.scratch.clone();
-      table_ref = &old;
       self.scratch.clear();
+      match &old.data[0][0] {
+        Value::Reference(id) => table_id = id.clone(),
+        _ => (),
+      };
     }
     self.rhs_columns_empty.clear();
     self.lhs_columns_empty.clear();
-    let out = table_ref.clone();
+    let out = old.clone();
     self.scratch.clear();
     out
   }
@@ -688,13 +694,12 @@ impl Block {
           unsafe {
             scanned = (*block).resolve_subscript(store,table,indices);
           }
-          println!("TABLE {:?}", scanned);
           let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-          out.rows = self.scratch.rows;
-          out.columns = self.scratch.columns;
-          out.data = self.scratch.data.clone();
-          out.column_index_to_alias = self.scratch.column_index_to_alias.clone();
-          out.column_aliases = self.scratch.column_aliases.clone();
+          out.rows = scanned.rows;
+          out.columns = scanned.columns;
+          out.data = scanned.data.clone();
+          out.column_index_to_alias = scanned.column_index_to_alias.clone();
+          out.column_aliases = scanned.column_aliases.clone();
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
