@@ -672,7 +672,7 @@ impl Block {
     }
     self.rhs_columns_empty.clear();
     self.lhs_columns_empty.clear();
-    let out = self.scratch.clone();
+    let out = table_ref.clone();
     self.scratch.clear();
     out
   }
@@ -722,141 +722,59 @@ impl Block {
           }
         },
         // TODO move most of this into Operations.rs
-        Constraint::Function{operation, fnstring, parameters, output} => {/* 
-          
-          // Concat Functions  
+        Constraint::Function{operation, fnstring, parameters, output} => {
+          // Concat Functions
           if *operation == Function::HorizontalConcatenate {
             let out_table = &output[0];
-            for (table, rows, columns) in parameters {
-              let table_ref = match table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-              };
-              let row_ixes: &Vec<Value> = match rows {
-                  Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                  Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                  _ => &self.rhs_rows_empty,
-                };
-              let column_ixes: &Vec<Value> = match columns {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                Some(Parameter::Index(index)) => {
-                  let ix = match table_ref.get_column_index(index) {
-                    Some(ix) => ix,
-                    None => 0,
-                  };
-                  self.lhs_columns_empty.push(Value::from_u64(ix));
-                  &self.lhs_columns_empty
-                },
-                _ => &self.lhs_rows_empty,
-              };
-              let width  = if column_ixes.is_empty() { table_ref.columns }
-                           else { column_ixes.len() as u64 };      
-              let height = if row_ixes.is_empty() { table_ref.rows }
-                           else { row_ixes.len() as u64 };
-              // Do the work here
-              // TODO move this into operations
-              if self.scratch.rows == 0 {
-                self.scratch.grow_to_fit(height, width);
-                let mut iix = 0;
-                let mut actual_width = 0;
-                let mut actual_height = 0;
-                for i in 0..width as usize {
-                  let mut column_mask = true;
-                  let cix = if column_ixes.is_empty() { i }
-                            else { 
-                              match column_ixes[i] {
-                                Value::Number(n) => n.mantissa() as usize  - 1,
-                                Value::Bool(true) => i,
-                                _ => {
-                                  column_mask = false;
-                                  0
-                                },  
-                              }
-                            };
-                  let mut jix = 0;
-                  for j in 0..height as usize {
-                    let mut row_mask = true;
-                    let rix = if row_ixes.is_empty() { j }
-                              else { 
-                                match row_ixes[j] {
-                                  Value::Number(n) => n.mantissa() as usize - 1,
-                                  Value::Bool(true) => j,
-                                  _ => {
-                                    row_mask = false;
-                                    0
-                                  }, 
-                                }
-                              };
-                    if column_mask == true && row_mask == true {
-                      self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
-                      jix += 1;
-                      actual_height = jix;
-                    }
-                  }
-                  if column_mask == true {
-                    iix += 1;
-                    actual_width = iix;
-                  }
-                }
-                self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
-              } else if self.scratch.rows == height {
-                let start_col: usize = self.scratch.columns as usize;
-                let end_col: usize = (self.scratch.columns + width) as usize;
+            let mut cat_table = Table::new(0,0,0);
+            for (name, table, indices) in parameters {
+              let scanned;
+              unsafe {
+                scanned = (*block).resolve_subscript(store,table,indices);
+              } 
+              // Do all the work here:
+              if cat_table.rows == 0 {
+                cat_table.grow_to_fit(scanned.rows,scanned.columns);
+                cat_table.data = scanned.data;
+              // We're adding a scalar to the table. Auto fill to height
+              } else if scanned.rows == 1 {
+                let start_col: usize = cat_table.columns as usize;
+                let end_col: usize = (cat_table.columns + scanned.columns) as usize;
                 let start_row: usize = 0;
-                let end_row: usize = self.scratch.rows as usize;
-                self.scratch.grow_to_fit(end_row as u64, end_col as u64);
-                for i in start_col..end_col {
-                  let cix = if column_ixes.is_empty() { i - start_col }
-                            else { column_ixes[i - start_col].as_u64().unwrap() as usize - 1 };
-                  for j in 0..height as usize {
-                    let rix: usize = if row_ixes.is_empty() { j }
-                              else { row_ixes[j as usize].as_u64().unwrap() as usize - 1 };
-                    self.scratch.data[i as usize][j as usize] = table_ref.data[cix][rix].clone();
+                let end_row: usize = cat_table.rows as usize;
+                cat_table.grow_to_fit(end_row as u64, end_col as u64);
+                for i in 0..scanned.columns {
+                  for j in 0..cat_table.rows {
+                    cat_table.data[i as usize + start_col][j as usize] = scanned.data[i as usize][0].clone();
                   }
                 }
-              // Auto fill scalars to fit
-              } else if height == 1 {
-                let start_col: usize = self.scratch.columns as usize;
-                let end_col: usize = (self.scratch.columns + width) as usize;
-                let start_row: usize = 0;
-                let end_row: usize = self.scratch.rows as usize;
-                self.scratch.grow_to_fit(end_row as u64, end_col as u64);
-                for i in start_col..end_col {
-                  let cix = if column_ixes.is_empty() { i - start_col }
-                            else { column_ixes[i - start_col].as_u64().unwrap() as usize - 1 };
-                  for j in 0..end_row {
-                    let rix: usize = if row_ixes.is_empty() { j }
-                              else { row_ixes[j as usize].as_u64().unwrap() as usize - 1 };
-                    self.scratch.data[i as usize][j as usize] = table_ref.data[cix][0].clone();
-                  }
-                }
-              // Scale single row to fit new size
-              } else if self.scratch.rows == 1 {
-                let old_width = self.scratch.columns;
-                let end_col: usize = (self.scratch.columns + width) as usize;
-                self.scratch.grow_to_fit(height, end_col as u64);
+              } else if cat_table.rows == 1 {
+                let old_width = cat_table.columns;
+                let end_col: usize = (cat_table.columns + scanned.columns) as usize;
+                cat_table.grow_to_fit(scanned.rows, end_col as u64);
                 // copy old stuff
                 for i in 0..old_width as usize {
-                  for j in 1..self.scratch.rows as usize {
-                    self.scratch.data[i][j] = self.scratch.data[i][0].clone();
+                  for j in 1..cat_table.rows as usize {
+                    cat_table.data[i][j] = cat_table.data[i][0].clone();
                   }
                 }
                 // copy new stuff
-                for i in 0..width as usize {
-                  for j in 0..height as usize {
-                    self.scratch.data[i + old_width as usize][j] = table_ref.data[i][j].clone();
+                for i in 0..scanned.columns as usize {
+                  for j in 0..scanned.rows as usize {
+                    cat_table.data[i + old_width as usize][j] = scanned.data[i][j].clone();
                   }
                 }
               }
-              self.lhs_columns_empty.clear();
             }
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = self.scratch.rows;
-            out.columns = self.scratch.columns;
-            out.data = self.scratch.data.clone();
+            out.rows = cat_table.rows;
+            out.columns = cat_table.columns;
+            out.data = cat_table.data.clone();
+            self.lhs_columns_empty.clear();
+            self.rhs_columns_empty.clear();
             self.scratch.clear();
           }
+          /*
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
             for (table, rows, columns) in parameters {
