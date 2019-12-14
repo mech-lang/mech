@@ -839,240 +839,31 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
-          /*
-          else if *operation == Function::MathSin || *operation == Function::MathCos ||
-                  *operation == Function::MathRound ||
-                  *operation == Function::MathFloor ||
-                  *operation == Function::StatSum ||
-                  *operation == Function::TableSplit || 
-                  *operation == Function::SetAny {
-            let argument = match &parameters[0] {
-              (_ TableId::Local(argument), _) => *argument,
-              _ => 0,
-            };
-            let (value_table, value_rows, value_columns) = &parameters[1];            
-            let out_table = &output[0];
-            {
-              let rhs = match value_table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-              };
-              let rhs_rows: &Vec<Value> = match value_rows {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                _ => &self.rhs_rows_empty,
-              };
-              let rhs_columns: &Vec<Value> = match value_columns {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                Some(Parameter::Index(index)) => {
-                  let ix = match rhs.get_column_index(index) {
-                    Some(ix) => ix,
-                    None => 0,
-                  };
-                  self.rhs_columns_empty.push(Value::from_u64(ix));
-                  &self.rhs_columns_empty
-                },
-                _ => &self.rhs_columns_empty,
-              };
-              let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
-                               else { rhs_columns.len() as u64 };     
-              let rhs_height = if rhs_rows.is_empty() { rhs.rows }
-                               else { rhs_rows.len() as u64 }; 
-              self.scratch.grow_to_fit(rhs_height, rhs_width);        
-              for i in 0..rhs_width as usize {
-                let rcix = if rhs_columns.is_empty() { i }
-                          else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
-                for j in 0..rhs_height as usize {
-                  let rrix = if rhs_rows.is_empty() { j }
-                            else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
-                  let pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
-                  match (operation, argument, &rhs.data[rcix][rrix]) {
-                    // column
-                    (Function::StatSum, 0x756cddd0, Value::Number(x)) => {
-                      let previous = self.scratch.data[0][0].as_quantity().unwrap();
-                      match previous.add(*x) {
-                        Ok(op_result) => {
-                          self.scratch.data[0][0] = Value::Number(op_result);
-                          self.scratch.shrink_to_fit(1,1);
-                        },
-                        _ => (), // Throw an error here
-                      }
-                    }
-                    // row
-                    (Function::StatSum, 0x776f72, Value::Number(x)) => {
-                      let previous = self.scratch.data[0][0].as_quantity().unwrap();
-                      match previous.add(*x) {
-                        Ok(op_result) => {
-                          self.scratch.data[0][0] = Value::Number(op_result);
-                          self.scratch.shrink_to_fit(1,1);
-                        },
-                        _ => (), // Throw an error here
-                      }
-                    }
-                    // column
-                    (Function::MathRound, 0x756cddd0, Value::Number(x)) => {
-                      let result = round(x.to_float());
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
-                    // column
-                    (Function::SetAny, 0x756cddd0, Value::Bool(x)) => {
-                      let new = match (x, &self.scratch.data[0][0]) {
-                        (false, Value::Empty) => Value::Bool(false),
-                        (true, _) => Value::Bool(true),
-                        (_, Value::Bool(true)) => Value::Bool(true),
-                        (false, _) => Value::Bool(false),
-                      };
-                      self.scratch.data[0][0] = new;
-                    },
-                    // column
-                    (Function::MathFloor, 0x756cddd0, Value::Number(x)) => {
-                      let result = floor(x.to_float());
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
-                    // column
-                    (Function::TableSplit, 0x756cddd0, Value::Number(x)) => {
-                    },
-                    // row
-                    (Function::TableSplit, 0x776f72, Value::Number(x)) => {
-
-                    },
-                    // radians
-                    (Function::MathSin, 0x69d7cfd3, Value::Number(x)) => {
-                      let result = sin(x.to_float());
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
-                    // degrees
-                    (Function::MathCos, 0x72dacac9, Value::Number(x)) => {
-                      let result = match fmod(x.to_float(), 360.0) {
-                        0.0 => 1.0,
-                        90.0 => 0.0,
-                        180.0 => -1.0,
-                        270.0 => 0.0,
-                        _ => cos(x.to_float() * pi / 180.0),
-                      };
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
-                    // radians
-                    (Function::MathCos, 0x69d7cfd3, Value::Number(x)) => {
-                      let result = cos(x.to_float());
-                      self.scratch.data[i][j] = Value::from_quantity(result.to_quantity());
-                    },
-                    // degrees
-                    (_, _, Value::Number(x)) => {
-                      let result = match functions.get(fnstring) {
-                        Some(Some(fn_ptr)) => {
-                          fn_ptr(Value::Number(*x))
-                        }
-                        _ => Value::Empty,
-                      };
-                      self.scratch.data[i][j] = result;
-                    },
-                    _ => (),
+          else {
+            /*
+            match (operation, argument, &rhs.data[rcix][rrix]) {
+              (_, _, Value::Number(x)) => {
+                let result = match functions.get(fnstring) {
+                  Some(Some(fn_ptr)) => {
+                    fn_ptr(Value::Number(*x))
                   }
-                }
-              } 
-            }
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = self.scratch.rows;
-            out.columns = self.scratch.columns;
-            out.data = self.scratch.data.clone();
-            self.scratch.clear();
+                  _ => Value::Empty,
+                };
+                self.scratch.data[i][j] = result;
+              },
+              _ => (),
+            }*.
           }
-          // Infix Math
-          else if parameters.len() == 2 {
-            // Pass the parameters to the appropriate function
-            let op_fun = match operation {
-              Function::Add => operations::math_add,
-              Function::Subtract => operations::math_subtract,
-              Function::Multiply => operations::math_multiply,
-              Function::Divide => operations::math_divide,
-              Function::Power => operations::math_power,
-              _ => operations::undefined, 
-            };
-            // Execute the function. Results are placed on the memory registers
-            let (lhs_table, lhs_rows, lhs_columns) = &parameters[0];
-            let (rhs_table, rhs_rows, rhs_columns) = &parameters[1];
-            let out_table = &output[0];
-            // TODO This seems very inefficient. Find a better way to do this. 
-            // I'm having trouble getting the borrow checker to understand what I'm doing here
-            let mut errors: Vec<ErrorType> = Vec::new();
-            {     
-              let lhs = match lhs_table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-              };
-              let rhs = match rhs_table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-              };
-              let lhs_rows: &Vec<Value> = match lhs_rows {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                _ => &self.lhs_rows_empty,
-              };
-              let rhs_rows: &Vec<Value> = match rhs_rows {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                _ => &self.rhs_rows_empty,
-              };
-              let lhs_columns: &Vec<Value> = match lhs_columns {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                Some(Parameter::Index(index)) => {
-                  let ix = match lhs.get_column_index(index) {
-                    Some(ix) => ix,
-                    None => 0,
-                  };
-                  self.lhs_columns_empty.push(Value::from_u64(ix));
-                  &self.lhs_columns_empty
-                },
-                _ => &self.lhs_rows_empty,
-              };
-              let rhs_columns: &Vec<Value> = match rhs_columns {
-                Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-                Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-                Some(Parameter::Index(index)) => {
-                  let ix = match rhs.get_column_index(index) {
-                    Some(ix) => ix,
-                    None => 0,
-                  };
-                  self.rhs_columns_empty.push(Value::from_u64(ix));
-                  &self.rhs_columns_empty
-                },
-                _ => &self.rhs_columns_empty,
-              };
-              op_fun(lhs, lhs_rows, lhs_columns,
-                     rhs, rhs_rows, rhs_columns, &mut self.scratch, &mut errors);
-            }
-            // If there are no errors, copy the data over
-            if errors.len() == 0 {
-              let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-              out.rows = self.scratch.rows;
-              out.columns = self.scratch.columns;
-              out.data = self.scratch.data.clone();
-            } 
-            // Clear scratch no matter what
-            self.scratch.clear();
-            self.rhs_columns_empty.clear();
-            self.lhs_columns_empty.clear();
-            // record error on block and quit the solve loop if there are any errors
-            for error in &errors {
-              self.errors.push(
-                Error{
-                  block: self.id as u64,
-                  constraint: step.clone(),
-                  error_id: error.clone(),
-                }
-              );
-            }
-            if errors.len() > 0 {
-              break 'solve_loop;
-            }
-          }*/
+
+          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+          out.rows = self.scratch.rows;
+          out.columns = self.scratch.columns;
+          out.data = self.scratch.data.clone();
+          self.scratch.clear();
+          */
+          }
         },
         Constraint::Insert{from, to} => {/*
-          
           let (from_table, from_ixes) = from;
           let (to_table, to_ixes) = to;
 
