@@ -779,7 +779,6 @@ impl Block {
             self.rhs_columns_empty.clear();
             self.scratch.clear();
           }
-          
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
@@ -803,16 +802,15 @@ impl Block {
                 // TODO Throw size error
               }
             }
-            
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = cat_table.rows;
             out.columns = cat_table.columns;
             out.data = cat_table.data.clone();
             self.scratch.clear();
-          }/*
+          }
           else if *operation == Function::TableSplit {
             let out_table = &output[0];
-            let (in_table, _, _) = &parameters[0];
+            let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
               TableId::Local(id) => self.memory.get(*id).unwrap(),
               TableId::Global(id) => store.get_table(*id).unwrap(),
@@ -841,6 +839,7 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           }
+          /*
           else if *operation == Function::MathSin || *operation == Function::MathCos ||
                   *operation == Function::MathRound ||
                   *operation == Function::MathFloor ||
@@ -848,7 +847,7 @@ impl Block {
                   *operation == Function::TableSplit || 
                   *operation == Function::SetAny {
             let argument = match &parameters[0] {
-              (TableId::Local(argument), _, _) => *argument,
+              (_ TableId::Local(argument), _) => *argument,
               _ => 0,
             };
             let (value_table, value_rows, value_columns) = &parameters[1];            
@@ -1070,161 +1069,7 @@ impl Block {
             if errors.len() > 0 {
               break 'solve_loop;
             }
-          }
-        
-        
-        */},
-        Constraint::Filter{comparator, lhs, rhs, output} => {
-          let op_fun = match comparator {
-            Comparator::NotEqual => operations::compare_not_equal,
-            Comparator::Equal => operations::compare_equal,
-            Comparator::LessThanEqual => operations::compare_less_than_equal,
-            Comparator::GreaterThanEqual => operations::compare_greater_than_equal,
-            Comparator::GreaterThan => operations::compare_greater_than,
-            Comparator::LessThan => operations::compare_less_than,
-            _ => operations::compare_undefined, 
-          };
-          let (lhs_table, lhs_rows, lhs_columns) = &lhs;
-          let (rhs_table, rhs_rows, rhs_columns) = &rhs;
-          let out_table = output;
-          {
-            let lhs = match lhs_table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-            };
-            let rhs = match rhs_table {
-              TableId::Local(id) => self.memory.get(*id).unwrap(),
-              TableId::Global(id) => store.get_table(*id).unwrap(),
-            };
-            let lhs_rows: &Vec<Value> = match lhs_rows {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.lhs_rows_empty,
-            };
-            let rhs_rows: &Vec<Value> = match rhs_rows {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.rhs_rows_empty,
-            };
-            
-            let lhs_columns: &Vec<Value> = match lhs_columns {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match lhs.get_column_index(index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.lhs_columns_empty.push(Value::from_u64(ix));
-                &self.lhs_columns_empty
-              },
-              _ => &self.lhs_rows_empty,
-            };
-            let rhs_columns: &Vec<Value> = match rhs_columns {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match rhs.get_column_index(index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.rhs_columns_empty.push(Value::from_u64(ix));
-                &self.rhs_columns_empty
-              },
-              _ => &self.rhs_columns_empty,
-            };
-            op_fun(lhs, lhs_rows, lhs_columns,
-                    rhs, rhs_rows, rhs_columns, &mut self.scratch);
-          }
-          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-          out.rows = self.scratch.rows;
-          out.columns = self.scratch.columns;
-          out.data = self.scratch.data.clone();
-          self.scratch.clear();
-          self.rhs_columns_empty.clear();
-          self.lhs_columns_empty.clear();
-        },
-        Constraint::Logic{logic, lhs, rhs, output} => {
-          let op_fun = match logic {
-            Logic::And => operations::logic_and,
-            Logic::Or => operations::logic_or,
-            _ => operations::logic_undefined, 
-          };
-          let (lhs_table, lhs_rows, lhs_columns) = &lhs;
-          let (rhs_table, rhs_rows, rhs_columns) = &rhs;
-          let out_table = output;
-          {
-            let lhs = match lhs_table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-            };
-            let rhs = match rhs_table {
-              TableId::Local(id) => self.memory.get(*id).unwrap(),
-              TableId::Global(id) => store.get_table(*id).unwrap(),
-            };
-            let lhs_rows: &Vec<Value> = match lhs_rows {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.lhs_rows_empty,
-            };
-            let rhs_rows: &Vec<Value> = match rhs_rows {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.rhs_rows_empty,
-            };
-            let lhs_columns: &Vec<Value> = match lhs_columns {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match lhs.get_column_index(index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.lhs_columns_empty.push(Value::from_u64(ix));
-                &self.lhs_columns_empty
-              },
-              _ => &self.lhs_rows_empty,
-            };
-            let rhs_columns: &Vec<Value> = match rhs_columns {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match rhs.get_column_index(index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.rhs_columns_empty.push(Value::from_u64(ix));
-                &self.rhs_columns_empty
-              },
-              _ => &self.rhs_columns_empty,
-            };
-            op_fun(lhs, lhs_rows, lhs_columns,
-                   rhs, rhs_rows, rhs_columns, &mut self.scratch);
-          }
-          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-          out.rows = self.scratch.rows;
-          out.columns = self.scratch.columns;
-          out.data = self.scratch.data.clone();
-          self.scratch.clear();
-          self.rhs_columns_empty.clear();
-          self.lhs_columns_empty.clear();
-        },
-        Constraint::Range{table, start, end} => {
-          {
-            let start_value = &self.memory.get(*start.unwrap()).unwrap().data[0][0].as_u64().unwrap().clone();
-            let end_value = &self.memory.get(*end.unwrap()).unwrap().data[0][0].as_u64().unwrap().clone();
-            self.scratch.grow_to_fit(end_value - start_value + 1, 1);
-            let mut row = 1;
-            for i in *start_value..*end_value + 1 {
-              self.scratch.set_cell(&Index::Index(row), &Index::Index(1), Value::from_u64(i));
-              row += 1;
-            }
-          }
-          let out = self.memory.get_mut(*table.unwrap()).unwrap();
-          out.data = self.scratch.data.clone();
-          out.rows = self.scratch.rows;
-          out.columns = self.scratch.columns;
-          self.scratch.clear();
+          }*/
         },
         Constraint::Insert{from, to} => {/*
           
