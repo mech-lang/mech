@@ -779,35 +779,37 @@ impl Block {
             self.rhs_columns_empty.clear();
             self.scratch.clear();
           }
-          /*
+          
           else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
-            for (table, rows, columns) in parameters {
-              let table_ref = match table {
-                TableId::Local(id) => self.memory.get(*id).unwrap(),
-                TableId::Global(id) => store.get_table(*id).unwrap(),
-              };
-              if self.scratch.columns == 0 {
-                self.scratch.grow_to_fit(table_ref.rows, table_ref.columns);
-                self.scratch.data = table_ref.data.clone();
-              } else if self.scratch.columns == table_ref.columns {
+            let mut cat_table = Table::new(0,0,0);
+            for (name, table, indices) in parameters {
+              let scanned;
+              unsafe {
+                scanned = (*block).resolve_subscript(store,table,indices);
+              } 
+              if cat_table.rows == 0 {
+                cat_table.grow_to_fit(scanned.rows, scanned.columns);
+                cat_table.data = scanned.data.clone();
+              } else if cat_table.columns == scanned.columns {
                 let mut i = 0;
-                for column in &mut self.scratch.data {
-                  let mut col = table_ref.data[i].clone();
+                for column in &mut cat_table.data {
+                  let mut col = scanned.data[i].clone();
                   column.append(&mut col);
                   i += 1;
                 }
-                self.scratch.grow_to_fit(self.scratch.rows + table_ref.rows, self.scratch.columns);
+                cat_table.grow_to_fit(cat_table.rows + scanned.rows, cat_table.columns);
+              } else {
+                // TODO Throw size error
               }
             }
             
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = self.scratch.rows;
-            out.columns = self.scratch.columns;
-            out.data = self.scratch.data.clone();
+            out.rows = cat_table.rows;
+            out.columns = cat_table.columns;
+            out.data = cat_table.data.clone();
             self.scratch.clear();
-            
-          }
+          }/*
           else if *operation == Function::TableSplit {
             let out_table = &output[0];
             let (in_table, _, _) = &parameters[0];
