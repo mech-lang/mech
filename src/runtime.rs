@@ -1565,15 +1565,6 @@ impl fmt::Debug for Block {
   }
 }
 
-// ## Pipe
-
-// Pipes are conduits of records between blocks.
-
-/*pub struct Pipe {
-  input: Address,
-  output: Address,
-}*/
-
 // ## Constraints
 
 // Constraints put bounds on the data available for a block to work with. For 
