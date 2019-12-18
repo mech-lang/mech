@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{math_add, Function, Comparator, Parameter, Logic};
+use operations::{math_add, math_subtract, math_multiply, math_divide, Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -51,6 +51,9 @@ impl Runtime {
       errors: Vec::new(),
     };
     runtime.functions.insert("+".to_string(),Some(math_add));
+    runtime.functions.insert("*".to_string(),Some(math_multiply));
+    runtime.functions.insert("/".to_string(),Some(math_divide));
+    runtime.functions.insert("-".to_string(),Some(math_subtract));
     runtime
   }
 
