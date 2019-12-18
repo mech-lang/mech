@@ -1000,11 +1000,13 @@ impl Compiler {
         self.column = store_col;
         self.table = store_table;
       },
-      Node::Function{name, children} => {/*
+      Node::Function{name, children} => {
         self.expression += 1;
         self.table = Hasher::hash_string(format!("Function{:?},{:?}-{:?}", self.section, self.block, self.expression));
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});        
-        let operation = match name.as_ref() {
+        let operation = Function::Undefined;
+        /*
+        match name.as_ref() {
           "+" => Function::Add,
           "-" => Function::Subtract,
           "*" => Function::Multiply,
@@ -1018,37 +1020,38 @@ impl Compiler {
           "set/any" => Function::SetAny,
           "table/split" => Function::TableSplit,
           _ => Function::Undefined,
-        };
+        };*/
+        
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
           self.column += 1;
           parameters.push(self.compile_constraint(child));
         }
-        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
+        let mut parameter_registers: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![];
         for parameter in &parameters {
           match &parameter[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
             Constraint::Identifier{id, ..} => {
-              parameter_registers.push((TableId::Local(*id),None, None));
+              parameter_registers.push(("".to_string(),TableId::Local(*id),vec![(None, None)]));
               match &parameter[1] {
                 Constraint::NewTable{id, rows, columns} => {
-                  parameter_registers.push((id.clone(), None, None));
+                  parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
                 },
                 _ => (),
               }
             },
             Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push((id.clone(), None, None));
+              parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
             },
             Constraint::Scan{table, indices, output} => {
-              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
+              parameter_registers.push(("".to_string(), table.clone(), indices.clone()));
             },
             Constraint::Function{operation, fnstring, parameters, output} => {
               for o in output {
-                parameter_registers.push((o.clone(), None, None));
+                parameter_registers.push(("".to_string(), o.clone(), vec![(None, None)]));
               }
             },
             _ => (),
@@ -1058,7 +1061,7 @@ impl Compiler {
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }
-      */},
+      },
       Node::Table{name, id} => {
         self.table = Hasher::hash_string(format!("Table{:?},{:?}-{:?}", self.section, self.block, name));
         constraints.push(Constraint::Identifier{id: *id, text: name.clone()});
