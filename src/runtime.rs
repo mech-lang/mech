@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{Function, Comparator, Parameter, Logic};
+use operations::{math_add, Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -33,7 +33,7 @@ pub struct Runtime {
   pub pipes_map: HashMap<Register, HashSet<Address>>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
-  pub functions: HashMap<String, Option<fn(Value)->Value>>,
+  pub functions: HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -41,7 +41,7 @@ pub struct Runtime {
 impl Runtime {
 
   pub fn new() -> Runtime {
-    Runtime {
+    let mut runtime = Runtime {
       blocks: HashMap::new(),
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
@@ -49,7 +49,9 @@ impl Runtime {
       functions: HashMap::new(),
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
-    }
+    };
+    runtime.functions.insert("+".to_string(),Some(math_add));
+    runtime
   }
 
   pub fn clear(&mut self) {
@@ -82,7 +84,7 @@ impl Runtime {
 
     // Record the functions used in block
     for fun in &block.functions {
-      self.functions.insert(fun.to_string(), None);
+      //self.functions.insert(fun.to_string(), None);
     }
 
     // Register all local tables in the tables map
@@ -705,7 +707,7 @@ impl Block {
     out
   }
 
-  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Value)->Value>>) {
+  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>) {
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
@@ -800,8 +802,7 @@ impl Block {
             self.lhs_columns_empty.clear();
             self.rhs_columns_empty.clear();
             self.scratch.clear();
-          }
-          else if *operation == Function::VerticalConcatenate {
+          } else if *operation == Function::VerticalConcatenate {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -829,8 +830,7 @@ impl Block {
             out.columns = cat_table.columns;
             out.data = cat_table.data.clone();
             self.scratch.clear();
-          }
-          else if *operation == Function::TableSplit {
+          } else if *operation == Function::TableSplit {
             let out_table = &output[0];
             let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
@@ -860,29 +860,27 @@ impl Block {
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
-          }
-          else {
-            /*
-            match (operation, argument, &rhs.data[rcix][rrix]) {
-              (_, _, Value::Number(x)) => {
-                let result = match functions.get(fnstring) {
-                  Some(Some(fn_ptr)) => {
-                    fn_ptr(Value::Number(*x))
-                  }
-                  _ => Value::Empty,
-                };
-                self.scratch.data[i][j] = result;
-              },
-              _ => (),
-            }*.
-          }
-
-          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-          out.rows = self.scratch.rows;
-          out.columns = self.scratch.columns;
-          out.data = self.scratch.data.clone();
-          self.scratch.clear();
-          */
+          } else {
+            let out_table = &output[0];
+            let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
+              let table_ref: Table;
+              unsafe {
+                table_ref = (*block).resolve_subscript(store,table_id,indices);
+              }
+              (arg_name.clone(), table_ref)
+            }).collect::<Vec<_>>();
+            let result = match functions.get(fnstring) {
+              Some(Some(fn_ptr)) => {
+                fn_ptr(arguments)
+              }
+              _ => Table::new(0,1,1),
+            };
+            self.scratch = result;
+            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            out.rows = self.scratch.rows;
+            out.columns = self.scratch.columns;
+            out.data = self.scratch.data.clone();
+            self.scratch.clear();
           }
         },
         Constraint::Insert{from, to} => {
@@ -1273,7 +1271,7 @@ impl fmt::Debug for Constraint {
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
       Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
-      Constraint::Function{operation, fnstring, parameters, output} => write!(f, "Fxn::{:?}{:?} -> {:?}", operation, parameters, output),
+      Constraint::Function{operation, fnstring, parameters, output} => write!(f, "Function({:?}({:?}) -> {:?})", fnstring, parameters, output),
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
