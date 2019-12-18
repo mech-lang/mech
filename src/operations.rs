@@ -44,6 +44,13 @@ pub enum Function {
   Undefined
 }
 
+pub fn math_add(input: Vec<(String, Table)>) -> Table {
+  
+  let (_, lhs) = &input[0];
+  let (_, rhs) = &input[1];
+  lhs.clone()
+}
+
 #[macro_export]
 macro_rules! binary_math {
   ($func_name:ident, $op:tt) => (
@@ -140,7 +147,6 @@ macro_rules! binary_math {
   )
 }
 
-binary_math!{math_add, add}
 binary_math!{math_subtract, sub}
 binary_math!{math_multiply, multiply}
 binary_math!{math_divide, divide}
