@@ -1082,7 +1082,7 @@ impl Compiler {
         for child in children {
           match child {
             Node::DotIndex{children} => {
-              let tuple = (compile_child(&children[0]), None);
+              let tuple = (None, compile_child(&children[1]));
               indices.push(tuple);
             }
             Node::SubscriptIndex{children} => {
