@@ -60,6 +60,11 @@ pub enum Node {
   Constant {value: Quantity, unit: Option<String>},
   String{ text: String },
   Token{ token: Token, byte: u8 },
+  Add,
+  Subtract,
+  Multiply,
+  Divide,
+  Exponent,
   LessThan,
   GreaterThan,
   GreaterThanEqual,
@@ -145,6 +150,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::NotEqual => {print!("NotEqual\n"); None},
     Node::Empty => {print!("Empty\n"); None},
     Node::Null => {print!("Null\n"); None},
+    Node::Add => {print!("Add\n"); None},
+    Node::Subtract => {print!("Subtract\n"); None},
+    Node::Multiply => {print!("Multiply\n"); None},
+    Node::Divide => {print!("Divide\n"); None},
+    Node::Exponent => {print!("Exponent\n"); None},
     // Markdown Nodes
     Node::Title{text} => {print!("Title({:?})\n", text); None},
     Node::ParagraphText{text} => {print!("ParagraphText({:?})\n", text); None},
@@ -156,7 +166,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     // Extended Mechdown
     Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
     Node::MechCodeBlock{children} => {print!("MechCodeBlock\n"); Some(children)},
-    _ => {print!("Unhandled Node"); None},
+    _ => {print!("Unhandled Compiler Node"); None},
   };  
   match children {
     Some(childs) => {
@@ -1749,7 +1759,8 @@ impl Compiler {
       parser::Node::L1{children} |
       parser::Node::L2{children} |
       parser::Node::L3{children} |
-      parser::Node::L4{children} => {
+      parser::Node::L4{children} |
+      parser::Node::L5{children} => {
         let result = self.compile_nodes(children);
         let mut last = Node::Null;
         for node in result {
@@ -1770,11 +1781,23 @@ impl Compiler {
       },
       parser::Node::L1Infix{children} |
       parser::Node::L2Infix{children} |
-      parser::Node::L3Infix{children} => {
+      parser::Node::L3Infix{children} |
+      parser::Node::L4Infix{children} => {
         let result = self.compile_nodes(children);
         let operator = &result[0].clone();
         let input = &result[1].clone();
         let name: String = match operator {
+          Node::Add => "math_add".to_string(),
+          Node::Subtract => "math_subtract".to_string(),
+          Node::Multiply => "math_multiply".to_string(),
+          Node::Divide => "math_divide".to_string(),
+          Node::Exponent => "math_exponent".to_string(),
+          Node::GreaterThan => "compare_greater_than".to_string(),
+          Node::GreaterThanEqual => "compare_greater_than_equal".to_string(),
+          Node::LessThanEqual => "compare_less_than_equal".to_string(),
+          Node::LessThan => "compare_less_than".to_string(),
+          Node::Equal => "compare_equal".to_string(),
+          Node::NotEqual => "compare_not_equal".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
         };        
@@ -1812,6 +1835,17 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
+      parser::Node::GreaterThan => compiled.push(Node::GreaterThan),
+      parser::Node::LessThan => compiled.push(Node::LessThan),
+      parser::Node::GreaterThanEqual => compiled.push(Node::GreaterThanEqual),
+      parser::Node::LessThanEqual => compiled.push(Node::LessThanEqual),
+      parser::Node::Equal => compiled.push(Node::Equal),
+      parser::Node::NotEqual => compiled.push(Node::NotEqual),
+      parser::Node::Add => compiled.push(Node::Add),
+      parser::Node::Subtract => compiled.push(Node::Subtract),
+      parser::Node::Multiply => compiled.push(Node::Multiply),
+      parser::Node::Divide => compiled.push(Node::Divide),
+      parser::Node::Exponent => compiled.push(Node::Exponent),
       parser::Node::Comparator{children} => {
         match children[0] {
           parser::Node::LessThan => compiled.push(Node::LessThan),
@@ -1875,7 +1909,7 @@ impl Compiler {
         }
         compiled.push(Node::Token{token, byte});
       },
-      _ => println!("Unhandled Node: {:?}", node),
+      _ => println!("Unhandled Parser Node in Compiler: {:?}", node),
     }
     
     //self.constraints = constraints.clone();

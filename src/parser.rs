@@ -112,10 +112,12 @@ pub enum Node {
   L1Infix{ children: Vec<Node> },
   L2Infix{ children: Vec<Node> },
   L3Infix{ children: Vec<Node> },
+  L4Infix{ children: Vec<Node> },
   L1{ children: Vec<Node> },
   L2{ children: Vec<Node> },
   L3{ children: Vec<Node> },
   L4{ children: Vec<Node> },
+  L5{ children: Vec<Node> },
   Function{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
   ParentheticalExpression{ children: Vec<Node> },
@@ -128,6 +130,11 @@ pub enum Node {
   Transition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   Token{token: Token, byte: u8},
+  Add,
+  Subtract,
+  Multiply,
+  Divide,
+  Exponent,
   LessThanEqual,
   GreaterThanEqual,
   Equal,
@@ -235,10 +242,12 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L1Infix{children} => {print!("L1Infix\n"); Some(children)},
     Node::L2Infix{children} => {print!("L2Infix\n"); Some(children)},
     Node::L3Infix{children} => {print!("L3Infix\n"); Some(children)},
+    Node::L4Infix{children} => {print!("L4Infix\n"); Some(children)},
     Node::L1{children} => {print!("L1\n"); Some(children)},
     Node::L2{children} => {print!("L2\n"); Some(children)},
     Node::L3{children} => {print!("L3\n"); Some(children)},
     Node::L4{children} => {print!("L4\n"); Some(children)},
+    Node::L5{children} => {print!("L5\n"); Some(children)},
     Node::Function{children} => {print!("Function\n"); Some(children)},
     Node::Negation{children} => {print!("Negation\n"); Some(children)},
     Node::ParentheticalExpression{children} => {print!("ParentheticalExpression\n"); Some(children)},
@@ -255,6 +264,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::Transitions{children} => {print!("Transitions\n"); Some(children)},
     Node::Transition{children} => {print!("Transition\n"); Some(children)},
+    Node::Add => {print!("Add\n",); None},
+    Node::Subtract => {print!("Subtract\n",); None},
+    Node::Multiply => {print!("Multiply\n",); None},
+    Node::Divide => {print!("Divide\n",); None},
+    Node::Exponent => {print!("Exponent\n",); None},
     Node::LessThan => {print!("LessThan\n",); None},
     Node::GreaterThan => {print!("GreaterThan\n",); None},
     Node::GreaterThanEqual => {print!("GreaterThanEqual\n",); None},
@@ -263,7 +277,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::NotEqual => {print!("NotEqual\n",); None},
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
-    _ => {print!("Unhandled Node"); None},
+    _ => {print!("Unhandled Parser Node"); None},
   };  
   match children {
     Some(childs) => {
@@ -722,6 +736,36 @@ fn function(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Function { children: function }))
 }
 
+fn matrix_multiply(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("**")(input)?;
+  Ok((input, Node::Null))
+}
+
+fn add(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("+")(input)?;
+  Ok((input, Node::Add))
+}
+
+fn subtract(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("-")(input)?;
+  Ok((input, Node::Subtract))
+}
+
+fn multiply(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("*")(input)?;
+  Ok((input, Node::Multiply))
+}
+
+fn divide(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("/")(input)?;
+  Ok((input, Node::Divide))
+}
+
+fn exponent(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("^")(input)?;
+  Ok((input, Node::Exponent))
+}
+
 fn l1(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l2) = l2(input)?;
   let (input, mut infix) = many0(l1_infix)(input)?;
@@ -732,15 +776,10 @@ fn l1(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l1_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((plus, dash))(input)?;
+  let (input, op) = alt((add, subtract))(input)?;
   let (input, _) = space(input)?;
   let (input, l2) = l2(input)?;
   Ok((input, Node::L1Infix { children: vec![op, l2] }))
-}
-
-fn matrix_multiply(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, _) = tag("**")(input)?;
-  Ok((input, Node::Null))
 }
 
 fn l2(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
@@ -753,7 +792,7 @@ fn l2(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l2_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((asterisk, slash, matrix_multiply))(input)?;
+  let (input, op) = alt((multiply, divide, matrix_multiply))(input)?;
   let (input, _) = space(input)?;
   let (input, l3) = l3(input)?;
   Ok((input, Node::L2Infix { children: vec![op, l3] }))
@@ -776,8 +815,24 @@ fn l3_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l4(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l4) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
-  Ok((input, Node::L4 { children: vec![l4] }))
+  let (input, l5) = l5(input)?;
+  let (input, mut infix) = many0(l4_infix)(input)?;
+  let mut math = vec![l5];
+  math.append(&mut infix);
+  Ok((input, Node::L4 { children: math }))
+}
+
+fn l4_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = space(input)?;
+  let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
+  let (input, _) = space(input)?;
+  let (input, l5) = l5(input)?;
+  Ok((input, Node::L4Infix { children: vec![op, l5] }))
+}
+
+fn l5(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, l5) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
+  Ok((input, Node::L5 { children: vec![l5] }))
 }
 
 fn math_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
@@ -896,7 +951,7 @@ fn string(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, expression) = alt((string , range , logic_expression , filter_expression , inline_table , anonymous_table , math_expression))(input)?;
+  let (input, expression) = alt((string , range , logic_expression , inline_table , anonymous_table , math_expression))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 
