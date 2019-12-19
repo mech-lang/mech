@@ -1,5 +1,5 @@
 use mech_core::{Block, Constraint, TableId};
-use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use super::compiler::Node;
 use hashbrown::hash_map::{HashMap, Entry};
 
@@ -58,11 +58,6 @@ impl Formatter {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("{} {:?} {}", lhs, operator, rhs);
-      },
-      Node::FilterExpression{comparator, children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        code = format!("{} {:?} {}", lhs, comparator, rhs);
       },
       Node::Function{name, children} => {
         match name.as_ref() {

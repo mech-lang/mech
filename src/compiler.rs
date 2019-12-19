@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Block, BlockState, Constraint, Index, TableId};
-use mech_core::{Function, Comparator, Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
 use mech_core::ErrorType;
 use parser;
@@ -30,7 +30,6 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
-  FilterExpression{ comparator: Comparator, children: Vec<Node> },
   LogicExpression{ operator: Logic, children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
@@ -132,7 +131,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::FilterExpression{comparator, children} => {print!("FilterExpression({:?})\n", comparator); Some(children)},
     Node::LogicExpression{operator, children} => {print!("LogicExpression({:?})\n", operator); Some(children)},
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
@@ -671,7 +669,7 @@ impl Compiler {
           let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
           constraints.push(Constraint::AliasTable{table: TableId::Local(intermediate_table), alias});
           constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-          constraints.push(Constraint::Function{operation: Function::TableSplit, fnstring: "table_split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
+          constraints.push(Constraint::Function{fnstring: "table_split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
         } else {
           // TODO error if there are no children
         }
@@ -681,7 +679,7 @@ impl Compiler {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
           //Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), indices: indices.clone()}),
-          Constraint::Filter{comparator, lhs, rhs, output} => {
+          /*Constraint::Filter{comparator, lhs, rhs, output} => {
             let intermediate_table = Hasher::hash_string(format!("inlinescan{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
             self.table += 1;
             for x in &result {
@@ -697,7 +695,7 @@ impl Compiler {
             constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
             constraints.push(Constraint::Function{operation: Function::SetAny, fnstring: "set_any".to_string(), parameters: vec![("column".to_string(), output.clone(), vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
             constraints.append(&mut result);
-          },
+          },*/
           _ => (),
         }
       },
@@ -840,7 +838,7 @@ impl Compiler {
         constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.append(&mut column_names);
-        constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, fnstring: "table_horizontal_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
+        constraints.push(Constraint::Function{fnstring: "table_horizontal_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
         self.row = store_row;
         self.column = store_column;
@@ -885,7 +883,7 @@ impl Compiler {
           constraints.push(Constraint::Reference{table: TableId::Local(self.table), destination: table_reference});
           constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
-          constraints.push(Constraint::Function{operation: Function::VerticalConcatenate, fnstring: "table_vertical_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
+          constraints.push(Constraint::Function{fnstring: "table_vertical_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: TableId::Local(self.table), destination: table_reference});
@@ -912,38 +910,6 @@ impl Compiler {
           }
         }
       },
-      Node::FilterExpression{comparator, children} => {/*
-        self.expression += 1;
-        self.table = Hasher::hash_string(format!("FilterExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut output = TableId::Local(self.table);
-        let mut parameters: Vec<Vec<Constraint>> = vec![];
-        for child in children {
-          self.column += 1;
-          parameters.push(self.compile_constraint(child));
-        }
-        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
-        for parameter in &parameters {
-          match &parameter[0] {
-            Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push((id.clone(), None, None));
-            },
-            Constraint::Scan{table, indices, output} => {
-              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
-            },
-            Constraint::Function{operation, fnstring, parameters, output} => {
-              for o in output {
-                parameter_registers.push((o.clone(), None, None));
-              }
-            },
-            _ => (),
-          };
-        }
-        constraints.push(Constraint::NewTable{id: output.clone(), rows: 0, columns: 0});
-        constraints.push(Constraint::Filter{comparator: comparator.clone(), lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
-        for mut p in &parameters {
-          constraints.append(&mut p.clone());
-        }  
-      */},
       Node::LogicExpression{operator, children} => {/*
         self.expression += 1;
         self.table = Hasher::hash_string(format!("LogicExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
@@ -1013,25 +979,7 @@ impl Compiler {
       Node::Function{name, children} => {
         self.expression += 1;
         self.table = Hasher::hash_string(format!("Function{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});        
-        let operation = Function::Undefined;
-        /*
-        match name.as_ref() {
-          "+" => Function::Add,
-          "-" => Function::Subtract,
-          "*" => Function::Multiply,
-          "/" => Function::Divide,
-          "^" => Function::Power,
-          "math/round" => Function::MathRound,
-          "math/floor" => Function::MathFloor,
-          "math/sin" => Function::MathSin,
-          "math/cos" => Function::MathCos,
-          "stat/sum" => Function::StatSum,
-          "set/any" => Function::SetAny,
-          "table/split" => Function::TableSplit,
-          _ => Function::Undefined,
-        };*/
-        
+        constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});                
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
         for child in children {
@@ -1059,7 +1007,7 @@ impl Compiler {
             Constraint::Scan{table, indices, output} => {
               parameter_registers.push(("".to_string(), table.clone(), indices.clone()));
             },
-            Constraint::Function{operation, fnstring, parameters, output} => {
+            Constraint::Function{fnstring, parameters, output} => {
               for o in output {
                 parameter_registers.push(("".to_string(), o.clone(), vec![(None, None)]));
               }
@@ -1067,7 +1015,7 @@ impl Compiler {
             _ => (),
           };
         }
-        constraints.push(Constraint::Function{operation, fnstring: name.to_string(), parameters: parameter_registers, output});
+        constraints.push(Constraint::Function{fnstring: name.to_string(), parameters: parameter_registers, output});
         for mut p in &parameters {
           constraints.append(&mut p.clone());
         }
@@ -1156,7 +1104,7 @@ impl Compiler {
         }
         if parameter_registers.len() > 1 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-          constraints.push(Constraint::Function{operation: Function::HorizontalConcatenate, fnstring: "table_horizontal_concatenate".to_string(), parameters: parameter_registers, output: vec![TableId::Local(table)]});
+          constraints.push(Constraint::Function{fnstring: "table_horizontal_concatenate".to_string(), parameters: parameter_registers, output: vec![TableId::Local(table)]});
         }
         constraints.append(&mut compiled);
       },
@@ -1393,23 +1341,6 @@ impl Compiler {
       parser::Node::SelectExpression{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectExpression{children: result});
-      },
-      parser::Node::FilterExpression{children} => {
-        let result = self.compile_nodes(children);
-        let mut comparator = Comparator::Undefined;
-        let mut children: Vec<Node> = Vec::new();
-        for node in result {
-          match node {
-            Node::LessThan => comparator = Comparator::LessThan,
-            Node::GreaterThan => comparator = Comparator::GreaterThan,
-            Node::GreaterThanEqual => comparator = Comparator::GreaterThanEqual,
-            Node::LessThanEqual => comparator = Comparator::LessThanEqual,
-            Node::Equal => comparator = Comparator::Equal,
-            Node::NotEqual => comparator = Comparator::NotEqual,
-            _ => children.push(node),
-          }
-        }
-        compiled.push(Node::FilterExpression{comparator, children});
       },
       parser::Node::LogicExpression{children} => {
         let result = self.compile_nodes(children);
