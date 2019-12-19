@@ -22,28 +22,6 @@ pub enum Parameter {
   Index (Index),
 }
 
-// ## Functions
-
-#[repr(u8)]
-#[derive(Debug, Clone, PartialEq)]
-pub enum Function {
-  Add, 
-  Subtract, 
-  Multiply, 
-  Divide,
-  Power,
-  HorizontalConcatenate,
-  VerticalConcatenate,
-  MathRound,
-  MathFloor,
-  MathSin,
-  MathCos,
-  StatSum,
-  SetAny,
-  TableSplit,
-  Undefined
-}
-
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
