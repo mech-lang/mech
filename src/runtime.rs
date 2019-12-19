@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter, Logic};
+use operations::{stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -50,16 +50,17 @@ impl Runtime {
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
-    runtime.functions.insert("math_add".to_string(),Some(math_add));
-    runtime.functions.insert("math_multiply".to_string(),Some(math_multiply));
-    runtime.functions.insert("math_divide".to_string(),Some(math_divide));
-    runtime.functions.insert("math_subtract".to_string(),Some(math_subtract));
-    runtime.functions.insert("compare_greater_than".to_string(),Some(compare_greater_than));
-    runtime.functions.insert("compare_less_than".to_string(),Some(compare_less_than));
-    runtime.functions.insert("compare_greater_than_equal".to_string(),Some(compare_greater_than_equal));
-    runtime.functions.insert("compare_less_than_equal".to_string(),Some(compare_less_than_equal));
-    runtime.functions.insert("compare_equal".to_string(),Some(compare_equal));
-    runtime.functions.insert("compare_not_equal".to_string(),Some(compare_not_equal));
+    runtime.functions.insert("math/add".to_string(),Some(math_add));
+    runtime.functions.insert("math/multiply".to_string(),Some(math_multiply));
+    runtime.functions.insert("math/divide".to_string(),Some(math_divide));
+    runtime.functions.insert("math/subtract".to_string(),Some(math_subtract));
+    runtime.functions.insert("compare/greater-than".to_string(),Some(compare_greater_than));
+    runtime.functions.insert("compare/less-than".to_string(),Some(compare_less_than));
+    runtime.functions.insert("compare/greater-than-equal".to_string(),Some(compare_greater_than_equal));
+    runtime.functions.insert("compare/less-than-equal".to_string(),Some(compare_less_than_equal));
+    runtime.functions.insert("compare/equal".to_string(),Some(compare_equal));
+    runtime.functions.insert("compare/not-equal".to_string(),Some(compare_not_equal));
+    runtime.functions.insert("stat/sum".to_string(),Some(stat_sum));
     runtime
   }
 
@@ -694,9 +695,11 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>) {
+    
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
+      println!("{:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -739,7 +742,7 @@ impl Block {
         // TODO move most of this into Operations.rs
         Constraint::Function{fnstring, parameters, output} => {
           // Concat Functions
-          if *fnstring == "table_horizontal_concatenate" {
+          if *fnstring == "table/horizontal-concatenate" {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -788,7 +791,7 @@ impl Block {
             self.lhs_columns_empty.clear();
             self.rhs_columns_empty.clear();
             self.scratch.clear();
-          } else if *fnstring == "table_vertical_concatenate" {
+          } else if *fnstring == "table/vertical-concatenate" {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -816,7 +819,7 @@ impl Block {
             out.columns = cat_table.columns;
             out.data = cat_table.data.clone();
             self.scratch.clear();
-          } else if *fnstring == "table_split" {
+          } else if *fnstring == "table/split" {
             let out_table = &output[0];
             let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
