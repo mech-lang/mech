@@ -41,7 +41,7 @@ mod errors;
 pub use self::database::{Transaction, Change, Interner};
 pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
 pub use self::indexes::{TableIndex, Hasher};
-pub use self::operations::{Function, Comparator, Logic, Parameter};
+pub use self::operations::{Logic, Parameter};
 pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 pub use self::errors::{Error, ErrorType};

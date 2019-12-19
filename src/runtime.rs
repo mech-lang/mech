@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Function, Comparator, Parameter, Logic};
+use operations::{math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -322,7 +322,6 @@ impl Block {
     reversed.reverse();
     for constraint in reversed {
       match constraint {
-        Constraint::Filter{..} |
         Constraint::Logic{..} |
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
@@ -398,7 +397,7 @@ impl Block {
             TableId::Global(id) => (), // TODO Add global alias here
           }
         },
-        Constraint::Function{operation, fnstring, parameters, output} => {
+        Constraint::Function{fnstring, parameters, output} => {
           self.functions.insert(fnstring.to_string());
           for (arg_name, table, indices) in parameters {
             match table {
@@ -407,28 +406,6 @@ impl Block {
               },
               _ => (),
             }
-          }
-        },
-        Constraint::Filter{comparator, lhs, rhs, output} => {
-          let (lhs_table, lhs_rows, lhs_columns) = lhs;
-          let (rhs_table, rhs_rows, rhs_columns) = rhs;
-          match lhs_table {
-            TableId::Global(id) => {
-              match lhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: *id, column: index.clone()}),
-                _ => self.input_registers.insert(Register{table: *id, column: Index::Index(0)}),
-              };
-            }
-            _ => (),
-          }
-          match rhs_table {
-            TableId::Global(id) => {
-              match rhs_columns {
-                Some(Parameter::Index(index)) => self.input_registers.insert(Register{table: *id, column: index.clone()}),
-                _ => self.input_registers.insert(Register{table: *id, column: Index::Index(0)}),
-              };
-            }
-            _ => (),
           }
         },
         Constraint::NewTable{id, rows, columns} => {
@@ -760,9 +737,9 @@ impl Block {
           }
         },
         // TODO move most of this into Operations.rs
-        Constraint::Function{operation, fnstring, parameters, output} => {
+        Constraint::Function{fnstring, parameters, output} => {
           // Concat Functions
-          if *operation == Function::HorizontalConcatenate {
+          if *fnstring == "table_horizontal_concatenate" {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -811,7 +788,7 @@ impl Block {
             self.lhs_columns_empty.clear();
             self.rhs_columns_empty.clear();
             self.scratch.clear();
-          } else if *operation == Function::VerticalConcatenate {
+          } else if *fnstring == "table_vertical_concatenate" {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -839,7 +816,7 @@ impl Block {
             out.columns = cat_table.columns;
             out.data = cat_table.data.clone();
             self.scratch.clear();
-          } else if *operation == Function::TableSplit {
+          } else if *fnstring == "table_split" {
             let out_table = &output[0];
             let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
@@ -1255,9 +1232,8 @@ pub enum Constraint {
   Identifier {id: u64, text: String},
   Range{table: TableId, start: TableId, end: TableId},
   // Transform Constraints
-  Filter {comparator: operations::Comparator, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
   Logic {logic: operations::Logic, lhs: (TableId, Option<Parameter>, Option<Parameter>), rhs: (TableId, Option<Parameter>, Option<Parameter>), output: TableId},
-  Function {operation: operations::Function, fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
+  Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: Quantity, unit: Option<String>},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
@@ -1278,9 +1254,8 @@ impl fmt::Debug for Constraint {
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
       Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
-      Constraint::Filter{comparator, lhs, rhs, output} => write!(f, "Filter({:?} {:?} {:?} -> {:?})", lhs, comparator, rhs, output),
       Constraint::Logic{logic, lhs, rhs, output} => write!(f, "Logic({:?} {:?} {:?} -> {:?})", lhs, logic, rhs, output),
-      Constraint::Function{operation, fnstring, parameters, output} => write!(f, "Function({:?}({:?}) -> {:?})", fnstring, parameters, output),
+      Constraint::Function{fnstring, parameters, output} => write!(f, "Function({:?}({:?}) -> {:?})", fnstring, parameters, output),
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
