@@ -115,6 +115,24 @@ binary_infix!{compare_greater_than_equal, greater_than_equal}
 binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than, less_than}
 
+pub fn stat_sum(input: Vec<(String, Table)>) -> Table {
+  let mut out = Table::new(0,1,1);
+  let (field, table_ref) = &input[0];
+  if field == "column" {
+    let mut total = 0.to_quantity();
+    for i in 0..table_ref.rows as usize {
+      match table_ref.data[0][i] {
+        Value::Number(x) => {
+          total = total.add(x).unwrap();
+        }
+        _ => (),
+      }
+    }
+    out.data[0][0] = Value::Number(total);
+  }
+  out
+}
+
 // ## Logic
 
 #[repr(u8)]
