@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{math_add, math_subtract, math_multiply, math_divide, Function, Comparator, Parameter, Logic};
+use operations::{math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Function, Comparator, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -50,10 +50,16 @@ impl Runtime {
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
-    runtime.functions.insert("+".to_string(),Some(math_add));
-    runtime.functions.insert("*".to_string(),Some(math_multiply));
-    runtime.functions.insert("/".to_string(),Some(math_divide));
-    runtime.functions.insert("-".to_string(),Some(math_subtract));
+    runtime.functions.insert("math_add".to_string(),Some(math_add));
+    runtime.functions.insert("math_multiply".to_string(),Some(math_multiply));
+    runtime.functions.insert("math_divide".to_string(),Some(math_divide));
+    runtime.functions.insert("math_subtract".to_string(),Some(math_subtract));
+    runtime.functions.insert("compare_greater_than".to_string(),Some(compare_greater_than));
+    runtime.functions.insert("compare_less_than".to_string(),Some(compare_less_than));
+    runtime.functions.insert("compare_greater_than_equal".to_string(),Some(compare_greater_than_equal));
+    runtime.functions.insert("compare_less_than_equal".to_string(),Some(compare_less_than_equal));
+    runtime.functions.insert("compare_equal".to_string(),Some(compare_equal));
+    runtime.functions.insert("compare_not_equal".to_string(),Some(compare_not_equal));
     runtime
   }
 

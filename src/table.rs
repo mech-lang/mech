@@ -37,7 +37,13 @@ impl Value {
   }
 
   pub fn from_quantity(num: Quantity) -> Value {
-    Value::Number(num)
+    if num == ((1 as u64)<<62) {
+      Value::Bool(true)
+    } else if num == ((1 as u64)<<63) {
+      Value::Bool(false)
+    } else {
+      Value::Number(num)
+    }
   }
 
   pub fn from_i64(num: i64) -> Value {

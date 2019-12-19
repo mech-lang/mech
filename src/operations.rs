@@ -45,7 +45,7 @@ pub enum Function {
 }
 
 #[macro_export]
-macro_rules! binary_math {
+macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     pub fn $func_name(input: Vec<(String, Table)>) -> Table {
       // TODO Test for the right amount of inputs
@@ -60,7 +60,6 @@ macro_rules! binary_math {
 
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
-
 
       // The tables are the same size
       let result: Table = if lhs_width == rhs_width && lhs_height == rhs_height {
@@ -124,13 +123,19 @@ macro_rules! binary_math {
   )
 }
 
-binary_math!{math_add, add}
-binary_math!{math_subtract, sub}
-binary_math!{math_multiply, multiply}
-binary_math!{math_divide, divide}
+binary_infix!{math_add, add}
+binary_infix!{math_subtract, sub}
+binary_infix!{math_multiply, multiply}
+binary_infix!{math_divide, divide}
 // FIXME this isn't actually right at all. ^ is not power in Rust
 //binary_math!{math_power, add}
-//binary_math!{undefined, add}
+
+binary_infix!{compare_not_equal, not_equal}
+binary_infix!{compare_equal, equal}
+binary_infix!{compare_less_than_equal, less_than_equal}
+binary_infix!{compare_greater_than_equal, greater_than_equal}
+binary_infix!{compare_greater_than, greater_than}
+binary_infix!{compare_less_than, less_than}
 
 // ## Comparators
 
@@ -160,111 +165,6 @@ impl fmt::Debug for Comparator {
     }
   }
 }
-
-#[macro_export]
-macro_rules! comparator {
-  ($func_name:ident, $op:tt) => (
-    pub fn $func_name(lhs: &Table, lhs_rows: &Vec<Value>, lhs_columns: &Vec<Value>, 
-                      rhs: &Table, rhs_rows: &Vec<Value>, rhs_columns: &Vec<Value>,
-                      out: &mut Table) {
-
-      // Get the math dimensions
-      let lhs_width  = if lhs_columns.is_empty() { lhs.columns }
-                       else { lhs_columns.len() as u64 };
-      let rhs_width  = if rhs_columns.is_empty() { rhs.columns }
-                       else { rhs_columns.len() as u64 };      
-      let lhs_height = if lhs_rows.is_empty() { lhs.rows }
-                       else { lhs_rows.len() as u64 };
-      let rhs_height = if rhs_rows.is_empty() { rhs.rows }
-                       else { rhs_rows.len() as u64 };
-
-      let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
-      let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
-
-      // The tables are the same size
-      if lhs_width == rhs_width && lhs_height == rhs_height {
-        out.grow_to_fit(lhs_height, lhs_width);        
-        for i in 0..lhs_width as usize {
-          let lcix = if lhs_columns.is_empty() { i }
-                    else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
-          let rcix = if rhs_columns.is_empty() { i }
-                    else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
-          for j in 0..lhs_height as usize {
-            let lrix = if lhs_rows.is_empty() { j }
-                       else { lhs_rows[j].as_u64().unwrap() as usize - 1 };
-            let rrix = if rhs_rows.is_empty() { j }
-                       else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
-            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
-              (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x.$op(*y));
-              },
-              (Value::String(x), Value::String(y)) => {
-                out.data[i][j] = Value::Bool(x == y);
-              },
-              _ => (),
-            }
-          }
-        }
-      // Operate with scalar on the left
-      } else if lhs_is_scalar {
-        out.grow_to_fit(rhs_height, rhs_width);        
-        for i in 0..rhs_width as usize {
-          let lcix = if lhs_columns.is_empty() { 0 }
-                    else { lhs_columns[0].as_u64().unwrap() as usize - 1 };
-          let rcix = if rhs_columns.is_empty() { i }
-                    else { rhs_columns[i].as_u64().unwrap() as usize - 1 };
-          for j in 0..rhs_height as usize {
-            let lrix = if lhs_rows.is_empty() { 0 }
-                       else { lhs_rows[0].as_u64().unwrap() as usize - 1 };
-            let rrix = if rhs_rows.is_empty() { j }
-                       else { rhs_rows[j].as_u64().unwrap() as usize - 1 };
-            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
-              (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x.$op(*y));
-              },
-              (Value::String(x), Value::String(y)) => {
-                out.data[i][j] = Value::Bool(x == y);
-              },
-              _ => (),
-            }
-          }
-        }
-      // Operate with scalar on the right
-      } else if rhs_is_scalar {
-        out.grow_to_fit(lhs_height, lhs_width);        
-        for i in 0..lhs_width as usize {
-          let lcix = if lhs_columns.is_empty() { i }
-                    else { lhs_columns[i].as_u64().unwrap() as usize - 1 };
-          let rcix = if rhs_columns.is_empty() { 0 }
-                    else { rhs_columns[0].as_u64().unwrap() as usize - 1 };
-          for j in 0..lhs_height as usize {
-            let lrix = if lhs_rows.is_empty() { j }
-                       else { lhs_rows[j].as_u64().unwrap() as usize - 1 };
-            let rrix = if rhs_rows.is_empty() { 0 }
-                       else { rhs_rows[0].as_u64().unwrap() as usize - 1 };
-            match (&lhs.data[lcix][lrix], &rhs.data[rcix][rrix]) {
-              (Value::Number(x), Value::Number(y)) => {
-                out.data[i][j] = Value::Bool(x.$op(*y));
-              },
-              (Value::String(x), Value::String(y)) => {
-                out.data[i][j] = Value::Bool(x == y);
-              },
-              _ => (),
-            }
-          }
-        }
-      }
-    }
-  )
-}
-
-comparator!{compare_not_equal, not_equal}
-comparator!{compare_equal, equal}
-comparator!{compare_less_than_equal, less_than_equal}
-comparator!{compare_greater_than_equal, greater_than_equal}
-comparator!{compare_greater_than, greater_than}
-comparator!{compare_less_than, less_than}
-comparator!{compare_undefined, greater_than}
 
 // ## Logic
 

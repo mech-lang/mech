@@ -156,12 +156,12 @@ pub trait QuantityMath {
     fn sub(self, Quantity) -> Result<Quantity, ErrorType>;
     fn multiply(self, Quantity) -> Result<Quantity, ErrorType>;
     fn divide(self, Quantity) -> Result<Quantity, ErrorType>;
-    fn less_than(self, Quantity) -> bool;
-    fn greater_than(self, Quantity) -> bool;
-    fn less_than_equal(self, Quantity) -> bool;
-    fn greater_than_equal(self, Quantity) -> bool;
-    fn equal(self, Quantity) -> bool;
-    fn not_equal(self, Quantity) -> bool;
+    fn less_than(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn greater_than(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn less_than_equal(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn greater_than_equal(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn equal(self, Quantity) -> Result<Quantity, ErrorType>;
+    fn not_equal(self, Quantity) -> Result<Quantity, ErrorType>;
     fn to_string(self) -> String;
     fn format(self) -> String;
     fn to_float(self) -> f64;
@@ -325,52 +325,70 @@ impl QuantityMath for Quantity {
         Ok(make_quantity(result, -4 + self.range(), 0))
     }
 
-    fn less_than(self, other: Quantity) -> bool {
+    fn less_than(self, other: Quantity) -> Result<Quantity, ErrorType> {
         if self.is_negative() && !other.is_negative() {
-            true
+            Ok((1 as u64)<<62)
         } else if !self.is_negative() && other.is_negative() {
-            false
+            Ok((1 as u64)<<63)
         } else {
-            self.to_float() < other.to_float()
+            match self.to_float() < other.to_float() {
+                true => Ok((1 as u64)<<62),
+                false => Ok((1 as u64)<<63),
+            }
         }
     }
 
-    fn less_than_equal(self, other: Quantity) -> bool {
+    fn less_than_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
         if self.is_negative() && !other.is_negative() {
-            false
+            Ok((1 as u64)<<63) // false
         } else if !self.is_negative() && other.is_negative() {
-            true
+            Ok((1 as u64)<<62) // true
         } else {
-            self.to_float() <= other.to_float()
+            match self.to_float() <= other.to_float() {
+                true => Ok((1 as u64)<<62),
+                false => Ok((1 as u64)<<63),
+            }
         }
     }
 
-    fn greater_than_equal(self, other: Quantity) -> bool {
+    fn greater_than_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
         if self.is_negative() && !other.is_negative() {
-            false
+            Ok((1 as u64)<<63)
         } else if !self.is_negative() && other.is_negative() {
-            true
+            Ok((1 as u64)<<62)
         } else {
-            self.to_float() >= other.to_float()
+            match self.to_float() >= other.to_float() {
+                true => Ok((1 as u64)<<62),
+                false => Ok((1 as u64)<<63),
+            }
         }
     }
 
-    fn greater_than(self, other: Quantity) -> bool {
+    fn greater_than(self, other: Quantity) -> Result<Quantity, ErrorType> {
         if self.is_negative() && !other.is_negative() {
-            false
+            Ok((1 as u64)<<63)
         } else if !self.is_negative() && other.is_negative() {
-            true
+            Ok((1 as u64)<<62)
         } else {
-            self.to_float() > other.to_float()
+            match self.to_float() > other.to_float() {
+                true => Ok((1 as u64)<<62),
+                false => Ok((1 as u64)<<63),
+            }
         }
     }
 
-    fn equal(self, other: Quantity) -> bool {
-        self.to_float() == other.to_float()
+    fn equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
+        match self.to_float() == other.to_float() {
+            true => Ok((1 as u64)<<62),
+            false => Ok((1 as u64)<<63),
+        }
     }
 
-    fn not_equal(self, other: Quantity) -> bool {
-        self.to_float() != other.to_float()
+    fn not_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
+        match self.to_float() != other.to_float()  {
+            true => Ok((1 as u64)<<62),
+            false => Ok((1 as u64)<<63),
+        }
     }
 }
 
