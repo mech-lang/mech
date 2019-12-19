@@ -669,7 +669,7 @@ impl Compiler {
           let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
           constraints.push(Constraint::AliasTable{table: TableId::Local(intermediate_table), alias});
           constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-          constraints.push(Constraint::Function{fnstring: "table_split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
+          constraints.push(Constraint::Function{fnstring: "table/split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
         } else {
           // TODO error if there are no children
         }
@@ -838,7 +838,7 @@ impl Compiler {
         constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
         constraints.append(&mut column_names);
-        constraints.push(Constraint::Function{fnstring: "table_horizontal_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
+        constraints.push(Constraint::Function{fnstring: "table/horizontal-concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         constraints.append(&mut compiled);
         self.row = store_row;
         self.column = store_column;
@@ -883,7 +883,7 @@ impl Compiler {
           constraints.push(Constraint::Reference{table: TableId::Local(self.table), destination: table_reference});
           constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
           constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
-          constraints.push(Constraint::Function{fnstring: "table_vertical_concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
+          constraints.push(Constraint::Function{fnstring: "table/vertical-concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: TableId::Local(self.table), destination: table_reference});
@@ -992,11 +992,11 @@ impl Compiler {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
-            Constraint::Identifier{id, ..} => {
-              parameter_registers.push(("".to_string(),TableId::Local(*id),vec![(None, None)]));
+            Constraint::Identifier{id, text} => {
+              //parameter_registers.push(("".to_string(),TableId::Local(*id),vec![(None, None)]));
               match &parameter[1] {
                 Constraint::NewTable{id, rows, columns} => {
-                  parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
+                  parameter_registers.push((text.clone(), id.clone(), vec![(None, None)]));
                 },
                 _ => (),
               }
@@ -1718,17 +1718,17 @@ impl Compiler {
         let operator = &result[0].clone();
         let input = &result[1].clone();
         let name: String = match operator {
-          Node::Add => "math_add".to_string(),
-          Node::Subtract => "math_subtract".to_string(),
+          Node::Add => "math/add".to_string(),
+          Node::Subtract => "math/subtract".to_string(),
           Node::Multiply => "math_multiply".to_string(),
-          Node::Divide => "math_divide".to_string(),
-          Node::Exponent => "math_exponent".to_string(),
-          Node::GreaterThan => "compare_greater_than".to_string(),
-          Node::GreaterThanEqual => "compare_greater_than_equal".to_string(),
-          Node::LessThanEqual => "compare_less_than_equal".to_string(),
-          Node::LessThan => "compare_less_than".to_string(),
-          Node::Equal => "compare_equal".to_string(),
-          Node::NotEqual => "compare_not_equal".to_string(),
+          Node::Divide => "math/divide".to_string(),
+          Node::Exponent => "math/exponent".to_string(),
+          Node::GreaterThan => "compare/greater-than".to_string(),
+          Node::GreaterThanEqual => "compare/greater-than-equal".to_string(),
+          Node::LessThanEqual => "compare/less-than-equal".to_string(),
+          Node::LessThan => "compare/less-than".to_string(),
+          Node::Equal => "compare/equal".to_string(),
+          Node::NotEqual => "compare/not-equal".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
         };        

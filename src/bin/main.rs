@@ -30,21 +30,14 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"# Mech Homepage
-
-
-
-Sections
-  sections = ["Community"; "Learn"; "Blog"; "Try"]
-  #sections = [type: "div" class: _ contains: sections]
-
+  let input = String::from(r#"
 block
-  sections >- #sections
-  li = [type: "li" class: _ contains >- #sections]
-  #ul = [type: "ul" class: _ contains: [li]]
+  #x = [1; 2; 3; 2]
+  #y = [2; 1; 3; 2]
   
 block
-  #app/main = [root: "drawing" direction: _ contains: [#ul]]"#);
+  ix = #x == #y
+  #test = stat/sum(column: #x{ix})"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -56,12 +49,11 @@ block
 
   println!("{:?}", programs);
  
-
   core.register_blocks(compiler.blocks.clone());
-  //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.unparsed);
+  println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.unparsed);
   println!("{:?}", compiler.syntax_tree);
-  println!("{:?}", core.runtime);
+  //println!("{:?}", core.runtime);
   core.step();
   println!("{:?}", core);
   println!("{:?}", core.runtime);
