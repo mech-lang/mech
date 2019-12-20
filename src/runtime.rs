@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
+use operations::{table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -65,6 +65,7 @@ impl Runtime {
     runtime.functions.insert("logic/and".to_string(),Some(logic_and));
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
     runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
+    runtime.functions.insert("table/vertical-concatenate".to_string(),Some(table_vertical_concatenate));
     runtime
   }
 
@@ -742,36 +743,7 @@ impl Block {
         },
         // TODO move most of this into Operations.rs
         Constraint::Function{fnstring, parameters, output} => {
-          // Concat Functions
-          if *fnstring == "table/vertical-concatenate" {
-            let out_table = &output[0];
-            let mut cat_table = Table::new(0,0,0);
-            for (name, table, indices) in parameters {
-              let scanned;
-              unsafe {
-                scanned = (*block).resolve_subscript(store,table,indices);
-              } 
-              if cat_table.rows == 0 {
-                cat_table.grow_to_fit(scanned.rows, scanned.columns);
-                cat_table.data = scanned.data.clone();
-              } else if cat_table.columns == scanned.columns {
-                let mut i = 0;
-                for column in &mut cat_table.data {
-                  let mut col = scanned.data[i].clone();
-                  column.append(&mut col);
-                  i += 1;
-                }
-                cat_table.grow_to_fit(cat_table.rows + scanned.rows, cat_table.columns);
-              } else {
-                // TODO Throw size error
-              }
-            }
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = cat_table.rows;
-            out.columns = cat_table.columns;
-            out.data = cat_table.data.clone();
-            self.scratch.clear();
-          } else if *fnstring == "table/split" {
+          if *fnstring == "table/split" {
             let out_table = &output[0];
             let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {

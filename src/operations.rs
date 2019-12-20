@@ -195,6 +195,27 @@ pub fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
   cat_table
 }
 
+pub fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Table {
+  let mut cat_table = Table::new(0,0,0);
+  for (_, scanned) in input {
+    if cat_table.rows == 0 {
+      cat_table.grow_to_fit(scanned.rows, scanned.columns);
+      cat_table.data = scanned.data.clone();
+    } else if cat_table.columns == scanned.columns {
+      let mut i = 0;
+      for column in &mut cat_table.data {
+        let mut col = scanned.data[i].clone();
+        column.append(&mut col);
+        i += 1;
+      }
+      cat_table.grow_to_fit(cat_table.rows + scanned.rows, cat_table.columns);
+    } else {
+      // TODO Throw size error
+    }
+  }
+  cat_table
+}
+
 // ## Logic
 
 #[macro_export]
