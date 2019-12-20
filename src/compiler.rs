@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Block, BlockState, Constraint, Index, TableId};
-use mech_core::{Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
 use mech_core::ErrorType;
 use parser;
@@ -30,7 +30,6 @@ pub enum Node {
   Statement{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   MathExpression{ children: Vec<Node> },
-  LogicExpression{ operator: Logic, children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   DataWatch{ children: Vec<Node> },
@@ -131,7 +130,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::LogicExpression{operator, children} => {print!("LogicExpression({:?})\n", operator); Some(children)},
     Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
@@ -909,39 +907,7 @@ impl Compiler {
             _ => (),
           }
         }
-      },
-      Node::LogicExpression{operator, children} => {/*
-        self.expression += 1;
-        self.table = Hasher::hash_string(format!("LogicExpression{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut output = TableId::Local(self.table);
-        let mut parameters: Vec<Vec<Constraint>> = vec![];
-        for child in children {
-          self.column += 1;
-          parameters.push(self.compile_constraint(child));
-        }
-        let mut parameter_registers: Vec<(TableId, Option<Parameter>, Option<Parameter>)> = vec![];
-        for parameter in &parameters {
-          match &parameter[0] {
-            Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push((id.clone(), None, None));
-            },
-            Constraint::Scan{table, indices, output} => {
-              parameter_registers.push((table.clone(), indices[0].clone(), indices[1].clone()));
-            },
-            Constraint::Function{operation, fnstring, parameters, output} => {
-              for o in output {
-                parameter_registers.push((o.clone(), None, None));
-              }
-            },
-            _ => (),
-          };
-        }
-        constraints.push(Constraint::NewTable{id: output.clone(), rows: 0, columns: 0});
-        constraints.push(Constraint::Logic{logic: operator.clone(), lhs: parameter_registers[0].clone(), rhs: parameter_registers[1].clone(), output: output.clone()});
-        for mut p in &parameters {
-          constraints.append(&mut p.clone());
-        }  
-      */},      
+      },      
       /*Node::Range{children} => {/*        
         let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
         let mut arguments = vec![];
@@ -1338,19 +1304,6 @@ impl Compiler {
         let result = self.compile_nodes(children);
         compiled.push(Node::SelectExpression{children: result});
       },
-      parser::Node::LogicExpression{children} => {
-        let result = self.compile_nodes(children);
-        let mut children: Vec<Node> = Vec::new();
-        let mut operator = Logic::Undefined;
-        for node in result {
-          match node {
-            Node::And => operator = Logic::And,
-            Node::Or => operator = Logic::Or,
-            _ => children.push(node),
-          }
-        }
-        compiled.push(Node::LogicExpression{operator, children});
-      },
       parser::Node::InlineTable{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -1688,7 +1641,8 @@ impl Compiler {
       parser::Node::L2{children} |
       parser::Node::L3{children} |
       parser::Node::L4{children} |
-      parser::Node::L5{children} => {
+      parser::Node::L5{children} |
+      parser::Node::L6{children} => {
         let result = self.compile_nodes(children);
         let mut last = Node::Null;
         for node in result {
@@ -1711,7 +1665,8 @@ impl Compiler {
       parser::Node::L1Infix{children} |
       parser::Node::L2Infix{children} |
       parser::Node::L3Infix{children} |
-      parser::Node::L4Infix{children} => {
+      parser::Node::L4Infix{children} |
+      parser::Node::L5Infix{children} => {
         let result = self.compile_nodes(children);
         let operator = &result[0].clone();
         let input = &result[1].clone();
@@ -1728,6 +1683,8 @@ impl Compiler {
           Node::Equal => "compare/equal".to_string(),
           Node::NotEqual => "compare/not-equal".to_string(),
           Node::Range => "table/range".to_string(),
+          Node::And => "logic/and".to_string(),
+          Node::Or => "logic/or".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
         };        
@@ -1777,6 +1734,8 @@ impl Compiler {
       parser::Node::Multiply => compiled.push(Node::Multiply),
       parser::Node::Divide => compiled.push(Node::Divide),
       parser::Node::Exponent => compiled.push(Node::Exponent),
+      parser::Node::And => compiled.push(Node::And),
+      parser::Node::Or => compiled.push(Node::Or),
       parser::Node::Comparator{children} => {
         match children[0] {
           parser::Node::LessThan => compiled.push(Node::LessThan),

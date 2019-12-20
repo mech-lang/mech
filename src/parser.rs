@@ -858,8 +858,24 @@ fn l4_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l5(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l5) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
-  Ok((input, Node::L5 { children: vec![l5] }))
+  let (input, l6) = l6(input)?;
+  let (input, mut infix) = many0(l5_infix)(input)?;
+  let mut math = vec![l6];
+  math.append(&mut infix);
+  Ok((input, Node::L5 { children: math }))
+}
+
+fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = space(input)?;
+  let (input, op) = alt((and, or))(input)?;
+  let (input, _) = space(input)?;
+  let (input, l6) = l6(input)?;
+  Ok((input, Node::L5Infix { children: vec![op, l6] }))
+}
+
+fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, l6) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
+  Ok((input, Node::L6 { children: vec![l6] }))
 }
 
 fn math_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {

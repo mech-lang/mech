@@ -1,5 +1,5 @@
 use mech_core::{Block, Constraint, TableId};
-use mech_core::{Logic, Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use super::compiler::Node;
 use hashbrown::hash_map::{HashMap, Entry};
 
@@ -54,11 +54,11 @@ impl Formatter {
         node_type = "empty";
         code = "_".to_string();
       },
-      Node::LogicExpression{operator, children} => {
+      /*Node::LogicExpression{operator, children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("{} {:?} {}", lhs, operator, rhs);
-      },
+      },*/
       Node::Function{name, children} => {
         match name.as_ref() {
           "*" | "+" | "/" => {
