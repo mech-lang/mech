@@ -620,13 +620,7 @@ impl Block {
       let mut iix = 0;
       let mut actual_width = 0;
       let mut actual_height = 0;
-      println!("BBBBB");
-            println!("{:?}", table_ref);
-
-      println!("{:?} {:?}", width, height);
       for i in 0..width as usize {
-              println!("CCCC");
-
         let mut column_mask = true;
         let cix = if column_ixes.is_empty() { i }
                   else { 
@@ -641,8 +635,6 @@ impl Block {
                   };
         let mut jix = 0;
         for j in 0..height as usize {
-                println!("DDDD");
-
           let mut row_mask = true;
           let rix = if row_ixes.is_empty() { j }
                     else { 
@@ -709,7 +701,6 @@ impl Block {
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
-      println!("{:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
@@ -717,7 +708,6 @@ impl Block {
           unsafe {
             scanned = (*block).resolve_subscript(store,table,indices);
           }
-          println!("SCANNING {:?}", scanned);
           let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
           out.rows = scanned.rows;
           out.columns = scanned.columns;
@@ -754,7 +744,6 @@ impl Block {
         Constraint::Function{fnstring, parameters, output} => {
           // Concat Functions
           if *fnstring == "table/horizontal-concatenate" {
-            println!("DOING HORZCAT");
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {
@@ -764,12 +753,10 @@ impl Block {
               } 
               // Do all the work here:
               if cat_table.rows == 0 {
-                println!("A");
                 cat_table.grow_to_fit(scanned.rows,scanned.columns);
                 cat_table.data = scanned.data;
               // We're adding a scalar to the table. Auto fill to height
               } else if scanned.rows == 1 {
-                println!("B");
                 let start_col: usize = cat_table.columns as usize;
                 let end_col: usize = (cat_table.columns + scanned.columns) as usize;
                 let start_row: usize = 0;
@@ -781,7 +768,6 @@ impl Block {
                   }
                 }
               } else if cat_table.rows == 1 {
-                println!("C");
                 let old_width = cat_table.columns;
                 let end_col: usize = (cat_table.columns + scanned.columns) as usize;
                 cat_table.grow_to_fit(scanned.rows, end_col as u64);
@@ -799,7 +785,6 @@ impl Block {
                 }
               }
             }
-            println!("C");
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = cat_table.rows;
             out.columns = cat_table.columns;
@@ -866,7 +851,6 @@ impl Block {
             out.data = self.scratch.data.clone();
             self.scratch.clear();
           } else {
-            println!("HERERE: {:?}", output);
             let out_table = &output[0];
             let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
               let table_ref: Table;
@@ -875,21 +859,18 @@ impl Block {
               }
               (arg_name.clone(), table_ref)
             }).collect::<Vec<_>>();
-            println!("AA");
             let result = match functions.get(fnstring) {
               Some(Some(fn_ptr)) => {
                 fn_ptr(arguments)
               }
               _ => Table::new(0,1,1),
             };
-            println!("BB");
             self.scratch = result;
             let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
             self.scratch.clear();
-            println!("Doneee");
           }
         },
         Constraint::Insert{from, to} => {
