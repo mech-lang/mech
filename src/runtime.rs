@@ -697,7 +697,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>) {
-    
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
@@ -781,6 +780,15 @@ impl Block {
                 for i in 0..scanned.columns as usize {
                   for j in 0..scanned.rows as usize {
                     cat_table.data[i + old_width as usize][j] = scanned.data[i][j].clone();
+                  }
+                }
+              // We are cating two tables of the same height
+              } else if cat_table.rows == scanned.rows {
+                let cols = cat_table.columns as usize;
+                cat_table.grow_to_fit(cat_table.rows, cat_table.columns + scanned.columns);
+                for i in 0..scanned.columns as usize {
+                  for j in 0..cat_table.rows as usize {
+                    cat_table.data[cols+i][j] = scanned.data[i][j].clone();
                   }
                 }
               }
