@@ -1070,7 +1070,7 @@ impl Compiler {
         }
         if parameter_registers.len() > 1 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table), rows: 0, columns: 0});
-          constraints.push(Constraint::Function{fnstring: "table_horizontal_concatenate".to_string(), parameters: parameter_registers, output: vec![TableId::Local(table)]});
+          constraints.push(Constraint::Function{fnstring: "table/horizontal-concatenate".to_string(), parameters: parameter_registers, output: vec![TableId::Local(table)]});
         }
         constraints.append(&mut compiled);
       },
