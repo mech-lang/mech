@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
+use operations::{table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -64,6 +64,7 @@ impl Runtime {
     runtime.functions.insert("table/range".to_string(),Some(table_range));
     runtime.functions.insert("logic/and".to_string(),Some(logic_and));
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
+    runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
     runtime
   }
 
@@ -742,65 +743,7 @@ impl Block {
         // TODO move most of this into Operations.rs
         Constraint::Function{fnstring, parameters, output} => {
           // Concat Functions
-          if *fnstring == "table/horizontal-concatenate" {
-            let out_table = &output[0];
-            let mut cat_table = Table::new(0,0,0);
-            for (name, table, indices) in parameters {
-              let scanned;
-              unsafe {
-                scanned = (*block).resolve_subscript(store,table,indices);
-              } 
-              // Do all the work here:
-              if cat_table.rows == 0 {
-                cat_table.grow_to_fit(scanned.rows,scanned.columns);
-                cat_table.data = scanned.data;
-              // We're adding a scalar to the table. Auto fill to height
-              } else if scanned.rows == 1 {
-                let start_col: usize = cat_table.columns as usize;
-                let end_col: usize = (cat_table.columns + scanned.columns) as usize;
-                let start_row: usize = 0;
-                let end_row: usize = cat_table.rows as usize;
-                cat_table.grow_to_fit(end_row as u64, end_col as u64);
-                for i in 0..scanned.columns {
-                  for j in 0..cat_table.rows {
-                    cat_table.data[i as usize + start_col][j as usize] = scanned.data[i as usize][0].clone();
-                  }
-                }
-              } else if cat_table.rows == 1 {
-                let old_width = cat_table.columns;
-                let end_col: usize = (cat_table.columns + scanned.columns) as usize;
-                cat_table.grow_to_fit(scanned.rows, end_col as u64);
-                // copy old stuff
-                for i in 0..old_width as usize {
-                  for j in 1..cat_table.rows as usize {
-                    cat_table.data[i][j] = cat_table.data[i][0].clone();
-                  }
-                }
-                // copy new stuff
-                for i in 0..scanned.columns as usize {
-                  for j in 0..scanned.rows as usize {
-                    cat_table.data[i + old_width as usize][j] = scanned.data[i][j].clone();
-                  }
-                }
-              // We are cating two tables of the same height
-              } else if cat_table.rows == scanned.rows {
-                let cols = cat_table.columns as usize;
-                cat_table.grow_to_fit(cat_table.rows, cat_table.columns + scanned.columns);
-                for i in 0..scanned.columns as usize {
-                  for j in 0..cat_table.rows as usize {
-                    cat_table.data[cols+i][j] = scanned.data[i][j].clone();
-                  }
-                }
-              }
-            }
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
-            out.rows = cat_table.rows;
-            out.columns = cat_table.columns;
-            out.data = cat_table.data.clone();
-            self.lhs_columns_empty.clear();
-            self.rhs_columns_empty.clear();
-            self.scratch.clear();
-          } else if *fnstring == "table/vertical-concatenate" {
+          if *fnstring == "table/vertical-concatenate" {
             let out_table = &output[0];
             let mut cat_table = Table::new(0,0,0);
             for (name, table, indices) in parameters {

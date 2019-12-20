@@ -146,6 +146,55 @@ pub fn table_range(input: Vec<(String, Table)>) -> Table {
   out
 }
 
+pub fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
+  let mut cat_table = Table::new(0,0,0);
+  for (_, scanned) in input {
+    // Do all the work here:
+    if cat_table.rows == 0 {
+      cat_table.grow_to_fit(scanned.rows,scanned.columns);
+      cat_table.data = scanned.data;
+    // We're adding a scalar to the table. Auto fill to height
+    } else if scanned.rows == 1 {
+      let start_col: usize = cat_table.columns as usize;
+      let end_col: usize = (cat_table.columns + scanned.columns) as usize;
+      let start_row: usize = 0;
+      let end_row: usize = cat_table.rows as usize;
+      cat_table.grow_to_fit(end_row as u64, end_col as u64);
+      for i in 0..scanned.columns {
+        for j in 0..cat_table.rows {
+          cat_table.data[i as usize + start_col][j as usize] = scanned.data[i as usize][0].clone();
+        }
+      }
+    } else if cat_table.rows == 1 {
+      let old_width = cat_table.columns;
+      let end_col: usize = (cat_table.columns + scanned.columns) as usize;
+      cat_table.grow_to_fit(scanned.rows, end_col as u64);
+      // copy old stuff
+      for i in 0..old_width as usize {
+        for j in 1..cat_table.rows as usize {
+          cat_table.data[i][j] = cat_table.data[i][0].clone();
+        }
+      }
+      // copy new stuff
+      for i in 0..scanned.columns as usize {
+        for j in 0..scanned.rows as usize {
+          cat_table.data[i + old_width as usize][j] = scanned.data[i][j].clone();
+        }
+      }
+    // We are cating two tables of the same height
+    } else if cat_table.rows == scanned.rows {
+      let cols = cat_table.columns as usize;
+      cat_table.grow_to_fit(cat_table.rows, cat_table.columns + scanned.columns);
+      for i in 0..scanned.columns as usize {
+        for j in 0..cat_table.rows as usize {
+          cat_table.data[cols+i][j] = scanned.data[i][j].clone();
+        }
+      }
+    }
+  }
+  cat_table
+}
+
 // ## Logic
 
 #[macro_export]
