@@ -513,7 +513,7 @@ block
 
 // ## Full programs
 
-test_mech!(program_bouncing_balls,"# Bouncing Balls
+/*test_mech!(program_bouncing_balls,"# Bouncing Balls
 
 Define the environment
   #html/event/click = [|x y|]
@@ -554,7 +554,7 @@ Create ball on click
 
 test
   x = #ball.x + #ball.y
-  #test = stat/sum(column: x)", Value::Number(make_quantity(98,0,0)));
+  #test = stat/sum(column: x)", Value::Number(make_quantity(98,0,0)));*/
 
 // ## Strings
 
