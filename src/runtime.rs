@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter, Logic};
+use operations::{table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter, Logic};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -61,6 +61,7 @@ impl Runtime {
     runtime.functions.insert("compare/equal".to_string(),Some(compare_equal));
     runtime.functions.insert("compare/not-equal".to_string(),Some(compare_not_equal));
     runtime.functions.insert("stat/sum".to_string(),Some(stat_sum));
+    runtime.functions.insert("table/range".to_string(),Some(table_range));
     runtime
   }
 
@@ -699,7 +700,6 @@ impl Block {
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
-      println!("{:?}", step);
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;

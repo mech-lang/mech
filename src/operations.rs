@@ -133,6 +133,19 @@ pub fn stat_sum(input: Vec<(String, Table)>) -> Table {
   out
 }
 
+pub fn table_range(input: Vec<(String, Table)>) -> Table {
+  let (_, lhs) = &input[0];
+  let (_, rhs) = &input[1];
+  let start = lhs.data[0][0].as_i64().unwrap();
+  let end = rhs.data[0][0].as_i64().unwrap();
+  let steps = (end - start) as usize + 1;
+  let mut out = Table::new(0,steps as u64,1);
+  for i in 0..steps {
+    out.data[0][i] = Value::Number((start + i as i64).to_quantity())
+  }
+  out
+}
+
 // ## Logic
 
 #[repr(u8)]
