@@ -1673,7 +1673,7 @@ impl Compiler {
         let name: String = match operator {
           Node::Add => "math/add".to_string(),
           Node::Subtract => "math/subtract".to_string(),
-          Node::Multiply => "math_multiply".to_string(),
+          Node::Multiply => "math/multiply".to_string(),
           Node::Divide => "math/divide".to_string(),
           Node::Exponent => "math/exponent".to_string(),
           Node::GreaterThan => "compare/greater-than".to_string(),
