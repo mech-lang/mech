@@ -53,7 +53,7 @@ pub enum Node {
   Subscript{ children: Vec<Node> },
   LogicOperator{ children: Vec<Node> },
   LogicExpression{ children: Vec<Node> },
-  Range{ children: Vec<Node> },
+  Range,
   SelectAll,
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
@@ -109,15 +109,19 @@ pub enum Node {
   NewLine{ children: Vec<Node> },
   Text{ children: Vec<Node> },
   Punctuation{ children: Vec<Node> },
+  L0Infix{ children: Vec<Node> },
   L1Infix{ children: Vec<Node> },
   L2Infix{ children: Vec<Node> },
   L3Infix{ children: Vec<Node> },
   L4Infix{ children: Vec<Node> },
+  L5Infix{ children: Vec<Node> },
+  L0{ children: Vec<Node> },
   L1{ children: Vec<Node> },
   L2{ children: Vec<Node> },
   L3{ children: Vec<Node> },
   L4{ children: Vec<Node> },
   L5{ children: Vec<Node> },
+  L6{ children: Vec<Node> },
   Function{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
   ParentheticalExpression{ children: Vec<Node> },
@@ -210,7 +214,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Subscript{children} => {print!("Subscript\n"); Some(children)},
     Node::LogicOperator{children} => {print!("LogicOperator\n"); Some(children)},
     Node::LogicExpression{children} => {print!("LogicExpression\n"); Some(children)},
-    Node::Range{children} => {print!("Range\n"); Some(children)},
+    Node::Range => {print!("Range\n"); None},
     Node::SelectAll => {print!("SelectAll\n"); None},
     Node::Index{children} => {print!("Index\n"); Some(children)},
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
@@ -239,10 +243,12 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Node{children} => {print!("Node\n"); Some(children)},
     Node::Text{children} => {print!("Text\n"); Some(children)},
     Node::Punctuation{children} => {print!("Punctuation\n"); Some(children)},
+    Node::L0Infix{children} => {print!("L0Infix\n"); Some(children)},
     Node::L1Infix{children} => {print!("L1Infix\n"); Some(children)},
     Node::L2Infix{children} => {print!("L2Infix\n"); Some(children)},
     Node::L3Infix{children} => {print!("L3Infix\n"); Some(children)},
     Node::L4Infix{children} => {print!("L4Infix\n"); Some(children)},
+    Node::L0{children} => {print!("L0\n"); Some(children)},
     Node::L1{children} => {print!("L1\n"); Some(children)},
     Node::L2{children} => {print!("L2\n"); Some(children)},
     Node::L3{children} => {print!("L3\n"); Some(children)},
@@ -715,9 +721,9 @@ fn statement(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn parenthetical_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_parenthesis(input)?;
-  let (input, l1) = l1(input)?;
+  let (input, l0) = l0(input)?;
   let (input, _) = right_parenthesis(input)?;
-  Ok((input, l1))
+  Ok((input, l0))
 }
 
 fn negation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
@@ -766,6 +772,27 @@ fn exponent(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Exponent))
 }
 
+fn range_op(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag(":")(input)?;
+  Ok((input, Node::Range))
+}
+
+fn l0(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, l1) = l1(input)?;
+  let (input, mut infix) = many0(l0_infix)(input)?;
+  let mut math = vec![l1];
+  math.append(&mut infix);
+  Ok((input, Node::L0 { children: math }))
+}
+
+fn l0_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = space0(input)?;
+  let (input, op) = range_op(input)?;
+  let (input, _) = space0(input)?;
+  let (input, l1) = l1(input)?;
+  Ok((input, Node::L0Infix { children: vec![op, l1] }))
+}
+
 fn l1(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, l2) = l2(input)?;
   let (input, mut infix) = many0(l1_infix)(input)?;
@@ -808,7 +835,7 @@ fn l3(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l3_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = caret(input)?;
+  let (input, op) = exponent(input)?;
   let (input, _) = space(input)?;
   let (input, l4) = l4(input)?;
   Ok((input, Node::L3Infix { children: vec![op, l4] }))
@@ -836,8 +863,8 @@ fn l5(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn math_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l1) = l1(input)?;
-  Ok((input, Node::MathExpression { children: vec![l1] }))
+  let (input, l0) = l0(input)?;
+  Ok((input, Node::MathExpression { children: vec![l0] }))
 }
 
 // #### Filter Expressions
@@ -877,15 +904,6 @@ fn comparator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Comparator { children: vec![comparator] }))
 }
 
-fn filter_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, lhs) = alt((data, constant))(input)?;
-  let (input, _) = space(input)?;
-  let (input, comp) = comparator(input)?;
-  let (input, _) = space(input)?;
-  let (input, rhs) = alt((data, constant))(input)?;
-  Ok((input, Node::FilterExpression { children: vec![lhs, comp, rhs] }))
-}
-
 // State Machine
 
 /*
@@ -918,23 +936,7 @@ fn logic_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::LogicOperator { children: vec![operator] }))
 }
 
-fn logic_expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, lhs) = alt((filter_expression , data , constant))(input)?;
-  let (input, _) = space1(input)?;
-  let (input, op) = logic_operator(input)?;
-  let (input, _) = space1(input)?;
-  let (input, rhs) = alt((logic_expression , filter_expression , data , constant))(input)?;
-  Ok((input, Node::LogicExpression { children: vec![lhs, op, rhs] }))
-}
-
 // #### Other Expressions
-
-fn range(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, start) = math_expression(input)?;
-  let (input, _) = tuple((space0,colon,space0))(input)?;
-  let (input, end) = math_expression(input)?;
-  Ok((input, Node::Range { children: vec![start,end] }))
-}
 
 fn string_interpolation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("{{")(input)?;
@@ -951,7 +953,7 @@ fn string(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, expression) = alt((string , range , logic_expression , inline_table , anonymous_table , math_expression))(input)?;
+  let (input, expression) = alt((string, inline_table, anonymous_table, math_expression))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 

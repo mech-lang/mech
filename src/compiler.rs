@@ -43,7 +43,7 @@ pub enum Node {
   Define { name: String, id: u64},
   DotIndex { children: Vec<Node>},
   SubscriptIndex { children: Vec<Node> },
-  Range { children: Vec<Node> },
+  Range,
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
@@ -125,7 +125,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
-    Node::Range{children} => {print!("Range\n"); Some(children)},
+    Node::Range => {print!("Range\n"); None},
     Node::Expression{children} => {print!("Expression\n"); Some(children)},
     Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
@@ -942,7 +942,7 @@ impl Compiler {
           constraints.append(&mut p.clone());
         }  
       */},      
-      Node::Range{children} => {/*        
+      /*Node::Range{children} => {/*        
         let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
         let mut arguments = vec![];
         let mut compiled = vec![];
@@ -959,7 +959,7 @@ impl Compiler {
           constraints.push(Constraint::Range{table: table_id.clone(), start: arguments[0].clone(), end: arguments[1].clone()});
         }
         constraints.append(&mut compiled);
-      */},
+      */},*/
       Node::MathExpression{children} => {
         let store_row = self.row;
         let store_col = self.column;
@@ -1272,10 +1272,6 @@ impl Compiler {
       },
       parser::Node::SelectAll => {
         compiled.push(Node::SelectAll);
-      },
-      parser::Node::Range{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Range{children: result});
       },
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
@@ -1687,6 +1683,7 @@ impl Compiler {
         compiled.push(Node::Identifier{name: word, id});
       },
       // Math
+      parser::Node::L0{children} |
       parser::Node::L1{children} |
       parser::Node::L2{children} |
       parser::Node::L3{children} |
@@ -1710,6 +1707,7 @@ impl Compiler {
         }
         compiled.push(last);
       },
+      parser::Node::L0Infix{children} |
       parser::Node::L1Infix{children} |
       parser::Node::L2Infix{children} |
       parser::Node::L3Infix{children} |
@@ -1729,6 +1727,7 @@ impl Compiler {
           Node::LessThan => "compare/less-than".to_string(),
           Node::Equal => "compare/equal".to_string(),
           Node::NotEqual => "compare/not-equal".to_string(),
+          Node::Range => "table/range".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
         };        
@@ -1773,6 +1772,7 @@ impl Compiler {
       parser::Node::Equal => compiled.push(Node::Equal),
       parser::Node::NotEqual => compiled.push(Node::NotEqual),
       parser::Node::Add => compiled.push(Node::Add),
+      parser::Node::Range => compiled.push(Node::Range),
       parser::Node::Subtract => compiled.push(Node::Subtract),
       parser::Node::Multiply => compiled.push(Node::Multiply),
       parser::Node::Divide => compiled.push(Node::Divide),
@@ -1977,7 +1977,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     125 => Some('}'),
     126 => Some('~'),
     _ => {
-      println!("Unhandled Byte {:?}", byte);
+      //println!("Unhandled Byte {:?}", byte);
       None
     },
   }
