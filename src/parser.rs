@@ -851,7 +851,7 @@ fn l4(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l4_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
+  let (input, op) = alt((and, or))(input)?;
   let (input, _) = space(input)?;
   let (input, l5) = l5(input)?;
   Ok((input, Node::L4Infix { children: vec![op, l5] }))
@@ -867,7 +867,7 @@ fn l5(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((and, or))(input)?;
+  let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
   let (input, _) = space(input)?;
   let (input, l6) = l6(input)?;
   Ok((input, Node::L5Infix { children: vec![op, l6] }))
