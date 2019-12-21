@@ -129,6 +129,17 @@ pub fn stat_sum(input: Vec<(String, Table)>) -> Table {
       }
     }
     out.data[0][0] = Value::Number(total);
+  } else if field == "row" {
+    let mut total = 0.to_quantity();
+    for i in 0..table_ref.columns as usize {
+      match table_ref.data[i][0] {
+        Value::Number(x) => {
+          total = total.add(x).unwrap();
+        }
+        _ => (),
+      }
+    }
+    out.data[0][0] = Value::Number(total);    
   }
   out
 }
