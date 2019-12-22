@@ -908,24 +908,6 @@ impl Compiler {
           }
         }
       },      
-      /*Node::Range{children} => {/*        
-        let table_id = TableId::Local(Hasher::hash_string(format!("RangeExpression{:?},{:?}-{:?}", self.section, self.block, self.expression)));
-        let mut arguments = vec![];
-        let mut compiled = vec![];
-        for child in children {
-          let mut result = self.compile_constraint(child);
-          match &result[0] {
-            Constraint::NewTable{id, rows, columns} => arguments.push(id.clone()),
-            _ => (),
-          };
-          compiled.append(&mut result);
-        }
-        constraints.push(Constraint::NewTable{id: table_id.clone(), rows: 0, columns: 0});
-        if arguments.len() == 2 {
-          constraints.push(Constraint::Range{table: table_id.clone(), start: arguments[0].clone(), end: arguments[1].clone()});
-        }
-        constraints.append(&mut compiled);
-      */},*/
       Node::MathExpression{children} => {
         let store_row = self.row;
         let store_col = self.column;
