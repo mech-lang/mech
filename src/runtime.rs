@@ -372,14 +372,15 @@ impl Block {
             _ => (),
           }
         },
-        Constraint::ChangeScan{table, column} => {
-          match (table, column.as_slice()) {
-            (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
-              self.input_registers.insert(Register{table: *id, column: index.clone()});
-            },
-            (TableId::Global(id), [None, None]) => {
+        Constraint::ChangeScan{table, indices} => {
+          match (table, indices) {
+            (TableId::Global(id), _) => {
               self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
             },
+            /*
+            (TableId::Global(id), [None, None]) => {
+              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
+            },*/
             _ => (),
           }
         },
@@ -719,12 +720,13 @@ impl Block {
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
         },
-        Constraint::ChangeScan{table, column} => {
-          match (table, column.as_slice()) {
-            (TableId::Global(id), [None, Some(Parameter::Index(index))]) => {
-              let register = Register{table: *id, column: index.clone()};
+        Constraint::ChangeScan{table, indices} => {
+          match (table, indices) {
+            (TableId::Global(id), _) => {
+              let register = Register{table:*id, column: Index::Index(0)};
               self.ready.remove(&register);
             }
+            /*
             (TableId::Global(id), [None, None]) => {
               let register = Register{table: *id, column: Index::Index(0)};
               self.ready.remove(&register);
@@ -737,11 +739,10 @@ impl Block {
                 self.state = BlockState::Unsatisfied;
                 break 'solve_loop;
               }
-            },
+            },*/
             _ => (),
           }
         },
-        // TODO move most of this into Operations.rs
         Constraint::Function{fnstring, parameters, output} => {
           if *fnstring == "table/split" {
             let out_table = &output[0];
@@ -1137,7 +1138,7 @@ pub enum Constraint {
   // Input Constraints
   Reference{table: TableId, destination: u64},
   Scan {table: TableId, indices: Vec<(Option<Parameter>, Option<Parameter>)>, output: TableId},
-  ChangeScan {table: TableId, column: Vec<Option<Parameter>>},
+  ChangeScan {table: TableId, indices: Vec<(Option<Parameter>, Option<Parameter>)>},
   Identifier {id: u64, text: String},
   // Transform Constraints
   Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
@@ -1160,7 +1161,7 @@ impl fmt::Debug for Constraint {
       Constraint::Reference{table, destination} => write!(f, "Reference({:?} -> {:#x})", table, destination),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
-      Constraint::ChangeScan{table, column} => write!(f, "ChangeScan(#{:?}({:?}))", table, column),
+      Constraint::ChangeScan{table, indices} => write!(f, "ChangeScan(#{:?}({:?}))", table, indices),
       Constraint::Function{fnstring, parameters, output} => write!(f, "Function({:?}({:?}) -> {:?})", fnstring, parameters, output),
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
