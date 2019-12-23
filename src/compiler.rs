@@ -673,24 +673,7 @@ impl Compiler {
       Node::DataWatch{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
-          //Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), indices: indices.clone()}),
-          /*Constraint::Filter{comparator, lhs, rhs, output} => {
-            let intermediate_table = Hasher::hash_string(format!("inlinescan{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
-            self.table += 1;
-            for x in &result {
-              match x {
-                Constraint::Scan{table: TableId::Global(x), ..} => {
-
-                  constraints.push(Constraint::ChangeScan{table: TableId::Global(x.clone()), column: vec![None, None]});
-                },
-                _ => (),
-              };
-            }
-            constraints.push(Constraint::ChangeScan{table: TableId::Local(intermediate_table), column: vec![None, None]});
-            constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-            constraints.push(Constraint::Function{operation: Function::SetAny, fnstring: "set_any".to_string(), parameters: vec![("column".to_string(), output.clone(), vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
-            constraints.append(&mut result);
-          },*/
+          Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), indices: indices.clone()}),
           _ => (),
         }
       },
@@ -1206,14 +1189,7 @@ impl Compiler {
       },
       parser::Node::DataWatch{children} => {
         let result = self.compile_nodes(children);
-        let mut children: Vec<Node> = Vec::new();
-        for node in result {
-          match node {
-            Node::Token{..} => (),
-            _ => children.push(node),
-          }
-        }
-        compiled.push(Node::DataWatch{children});
+        compiled.push(Node::DataWatch{children: result});
       },
       parser::Node::SelectAll => {
         compiled.push(Node::SelectAll);
