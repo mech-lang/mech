@@ -797,9 +797,14 @@ impl Block {
           }
         },
         Constraint::Insert{from, to} => {
-                  /*
+                  
           let (from_table, from_ixes) = from;
           let (to_table, to_ixes) = to;
+
+          let to_table_id = match to_table {
+            TableId::Global(id) => id.clone(),
+            TableId::Local(id) => 0,
+          };
 
           let from_table_ref;
           unsafe {
@@ -808,25 +813,48 @@ impl Block {
 
           let to_table_ref;
           unsafe {
-            from_table_ref = (*block).resolve_subscript(store,from_table,vec![(None, None)]);
+            to_table_ref = (*block).resolve_subscript(store,to_table,&vec![(None, None)]);
           } 
-
-          // If we only have one index, it's like this #x{3} := ...
-          let (to_row_values, to_column_values) = match index {
-            // If we only have one index, it's like this #x{3}
+         
+          let one = vec![Value::from_u64(1)];
+          let (to_row_values, to_column_values) = match to_ixes[0] {
+            // If we only have one index, we have two options:
+            // #x{3}
+            // #x.y
+            (None, Some(parameter)) |
             (Some(parameter), None) => {
               // Get the ixes
               let ixes: &Vec<Value> = match &parameter {
                 Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
                 Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                Parameter::Index(index) => {
+                  let ix = match to_table_ref.get_column_index(index) {
+                    Some(ix) => ix,
+                    // If the attribute is missing, note the error and bail
+                    None => { 
+                      /* TODO Fix this
+                      self.errors.push(
+                        Error{
+                          block: self.id as u64,
+                          constraint: step.clone(),
+                          error_id: ErrorType::MissingAttribute(index.clone()),
+                        }
+                      );*/
+                      break 'solve_loop;
+                    }, 
+                  };
+                  self.lhs_columns_empty.push(Value::from_u64(ix));
+                  &self.lhs_columns_empty
+                },
                 _ => &self.rhs_rows_empty,
               };
               // The other dimension index will be one.
               // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
               // If #x = [1; 2; 3] then it translates to #x{3,1}
-              let (row_ixes, column_ixes) = match (table_ref.rows, table_ref.columns) {
+              let (row_ixes, column_ixes) = match (to_table_ref.rows, to_table_ref.columns) {
                 (1, columns) => (&one, ixes),
                 (rows, 1) => (ixes, &one),
+                _ => (&self.rhs_rows_empty, ixes),
                 _ => {
                   // TODO Report an error here... or do matlab style ind2sub
                   break 'solve_loop;
@@ -838,77 +866,49 @@ impl Block {
             // #x{1,2}
             // #x.y{1}
             (Some(row_parameter), Some(column_parameter)) => {
-            },
-            _ => (self.rhs_rows_empty, self.lhs_columns_empty),
+              let row_ixes: &Vec<Value> = match &row_parameter {
+                Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                _ => &self.rhs_rows_empty,
+              };
+              let column_ixes: &Vec<Value> = match &column_parameter {
+                Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+                Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                Parameter::Index(index) => {
+                  let ix = match to_table_ref.get_column_index(index) {
+                    Some(ix) => ix,
+                    // If the attribute is missing, note the error and bail
+                    None => { 
+                      /* TODO Fix this
+                      self.errors.push(
+                        Error{
+                          block: self.id as u64,
+                          constraint: step.clone(),
+                          error_id: ErrorType::MissingAttribute(index.clone()),
+                        }
+                      );*/
+                      break 'solve_loop;
+                    }, 
+                  };
+                  self.lhs_columns_empty.push(Value::from_u64(ix));
+                  &self.lhs_columns_empty
+                },
+                _ => &self.lhs_rows_empty,
+              };
+              (row_ixes, column_ixes)
+            }
+            _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
           };
 
-
-
-          let one = vec![Value::from_u64(1)];
-          let (to_row_values, to_column_values) = .len() == 1 {
-            // Get the ixes
-            let ixes: &Vec<Value> = match &to_ixes[0] {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              _ => &self.rhs_rows_empty,
-            };
-            // Now the other dimension index will be one.
-            // So if it's #x{3} := 7 where #x = [1 2 3], then it translates to #x{1,3} := 7
-            // If #x = [1; 2; 3] then it translates to #x{3,1} := 7
-            let (row_ixes, column_ixes) = match (to.rows, to.columns) {
-              (1, columns) => (&one, ixes),
-              (rows, 1) => (ixes, &one),
-              _ => {
-                // TODO Report an error here... or do matlab style ind2sub
-                break 'solve_loop;
-              }
-            };
-            (row_ixes, column_ixes)
-          // Otherwise we have a couple choices:
-          // #x{1,2}
-          } else {
-            let to_column_values: &Vec<Value> = match &to_ixes[1] {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match to.get_column_index(&index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.lhs_columns_empty.push(Value::from_u64(ix));
-                &self.lhs_columns_empty
-              },
-              _ => &self.lhs_columns_empty,
-            };
-
-            let to_row_values: &Vec<Value> = match &to_ixes[0] {
-              Some(Parameter::TableId(TableId::Local(id))) => &self.memory.get(*id).unwrap().data[0],
-              Some(Parameter::TableId(TableId::Global(id))) => &store.get_table(*id).unwrap().data[0],
-              Some(Parameter::Index(index)) => {
-                let ix = match to.get_row_index(&index) {
-                  Some(ix) => ix,
-                  None => 0,
-                };
-                self.lhs_rows_empty.push(Value::from_u64(ix));
-                &self.lhs_rows_empty
-              },
-              _ => &self.lhs_rows_empty,
-            };
-            (to_row_values, to_column_values)
-          };
-
-          let to_width = if to_column_values.is_empty() { to.columns }
-                         else { to_column_values.len() as u64 };
-          let from_width = if from_column_values.is_empty() { from.columns }
-                           else { from_column_values.len() as u64 };      
-          let to_height = if to_row_values.is_empty() { to.rows }
+          let to_width = if to_column_values.is_empty() { to_table_ref.columns }
+                         else { to_column_values.len() as u64 };     
+          let to_height = if to_row_values.is_empty() { to_table_ref.rows }
                           else { to_row_values.len() as u64 };
-          let from_height = if from_row_values.is_empty() { from.rows }
-                            else { from_row_values.len() as u64 };
+          let from_height = from_table_ref.rows;
+          let from_width = from_table_ref.columns;
 
           let to_is_scalar = to_width == 1 && to_height == 1;
-          let from_is_scalar = from_width == 1 && from_height == 1;
-
+          let from_is_scalar = from_table_ref.columns == 1 && from_table_ref.rows == 1;
 
           // TODO MAKE THIS REAL
           if from_is_scalar {
@@ -928,17 +928,17 @@ impl Block {
                     let change = Change::Set{table: to_table_id.clone(), 
                                              row: Index::Index(j as u64 + 1), 
                                              column: Index::Index(cix as u64 + 1),
-                                             value: from.data[0][0].clone() 
+                                             value: from_table_ref.data[0][0].clone() 
                                             };
                     self.block_changes.push(change);
                   },
                   Value::Number(index) => {
                     let ix = index.mantissa() as usize;
-                    if ix <= to.rows as usize {
+                    if ix <= to_table_ref.rows as usize {
                       let change = Change::Set{table: to_table_id.clone(), 
                                               row: Index::Index(ix as u64), 
                                               column: Index::Index(cix as u64 + 1),
-                                              value: from.data[0][0].clone() 
+                                              value: from_table_ref.data[0][0].clone() 
                                               };
                       self.block_changes.push(change); 
                     }
@@ -950,14 +950,6 @@ impl Block {
           // from and to are the same size
           } else if to_height == from_height && to_width == from_width {
             for i in 0..from_width as usize {
-              let fcix = if from_column_values.is_empty() { i }
-                         else {
-                           match from_column_values[i] {
-                             Value::Number(x) => x.mantissa() as usize  - 1,
-                             Value::Bool(true) => i,
-                             _ => {continue; 0}, // This continues before the return
-                           }
-                         };
               let tcix = if to_column_values.is_empty() { i }
                          else {
                            match to_column_values[i] {
@@ -967,15 +959,6 @@ impl Block {
                            }
                          };
               for j in 0..from_height as usize {
-                let frix = if from_row_values.is_empty() { j }
-                           else {
-                             match from_row_values[j] {
-                               Value::Number(x) => x.mantissa() as usize  - 1,
-                               Value::Bool(true) => j,
-                               _ => {continue; 0},
-                             }
-                           };
-
                 let trix = if to_row_values.is_empty() { j }
                            else {
                              match to_row_values[j] {
@@ -987,18 +970,17 @@ impl Block {
                 let change = Change::Set{table: to_table_id.clone(), 
                                           row: Index::Index(trix as u64 + 1), 
                                           column: Index::Index(tcix as u64 + 1),
-                                          value: from.data[fcix][frix].clone() 
+                                          value: from_table_ref.data[i][j].clone() 
                                         };
                 self.block_changes.push(change);
               }
             }
           }
-          
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
           self.lhs_rows_empty.clear();
-        */},
+        },
         Constraint::Append{from_table, to_table} => {
           let from = match from_table {
             TableId::Local(id) => self.memory.get(*id).unwrap(),

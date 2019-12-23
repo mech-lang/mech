@@ -15,7 +15,7 @@ use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 fn main() {
   let x = make_quantity(1, 3, 1);
   //let y = make_quantity(1, 3, 0);
-  println!("{:#010b}", x.domain());
-  //println!("{:#066b}", y);
+  //println!("{:#010b}", x.domain());
+  ////println!("{:#066b}", y);
   assert_eq!(x.range(), 3);
 }
