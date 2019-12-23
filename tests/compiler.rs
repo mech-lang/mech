@@ -491,7 +491,7 @@ block
   ~ #time/timer.tick
   #test = 3", Value::from_i64(3));
 
-test_mech!(change_scan_simple,"block
+test_mech!(change_scan_simple2,"block
   #i = 2
   #x = [400; 0; 0]
  
@@ -502,6 +502,15 @@ block
   ~ #i
   i = #i
   #x{i,:} := #x{i - 1,:} + 1", Value::from_i64(801));
+
+test_mech!(change_scan_simple,"block
+  #i = 2
+  #test = 10
+
+block 
+  ~ #i
+  #test := 20", Value::from_i64(20));
+
 
 test_mech!(change_scan_equality,"block
   #test = #q * 3
