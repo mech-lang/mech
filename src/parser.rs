@@ -915,11 +915,6 @@ fn less_than_equal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::LessThanEqual))
 }
 
-fn comparator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, comparator) = alt((greater_than_equal , less_than_equal , equal_to , not_equal , less_than , greater_than))(input)?;
-  Ok((input, Node::Comparator { children: vec![comparator] }))
-}
-
 // State Machine
 
 /*
@@ -945,11 +940,6 @@ fn or(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn and(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("&")(input)?;
   Ok((input, Node::And))
-}
-
-fn logic_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, operator) = alt((and, or))(input)?;
-  Ok((input, Node::LogicOperator { children: vec![operator] }))
 }
 
 // #### Other Expressions
