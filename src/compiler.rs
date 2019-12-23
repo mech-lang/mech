@@ -543,19 +543,18 @@ impl Compiler {
                   _ => false,
                 };
               },
-              /*
-              Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes, ..)} => {
+              Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes)} => {
                 // TODO Handle other cases of from and parameters
                 let to_rows = to_ixes[0];
                 match to_rows {
-                  Some(Parameter::TableId(TableId::Local(id))) => consumes.insert(id),
+                  (Some(Parameter::TableId(TableId::Local(id))),_) => consumes.insert(id),
                   _ => false,
                 };
                 match to_table {
                   TableId::Global(id) => produces.insert(*id),
                   _ => false,
                 };
-              },*/
+              },
               _ => (),
             }
             constraints.push(constraint.clone());
@@ -621,7 +620,6 @@ impl Compiler {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
-        /*
         let mut result1 = self.compile_constraint(&children[0]);
         result1.remove(0);
         let scan = result1.remove(0);
@@ -633,14 +631,13 @@ impl Compiler {
         };
         let mut result2 = self.compile_constraint(&children[1]);
         let (from, from_ixes) = match &result2[0] {
-          Constraint::NewTable{id, ..} => (id.clone(), vec![None, None]),
+          Constraint::NewTable{id, ..} => (id.clone(), vec![(None, None)]),
           Constraint::Scan{table, indices, output} => (table.clone(), indices.clone()),
-          _ => (TableId::Local(0), vec![None, None]), 
+          _ => (TableId::Local(0), vec![(None, None)]), 
         };
         constraints.push(Constraint::Insert{from: (from, from_ixes), to: (to, to_ixes)});
         constraints.append(&mut result1);
         constraints.append(&mut result2);
-        */
       },
       Node::SplitData{children} => {
         self.expression += 1;
