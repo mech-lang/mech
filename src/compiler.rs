@@ -960,7 +960,7 @@ impl Compiler {
           let mut result = self.compile_constraint(&child);
           let param = match &result[0] {
             Constraint::NewTable{ref id, rows, columns} => Some(Parameter::TableId(id.clone())),
-            Constraint::Null => None,
+            Constraint::Null => Some(Parameter::All),
             Constraint::Scan{table, ..} => Some(Parameter::TableId(table.clone())),
             Constraint::Identifier{id, ..} => Some(Parameter::Index(Index::Alias(id.clone()))),
             _ => None,
