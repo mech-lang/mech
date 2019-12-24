@@ -145,7 +145,6 @@ impl Runtime {
   // block graph. The graph is run until the tables reach a steady state or 
   // we hit the max_iteration limit
   pub fn run_network(&mut self, store: &mut Interner, max_iterations: u64) {
-    
     let mut iteration_count = 0; 
     // Note: The way this while loop is written, it's actually a do-while loop.
     // This is a little trick in Rust. This means the network will always run
@@ -536,8 +535,6 @@ impl Block {
       let (row_ixes, column_ixes) = match index {
         // If we only have one index, we have two options:
         // #x{3}
-        // #x.y
-        (None, Some(parameter)) |
         (Some(parameter), None) => {
           // Get the ixes
           let ixes: &Vec<Value> = match &parameter {
@@ -577,6 +574,35 @@ impl Block {
             }
           };
           (row_ixes, column_ixes)
+        },
+        // #x.y
+        (None, Some(parameter)) => {
+          // Get the ixes
+          let ixes: &Vec<Value> = match &parameter {
+            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::Index(index) => {
+              let ix = match table_ref.get_column_index(index) {
+                Some(ix) => ix,
+                // If the attribute is missing, note the error and bail
+                None => { 
+                  /* TODO Fix this
+                  self.errors.push(
+                    Error{
+                      block: self.id as u64,
+                      constraint: step.clone(),
+                      error_id: ErrorType::MissingAttribute(index.clone()),
+                    }
+                  );*/
+                  break 'solve_loop;
+                }, 
+              };
+              self.lhs_columns_empty.push(Value::from_u64(ix));
+              &self.lhs_columns_empty
+            },
+            _ => &self.rhs_rows_empty,
+          };
+          (&self.lhs_rows_empty, ixes)
         },
         // Otherwise we have a couple choices:
         // #x{1,2}
@@ -687,8 +713,8 @@ impl Block {
       self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
       old = self.scratch.clone();
       self.scratch.clear();
-      match &old.data[0][0] {
-        Value::Reference(id) => table_id = id.clone(),
+      match &old.index(&Index::Index(1),&Index::Index(1)) {
+        Some(Value::Reference(id)) => table_id = id.clone(),
         _ => (),
       };
     }
@@ -705,6 +731,8 @@ impl Block {
     'solve_loop: for step in &self.plan {
       match step {
         Constraint::Scan{table, indices, output} => {
+
+          
           let out_table = &output;
           let scanned;
           unsafe {
@@ -1047,6 +1075,7 @@ impl Block {
       self.updated = true;
     }
     self.block_changes.clear();
+    self.state = BlockState::Updated;
   }
 
   fn copy_table(&mut self, from_table: TableId, to_table: TableId, store: &Interner) {
