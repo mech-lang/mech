@@ -20,6 +20,7 @@ work on the supplied data.
 pub enum Parameter {
   TableId (TableId),
   Index (Index),
+  All,
 }
 
 #[macro_export]

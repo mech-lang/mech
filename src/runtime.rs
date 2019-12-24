@@ -561,6 +561,7 @@ impl Block {
             },
             _ => &self.rhs_rows_empty,
           };
+          println!("{:?}", table_ref);
           // The other dimension index will be one.
           // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
           // If #x = [1; 2; 3] then it translates to #x{3,1}
@@ -638,9 +639,37 @@ impl Block {
             _ => &self.lhs_rows_empty,
           };
           (row_ixes, column_ixes)
-        }
+        },
+        (Some(parameter), Some(Parameter::All)) => {
+          let ixes: &Vec<Value> = match &parameter {
+            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::Index(index) => {
+              let ix = match table_ref.get_column_index(index) {
+                Some(ix) => ix,
+                // If the attribute is missing, note the error and bail
+                None => { 
+                  /* TODO Fix this
+                  self.errors.push(
+                    Error{
+                      block: self.id as u64,
+                      constraint: step.clone(),
+                      error_id: ErrorType::MissingAttribute(index.clone()),
+                    }
+                  );*/
+                  break 'solve_loop;
+                }, 
+              };
+              self.lhs_columns_empty.push(Value::from_u64(ix));
+              &self.lhs_columns_empty
+            },
+            _ => &self.rhs_rows_empty,
+          };
+          (ixes ,&self.rhs_columns_empty)
+        },
         _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
       };
+
       let width  = if column_ixes.is_empty() { table_ref.columns }
                     else { column_ixes.len() as u64 };      
       let height = if row_ixes.is_empty() { table_ref.rows }
