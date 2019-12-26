@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
+use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use libm::{sin, cos, fmod, round, floor};
 use errors::{Error, ErrorType};
@@ -66,6 +66,7 @@ impl Runtime {
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
     runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
     runtime.functions.insert("table/vertical-concatenate".to_string(),Some(table_vertical_concatenate));
+    runtime.functions.insert("set/any".to_string(),Some(set_any));
     runtime
   }
 

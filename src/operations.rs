@@ -158,6 +158,35 @@ pub fn table_range(input: Vec<(String, Table)>) -> Table {
   out
 }
 
+pub fn set_any(input: Vec<(String, Table)>) -> Table {
+  let mut out = Table::new(0,1,1);
+  let (field, table_ref) = &input[0];
+  if field == "column" {
+    let mut result = Value::Bool(false);
+    for i in 0..table_ref.rows as usize {
+      match table_ref.data[0][i] {
+        Value::Bool(true) => {
+          result = Value::Bool(true);
+        }
+        _ => (),
+      }
+    }
+    out.data[0][0] = result;
+  } else if field == "row" {
+    let mut result = Value::Bool(false);
+    for i in 0..table_ref.columns as usize {
+      match table_ref.data[i][0] {
+        Value::Bool(true) => {
+          result = Value::Bool(true);
+        }
+        _ => (),
+      }
+    }
+    out.data[0][0] = result;    
+  }
+  out
+}
+
 pub fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
   let mut cat_table = Table::new(0,0,0);
   for (_, scanned) in input {
