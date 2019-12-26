@@ -874,9 +874,21 @@ impl Block {
           unsafe {
             to_table_ref = (*block).resolve_subscript(store,to_table,&vec![(None, None)]);
           } 
-         
+
+          // TODO This thing is a little hacky. It merges two subscripts together. Maybe this should be in the compiler?
+          let to_ixes = if to_ixes.len() == 2 {
+            match (to_ixes[0], to_ixes[1]) {
+              ((None, x),(y,None)) => {
+                (y,x)
+              }
+              _ => to_ixes[0]
+            }
+          } else {
+            to_ixes[0]
+          };
+
           let one = vec![Value::from_u64(1)];
-          let (to_row_values, to_column_values) = match to_ixes[0] {
+          let (to_row_values, to_column_values) = match to_ixes {
             // If we only have one index, we have two options:
             // #x{3}
             // #x.y
@@ -958,6 +970,7 @@ impl Block {
             }
             _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
           };
+          println!("-------------------{:?} {:?}", to_row_values, to_column_values);
 
           let to_width = if to_column_values.is_empty() { to_table_ref.columns }
                          else { to_column_values.len() as u64 };     
