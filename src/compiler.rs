@@ -1662,7 +1662,7 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         let mut input = vec![Node::Constant{value: 0, unit: None}];
         input.push(result[0].clone());
-        compiled.push(Node::Function{ name: "-".to_string(), children: input });
+        compiled.push(Node::Function{ name: "math/subtract".to_string(), children: input });
       },
       parser::Node::String{children} => {
         let mut result = self.compile_nodes(children);
