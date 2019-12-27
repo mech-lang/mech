@@ -26,7 +26,7 @@ pub enum Parameter {
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(input: Vec<(String, Table)>) -> Table {
+    pub extern "C" fn $func_name(input: Vec<(String, Table)>) -> Table {
       // TODO Test for the right amount of inputs
       let (_, lhs) = &input[0];
       let (_, rhs) = &input[1];
@@ -116,7 +116,7 @@ binary_infix!{compare_greater_than_equal, greater_than_equal}
 binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than, less_than}
 
-pub fn stat_sum(input: Vec<(String, Table)>) -> Table {
+pub extern "C" fn stat_sum(input: Vec<(String, Table)>) -> Table {
   let mut out = Table::new(0,1,1);
   let (field, table_ref) = &input[0];
   if field == "column" {
@@ -145,7 +145,7 @@ pub fn stat_sum(input: Vec<(String, Table)>) -> Table {
   out
 }
 
-pub fn table_range(input: Vec<(String, Table)>) -> Table {
+pub extern "C" fn table_range(input: Vec<(String, Table)>) -> Table {
   let (_, lhs) = &input[0];
   let (_, rhs) = &input[1];
   let start = lhs.data[0][0].as_i64().unwrap();
@@ -158,7 +158,7 @@ pub fn table_range(input: Vec<(String, Table)>) -> Table {
   out
 }
 
-pub fn set_any(input: Vec<(String, Table)>) -> Table {
+pub extern "C" fn set_any(input: Vec<(String, Table)>) -> Table {
   let mut out = Table::new(0,1,1);
   let (field, table_ref) = &input[0];
   if field == "column" {
@@ -187,7 +187,7 @@ pub fn set_any(input: Vec<(String, Table)>) -> Table {
   out
 }
 
-pub fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
+pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
   let mut cat_table = Table::new(0,0,0);
   for (_, scanned) in input {
     // Do all the work here:
@@ -236,7 +236,7 @@ pub fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
   cat_table
 }
 
-pub fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Table {
+pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Table {
   let mut cat_table = Table::new(0,0,0);
   for (_, scanned) in input {
     if cat_table.rows == 0 {
@@ -262,7 +262,7 @@ pub fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Table {
 #[macro_export]
 macro_rules! logic {
   ($func_name:ident, $op:tt) => (
-    pub fn $func_name(input: Vec<(String, Table)>) -> Table {
+    pub extern "C" fn $func_name(input: Vec<(String, Table)>) -> Table {
       // TODO Test for the right amount of inputs
       let (_, lhs) = &input[0];
       let (_, rhs) = &input[1];

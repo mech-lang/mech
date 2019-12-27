@@ -33,7 +33,7 @@ pub struct Runtime {
   pub pipes_map: HashMap<Register, HashSet<Address>>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
-  pub functions: HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>,
+  pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -755,7 +755,7 @@ impl Block {
     out
   }
 
-  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<fn(Vec<(String, Table)>)->Table>>) {
+  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>) {
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
