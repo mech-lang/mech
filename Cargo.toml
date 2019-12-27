@@ -4,7 +4,7 @@ version = "0.0.3"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["dylib", "rlib"]
 
 [dependencies]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
