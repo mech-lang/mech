@@ -192,7 +192,7 @@ impl Persister {
     let file = match File::open(path) {
       Ok(f) => f,
       Err(_) => {
-        //println!("Unable to load db: {}", path);
+        ////println!("Unable to load db: {}", path);
         return;
       }
     };
@@ -204,7 +204,7 @@ impl Persister {
           self.loaded.push(change);
         },
         Err(info) => {
-          //println!("ran out {:?}", info);
+          ////println!("ran out {:?}", info);
           break;
         }
       }
@@ -255,7 +255,7 @@ impl ProgramRunner {
     let changes = persister.get_changes();
 
     // Load database
-    //println!("{} Applying {} stored changes...", BrightCyan.paint(format!("[{}]", name)), changes.len());    
+    ////println!("{} Applying {} stored changes...", BrightCyan.paint(format!("[{}]", name)), changes.len());    
     for change in changes {
       program.mech.process_transaction(&Transaction::from_change(change));
     }*/
@@ -292,7 +292,7 @@ impl ProgramRunner {
             let mism_file_path = format!("misms/{}",mism_name);
             // TODO Do path and URL. Right now, assume URL
             {
-              println!("Downloading: {} v{}", name, ver);
+              //println!("Downloading: {} v{}", name, ver);
               let mism_url = format!("{}{}", path, mism_name);
               let mut response = reqwest::get(mism_url.as_str())?;
               let mut dest = File::create(mism_file_path.clone())?;
@@ -309,7 +309,7 @@ impl ProgramRunner {
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
-            let m = mechanism.get::<fn(Value)->Value>(s.as_bytes()).expect("Symbol not present");
+            let m = mechanism.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect("Symbol not present");
             m.into_raw()
           };
           *fun = Some(*native_rust);
@@ -344,7 +344,7 @@ impl ProgramRunner {
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            //println!("{} Txn started:\n {:?}", name, txn);
+            ////println!("{} Txn started:\n {:?}", name, txn);
             let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
@@ -352,8 +352,8 @@ impl ProgramRunner {
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;              
             //program.compile_string(String::from(text.clone()));
-            //println!("{:?}", program.mech);
-            //println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            ////println!("{:?}", program.mech);
+            ////println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
             let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
               let change = &program.mech.store.changes[i-1];
@@ -420,11 +420,11 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Clear);
           },
           (Ok(RunLoopMessage::PrintCore), _) => {
-            println!("{:?}", program.mech);
+            //println!("{:?}", program.mech);
             client_outgoing.send(ClientMessage::Done);
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
-            println!("{:?}", program.mech.runtime);
+            //println!("{:?}", program.mech.runtime);
             client_outgoing.send(ClientMessage::Done);
           },
           (Err(_), _) => break 'runloop,
