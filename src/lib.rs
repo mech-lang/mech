@@ -805,7 +805,7 @@ impl Core {
           _ => (),
         }
       }
-      log!("{:?}--{:?}",k,v);
+      //log!("{:?}--{:?}",k,v);
     }
 
     // render views
@@ -1192,7 +1192,6 @@ impl Core {
             break 'column_loop;
           },
           Value::Reference(TableId::Local(reference)) => {
-            
             let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
             let mut div = document.create_element("div")?;
             let referenced_table;
@@ -1200,7 +1199,6 @@ impl Core {
             unsafe {
               referenced_table = (*core).store.get_table(*reference).unwrap();
             }
-            log!("{:?}", referenced_table);
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
           }
@@ -1219,7 +1217,6 @@ impl Core {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-
     // Get the elements table for this canvas
     let elements = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements.parse::<u64>().unwrap();
