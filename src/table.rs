@@ -89,7 +89,10 @@ impl Value {
     match self {
       Value::String(n) => Some(n.clone()),
       Value::Number(q) => Some(q.format()),
-      Value::Reference(r) => Some(format!("{:?}", r)),
+      Value::Reference(TableId::Global(r)) |
+      Value::Reference(TableId::Local(r)) => {
+        Some(format!("{:?}", r))
+      },
       Value::Empty => Some(String::from("")),
       Value::Bool(t) => match t {
         true => Some(String::from("true")),
