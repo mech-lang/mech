@@ -365,8 +365,6 @@ impl Block {
           };
         },
         Constraint::Scan{table, indices, output} => {
-          // TODO Update this whole register adding process and marking tables ready
-          //self.input_registers.push(Register::input(table, 1));
           match table {
             TableId::Global(id) => {
               self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
@@ -376,8 +374,13 @@ impl Block {
         },
         Constraint::ChangeScan{table, indices} => {
           match (table, indices) {
-            (TableId::Global(id), _) => {
-              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
+            (TableId::Global(id), x) => {
+              println!("-------------------------{:?}",x);
+              let column = match x[0] {
+                (None, Some(Parameter::Index(index))) => index,
+                _ => Index::Index(0),
+              };
+              self.input_registers.insert(Register{table: *id, column});
             },
             /*
             (TableId::Global(id), [None, None]) => {
@@ -407,9 +410,13 @@ impl Block {
         Constraint::Function{fnstring, parameters, output} => {
           self.functions.insert(fnstring.to_string());
           for (arg_name, table, indices) in parameters {
-            match table {
-              TableId::Global(id) => {
-                self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
+            match (table, indices) {
+              (TableId::Global(id), x) => {
+                let column = match x[0] {
+                  (None, Some(Parameter::Index(index))) => index,
+                  _ => Index::Index(0),
+                };
+                self.input_registers.insert(Register{table: *id, column});
               },
               _ => (),
             }
@@ -793,7 +800,11 @@ impl Block {
           self.lhs_columns_empty.clear();
         },
         Constraint::ChangeScan{table, indices} => {
-          match (table, indices) {
+          match (table, indices.as_slice()) {
+            (TableId::Global(id), [(None, Some(Parameter::Index(index)))]) => {
+              let register = Register{table: *id, column: index.clone()};
+              self.ready.remove(&register);
+            }
             (TableId::Global(id), _) => {
               let register = Register{table:*id, column: Index::Index(0)};
               self.ready.remove(&register);
