@@ -61,20 +61,70 @@ impl Formatter {
       },*/
       Node::Function{name, children} => {
         match name.as_ref() {
-          "*" | "+" | "/" => {
+          "math/add" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
-            code = format!("{} {} {}", lhs, name, rhs);
+            code = format!("{} + {}", lhs, rhs);
           },
-          "-" => {
+          "math/multiply" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} * {}", lhs, rhs);
+          },
+          "math/divide" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} / {}", lhs, rhs);
+          },
+          "math/subtract" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
             if lhs == "<span class=\"highlight-constant\" id=\"constant\">0</span>" || lhs == "0" {
-              code = format!("{}{}", name, rhs);
+              code = format!("-{}", rhs);
             } else {
-              code = format!("{} {} {}", lhs, name, rhs);
+              code = format!("{} - {}", lhs, rhs);
             }
           }
+          "logic/and" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} & {}", lhs, rhs);
+          },
+          "logic/or" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} & {}", lhs, rhs);
+          },
+          "compare/less-than" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} < {}", lhs, rhs);
+          },
+          "compare/less-than-equal" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} <= {}", lhs, rhs);
+          },
+          "compare/greater-than" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} > {}", lhs, rhs);
+          },
+          "compare/greater-than-equal" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} >= {}", lhs, rhs);
+          },
+          "compare/equal" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} == {}", lhs, rhs);
+          },
+          "compare/not-equal" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} != {}", lhs, rhs);
+          },
           _ => {
             //node_type = "function";
             for (ix, child) in children.iter().enumerate() {
