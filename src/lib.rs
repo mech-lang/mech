@@ -12,6 +12,7 @@ extern crate web_sys;
 extern crate mech_core;
 extern crate mech_syntax;
 extern crate mech_utilities;
+extern crate mech_math;
 extern crate serde_json;
 
 use std::collections::HashMap;
@@ -27,6 +28,7 @@ use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::WebsocketClientMessage;
+use mech_math::{math_cos, math_sin, math_floor, math_round};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -52,6 +54,10 @@ pub struct Core {
 impl Core {
   pub fn new(changes: usize, tables: usize) -> Core {
     let mut mech = mech_core::Core::new(changes,tables);
+    mech.runtime.functions.insert("math/cos".to_string(),Some(math_cos));
+    mech.runtime.functions.insert("math/sin".to_string(),Some(math_sin));
+    mech.runtime.functions.insert("math/floor".to_string(),Some(math_floor));
+    mech.runtime.functions.insert("math/round".to_string(),Some(math_round));
     Core {
       core: mech,
       programs: Vec::new(),
