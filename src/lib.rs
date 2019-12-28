@@ -58,19 +58,37 @@ pub extern "C" fn math_cos(input: Vec<(String, Table)>) -> Table {
   out 
 }
 
-/*
+
 #[no_mangle]
 pub extern "C" fn math_round(input: Vec<(String, Table)>) -> Table {
-  match x {
-    Value::Number(n) => Value::from_quantity(round(n.to_float()).to_quantity()),
-    _ => Value::Empty
+  let (argument, table_ref) = &input[0];
+  let mut out = Table::new(0,table_ref.rows,table_ref.columns);
+  for i in 0..table_ref.columns as usize {
+    for j in 0..table_ref.rows as usize {
+      let x = &table_ref.data[i][j];
+      let result = match x {
+        Value::Number(n) => Value::from_quantity(round(n.to_float()).to_quantity()),
+        _ => Value::Empty
+      };
+      out.data[i][j] = result;
+    }
   }
+  out
 }
 
 #[no_mangle]
 pub extern "C" fn math_floor(input: Vec<(String, Table)>) -> Table {
-  match x {
-    Value::Number(n) => Value::from_quantity(floor(n.to_float()).to_quantity()),
-    _ => Value::Empty
+  let (argument, table_ref) = &input[0];
+  let mut out = Table::new(0,table_ref.rows,table_ref.columns);
+  for i in 0..table_ref.columns as usize {
+    for j in 0..table_ref.rows as usize {
+      let x = &table_ref.data[i][j];
+      let result = match x {
+        Value::Number(n) => Value::from_quantity(floor(n.to_float()).to_quantity()),
+        _ => Value::Empty
+      };
+      out.data[i][j] = result;
+    }
   }
-}*/
+  out
+}
