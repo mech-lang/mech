@@ -279,8 +279,8 @@ impl ProgramRunner {
 
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
-      match registry.get(m[0]) {
-        Some((ver, path)) => {
+      match (&fun, registry.get(m[0])) {
+        (None, Some((ver, path))) => {
 
           fn download_mism(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
             create_dir("misms");
@@ -292,7 +292,7 @@ impl ProgramRunner {
             let mism_file_path = format!("misms/{}",mism_name);
             // TODO Do path and URL. Right now, assume URL
             {
-              //println!("Downloading: {} v{}", name, ver);
+              println!("Downloading: {} v{}", name, ver);
               let mism_url = format!("{}{}", path, mism_name);
               let mut response = reqwest::get(mism_url.as_str())?;
               let mut dest = File::create(mism_file_path.clone())?;
@@ -309,12 +309,13 @@ impl ProgramRunner {
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
-            let m = mechanism.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect("Symbol not present");
+            let error_msg = format!("Symbol {} not found",s);
+            let m = mechanism.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
         },
-        None => (),
+        _ => (),
       }
     }
     self.program.mech.step();
