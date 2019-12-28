@@ -54,13 +54,13 @@ impl Formatter {
         node_type = "empty";
         code = "_".to_string();
       },
-      /*Node::LogicExpression{operator, children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        code = format!("{} {:?} {}", lhs, operator, rhs);
-      },*/
       Node::Function{name, children} => {
         match name.as_ref() {
+          "table/range" => {
+            let lhs = self.write_node(&children[0]);
+            let rhs = self.write_node(&children[1]);
+            code = format!("{} : {}", lhs, rhs);
+          },
           "math/add" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
@@ -148,11 +148,6 @@ impl Formatter {
           }
         }
       },
-      /*Node::Range{children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        code = format!("{}:{}", lhs, rhs);
-      }*/
       Node::Table{name, id: _} => {
         code = name.clone();
         if self.html {
