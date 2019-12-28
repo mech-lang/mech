@@ -286,6 +286,7 @@ pub struct Block {
   rhs_rows_empty: Vec<Value>,
   rhs_columns_empty: Vec<Value>,
   block_changes: Vec<Change>,
+  current_step: Option<Constraint>,
 }
 
 impl Block {
@@ -312,6 +313,7 @@ impl Block {
       rhs_rows_empty: Vec::new(),
       rhs_columns_empty: Vec::new(),
       block_changes: Vec::new(),
+      current_step: None,
     }
   }
 
@@ -744,7 +746,18 @@ impl Block {
       old = self.scratch.clone();
       self.scratch.clear();
       match &old.index(&Index::Index(1),&Index::Index(1)) {
-        Some(Value::Reference(id)) => table_id = id.clone(),
+        Some(Value::Reference(id)) => {
+          // Make block depend on reference
+          match self.current_step {
+            Some(Constraint::Scan{..}) => {
+              let register = Register{table: *id.unwrap(), column: Index::Index(0)};
+              self.ready.insert(register.clone());
+              self.input_registers.insert(register.clone());
+            }
+            _ => (),
+          };
+          table_id = id.clone()
+        },
         _ => (),
       };
     }
@@ -759,6 +772,7 @@ impl Block {
     let block = self as *mut Block;
     let mut copy_tables: Vec<TableId> = vec![];
     'solve_loop: for step in &self.plan {
+      self.current_step = Some(step.clone());
       match step {
         Constraint::Scan{table, indices, output} => {
 
@@ -1119,6 +1133,7 @@ impl Block {
     }
     self.block_changes.clear();
     self.state = BlockState::Updated;
+    self.current_step = None;
   }
 
   fn copy_table(&mut self, from_table: TableId, to_table: TableId, store: &Interner) {
