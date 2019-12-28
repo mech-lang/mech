@@ -100,7 +100,7 @@ impl Runtime {
 
     // Record the functions used in block
     for fun in &block.functions {
-      //self.functions.insert(fun.to_string(), None);
+      self.functions.entry(fun.to_string()).or_insert(None);
     }
 
     // Register all local tables in the tables map
