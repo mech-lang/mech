@@ -275,7 +275,7 @@ impl ProgramRunner {
 
     let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
     registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/releases/download/v0.0.1/"));
-    registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
+    //registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
 
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
