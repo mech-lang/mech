@@ -375,7 +375,6 @@ impl Block {
         Constraint::ChangeScan{table, indices} => {
           match (table, indices) {
             (TableId::Global(id), x) => {
-              println!("-------------------------{:?}",x);
               let column = match x[0] {
                 (None, Some(Parameter::Index(index))) => index,
                 _ => Index::Index(0),
@@ -571,7 +570,6 @@ impl Block {
             },
             _ => &self.rhs_rows_empty,
           };
-          println!("{:?}", table_ref);
           // The other dimension index will be one.
           // So if it's #x{3} where #x = [1 2 3], then it translates to #x{1,3}
           // If #x = [1; 2; 3] then it translates to #x{3,1}
@@ -777,7 +775,7 @@ impl Block {
 
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>) {
     let block = self as *mut Block;
-    let mut copy_tables: Vec<TableId> = vec![];
+    let mut copy_tables: HashSet<TableId> = HashSet::new();
     'solve_loop: for step in &self.plan {
       self.current_step = Some(step.clone());
       match step {
@@ -995,7 +993,6 @@ impl Block {
             }
             _ => (&self.lhs_rows_empty, &self.rhs_rows_empty),
           };
-          println!("-------------------{:?} {:?}", to_row_values, to_column_values);
 
           let to_width = if to_column_values.is_empty() { to_table_ref.columns }
                          else { to_column_values.len() as u64 };     
@@ -1110,7 +1107,7 @@ impl Block {
             for (row_ix, data) in column.iter().enumerate() {
               match data {
                 Value::Reference(id) => {
-                  copy_tables.push(*id);
+                  copy_tables.insert(*id);
                 }, 
                 _ => (),
               }
@@ -1130,10 +1127,9 @@ impl Block {
         },
         _ => (),
       } 
-      
     }
-    for c in copy_tables {
-      self.copy_table(c, c, store);
+    for c in copy_tables.iter() {
+      self.copy_table(*c, *c, store);
     }
 
     if self.errors.len() > 0 {
@@ -1148,7 +1144,7 @@ impl Block {
   }
 
   fn copy_table(&mut self, from_table: TableId, to_table: TableId, store: &Interner) {
-    let mut copy_tables: Vec<TableId> = vec![];
+    let mut copy_tables: HashSet<TableId> = HashSet::new();
     let mut from_table_ref = match from_table {
       TableId::Local(id) => {
         match self.memory.get(id) {
@@ -1170,15 +1166,15 @@ impl Block {
       for (row_ix, data) in column.iter().enumerate() {
         match data {
           Value::Reference(id) => {
-            copy_tables.push(*id);
+            copy_tables.insert(*id);
           }, 
           _ => (),
         }
         changes.push(Change::Set{table: to_table_id, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
       }
     }
-    for c in copy_tables {
-      self.copy_table(c, c, store);
+    for c in copy_tables.iter() {
+      self.copy_table(*c, *c, store);
     }
     self.block_changes.append(&mut changes);
   }

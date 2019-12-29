@@ -123,7 +123,7 @@ impl fmt::Debug for Value {
 
 // ### Table Id
 
-#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum TableId {
   Local(u64),
   Global(u64),
