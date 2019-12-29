@@ -612,6 +612,19 @@ block
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(314));
 
+test_mech!(deep_nesting,r#"
+block
+  #test = stat/sum(row: #app/main{1}{1}{2}{:})
+
+block
+  #ball = [x: 10 y: 10]
+
+block
+  ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
+  line = [shape: "line" parameters: [x1: #ball.x, y1: #ball.y]]
+  canvas = [contains: [ball; line]]
+  #app/main = [contains: [canvas]]"#, Value::from_u64(579));
+
 test_mech!(nesting_math,r#"
 block
   #test = #app{2,2}{1,2}{1,1} * 10

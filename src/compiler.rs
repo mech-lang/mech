@@ -821,7 +821,6 @@ impl Compiler {
         self.row = store_row;
         self.column = store_column;
         self.table = store_table;
-        self.expression = store_expression;
       }
       Node::Binding{children} => {
         let mut result = self.compile_constraints(children);
