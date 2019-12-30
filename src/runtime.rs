@@ -761,6 +761,7 @@ impl Block {
             }
             _ => (),
           };
+          // Swap the old table with a new id
           table_id = id.clone()
         },
         _ => (),
@@ -1114,7 +1115,6 @@ impl Block {
               changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
             }
           }
-          //println!("{:?}", self);
           self.block_changes.append(&mut changes);
         },
         Constraint::NewTable{id, rows, columns} => {
