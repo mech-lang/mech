@@ -786,3 +786,15 @@ block
 
 block
   #i.x{#i <= 6} := #i.x + 1"#, Value::from_u64(7));
+
+// ## Table split
+
+test_mech!(table_split, r#"
+block
+  #test = #z{1}{1} + #z{2}{1} + #z{3}{1}
+block
+  x = [7;8;9]
+  y >- x
+  #z = y"#, Value::from_u64(24));
+
+
