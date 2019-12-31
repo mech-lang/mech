@@ -630,6 +630,17 @@ impl Compiler {
           _ => (TableId::Global(0), vec![(None, None)]), 
         };
         let mut result2 = self.compile_constraint(&children[1]);
+
+        match result2[1] {
+          Constraint::Reference{..} => {
+            result2.remove(2);
+            result2.remove(1);
+            result2.remove(0);
+          }
+          _ => (),
+        };
+
+
         let (from, from_ixes) = match &result2[0] {
           Constraint::NewTable{id, ..} => (id.clone(), vec![(None, None)]),
           Constraint::Scan{table, indices, output} => (table.clone(), indices.clone()),

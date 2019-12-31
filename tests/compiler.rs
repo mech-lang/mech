@@ -388,6 +388,16 @@ block
 block
   #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
 
+test_mech!(set_inline_row,"
+block
+  #test = stat/sum(row: #launch-point)
+
+block
+  #launch-point = [x: 0 y: 0]
+
+block
+  #launch-point := [x: 10 y: 20]", Value::from_i64(30));
+
 // ## Concat
 
 test_mech!(concat_horzcat_data,"
