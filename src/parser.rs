@@ -528,7 +528,7 @@ fn select_all(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn subscript(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, subscript) = alt((select_all, constant, expression))(input)?;
+  let (input, subscript) = alt((select_all, expression))(input)?;
   let (input, _) = tuple((space0, opt(comma), space0))(input)?;
   Ok((input, Node::Subscript{children: vec![subscript]}))
 }
@@ -874,7 +874,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((function, data, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((function, data, string, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
