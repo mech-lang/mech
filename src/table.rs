@@ -101,6 +101,57 @@ impl Value {
       _ => None,
     }
   }
+
+  pub fn equal(&self, other: &Value) -> Option<bool> {
+    match (self, other) {
+      (Value::String(ref x), Value::String(ref y)) => {
+        Some(x.to_owned() == y.to_owned())
+      }
+      _ => None,
+    }
+  }
+
+  pub fn not_equal(&self, other: &Value) -> Option<bool> {
+    match (self, other) {
+      (Value::String(ref x), Value::String(ref y)) => {
+        Some(x.to_owned() != y.to_owned())
+      }
+      _ => None,
+    }
+  }
+
+  pub fn less_than(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn less_than_equal(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn greater_than(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn greater_than_equal(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn add(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn sub(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn multiply(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
+  pub fn divide(&self, other: &Value) -> Option<bool> {
+    None
+  }
+
 }
 
 impl fmt::Debug for Value {
