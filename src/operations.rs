@@ -53,6 +53,9 @@ macro_rules! binary_infix {
                   _ => (),
                 }
               },
+              (Value::String(x), Value::String(y)) => {
+                out.data[i][j] = Value::Bool(lhs.data[i][j].$op(&rhs.data[i][j]).unwrap());
+              },
               _ => (),
             }
           }
