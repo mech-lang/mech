@@ -32,12 +32,11 @@ fn compile_test(input: String, test: Value) {
 fn main() {
   let input = String::from(r#"
 block
-  #x = [1; 2; 3; 2]
-  #y = [2; 1; 3; 2]
+  ~ #q > 100
+  #test = #q * 3
   
 block
-  ix = #x == #y
-  #test = stat/sum(column: #x{ix})"#);
+  #q = 10"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);

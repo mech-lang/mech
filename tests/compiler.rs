@@ -544,6 +544,12 @@ test_mech!(change_scan_equality,"block
 block
   #q = 10", Value::from_i64(30));
 
+test_mech!(change_scan_inequality,"block
+  #test = #q * 3
+  ~ #q > 20
+
+block
+  #q = 10", Value::from_i64(10));
 
 // ## Full programs
 
