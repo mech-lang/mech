@@ -280,6 +280,7 @@ pub struct Block {
   pub errors: Vec<Error>,
   pub functions: HashSet<String>,
   memory: TableIndex,
+  tables_modified: HashSet<u64>,
   scratch: Table,
   lhs_rows_empty: Vec<Value>,
   lhs_columns_empty: Vec<Value>,
@@ -305,6 +306,7 @@ impl Block {
       functions: HashSet::with_capacity(1),
       constraints: Vec::with_capacity(1),
       memory: TableIndex::new(1),
+      tables_modified: HashSet::new(),
       errors: Vec::new(),
       scratch: Table::new(0,0,0),
       // allocate empty indices so we don't have to do this on each iteration
@@ -777,6 +779,7 @@ impl Block {
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>) {
     let block = self as *mut Block;
     let mut copy_tables: HashSet<TableId> = HashSet::new();
+    self.tables_modified.clear();
     'solve_loop: for step in &self.plan {
       self.current_step = Some(step.clone());
       match step {
@@ -794,6 +797,7 @@ impl Block {
           out.data = scanned.data.clone();
           out.column_index_to_alias = scanned.column_index_to_alias.clone();
           out.column_aliases = scanned.column_aliases.clone();
+          self.tables_modified.insert(out.id);
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
@@ -855,6 +859,7 @@ impl Block {
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
+            self.tables_modified.insert(out.id);
             self.scratch.clear();
           } else {
             let out_table = &output[0];
@@ -876,6 +881,7 @@ impl Block {
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
+            self.tables_modified.insert(out.id);
             self.scratch.clear();
           }
         },
