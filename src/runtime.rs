@@ -171,7 +171,7 @@ impl Runtime {
       // Queue up the next blocks based on tables that changed during this round.
       for (table, column) in store.tables.changed_this_round.drain() {
         self.changed_this_round.insert((table.clone(), column.clone()));
-        let register = Register::new(table,column);
+        let register = Register::new(TableId::Global(table),column);
         match self.pipes_map.get(&register) {
           Some(register_addresses) => {
             for register_address in register_addresses.iter() {
@@ -232,13 +232,13 @@ impl fmt::Debug for Address {
 
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Register {
-  pub table: u64,
+  pub table: TableId,
   pub column: Index,
 }
 
 impl Register {
   
-  pub fn new(table: u64, column: Index) -> Register { 
+  pub fn new(table: TableId, column: Index) -> Register { 
     Register {
       table: table,
       column: column,
@@ -250,7 +250,7 @@ impl Register {
 impl fmt::Debug for Register {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "({:#x}, {:?})", self.table, self.column)
+    write!(f, "({:?}, {:?})", self.table, self.column)
   }
 }
 
@@ -344,13 +344,13 @@ impl Block {
     for (constraint_ix, constraint) in constraints.iter().enumerate() {
       match constraint {
         Constraint::CopyTable{from_table, to_table} => {
-          self.output_registers.insert(Register::new(*to_table, Index::Index(0)));
+          self.output_registers.insert(Register::new(TableId::Global(*to_table), Index::Index(0)));
         },
         Constraint::Append{from_table, to_table} => {
           match to_table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register::new(*id, Index::Index(0)));
-              self.output_registers.insert(Register::new(*id, Index::Index(0)));
+              self.input_registers.insert(Register::new(*to_table, Index::Index(0)));
+              self.output_registers.insert(Register::new(*to_table, Index::Index(0)));
             }
             _ => (),
           };
@@ -358,8 +358,8 @@ impl Block {
         Constraint::Insert{from: (from_table, ..), to: (to_table, ..)} => {
           match to_table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register::new(*id, Index::Index(0)));
-              self.output_registers.insert(Register::new(*id, Index::Index(0)));
+              self.input_registers.insert(Register::new(*to_table, Index::Index(0)));
+              self.output_registers.insert(Register::new(*to_table, Index::Index(0)));
             }, 
             _ => (),
           };
@@ -367,7 +367,7 @@ impl Block {
         Constraint::Scan{table, indices, output} => {
           match table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
+              self.input_registers.insert(Register{table: *table, column: Index::Index(0)});
             },
             _ => (),
           }
@@ -379,12 +379,11 @@ impl Block {
                 (None, Some(Parameter::Index(index))) => index,
                 _ => Index::Index(0),
               };
-              self.input_registers.insert(Register{table: *id, column});
+              self.input_registers.insert(Register{table: *table, column});
             },
-            /*
-            (TableId::Global(id), [None, None]) => {
-              self.input_registers.insert(Register{table: *id, column: Index::Index(0)});
-            },*/
+            (TableId::Local(id), _) => {
+              self.input_registers.insert(Register{table: *table, column: Index::Index(0)});
+            },
             _ => (),
           }
         },
@@ -415,7 +414,7 @@ impl Block {
                   (None, Some(Parameter::Index(index))) => index,
                   _ => Index::Index(0),
                 };
-                self.input_registers.insert(Register{table: *id, column});
+                self.input_registers.insert(Register{table: *table, column});
               },
               _ => (),
             }
@@ -755,7 +754,7 @@ impl Block {
           // Make block depend on reference
           match self.current_step {
             Some(Constraint::Scan{..}) => {
-              let register = Register{table: *id.unwrap(), column: Index::Index(0)};
+              let register = Register{table: TableId::Global(*id.unwrap()), column: Index::Index(0)};
               self.ready.insert(register.clone());
               self.input_registers.insert(register.clone());
             }
@@ -801,11 +800,11 @@ impl Block {
         Constraint::ChangeScan{table, indices} => {
           match (table, indices.as_slice()) {
             (TableId::Global(id), [(None, Some(Parameter::Index(index)))]) => {
-              let register = Register{table: *id, column: index.clone()};
+              let register = Register{table: TableId::Global(*id), column: index.clone()};
               self.ready.remove(&register);
             }
             (TableId::Global(id), _) => {
-              let register = Register{table:*id, column: Index::Index(0)};
+              let register = Register{table:TableId::Global(*id), column: Index::Index(0)};
               self.ready.remove(&register);
             }
             /*
