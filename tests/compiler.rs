@@ -545,11 +545,21 @@ block
   #q = 10", Value::from_i64(30));
 
 test_mech!(change_scan_inequality,"block
-  #test = #q * 3
+  #test := #q * 3
   ~ #q > 20
 
 block
+  #test = 10
   #q = 10", Value::from_i64(10));
+
+  
+test_mech!(change_scan_inequality2,"block
+  #test := #q * 3
+  ~ #q < 20
+
+block
+  #test = 10
+  #q = 10", Value::from_i64(30));
 
 // ## Full programs
 
