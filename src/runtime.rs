@@ -524,8 +524,20 @@ impl Block {
       if set_diff.len() == 0 {
         true
       } else {
-        self.state = BlockState::Unsatisfied;
-        false
+        // Mark as unsatisfied if there are any global tables still waiting.
+        // Dependency on a local table is still possible.
+        let mut result = true;
+        for x in set_diff.iter() {
+          match x {
+            Register{table: TableId::Global(y), ..} => {
+              self.state = BlockState::Unsatisfied;
+              result = false;
+            },
+            _ => (),
+          }
+        }
+        result
+
       }
     }    
   }
