@@ -827,7 +827,7 @@ impl Block {
             (TableId::Global(id), [None, None]) => {
               let register = Register{table: *id, column: Index::Index(0)};
               self.ready.remove(&register);
-            }
+            }*/
             (TableId::Local(id), _) => {
               // test value at table
               let table = self.memory.get(*id).unwrap();
@@ -836,7 +836,7 @@ impl Block {
                 self.state = BlockState::Unsatisfied;
                 break 'solve_loop;
               }
-            },*/
+            },
             _ => (),
           }
         },
