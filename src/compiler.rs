@@ -687,6 +687,7 @@ impl Compiler {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{table: table.clone(), indices: indices.clone()}),
           Constraint::Function{fnstring, parameters, output} => {
             constraints.push(Constraint::ChangeScan{table: output[0].clone(), indices: vec![(None, None)]});
+            constraints.append(&mut result);
           }
           _ => (),
         }
