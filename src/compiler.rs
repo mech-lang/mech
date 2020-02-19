@@ -686,7 +686,14 @@ impl Compiler {
         match &result[1] {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{tables: vec![(table.clone(), indices.clone())]}),
           Constraint::Function{fnstring, parameters, output} => {
-            constraints.push(Constraint::ChangeScan{tables: vec![(output[0].clone(), vec![(None, None)])]});
+            let mut scans: Vec<(TableId,Vec<(Option<Parameter>,Option<Parameter>)>)> = result.iter().filter_map(|x|{
+              match x {
+                Constraint::Scan{table,indices,..} => Some((table.clone(),indices.clone())),
+                _ => None,
+              }
+            }).collect::<Vec<_>>();
+            scans.push((output[0].clone(), vec![(None, None)]));
+            constraints.push(Constraint::ChangeScan{tables: scans});
             constraints.append(&mut result);
           }
           _ => (),

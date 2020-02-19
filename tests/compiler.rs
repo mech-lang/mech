@@ -561,6 +561,22 @@ block
   #test = 10
   #q = 10", Value::from_i64(30));
 
+test_mech!(change_scan_recursive,r#"
+block
+  ~ #html/event/keydown.key == "ArrowUp"
+  #explorer.y := #explorer.y - 1"
+
+block
+  #explorer = [x: 10, y: 10]"
+
+block
+  ~ #explorer.x
+  #html/event/keydown = [key: "ArrowUp"]
+
+block
+  ~ #explorer
+  #test = #explorer.y"#, Value::from_i64(9));
+
 // ## Full programs
 
 /*test_mech!(program_bouncing_balls,"# Bouncing Balls
