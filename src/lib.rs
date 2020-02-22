@@ -71,8 +71,8 @@ impl Core {
       remote_tables: HashMap::new(),
     }
   }
-
   pub fn connect_remote_core(&mut self, address: String) {
+    /*
     let mut ws = web_sys::WebSocket::new(&address).unwrap();
     let wasm_core = self as *mut Core;
     // Set On Opened
@@ -123,6 +123,7 @@ impl Core {
       closure.forget();
     }
     self.websocket = Some(ws);
+  */
   }
 
   pub fn compile_code(&mut self, code: String) {
@@ -167,6 +168,8 @@ impl Core {
     changes.append(&mut new_table("html/event/mousemove".to_string(), vec!["x".to_string(),"y".to_string()]));
     changes.append(&mut new_table("html/event/mousedown".to_string(), vec!["x".to_string(),"y".to_string()]));
     changes.append(&mut new_table("html/event/keydown".to_string(), vec!["key".to_string(),"id".to_string()]));
+    changes.append(&mut new_table("html/event/keyup".to_string(), vec!["key".to_string(),"id".to_string()]));
+
     let txn = Transaction::from_changeset(changes);
     self.core.process_transaction(&txn);
 
@@ -202,6 +205,36 @@ impl Core {
       };
       let keydown_callback = closure("html/event/keydown");
       document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
+      keydown_callback.forget();
+    }
+
+    {
+      let closure = |i| { Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
+        let key = event.key();
+        let table_id = Hasher::hash_str(i);
+        // TODO Make this safe
+        unsafe {
+          (*wasm_core).changes.push(Change::Set{
+            table: table_id, 
+            row: Index::Index(1), 
+            column: Index::Index(1),
+            value: Value::from_string(key.to_string()),
+          });    
+          (*wasm_core).changes.push(Change::Set{
+            table: table_id, 
+            row: Index::Index(1), 
+            column: Index::Index(2),
+            value: Value::from_f64(event.time_stamp()),
+          });               
+          (*wasm_core).process_transaction();
+          (*wasm_core).render();
+        }
+      }) as Box<dyn FnMut(_)>)
+      };
+      let keydown_callback = closure("html/event/keyup");
+      document.add_event_listener_with_callback("keyup", keydown_callback.as_ref().unchecked_ref())?;
       keydown_callback.forget();
     }
 
