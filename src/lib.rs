@@ -710,7 +710,7 @@ impl Core {
     }
   }
 
-  pub fn render_view(&mut self, view: u64) -> Result<(), JsValue> {
+  fn render_view(&mut self, view: u64) -> Result<(), JsValue> {
 
     let mut output = "".to_string();
 
@@ -909,7 +909,7 @@ impl Core {
     }*/
   }
 
-  pub fn draw_table(&self, block_id: usize, table_id: u64) -> String { 
+  fn draw_table(&self, block_id: usize, table_id: u64) -> String { 
     let table = match block_id {
       0 => self.core.store.get_table(table_id).unwrap(),
       _ => self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap(),
