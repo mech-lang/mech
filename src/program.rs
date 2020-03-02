@@ -275,7 +275,7 @@ impl ProgramRunner {
 
     let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
     registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/releases/download/v0.0.1/"));
-    //registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
+    registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
 
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
@@ -373,7 +373,7 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::Listening(table_ids)), _) => {
             for table_id in table_ids {
-              match program.mech.output.get(&Register::new(table_id, Index::Index(0))) {
+              match program.mech.output.get(&Register::new(mech_core::TableId::Global(table_id), Index::Index(0))) {
                 Some(_) => {program.listeners.insert(table_id);}, // We produce a table for which they're listening, so let's mark that
                 _ => (),
               }
