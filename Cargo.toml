@@ -23,9 +23,4 @@ no-std = ["rlibc"]
 hashbrown = {version = "0.6.0", features = ["nightly"]}
 serde = {version = "1.0.96", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.96"
-libm = "0.1.2"
 rlibc = { version = "=1.0", optional = true }
-
-[dependencies.num]
-version = "0.2"
-default-features = false
