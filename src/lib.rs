@@ -3,13 +3,13 @@ extern crate serde_derive;
 extern crate serde;
 extern crate mech_core;
 
-use mech_core::{Transaction, Interner};
+use mech_core::{Transaction, Interner, TableId};
 
 // ## Client Message
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum WebsocketClientMessage {
-  Listening(Vec<u64>),
+  Listening(Vec<TableId>),
   Control(u8),
   Code(String),
   Table(usize),
@@ -29,7 +29,7 @@ pub enum RunLoopMessage {
   Clear,
   PrintCore,
   PrintRuntime,
-  Listening(Vec<u64>),
+  Listening(Vec<TableId>),
   Table(u64),
   Transaction(Transaction),
   Code(String),
