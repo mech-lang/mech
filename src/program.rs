@@ -17,7 +17,7 @@ use std::sync::Arc;
 use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
-use mech_core::{Table, TableIndex, Hasher};
+use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
 use mech_utilities::{RunLoopMessage, Watcher};
 
@@ -37,7 +37,7 @@ pub struct Program {
   pub outgoing: Sender<RunLoopMessage>,
   pub errors: Vec<Error>,
   programs: u64,
-  pub listeners: HashSet<u64>,
+  pub listeners: HashSet<TableId>,
 }
 
 impl Program {
@@ -360,7 +360,7 @@ impl ProgramRunner {
               let change = &program.mech.store.changes[i-1];
               match change {
                 Change::Set{table, ..} => {
-                  match program.listeners.get(&table) {
+                  match program.listeners.get(&TableId::Global(*table)) {
                     Some(_) => changes.push(change.clone()),
                     _ => (),
                   }
@@ -373,7 +373,7 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::Listening(table_ids)), _) => {
             for table_id in table_ids {
-              match program.mech.output.get(&Register::new(mech_core::TableId::Global(table_id), Index::Index(0))) {
+              match program.mech.output.get(&Register::new(table_id, Index::Index(0))) {
                 Some(_) => {program.listeners.insert(table_id);}, // We produce a table for which they're listening, so let's mark that
                 _ => (),
               }
