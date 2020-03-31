@@ -17,9 +17,8 @@ use std::fs::File;
 extern crate clap;
 use clap::{Arg, App, ArgMatches, SubCommand};
 
-extern crate term_painter;
-use term_painter::ToStyle;
-use term_painter::Color::*;
+extern crate colored;
+use colored::*;
 
 extern crate mech;
 use mech::{Core, Compiler, Table, Value, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
@@ -165,10 +164,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
         };
       }
       if passed_all_tests {
-        println!("Test result: {} | total {} | passed {} | failed {} | ", Green.paint("ok"), tests_count, tests_passed, tests_failed);
+        println!("Test result: {} | total {} | passed {} | failed {} | ", "ok".green(), tests_count, tests_passed, tests_failed);
         std::process::exit(0);
       } else {
-        println!("Test result: {} | total {} | passed {} | failed {} | ", Red.paint("failed"), tests_count, tests_passed, tests_failed);
+        println!("Test result: {} | total {} | passed {} | failed {} | ", "failed".red(), tests_count, tests_passed, tests_failed);
         std::process::exit(1);
       }
   } else if let Some(matches) = matches.subcommand_matches("run") {
@@ -221,14 +220,17 @@ fn main() -> Result<(), Box<std::error::Error>> {
     std::process::exit(0);
   }
 
-  println!("\n {}",  BrightBlack.paint("╔═══════════════════════╗"));
-  println!(" {}      {}      {}", BrightBlack.paint("║"), BrightYellow.paint(format!("MECH v{}",version)), BrightBlack.paint("║"));
-  println!(" {}\n",  BrightBlack.paint("╚═══════════════════════╝"));
+  println!("\n {}",  "╔═══════════════════════╗".bright_black());
+  println!(" {}      {}      {}", "║".bright_black(), format!("MECH v{}",version).bright_yellow(), "║".bright_black());
+  println!(" {}\n",  "╚═══════════════════════╝".bright_black());
   if serve {
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
   // If we're not serving, go into a REPL
   } else {
+    println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
+    let help_message = "Available commands are: help, quit, core, runtime, pause, resume";
+
     let paths = if mech_paths.is_empty() {
       None
     } else {
@@ -236,9 +238,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
     };
     let mech_client = ClientHandler::new("Mech REPL", None, paths, None);
     'REPL: loop {
-
+      io::stdout().flush().unwrap();
       // Print a prompt
-      print!("{}", Yellow.paint(">: "));
+      print!("{}", ">: ".bright_yellow());
+      io::stdout().flush().unwrap();
       let mut input = String::new();
 
       io::stdin().read_line(&mut input).unwrap();
@@ -249,7 +252,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         Ok((CompleteStr(""), command)) => {
           match command {
             ReplCommand::Help => {
-              println!("Available commands are: help, quit, core, runtime, pause, resume");
+              println!("{}",help_message);
               continue;
             },
             ReplCommand::Quit => {
@@ -274,6 +277,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
               continue;
             },
             _ => {
+              println!("{}",help_message);
               continue;
             }
           }
@@ -295,7 +299,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
             if parser.unparsed == "" { 
               mech_client.running.send(RunLoopMessage::Code(command));
             } else {
-                println!("{} Unknown Command: {:?}", Red.paint("Error:"), input.trim());
+                println!("{} Unknown Command: {:?}", "Error:".red(), input.trim());
               continue;
             }
           }
@@ -311,13 +315,13 @@ fn main() -> Result<(), Box<std::error::Error>> {
           }
         },
         (Ok(ClientMessage::Pause)) => {
-          println!("{} Paused", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+          println!("{} Paused", format!("[{}]", mech_client.client_name).bright_cyan());
         },
         (Ok(ClientMessage::Resume)) => {
-          println!("{} Resumed", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+          println!("{} Resumed", format!("[{}]", mech_client.client_name).bright_cyan());
         },
         (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", BrightCyan.paint(format!("[{}]", mech_client.client_name)));
+          println!("{} Cleared", format!("[{}]", mech_client.client_name).bright_cyan());
         },
         (Ok(ClientMessage::NewBlocks(count))) => {
           println!("Compiled {} blocks.", count);

@@ -21,7 +21,8 @@ mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 mech-server = {git = "https://gitlab.com/mech-lang/server"}
 mech-program = {git = "https://gitlab.com/mech-lang/program"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
-clap = "2.31.2"
+clap = "2.33.0"
 term-painter = "0.2.4"
+colored = "1.9.3"
 nom = "4.2.2"
 reqwest = "0.9.22"
