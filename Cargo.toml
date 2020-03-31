@@ -24,5 +24,5 @@ mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 clap = "2.33.0"
 term-painter = "0.2.4"
 colored = "1.9.3"
-nom = "4.2.2"
+nom = "5.1.1"
 reqwest = "0.9.22"

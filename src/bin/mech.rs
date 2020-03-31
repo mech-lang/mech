@@ -27,10 +27,16 @@ use mech::QuantityMath;
 
 #[macro_use]
 extern crate nom;
-use nom::alpha1 as nom_alpha1;
-use nom::digit1 as nom_digit1;
-use nom::AtEof as eof;
-use nom::types::CompleteStr;
+use nom::{
+  IResult,
+  branch::alt,
+  sequence::tuple,
+  combinator::opt,
+  error::{context, convert_error, ErrorKind, ParseError, VerboseError},
+  multi::{many1, many0},
+  bytes::complete::{tag},
+  character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
+};
 
 extern crate mech_server;
 
@@ -229,7 +235,17 @@ fn main() -> Result<(), Box<std::error::Error>> {
   // If we're not serving, go into a REPL
   } else {
     println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
-    let help_message = "Available commands are: help, quit, core, runtime, pause, resume";
+    let help_message = r#"
+Available commands are: 
+
+help    - displays this message
+quit    - quits this REPL
+core    - prints info about the current mech core
+runtime - prints info about the runtime attached to the current core
+pause   - pause core execution
+resume  - resume core execution
+clear   - reset the current core
+"#;
 
     let paths = if mech_paths.is_empty() {
       None
@@ -247,9 +263,9 @@ fn main() -> Result<(), Box<std::error::Error>> {
       io::stdin().read_line(&mut input).unwrap();
 
       // Handle built in commands
-      let parse = parse_repl_command(CompleteStr(input.trim()));
+      let parse = parse_repl_command(input.trim());
       match parse {
-        Ok((CompleteStr(""), command)) => {
+        Ok((_, command)) => {
           match command {
             ReplCommand::Help => {
               println!("{}",help_message);
@@ -387,55 +403,52 @@ fn print_repeated_char(to_print: &str, n: usize) {
   }
 }
 
-named!(word<CompleteStr, String>, do_parse!(
-  bytes: nom_alpha1 >>
-  (bytes.to_string())));
+pub fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  Ok((input, ReplCommand::Empty))
+}
 
-named!(slash<CompleteStr, String>, do_parse!(
-  tag!("/") >> ("/".to_string())));
+pub fn clear(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("clear")(input)?;
+  Ok((input, ReplCommand::Clear))
+}
 
-named!(dash<CompleteStr, String>, do_parse!(
-  tag!("-") >> ("-".to_string())));
+pub fn runtime(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("runtime")(input)?;
+  Ok((input, ReplCommand::PrintRuntime))
+}
 
-named!(identifier<CompleteStr, String>, do_parse!(
-  identifier: map!(tuple!(count!(word,1), many0!(alt!(dash | slash | word))), |tuple| {
-    let (mut word, mut rest) = tuple;
-    word.append(&mut rest);
-    let word = word.iter().fold(String::new(), |mut word, next| {word.push_str(next); word});
-    word
-  }) >> (identifier)));
+pub fn core(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("core")(input)?;
+  Ok((input, ReplCommand::PrintCore))
+}
 
-named!(table<CompleteStr, ReplCommand>, do_parse!(
-  tag!("#") >> identifier: map!(identifier, |identifier| { Hasher::hash_string(identifier) }) >>
-  (ReplCommand::Table(identifier))));
+pub fn quit(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = alt((tag("quit"),tag("exit")))(input)?;
+  Ok((input, ReplCommand::Quit))
+}
 
-named!(space<CompleteStr, ReplCommand>, do_parse!(
-  many1!(tag!(" ")) >> (ReplCommand::Empty)));
+pub fn resume(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("resume")(input)?;
+  Ok((input, ReplCommand::Resume))
+}
 
-named!(empty<CompleteStr, ReplCommand>, do_parse!(
-  space >> (ReplCommand::Empty)));
+pub fn pause(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("pause")(input)?;
+  Ok((input, ReplCommand::Pause))
+}
 
-named!(resume<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":resume") >> (ReplCommand::Resume)));
+pub fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("help")(input)?;
+  Ok((input, ReplCommand::Help))
+}
 
-named!(pause<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":pause") >> (ReplCommand::Pause)));
+pub fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag(":")(input)?;
+  let (input, command) = alt((quit, help, pause, resume, core, runtime, clear))(input)?;
+  Ok((input, command))
+}
 
-named!(quit<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":quit") >> (ReplCommand::Quit)));
-
-named!(core<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":core") >> (ReplCommand::PrintCore)));
-
-named!(clear<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":clear") >> (ReplCommand::Clear)));
-
-named!(runtime<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":runtime") >> (ReplCommand::PrintRuntime)));
-
-named!(help<CompleteStr, ReplCommand>, do_parse!(
-  tag!(":help") >> (ReplCommand::Help)));
-
-named!(parse_repl_command<CompleteStr, ReplCommand>, do_parse!(
-  command: alt!(help | quit | pause | resume | table | core | clear | runtime | empty) >>
-  (command)));
+pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, command) = alt((command, mech_code))(input)?;
+  Ok((input, command))
+}
