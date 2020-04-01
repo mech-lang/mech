@@ -21,7 +21,7 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{Core, Compiler, Table, Value, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Core, Compiler, Table, Value, ParserNode, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::ClientHandler;
 use mech::QuantityMath;
 
@@ -55,7 +55,9 @@ pub enum ReplCommand {
   Clear,
   Table(u64),
   Code(String),
+  ParsedCode(ParserNode),
   Empty,
+  Error,
 }
 
 // ## Mech Entry
@@ -263,7 +265,12 @@ clear   - reset the current core
       io::stdin().read_line(&mut input).unwrap();
 
       // Handle built in commands
-      let parse = parse_repl_command(input.trim());
+      let parse = if input.trim() == "" {
+        continue
+      } else {
+        parse_repl_command(input.trim())
+      };
+      
       match parse {
         Ok((_, command)) => {
           match command {
@@ -289,36 +296,24 @@ clear   - reset the current core
             ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
             ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
             ReplCommand::Empty => {
-              println!("Empty");
               continue;
             },
+            ReplCommand::Error => {
+              println!("Unknown command. Enter :help to see available commands.");
+              continue;
+            },
+            ReplCommand::Code(code) => {
+              mech_client.running.send(RunLoopMessage::Code(code));
+              continue;
+            }
             _ => {
               println!("{}",help_message);
               continue;
             }
           }
         },
-        err => {
-          if input.trim() == "" {
-            continue;
-          }
-          // Try parsing mech code
-          let mut parser = Parser::new();
-          parser.parse(input.trim());
-          if parser.unparsed == "" {
-            mech_client.running.send(RunLoopMessage::Code(input.trim().to_string()));
-          // Try parsing it as an anonymous statement
-          } else {
-            let command = format!("#ans = {}", input.trim());
-            let mut parser = Parser::new();
-            parser.parse(&command);
-            if parser.unparsed == "" { 
-              mech_client.running.send(RunLoopMessage::Code(command));
-            } else {
-                println!("{} Unknown Command: {:?}", "Error:".red(), input.trim());
-              continue;
-            }
-          }
+        _ => {
+          
         }, 
       }
 
@@ -404,7 +399,23 @@ fn print_repeated_char(to_print: &str, n: usize) {
 }
 
 pub fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  Ok((input, ReplCommand::Empty))
+  // Try parsing mech code
+  let mut parser = Parser::new();
+  parser.parse_block(input);
+  if parser.unparsed == "" {
+    //println!("{:?}", parser.parse_tree);
+    Ok((input, ReplCommand::Code(input.to_string())))
+  // Try parsing it as an anonymous statement
+  } else {
+    let command = format!("#ans = {}", input.trim());
+    let mut parser = Parser::new();
+    parser.parse_block(&command);
+    if parser.unparsed == "" { 
+      Ok((input, ReplCommand::Code(input.to_string())))
+    } else {
+      Ok((input, ReplCommand::Error))
+    }
+  }
 }
 
 pub fn clear(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
