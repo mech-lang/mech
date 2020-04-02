@@ -13,7 +13,7 @@ mod repl;
 pub use mech_core::{Core, Table, Value, Hasher};
 pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
-pub use mech_syntax::parser::Parser;
+pub use mech_syntax::parser::{Parser, Node as ParserNode};
 pub use mech_program::{ProgramRunner, RunLoop, ClientMessage};
 pub use mech_utilities::RunLoopMessage;
 pub use mech_server::client::{ClientHandler};
