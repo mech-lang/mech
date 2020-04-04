@@ -255,7 +255,9 @@ clear   - reset the current core
       Some(&mech_paths)
     };
     let mech_client = ClientHandler::new("Mech REPL", None, paths, None);
+    let formatted_name = format!("[{}]", mech_client.client_name).bright_cyan();
     'REPL: loop {
+      
       io::stdout().flush().unwrap();
       // Print a prompt
       print!("{}", ">: ".bright_yellow());
@@ -266,7 +268,7 @@ clear   - reset the current core
 
       // Handle built in commands
       let parse = if input.trim() == "" {
-        continue
+        continue;
       } else {
         parse_repl_command(input.trim())
       };
@@ -276,7 +278,6 @@ clear   - reset the current core
           match command {
             ReplCommand::Help => {
               println!("{}",help_message);
-              continue;
             },
             ReplCommand::Quit => {
               break 'REPL;
@@ -296,19 +297,16 @@ clear   - reset the current core
             ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
             ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
             ReplCommand::Empty => {
-              continue;
+              println!("Empty");
             },
             ReplCommand::Error => {
               println!("Unknown command. Enter :help to see available commands.");
-              continue;
             },
             ReplCommand::Code(code) => {
               mech_client.running.send(RunLoopMessage::Code(code));
-              continue;
             }
             _ => {
-              println!("{}",help_message);
-              continue;
+              println!("something else: {}", help_message);
             }
           }
         },
@@ -316,8 +314,9 @@ clear   - reset the current core
           
         }, 
       }
-
+      
       // Get a response from the thread
+      //'qq: loop {
       match mech_client.running.receive() {
         (Ok(ClientMessage::Table(table))) => {
           match table {
@@ -326,20 +325,35 @@ clear   - reset the current core
           }
         },
         (Ok(ClientMessage::Pause)) => {
-          println!("{} Paused", format!("[{}]", mech_client.client_name).bright_cyan());
+          println!("{} Paused", formatted_name);
         },
         (Ok(ClientMessage::Resume)) => {
-          println!("{} Resumed", format!("[{}]", mech_client.client_name).bright_cyan());
+          println!("{} Resumed", formatted_name);
         },
         (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", format!("[{}]", mech_client.client_name).bright_cyan());
+          println!("{} Cleared", formatted_name);
         },
         (Ok(ClientMessage::NewBlocks(count))) => {
           println!("Compiled {} blocks.", count);
         },
-        _ => (),
+        (Ok(ClientMessage::String(message))) => {
+          println!("{} {}", formatted_name, message);
+        },
+        (Ok(ClientMessage::Done)) => {
+          println!("{} Done", formatted_name);
+        }
+        (Ok(ClientMessage::Transaction(txn))) => {
+          println!("{} Transaction: {:?}", formatted_name, txn);
+        },
+        q => {
+          println!("else: {:?}", q);
+          //break 'qq;
+        },
       };
+      //}
+      
 
+      
     }
   }
   Ok(())
