@@ -107,6 +107,7 @@ pub enum ClientMessage {
   NewBlocks(usize),
   Table(Option<Table>),
   Transaction(Transaction),
+  String(String),
   Block(Block),
   Done,
 }
@@ -345,7 +346,7 @@ impl ProgramRunner {
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            ////println!("{} Txn started:\n {:?}", name, txn);
+            //println!("{} Txn started:\n {:?}", name, txn);
             let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
@@ -368,8 +369,10 @@ impl ProgramRunner {
                 _ => ()
               } 
             }
-            let txn = Transaction::from_changeset(changes);
-            client_outgoing.send(ClientMessage::Transaction(txn));
+            if !changes.is_empty() {
+              let txn = Transaction::from_changeset(changes);
+              client_outgoing.send(ClientMessage::Transaction(txn));
+            }
           },
           (Ok(RunLoopMessage::Listening(table_ids)), _) => {
             for table_id in table_ids {
@@ -421,12 +424,10 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Clear);
           },
           (Ok(RunLoopMessage::PrintCore), _) => {
-            //println!("{:?}", program.mech);
-            client_outgoing.send(ClientMessage::Done);
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
-            //println!("{:?}", program.mech.runtime);
-            client_outgoing.send(ClientMessage::Done);
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
           (Err(_), _) => break 'runloop,
           _ => (),
