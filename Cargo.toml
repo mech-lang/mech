@@ -1,6 +1,6 @@
 [package]
 name = "mech-program"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Organizes Mech cores into a coordinated program. Handles reading files, interfacing with libraries, and persisting changes top disk."
 documentation = "http://docs.mech-lang.org"
@@ -10,20 +10,22 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 
 [badges]
 gitlab = { repository = "mech-lang/program", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
+mech-core = "0.0.4"
+mech-syntax = "0.0.4"
+mech-utilities= "0.0.4"
+
 time = "0.1.39"
-serde = "1.0.46"
-serde_derive = "1.0.46"
-serde_json = "1.0.17"
+serde = "1.0.105"
+serde_derive = "1.0.105"
+serde_json = "1.0.50"
 bincode = "0.8"
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
-mech-utilities= {git = "https://gitlab.com/mech-lang/utilities"}
 libloading = "0.5"
 lazy_static = "1.4.0"
 reqwest = "0.9.22"
