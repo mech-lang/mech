@@ -64,7 +64,7 @@ pub enum ReplCommand {
 
 fn main() -> Result<(), Box<std::error::Error>> {
 
-  let version = "0.0.3";
+  let version = "0.0.4";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella")

@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Main crate for the Mech programming language. Provides a REPL and hosted editor."
 documentation = "http://docs.mech-lang.org"
@@ -10,17 +10,19 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
-mech-server = {git = "https://gitlab.com/mech-lang/server"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = "0.0.4"
+mech-syntax = "0.0.4"
+mech-server = "0.0.4"
+mech-program = "0.0.4"
+mech-utilities = "0.0.4"
+
 clap = "2.33.0"
 term-painter = "0.2.4"
 colored = "1.9.3"
