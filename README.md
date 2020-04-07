@@ -35,7 +35,7 @@ You can download the the latest release for your platform [here](https://github.
 
 ### From Source
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) and [NodeJS](https://nodejs.org/) before building Mech. When those are installed, follow these instructions:
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) and [NodeJS](https://nodejs.org/) (v. 10.x) before building Mech. When those are installed, follow these instructions:
 
 ```bash
 > git clone https://gitlab.com/mech-lang/mech
