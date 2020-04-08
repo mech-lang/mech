@@ -9,7 +9,7 @@ use runtime::Constraint;
 
 // ## The Error Struct
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Error { 
   pub block: u64,
   pub constraint: Constraint,
@@ -17,7 +17,7 @@ pub struct Error {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub enum ErrorType {
   MissingAttribute(Index),
   IndexOutOfBounds(((u64, u64), (u64, u64))),
