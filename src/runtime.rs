@@ -253,7 +253,7 @@ impl fmt::Debug for Register {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum BlockState {
   Ready,
   Error,
@@ -1245,7 +1245,7 @@ impl fmt::Debug for Block {
 // example, Scan constraints could bring data into the block, and a Join 
 // constraint could match elements from one table to another.
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize)]
 pub enum Constraint {
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},
