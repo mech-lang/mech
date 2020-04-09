@@ -12,7 +12,6 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Sender};
 use std::io;
 use std::io::prelude::*;
-use std::fs::File;
 
 extern crate clap;
 use clap::{Arg, App, ArgMatches, SubCommand};
@@ -21,7 +20,7 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{Core, Compiler, Table, Value, ParserNode, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Core, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::ClientHandler;
 use mech::QuantityMath;
 
@@ -43,6 +42,16 @@ extern crate mech_server;
 extern crate reqwest;
 use std::collections::HashMap;
 
+extern crate bincode;
+use std::io::{Write, BufReader, BufWriter};
+use std::fs::{OpenOptions, File, canonicalize, create_dir};
+
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
+extern crate serde;
+
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
   Help,
@@ -59,6 +68,22 @@ pub enum ReplCommand {
   Empty,
   Error,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MiniBlock {
+  pub constraints: Vec<(String, Vec<Constraint>)>,
+}
+
+impl MiniBlock {
+  
+  pub fn new() -> MiniBlock { 
+    MiniBlock {
+      constraints: Vec::with_capacity(1),
+    }
+  }
+
+}
+
 
 // ## Mech Entry
 
@@ -108,7 +133,13 @@ fn main() -> Result<(), Box<std::error::Error>> {
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
-        .multiple(true)))      
+        .multiple(true)))
+    .subcommand(SubCommand::with_name("build")
+      .about("Build a target folder or *.mec file into a .blx file that can be loaded into a Mech runtime or compiled into an executable.")    
+      .arg(Arg::with_name("mech_build_file_paths")
+        .help("The files and folders to build.")
+        .required(true)
+        .multiple(true)))
     .get_matches();
 
   let wport = matches.value_of("port").unwrap_or("3012");
@@ -185,32 +216,46 @@ fn main() -> Result<(), Box<std::error::Error>> {
   
     for path_str in mech_paths {
       let path = Path::new(path_str);
-
-      let program = if path.to_str().unwrap().starts_with("https") {
-        reqwest::get(path.to_str().unwrap())?.text()?
+      let blocks: Vec<Block> = if path.to_str().unwrap().starts_with("https") {
+        let mech_source = reqwest::get(path.to_str().unwrap())?.text()?;
+        let mut compiler = Compiler::new();
+        compiler.compile_string(mech_source);
+        compiler.blocks
       } else {
         match (path.file_name(), path.extension())  {
           (Some(name), Some(extension)) => {
             match extension.to_str() {
               Some("mec") => {
                 let mut f = File::open(name)?;
-
-                let mut buffer = String::new();
-
-                f.read_to_string(&mut buffer);
-                buffer
+                let mut mech_source = String::new();
+                f.read_to_string(&mut mech_source);
+                let mut compiler = Compiler::new();
+                compiler.compile_string(mech_source);
+                compiler.blocks
               }
-              _ => "".to_string(),
+              Some("blx") => {
+                let mut blocks: Vec<Block> = Vec::new();
+                let file = File::open(name)?;
+                let mut reader = BufReader::new(file);
+                let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
+                for miniblock in miniblocks {
+                  let mut block = Block::new();
+                  for constraint in miniblock.constraints {
+                    block.add_constraints(constraint);
+                  }
+                  blocks.push(block);
+                }
+                blocks
+              }
+              _ => Vec::new(),
             }
           },
-          _ => "".to_string(),
+          _ => Vec::new(),
         }
       };
-      // Spin up a mech core and compiler
+      // Spin up a mech core and add the new blocks
       let mut core = Core::new(1000,1000);
-      let mut compiler = Compiler::new();
-      compiler.compile_string(program);
-      core.register_blocks(compiler.blocks);
+      core.register_blocks(blocks);
       core.step();
       let output_id: u64 = Hasher::hash_str("mech/output");  
 
@@ -225,6 +270,58 @@ fn main() -> Result<(), Box<std::error::Error>> {
         _ => (),
       }
     }
+    std::process::exit(0);
+  } else if let Some(matches) = matches.subcommand_matches("build") {
+    let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
+    println!("Building {:?}", mech_paths);
+    // TODO - Implement running a folder of .mec files
+    // TODO handle relative paths
+  
+    // Spin up a mech core and compiler
+    let mut core = Core::new(1000,1000);
+
+    for path_str in mech_paths {
+      let path = Path::new(path_str);
+      let program = if path.to_str().unwrap().starts_with("https") {
+        reqwest::get(path.to_str().unwrap())?.text()?
+      } else {
+        match (path.file_name(), path.extension())  {
+          (Some(name), Some(extension)) => {
+            match extension.to_str() {
+              Some("mec") => {
+
+                let mut f = File::open(name)?;
+
+                let mut buffer = String::new();
+
+                f.read_to_string(&mut buffer);
+                buffer
+              }
+              _ => "".to_string(),
+            }
+          },
+          _ => "".to_string(),
+        }
+      };
+      let mut compiler = Compiler::new();
+      compiler.compile_string(program);
+      core.register_blocks(compiler.blocks);
+    }
+
+    let file = OpenOptions::new().write(true).create(true).open(&"output.blx").unwrap();
+    let mut writer = BufWriter::new(file);
+    let mut miniblocks: Vec<MiniBlock> = Vec::new();
+    for (_, block) in core.runtime.blocks.iter() {
+      let mut miniblock = MiniBlock::new();
+      miniblock.constraints = block.constraints.clone();
+      miniblocks.push(miniblock);
+    }
+    let result = bincode::serialize(&miniblocks).unwrap();
+    if let Err(e) = writer.write_all(&result) {
+      panic!("{} Failed to write core! {:?}", "[Error]".bright_red(), e);
+    }
+    writer.flush().unwrap();
+
     std::process::exit(0);
   }
 
@@ -316,7 +413,6 @@ clear   - reset the current core
       }
       
       // Get a response from the thread
-      //'qq: loop {
       match mech_client.running.receive() {
         (Ok(ClientMessage::Table(table))) => {
           match table {
@@ -347,10 +443,8 @@ clear   - reset the current core
         },
         q => {
           println!("else: {:?}", q);
-          //break 'qq;
         },
       };
-      //}
       
 
       
