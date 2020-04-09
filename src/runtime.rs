@@ -1245,7 +1245,7 @@ impl fmt::Debug for Block {
 // example, Scan constraints could bring data into the block, and a Join 
 // constraint could match elements from one table to another.
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Constraint {
   NewTable{id: TableId, rows: u64, columns: u64},
   TableColumn{table: u64, column_ix: u64, column_alias: u64},

@@ -16,7 +16,7 @@ work on the supplied data.
 
 // ## Parameters
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Parameter {
   TableId (TableId),
   Index (Index),
