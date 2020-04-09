@@ -10,7 +10,7 @@ extern crate mech_utilities;
 
 mod repl;
 
-pub use mech_core::{Core, Table, Value, Hasher};
+pub use mech_core::{Core, Block, Table, Value, Hasher, Constraint};
 pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
 pub use mech_syntax::parser::{Parser, Node as ParserNode};
