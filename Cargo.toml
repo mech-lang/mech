@@ -17,15 +17,15 @@ gitlab = { repository = "mech-lang/program", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.0.4"
-mech-syntax = "0.0.4"
-mech-utilities= "0.0.4"
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 time = "0.1.39"
-serde = "1.0.105"
-serde_derive = "1.0.105"
-serde_json = "1.0.50"
-bincode = "0.8"
+serde = "1.0.106"
+serde_derive = "1.0.106"
+serde_json = "1.0.51"
+bincode = "1.2.1"
 libloading = "0.5"
 lazy_static = "1.4.0"
 reqwest = "0.9.22"
