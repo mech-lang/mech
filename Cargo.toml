@@ -14,6 +14,6 @@ readme = "README.md"
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = "0.0.4"
-mech-utilities = "0.0.4"
+mech-core = {git= "https://gitlab.com/mech-lang/core"}
+mech-utilities = {git= "https://gitlab.com/mech-lang/utilities"}
 libm = "0.1.2"
