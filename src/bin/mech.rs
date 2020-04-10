@@ -285,11 +285,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
       let program = if path.to_str().unwrap().starts_with("https") {
         reqwest::get(path.to_str().unwrap())?.text()?
       } else {
-        match (path.file_name(), path.extension())  {
+        match (path.to_str(), path.extension())  {
           (Some(name), Some(extension)) => {
             match extension.to_str() {
               Some("mec") => {
-
                 let mut f = File::open(name)?;
 
                 let mut buffer = String::new();
