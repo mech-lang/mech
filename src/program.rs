@@ -176,7 +176,7 @@ impl Persister {
           PersisterMessage::Stop => { break; }
           PersisterMessage::Write(items) => {
             for item in items {
-              let result = bincode::serialize(&item, bincode::Infinite).unwrap();
+              let result = bincode::serialize(&item).unwrap();
               if let Err(e) = writer.write_all(&result) {
                 panic!("Can't persist! {:?}", e);
               }
@@ -199,7 +199,7 @@ impl Persister {
     };
     let mut reader = BufReader::new(file);
     loop {
-      let result:Result<Change, _> = bincode::deserialize_from(&mut reader, bincode::Infinite);
+      let result:Result<Change, _> = bincode::deserialize_from(&mut reader);
       match result {
         Ok(change) => {
           self.loaded.push(change);
@@ -238,7 +238,7 @@ impl Persister {
 pub struct ProgramRunner {
   pub name: String,
   pub program: Program, 
-  pub mechanisms: HashMap<String, Library>,
+  pub machines: HashMap<String, Library>,
   pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -264,7 +264,7 @@ impl ProgramRunner {
     ProgramRunner {
       name: name.to_owned(),
       program,
-      mechanisms: HashMap::new(),
+      machines: HashMap::new(),
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
       persistence_channel: None,
@@ -304,14 +304,14 @@ impl ProgramRunner {
             Ok(mism)
           }
 
-          let mechanism = self.mechanisms.entry(m[0].to_string()).or_insert_with(||{
+          let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
             download_mism(m[0], path, ver).unwrap()
           });       
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = mechanism.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+            let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
