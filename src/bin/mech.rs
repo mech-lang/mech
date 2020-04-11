@@ -273,39 +273,60 @@ fn main() -> Result<(), Box<std::error::Error>> {
     std::process::exit(0);
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
-    println!("Building {:?}", mech_paths);
-    // TODO - Implement running a folder of .mec files
-    // TODO handle relative paths
   
     // Spin up a mech core and compiler
     let mut core = Core::new(1000,1000);
-
+    let mut compiler = Compiler::new();
     for path_str in mech_paths {
       let path = Path::new(path_str);
-      let program = if path.to_str().unwrap().starts_with("https") {
-        reqwest::get(path.to_str().unwrap())?.text()?
+      // Compile a .mec file on the web
+      if path.to_str().unwrap().starts_with("https") {
+        println!("{} {}", "[Building]".bright_green(), path.display());
+        let program = reqwest::get(path.to_str().unwrap())?.text()?;
+        compiler.compile_string(program);
       } else {
-        match (path.to_str(), path.extension())  {
-          (Some(name), Some(extension)) => {
-            match extension.to_str() {
-              Some("mec") => {
-                let mut f = File::open(name)?;
-
-                let mut buffer = String::new();
-
-                f.read_to_string(&mut buffer);
-                buffer
+        // Compile a directory of mech files
+        if path.is_dir() {
+          for entry in path.read_dir().expect("read_dir call failed") {
+            if let Ok(entry) = entry {
+              match (entry.path().to_str(), entry.path().extension())  {
+                (Some(name), Some(extension)) => {
+                  match extension.to_str() {
+                    Some("mec") => {
+                      println!("{} {}", "[Building]".bright_green(), name);
+                      let mut f = File::open(name)?;
+                      let mut buffer = String::new();
+                      f.read_to_string(&mut buffer);
+                      compiler.compile_string(buffer);
+                    }
+                    _ => (),
+                  }
+                },
+                _ => (),
               }
-              _ => "".to_string(),
             }
-          },
-          _ => "".to_string(),
+          }
+        } else if path.is_file() {
+          // Compile a single file
+          match (path.to_str(), path.extension())  {
+            (Some(name), Some(extension)) => {
+              match extension.to_str() {
+                Some("mec") => {
+                  println!("{} {}", "[Building]".bright_green(), name);
+                  let mut f = File::open(name)?;
+                  let mut buffer = String::new();
+                  f.read_to_string(&mut buffer);
+                  compiler.compile_string(buffer);
+                }
+                _ => (),
+              }
+            },
+            _ => (),
+          }
         }
       };
-      let mut compiler = Compiler::new();
-      compiler.compile_string(program);
-      core.register_blocks(compiler.blocks);
     }
+    core.register_blocks(compiler.blocks);
 
     let file = OpenOptions::new().write(true).create(true).open(&"output.blx").unwrap();
     let mut writer = BufWriter::new(file);
@@ -321,6 +342,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     }
     writer.flush().unwrap();
 
+    println!("{}", "[Finished]".bright_green());
     std::process::exit(0);
   }
 
