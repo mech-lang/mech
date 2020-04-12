@@ -218,65 +218,91 @@ fn main() -> Result<(), Box<std::error::Error>> {
       }
   } else if let Some(matches) = matches.subcommand_matches("run") {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
-    println!("Running {:?}", mech_paths);
-    // TODO - Implement running a folder of .mec files
-  
+    let mut compiler = Compiler::new();
+    
+    // Compile all the mec files supplied
     for path_str in mech_paths {
       let path = Path::new(path_str);
-      let blocks: Vec<Block> = if path.to_str().unwrap().starts_with("https") {
+      if path.to_str().unwrap().starts_with("https") {
+        println!("{} {}", "[Building]".bright_green(), path.display());
         let mech_source = reqwest::get(path.to_str().unwrap())?.text()?;
-        let mut compiler = Compiler::new();
-        compiler.compile_string(mech_source);
-        compiler.blocks
+        compiler.compile_string(mech_source);    
       } else {
-        match (path.file_name(), path.extension())  {
-          (Some(name), Some(extension)) => {
-            match extension.to_str() {
-              Some("mec") => {
-                let mut f = File::open(name)?;
-                let mut mech_source = String::new();
-                f.read_to_string(&mut mech_source);
-                let mut compiler = Compiler::new();
-                compiler.compile_string(mech_source);
-                compiler.blocks
-              }
-              Some("blx") => {
-                let mut blocks: Vec<Block> = Vec::new();
-                let file = File::open(name)?;
-                let mut reader = BufReader::new(file);
-                let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                for miniblock in miniblocks {
-                  let mut block = Block::new();
-                  for constraint in miniblock.constraints {
-                    block.add_constraints(constraint);
+        if path.is_dir() {
+          for entry in path.read_dir().expect("read_dir call failed") {
+            if let Ok(entry) = entry {
+              match (entry.path().to_str(), entry.path().extension())  {
+                (Some(name), Some(extension)) => {
+                  match extension.to_str() {
+                    Some("mec") => {
+                      println!("{} {}", "[Building]".bright_green(), name);
+                      let mut f = File::open(name)?;
+                      let mut buffer = String::new();
+                      f.read_to_string(&mut buffer);
+                      compiler.compile_string(buffer);
+                    }
+                    _ => (),
                   }
-                  blocks.push(block);
-                }
-                blocks
+                },
+                _ => (),
               }
-              _ => Vec::new(),
-            }
-          },
-          _ => Vec::new(),
-        }
-      };
-      // Spin up a mech core and add the new blocks
-      let mut core = Core::new(1000,1000);
-      core.register_blocks(blocks);
-      core.step();
-      let output_id: u64 = Hasher::hash_str("mech/output");  
-
-      match core.store.get_table(output_id) {
-        Some(output_table) => {
-          for i in 0..output_table.rows as usize {
-            for j in 0..output_table.columns as usize {
-              println!("{:?}", output_table.data[j][i]);
             }
           }
-        },
-        _ => (),
+        } else if path.is_file() {
+          match (path.file_name(), path.extension())  {
+            (Some(name), Some(extension)) => {
+              match extension.to_str() {
+                Some("mec") => {
+                  println!("{} {}", "[Building]".bright_green(), path.display());
+                  let mut f = File::open(name)?;
+                  let mut mech_source = String::new();
+                  f.read_to_string(&mut mech_source);
+                  compiler.compile_string(mech_source);
+                }
+                Some("blx") => {
+                  println!("{} {}", "[Loading]".bright_green(), path.display());
+                  let mut blocks: Vec<Block> = Vec::new();
+                  let file = File::open(name)?;
+                  let mut reader = BufReader::new(file);
+                  let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
+                  for miniblock in miniblocks {
+                    let mut block = Block::new();
+                    for constraint in miniblock.constraints {
+                      block.add_constraints(constraint);
+                    }
+                    blocks.push(block);
+                  }
+                  compiler.blocks.append(&mut blocks);
+                }
+                _ => (),
+              }
+            },
+            _ => (),
+          }
+        }
       }
     }
+
+    println!("{}", "[Running]".bright_green());
+
+    // Spin up a mech core and add the new blocks
+    let mut core = Core::new(1000,1000);
+    core.register_blocks(compiler.blocks);
+    core.step();
+    let output_id: u64 = Hasher::hash_str("mech/output");  
+
+    match core.store.get_table(output_id) {
+      Some(output_table) => {
+        for i in 0..output_table.rows as usize {
+          for j in 0..output_table.columns as usize {
+            println!("{:?}", output_table.data[j][i]);
+          }
+        }
+      },
+      _ => (),
+    }
+
+
     std::process::exit(0);
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
