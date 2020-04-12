@@ -136,6 +136,13 @@ fn main() -> Result<(), Box<std::error::Error>> {
         .multiple(true)))
     .subcommand(SubCommand::with_name("build")
       .about("Build a target folder or *.mec file into a .blx file that can be loaded into a Mech runtime or compiled into an executable.")    
+      .arg(Arg::with_name("output_name")
+        .help("Output file name")
+        .short("o")
+        .long("output")
+        .value_name("OUTPUTNAME")
+        .required(false)
+        .takes_value(true))
       .arg(Arg::with_name("mech_build_file_paths")
         .help("The files and folders to build.")
         .required(true)
@@ -328,7 +335,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
     }
     core.register_blocks(compiler.blocks);
 
-    let file = OpenOptions::new().write(true).create(true).open(&"output.blx").unwrap();
+    let output_name = match matches.value_of("output_name") {
+      Some(name) => format!("{}.blx",name),
+      None => "output.blx".to_string(),
+    };
+
+    let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
     for (_, block) in core.runtime.blocks.iter() {
@@ -342,7 +354,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     }
     writer.flush().unwrap();
 
-    println!("{}", "[Finished]".bright_green());
+    println!("{} Wrote {}", "[Finished]".bright_green(), output_name);
     std::process::exit(0);
   }
 
