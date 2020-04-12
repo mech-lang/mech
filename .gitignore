@@ -7,6 +7,9 @@
 # Database files
 *.mdb
 
+# Blocks files
+*.blx
+
 # Executables
 *.exe
 
