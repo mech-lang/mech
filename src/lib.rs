@@ -93,6 +93,11 @@ impl Core {
     self.transaction_boundaries.clear();
   }
 
+  pub fn get_table(&mut self, table_name: String) -> Option<&Table> {
+    let table_id = Hasher::hash_string(table_name);
+    self.store.get_table(table_id)
+  }
+
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
     self.runtime.register_blocks(blocks, &mut self.store);
     for (id, block) in self.runtime.blocks.iter() {
