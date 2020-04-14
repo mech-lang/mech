@@ -187,6 +187,20 @@ block
   x = 3:6
   #test = 5 + x", Value::from_i64(8));
 
+test_mech!(math_vector_plus_scalar_inline,"
+block
+  #x = [1 2 3] + 1
+  
+block
+  #test = stat/sum(row: #x)", Value::from_i64(9));
+
+test_mech!(math_vector_plus_scalar_inline_reverse,"
+block
+  #x = 1 + [1 2 3]
+    
+block
+  #test = stat/sum(row: #x)", Value::from_i64(9));
+
 test_mech!(math_vector_plus_scalar,"
 block
   x = [1 2 3]

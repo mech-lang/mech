@@ -878,7 +878,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((function, data, string, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -963,7 +963,7 @@ fn string(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, expression) = alt((string, inline_table, anonymous_table, math_expression))(input)?;
+  let (input, expression) = alt((string, inline_table, math_expression, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 
