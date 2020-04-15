@@ -950,8 +950,6 @@ impl Compiler {
             _ => (),
           };
 
-
-          println!("parameters: {:?}", c);
           parameters.push(c);
         }
         
