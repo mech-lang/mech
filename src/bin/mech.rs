@@ -94,38 +94,36 @@ fn main() -> Result<(), Box<std::error::Error>> {
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
     .about("The Mech REPL. Default values for options are in parentheses.")
-    .arg(Arg::with_name("mech_file_paths")
-      .help("The files and folders from which to load .mec files")
-      .required(false)
-      .multiple(true))
-    .arg(Arg::with_name("serve")
-      .short("s")
-      .long("serve")
-      .help("Starts a Mech HTTP and websocket server (false)"))
-    .arg(Arg::with_name("port")
-      .short("p")
-      .long("port")
-      .value_name("PORT")
-      .help("Sets the port for the Mech server (3012)")
-      .takes_value(true))
-    .arg(Arg::with_name("http-port")
-      .short("t")
-      .long("http-port")
-      .value_name("HTTPPORT")
-      .help("Sets the port for the HTTP server (8081)")
-      .takes_value(true))
-    .arg(Arg::with_name("address")
-      .short("a")
-      .long("address")
-      .value_name("ADDRESS")
-      .help("Sets the address of the server (127.0.0.1)")
-      .takes_value(true))
-    .arg(Arg::with_name("persist")
-      .short("r")
-      .long("persist")
-      .value_name("PERSIST")
-      .help("The path for the file to load from and persist changes (current working directory)")
-      .takes_value(true))
+    .subcommand(SubCommand::with_name("serve")
+      .about("Starts a Mech HTTP and websocket server")
+      .arg(Arg::with_name("mech_serve_file_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .multiple(true))
+      .arg(Arg::with_name("port")
+        .short("p")
+        .long("port")
+        .value_name("PORT")
+        .help("Sets the port for the Mech websocket server (3012)")
+        .takes_value(true))
+      .arg(Arg::with_name("http-port")
+        .short("t")
+        .long("http-port")
+        .value_name("HTTPPORT")
+        .help("Sets the port for the HTTP server (8081)")
+        .takes_value(true))    
+      .arg(Arg::with_name("address")
+        .short("a")
+        .long("address")
+        .value_name("ADDRESS")
+        .help("Sets the address of the server (127.0.0.1)")
+        .takes_value(true))  
+      .arg(Arg::with_name("persist")
+        .short("r")
+        .long("persist")
+        .value_name("PERSIST")
+        .help("The path for the file to load from and persist changes (current working directory)")
+        .takes_value(true)))
     .subcommand(SubCommand::with_name("test")
       .about("Execute all tests of a local package"))
     .subcommand(SubCommand::with_name("run")
@@ -149,17 +147,21 @@ fn main() -> Result<(), Box<std::error::Error>> {
         .multiple(true)))
     .get_matches();
 
-  let wport = matches.value_of("port").unwrap_or("3012");
-  let hport = matches.value_of("http-port").unwrap_or("8081");
-  let address = matches.value_of("address").unwrap_or("127.0.0.1");
-  let serve = matches.is_present("serve");
-  let http_address = format!("{}:{}",address,hport);
-  let websocket_address = format!("{}:{}",address,wport);
-  let mech_paths = matches.values_of("mech_file_paths").map_or(vec![], |files| files.collect());
-  let persistence_path = matches.value_of("persistence").unwrap_or("");
+  if let Some(matches) = matches.subcommand_matches("serve") {
+
+    let wport = matches.value_of("port").unwrap_or("3012");
+    let hport = matches.value_of("http-port").unwrap_or("8081");
+    let address = matches.value_of("address").unwrap_or("127.0.0.1");
+    let http_address = format!("{}:{}",address,hport);
+    let websocket_address = format!("{}:{}",address,wport);
+    let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
+    let persistence_path = matches.value_of("persistence").unwrap_or("");
+
+    mech_server::http_server(http_address);
+    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
 
   // The testing framework
-  if let Some(matches) = matches.subcommand_matches("test") {
+  } else if let Some(matches) = matches.subcommand_matches("test") {
       println!("Testing...");
       let paths = std::fs::read_dir("./").unwrap();
       let mut passed_all_tests = true;
@@ -303,6 +305,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
 
     std::process::exit(0);
+  // Build a .blx file from .mec and other .blx files
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
   
@@ -386,11 +389,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
   println!("\n {}",  "╔═══════════════════════╗".bright_black());
   println!(" {}      {}      {}", "║".bright_black(), format!("MECH v{}",version).bright_yellow(), "║".bright_black());
   println!(" {}\n",  "╚═══════════════════════╝".bright_black());
-  if serve {
-    mech_server::http_server(http_address);
-    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
-  // If we're not serving, go into a REPL
-  } else {
+
     println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
     let help_message = r#"
 Available commands are: 
@@ -404,110 +403,103 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
-    let paths = if mech_paths.is_empty() {
-      None
+  let mech_client = ClientHandler::new("Mech REPL", None, None, None);
+  let formatted_name = format!("[{}]", mech_client.client_name).bright_cyan();
+  'REPL: loop {
+    
+    io::stdout().flush().unwrap();
+    // Print a prompt
+    print!("{}", ">: ".bright_yellow());
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+
+    io::stdin().read_line(&mut input).unwrap();
+
+    // Handle built in commands
+    let parse = if input.trim() == "" {
+      continue;
     } else {
-      Some(&mech_paths)
+      parse_repl_command(input.trim())
     };
-    let mech_client = ClientHandler::new("Mech REPL", None, paths, None);
-    let formatted_name = format!("[{}]", mech_client.client_name).bright_cyan();
-    'REPL: loop {
-      
-      io::stdout().flush().unwrap();
-      // Print a prompt
-      print!("{}", ">: ".bright_yellow());
-      io::stdout().flush().unwrap();
-      let mut input = String::new();
-
-      io::stdin().read_line(&mut input).unwrap();
-
-      // Handle built in commands
-      let parse = if input.trim() == "" {
-        continue;
-      } else {
-        parse_repl_command(input.trim())
-      };
-      
-      match parse {
-        Ok((_, command)) => {
-          match command {
-            ReplCommand::Help => {
-              println!("{}",help_message);
-            },
-            ReplCommand::Quit => {
-              break 'REPL;
-            },
-            ReplCommand::Table(id) => {
-              mech_client.running.send(RunLoopMessage::Table(id));
-            },
-            ReplCommand::Clear => {
-              mech_client.running.send(RunLoopMessage::Clear);
-            },
-            ReplCommand::PrintCore => {
-              mech_client.running.send(RunLoopMessage::PrintCore);
-            },
-            ReplCommand::PrintRuntime => {
-              mech_client.running.send(RunLoopMessage::PrintRuntime);
-            },
-            ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
-            ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
-            ReplCommand::Empty => {
-              println!("Empty");
-            },
-            ReplCommand::Error => {
-              println!("Unknown command. Enter :help to see available commands.");
-            },
-            ReplCommand::Code(code) => {
-              mech_client.running.send(RunLoopMessage::Code(code));
-            }
-            _ => {
-              println!("something else: {}", help_message);
-            }
+    
+    match parse {
+      Ok((_, command)) => {
+        match command {
+          ReplCommand::Help => {
+            println!("{}",help_message);
+          },
+          ReplCommand::Quit => {
+            break 'REPL;
+          },
+          ReplCommand::Table(id) => {
+            mech_client.running.send(RunLoopMessage::Table(id));
+          },
+          ReplCommand::Clear => {
+            mech_client.running.send(RunLoopMessage::Clear);
+          },
+          ReplCommand::PrintCore => {
+            mech_client.running.send(RunLoopMessage::PrintCore);
+          },
+          ReplCommand::PrintRuntime => {
+            mech_client.running.send(RunLoopMessage::PrintRuntime);
+          },
+          ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
+          ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
+          ReplCommand::Empty => {
+            println!("Empty");
+          },
+          ReplCommand::Error => {
+            println!("Unknown command. Enter :help to see available commands.");
+          },
+          ReplCommand::Code(code) => {
+            mech_client.running.send(RunLoopMessage::Code(code));
           }
-        },
-        _ => {
-          
-        }, 
-      }
-      
-      // Get a response from the thread
-      match mech_client.running.receive() {
-        (Ok(ClientMessage::Table(table))) => {
-          match table {
-            Some(ref table_ref) => print_table(table_ref),
-            None => (),
+          _ => {
+            println!("something else: {}", help_message);
           }
-        },
-        (Ok(ClientMessage::Pause)) => {
-          println!("{} Paused", formatted_name);
-        },
-        (Ok(ClientMessage::Resume)) => {
-          println!("{} Resumed", formatted_name);
-        },
-        (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", formatted_name);
-        },
-        (Ok(ClientMessage::NewBlocks(count))) => {
-          println!("Compiled {} blocks.", count);
-        },
-        (Ok(ClientMessage::String(message))) => {
-          println!("{} {}", formatted_name, message);
-        },
-        (Ok(ClientMessage::Done)) => {
-          println!("{} Done", formatted_name);
         }
-        (Ok(ClientMessage::Transaction(txn))) => {
-          println!("{} Transaction: {:?}", formatted_name, txn);
-        },
-        q => {
-          println!("else: {:?}", q);
-        },
-      };
-      
-
-      
+      },
+      _ => {
+        
+      }, 
     }
+    
+    // Get a response from the thread
+    match mech_client.running.receive() {
+      (Ok(ClientMessage::Table(table))) => {
+        match table {
+          Some(ref table_ref) => print_table(table_ref),
+          None => (),
+        }
+      },
+      (Ok(ClientMessage::Pause)) => {
+        println!("{} Paused", formatted_name);
+      },
+      (Ok(ClientMessage::Resume)) => {
+        println!("{} Resumed", formatted_name);
+      },
+      (Ok(ClientMessage::Clear)) => {
+        println!("{} Cleared", formatted_name);
+      },
+      (Ok(ClientMessage::NewBlocks(count))) => {
+        println!("Compiled {} blocks.", count);
+      },
+      (Ok(ClientMessage::String(message))) => {
+        println!("{} {}", formatted_name, message);
+      },
+      (Ok(ClientMessage::Done)) => {
+        println!("{} Done", formatted_name);
+      }
+      (Ok(ClientMessage::Transaction(txn))) => {
+        println!("{} Transaction: {:?}", formatted_name, txn);
+      },
+      q => {
+        println!("else: {:?}", q);
+      },
+    };
+    
   }
+  
   Ok(())
 }
 
