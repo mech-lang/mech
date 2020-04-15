@@ -47,6 +47,7 @@ pub use self::errors::{Error, ErrorType};
 
 // ## Core
 
+#[derive(Clone)]
 pub struct Core {
   pub id: u64,
   pub epoch: usize,

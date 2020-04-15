@@ -113,7 +113,7 @@ impl fmt::Debug for Transaction {
 
 // ## Interner
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Interner {
   pub offset: usize,
   pub tables: TableIndex,
