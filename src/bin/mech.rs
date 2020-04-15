@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
-    .about("The Mech REPL. Default values for options are in parentheses.")
+    .about("Mech's compiler and REPL. Also contains various other helpful tools! Default values for options are in parentheses.")
     .subcommand(SubCommand::with_name("serve")
       .about("Starts a Mech HTTP and websocket server")
       .arg(Arg::with_name("mech_serve_file_paths")
@@ -127,7 +127,13 @@ fn main() -> Result<(), Box<std::error::Error>> {
     .subcommand(SubCommand::with_name("test")
       .about("Execute all tests of a local package"))
     .subcommand(SubCommand::with_name("run")
-      .about("Run a target folder or *.mec file")    
+      .about("Run a target folder or *.mec file")
+      .arg(Arg::with_name("repl_mode")
+        .short("r")
+        .long("repl")
+        .value_name("REPL")
+        .help("Start a REPL")
+        .takes_value(false))
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
@@ -147,7 +153,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         .multiple(true)))
     .get_matches();
 
-  if let Some(matches) = matches.subcommand_matches("serve") {
+  let core: Option<Core> = if let Some(matches) = matches.subcommand_matches("serve") {
 
     let wport = matches.value_of("port").unwrap_or("3012");
     let hport = matches.value_of("http-port").unwrap_or("8081");
@@ -159,7 +165,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     mech_server::http_server(http_address);
     mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
-
+    None
   // The testing framework
   } else if let Some(matches) = matches.subcommand_matches("test") {
       println!("Testing...");
@@ -217,8 +223,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
         println!("Test result: {} | total {} | passed {} | failed {} | ", "failed".red(), tests_count, tests_passed, tests_failed);
         std::process::exit(1);
       }
+      None
   } else if let Some(matches) = matches.subcommand_matches("run") {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
+    let repl = matches.is_present("repl_mode");
     let mut compiler = Compiler::new();
     
     // Compile all the mec files supplied
@@ -292,19 +300,20 @@ fn main() -> Result<(), Box<std::error::Error>> {
     core.step();
     let output_id: u64 = Hasher::hash_str("mech/output");  
 
-    match core.store.get_table(output_id) {
-      Some(output_table) => {
-        for i in 0..output_table.rows as usize {
-          for j in 0..output_table.columns as usize {
-            println!("{:?}", output_table.data[j][i]);
+    if !repl {
+      match core.store.get_table(output_id) {
+        Some(output_table) => {
+          for i in 0..output_table.rows as usize {
+            for j in 0..output_table.columns as usize {
+              println!("{:?}", output_table.data[j][i]);
+            }
           }
-        }
-      },
-      _ => (),
+        },
+        _ => (),
+      }
+      std::process::exit(0);
     }
-
-
-    std::process::exit(0);
+    Some(core)
   // Build a .blx file from .mec and other .blx files
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
@@ -384,7 +393,10 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     println!("{} Wrote {}", "[Finished]".bright_green(), output_name);
     std::process::exit(0);
-  }
+    None
+  } else {
+    None
+  };
 
   println!("\n {}",  "╔═══════════════════════╗".bright_black());
   println!(" {}      {}      {}", "║".bright_black(), format!("MECH v{}",version).bright_yellow(), "║".bright_black());
@@ -403,7 +415,12 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
-  let mech_client = ClientHandler::new("Mech REPL", None, None, None);
+  let cores = match core {
+    Some(core) => Some(vec![core]),
+    None => None,
+  };
+
+  let mech_client = ClientHandler::new("Mech REPL", None, None, None, cores);
   let formatted_name = format!("[{}]", mech_client.client_name).bright_cyan();
   'REPL: loop {
     
