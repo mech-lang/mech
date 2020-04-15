@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
   let version = "0.0.4";
   let matches = App::new("Mech")
     .version(version)
-    .author("Corey Montella")
+    .author("Corey Montella corey@mech-lang.org")
     .about("The Mech REPL. Default values for options are in parentheses.")
     .arg(Arg::with_name("mech_file_paths")
       .help("The files and folders from which to load .mec files")
@@ -184,9 +184,8 @@ fn main() -> Result<(), Box<std::error::Error>> {
                 compiler.compile_string(buffer);
                 core.register_blocks(compiler.blocks);
                 core.step();
-                let test_results_id: u64 = Hasher::hash_str("mech/test");  
 
-                match core.store.get_table(test_results_id) {
+                match core.get_table("mech/test".to_string()) {
                   Some(test_results) => {
                     for i in 0..test_results.rows as usize {
                       for j in 0..test_results.columns as usize {
