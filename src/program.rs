@@ -31,6 +31,7 @@ use time;
 pub struct Program {
   pub name: String,
   pub mech: Core,
+  pub cores: Vec<Core>,
   pub watchers: HashMap<u64, Box<Watcher + Send>>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -52,6 +53,7 @@ impl Program {
       watchers: HashMap::new(),
       capacity,
       mech,
+      cores: vec![],
       incoming,
       outgoing,
       errors: Vec::new(),
@@ -284,7 +286,7 @@ impl ProgramRunner {
         (None, Some((ver, path))) => {
 
           fn download_mism(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
-            create_dir("misms");
+            create_dir("machines");
 
             #[cfg(unix)]
             let mism_name = format!("libmech_{}.so", name);
@@ -321,6 +323,10 @@ impl ProgramRunner {
     }
     self.program.mech.step();
     Ok(())
+  }
+
+  pub fn load_core(&mut self, core: Core) {
+    self.program.cores.push(core);
   }
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
