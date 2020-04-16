@@ -237,6 +237,27 @@ impl Persister {
   }
 }
 
+fn download_machine(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
+  create_dir("machines");
+
+  #[cfg(unix)]
+  let machine_name = format!("libmech_{}.so", name);
+  #[cfg(windows)]
+  let machine_name = format!("mech_{}.dll", name);
+  let machine_file_path = format!("machines/{}",machine_name);
+  // TODO Do path and URL. Right now, assume URL
+  {
+    println!("Downloading: {} v{}", name, ver);
+    let machine_url = format!("{}{}", path, machine_name);
+    let mut response = reqwest::get(machine_url.as_str())?;
+    let mut dest = File::create(machine_file_path.clone())?;
+    copy(&mut response, &mut dest)?;
+  }
+  let machine_file_path = format!("machines/{}",machine_name);
+  let machine = Library::new(machine_file_path).expect("Can't load library");
+  Ok(machine)
+}
+
 // ## Program Runner
 
 pub struct ProgramRunner {
@@ -287,29 +308,8 @@ impl ProgramRunner {
       match (&fun, registry.get(m[0])) {
         (None, Some((ver, path))) => {
 
-          fn download_mism(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
-            create_dir("machines");
-
-            #[cfg(unix)]
-            let mism_name = format!("libmech_{}.so", name);
-            #[cfg(windows)]
-            let mism_name = format!("mech_{}.dll", name);
-            let mism_file_path = format!("misms/{}",mism_name);
-            // TODO Do path and URL. Right now, assume URL
-            {
-              println!("Downloading: {} v{}", name, ver);
-              let mism_url = format!("{}{}", path, mism_name);
-              let mut response = reqwest::get(mism_url.as_str())?;
-              let mut dest = File::create(mism_file_path.clone())?;
-              copy(&mut response, &mut dest)?;
-            }
-            let mism_file_path = format!("misms/{}",mism_name);
-            let mism = Library::new(mism_file_path).expect("Can't load library");
-            Ok(mism)
-          }
-
           let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-            download_mism(m[0], path, ver).unwrap()
+            download_machine(m[0], path, ver).unwrap()
           });       
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
@@ -436,8 +436,12 @@ impl ProgramRunner {
             program.clear();
             client_outgoing.send(ClientMessage::Clear);
           },
-          (Ok(RunLoopMessage::PrintCore), _) => {
-            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
+          (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
+            match core_id {
+              None => client_outgoing.send(ClientMessage::String(format!("{:?}",program.cores.len() + 1))),
+              Some(0) => client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech))),
+              Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}",program.cores.get(&core_id)))),
+            };
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
