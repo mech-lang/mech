@@ -59,7 +59,7 @@ pub enum ReplCommand {
   Pause,
   Resume,
   Stop,
-  PrintCore,
+  PrintCore(Option<u64>),
   PrintRuntime,
   Clear,
   Table(u64),
@@ -416,7 +416,10 @@ clear   - reset the current core
 "#;
 
   let cores = match core {
-    Some(core) => Some(vec![core]),
+    Some(mut core) => {
+      core.id = 1;
+      Some(vec![core])
+    },
     None => None,
   };
 
@@ -454,8 +457,8 @@ clear   - reset the current core
           ReplCommand::Clear => {
             mech_client.running.send(RunLoopMessage::Clear);
           },
-          ReplCommand::PrintCore => {
-            mech_client.running.send(RunLoopMessage::PrintCore);
+          ReplCommand::PrintCore(core_id) => {
+            mech_client.running.send(RunLoopMessage::PrintCore(core_id));
           },
           ReplCommand::PrintRuntime => {
             mech_client.running.send(RunLoopMessage::PrintRuntime);
@@ -605,7 +608,13 @@ pub fn runtime(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 
 pub fn core(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag("core")(input)?;
-  Ok((input, ReplCommand::PrintCore))
+  let (input, _) = space0(input)?;
+  let (input, core_id) = opt(digit1)(input)?;
+  let core_id = match core_id {
+    Some(core_id) => Some(core_id.parse::<u64>().unwrap()),
+    None => None,
+  };
+  Ok((input, ReplCommand::PrintCore(core_id)))
 }
 
 pub fn quit(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
