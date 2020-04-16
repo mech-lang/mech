@@ -3,7 +3,7 @@ extern crate serde_derive;
 extern crate serde;
 extern crate mech_core;
 
-use mech_core::{Transaction, Interner, TableId};
+use mech_core::{Transaction, Interner, TableId, Core};
 
 // ## Client Message
 
@@ -27,12 +27,13 @@ pub enum RunLoopMessage {
   Pause,
   Resume,
   Clear,
-  PrintCore,
+  PrintCore(Option<u64>),
   PrintRuntime,
   Listening(Vec<TableId>),
   Table(u64),
   Transaction(Transaction),
   Code(String),
+  Core(Core),
 }
 
 // ## Watchers
