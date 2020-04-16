@@ -327,7 +327,8 @@ impl ProgramRunner {
     Ok(())
   }
 
-  pub fn load_core(&mut self, core: Core) {
+  pub fn load_core(&mut self, mut core: Core) {
+    core.id = (self.program.cores.len() + 1) as u64;
     for input_register in &core.input {
       let input = self.program.input_map.entry(input_register.clone()).or_insert(HashSet::new());
       input.insert(core.id);
