@@ -31,7 +31,8 @@ use time;
 pub struct Program {
   pub name: String,
   pub mech: Core,
-  pub cores: Vec<Core>,
+  pub cores: HashMap<u64,Core>,
+  pub input_map: HashMap<Register,HashSet<u64>>,
   pub watchers: HashMap<u64, Box<Watcher + Send>>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -53,7 +54,8 @@ impl Program {
       watchers: HashMap::new(),
       capacity,
       mech,
-      cores: vec![],
+      cores: HashMap::new(),
+      input_map: HashMap::new(),
       incoming,
       outgoing,
       errors: Vec::new(),
@@ -326,7 +328,11 @@ impl ProgramRunner {
   }
 
   pub fn load_core(&mut self, core: Core) {
-    self.program.cores.push(core);
+    for input_register in &core.input {
+      let input = self.program.input_map.entry(input_register.clone()).or_insert(HashSet::new());
+      input.insert(core.id);
+    }
+    self.program.cores.insert(core.id, core);
   }
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
