@@ -322,6 +322,14 @@ impl Block {
     self.memory.get(table_id)
   } 
 
+  pub fn gen_block_id(&self) -> usize {
+    let mut constraint_string = String::new();
+    for constraint in &self.constraints {
+      constraint_string = format!("{}{:?}",constraint_string, constraint);
+    }
+    Hasher::hash_string(constraint_string) as usize
+  }
+
   pub fn add_constraints(&mut self, constraint_tuple: (String, Vec<Constraint>)) {
     self.constraints.push(constraint_tuple.clone());
     let (constraint_text, constraints) = constraint_tuple;
