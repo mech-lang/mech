@@ -296,13 +296,12 @@ impl ProgramRunner {
     }
   }
 
-  pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
-    self.program.compile_program(input);
-
+  pub fn download_dependencies(&mut self) -> Result<(),Box<std::error::Error>>{
     let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
     registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/releases/download/v0.0.1/"));
     registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
 
+    // Do it for the mech core
     for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
       match (&fun, registry.get(m[0])) {
@@ -323,7 +322,36 @@ impl ProgramRunner {
         _ => (),
       }
     }
-    self.program.mech.step();
+    
+    // Do it for the the other core
+    for core in self.program.cores.values_mut() {
+      for (fun_name, fun) in core.runtime.functions.iter_mut() {
+        let m: Vec<_> = fun_name.split('/').collect();
+        match (&fun, registry.get(m[0])) {
+          (None, Some((ver, path))) => {
+  
+            let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
+              download_machine(m[0], path, ver).unwrap()
+            });       
+            let native_rust = unsafe {
+              // Replace slashes with underscores and then add a null terminator
+              let mut s = format!("{}\0", fun_name.replace("/","_"));
+              let error_msg = format!("Symbol {} not found",s);
+              let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+              m.into_raw()
+            };
+            *fun = Some(*native_rust);
+          },
+          _ => (),
+        }
+      }
+    }
+    
+    Ok(())
+  }
+
+  pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
+    self.program.compile_program(input);
     Ok(())
   }
 
@@ -355,6 +383,15 @@ impl ProgramRunner {
     let mut program = self.program;
     let persistence_channel = self.persistence_channel;
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
+      // Step cores
+      program.mech.step();
+      for core in program.cores.values_mut() {
+        println!("{:?}", core);
+        println!("{:?}", core.runtime);
+        core.step();
+
+      }
+
       let mut paused = false;
       'runloop: loop {
         match (program.incoming.recv(), paused) {
