@@ -13,6 +13,7 @@ use std::mem;
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::io::{Write, BufReader, BufWriter};
 use std::sync::Arc;
+use std::path::{Path, PathBuf};
 
 use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
@@ -33,6 +34,7 @@ pub struct Program {
   pub mech: Core,
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
+  pub machines: HashMap<String, Library>,
   pub watchers: HashMap<u64, Box<Watcher + Send>>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -55,6 +57,7 @@ impl Program {
       capacity,
       mech,
       cores: HashMap::new(),
+      machines: HashMap::new(),
       input_map: HashMap::new(),
       incoming,
       outgoing,
@@ -89,6 +92,93 @@ impl Program {
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     self.outgoing.send(RunLoopMessage::Transaction(txn));
     self.mech.step();
+  }
+
+  pub fn download_dependencies(&mut self) -> Result<(),Box<std::error::Error>> {
+    let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
+    registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/"));
+    registry.insert("stats", ("0.0.1", "https://github.com/mech-lang/stats/"));
+
+    fn download_machine(name: &str, path_str: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
+      create_dir("machines");
+    
+      #[cfg(unix)]
+      let machine_name = format!("libmech_{}.so", name);
+      #[cfg(windows)]
+      let machine_name = format!("mech_{}.dll", name);
+      let machine_file_path = format!("machines/{}",machine_name);
+      {
+        let path = Path::new(path_str);
+        // Download from teh web
+        if path.to_str().unwrap().starts_with("https") {
+          println!("{} {} v{}", "[Downloading]", name, ver);
+          let machine_url = format!("{}/releases/download/v{}/{}", path_str, ver, machine_name);
+          let mut response = reqwest::get(machine_url.as_str())?;
+          let mut dest = File::create(machine_file_path.clone())?;
+          copy(&mut response, &mut dest)?;
+        // Load from a local directory
+        } else {
+          println!("{} {} v{}", "[Loading]", name, ver);
+          let machine_path = format!("{}{}", path_str, machine_name);
+          println!("{:?}", machine_path);
+          let path = Path::new(&machine_path);
+          let mut dest = File::create(machine_file_path.clone())?;
+          let mut f = File::open(path)?;
+          copy(&mut f, &mut dest)?;
+        }
+      }
+      let machine_file_path = format!("machines/{}",machine_name);
+      let machine = Library::new(machine_file_path).expect("Can't load library");
+      Ok(machine)
+    }
+
+    // Do it for the mech core
+    for (fun_name, fun) in self.mech.runtime.functions.iter_mut() {
+      let m: Vec<_> = fun_name.split('/').collect();
+      match (&fun, registry.get(m[0])) {
+        (None, Some((ver, path))) => {
+
+          let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
+            download_machine(m[0], path, ver).unwrap()
+          });       
+          let native_rust = unsafe {
+            // Replace slashes with underscores and then add a null terminator
+            let mut s = format!("{}\0", fun_name.replace("/","_"));
+            let error_msg = format!("Symbol {} not found",s);
+            let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+            m.into_raw()
+          };
+          *fun = Some(*native_rust);
+        },
+        _ => (),
+      }
+    }
+    
+    // Do it for the the other core
+    for core in self.cores.values_mut() {
+      for (fun_name, fun) in core.runtime.functions.iter_mut() {
+        let m: Vec<_> = fun_name.split('/').collect();
+        match (&fun, registry.get(m[0])) {
+          (None, Some((ver, path))) => {
+  
+            let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
+              download_machine(m[0], path, ver).unwrap()
+            });       
+            let native_rust = unsafe {
+              // Replace slashes with underscores and then add a null terminator
+              let mut s = format!("{}\0", fun_name.replace("/","_"));
+              let error_msg = format!("Symbol {} not found",s);
+              let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+              m.into_raw()
+            };
+            *fun = Some(*native_rust);
+          },
+          _ => (),
+        }
+      }
+    }
+    
+    Ok(())
   }
 
   pub fn clear(&mut self) {
@@ -236,34 +326,11 @@ impl Persister {
     self.outgoing.send(PersisterMessage::Stop).unwrap();
   }
 }
-
-fn download_machine(name: &str, path: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
-  create_dir("machines");
-
-  #[cfg(unix)]
-  let machine_name = format!("libmech_{}.so", name);
-  #[cfg(windows)]
-  let machine_name = format!("mech_{}.dll", name);
-  let machine_file_path = format!("machines/{}",machine_name);
-  // TODO Do path and URL. Right now, assume URL
-  {
-    println!("Downloading: {} v{}", name, ver);
-    let machine_url = format!("{}{}", path, machine_name);
-    let mut response = reqwest::get(machine_url.as_str())?;
-    let mut dest = File::create(machine_file_path.clone())?;
-    copy(&mut response, &mut dest)?;
-  }
-  let machine_file_path = format!("machines/{}",machine_name);
-  let machine = Library::new(machine_file_path).expect("Can't load library");
-  Ok(machine)
-}
-
 // ## Program Runner
 
 pub struct ProgramRunner {
   pub name: String,
   pub program: Program, 
-  pub machines: HashMap<String, Library>,
   pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -289,65 +356,10 @@ impl ProgramRunner {
     ProgramRunner {
       name: name.to_owned(),
       program,
-      machines: HashMap::new(),
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
       persistence_channel: None,
     }
-  }
-
-  pub fn download_dependencies(&mut self) -> Result<(),Box<std::error::Error>>{
-    let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
-    registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/releases/download/v0.0.1/"));
-    registry.insert("stat", ("0.0.1", "https://github.com/mech-lang/stat/releases/download/v0.0.1/"));
-
-    // Do it for the mech core
-    for (fun_name, fun) in self.program.mech.runtime.functions.iter_mut() {
-      let m: Vec<_> = fun_name.split('/').collect();
-      match (&fun, registry.get(m[0])) {
-        (None, Some((ver, path))) => {
-
-          let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-            download_machine(m[0], path, ver).unwrap()
-          });       
-          let native_rust = unsafe {
-            // Replace slashes with underscores and then add a null terminator
-            let mut s = format!("{}\0", fun_name.replace("/","_"));
-            let error_msg = format!("Symbol {} not found",s);
-            let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
-            m.into_raw()
-          };
-          *fun = Some(*native_rust);
-        },
-        _ => (),
-      }
-    }
-    
-    // Do it for the the other core
-    for core in self.program.cores.values_mut() {
-      for (fun_name, fun) in core.runtime.functions.iter_mut() {
-        let m: Vec<_> = fun_name.split('/').collect();
-        match (&fun, registry.get(m[0])) {
-          (None, Some((ver, path))) => {
-  
-            let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-              download_machine(m[0], path, ver).unwrap()
-            });       
-            let native_rust = unsafe {
-              // Replace slashes with underscores and then add a null terminator
-              let mut s = format!("{}\0", fun_name.replace("/","_"));
-              let error_msg = format!("Symbol {} not found",s);
-              let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
-              m.into_raw()
-            };
-            *fun = Some(*native_rust);
-          },
-          _ => (),
-        }
-      }
-    }
-    
-    Ok(())
   }
 
   pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
@@ -382,14 +394,16 @@ impl ProgramRunner {
     let (client_outgoing, incoming) = mpsc::channel();
     let mut program = self.program;
     let persistence_channel = self.persistence_channel;
+
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
+
+      program.download_dependencies();
+
       // Step cores
       program.mech.step();
-      for core in program.cores.values_mut() {
-        println!("{:?}", core);
-        println!("{:?}", core.runtime);
-        core.step();
 
+      for core in program.cores.values_mut() {
+        core.step();
       }
 
       let mut paused = false;
