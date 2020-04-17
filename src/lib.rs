@@ -15,7 +15,7 @@ pub extern "C" fn stats_average(input: Vec<(String, Table)>) -> Table {
       for j in 0..table_ref.columns as usize {
         value = value + &table_ref.data[j][i].as_float().unwrap();
       }
-      out.data[0][i] = Value::from_quantity((value / table_ref.rows as f64).to_quantity());
+      out.data[0][i] = Value::from_quantity((value / table_ref.columns as f64).to_quantity());
     }
     out
   } else if argument == "column" {
