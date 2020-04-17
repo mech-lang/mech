@@ -54,7 +54,7 @@ block
   x = [1 2
        4 _
        _ 7]
-  #test = stat/sum(column: x{:,1})",Value::from_i64(5));
+  #test = stats/sum(column: x{:,1})",Value::from_i64(5));
 
 test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i64(123));
 
@@ -192,14 +192,14 @@ block
   #x = [1 2 3] + 1
   
 block
-  #test = stat/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i64(9));
 
 test_mech!(math_vector_plus_scalar_inline_reverse,"
 block
   #x = 1 + [1 2 3]
     
 block
-  #test = stat/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i64(9));
 
 test_mech!(math_vector_plus_scalar,"
 block
@@ -207,7 +207,7 @@ block
   #x = x + 1
 
 block
-  #test = stat/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i64(9));
 
 test_mech!(math_negation_double_negative,"
 block
@@ -228,7 +228,7 @@ test_mech!(units_scaling,"#test = 35g + 10kg", Value::from_i64(10035));
 
 test_mech!(range_basic,r#"
 block
-  #test = stat/sum(column: #range)
+  #test = stats/sum(column: #range)
 block
   #range = 5 : 14"#, Value::from_i64(95));
 
@@ -277,7 +277,7 @@ block
   
 block
   ix = #x >= #y
-  #test = stat/sum(column: #x{ix,:})", Value::from_i64(5)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i64(5)); 
 
 test_mech!(comparator_less_than_equal,"
 block
@@ -286,7 +286,7 @@ block
   
 block
   ix = #x <= #y
-  #test = stat/sum(column: #x{ix,:})", Value::from_i64(4)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i64(4)); 
 
 
 test_mech!(comparator_equal,"
@@ -296,7 +296,7 @@ block
   
 block
   ix = #x == #y
-  #test = stat/sum(column: #x{ix,:})", Value::from_i64(5)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i64(5)); 
 
 test_mech!(comparator_equal_string,r#"
 block
@@ -320,7 +320,7 @@ block
   
 block
   ix = #x != #y
-  #test = stat/sum(column: #x{ix,:})", Value::from_i64(3)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i64(3)); 
 
 // ## Set
 
@@ -340,7 +340,7 @@ block
   #x{3} := 7
 
 block
-  #test = stat/sum(column: #x)", Value::from_i64(407));
+  #test = stats/sum(column: #x)", Value::from_i64(407));
 
 test_mech!(set_column_logical,"
 block
@@ -419,7 +419,7 @@ block
 
 test_mech!(set_inline_row,"
 block
-  #test = stat/sum(row: #launch-point)
+  #test = stats/sum(row: #launch-point)
 
 block
   #launch-point = [x: 0 y: 0]
@@ -440,7 +440,7 @@ block
 
 test_mech!(concat_horzcat_autofill,r#"
 block
-  #test = stat/sum(column: #y.type)
+  #test = stats/sum(column: #y.type)
 
 block
   x = ["a"; "b"; "c"; "d"]
@@ -535,7 +535,7 @@ test_mech!(change_scan_simple2,"block
   #x = [400; 0; 0]
  
 block
-  #test = stat/sum(column: #x)
+  #test = stats/sum(column: #x)
 
 block 
   ~ #i
@@ -634,7 +634,7 @@ Create ball on click
 
 test
   x = #ball.x + #ball.y
-  #test = stat/sum(column: x)", Value::Number(make_quantity(98,0,0)));*/
+  #test = stats/sum(column: x)", Value::Number(make_quantity(98,0,0)));*/
 
 // ## Strings
 
@@ -685,7 +685,7 @@ block
 
 test_mech!(deep_nesting,r#"
 block
-  #test = stat/sum(row: #app/main{1}{1}{2}{:})
+  #test = stats/sum(row: #app/main{1}{1}{2}{:})
 
 block
   #ball = [x: 10 y: 10]
@@ -728,14 +728,14 @@ block
 test_mech!(function_stat_sum,r#"
 block
   x = [1;2;3;4;5]
-  #test = stat/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
+  #test = stats/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
 
 test_mech!(function_add_functions,r#"
 block
   x = [1 2
        4 _
        _ 7]
-  #test = stat/sum(column: x{:,1}) + stat/sum(column: x{:,2})"#, Value::from_i64(14));
+  #test = stats/sum(column: x{:,1}) + stats/sum(column: x{:,2})"#, Value::from_i64(14));
 
 test_mech!(function_set_any,r#"
 block
