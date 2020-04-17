@@ -17,11 +17,11 @@ gitlab = { repository = "mech-lang/mech", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git= "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git= "https://gitlab.com/mech-lang/syntax"}
-mech-server = {git= "https://gitlab.com/mech-lang/server"}
-mech-program = {git= "https://gitlab.com/mech-lang/program"}
-mech-utilities = {git= "https://gitlab.com/mech-lang/utilities"}
+mech-core = {path = "../core"}
+mech-syntax = {path = "../syntax"}
+mech-server = {path = "../server"}
+mech-program = {path = "../program"}
+mech-utilities = {path = "../utilities"}
 
 clap = "2.33.0"
 term-painter = "0.2.4"

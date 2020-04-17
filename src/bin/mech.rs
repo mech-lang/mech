@@ -297,7 +297,6 @@ fn main() -> Result<(), Box<std::error::Error>> {
     // Spin up a mech core and add the new blocks
     let mut core = Core::new(1000,1000);
     core.register_blocks(compiler.blocks);
-    core.step();
     let output_id: u64 = Hasher::hash_str("mech/output");  
 
     if !repl {
