@@ -59,7 +59,7 @@ impl Runtime {
     runtime.functions.insert("compare/less-than-equal".to_string(),Some(compare_less_than_equal));
     runtime.functions.insert("compare/equal".to_string(),Some(compare_equal));
     runtime.functions.insert("compare/not-equal".to_string(),Some(compare_not_equal));
-    runtime.functions.insert("stat/sum".to_string(),Some(stat_sum));
+    runtime.functions.insert("stats/sum".to_string(),Some(stat_sum));
     runtime.functions.insert("table/range".to_string(),Some(table_range));
     runtime.functions.insert("logic/and".to_string(),Some(logic_and));
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
@@ -108,7 +108,6 @@ impl Runtime {
     }
     // Register all errors on the block with the runtime
     self.errors.append(&mut block.errors.clone());
-
     // Mark the block as ready for execution on the next available cycle
     if block.updated && block.input_registers.len() == 0 && block.errors.len() == 0 {
       self.ready_blocks.insert(block.id);
