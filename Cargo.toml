@@ -10,10 +10,14 @@ keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
+[badges]
+gitlab = { repository = "mech-lang/math", branch = "master" }
+maintenance = { status = "actively-developed" }
+
 [lib]
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = "0.0.4"
-mech-utilities = "0.0.4"
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 libm = "0.1.2"
