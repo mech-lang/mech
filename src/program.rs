@@ -95,9 +95,26 @@ impl Program {
   }
 
   pub fn download_dependencies(&mut self) -> Result<(),Box<std::error::Error>> {
-    let mut registry: HashMap<&str, (&str, &str)> = HashMap::new();
-    registry.insert("math", ("0.0.1", "https://github.com/mech-lang/math/"));
-    registry.insert("stats", ("0.0.1", "https://github.com/mech-lang/stats/"));
+
+    // Download repository index
+    let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
+    let mut response = reqwest::get(registry_url)?.text()?;
+    let mut registry_compiler = Compiler::new();
+    registry_compiler.compile_string(response);
+    let mut registry_core = Core::new(1,1);
+    registry_core.register_blocks(registry_compiler.blocks);
+    registry_core.step();
+
+    // Convert the machine listing into a hash map
+    let mut registry: HashMap<String, (String, String)> = HashMap::new();
+    let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap();
+    for row in 0..registry_table.rows {
+      let row_index = Index::Index(row+1);
+      let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
+      let version = registry_table.index(&row_index, &Index::Index(2)).unwrap().as_string().unwrap();
+      let url = registry_table.index(&row_index, &Index::Index(3)).unwrap().as_string().unwrap();
+      registry.insert(name, (version, url));
+    }
 
     fn download_machine(name: &str, path_str: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
       create_dir("machines");
@@ -112,7 +129,7 @@ impl Program {
         // Download from teh web
         if path.to_str().unwrap().starts_with("https") {
           println!("{} {} v{}", "[Downloading]", name, ver);
-          let machine_url = format!("{}/releases/download/v{}/{}", path_str, ver, machine_name);
+          let machine_url = format!("{}/{}", path_str, machine_name);
           let mut response = reqwest::get(machine_url.as_str())?;
           let mut dest = File::create(machine_file_path.clone())?;
           copy(&mut response, &mut dest)?;
