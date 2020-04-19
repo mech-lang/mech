@@ -2,3 +2,5 @@ Cargo.lock
 target
 *.mdb
 misms
+*.dll
+*.so
