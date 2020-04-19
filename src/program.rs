@@ -27,6 +27,35 @@ use std::io::copy;
 
 use time;
 
+fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
+  create_dir("machines");
+
+  let machine_file_path = format!("machines/{}",machine_name);
+  {
+    let path = Path::new(path_str);
+    // Download from teh web
+    if path.to_str().unwrap().starts_with("https") {
+      println!("{} {} v{}", "[Downloading]", name, ver);
+      let machine_url = format!("{}/{}", path_str, machine_name);
+      let mut response = reqwest::get(machine_url.as_str())?;
+      let mut dest = File::create(machine_file_path.clone())?;
+      copy(&mut response, &mut dest)?;
+    // Load from a local directory
+    } else {
+      println!("{} {} v{}", "[Loading]", name, ver);
+      let machine_path = format!("{}{}", path_str, machine_name);
+      println!("{:?}", machine_path);
+      let path = Path::new(&machine_path);
+      let mut dest = File::create(machine_file_path.clone())?;
+      let mut f = File::open(path)?;
+      copy(&mut f, &mut dest)?;
+    }
+  }
+  let machine_file_path = format!("machines/{}",machine_name);
+  let machine = Library::new(machine_file_path).expect("Can't load library");
+  Ok(machine)
+}
+
 // ## Program
 
 pub struct Program {
@@ -116,47 +145,18 @@ impl Program {
       registry.insert(name, (version, url));
     }
 
-    fn download_machine(name: &str, path_str: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
-      create_dir("machines");
-    
-      #[cfg(unix)]
-      let machine_name = format!("libmech_{}.so", name);
-      #[cfg(windows)]
-      let machine_name = format!("mech_{}.dll", name);
-      let machine_file_path = format!("machines/{}",machine_name);
-      {
-        let path = Path::new(path_str);
-        // Download from teh web
-        if path.to_str().unwrap().starts_with("https") {
-          println!("{} {} v{}", "[Downloading]", name, ver);
-          let machine_url = format!("{}/{}", path_str, machine_name);
-          let mut response = reqwest::get(machine_url.as_str())?;
-          let mut dest = File::create(machine_file_path.clone())?;
-          copy(&mut response, &mut dest)?;
-        // Load from a local directory
-        } else {
-          println!("{} {} v{}", "[Loading]", name, ver);
-          let machine_path = format!("{}{}", path_str, machine_name);
-          println!("{:?}", machine_path);
-          let path = Path::new(&machine_path);
-          let mut dest = File::create(machine_file_path.clone())?;
-          let mut f = File::open(path)?;
-          copy(&mut f, &mut dest)?;
-        }
-      }
-      let machine_file_path = format!("machines/{}",machine_name);
-      let machine = Library::new(machine_file_path).expect("Can't load library");
-      Ok(machine)
-    }
-
     // Do it for the mech core
     for (fun_name, fun) in self.mech.runtime.functions.iter_mut() {
       let m: Vec<_> = fun_name.split('/').collect();
+      #[cfg(unix)]
+      let machine_name = format!("libmech_{}.so", m[0]);
+      #[cfg(windows)]
+      let machine_name = format!("mech_{}.dll", m[0]);
       match (&fun, registry.get(m[0])) {
         (None, Some((ver, path))) => {
 
           let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-            download_machine(m[0], path, ver).unwrap()
+            download_machine(&machine_name, m[0], path, ver).unwrap()
           });       
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
@@ -175,11 +175,15 @@ impl Program {
     for core in self.cores.values_mut() {
       for (fun_name, fun) in core.runtime.functions.iter_mut() {
         let m: Vec<_> = fun_name.split('/').collect();
+        #[cfg(unix)]
+        let machine_name = format!("libmech_{}.so", m[0]);
+        #[cfg(windows)]
+        let machine_name = format!("mech_{}.dll", m[0]);
         match (&fun, registry.get(m[0])) {
           (None, Some((ver, path))) => {
   
             let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-              download_machine(m[0], path, ver).unwrap()
+              download_machine(&machine_name, m[0], path, ver).unwrap()
             });       
             let native_rust = unsafe {
               // Replace slashes with underscores and then add a null terminator
@@ -415,6 +419,7 @@ impl ProgramRunner {
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
 
       program.download_dependencies();
+      client_outgoing.send(ClientMessage::Done);
 
       // Step cores
       program.mech.step();
