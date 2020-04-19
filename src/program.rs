@@ -154,9 +154,13 @@ impl Program {
       let machine_name = format!("mech_{}.dll", m[0]);
       match (&fun, registry.get(m[0])) {
         (None, Some((ver, path))) => {
-
           let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-            download_machine(&machine_name, m[0], path, ver).unwrap()
+            match File::open(format!("machines/{}",machine_name)) {
+              Ok(_) => {
+                Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+              }
+              _ => download_machine(&machine_name, m[0], path, ver).unwrap()
+            }
           });       
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
@@ -183,8 +187,13 @@ impl Program {
           (None, Some((ver, path))) => {
   
             let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
-              download_machine(&machine_name, m[0], path, ver).unwrap()
-            });       
+              match File::open(format!("machines/{}",machine_name)) {
+                Ok(_) => {
+                  Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+                }
+                _ => download_machine(&machine_name, m[0], path, ver).unwrap()
+              }
+            });          
             let native_rust = unsafe {
               // Replace slashes with underscores and then add a null terminator
               let mut s = format!("{}\0", fun_name.replace("/","_"));
