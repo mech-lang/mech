@@ -25,7 +25,7 @@ fn load_module_with_program() {
                      Some(&Value::from_u64(0)));
           break;
       },
-      message => assert_eq!(1,2),
+      message => (),
     }
   }
 }
