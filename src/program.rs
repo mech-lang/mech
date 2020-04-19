@@ -27,7 +27,7 @@ use std::io::copy;
 
 use time;
 
-fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str) -> Result<Library,Box<std::error::Error>> {
+fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
   create_dir("machines");
 
   let machine_file_path = format!("machines/{}",machine_name);
@@ -35,6 +35,10 @@ fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str) -
     let path = Path::new(path_str);
     // Download from teh web
     if path.to_str().unwrap().starts_with("https") {
+      match outgoing {
+        Some(sender) => {sender.send(ClientMessage::String("Hello".to_string()));}
+        None => (),
+      }
       println!("{} {} v{}", "[Downloading]", name, ver);
       let machine_url = format!("{}/{}", path_str, machine_name);
       let mut response = reqwest::get(machine_url.as_str())?;
@@ -123,7 +127,7 @@ impl Program {
     self.mech.step();
   }
 
-  pub fn download_dependencies(&mut self) -> Result<(),Box<std::error::Error>> {
+  pub fn download_dependencies(&mut self, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
 
     // Download repository index
     let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
@@ -159,7 +163,7 @@ impl Program {
               Ok(_) => {
                 Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
               }
-              _ => download_machine(&machine_name, m[0], path, ver).unwrap()
+              _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
             }
           });       
           let native_rust = unsafe {
@@ -191,7 +195,7 @@ impl Program {
                 Ok(_) => {
                   Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
                 }
-                _ => download_machine(&machine_name, m[0], path, ver).unwrap()
+                _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
               }
             });          
             let native_rust = unsafe {
@@ -237,6 +241,7 @@ pub enum ClientMessage {
 }
 
 pub struct RunLoop {
+  pub name: String,
   thread: JoinHandle<()>,
   outgoing: Sender<RunLoopMessage>,
   incoming: Receiver<ClientMessage>,
@@ -427,8 +432,7 @@ impl ProgramRunner {
 
     let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
 
-      program.download_dependencies();
-      client_outgoing.send(ClientMessage::Done);
+      program.download_dependencies(Some(client_outgoing.clone()));
 
       // Step cores
       program.mech.step();
@@ -536,7 +540,7 @@ impl ProgramRunner {
         channel.send(PersisterMessage::Stop);
       }
     }).unwrap();
-    RunLoop { thread, outgoing, incoming }
+    RunLoop { name, thread, outgoing, incoming }
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {
