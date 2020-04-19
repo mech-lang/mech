@@ -21,7 +21,6 @@ use colored::*;
 
 extern crate mech;
 use mech::{Core, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
-use mech::ClientHandler;
 use mech::QuantityMath;
 
 #[macro_use]
@@ -422,8 +421,14 @@ clear   - reset the current core
     None => None,
   };
 
-  let mech_client = ClientHandler::new("Mech REPL", None, None, None, cores);
-  let formatted_name = format!("[{}]", mech_client.client_name).bright_cyan();
+  let mut runner = ProgramRunner::new("Mech REPL", 1500000);
+  for core in cores.unwrap_or(vec![]) {
+    runner.load_core(core);
+  }
+  let mech_client = runner.run();
+  
+  //ClientHandler::new("Mech REPL", None, None, None, cores);
+  let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
   'REPL: loop {
     
     io::stdout().flush().unwrap();
@@ -451,19 +456,19 @@ clear   - reset the current core
             break 'REPL;
           },
           ReplCommand::Table(id) => {
-            mech_client.running.send(RunLoopMessage::Table(id));
+            mech_client.send(RunLoopMessage::Table(id));
           },
           ReplCommand::Clear => {
-            mech_client.running.send(RunLoopMessage::Clear);
+            mech_client.send(RunLoopMessage::Clear);
           },
           ReplCommand::PrintCore(core_id) => {
-            mech_client.running.send(RunLoopMessage::PrintCore(core_id));
+            mech_client.send(RunLoopMessage::PrintCore(core_id));
           },
           ReplCommand::PrintRuntime => {
-            mech_client.running.send(RunLoopMessage::PrintRuntime);
+            mech_client.send(RunLoopMessage::PrintRuntime);
           },
-          ReplCommand::Pause => {mech_client.running.send(RunLoopMessage::Pause);},
-          ReplCommand::Resume => {mech_client.running.send(RunLoopMessage::Resume);},
+          ReplCommand::Pause => {mech_client.send(RunLoopMessage::Pause);},
+          ReplCommand::Resume => {mech_client.send(RunLoopMessage::Resume);},
           ReplCommand::Empty => {
             println!("Empty");
           },
@@ -471,7 +476,7 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            mech_client.running.send(RunLoopMessage::Code(code));
+            mech_client.send(RunLoopMessage::Code(code));
           }
           _ => {
             println!("something else: {}", help_message);
@@ -484,7 +489,7 @@ clear   - reset the current core
     }
     
     // Get a response from the thread
-    match mech_client.running.receive() {
+    match mech_client.receive() {
       (Ok(ClientMessage::Table(table))) => {
         match table {
           Some(ref table_ref) => print_table(table_ref),
