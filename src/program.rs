@@ -3,6 +3,8 @@
 // # Prelude
 extern crate bincode;
 extern crate libloading;
+extern crate colored;
+use colored::*;
 
 use std::sync::mpsc::{Sender, Receiver, SendError};
 use std::thread::{self, JoinHandle};
@@ -33,20 +35,22 @@ fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, o
   let machine_file_path = format!("machines/{}",machine_name);
   {
     let path = Path::new(path_str);
-    // Download from teh web
+    // Download from the web
     if path.to_str().unwrap().starts_with("https") {
       match outgoing {
-        Some(sender) => {sender.send(ClientMessage::String("Hello".to_string()));}
+        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Downloading]".bright_cyan(), name, ver)));}
         None => (),
       }
-      println!("{} {} v{}", "[Downloading]", name, ver);
       let machine_url = format!("{}/{}", path_str, machine_name);
       let mut response = reqwest::get(machine_url.as_str())?;
       let mut dest = File::create(machine_file_path.clone())?;
       copy(&mut response, &mut dest)?;
     // Load from a local directory
     } else {
-      println!("{} {} v{}", "[Loading]", name, ver);
+      match outgoing {
+        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), name, ver)));}
+        None => (),
+      }
       let machine_path = format!("{}{}", path_str, machine_name);
       println!("{:?}", machine_path);
       let path = Path::new(&machine_path);
@@ -436,11 +440,12 @@ impl ProgramRunner {
 
       // Step cores
       program.mech.step();
-
       for core in program.cores.values_mut() {
         core.step();
       }
 
+      // Send the first done to the client to indicate that the program is initialized
+      client_outgoing.send(ClientMessage::Done);
       let mut paused = false;
       'runloop: loop {
         match (program.incoming.recv(), paused) {
@@ -480,7 +485,6 @@ impl ProgramRunner {
                 _ => (),
               }
             }
-            client_outgoing.send(ClientMessage::Done);
           },
           (Ok(RunLoopMessage::Stop), _) => { 
             client_outgoing.send(ClientMessage::Stop);
@@ -516,7 +520,6 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Code(code)), _) => {
             let block_count = program.mech.runtime.blocks.len();
             program.compile_fragment(code);
-            client_outgoing.send(ClientMessage::Done);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
@@ -535,6 +538,7 @@ impl ProgramRunner {
           (Err(_), _) => break 'runloop,
           _ => (),
         }
+        client_outgoing.send(ClientMessage::Done);
       }
       if let Some(channel) = persistence_channel {
         channel.send(PersisterMessage::Stop);
