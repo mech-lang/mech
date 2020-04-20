@@ -497,6 +497,7 @@ impl Compiler {
         let mut block = Block::new();
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
+        block.id = Hasher::hash_string(block.text.clone()) as usize;
         block.name = format!("{:?},{:?},{:?}", self.program, self.section, self.block);
         self.block += 1;
         let mut constraints = Vec::new();
@@ -609,7 +610,7 @@ impl Compiler {
           let (constraint_text, _, _, step_constraints) = step;
           block.add_constraints((constraint_text, step_constraints));
         }
-        block.id = block.gen_block_id();
+        //block.id = block.gen_block_id();
         self.blocks.push(block.clone());
         Some((block.id, node))
       },
