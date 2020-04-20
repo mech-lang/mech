@@ -128,7 +128,6 @@ impl Program {
     self.programs += 1;
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
-    self.mech.step();
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
@@ -520,6 +519,8 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Code(code)), _) => {
             let block_count = program.mech.runtime.blocks.len();
             program.compile_fragment(code);
+            program.download_dependencies(Some(client_outgoing.clone()));
+            program.mech.step();
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
