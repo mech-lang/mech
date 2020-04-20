@@ -481,7 +481,8 @@ clear   - reset the current core
 
     // Handle built in commands
     let parse = if input.trim() == "" {
-      continue;
+      skip_receive = true;
+      continue 'REPL;
     } else {
       parse_repl_command(input.trim())
     };
