@@ -598,19 +598,16 @@ fn print_repeated_char(to_print: &str, n: usize) {
 pub fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   // Try parsing mech code
   let mut parser = Parser::new();
-  parser.parse_block(input);
-  if parser.unparsed == "" {
-    //println!("{:?}", parser.parse_tree);
-    Ok((input, ReplCommand::Code(input.to_string())))
-  // Try parsing it as an anonymous statement
-  } else {
-    let command = format!("#ans = {}", input.trim());
-    let mut parser = Parser::new();
-    parser.parse_block(&command);
-    if parser.unparsed == "" { 
-      Ok((input, ReplCommand::Code(input.to_string())))
-    } else {
-      Ok((input, ReplCommand::Error))
+  match parser.parse_fragment(input) {
+    Ok(_) => Ok((input, ReplCommand::Code(input.to_string()))),
+    Err(_) => {
+      // Try parsing it as an anonymous statement
+      let command = format!("#ans = {}", input.trim());
+      let mut parser = Parser::new();
+      match parser.parse_fragment(&command) { 
+        Ok(_) => Ok((input, ReplCommand::Code(command.to_string()))),
+        Err(_) => Ok((input, ReplCommand::Error)),
+      }
     }
   }
 }
