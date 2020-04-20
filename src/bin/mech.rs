@@ -20,7 +20,7 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{Core, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Core, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, Program, ErrorType, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::QuantityMath;
 
 #[macro_use]
@@ -319,6 +319,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     // Spin up a mech core and compiler
     let mut core = Core::new(1000,1000);
     let mut compiler = Compiler::new();
+    let mut program = Program::new("build",100);
     for path_str in mech_paths {
       let path = Path::new(path_str);
       // Compile a .mec file on the web
@@ -369,6 +370,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
       };
     }
     core.register_blocks(compiler.blocks);
+    program.mech = core;
+    program.errors.append(&mut program.mech.runtime.errors.clone());
+    if program.errors.len() > 0 {
+      print_errors(&program);
+      std::process::exit(1);
+    }
 
     let output_name = match matches.value_of("output_name") {
       Some(name) => format!("{}.blx",name),
@@ -378,7 +385,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for (_, block) in core.runtime.blocks.iter() {
+    for (_, block) in program.mech.runtime.blocks.iter() {
       let mut miniblock = MiniBlock::new();
       miniblock.constraints = block.constraints.clone();
       miniblocks.push(miniblock);
@@ -658,4 +665,36 @@ pub fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, command) = alt((command, mech_code))(input)?;
   Ok((input, command))
+}
+
+fn print_errors(program: &Program) {
+  if program.errors.len() > 0 {
+    let plural = if program.errors.len() == 1 {
+      ""
+    } else {
+      "s"
+    };
+    let error_notice = format!("Found {} Error{}:", &program.errors.len(), plural);
+    println!("\n{}\n", error_notice.bright_red());
+    for error in &program.errors {
+      let block = &program.mech.runtime.blocks.get(&(error.block as usize)).unwrap();
+      println!("{} {} {} {}\n ", "--".bright_yellow(), "Block".yellow(), block.name, "---------------------------------------".bright_yellow());
+      match error.error_id {
+        ErrorType::DuplicateAlias(alias_id) => {
+          let alias = &program.mech.store.names.get(&alias_id).unwrap();
+          println!(" Local table {:?} defined more than once.", alias);
+        },
+        _ => (),
+      }
+      println!("");
+      for (ix,(text, constraints)) in block.constraints.iter().enumerate() {
+        if constraints.contains(&error.constraint) {
+          println!(" {} {}", ">".bright_red(), text);
+        } else {
+          println!("   {}", text.bright_black());
+        }
+      }
+      println!("\n{}", "------------------------------------------------------\n".bright_yellow());
+    }
+  }
 }
