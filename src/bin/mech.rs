@@ -431,6 +431,42 @@ clear   - reset the current core
   let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
   'REPL: loop {
     
+    // Get all responses from the thread
+    'receive_loop: loop {
+      match mech_client.receive() {
+        (Ok(ClientMessage::Table(table))) => {
+          match table {
+            Some(ref table_ref) => print_table(table_ref),
+            None => (),
+          }
+        },
+        (Ok(ClientMessage::Pause)) => {
+          println!("{} Paused", formatted_name);
+        },
+        (Ok(ClientMessage::Resume)) => {
+          println!("{} Resumed", formatted_name);
+        },
+        (Ok(ClientMessage::Clear)) => {
+          println!("{} Cleared", formatted_name);
+        },
+        (Ok(ClientMessage::NewBlocks(count))) => {
+          println!("Compiled {} blocks.", count);
+        },
+        (Ok(ClientMessage::String(message))) => {
+          println!("{} {}", formatted_name, message);
+        },
+        (Ok(ClientMessage::Transaction(txn))) => {
+          println!("{} Transaction: {:?}", formatted_name, txn);
+        },
+        (Ok(ClientMessage::Done)) => {
+          break 'receive_loop;
+        },
+        q => {
+          println!("else: {:?}", q);
+        },
+      };
+    }
+
     io::stdout().flush().unwrap();
     // Print a prompt
     print!("{}", ">: ".bright_yellow());
@@ -487,41 +523,7 @@ clear   - reset the current core
         
       }, 
     }
-    
-    // Get a response from the thread
-    match mech_client.receive() {
-      (Ok(ClientMessage::Table(table))) => {
-        match table {
-          Some(ref table_ref) => print_table(table_ref),
-          None => (),
-        }
-      },
-      (Ok(ClientMessage::Pause)) => {
-        println!("{} Paused", formatted_name);
-      },
-      (Ok(ClientMessage::Resume)) => {
-        println!("{} Resumed", formatted_name);
-      },
-      (Ok(ClientMessage::Clear)) => {
-        println!("{} Cleared", formatted_name);
-      },
-      (Ok(ClientMessage::NewBlocks(count))) => {
-        println!("Compiled {} blocks.", count);
-      },
-      (Ok(ClientMessage::String(message))) => {
-        println!("{} {}", formatted_name, message);
-      },
-      (Ok(ClientMessage::Done)) => {
-        println!("{} Done", formatted_name);
-      }
-      (Ok(ClientMessage::Transaction(txn))) => {
-        println!("{} Transaction: {:?}", formatted_name, txn);
-      },
-      q => {
-        println!("else: {:?}", q);
-      },
-    };
-    
+   
   }
   
   Ok(())
