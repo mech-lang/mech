@@ -359,6 +359,18 @@ impl Parser {
       _ => (), 
     }
   }
+
+  pub fn parse_fragment(&mut self, text: &str) -> Result<(),()> {
+    let parse_tree = parse_fragment(text);
+    match parse_tree {
+      Ok((rest, tree)) => {
+        self.unparsed = rest.to_string();
+        self.parse_tree = tree;
+        Ok(())
+      },
+      Err(x) => Err(()), 
+    }
+  }
 }
 
 impl fmt::Debug for Parser {
@@ -1141,7 +1153,7 @@ pub fn program(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn parse_mech(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, program) = alt((fragment, program))(input)?;
+  let (input, program) = alt((program, fragment))(input)?;
   Ok((input, Node::Root { children:  vec![program] }))
 }
 
@@ -1156,4 +1168,9 @@ pub fn parse_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, constraints) = many1(raw_constraint)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children:  constraints }))
+}
+
+pub fn parse_fragment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, statement) = statement(input)?;
+  Ok((input, Node::Fragment { children:  vec![statement] }))
 }

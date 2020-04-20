@@ -348,6 +348,16 @@ impl Compiler {
     ast[0].clone()
   }
 
+  pub fn compile_fragment_string(&mut self, input: String) -> Node {
+    self.text = input.clone();
+    let mut parser = Parser::new();
+    parser.parse_fragment(&input);
+    self.unparsed = parser.unparsed;
+    self.parse_tree = parser.parse_tree.clone();
+    let ast = self.build_syntax_tree(parser.parse_tree);
+    ast[0].clone()
+  }
+
   pub fn compile(&mut self, input: Node) -> Vec<Program> {
     let mut programs = Vec::new();
     match input {
