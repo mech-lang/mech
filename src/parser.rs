@@ -67,6 +67,7 @@ pub enum Node {
   AnonymousTable{ children: Vec<Node> },
   TableRow{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
+  FunctionBinding{ children: Vec<Node> },
   Attribute{ children: Vec<Node> },
   TableHeader{ children: Vec<Node> },
   InlineTable{ children: Vec<Node> },
@@ -200,6 +201,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
+    Node::FunctionBinding{children} => {print!("FunctionBinding\n"); Some(children)},
     Node::InlineTable{children} => {print!("InlineTable\n"); Some(children)},
     Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
     Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
@@ -580,6 +582,15 @@ fn binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Binding{children: vec![binding_id, bound]}))
 }
 
+fn function_binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, binding_id) = identifier(input)?;
+  let (input, _) = tuple((colon, space0))(input)?;
+  let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
+  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  Ok((input, Node::FunctionBinding{children: vec![binding_id, bound]}))
+}
+
+
 fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, item) = alt((empty, data, expression, quantity))(input)?;
@@ -739,7 +750,7 @@ fn negation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn function(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, identifier) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, mut bindings) = many1(binding)(input)?;
+  let (input, mut bindings) = many1(function_binding)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let mut function = vec![identifier];
   function.append(&mut bindings);

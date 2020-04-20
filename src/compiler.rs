@@ -38,6 +38,7 @@ pub enum Node {
   SplitData{ children: Vec<Node> },
   Column{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
+  FunctionBinding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
   Define { name: String, id: u64},
   DotIndex { children: Vec<Node>},
@@ -107,6 +108,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
+    Node::FunctionBinding{children} => {print!("FunctionBinding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
     Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
     Node::InlineTable{children} => {print!("InlineTable\n"); Some(children)},
@@ -502,13 +504,13 @@ impl Compiler {
         let mut unsatisfied_constraints: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
+        // ----------------------------------------------------------------------------------------------------------
+        // Planner
+        // ----------------------------------------------------------------------------------------------------------
+        // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
         for constraint_node in children {
           let constraint_text = formatter.format(&constraint_node, false);
           let mut result = self.compile_constraint(&constraint_node);
-          // ----------------------------------------------------------------------------------------------------------
-          // Planner
-          // ----------------------------------------------------------------------------------------------------------
-          // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
@@ -848,6 +850,23 @@ impl Compiler {
         let mut result = self.compile_constraints(children);
         constraints.append(&mut result);
       }
+      Node::FunctionBinding{children} => {
+        for child in children {
+          let mut c = self.compile_constraint(child);
+          if c.len() > 4 {
+            match c[1] {
+              Constraint::Reference{..} => {
+                c.remove(3);
+                c.remove(2);
+                c.remove(1);
+                c.remove(0);
+              }
+              _ => (),
+            }
+          }
+          constraints.append(&mut c);
+        }
+      }
       Node::AnonymousTableDefine{children} => {
         let store_table = self.table;
         let anon_table_rows = 0;
@@ -931,6 +950,7 @@ impl Compiler {
         constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});                
         let mut output: Vec<TableId> = vec![TableId::Local(self.table)];
         let mut parameters: Vec<Vec<Constraint>> = vec![];
+        
         for child in children {
           self.column += 1;
           let mut c = self.compile_constraint(child);
@@ -948,7 +968,7 @@ impl Compiler {
               c.remove(0);
             }
             _ => (),
-          };
+          }
 
           parameters.push(c);
         }
@@ -1279,6 +1299,17 @@ impl Compiler {
           }
         }
         compiled.push(Node::Binding{children});
+      },
+      parser::Node::FunctionBinding{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (), 
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::FunctionBinding{children});
       },
       parser::Node::Constraint{children} => {
         let result = self.compile_nodes(children);

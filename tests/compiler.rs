@@ -749,6 +749,10 @@ block
   y = x > 5
   #test = set/any(column: y)"#, Value::Bool(false));
 
+test_mech!(function_inline_args,r#"
+block
+  #test = stats/sum(row: [1 2 3 4])"#, Value::from_u64(10));
+
 // ## Errors
 
 test_mech!(error_duplicate_alias, r#"
