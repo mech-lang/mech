@@ -112,7 +112,7 @@ impl Program {
     let mech_code = Hasher::hash_str("mech/code");
     self.programs += 1;
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
-    self.outgoing.send(RunLoopMessage::Transaction(txn));
+    //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
   pub fn compile_fragment(&mut self, input: String) {
@@ -127,7 +127,7 @@ impl Program {
     let mech_code = Hasher::hash_str("mech/code");
     self.programs += 1;
     let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
-    self.outgoing.send(RunLoopMessage::Transaction(txn));
+    //self.outgoing.send(RunLoopMessage::Transaction(txn));
     self.mech.step();
   }
 
@@ -535,8 +535,10 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
-          (Err(_), _) => break 'runloop,
-          _ => (),
+          (Err(_), _) => {
+            break 'runloop
+          },
+          x => println!("{:?}", x),
         }
         client_outgoing.send(ClientMessage::Done);
       }
