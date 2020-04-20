@@ -291,14 +291,14 @@ fn main() -> Result<(), Box<std::error::Error>> {
       }
     }
 
-    println!("{}", "[Running]".bright_green());
-
     // Spin up a mech core and add the new blocks
     let mut core = Core::new(1000,1000);
     core.register_blocks(compiler.blocks);
     let output_id: u64 = Hasher::hash_str("mech/output");  
 
     if !repl {
+      println!("{}", "[Running]".bright_green());
+      core.step();
       match core.store.get_table(output_id) {
         Some(output_table) => {
           for i in 0..output_table.rows as usize {
@@ -426,46 +426,50 @@ clear   - reset the current core
     runner.load_core(core);
   }
   let mech_client = runner.run();
+  let mut skip_receive = false;
   
   //ClientHandler::new("Mech REPL", None, None, None, cores);
   let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
   'REPL: loop {
     
     // Get all responses from the thread
-    'receive_loop: loop {
-      match mech_client.receive() {
-        (Ok(ClientMessage::Table(table))) => {
-          match table {
-            Some(ref table_ref) => print_table(table_ref),
-            None => (),
-          }
-        },
-        (Ok(ClientMessage::Pause)) => {
-          println!("{} Paused", formatted_name);
-        },
-        (Ok(ClientMessage::Resume)) => {
-          println!("{} Resumed", formatted_name);
-        },
-        (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", formatted_name);
-        },
-        (Ok(ClientMessage::NewBlocks(count))) => {
-          println!("Compiled {} blocks.", count);
-        },
-        (Ok(ClientMessage::String(message))) => {
-          println!("{} {}", formatted_name, message);
-        },
-        (Ok(ClientMessage::Transaction(txn))) => {
-          println!("{} Transaction: {:?}", formatted_name, txn);
-        },
-        (Ok(ClientMessage::Done)) => {
-          break 'receive_loop;
-        },
-        q => {
-          println!("else: {:?}", q);
-        },
-      };
+    if !skip_receive {
+      'receive_loop: loop {
+        match mech_client.receive() {
+          (Ok(ClientMessage::Table(table))) => {
+            match table {
+              Some(ref table_ref) => print_table(table_ref),
+              None => (),
+            }
+          },
+          (Ok(ClientMessage::Pause)) => {
+            println!("{} Paused", formatted_name);
+          },
+          (Ok(ClientMessage::Resume)) => {
+            println!("{} Resumed", formatted_name);
+          },
+          (Ok(ClientMessage::Clear)) => {
+            println!("{} Cleared", formatted_name);
+          },
+          (Ok(ClientMessage::NewBlocks(count))) => {
+            println!("Compiled {} blocks.", count);
+          },
+          (Ok(ClientMessage::String(message))) => {
+            println!("{} {}", formatted_name, message);
+          },
+          (Ok(ClientMessage::Transaction(txn))) => {
+            println!("{} Transaction: {:?}", formatted_name, txn);
+          },
+          (Ok(ClientMessage::Done)) => {
+            break 'receive_loop;
+          },
+          q => {
+            println!("else: {:?}", q);
+          },
+        };
+      }
     }
+    skip_receive = false;
 
     io::stdout().flush().unwrap();
     // Print a prompt
@@ -487,6 +491,7 @@ clear   - reset the current core
         match command {
           ReplCommand::Help => {
             println!("{}",help_message);
+            skip_receive = true;
           },
           ReplCommand::Quit => {
             break 'REPL;
