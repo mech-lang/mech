@@ -725,10 +725,26 @@ block
 
 // ## Functions
 
-test_mech!(function_stat_sum,r#"
+test_mech!(function_stats_sum,r#"
 block
   x = [1;2;3;4;5]
   #test = stats/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
+
+test_mech!(function_stats_sum_row,r#"
+block
+  x = [1 2 3 4 5]
+  #test = stats/sum(row: x)"#, Value::Number(make_quantity(15,0,0)));
+
+test_mech!(function_stats_sum_row_col,r#"
+block
+  x = [1;2;3;4;5]
+  y = stats/sum(row: x)
+  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::Number(make_quantity(15,0,0)));
+
+test_mech!(function_stats_sum_table,r#"
+block
+  x = [1 2 3; 4 5 6]
+  #test = stats/sum(table: x)"#, Value::Number(make_quantity(21,0,0)));
 
 test_mech!(function_add_functions,r#"
 block
@@ -753,6 +769,10 @@ test_mech!(function_inline_args,r#"
 block
   #test = stats/sum(row: [1 2 3 4])"#, Value::from_u64(10));
 
+test_mech!(function_inline_colum_args,r#"
+block
+  #test = stats/sum(column: [1; 2; 3; 4])"#, Value::from_u64(10));
+  
 // ## Errors
 
 test_mech!(error_duplicate_alias, r#"
