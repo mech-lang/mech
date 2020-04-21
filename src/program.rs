@@ -73,6 +73,7 @@ pub struct Program {
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub machines: HashMap<String, Library>,
   pub watchers: HashMap<u64, Box<Watcher + Send>>,
+  pub machine_registry: HashMap<String, (String, String)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
@@ -92,6 +93,7 @@ impl Program {
       name: name.to_owned(), 
       watchers: HashMap::new(),
       capacity,
+      machine_registry: HashMap::new(), 
       mech,
       cores: HashMap::new(),
       machines: HashMap::new(),
@@ -132,24 +134,25 @@ impl Program {
 
   pub fn download_dependencies(&mut self, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
 
-    // Download repository index
-    let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
-    let mut response = reqwest::get(registry_url)?.text()?;
-    let mut registry_compiler = Compiler::new();
-    registry_compiler.compile_string(response);
-    let mut registry_core = Core::new(1,1);
-    registry_core.register_blocks(registry_compiler.blocks);
-    registry_core.step();
+    if self.machine_registry.len() == 0 {
+      // Download repository index
+      let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
+      let mut response = reqwest::get(registry_url)?.text()?;
+      let mut registry_compiler = Compiler::new();
+      registry_compiler.compile_string(response);
+      let mut registry_core = Core::new(1,1);
+      registry_core.register_blocks(registry_compiler.blocks);
+      registry_core.step();
 
-    // Convert the machine listing into a hash map
-    let mut registry: HashMap<String, (String, String)> = HashMap::new();
-    let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap();
-    for row in 0..registry_table.rows {
-      let row_index = Index::Index(row+1);
-      let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
-      let version = registry_table.index(&row_index, &Index::Index(2)).unwrap().as_string().unwrap();
-      let url = registry_table.index(&row_index, &Index::Index(3)).unwrap().as_string().unwrap();
-      registry.insert(name, (version, url));
+      // Convert the machine listing into a hash map
+      let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap();
+      for row in 0..registry_table.rows {
+        let row_index = Index::Index(row+1);
+        let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
+        let version = registry_table.index(&row_index, &Index::Index(2)).unwrap().as_string().unwrap();
+        let url = registry_table.index(&row_index, &Index::Index(3)).unwrap().as_string().unwrap();
+        self.machine_registry.insert(name, (version, url));
+      }
     }
 
     // Do it for the mech core
@@ -159,7 +162,7 @@ impl Program {
       let machine_name = format!("libmech_{}.so", m[0]);
       #[cfg(windows)]
       let machine_name = format!("mech_{}.dll", m[0]);
-      match (&fun, registry.get(m[0])) {
+      match (&fun, self.machine_registry.get(m[0])) {
         (None, Some((ver, path))) => {
           let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
@@ -190,7 +193,7 @@ impl Program {
         let machine_name = format!("libmech_{}.so", m[0]);
         #[cfg(windows)]
         let machine_name = format!("mech_{}.dll", m[0]);
-        match (&fun, registry.get(m[0])) {
+        match (&fun, self.machine_registry.get(m[0])) {
           (None, Some((ver, path))) => {
   
             let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
