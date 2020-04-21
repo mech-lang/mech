@@ -63,6 +63,7 @@ pub enum ReplCommand {
   Clear,
   Table(u64),
   Code(String),
+  EchoCode(String),
   ParsedCode(ParserNode),
   Empty,
   Error,
@@ -464,6 +465,15 @@ clear   - reset the current core
           (Ok(ClientMessage::String(message))) => {
             println!("{} {}", formatted_name, message);
           },
+          (Ok(ClientMessage::Table(table))) => {
+            match table {
+              Some(table) => {
+                println!("{} ", formatted_name);
+                print_table(&table);
+              }
+              None => println!("{} Table not found", formatted_name),
+            }
+          },
           (Ok(ClientMessage::Transaction(txn))) => {
             println!("{} Transaction: {:?}", formatted_name, txn);
           },
@@ -526,7 +536,10 @@ clear   - reset the current core
           },
           ReplCommand::Code(code) => {
             mech_client.send(RunLoopMessage::Code(code));
-          }
+          },
+          ReplCommand::EchoCode(code) => {
+            mech_client.send(RunLoopMessage::EchoCode(code));
+          },
           _ => {
             println!("something else: {}", help_message);
           }
@@ -605,7 +618,7 @@ pub fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> 
       let command = format!("#ans = {}", input.trim());
       let mut parser = Parser::new();
       match parser.parse_fragment(&command) { 
-        Ok(_) => Ok((input, ReplCommand::Code(command.to_string()))),
+        Ok(_) => Ok((input, ReplCommand::EchoCode(command.to_string()))),
         Err(_) => Ok((input, ReplCommand::Error)),
       }
     }
