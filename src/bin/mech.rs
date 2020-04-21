@@ -86,8 +86,8 @@ impl MiniBlock {
 
 
 // ## Mech Entry
-
-fn main() -> Result<(), Box<std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
   control::set_virtual_terminal(true).unwrap();
   let version = "0.0.4";
   let matches = App::new("Mech")
@@ -234,7 +234,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
       let path = Path::new(path_str);
       if path.to_str().unwrap().starts_with("https") {
         println!("{} {}", "[Building]".bright_green(), path.display());
-        let mech_source = reqwest::get(path.to_str().unwrap())?.text()?;
+        let mech_source = reqwest::get(path.to_str().unwrap()).await?.text().await?;
         compiler.compile_string(mech_source);    
       } else {
         if path.is_dir() {
@@ -326,7 +326,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
       // Compile a .mec file on the web
       if path.to_str().unwrap().starts_with("https") {
         println!("{} {}", "[Building]".bright_green(), path.display());
-        let program = reqwest::get(path.to_str().unwrap())?.text()?;
+        let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
         compiler.compile_string(program);
       } else {
         // Compile a directory of mech files
@@ -555,7 +555,7 @@ clear   - reset the current core
   Ok(())
 }
 
-fn print_table(table: &Table) {
+pub fn print_table(table: &Table) {
   // Get the length of each column
   let mut column_widths = vec![0; table.columns as usize];
   for column in 0..table.columns as usize {
