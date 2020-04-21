@@ -33,6 +33,7 @@ pub enum RunLoopMessage {
   Table(u64),
   Transaction(Transaction),
   Code(String),
+  EchoCode(String),
   Core(Core),
 }
 
