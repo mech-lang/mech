@@ -521,6 +521,14 @@ impl ProgramRunner {
             program.compile_fragment(code);
             program.download_dependencies(Some(client_outgoing.clone()));
             program.mech.step();
+          }
+          (Ok(RunLoopMessage::EchoCode(code)), _) => {
+            let block_count = program.mech.runtime.blocks.len();
+            program.compile_fragment(code);
+            program.download_dependencies(Some(client_outgoing.clone()));
+            program.mech.step();
+            let echo_table = program.mech.get_table("ans".to_string()).unwrap();
+            client_outgoing.send(ClientMessage::Table(Some(echo_table.clone())));
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
