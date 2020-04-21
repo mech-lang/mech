@@ -864,10 +864,14 @@ impl Compiler {
       Node::FunctionBinding{children} => {
         for child in children {
           let mut c = self.compile_constraint(child);
-          if c.len() > 4 {
+          // TODO again, this is a kludge. See the TODO in Node::Function
+          if c.len() > 3 {
             match c[1] {
               Constraint::Reference{..} => {
-                c.remove(3);
+                match c[3] {
+                  Constraint::AliasTable{..} => {c.remove(3);}
+                  _ => (),
+                }
                 c.remove(2);
                 c.remove(1);
                 c.remove(0);
