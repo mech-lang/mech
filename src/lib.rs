@@ -29,4 +29,4 @@ pub mod program;
 
 // ## Exported Modules
 
-pub use self::program::{ProgramRunner, RunLoop, ClientMessage};
+pub use self::program::{Program, ProgramRunner, RunLoop, ClientMessage};
