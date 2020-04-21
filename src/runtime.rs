@@ -20,7 +20,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations;
-use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stat_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
+use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stats_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use errors::{Error, ErrorType};
 
@@ -59,7 +59,7 @@ impl Runtime {
     runtime.functions.insert("compare/less-than-equal".to_string(),Some(compare_less_than_equal));
     runtime.functions.insert("compare/equal".to_string(),Some(compare_equal));
     runtime.functions.insert("compare/not-equal".to_string(),Some(compare_not_equal));
-    runtime.functions.insert("stats/sum".to_string(),Some(stat_sum));
+    runtime.functions.insert("stats/sum".to_string(),Some(stats_sum));
     runtime.functions.insert("table/range".to_string(),Some(table_range));
     runtime.functions.insert("logic/and".to_string(),Some(logic_and));
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));

@@ -119,33 +119,58 @@ binary_infix!{compare_greater_than_equal, greater_than_equal}
 binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than, less_than}
 
-pub extern "C" fn stat_sum(input: Vec<(String, Table)>) -> Table {
-  let mut out = Table::new(0,1,1);
-  let (field, table_ref) = &input[0];
-  if field == "column" {
-    let mut total = 0.to_quantity();
+#[no_mangle]
+pub extern "C" fn stats_sum(input: Vec<(String, Table)>) -> Table {
+  let (argument, table_ref) = &input[0];
+  let out = if argument == "row" {
+    let mut out = Table::new(0,table_ref.rows,1);
     for i in 0..table_ref.rows as usize {
-      match table_ref.data[0][i] {
-        Value::Number(x) => {
-          total = total.add(x).unwrap();
+      let mut total = 0.to_quantity();
+      for j in 0..table_ref.columns as usize {
+        match table_ref.data[j][i] {
+          Value::Number(x) => {
+            total = total.add(x).unwrap();
+          }
+          _ => (),
         }
-        _ => (),
       }
+      out.data[0][i] = Value::Number(total);
     }
-    out.data[0][0] = Value::Number(total);
-  } else if field == "row" {
+    out
+  } else if argument == "column" {
+    let mut out = Table::new(0,1,table_ref.columns);
+    for i in 0..table_ref.columns as usize {
+      let mut total = 0.to_quantity();
+      for j in 0..table_ref.rows as usize {
+        match table_ref.data[i][j] {
+          Value::Number(x) => {
+            total = total.add(x).unwrap();
+          }
+          _ => (),
+        }
+      }
+      out.data[i][0] = Value::Number(total);
+    }
+    out
+  } else if argument == "table" {
+    let mut out = Table::new(0,1,1);
     let mut total = 0.to_quantity();
     for i in 0..table_ref.columns as usize {
-      match table_ref.data[i][0] {
-        Value::Number(x) => {
-          total = total.add(x).unwrap();
+      for j in 0..table_ref.rows as usize {
+        match table_ref.data[i][j] {
+          Value::Number(x) => {
+            total = total.add(x).unwrap();
+          }
+          _ => (),
         }
-        _ => (),
       }
+      out.data[0][0] = Value::Number(total);
     }
-    out.data[0][0] = Value::Number(total);    
-  }
-  out
+    out
+  } else {
+    Table::new(0,1, 1)
+  };
+  out 
 }
 
 pub extern "C" fn table_range(input: Vec<(String, Table)>) -> Table {
