@@ -88,7 +88,7 @@ impl MiniBlock {
 // ## Mech Entry
 
 fn main() -> Result<(), Box<std::error::Error>> {
-
+  control::set_virtual_terminal(true).unwrap();
   let version = "0.0.4";
   let matches = App::new("Mech")
     .version(version)
