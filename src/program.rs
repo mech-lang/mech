@@ -6,9 +6,7 @@ extern crate libloading;
 extern crate colored;
 use colored::*;
 
-use std::sync::mpsc::{Sender, Receiver, SendError};
 use std::thread::{self, JoinHandle};
-use std::sync::mpsc;
 use std::collections::{HashMap, HashSet, Bound, BTreeMap};
 use std::collections::hash_map::Entry;
 use std::mem;
@@ -23,13 +21,15 @@ use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
 use mech_utilities::{RunLoopMessage, Watcher};
+use crossbeam_channel::Sender;
+use crossbeam_channel::Receiver;
 
 use libloading::Library;
 use std::io::copy;
 
 use time;
 
-fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
+fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
   create_dir("machines");
 
   let machine_file_path = format!("machines/{}",machine_name);
@@ -84,7 +84,7 @@ pub struct Program {
 
 impl Program {
   pub fn new(name:&str, capacity: usize) -> Program {
-    let (outgoing, incoming) = mpsc::channel();
+    let (outgoing, incoming) = crossbeam_channel::unbounded();
     let mut mech = Core::new(capacity, 100);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
@@ -132,7 +132,7 @@ impl Program {
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
-  pub fn download_dependencies(&mut self, outgoing: Option<std::sync::mpsc::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
+  pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
 
     if self.machine_registry.len() == 0 {
       // Download repository index
@@ -249,8 +249,8 @@ pub enum ClientMessage {
 pub struct RunLoop {
   pub name: String,
   thread: JoinHandle<()>,
-  outgoing: Sender<RunLoopMessage>,
-  incoming: Receiver<ClientMessage>,
+  pub outgoing: Sender<RunLoopMessage>,
+  pub incoming: Receiver<ClientMessage>,
 }
 
 impl RunLoop {
@@ -301,7 +301,7 @@ pub struct Persister {
 
 impl Persister {
   pub fn new(path_ref:&str) -> Persister {
-    let (outgoing, incoming) = mpsc::channel();
+    let (outgoing, incoming) = crossbeam_channel::unbounded();
     let path = path_ref.to_string();
     let thread = thread::spawn(move || {
       let file = OpenOptions::new().append(true).create(true).open(&path).unwrap();
@@ -432,7 +432,7 @@ impl ProgramRunner {
   pub fn run(self) -> RunLoop {
     let name = self.name;
     let outgoing = self.program.outgoing.clone();
-    let (client_outgoing, incoming) = mpsc::channel();
+    let (client_outgoing, incoming) = crossbeam_channel::unbounded();
     let mut program = self.program;
     let persistence_channel = self.persistence_channel;
 
