@@ -51,6 +51,11 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate serde;
 
+#[macro_use]
+extern crate actix_web;
+extern crate actix_rt;
+use actix_web::{get, web, App as ActixApp, HttpServer, Responder};
+
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
   Help,
@@ -84,9 +89,8 @@ impl MiniBlock {
 
 }
 
-
 // ## Mech Entry
-#[tokio::main]
+#[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   control::set_virtual_terminal(true).unwrap();
   let version = "0.0.4";
@@ -163,8 +167,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-    mech_server::http_server(http_address);
-    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);
+    /*mech_server::http_server(http_address);
+    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);*/
+
+    use actix_web::{get, web, App as ActixApp, HttpServer, Responder};
+
+    #[get("/{id}/{name}/index.html")]
+    async fn index(info: web::Path<(u32, String)>) -> impl Responder {
+      println!("Serving");
+      format!("Hello {}! id:{}", info.1, info.0)
+    }
+    println!("Awaiting connection");
+    HttpServer::new(|| ActixApp::new().service(index))
+        .bind(http_address)?
+        .run()
+        .await?;
+
+
     None
   // The testing framework
   } else if let Some(matches) = matches.subcommand_matches("test") {
