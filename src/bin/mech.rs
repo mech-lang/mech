@@ -92,6 +92,7 @@ impl MiniBlock {
 // ## Mech Entry
 #[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+  #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
   let version = "0.0.4";
   let matches = App::new("Mech")
