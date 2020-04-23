@@ -8,6 +8,8 @@ use core::fmt;
 use table::{Value, Table, Index};
 use indexes::TableIndex;
 use hashbrown::hash_map::{HashMap, Entry};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // ## Changes
 
@@ -171,10 +173,10 @@ impl Interner {
       Change::Set{table, row, column, value} => {
         let mut changed = false;
         let mut alias: Option<u64> = None;
-        match self.tables.get_mut(*table) {
+        match self.tables.get(*table) {
           Some(table_ref) => {
-            alias = table_ref.get_column_alias(column);
-            let old_value = table_ref.set_cell(&row, &column, value.clone());
+            alias = table_ref.borrow().get_column_alias(column);
+            let old_value = table_ref.borrow_mut().set_cell(&row, &column, value.clone());
             if old_value != *value {
               changed = true;
             }
@@ -223,9 +225,9 @@ impl Interner {
         self.tables.remove(&id);
       }
       Change::RenameColumn{table, column_ix, column_alias} => { 
-        match self.tables.get_mut(*table) {
+        match self.tables.get(*table) {
           Some(table_ref) => {
-            table_ref.set_column_alias(*column_alias, *column_ix);
+            table_ref.borrow_mut().set_column_alias(*column_alias, *column_ix);
           }
           None => (),
         };
@@ -254,18 +256,14 @@ impl Interner {
     self.changes_count += 1;
   }
 
-  pub fn get_table(&self, table: u64) -> Option<&Table> {
+  pub fn get_table(&self, table: u64) -> Option<&Rc<RefCell<Table>>> {
     self.tables.get(table)
-  }
-
-  pub fn get_table_mut(&mut self, table: u64) -> Option<&mut Table> {
-    self.tables.get_mut(table)
   }
 
   pub fn get_column(&self, table: u64, column: Index) -> Option<&Vec<Value>> {
     match self.tables.get(table) {
       Some(stored_table) => {
-        match stored_table.get_column(&column) {
+        match unsafe{(*stored_table.as_ptr()).get_column(&column)} {
           Some(column) => Some(column),
           None => None,
         }

@@ -11,6 +11,9 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use errors::ErrorType;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 // ## Hasher
 
 // Hashes strings by breaking them into chunks and adding their byte 
@@ -90,7 +93,7 @@ impl Hasher {
 
 #[derive(Clone, PartialEq)]
 pub struct TableIndex {
-  pub map: HashMap<u64, Table>,
+  pub map: HashMap<u64, Rc::<RefCell<Table>>>,
   pub aliases: HashMap<u64, u64>,
   pub changed_this_round: HashSet<(u64, Index)>,
 }
@@ -127,7 +130,7 @@ impl TableIndex {
     }
   }
 
-  pub fn get(&self, table_id: u64) -> Option<&Table> {
+  pub fn get(&self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
     match self.map.get(&table_id) {
       Some(table) => Some(table),
       None => {
@@ -139,21 +142,9 @@ impl TableIndex {
     }
   }
 
-  pub fn get_mut(&mut self, table_id: u64) -> Option<&mut Table> {
-    match self.aliases.get(&table_id) {
-      Some(id) => self.map.get_mut(&id),
-      None => {
-        match self.map.get_mut(&table_id) {
-          Some(table) => Some(table),
-          None => None,
-        }
-      },
-    }
-  }
-
   pub fn insert(&mut self, table: Table) {
     if !self.map.contains_key(&table.id) {
-      self.map.insert(table.id, table);
+      self.map.insert(table.id, Rc::new(RefCell::new(table)));
     }
   }
 

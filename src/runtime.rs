@@ -23,6 +23,8 @@ use operations;
 use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stats_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use errors::{Error, ErrorType};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // ## Runtime
 
@@ -155,7 +157,9 @@ impl Runtime {
       }).collect::<Vec<usize>>();
       ready_blocks.sort();
       for block_id in ready_blocks {
+        println!("Get block");
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
+        println!("Got block: {:?}", block);
         block.solve(store, &self.functions);
         // Register any new inputs
         for register in block.input_registers.iter() {
@@ -173,7 +177,9 @@ impl Runtime {
         match self.pipes_map.get(&register) {
           Some(register_addresses) => {
             for register_address in register_addresses.iter() {
+              println!("Get block2");
               let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
+              println!("Get block2");
               block.ready.insert(register_address.register.clone());
               if block.is_ready() {
                 self.ready_blocks.insert(register_address.block);
@@ -317,7 +323,7 @@ impl Block {
     }
   }
 
-  pub fn get_table(&self, table_id: u64) -> Option<&Table> {
+  pub fn get_table(&self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
     self.memory.get(table_id)
   } 
 
@@ -446,7 +452,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::Empty);
+              table_ref.borrow_mut().set_cell(&row, &column, Value::Empty);
             },
             Entry::Vacant(v) => {    
             },
@@ -471,8 +477,8 @@ impl Block {
           };
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
-              let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_quantity(test));
+              let table_ref = o.get();
+              table_ref.borrow_mut().set_cell(&row, &column, Value::from_quantity(test));
             },
             Entry::Vacant(v) => {    
             },
@@ -482,8 +488,8 @@ impl Block {
         Constraint::Reference{table, destination} => {
           match self.memory.map.entry(*destination) {
             Entry::Occupied(mut o) => {
-              let table_ref = o.get_mut();
-              table_ref.set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(*table));
+              let table_ref = o.get();
+              table_ref.borrow_mut().set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(*table));
             },
             Entry::Vacant(v) => {    
             },
@@ -496,8 +502,8 @@ impl Block {
           };
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
-              let table_ref = o.get_mut();
-              table_ref.set_cell(&row, &column, Value::from_string(value.clone()));
+              let table_ref = o.get();
+              table_ref.borrow_mut().set_cell(&row, &column, Value::from_string(value.clone()));
             },
             Entry::Vacant(v) => {    
             },
@@ -505,9 +511,9 @@ impl Block {
           self.updated = true;
         },
         Constraint::TableColumn{table, column_ix, column_alias} => {
-          match self.memory.get_mut(*table) {
+          match self.memory.get(*table) {
             Some(table_ref) => {
-              table_ref.set_column_alias(*column_alias, *column_ix);
+              table_ref.borrow_mut().set_column_alias(*column_alias, *column_ix);
             }
             None => (), // TODO Note this as an error
           };
@@ -556,10 +562,10 @@ impl Block {
     'solve_loop: for index in indices {
       let mut table_ref = match table_id {
         TableId::Local(id) => match self.memory.get(id) {
-          Some(id) => id,
-          None => store.get_table(id).unwrap(),
+          Some(id) => id.borrow(),
+          None => store.get_table(id).unwrap().borrow(),
         },
-        TableId::Global(id) => store.get_table(id).unwrap(),
+        TableId::Global(id) => store.get_table(id).unwrap().borrow(),
       };
       let one = vec![Value::from_u64(1)];
       let (row_ixes, column_ixes) = match index {
@@ -568,8 +574,8 @@ impl Block {
         (Some(parameter), None) => {
           // Get the ixes
           let ixes: &Vec<Value> = match &parameter {
-            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+            Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
               let ix = match table_ref.get_column_index(index) {
                 Some(ix) => ix,
@@ -609,8 +615,8 @@ impl Block {
         (None, Some(parameter)) => {
           // Get the ixes
           let ixes: &Vec<Value> = match &parameter {
-            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+            Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
               let ix = match table_ref.get_column_index(index) {
                 Some(ix) => ix,
@@ -639,13 +645,13 @@ impl Block {
         // #x.y{1}
         (Some(row_parameter), Some(column_parameter)) => {
           let row_ixes: &Vec<Value> = match &row_parameter {
-            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+            Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             _ => &self.rhs_rows_empty,
           };
           let column_ixes: &Vec<Value> = match &column_parameter {
-            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+            Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
               let ix = match table_ref.get_column_index(index) {
                 Some(ix) => ix,
@@ -671,8 +677,8 @@ impl Block {
         },
         (Some(parameter), Some(Parameter::All)) => {
           let ixes: &Vec<Value> = match &parameter {
-            Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-            Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+            Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+            Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
               let ix = match table_ref.get_column_index(index) {
                 Some(ix) => ix,
@@ -800,17 +806,18 @@ impl Block {
     let mut copy_tables: HashSet<TableId> = HashSet::new();
     self.tables_modified.clear();
     'solve_loop: for step in &self.plan {
+      println!("{:?}", step);
       self.current_step = Some(step.clone());
       match step {
         Constraint::Scan{table, indices, output} => {
 
-          
+          /*
           let out_table = &output;
           let scanned;
           unsafe {
             scanned = (*block).resolve_subscript(store,table,indices);
           }
-          let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+          let out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
           out.rows = scanned.rows;
           out.columns = scanned.columns;
           out.data = scanned.data.clone();
@@ -819,7 +826,7 @@ impl Block {
           self.tables_modified.insert(out.id);
           self.scratch.clear();
           self.rhs_columns_empty.clear();
-          self.lhs_columns_empty.clear();
+          self.lhs_columns_empty.clear();*/
         },
         Constraint::ChangeScan{tables} => {
           for (table, indices) in tables {
@@ -839,7 +846,7 @@ impl Block {
               }*/
               (TableId::Local(id), _) => {
                 // test value at table
-                let table = self.memory.get(*id).unwrap();
+                let table = self.memory.get(*id).unwrap().borrow_mut();
                 if table.data[0][0] == Value::Bool(false) || self.tables_modified.get(id) == None {
                   self.block_changes.clear();
                   self.state = BlockState::Unsatisfied;
@@ -855,8 +862,8 @@ impl Block {
             let out_table = &output[0];
             let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
-              TableId::Local(id) => self.memory.get(*id).unwrap(),
-              TableId::Global(id) => store.get_table(*id).unwrap(),
+              TableId::Local(id) => self.memory.get(*id).unwrap().borrow(),
+              TableId::Global(id) => store.get_table(*id).unwrap().borrow(),
             };        
             self.scratch.grow_to_fit(table_ref.rows, 1);
             let cc = table_ref.columns;
@@ -873,10 +880,12 @@ impl Block {
               for j in 0..cc as usize {
                 new_table.data[j][0] = data[j][i].clone();
               }
-              self.memory.insert(new_table);
+              unsafe{
+                (*block).memory.insert(new_table);
+              }
               self.scratch.data[0][i] = Value::Reference(TableId::Local(id));
             }
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
@@ -898,7 +907,7 @@ impl Block {
               _ => Table::new(0,1,1),
             };
             self.scratch = result;
-            let out = self.memory.get_mut(*out_table.unwrap()).unwrap();
+            let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
             out.data = self.scratch.data.clone();
@@ -916,12 +925,12 @@ impl Block {
             TableId::Local(id) => 0,
           };
 
-          let from_table_ref;
+          let from_table_ref: Table;
           unsafe {
             from_table_ref = (*block).resolve_subscript(store,from_table,from_ixes);
           } 
 
-          let to_table_ref;
+          let to_table_ref: Table;
           unsafe {
             to_table_ref = (*block).resolve_subscript(store,to_table,&vec![(None, None)]);
           } 
@@ -947,8 +956,8 @@ impl Block {
             (Some(parameter), None) => {
               // Get the ixes
               let ixes: &Vec<Value> = match &parameter {
-                Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+                Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 Parameter::Index(index) => {
                   let ix = match to_table_ref.get_column_index(index) {
                     Some(ix) => ix,
@@ -989,13 +998,13 @@ impl Block {
             // #x.y{1}
             (Some(row_parameter), Some(column_parameter)) => {
               let row_ixes: &Vec<Value> = match &row_parameter {
-                Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+                Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 _ => &self.rhs_rows_empty,
               };
               let column_ixes: &Vec<Value> = match &column_parameter {
-                Parameter::TableId(TableId::Local(id)) => &self.memory.get(*id).unwrap().data[0],
-                Parameter::TableId(TableId::Global(id)) => &store.get_table(*id).unwrap().data[0],
+                Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
+                Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 Parameter::Index(index) => {
                   let ix = match to_table_ref.get_column_index(index) {
                     Some(ix) => ix,
@@ -1105,13 +1114,13 @@ impl Block {
         },
         Constraint::Append{from_table, to_table} => {
           let from = match from_table {
-            TableId::Local(id) => self.memory.get(*id).unwrap(),
-            TableId::Global(id) => store.get_table(*id).unwrap(),
+            TableId::Local(id) => self.memory.get(*id).unwrap().borrow(),
+            TableId::Global(id) => store.get_table(*id).unwrap().borrow(),
           };
 
           let (to, to_id) = match to_table {
-            TableId::Local(id) => (self.memory.get(*id).unwrap(), id),
-            TableId::Global(id) => (store.get_table(*id).unwrap(), id),
+            TableId::Local(id) => (self.memory.get(*id).unwrap().borrow_mut(), id),
+            TableId::Global(id) => (store.get_table(*id).unwrap().borrow_mut(), id),
           };
 
           let from_width = from.columns;
@@ -1126,7 +1135,7 @@ impl Block {
           }
         },
         Constraint::CopyTable{from_table, to_table} => {
-          let mut from_table_ref = self.memory.get(*from_table).unwrap();
+          let mut from_table_ref = self.memory.get(*from_table).unwrap().borrow();
           let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
           for (alias, ix) in from_table_ref.column_aliases.iter() {
             changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
@@ -1171,15 +1180,16 @@ impl Block {
   }
 
   fn copy_table(&mut self, from_table: TableId, to_table: TableId, store: &Interner) {
+    let block = self as *mut Block;
     let mut copy_tables: HashSet<TableId> = HashSet::new();
     let mut from_table_ref = match from_table {
       TableId::Local(id) => {
-        match self.memory.get(id) {
-          None => store.get_table(id).unwrap(),
-          Some(table) => table,
+        match unsafe{(*block).memory.get(id)} {
+          None => store.get_table(id).unwrap().borrow(),
+          Some(table) => table.borrow(),
         }
       },
-      TableId::Global(id) => store.get_table(id).unwrap(),
+      TableId::Global(id) => store.get_table(id).unwrap().borrow(),
     };
     let to_table_id = match to_table {
       TableId::Local(id) => id,

@@ -13,6 +13,8 @@ systems.
 #[cfg(feature = "no-std")] extern crate rlibc;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
+#[cfg(not(feature = "no-std"))] use std::rc::Rc;
+#[cfg(not(feature = "no-std"))] use std::sync::Arc;
 
 extern crate hashbrown;
 #[macro_use]
@@ -21,8 +23,12 @@ extern crate serde;
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::rc::RC;
+#[cfg(feature = "no-std")] use alloc::sync::ArC;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 use hashbrown::hash_set::HashSet;
+
+use std::cell::RefCell;
 
 // ## Modules
 
@@ -44,7 +50,6 @@ pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 pub use self::errors::{Error, ErrorType};
 
-
 // ## Core
 
 #[derive(Clone)]
@@ -61,6 +66,7 @@ pub struct Core {
   pub input: HashSet<Register>,
   pub output: HashSet<Register>,
   pub paused: bool,
+  pub remote_tables: Vec<Arc<Table>>,
   transaction_boundaries: Vec<usize>,
 }
 
@@ -80,6 +86,7 @@ impl Core {
       input: HashSet::new(),
       output: HashSet::new(),
       paused: false,
+      remote_tables: Vec::new(),
       transaction_boundaries: Vec::new(),
     }
   }
@@ -94,7 +101,7 @@ impl Core {
     self.transaction_boundaries.clear();
   }
 
-  pub fn get_table(&mut self, table_name: String) -> Option<&Table> {
+  pub fn get_table(&mut self, table_name: String) -> Option<&Rc<RefCell<Table>>> {
     let table_id = Hasher::hash_string(table_name);
     self.store.get_table(table_id)
   }
@@ -146,14 +153,16 @@ impl Core {
   }
 
   pub fn step(&mut self) {
+    println!("Stepping");
     self.runtime.run_network(&mut self.store, 10_000);
+    println!("Stepped");
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
   pub fn index(&mut self, table: u64, row: &Index, column: &Index) -> Option<&Value> {
     match self.store.tables.get(table) {
       Some(table_ref) => {
-        match table_ref.index(row, column) {
+        match unsafe{(*table_ref.as_ptr()).index(row, column)} {
           Some(cell_data) => Some(cell_data),
           None => None,
         }
