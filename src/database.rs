@@ -168,7 +168,7 @@ impl Interner {
     }    
   }
 
-  fn intern_change(&mut self, change: &Change) {  
+  fn intern_change(&mut self, change: &Change) { 
     match change {
       Change::Set{table, row, column, value} => {
         let mut changed = false;

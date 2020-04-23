@@ -153,9 +153,7 @@ impl Core {
   }
 
   pub fn step(&mut self) {
-    println!("Stepping");
     self.runtime.run_network(&mut self.store, 10_000);
-    println!("Stepped");
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
@@ -311,7 +309,7 @@ impl fmt::Debug for Core {
     write!(f, "│     {:?}\n", self.runtime.errors).unwrap();
     write!(f, "└────────────────────┘\n").unwrap();
     for table in self.store.tables.map.values() {
-      write!(f, "{:?}", table).unwrap();
+      write!(f, "{:?}", table.borrow()).unwrap();
     }
     Ok(())
   }

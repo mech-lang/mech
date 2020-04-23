@@ -162,7 +162,7 @@ impl fmt::Debug for TableIndex {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     for (_table_id, table) in self.map.iter() {
-      write!(f, "{:?}\n", table).unwrap();
+      write!(f, "{:?}\n", table.borrow()).unwrap();
     }
     Ok(())
   }

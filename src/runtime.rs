@@ -157,9 +157,7 @@ impl Runtime {
       }).collect::<Vec<usize>>();
       ready_blocks.sort();
       for block_id in ready_blocks {
-        println!("Get block");
         let block = &mut self.blocks.get_mut(&block_id).unwrap();
-        println!("Got block: {:?}", block);
         block.solve(store, &self.functions);
         // Register any new inputs
         for register in block.input_registers.iter() {
@@ -177,9 +175,7 @@ impl Runtime {
         match self.pipes_map.get(&register) {
           Some(register_addresses) => {
             for register_address in register_addresses.iter() {
-              println!("Get block2");
               let mut block = &mut self.blocks.get_mut(&register_address.block).unwrap();
-              println!("Get block2");
               block.ready.insert(register_address.register.clone());
               if block.is_ready() {
                 self.ready_blocks.insert(register_address.block);
@@ -806,18 +802,15 @@ impl Block {
     let mut copy_tables: HashSet<TableId> = HashSet::new();
     self.tables_modified.clear();
     'solve_loop: for step in &self.plan {
-      println!("{:?}", step);
       self.current_step = Some(step.clone());
       match step {
         Constraint::Scan{table, indices, output} => {
-
-          /*
           let out_table = &output;
           let scanned;
           unsafe {
             scanned = (*block).resolve_subscript(store,table,indices);
           }
-          let out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
+          let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
           out.rows = scanned.rows;
           out.columns = scanned.columns;
           out.data = scanned.data.clone();
@@ -826,7 +819,7 @@ impl Block {
           self.tables_modified.insert(out.id);
           self.scratch.clear();
           self.rhs_columns_empty.clear();
-          self.lhs_columns_empty.clear();*/
+          self.lhs_columns_empty.clear();
         },
         Constraint::ChangeScan{tables} => {
           for (table, indices) in tables {
