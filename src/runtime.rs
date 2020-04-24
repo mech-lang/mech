@@ -32,6 +32,7 @@ use std::cell::RefCell;
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
   pub pipes_map: HashMap<Register, HashSet<Address>>,
+  pub output: HashSet<Register>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
   pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>,
@@ -46,6 +47,7 @@ impl Runtime {
       blocks: HashMap::new(),
       ready_blocks: HashSet::new(),
       pipes_map: HashMap::new(),
+      output: HashSet::new(),
       tables_map: HashMap::new(),
       functions: HashMap::new(),
       changed_this_round: HashSet::new(),
@@ -92,11 +94,13 @@ impl Runtime {
       listeners.insert(new_address);
 
       // Set the register as ready if the referenced column exists
-      /*
-      match store.get_column_by_id(table as u64, column) {
-        Some(_column) => block.ready = set_bit(block.ready, ix),
-        None => (),
-      }*/
+      if self.output.contains(&register) && store.contains(table) {
+        block.ready.insert(register.clone());
+      }
+    }
+
+    for register in block.output_registers.iter() {
+      self.output.insert(register.clone());
     }
 
     // Record the functions used in block
@@ -110,8 +114,10 @@ impl Runtime {
     }
     // Register all errors on the block with the runtime
     self.errors.append(&mut block.errors.clone());
+
+    println!("looking at you {:?}", block.is_ready());
     // Mark the block as ready for execution on the next available cycle
-    if block.updated && block.input_registers.len() == 0 && block.errors.len() == 0 {
+    if block.is_ready() {
       self.ready_blocks.insert(block.id);
     }
     // Add the block to our list of blocks
