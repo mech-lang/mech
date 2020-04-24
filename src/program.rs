@@ -13,6 +13,7 @@ use std::mem;
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::io::{Write, BufReader, BufWriter};
 use std::sync::Arc;
+use std::rc::Rc;
 use std::path::{Path, PathBuf};
 
 use mech_core::{Core, Register, Transaction, Change, Error};
@@ -83,7 +84,7 @@ pub struct Program {
 }
 
 impl Program {
-  pub fn new(name:&str, capacity: usize) -> Program {
+  pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
     let (outgoing, incoming) = crossbeam_channel::unbounded();
     let mut mech = Core::new(capacity, 100);
     let mech_code = Hasher::hash_str("mech/code");
@@ -145,7 +146,7 @@ impl Program {
       registry_core.step();
 
       // Convert the machine listing into a hash map
-      let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap();
+      let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap().borrow();
       for row in 0..registry_table.rows {
         let row_index = Index::Index(row+1);
         let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
@@ -242,7 +243,7 @@ pub enum ClientMessage {
   Table(Option<Table>),
   Transaction(Transaction),
   String(String),
-  Block(Block),
+  //Block(Block),
   Done,
 }
 
@@ -371,15 +372,14 @@ impl Persister {
 
 pub struct ProgramRunner {
   pub name: String,
-  pub program: Program, 
-  pub persistence_channel: Option<Sender<PersisterMessage>>,
+  //pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
 impl ProgramRunner {
 
   pub fn new(name:&str, capacity: usize) -> ProgramRunner {
     // Start a new program
-    let mut program = Program::new(name, capacity);
+    //let mut program = Program::new(name, capacity);
 
     // Start a persister
     /*
@@ -396,14 +396,14 @@ impl ProgramRunner {
     
     ProgramRunner {
       name: name.to_owned(),
-      program,
+      //program,
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
-      persistence_channel: None,
+      //persistence_channel: None,
     }
   }
 
-  pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
+  /*pub fn load_program(&mut self, input: String) -> Result<(),Box<std::error::Error>> {
     self.program.compile_program(input);
     Ok(())
   }
@@ -414,8 +414,12 @@ impl ProgramRunner {
       let input = self.program.input_map.entry(input_register.clone()).or_insert(HashSet::new());
       input.insert(core.id);
     }
+
+    let table = core.get_table("#data".to_string()).unwrap();
+    self.program.mech.remote_tables.push(table.clone());
+
     self.program.cores.insert(core.id, core);
-  }
+  }*/
 
   pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
     //let name = Hasher::hash_str(&watcher.get_name());
@@ -426,17 +430,21 @@ impl ProgramRunner {
   }
 
   pub fn add_persist_channel(&mut self, persister:&mut Persister) {
-    self.persistence_channel = Some(persister.get_channel());
+    //self.persistence_channel = Some(persister.get_channel());
   }
 
   pub fn run(self) -> RunLoop {
-    let name = self.name;
-    let outgoing = self.program.outgoing.clone();
+    //let name = self.name;
+    //let outgoing = self.program.outgoing.clone();
+    let (outgoing, program_incoming) = crossbeam_channel::unbounded();
+    let runloop_outgoing = outgoing.clone();
     let (client_outgoing, incoming) = crossbeam_channel::unbounded();
-    let mut program = self.program;
-    let persistence_channel = self.persistence_channel;
+    //let mut program = self.program;
+    //let persistence_channel = self.persistence_channel;
 
-    let thread = thread::Builder::new().name(program.name.to_owned()).spawn(move || {
+    let thread = thread::Builder::new().name(self.name.to_owned()).spawn(move || {
+
+      let mut program = Program::new("new program", 100, outgoing.clone(), program_incoming);
 
       program.download_dependencies(Some(client_outgoing.clone()));
 
@@ -448,8 +456,10 @@ impl ProgramRunner {
 
       // Send the first done to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Done);
+      println!("Sent a done message");
       let mut paused = false;
       'runloop: loop {
+        println!("In the run loop");
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             //println!("{} Txn started:\n {:?}", name, txn);
@@ -493,11 +503,11 @@ impl ProgramRunner {
             break 'runloop;
           },
           (Ok(RunLoopMessage::Table(table_id)), _) => { 
-            let table_msg = match program.mech.store.get_table(table_id) {
+            /*let table_msg = match program.mech.store.get_table(table_id) {
               Some(table) => ClientMessage::Table(Some(table.clone())),
               None => ClientMessage::Table(None),
             };
-            client_outgoing.send(table_msg);
+            client_outgoing.send(table_msg);*/
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -520,18 +530,35 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
+            println!("Loading code");
             let block_count = program.mech.runtime.blocks.len();
             program.compile_fragment(code);
             program.download_dependencies(Some(client_outgoing.clone()));
             program.mech.step();
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
+            println!("ECHO CODE!! {:?}", code);
+            
             let block_count = program.mech.runtime.blocks.len();
             program.compile_fragment(code);
+
+            
             program.download_dependencies(Some(client_outgoing.clone()));
+
+            println!("{:?}", program.mech);
+            for core in &program.cores {
+              println!("{:?}", core);
+            }
+
+
             program.mech.step();
-            let echo_table = program.mech.get_table("ans".to_string()).unwrap();
-            client_outgoing.send(ClientMessage::Table(Some(echo_table.clone())));
+            
+
+            let echo_table = match program.mech.get_table("ans".to_string()) {
+              Some(table) => Some(table.clone()),
+              None => None,
+            };
+            //client_outgoing.send(ClientMessage::Table(echo_table));
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
@@ -554,11 +581,11 @@ impl ProgramRunner {
         }
         client_outgoing.send(ClientMessage::Done);
       }
-      if let Some(channel) = persistence_channel {
+      /*if let Some(channel) = persistence_channel {
         channel.send(PersisterMessage::Stop);
-      }
+      }*/
     }).unwrap();
-    RunLoop { name, thread, outgoing, incoming }
+    RunLoop { name: self.name, thread, outgoing: runloop_outgoing, incoming }
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {
