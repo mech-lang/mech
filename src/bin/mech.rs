@@ -158,6 +158,119 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
+    // Spin up a mech core and compiler
+    let mut core = Core::new(1000,1000);
+    let mut compiler = Compiler::new();
+    let mut code: Vec<String> = Vec::new();
+
+    for path_str in mech_paths {
+      let path = Path::new(path_str);
+      // Compile a .mec file on the web
+      if path.to_str().unwrap().starts_with("https") {
+        println!("{} {}", "[Building]".bright_green(), path.display());
+        let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
+        code.push(program);
+      } else {
+        // Compile a directory of mech files
+        if path.is_dir() {
+          for entry in path.read_dir().expect("read_dir call failed") {
+            if let Ok(entry) = entry {
+              match (entry.path().to_str(), entry.path().extension())  {
+                (Some(name), Some(extension)) => {
+                  match extension.to_str() {
+                    Some("mec") => {
+                      println!("{} {}", "[Building]".bright_green(), name);
+                      let mut f = File::open(name)?;
+                      let mut buffer = String::new();
+                      f.read_to_string(&mut buffer);
+                      code.push(buffer);
+                    }
+                    _ => (),
+                  }
+                },
+                _ => (),
+              }
+            }
+          }
+        } else if path.is_file() {
+          // Compile a single file
+          match (path.to_str(), path.extension())  {
+            (Some(name), Some(extension)) => {
+              match extension.to_str() {
+                Some("mec") => {
+                  println!("{} {}", "[Building]".bright_green(), name);
+                  let mut f = File::open(name)?;
+                  let mut buffer = String::new();
+                  f.read_to_string(&mut buffer);
+                  code.push(buffer);
+                }
+                _ => (),
+              }
+            },
+            _ => (),
+          }
+        }
+      };
+    }
+
+    let mut runner = ProgramRunner::new("Mech REPL", 1500000);
+    let mech_client = runner.run();
+    for c in code {
+      mech_client.send(RunLoopMessage::Code((0,c)));
+    }
+    loop {
+      match mech_client.receive() {
+        Ok(ClientMessage::Done) => {
+          if mech_client.is_empty() {
+            break;
+          }
+        }
+        x => println!("{:?}", x),
+      }
+    }
+    
+
+    //#[get("/{id}/{name}/index.html")]
+    async fn index(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
+      println!("Serving");
+      let (sender, receiver) = data.get_ref();
+      sender.send(RunLoopMessage::EchoCode("#ans = #data".to_string()));
+      let mut message = String::new();
+      loop {
+        match receiver.recv() {
+          Ok(ClientMessage::Done) => {
+            if receiver.is_empty() {
+              break;
+            }
+          }
+          Err(x) => {
+            println!("{:?}",x);
+            break;
+          }
+          Ok(ClientMessage::Table(table)) => {
+            message = format!("{:?}", table);
+          }
+          x => println!("{:?}", x),
+        }
+      }
+        
+      message
+    }
+
+    println!("Awaiting connection");
+    let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone()));
+    HttpServer::new(move || {
+        ActixApp::new()
+        .app_data(data.clone())
+        .service(web::resource("/")
+        .route(web::get().to(index)))
+      })
+      .bind(http_address)?
+      .run()
+      .await?;
+    println!("Closing server.");
+    std::process::exit(0);
+
     None
   // The testing framework
   } else if let Some(matches) = matches.subcommand_matches("test") {
