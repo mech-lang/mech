@@ -36,9 +36,3 @@ pub enum RunLoopMessage {
   EchoCode(String),
   //Core(Core),
 }
-
-// ## Watchers
-
-pub trait Watcher {
-  fn get_name(& self) -> String;
-}
