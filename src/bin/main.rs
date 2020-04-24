@@ -30,15 +30,18 @@ block
 
 
   let running = runner.run();
-  running.send(RunLoopMessage::Table(Hasher::hash_str("test")));
+  running.send(RunLoopMessage::Code((0,"#data = 1 + 1".to_string())));
+  //running.send(RunLoopMessage::Table(Hasher::hash_str("test")));
   //running.send(RunLoopMessage::PrintRuntime);
   loop {
     loop {
+      println!("Receiving");
       match running.receive() {
         (Ok(ClientMessage::Table(table))) => {
             println!("{:?}", table);
         },
         (Ok(ClientMessage::Done)) => {
+          println!("Got a done");
           break;
         },
         (Ok(ClientMessage::String(message))) => {
