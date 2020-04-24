@@ -455,10 +455,8 @@ impl ProgramRunner {
 
       // Send the first done to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Done);
-      println!("Sent a done message");
       let mut paused = false;
       'runloop: loop {
-        println!("In the run loop");
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             //println!("{} Txn started:\n {:?}", name, txn);
@@ -502,11 +500,11 @@ impl ProgramRunner {
             break 'runloop;
           },
           (Ok(RunLoopMessage::Table(table_id)), _) => { 
-            /*let table_msg = match program.mech.store.get_table(table_id) {
-              Some(table) => ClientMessage::Table(Some(table.clone())),
+            let table_msg = match program.mech.store.get_table(table_id) {
+              Some(table) => ClientMessage::Table(Some(table.borrow().clone())),
               None => ClientMessage::Table(None),
             };
-            client_outgoing.send(table_msg);*/
+            client_outgoing.send(table_msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -529,7 +527,6 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
-            println!("Loading code");
             let block_count = program.mech.runtime.blocks.len();
             match code_tuple {
               (0, code) => {
@@ -546,18 +543,12 @@ impl ProgramRunner {
 
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
-            println!("ECHO CODE!! {:?}", code);
-            
             let mut compiler = Compiler::new();
             compiler.compile_string(code);
-            println!("{:?}", compiler.blocks);
             program.mech.register_blocks(compiler.blocks);
             program.download_dependencies(Some(client_outgoing.clone()));
             program.mech.step();
 
-            println!("{:?}", program.mech.runtime);
-
-            
             program.download_dependencies(Some(client_outgoing.clone()));
 
             let echo_table = match program.mech.get_table("ans".to_string()) {
