@@ -528,37 +528,43 @@ impl ProgramRunner {
             program.mech.step_forward_one();
             client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
-          (Ok(RunLoopMessage::Code(code)), _) => {
+          (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             println!("Loading code");
             let block_count = program.mech.runtime.blocks.len();
-            program.compile_fragment(code);
-            program.download_dependencies(Some(client_outgoing.clone()));
-            program.mech.step();
-            println!("{:?}", program.mech);
+            match code_tuple {
+              (0, code) => {
+                let mut compiler = Compiler::new();
+                compiler.compile_string(code);
+                program.mech.register_blocks(compiler.blocks);
+                program.download_dependencies(Some(client_outgoing.clone()));
+                program.mech.step();
+              }
+              (ix, code) => {
+
+              }
+            }
+
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
             println!("ECHO CODE!! {:?}", code);
             
-            let block_count = program.mech.runtime.blocks.len();
-            program.compile_fragment(code);
+            let mut compiler = Compiler::new();
+            compiler.compile_string(code);
+            println!("{:?}", compiler.blocks);
+            program.mech.register_blocks(compiler.blocks);
+            program.download_dependencies(Some(client_outgoing.clone()));
+            program.mech.step();
+
+            println!("{:?}", program.mech.runtime);
 
             
             program.download_dependencies(Some(client_outgoing.clone()));
 
-            println!("{:?}", program.mech);
-            for core in &program.cores {
-              println!("{:?}", core);
-            }
-
-
-            program.mech.step();
-            
-
             let echo_table = match program.mech.get_table("ans".to_string()) {
-              Some(table) => Some(table.clone()),
+              Some(table) => Some(table.borrow().clone()),
               None => None,
             };
-            //client_outgoing.send(ClientMessage::Table(echo_table));
+            client_outgoing.send(ClientMessage::Table(echo_table));
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
