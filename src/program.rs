@@ -85,7 +85,6 @@ pub struct Program {
 
 impl Program {
   pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
-    let (outgoing, incoming) = crossbeam_channel::unbounded();
     let mut mech = Core::new(capacity, 100);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
@@ -535,6 +534,7 @@ impl ProgramRunner {
             program.compile_fragment(code);
             program.download_dependencies(Some(client_outgoing.clone()));
             program.mech.step();
+            println!("{:?}", program.mech);
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
             println!("ECHO CODE!! {:?}", code);
