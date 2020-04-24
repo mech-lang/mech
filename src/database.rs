@@ -5,7 +5,7 @@
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use core::fmt;
-use table::{Value, Table, Index};
+use table::{Value, Table, TableId, Index};
 use indexes::TableIndex;
 use hashbrown::hash_map::{HashMap, Entry};
 use std::rc::Rc;
@@ -260,9 +260,14 @@ impl Interner {
     self.tables.get(table)
   }
 
-  pub fn get_column(&self, table: u64, column: Index) -> Option<&Vec<Value>> {
-    match self.tables.get(table) {
+  pub fn contains(&mut self, table: TableId) -> bool {
+    self.tables.contains(*table.unwrap())
+  }
+
+  pub fn get_column(&self, table: TableId, column: Index) -> Option<&Vec<Value>> {
+    match self.tables.get(*table.unwrap()) {
       Some(stored_table) => {
+        println!("tablelele {:?}, column: {:?}", stored_table, column);
         match unsafe{(*stored_table.as_ptr()).get_column(&column)} {
           Some(column) => Some(column),
           None => None,
