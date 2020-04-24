@@ -278,6 +278,10 @@ impl RunLoop {
     }
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.incoming.is_empty()
+  }
+
   pub fn channel(&self) -> Sender<RunLoopMessage> {
     self.outgoing.clone()
   }
@@ -530,7 +534,6 @@ impl ProgramRunner {
 
               }
             }
-
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
             let mut compiler = Compiler::new();
@@ -561,6 +564,18 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
+          (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
+            let mut blocks: Vec<Block> = Vec::new();
+            for miniblock in miniblocks {
+              let mut block = Block::new();
+              for constraint in miniblock.constraints {
+                block.add_constraints(constraint);
+              }
+              blocks.push(block);
+            }
+            program.mech.register_blocks(blocks);
+            program.mech.step();
+          }
           (Err(_), _) => {
             break 'runloop
           },
