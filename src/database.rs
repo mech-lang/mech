@@ -267,7 +267,6 @@ impl Interner {
   pub fn get_column(&self, table: TableId, column: Index) -> Option<&Vec<Value>> {
     match self.tables.get(*table.unwrap()) {
       Some(stored_table) => {
-        println!("tablelele {:?}, column: {:?}", stored_table, column);
         match unsafe{(*stored_table.as_ptr()).get_column(&column)} {
           Some(column) => Some(column),
           None => None,

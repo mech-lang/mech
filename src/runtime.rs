@@ -115,7 +115,6 @@ impl Runtime {
     // Register all errors on the block with the runtime
     self.errors.append(&mut block.errors.clone());
 
-    println!("looking at you {:?}", block.is_ready());
     // Mark the block as ready for execution on the next available cycle
     if block.is_ready() {
       self.ready_blocks.insert(block.id);
