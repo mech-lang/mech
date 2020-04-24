@@ -21,7 +21,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, Watcher};
+use mech_utilities::{RunLoopMessage};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -73,7 +73,6 @@ pub struct Program {
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub machines: HashMap<String, Library>,
-  pub watchers: HashMap<u64, Box<Watcher + Send>>,
   pub machine_registry: HashMap<String, (String, String)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -91,7 +90,6 @@ impl Program {
     mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
-      watchers: HashMap::new(),
       capacity,
       machine_registry: HashMap::new(), 
       mech,
@@ -419,14 +417,6 @@ impl ProgramRunner {
 
     self.program.cores.insert(core.id, core);
   }*/
-
-  pub fn attach_watcher(&mut self, watcher:Box<Watcher + Send>) {
-    //let name = Hasher::hash_str(&watcher.get_name());
-    //let columns = watcher.get_columns().clone() as u64;
-    //self.program.watchers.insert(name, watcher);
-    //let watcher_table = Transaction::from_change(Change::NewTable{id: name, rows: 1, columns});
-    //self.program.outgoing.send(RunLoopMessage::Transaction(watcher_table));
-  }
 
   pub fn add_persist_channel(&mut self, persister:&mut Persister) {
     //self.persistence_channel = Some(persister.get_channel());
