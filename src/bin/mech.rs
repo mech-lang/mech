@@ -9,7 +9,6 @@
 
 extern crate core;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Sender};
 use std::io;
 use std::io::prelude::*;
 
@@ -20,8 +19,10 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{Core, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, Program, ErrorType, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{Core, MiniBlock, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, Program, ErrorType, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
 use mech::QuantityMath;
+
+use std::thread::{self, JoinHandle};
 
 #[macro_use]
 extern crate nom;
@@ -54,7 +55,11 @@ extern crate serde;
 #[macro_use]
 extern crate actix_web;
 extern crate actix_rt;
-use actix_web::{get, web, App as ActixApp, HttpServer, Responder};
+use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder};
+
+#[macro_use]
+extern crate crossbeam_channel;
+use crossbeam_channel::{Sender, Receiver};
 
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
@@ -72,21 +77,6 @@ pub enum ReplCommand {
   ParsedCode(ParserNode),
   Empty,
   Error,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MiniBlock {
-  pub constraints: Vec<(String, Vec<Constraint>)>,
-}
-
-impl MiniBlock {
-  
-  pub fn new() -> MiniBlock { 
-    MiniBlock {
-      constraints: Vec::with_capacity(1),
-    }
-  }
-
 }
 
 // ## Mech Entry
@@ -168,23 +158,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-    /*mech_server::http_server(http_address);
-    mech_server::websocket_server(websocket_address, mech_paths, persistence_path);*/
-
-    use actix_web::{get, web, App as ActixApp, HttpServer, Responder};
-
-    #[get("/{id}/{name}/index.html")]
-    async fn index(info: web::Path<(u32, String)>) -> impl Responder {
-      println!("Serving");
-      format!("Hello {}! id:{}", info.1, info.0)
-    }
-    println!("Awaiting connection");
-    HttpServer::new(|| ActixApp::new().service(index))
-        .bind(http_address)?
-        .run()
-        .await?;
-
-
     None
   // The testing framework
   } else if let Some(matches) = matches.subcommand_matches("test") {
@@ -215,6 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 match core.get_table("mech/test".to_string()) {
                   Some(test_results) => {
+                    let test_results = test_results.borrow();
                     for i in 0..test_results.rows as usize {
                       for j in 0..test_results.columns as usize {
                         tests_count += 1;
@@ -248,7 +222,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
     let repl = matches.is_present("repl_mode");
     let mut compiler = Compiler::new();
-    
+
     // Compile all the mec files supplied
     for path_str in mech_paths {
       let path = Path::new(path_str);
@@ -322,6 +296,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       core.step();
       match core.store.get_table(output_id) {
         Some(output_table) => {
+          let output_table = output_table.borrow();
           for i in 0..output_table.rows as usize {
             for j in 0..output_table.columns as usize {
               println!("{:?}", output_table.data[j][i]);
@@ -338,16 +313,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
   
     // Spin up a mech core and compiler
-    let mut core = Core::new(1000,1000);
-    let mut compiler = Compiler::new();
-    let mut program = Program::new("build",100);
+    let mut code = Vec::new();
     for path_str in mech_paths {
       let path = Path::new(path_str);
       // Compile a .mec file on the web
       if path.to_str().unwrap().starts_with("https") {
         println!("{} {}", "[Building]".bright_green(), path.display());
         let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
-        compiler.compile_string(program);
+        code.push(program);
       } else {
         // Compile a directory of mech files
         if path.is_dir() {
@@ -361,7 +334,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                       let mut f = File::open(name)?;
                       let mut buffer = String::new();
                       f.read_to_string(&mut buffer);
-                      compiler.compile_string(buffer);
+                      code.push(buffer);
                     }
                     _ => (),
                   }
@@ -380,7 +353,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   let mut f = File::open(name)?;
                   let mut buffer = String::new();
                   f.read_to_string(&mut buffer);
-                  compiler.compile_string(buffer);
+                  code.push(buffer);
                 }
                 _ => (),
               }
@@ -390,12 +363,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
       };
     }
-    core.register_blocks(compiler.blocks);
-    program.mech = core;
-    program.errors.append(&mut program.mech.runtime.errors.clone());
-    if program.errors.len() > 0 {
-      print_errors(&program);
-      std::process::exit(1);
+
+    let mut compiler = Compiler::new();
+    for c in code {
+      compiler.compile_string(c);
     }
 
     let output_name = match matches.value_of("output_name") {
@@ -406,7 +377,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for (_, block) in program.mech.runtime.blocks.iter() {
+    for block in compiler.blocks.iter() {
       let mut miniblock = MiniBlock::new();
       miniblock.constraints = block.constraints.clone();
       miniblocks.push(miniblock);
@@ -441,73 +412,83 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
-  let cores = match core {
-    Some(mut core) => {
-      core.id = 1;
-      Some(vec![core])
-    },
-    None => None,
-  };
 
-  let mut runner = ProgramRunner::new("Mech REPL", 1500000);
-  for core in cores.unwrap_or(vec![]) {
-    runner.load_core(core);
-  }
+
+
+  let runner = ProgramRunner::new("Mech REPL", 1000);
   let mech_client = runner.run();
-  let mut skip_receive = false;
-  
-  //ClientHandler::new("Mech REPL", None, None, None, cores);
-  let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
-  'REPL: loop {
-    
-    // Get all responses from the thread
-    if !skip_receive {
-      'receive_loop: loop {
-        match mech_client.receive() {
-          (Ok(ClientMessage::Table(table))) => {
-            match table {
-              Some(ref table_ref) => print_table(table_ref),
-              None => (),
-            }
-          },
-          (Ok(ClientMessage::Pause)) => {
-            println!("{} Paused", formatted_name);
-          },
-          (Ok(ClientMessage::Resume)) => {
-            println!("{} Resumed", formatted_name);
-          },
-          (Ok(ClientMessage::Clear)) => {
-            println!("{} Cleared", formatted_name);
-          },
-          (Ok(ClientMessage::NewBlocks(count))) => {
-            println!("Compiled {} blocks.", count);
-          },
-          (Ok(ClientMessage::String(message))) => {
-            println!("{} {}", formatted_name, message);
-          },
-          (Ok(ClientMessage::Table(table))) => {
-            match table {
-              Some(table) => {
-                println!("{} ", formatted_name);
-                print_table(&table);
-              }
-              None => println!("{} Table not found", formatted_name),
-            }
-          },
-          (Ok(ClientMessage::Transaction(txn))) => {
-            println!("{} Transaction: {:?}", formatted_name, txn);
-          },
-          (Ok(ClientMessage::Done)) => {
-            break 'receive_loop;
-          },
-          q => {
-            println!("else: {:?}", q);
-          },
-        };
-      }
-    }
-    skip_receive = false;
 
+  match core {
+    Some(core) => {
+      let mut miniblocks = Vec::new();
+      for (_, block) in core.runtime.blocks.iter() {
+        let mut miniblock = MiniBlock::new();
+        miniblock.constraints = block.constraints.clone();
+        miniblocks.push(miniblock);
+      }
+      mech_client.send(RunLoopMessage::Blocks(miniblocks));
+    }
+    None =>(),
+  }
+
+  let mut skip_receive = false;
+
+  //ClientHandler::new("Mech REPL", None, None, None, cores);
+  let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+  let thread_receiver = mech_client.incoming.clone();
+  
+  // Break out receiver into its own thread
+  let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
+    // Get all responses from the thread
+    'receive_loop: loop {
+      match thread_receiver.recv() {
+        (Ok(ClientMessage::Pause)) => {
+          println!("{} Paused", formatted_name);
+        },
+        (Ok(ClientMessage::Resume)) => {
+          println!("{} Resumed", formatted_name);
+        },
+        (Ok(ClientMessage::Clear)) => {
+          println!("{} Cleared", formatted_name);
+        },
+        (Ok(ClientMessage::NewBlocks(count))) => {
+          println!("Compiled {} blocks.", count);
+        },
+        (Ok(ClientMessage::String(message))) => {
+          println!("{} {}", formatted_name, message);
+          print!("{}", ">: ".bright_yellow());
+        },
+        (Ok(ClientMessage::Table(table))) => {
+          match table {
+            Some(table) => {
+              println!("{} ", formatted_name);
+              print_table(&table);
+              print!("{}", ">: ".bright_yellow());
+            }
+            None => println!("{} Table not found", formatted_name),
+          }
+        },
+        (Ok(ClientMessage::Transaction(txn))) => {
+          println!("{} Transaction: {:?}", formatted_name, txn);
+        },
+        (Ok(ClientMessage::Done)) => {
+          // Do nothing
+        },
+        (Err(x)) => {
+          println!("{} {}", "[Error]".bright_red(), x);
+          break 'receive_loop;
+        }
+        q => {
+          println!("else: {:?}", q);
+        },
+      };
+      io::stdout().flush().unwrap();
+    }
+  });
+
+
+  'REPL: loop {
+     
     io::stdout().flush().unwrap();
     // Print a prompt
     print!("{}", ">: ".bright_yellow());
@@ -515,10 +496,10 @@ clear   - reset the current core
     let mut input = String::new();
 
     io::stdin().read_line(&mut input).unwrap();
+    
 
     // Handle built in commands
     let parse = if input.trim() == "" {
-      skip_receive = true;
       continue 'REPL;
     } else {
       parse_repl_command(input.trim())
@@ -529,7 +510,6 @@ clear   - reset the current core
         match command {
           ReplCommand::Help => {
             println!("{}",help_message);
-            skip_receive = true;
           },
           ReplCommand::Quit => {
             break 'REPL;
@@ -555,7 +535,7 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            mech_client.send(RunLoopMessage::Code(code));
+            mech_client.send(RunLoopMessage::Code((0,code)));
           },
           ReplCommand::EchoCode(code) => {
             mech_client.send(RunLoopMessage::EchoCode(code));
