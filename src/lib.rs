@@ -3,7 +3,7 @@ extern crate serde_derive;
 extern crate serde;
 extern crate mech_core;
 
-use mech_core::{Transaction, Interner, TableId, Core};
+use mech_core::{Transaction, Interner, TableId, Core, Constraint};
 
 // ## Client Message
 
@@ -34,5 +34,21 @@ pub enum RunLoopMessage {
   Transaction(Transaction),
   Code((u64,String)),
   EchoCode(String),
+  Blocks(Vec<MiniBlock>),
   //Core(Core),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MiniBlock {
+  pub constraints: Vec<(String, Vec<Constraint>)>,
+}
+
+impl MiniBlock {
+  
+  pub fn new() -> MiniBlock { 
+    MiniBlock {
+      constraints: Vec::with_capacity(1),
+    }
+  }
+
 }
