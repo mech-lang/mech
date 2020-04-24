@@ -34,7 +34,7 @@ pub enum RunLoopMessage {
   Transaction(Transaction),
   Code(String),
   EchoCode(String),
-  Core(Core),
+  //Core(Core),
 }
 
 // ## Watchers
