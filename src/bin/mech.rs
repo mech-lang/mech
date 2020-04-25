@@ -228,13 +228,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         x => println!("{:?}", x),
       }
     }
-    
 
-    //#[get("/{id}/{name}/index.html")]
-    async fn index(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
-      println!("Serving");
+    async fn index(req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
+      println!("Serving {:?}", req.connection_info());
+      println!("Serving {:?}", req.head());
       let (sender, receiver) = data.get_ref();
-      sender.send(RunLoopMessage::EchoCode("#ans = #data".to_string()));
+      loop {
+        match receiver.recv() {
+          Ok(ClientMessage::Done) => {
+            if receiver.is_empty() {
+              break;
+            }
+            
+          }
+          x => println!("{:?}", x),
+        }
+      }
+
+      let code = format!("#ans = #{}", info);
+      sender.send(RunLoopMessage::EchoCode(code));
       let mut message = String::new();
       loop {
         match receiver.recv() {
@@ -257,18 +269,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       message
     }
 
-    println!("Awaiting connection");
+    println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), http_address);
     let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone()));
     HttpServer::new(move || {
         ActixApp::new()
         .app_data(data.clone())
-        .service(web::resource("/")
+        .service(web::resource("/{query}")
         .route(web::get().to(index)))
       })
       .bind(http_address)?
       .run()
       .await?;
-    println!("Closing server.");
+    println!("{} Closing server.", "[Mech Server]".bright_cyan());
     std::process::exit(0);
 
     None
