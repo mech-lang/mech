@@ -165,8 +165,8 @@ impl Core {
     };
     let mut changes = vec![];
     changes.append(&mut new_table("html/event/click".to_string(), vec!["x".to_string(),"y".to_string()]));
-    changes.append(&mut new_table("html/event/mousemove".to_string(), vec!["x".to_string(),"y".to_string()]));
-    changes.append(&mut new_table("html/event/mousedown".to_string(), vec!["x".to_string(),"y".to_string()]));
+    changes.append(&mut new_table("html/event/pointermove".to_string(), vec!["x".to_string(),"y".to_string()]));
+    changes.append(&mut new_table("html/event/pointerdown".to_string(), vec!["x".to_string(),"y".to_string()]));
     changes.append(&mut new_table("html/event/keydown".to_string(), vec!["key".to_string(),"id".to_string()]));
     changes.append(&mut new_table("html/event/keyup".to_string(), vec!["key".to_string(),"id".to_string()]));
 
@@ -238,7 +238,7 @@ impl Core {
       keydown_callback.forget();
     }
 
-    // Add an event listener to mech-app that removes modals on mouse click
+    // Add an event listener to mech-app that removes modals on pointer click
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
         let window = web_sys::window().expect("no global `window` exists");
@@ -252,7 +252,7 @@ impl Core {
         };
       }) as Box<dyn FnMut(_)>);
       let app = document.get_element_by_id("mech-app").unwrap();
-      app.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
+      app.add_event_listener_with_callback("pointerdown", closure.as_ref().unchecked_ref())?;
       closure.forget();
     }
 
@@ -424,7 +424,7 @@ impl Core {
                   }
                   
                 }) as Box<dyn FnMut(_)>);
-                code_text.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
+                code_text.add_event_listener_with_callback("pointerdown", closure.as_ref().unchecked_ref())?;
                 closure.forget();
               }
               {
@@ -501,6 +501,7 @@ impl Core {
               let view_id = Hasher::hash_str("block/view");
               match block.get_table(view_id) {
                 Some(table) => {
+                  let table = table.borrow();
                   let mut view = document.create_element("div")?;
                   view.set_attribute("class", "mech-view");
                   view.set_id(&format!("{}",block_id));
@@ -527,8 +528,8 @@ impl Core {
                               .unwrap()
                               .dyn_into::<web_sys::CanvasRenderingContext2d>()
                               .unwrap();
-                          let x_data = block.get_table(x_pt_table[0].as_u64().unwrap()).unwrap();
-                          let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap();
+                          let x_data = block.get_table(x_pt_table[0].as_u64().unwrap()).unwrap().borrow();
+                          let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap().borrow();
 
                           for i in 0..x_data.rows as usize {
                             let y = &y_data.data[0][i].as_float().unwrap();
@@ -614,7 +615,7 @@ impl Core {
         let view = inline_view_elements.item(ix).unwrap();
         let id = view.id().parse::<u64>().unwrap();
         self.inline_views.insert(id);
-        let view_table = self.core.store.get_table(id).unwrap();
+        let view_table = self.core.store.get_table(id).unwrap().borrow();
         let data = &view_table.data[0][0];
         view.set_inner_html(&data.as_string().unwrap());
       }
@@ -719,7 +720,7 @@ impl Core {
     let view_id = Hasher::hash_str("block/view");
     let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
     let block = &self.core.runtime.blocks.get(&(view as usize)).unwrap();
-    let table = block.get_table(view_id).unwrap();
+    let table = block.get_table(view_id).unwrap().borrow();
 
     let view_type = table.get_column(&Index::Alias(Hasher::hash_str("type")));
     let x_pts = table.get_column(&Index::Alias(Hasher::hash_str("x")));
@@ -744,8 +745,8 @@ impl Core {
                 .unwrap()
                 .dyn_into::<web_sys::CanvasRenderingContext2d>()
                 .unwrap();
-            let x_data = block.get_table(x_pt_table[0].as_u64().unwrap()).unwrap();
-            let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap();
+            let x_data = block.get_table(x_pt_table[0].as_u64().unwrap()).unwrap().borrow();
+            let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap().borrow();
 
             for i in 0..x_data.rows as usize {
               let y = &y_data.data[0][i].as_float().unwrap();
@@ -815,7 +816,7 @@ impl Core {
         match document.get_element_by_id(&format!("{:?}",node)) {
           Some(mut div) => {
             let row = div.get_attribute("row").unwrap().parse::<usize>().unwrap();
-            let table = &self.core.store.tables.get(*k).unwrap();
+            let table = &self.core.store.tables.get(*k).unwrap().borrow();
             match &table.data[2][row - 1] {
               Value::String(value) => div.set_inner_html(&value),
               Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
@@ -825,7 +826,7 @@ impl Core {
                 if *table_ref != child.id().parse::<u64>().unwrap() {
                   //div.remove_child(&child);
                   unsafe {
-                    let referenced_table: &Table = (*wasm_core).core.store.get_table(*table_ref).unwrap();
+                    let referenced_table: &Table = &(*wasm_core).core.store.get_table(*table_ref).unwrap().borrow();
                     //(*wasm_core).draw_contents(&referenced_table, &mut div);
                   }
                 }
@@ -857,7 +858,7 @@ impl Core {
     let view_id = Hasher::hash_str("block/view");
     for view in self.inline_views.iter() {
       let view_node = document.get_element_by_id(&format!("{}",view)).unwrap();
-      let table = &self.core.store.tables.get(*view).unwrap();
+      let table = &self.core.store.tables.get(*view).unwrap().borrow();
       let mut output = format!("{}", &table.data[0][0].as_string().unwrap());
       view_node.set_inner_html(&output);
     }
@@ -911,8 +912,8 @@ impl Core {
 
   fn draw_table(&self, block_id: usize, table_id: u64) -> String { 
     let table = match block_id {
-      0 => self.core.store.get_table(table_id).unwrap(),
-      _ => self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap(),
+      0 => self.core.store.get_table(table_id).unwrap().borrow(),
+      _ => self.core.runtime.blocks.get(&block_id).unwrap().get_table(table_id).unwrap().borrow(),
     };
     let mut output = String::from("<table>");
     if table.column_aliases.len() > 0 {
@@ -986,7 +987,7 @@ impl Core {
   pub fn get_mantissas(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);
       let mut output: Vec<i32> = vec![];
-      match self.core.store.get_column(table_id, Index::Index(column as u64)) {
+      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().mantissa() as i32);
@@ -1000,7 +1001,7 @@ impl Core {
   pub fn get_ranges(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<i32> = vec![];
-      match self.core.store.get_column(table_id, Index::Index(column as u64)) {
+      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().range() as i32);
@@ -1014,7 +1015,7 @@ impl Core {
   pub fn get_column(&mut self, table: String, column: u32) -> Vec<f32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<f32> = vec![];
-      match self.core.store.get_column(table_id, Index::Index(column as u64)) {
+      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().to_float() as f32);
@@ -1035,6 +1036,7 @@ impl Core {
     }
     match table {
       Some(app_table) => {
+        let app_table = app_table.borrow();
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         let body = document.body().expect("document should have a body");
@@ -1048,7 +1050,7 @@ impl Core {
             Some(drawing_area) => {
               // TODO Make this safe
               unsafe {
-                contents_table = (*core).store.get_table(contents_id).unwrap();       
+                contents_table = (*core).store.get_table(contents_id).unwrap().borrow();       
               }
               self.draw_contents(&contents_table, &mut app);
               drawing_area.append_child(&app)?;
@@ -1095,7 +1097,7 @@ impl Core {
                     let referenced_table;
                     // TODO Make this safe
                     unsafe {
-                      referenced_table = (*core).store.get_table(*reference).unwrap();
+                      referenced_table = (*core).store.get_table(*reference).unwrap().borrow();
                     }
                     self.draw_contents(&referenced_table, &mut div);
                   }
@@ -1122,7 +1124,7 @@ impl Core {
                       .unwrap();
                 let parameters_id_str = &table.data[3][row].as_string().unwrap();
                 let parameters_id = &table.data[3][row].as_u64().unwrap();
-                let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+                let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
                 let min = &parameters_table.data[0][0].as_string().unwrap();
                 let max = &parameters_table.data[1][0].as_string().unwrap();
                 let value = &parameters_table.data[2][0].as_string().unwrap();
@@ -1169,7 +1171,7 @@ impl Core {
                 let parameters_id = &table.data[3][row].as_u64().unwrap();
                 let parameters_table;
                 unsafe {
-                  parameters_table = (*core).store.get_table(*parameters_id).unwrap();
+                  parameters_table = (*core).store.get_table(*parameters_id).unwrap().borrow();
                 }
                 canvas.set_id(&format!("{:?}",element_id));
                 canvas.set_attribute("elements",elements_id_str);
@@ -1208,10 +1210,10 @@ impl Core {
                     };
                     let click_callback = closure("html/event/click");
                     canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
-                    let move_callback = closure("html/event/mousemove");
-                    canvas.add_event_listener_with_callback("mousemove", move_callback.as_ref().unchecked_ref())?;
-                    let down_callback = closure("html/event/mousedown");
-                    canvas.add_event_listener_with_callback("mousedown", down_callback.as_ref().unchecked_ref())?;
+                    let move_callback = closure("html/event/pointermove");
+                    canvas.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
+                    let down_callback = closure("html/event/pointerdown");
+                    canvas.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
                   
                     click_callback.forget();
                     move_callback.forget();
@@ -1230,7 +1232,7 @@ impl Core {
             let referenced_table;
             // TODO Make this safe
             unsafe {
-              referenced_table = (*core).store.get_table(*reference).unwrap();
+              referenced_table = (*core).store.get_table(*reference).unwrap().borrow();
             }
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
@@ -1253,7 +1255,7 @@ impl Core {
     // Get the elements table for this canvas
     let elements = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements.parse::<u64>().unwrap();
-    let elements_table = self.core.store.get_table(elements_table_id).unwrap();
+    let elements_table = self.core.store.get_table(elements_table_id).unwrap().borrow();
     let context = Rc::new(context);
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
     for row in 0..elements_table.rows as usize {
@@ -1262,7 +1264,7 @@ impl Core {
           match shape.as_ref() {
             "circle" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
               for i in 0..parameters_table.rows as usize {
                 let x = parameters_table.data[0][i].as_float().unwrap();
                 let y = parameters_table.data[1][i].as_float().unwrap();
@@ -1278,7 +1280,7 @@ impl Core {
             },
             "line" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
               let x1 = parameters_table.data[0][0].as_float().unwrap();
               let y1 = parameters_table.data[1][0].as_float().unwrap();
               let x2 = parameters_table.data[2][0].as_float().unwrap();
@@ -1295,7 +1297,7 @@ impl Core {
             },
             "image" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap();
+              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
               let image_source = parameters_table.data[3][0].as_string().unwrap();
               let source_hash = Hasher::hash_string(image_source.clone());
               match self.images.entry(source_hash) {
