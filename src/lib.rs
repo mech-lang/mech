@@ -30,6 +30,7 @@ use mech_core::{TableId, ErrorType, Transaction, BlockState, Hasher, Change, Ind
 use mech_utilities::WebsocketClientMessage;
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 
+#[macro_export]
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
