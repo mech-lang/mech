@@ -55,7 +55,10 @@ extern crate serde;
 #[macro_use]
 extern crate actix_web;
 extern crate actix_rt;
+extern crate actix_files;
 use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder};
+use actix_session::{CookieSession, Session};
+use ahash::AHasher;
 
 #[macro_use]
 extern crate crossbeam_channel;
@@ -229,9 +232,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     }
 
-    async fn index(req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
-      println!("Serving {:?}", req.connection_info());
-      println!("Serving {:?}", req.head());
+    async fn index(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
+      println!("Serving");
+      use core::hash::Hasher;
+      //println!("Connection Info {:?}", req.connection_info());
+      //println!("Head {:?}", req.head());
+      let mut hasher = AHasher::new_with_keys(123, 456);
+      hasher.write(format!("{:?}", req.head()).as_bytes());
+      let mut id: u64 = hasher.finish();
+      if let Some(uid) = session.get::<u64>("mech-user/id").unwrap() {
+        println!("Mech user: {:x}", uid);
+        id = uid
+      } else {
+        session.set("mech-user/id", id);
+      }
+
+
+      /*
       let (sender, receiver) = data.get_ref();
       loop {
         match receiver.recv() {
@@ -264,9 +281,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           }
           x => println!("{:?}", x),
         }
-      }
+      }*/
         
-      message
+      //message
+      format!("{:x}", id)
     }
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), http_address);
@@ -274,8 +292,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     HttpServer::new(move || {
         ActixApp::new()
         .app_data(data.clone())
-        .service(web::resource("/{query}")
-        .route(web::get().to(index)))
+        .wrap(CookieSession::signed(&[0; 32]).secure(false))
+        .service(web::resource("/table/{query}")
+          .route(web::get().to(index)))
+        .service(
+          actix_files::Files::new("/", "./notebook/").index_file("index.html"),
+        )
       })
       .bind(http_address)?
       .run()
