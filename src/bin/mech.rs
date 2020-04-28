@@ -399,7 +399,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
           }
         } else if path.is_file() {
-          match (path.file_name(), path.extension())  {
+          match (path.to_str(), path.extension())  {
             (Some(name), Some(extension)) => {
               match extension.to_str() {
                 Some("mec") => {
