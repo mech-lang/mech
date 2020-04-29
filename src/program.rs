@@ -21,7 +21,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage};
+use mech_utilities::{RunLoopMessage, MechCode};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -523,7 +523,7 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             let block_count = program.mech.runtime.blocks.len();
             match code_tuple {
-              (0, code) => {
+              (0, MechCode::String(code)) => {
                 let mut compiler = Compiler::new();
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
