@@ -258,6 +258,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut compiler = Compiler::new();
 
     let code = read_mech_files(mech_paths).await?;
+    for c in code.clone() {
+      match c {
+        MechCode::String(c) => {compiler.compile_string(c);},
+        MechCode::MiniBlock(c) => {
+          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
+          let mut blocks: Vec<Block> = Vec::new() ;
+          for miniblock in miniblocks {
+            let mut block = Block::new();
+            for constraint in miniblock.constraints {
+              block.add_constraints(constraint);
+            }
+            blocks.push(block);
+          }
+          compiler.blocks.append(&mut blocks);
+        },
+      }
+    }
+    let mut miniblocks: Vec<MiniBlock> = Vec::new();
+    for block in compiler.blocks.iter() {
+      let mut miniblock = MiniBlock::new();
+      miniblock.constraints = block.constraints.clone();
+      miniblocks.push(miniblock);
+    }
+    let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
+
+
 
     let mut runner = ProgramRunner::new("Mech REPL", 1500000);
     let mech_client = runner.run();
@@ -275,7 +301,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     }
 
-    async fn index(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
+    async fn index(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>, Vec<u8>)>) -> impl Responder {
       println!("Serving");
       use core::hash::Hasher;
       //println!("Connection Info {:?}", req.connection_info());
@@ -330,19 +356,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{:x}", id)
     }
 
-    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
-      format!("O")
+    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>)>) -> impl Responder {
+      let (sender, receiver, miniblocks) = data.get_ref();
+      format!("{{\"blocks\": {:?} }}", miniblocks)
     }
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), http_address);
-    let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone()));
+    let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone(), serialized_miniblocks.clone()));
     HttpServer::new(move || {
         ActixApp::new()
         .app_data(data.clone())
         .wrap(CookieSession::signed(&[0; 32]).secure(false))
         .service(web::resource("/table/{query}")
           .route(web::get().to(index)))
-        .service(web::resource("/program")
+        .service(web::resource("/blocks")
           .route(web::get().to(serve_blocks)))
         .service(
           actix_files::Files::new("/", "./notebook/").index_file("index.html"),
