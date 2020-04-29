@@ -100,6 +100,76 @@ pub enum ReplCommand {
   Error,
 }
 
+async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
+
+  let mut code: Vec<MechCode> = Vec::new();
+
+  for path_str in mech_paths {
+    let path = Path::new(path_str);
+    // Compile a .mec file on the web
+    if path.to_str().unwrap().starts_with("https") {
+      println!("{} {}", "[Building]".bright_green(), path.display());
+      let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
+      code.push(MechCode::String(program));
+    } else {
+      // Compile a directory of mech files
+      if path.is_dir() {
+        for entry in path.read_dir().expect("read_dir call failed") {
+          if let Ok(entry) = entry {
+            match (entry.path().to_str(), entry.path().extension())  {
+              (Some(name), Some(extension)) => {
+                match extension.to_str() {
+                  Some("blx") => {
+                    println!("{} {}", "[Building]".bright_green(), name);
+                    let mut f = File::open(name)?;
+                    let mut buffer = String::new();
+                    f.read_to_string(&mut buffer);
+                    code.push(MechCode::MiniBlock(buffer));
+                  }
+                  Some("mec") => {
+                    println!("{} {}", "[Building]".bright_green(), name);
+                    let mut f = File::open(name)?;
+                    let mut buffer = String::new();
+                    f.read_to_string(&mut buffer);
+                    code.push(MechCode::String(buffer));
+                  }
+                  _ => (),
+                }
+              },
+              _ => (),
+            }
+          }
+        }
+      } else if path.is_file() {
+        // Compile a single file
+        match (path.to_str(), path.extension())  {
+          (Some(name), Some(extension)) => {
+            match extension.to_str() {
+              Some("blx") => {
+                println!("{} {}", "[Building]".bright_green(), name);
+                let mut f = File::open(name)?;
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer);
+                code.push(MechCode::MiniBlock(buffer));
+              }
+              Some("mec") => {
+                println!("{} {}", "[Building]".bright_green(), name);
+                let mut f = File::open(name)?;
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer);
+                code.push(MechCode::String(buffer));
+              }
+              _ => (),
+            }
+          },
+          _ => (),
+        }
+      }
+    };
+  }
+  Ok(code)
+}
+
 // ## Mech Entry
 #[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -141,7 +211,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .help("The path for the file to load from and persist changes (current working directory)")
         .takes_value(true)))
     .subcommand(SubCommand::with_name("test")
-      .about("Execute all tests of a local package"))
+      .about("Execute all tests of a local package")
+      .arg(Arg::with_name("mech_test_file_paths")
+        .help("The files and folders to run.")
+        .required(true)
+        .multiple(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
       .arg(Arg::with_name("repl_mode")
@@ -182,71 +256,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Spin up a mech core and compiler
     let mut core = Core::new(1000,1000);
     let mut compiler = Compiler::new();
-    let mut code: Vec<MechCode> = Vec::new();
 
-    for path_str in mech_paths {
-      let path = Path::new(path_str);
-      // Compile a .mec file on the web
-      if path.to_str().unwrap().starts_with("https") {
-        println!("{} {}", "[Building]".bright_green(), path.display());
-        let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
-        code.push(MechCode::String(program));
-      } else {
-        // Compile a directory of mech files
-        if path.is_dir() {
-          for entry in path.read_dir().expect("read_dir call failed") {
-            if let Ok(entry) = entry {
-              match (entry.path().to_str(), entry.path().extension())  {
-                (Some(name), Some(extension)) => {
-                  match extension.to_str() {
-                    Some("blx") => {
-                      println!("{} {}", "[Building]".bright_green(), name);
-                      let mut f = File::open(name)?;
-                      let mut buffer = String::new();
-                      f.read_to_string(&mut buffer);
-                      code.push(MechCode::MiniBlock(buffer));
-                    }
-                    Some("mec") => {
-                      println!("{} {}", "[Building]".bright_green(), name);
-                      let mut f = File::open(name)?;
-                      let mut buffer = String::new();
-                      f.read_to_string(&mut buffer);
-                      code.push(MechCode::String(buffer));
-                    }
-                    _ => (),
-                  }
-                },
-                _ => (),
-              }
-            }
-          }
-        } else if path.is_file() {
-          // Compile a single file
-          match (path.to_str(), path.extension())  {
-            (Some(name), Some(extension)) => {
-              match extension.to_str() {
-                Some("blx") => {
-                  println!("{} {}", "[Building]".bright_green(), name);
-                  let mut f = File::open(name)?;
-                  let mut buffer = String::new();
-                  f.read_to_string(&mut buffer);
-                  code.push(MechCode::MiniBlock(buffer));
-                }
-                Some("mec") => {
-                  println!("{} {}", "[Building]".bright_green(), name);
-                  let mut f = File::open(name)?;
-                  let mut buffer = String::new();
-                  f.read_to_string(&mut buffer);
-                  code.push(MechCode::String(buffer));
-                }
-                _ => (),
-              }
-            },
-            _ => (),
-          }
-        }
-      };
-    }
+    let code = read_mech_files(mech_paths).await?;
 
     let mut runner = ProgramRunner::new("Mech REPL", 1500000);
     let mech_client = runner.run();
@@ -347,54 +358,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // The testing framework
   } else if let Some(matches) = matches.subcommand_matches("test") {
       println!("Testing...");
-      let paths = std::fs::read_dir("./").unwrap();
+      let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
       let mut passed_all_tests = true;
+
+      let mut compiler = Compiler::new();
+      let code = read_mech_files(mech_paths).await?;
+      for c in code {
+        match c {
+          MechCode::String(c) => {compiler.compile_string(c);},
+          MechCode::MiniBlock(c) => {
+            let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
+            let mut blocks: Vec<Block> = Vec::new() ;
+            for miniblock in miniblocks {
+              let mut block = Block::new();
+              for constraint in miniblock.constraints {
+                block.add_constraints(constraint);
+              }
+              blocks.push(block);
+            }
+            compiler.blocks.append(&mut blocks);
+          },
+        }
+      }
+
+      let mut core = Core::new(1000,1000);
+      core.register_blocks(compiler.blocks);
+      core.step();
+
       let mut tests_count = 0;
       let mut tests_passed = 0;
       let mut tests_failed = 0;
-      for path in paths {
-        let path = path.unwrap().path();
-        match (path.file_name(), path.extension())  {
-          (Some(name), Some(extension)) => {
-            match extension.to_str() {
-              Some("mec") => {
-                let mut f = File::open(name).unwrap();
-
-                let mut buffer = String::new();
-
-                f.read_to_string(&mut buffer);
-
-                // Spin up a mech core and compiler
-                let mut core = Core::new(1000,1000);
-                let mut compiler = Compiler::new();
-                compiler.compile_string(buffer);
-                core.register_blocks(compiler.blocks);
-                core.step();
-
-                match core.get_table("mech/test".to_string()) {
-                  Some(test_results) => {
-                    let test_results = test_results.borrow();
-                    for i in 0..test_results.rows as usize {
-                      for j in 0..test_results.columns as usize {
-                        tests_count += 1;
-                        if test_results.data[j][i] == Value::Bool(false) {
-                          passed_all_tests = false;
-                          tests_failed += 1;
-                        } else {
-                          tests_passed += 1;
-                        }
-                      }
-                    }
-                  },
-                  _ => (),
-                }
+      match core.get_table("mech/test".to_string()) {
+        Some(test_results) => {
+          let test_results = test_results.borrow();
+          for i in 0..test_results.rows as usize {
+            for j in 0..test_results.columns as usize {
+              tests_count += 1;
+              if test_results.data[j][i] == Value::Bool(false) {
+                passed_all_tests = false;
+                tests_failed += 1;
+              } else {
+                tests_passed += 1;
               }
-              _ => (),
             }
-          },
-          _ => (),
-        };
+          }
+        },
+        _ => (),
       }
+
+
       if passed_all_tests {
         println!("Test result: {} | total {} | passed {} | failed {} | ", "ok".green(), tests_count, tests_passed, tests_failed);
         std::process::exit(0);
@@ -407,67 +419,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
     let repl = matches.is_present("repl_mode");
     let mut compiler = Compiler::new();
-
-    // Compile all the mec files supplied
-    for path_str in mech_paths {
-      let path = Path::new(path_str);
-      if path.to_str().unwrap().starts_with("https") {
-        println!("{} {}", "[Building]".bright_green(), path.display());
-        let mech_source = reqwest::get(path.to_str().unwrap()).await?.text().await?;
-        compiler.compile_string(mech_source);    
-      } else {
-        if path.is_dir() {
-          for entry in path.read_dir().expect("read_dir call failed") {
-            if let Ok(entry) = entry {
-              match (entry.path().to_str(), entry.path().extension())  {
-                (Some(name), Some(extension)) => {
-                  match extension.to_str() {
-                    Some("mec") => {
-                      println!("{} {}", "[Building]".bright_green(), name);
-                      let mut f = File::open(name)?;
-                      let mut buffer = String::new();
-                      f.read_to_string(&mut buffer);
-                      compiler.compile_string(buffer);
-                    }
-                    _ => (),
-                  }
-                },
-                _ => (),
-              }
+    let code = read_mech_files(mech_paths).await?;
+    for c in code {
+      match c {
+        MechCode::String(c) => {compiler.compile_string(c);},
+        MechCode::MiniBlock(c) => {
+          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
+          let mut blocks: Vec<Block> = Vec::new() ;
+          for miniblock in miniblocks {
+            let mut block = Block::new();
+            for constraint in miniblock.constraints {
+              block.add_constraints(constraint);
             }
+            blocks.push(block);
           }
-        } else if path.is_file() {
-          match (path.to_str(), path.extension())  {
-            (Some(name), Some(extension)) => {
-              match extension.to_str() {
-                Some("mec") => {
-                  println!("{} {}", "[Building]".bright_green(), path.display());
-                  let mut f = File::open(name)?;
-                  let mut mech_source = String::new();
-                  f.read_to_string(&mut mech_source);
-                  compiler.compile_string(mech_source);
-                }
-                Some("blx") => {
-                  println!("{} {}", "[Loading]".bright_green(), path.display());
-                  let mut blocks: Vec<Block> = Vec::new();
-                  let file = File::open(name)?;
-                  let mut reader = BufReader::new(file);
-                  let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                  for miniblock in miniblocks {
-                    let mut block = Block::new();
-                    for constraint in miniblock.constraints {
-                      block.add_constraints(constraint);
-                    }
-                    blocks.push(block);
-                  }
-                  compiler.blocks.append(&mut blocks);
-                }
-                _ => (),
-              }
-            },
-            _ => (),
-          }
-        }
+          compiler.blocks.append(&mut blocks);
+        },
       }
     }
 
@@ -496,62 +463,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // Build a .blx file from .mec and other .blx files
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
-  
-    // Spin up a mech core and compiler
-    let mut code = Vec::new();
-    for path_str in mech_paths {
-      let path = Path::new(path_str);
-      // Compile a .mec file on the web
-      if path.to_str().unwrap().starts_with("https") {
-        println!("{} {}", "[Building]".bright_green(), path.display());
-        let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
-        code.push(program);
-      } else {
-        // Compile a directory of mech files
-        if path.is_dir() {
-          for entry in path.read_dir().expect("read_dir call failed") {
-            if let Ok(entry) = entry {
-              match (entry.path().to_str(), entry.path().extension())  {
-                (Some(name), Some(extension)) => {
-                  match extension.to_str() {
-                    Some("mec") => {
-                      println!("{} {}", "[Building]".bright_green(), name);
-                      let mut f = File::open(name)?;
-                      let mut buffer = String::new();
-                      f.read_to_string(&mut buffer);
-                      code.push(buffer);
-                    }
-                    _ => (),
-                  }
-                },
-                _ => (),
-              }
-            }
-          }
-        } else if path.is_file() {
-          // Compile a single file
-          match (path.to_str(), path.extension())  {
-            (Some(name), Some(extension)) => {
-              match extension.to_str() {
-                Some("mec") => {
-                  println!("{} {}", "[Building]".bright_green(), name);
-                  let mut f = File::open(name)?;
-                  let mut buffer = String::new();
-                  f.read_to_string(&mut buffer);
-                  code.push(buffer);
-                }
-                _ => (),
-              }
-            },
-            _ => (),
-          }
-        }
-      };
-    }
-
+    let code = read_mech_files(mech_paths).await?;
     let mut compiler = Compiler::new();
     for c in code {
-      compiler.compile_string(c);
+      match c {
+        MechCode::String(c) => {compiler.compile_string(c);},
+        MechCode::MiniBlock(c) => {
+          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
+          let mut blocks: Vec<Block> = Vec::new() ;
+          for miniblock in miniblocks {
+            let mut block = Block::new();
+            for constraint in miniblock.constraints {
+              block.add_constraints(constraint);
+            }
+            blocks.push(block);
+          }
+          compiler.blocks.append(&mut blocks);
+        },
+      }
     }
 
     let output_name = match matches.value_of("output_name") {
