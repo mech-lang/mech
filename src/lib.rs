@@ -11,7 +11,7 @@ use mech_core::{Transaction, Interner, TableId, Core, Constraint};
 pub enum WebsocketClientMessage {
   Listening(Vec<TableId>),
   Control(u8),
-  Code(String),
+  Code(MechCode),
   Table(usize),
   RemoveBlock(usize),
   Transaction(Transaction),
@@ -32,7 +32,7 @@ pub enum RunLoopMessage {
   Listening(Vec<TableId>),
   Table(u64),
   Transaction(Transaction),
-  Code((u64,String)),
+  Code((u64,MechCode)),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
   //Core(Core),
@@ -51,4 +51,10 @@ impl MiniBlock {
     }
   }
 
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MechCode {
+  String(String),
+  MiniBlock(String),
 }
