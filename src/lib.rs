@@ -15,5 +15,5 @@ pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
 pub use mech_syntax::parser::{Parser, Node as ParserNode};
 pub use mech_program::{Program, ProgramRunner, RunLoop, ClientMessage};
-pub use mech_utilities::{RunLoopMessage, MiniBlock};
+pub use mech_utilities::{RunLoopMessage, MiniBlock, MechCode};
 pub use mech_server::client::{ClientHandler};

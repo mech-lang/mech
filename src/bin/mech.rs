@@ -19,7 +19,25 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{Core, MiniBlock, Block, Constraint, Compiler, Table, Value, ParserNode, Hasher, Program, ErrorType, ProgramRunner, RunLoop, RunLoopMessage, ClientMessage, Parser};
+use mech::{
+  Core, 
+  MiniBlock, 
+  Block, 
+  Constraint, 
+  Compiler, 
+  Table, 
+  Value, 
+  ParserNode, 
+  Hasher, 
+  Program, 
+  ErrorType, 
+  ProgramRunner, 
+  RunLoop, 
+  RunLoopMessage, 
+  ClientMessage, 
+  Parser,
+  MechCode,
+};
 use mech::QuantityMath;
 
 use std::thread::{self, JoinHandle};
@@ -164,7 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Spin up a mech core and compiler
     let mut core = Core::new(1000,1000);
     let mut compiler = Compiler::new();
-    let mut code: Vec<String> = Vec::new();
+    let mut code: Vec<MechCode> = Vec::new();
 
     for path_str in mech_paths {
       let path = Path::new(path_str);
@@ -172,7 +190,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       if path.to_str().unwrap().starts_with("https") {
         println!("{} {}", "[Building]".bright_green(), path.display());
         let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
-        code.push(program);
+        code.push(MechCode::String(program));
       } else {
         // Compile a directory of mech files
         if path.is_dir() {
@@ -181,12 +199,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               match (entry.path().to_str(), entry.path().extension())  {
                 (Some(name), Some(extension)) => {
                   match extension.to_str() {
+                    Some("blx") => {
+                      println!("{} {}", "[Building]".bright_green(), name);
+                      let mut f = File::open(name)?;
+                      let mut buffer = String::new();
+                      f.read_to_string(&mut buffer);
+                      code.push(MechCode::MiniBlock(buffer));
+                    }
                     Some("mec") => {
                       println!("{} {}", "[Building]".bright_green(), name);
                       let mut f = File::open(name)?;
                       let mut buffer = String::new();
                       f.read_to_string(&mut buffer);
-                      code.push(buffer);
+                      code.push(MechCode::String(buffer));
                     }
                     _ => (),
                   }
@@ -200,12 +225,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           match (path.to_str(), path.extension())  {
             (Some(name), Some(extension)) => {
               match extension.to_str() {
+                Some("blx") => {
+                  println!("{} {}", "[Building]".bright_green(), name);
+                  let mut f = File::open(name)?;
+                  let mut buffer = String::new();
+                  f.read_to_string(&mut buffer);
+                  code.push(MechCode::MiniBlock(buffer));
+                }
                 Some("mec") => {
                   println!("{} {}", "[Building]".bright_green(), name);
                   let mut f = File::open(name)?;
                   let mut buffer = String::new();
                   f.read_to_string(&mut buffer);
-                  code.push(buffer);
+                  code.push(MechCode::String(buffer));
                 }
                 _ => (),
               }
@@ -287,6 +319,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{:x}", id)
     }
 
+    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>)>) -> impl Responder {
+      format!("O")
+    }
+
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), http_address);
     let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone()));
     HttpServer::new(move || {
@@ -295,6 +331,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .wrap(CookieSession::signed(&[0; 32]).secure(false))
         .service(web::resource("/table/{query}")
           .route(web::get().to(index)))
+        .service(web::resource("/program")
+          .route(web::get().to(serve_blocks)))
         .service(
           actix_files::Files::new("/", "./notebook/").index_file("index.html"),
         )
@@ -682,7 +720,7 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            mech_client.send(RunLoopMessage::Code((0,code)));
+            mech_client.send(RunLoopMessage::Code((0,MechCode::String(code))));
           },
           ReplCommand::EchoCode(code) => {
             mech_client.send(RunLoopMessage::EchoCode(code));
