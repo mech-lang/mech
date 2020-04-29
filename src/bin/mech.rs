@@ -55,8 +55,6 @@ use nom::{
   character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
 };
 
-extern crate mech_server;
-
 extern crate reqwest;
 use std::collections::HashMap;
 
