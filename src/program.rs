@@ -536,18 +536,28 @@ impl ProgramRunner {
             }
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
+            // Reset #ans
+             match program.mech.get_table("ans".to_string()) {
+              Some(table) => {
+                table.borrow_mut().clear();
+              },
+              None => (),
+            };
+
+            // Compile and run code
             let mut compiler = Compiler::new();
             compiler.compile_string(code);
             program.mech.register_blocks(compiler.blocks);
             program.download_dependencies(Some(client_outgoing.clone()));
             program.mech.step();
 
-            program.download_dependencies(Some(client_outgoing.clone()));
-
+            // Get the result
             let echo_table = match program.mech.get_table("ans".to_string()) {
               Some(table) => Some(table.borrow().clone()),
               None => None,
             };
+
+            // Send it
             client_outgoing.send(ClientMessage::Table(echo_table));
           } 
           (Ok(RunLoopMessage::Clear), _) => {
