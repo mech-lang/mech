@@ -119,10 +119,10 @@ async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn
                 match extension.to_str() {
                   Some("blx") => {
                     println!("{} {}", "[Building]".bright_green(), name);
-                    let mut f = File::open(name)?;
-                    let mut buffer = String::new();
-                    f.read_to_string(&mut buffer);
-                    code.push(MechCode::MiniBlock(buffer));
+                    let file = File::open(name)?;
+                    let mut reader = BufReader::new(file);
+                    let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
+                    code.push(MechCode::MiniBlock(miniblocks));
                   }
                   Some("mec") => {
                     println!("{} {}", "[Building]".bright_green(), name);
@@ -145,10 +145,10 @@ async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn
             match extension.to_str() {
               Some("blx") => {
                 println!("{} {}", "[Building]".bright_green(), name);
-                let mut f = File::open(name)?;
-                let mut buffer = String::new();
-                f.read_to_string(&mut buffer);
-                code.push(MechCode::MiniBlock(buffer));
+                let file = File::open(name)?;
+                let mut reader = BufReader::new(file);
+                let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
+                code.push(MechCode::MiniBlock(miniblocks));
               }
               Some("mec") => {
                 println!("{} {}", "[Building]".bright_green(), name);
@@ -166,6 +166,27 @@ async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn
     };
   }
   Ok(code)
+}
+
+fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
+  let mut compiler = Compiler::new();
+  for c in code {
+    match c {
+      MechCode::String(c) => {compiler.compile_string(c);},
+      MechCode::MiniBlock(c) => {
+        let mut blocks: Vec<Block> = Vec::new();
+        for miniblock in c {
+          let mut block = Block::new();
+          for constraint in miniblock.constraints {
+            block.add_constraints(constraint);
+          }
+          blocks.push(block);
+        }
+        compiler.blocks.append(&mut blocks);
+      },
+    }
+  }
+  compiler.blocks
 }
 
 // ## Mech Entry
@@ -253,35 +274,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spin up a mech core and compiler
     let mut core = Core::new(1000,1000);
-    let mut compiler = Compiler::new();
 
     let code = read_mech_files(mech_paths).await?;
-    for c in code.clone() {
-      match c {
-        MechCode::String(c) => {compiler.compile_string(c);},
-        MechCode::MiniBlock(c) => {
-          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
-          let mut blocks: Vec<Block> = Vec::new() ;
-          for miniblock in miniblocks {
-            let mut block = Block::new();
-            for constraint in miniblock.constraints {
-              block.add_constraints(constraint);
-            }
-            blocks.push(block);
-          }
-          compiler.blocks.append(&mut blocks);
-        },
-      }
-    }
+    let blocks = compile_code(code.clone());
+
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for block in compiler.blocks.iter() {
+    for block in blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.constraints = block.constraints.clone();
       miniblocks.push(miniblock);
     }
     let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
-
-
 
     let mut runner = ProgramRunner::new("Mech REPL", 1500000);
     let mech_client = runner.run();
@@ -388,26 +391,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
       let mut compiler = Compiler::new();
       let code = read_mech_files(mech_paths).await?;
-      for c in code {
-        match c {
-          MechCode::String(c) => {compiler.compile_string(c);},
-          MechCode::MiniBlock(c) => {
-            let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
-            let mut blocks: Vec<Block> = Vec::new() ;
-            for miniblock in miniblocks {
-              let mut block = Block::new();
-              for constraint in miniblock.constraints {
-                block.add_constraints(constraint);
-              }
-              blocks.push(block);
-            }
-            compiler.blocks.append(&mut blocks);
-          },
-        }
-      }
+      let blocks = compile_code(code);
 
       let mut core = Core::new(1000,1000);
-      core.register_blocks(compiler.blocks);
+      core.register_blocks(blocks);
       core.step();
 
       let mut tests_count = 0;
@@ -442,30 +429,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       None
   } else if let Some(matches) = matches.subcommand_matches("run") {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
-    let repl = matches.is_present("repl_mode");
-    let mut compiler = Compiler::new();
+    let repl = matches.is_present("repl_mode");    
     let code = read_mech_files(mech_paths).await?;
-    for c in code {
-      match c {
-        MechCode::String(c) => {compiler.compile_string(c);},
-        MechCode::MiniBlock(c) => {
-          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
-          let mut blocks: Vec<Block> = Vec::new() ;
-          for miniblock in miniblocks {
-            let mut block = Block::new();
-            for constraint in miniblock.constraints {
-              block.add_constraints(constraint);
-            }
-            blocks.push(block);
-          }
-          compiler.blocks.append(&mut blocks);
-        },
-      }
-    }
+    let blocks = compile_code(code);
 
     // Spin up a mech core and add the new blocks
     let mut core = Core::new(1000,1000);
-    core.register_blocks(compiler.blocks);
+    core.register_blocks(blocks);
     let output_id: u64 = Hasher::hash_str("mech/output");  
 
     if !repl {
@@ -489,24 +459,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
     let code = read_mech_files(mech_paths).await?;
-    let mut compiler = Compiler::new();
-    for c in code {
-      match c {
-        MechCode::String(c) => {compiler.compile_string(c);},
-        MechCode::MiniBlock(c) => {
-          let miniblocks: Vec<MiniBlock> = bincode::deserialize(c.as_bytes())?;
-          let mut blocks: Vec<Block> = Vec::new() ;
-          for miniblock in miniblocks {
-            let mut block = Block::new();
-            for constraint in miniblock.constraints {
-              block.add_constraints(constraint);
-            }
-            blocks.push(block);
-          }
-          compiler.blocks.append(&mut blocks);
-        },
-      }
-    }
+    let blocks = compile_code(code);
 
     let output_name = match matches.value_of("output_name") {
       Some(name) => format!("{}.blx",name),
@@ -516,7 +469,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for block in compiler.blocks.iter() {
+    for block in blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.constraints = block.constraints.clone();
       miniblocks.push(miniblock);
