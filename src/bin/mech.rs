@@ -205,17 +205,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .help("Source .mec and .blx files")
         .required(false)
         .multiple(true))
-      .arg(Arg::with_name("port")
+      .arg(Arg::with_name("http-port")
         .short("p")
         .long("port")
         .value_name("PORT")
-        .help("Sets the port for the Mech websocket server (3012)")
-        .takes_value(true))
-      .arg(Arg::with_name("http-port")
-        .short("t")
-        .long("http-port")
-        .value_name("HTTPPORT")
-        .help("Sets the port for the HTTP server (8081)")
+        .help("Sets the port for the server (8081)")
         .takes_value(true))    
       .arg(Arg::with_name("address")
         .short("a")
@@ -264,11 +258,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let core: Option<Core> = if let Some(matches) = matches.subcommand_matches("serve") {
 
-    let wport = matches.value_of("port").unwrap_or("3012");
-    let hport = matches.value_of("http-port").unwrap_or("8081");
+    let port = matches.value_of("port").unwrap_or("8081");
     let address = matches.value_of("address").unwrap_or("127.0.0.1");
-    let http_address = format!("{}:{}",address,hport);
-    let websocket_address = format!("{}:{}",address,wport);
+    let full_address = format!("{}:{}",address,port);
     let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
@@ -362,7 +354,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{{\"blocks\": {:?} }}", miniblocks)
     }
 
-    println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), http_address);
+    println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
     let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone(), serialized_miniblocks.clone()));
     HttpServer::new(move || {
         ActixApp::new()
@@ -376,7 +368,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           actix_files::Files::new("/", "./notebook/").index_file("index.html"),
         )
       })
-      .bind(http_address)?
+      .bind(full_address)?
       .run()
       .await?;
     println!("{} Closing server.", "[Mech Server]".bright_cyan());
