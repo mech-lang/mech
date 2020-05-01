@@ -72,9 +72,14 @@ extern crate serde;
 extern crate actix_web;
 extern crate actix_rt;
 extern crate actix_files;
-use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder};
+extern crate actix;
+extern crate actix_web_actors;
+use actix::prelude::*;
+use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder, Error, HttpRequest};
 use actix_session::{CookieSession, Session};
 use ahash::AHasher;
+use actix::{Actor, StreamHandler};
+use actix_web_actors::ws;
 
 #[macro_use]
 extern crate crossbeam_channel;
@@ -205,12 +210,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .help("Source .mec and .blx files")
         .required(false)
         .multiple(true))
-      .arg(Arg::with_name("http-port")
+      .arg(Arg::with_name("port")
         .short("p")
         .long("port")
         .value_name("PORT")
         .help("Sets the port for the server (8081)")
-        .takes_value(true))    
+        .takes_value(true))
       .arg(Arg::with_name("address")
         .short("a")
         .long("address")
@@ -294,7 +299,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     }
 
-    async fn index(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>, Vec<u8>)>) -> impl Responder {
+    async fn tables(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>, Vec<u8>)>) -> impl Responder {
       println!("Serving");
       use core::hash::Hasher;
       //println!("Connection Info {:?}", req.connection_info());
@@ -354,23 +359,108 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{{\"blocks\": {:?} }}", miniblocks)
     }
 
+    use std::time::{Duration, Instant};
+    // How often heartbeat pings are sent
+    const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
+    /// How long before lack of client response causes a timeout
+    const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
+
+    /// do websocket handshake and start `MyWebSocket` actor
+    async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
+        println!("{:?}", r);
+        let res = ws::start(MyWebSocket::new(), &r, stream);
+        println!("{:?}", res);
+        res
+    }
+
+    /// websocket connection is long running connection, it easier
+    /// to handle with an actor
+    struct MyWebSocket {
+        /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
+        /// otherwise we drop connection.
+        hb: Instant,
+    }
+
+    impl Actor for MyWebSocket {
+        type Context = ws::WebsocketContext<Self>;
+
+        /// Method is called on actor start. We start the heartbeat process here.
+        fn started(&mut self, ctx: &mut Self::Context) {
+            self.hb(ctx);
+        }
+    }
+
+    /// Handler for `ws::Message`
+    impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
+        fn handle(
+            &mut self,
+            msg: Result<ws::Message, ws::ProtocolError>,
+            ctx: &mut Self::Context,
+        ) {
+            // process websocket messages
+            println!("WS: {:?}", msg);
+            match msg {
+                Ok(ws::Message::Ping(msg)) => {
+                    self.hb = Instant::now();
+                    ctx.pong(&msg);
+                }
+                Ok(ws::Message::Pong(_)) => {
+                    self.hb = Instant::now();
+                }
+                Ok(ws::Message::Text(text)) => ctx.text(text),
+                Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+                Ok(ws::Message::Close(_)) => {
+                    ctx.stop();
+                }
+                _ => ctx.stop(),
+            }
+        }
+    }
+
+    impl MyWebSocket {
+        fn new() -> Self {
+            Self { hb: Instant::now() }
+        }
+
+        /// helper method that sends ping to client every second.
+        ///
+        /// also this method checks heartbeats from client
+        fn hb(&self, ctx: &mut <Self as Actor>::Context) {
+            ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
+                // check client heartbeats
+                if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
+                    // heartbeat timed out
+                    println!("Websocket Client heartbeat failed, disconnecting!");
+
+                    // stop actor
+                    ctx.stop();
+
+                    // don't try to send a ping
+                    return;
+                }
+
+                ctx.ping(b"");
+            });
+        }
+    }
+
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
     let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone(), serialized_miniblocks.clone()));
     HttpServer::new(move || {
         ActixApp::new()
-        .app_data(data.clone())
-        .wrap(CookieSession::signed(&[0; 32]).secure(false))
-        .service(web::resource("/table/{query}")
-          .route(web::get().to(index)))
-        .service(web::resource("/blocks")
-          .route(web::get().to(serve_blocks)))
-        .service(
-          actix_files::Files::new("/", "./notebook/").index_file("index.html"),
-        )
-      })
-      .bind(full_address)?
-      .run()
-      .await?;
+          .app_data(data.clone())
+          .wrap(CookieSession::signed(&[0; 32]).secure(false))
+          .service(web::resource("/tables/{query}").route(web::get().to(tables)))
+          .service(web::resource("/blocks").route(web::get().to(serve_blocks)))
+          // websocket route
+          .service(web::resource("/ws/").route(web::get().to(ws_index)))
+          .service(actix_files::Files::new("/", "./notebook/").index_file("index.html"))
+          // static files
+          //.service(fs::Files::new("/", "static/").index_file("index.html"))
+    })
+    .bind(full_address)?
+    .run()
+    .await?;
     println!("{} Closing server.", "[Mech Server]".bright_cyan());
     std::process::exit(0);
 
