@@ -406,6 +406,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Ok(ws::Message::Pong(_)) => {
                     self.hb = Instant::now();
+                    ctx.text("Message!");
                 }
                 Ok(ws::Message::Text(text)) => ctx.text(text),
                 Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
@@ -569,9 +570,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     None
   };
 
-  println!("\n {}",  "╔═══════════════════════╗".bright_black());
-  println!(" {}      {}      {}", "║".bright_black(), format!("MECH v{}",version).bright_yellow(), "║".bright_black());
-  println!(" {}\n",  "╚═══════════════════════╝".bright_black());
+let text_logo = r#"
+  ┌───────┐     ┌────┐ ┌──────┐ ┌─┐   ┌─┐
+  │ ┌─┐ ┌─┼─┐   └────┘ │ ┌────┘ │ │   │ │
+  │ │ │ │ │ │ ┌──────┐ │ │      │ └─┐ │ │
+  │ │ │ │ │ │ │ ┌────┘ │ │      │ ┌─┘ │ │
+  │ │ └─┘ │ │ │ └────┐ │ └────┐ │ │   │ │
+  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.bright_yellow();
+
+  println!("{}", text_logo);
+
+  println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
+  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).bright_yellow(), "║".bright_black());
+  println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
+  println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
 
     println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
     let help_message = r#"
