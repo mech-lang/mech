@@ -14,10 +14,12 @@ extern crate mech_syntax;
 extern crate mech_utilities;
 extern crate mech_math;
 extern crate serde_json;
+extern crate bincode;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::cell::Cell;
+use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -26,8 +28,8 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
-use mech_utilities::WebsocketClientMessage;
+use mech_core::{Block, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_utilities::{WebsocketClientMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 
 #[macro_export]
@@ -73,21 +75,21 @@ impl Core {
     }
   }
   pub fn connect_remote_core(&mut self, address: String) {
-    /*
+    
     let mut ws = web_sys::WebSocket::new(&address).unwrap();
     let wasm_core = self as *mut Core;
     // Set On Opened
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
         log!("Opened {:?}", event.time_stamp());
-        unsafe {
+        /*unsafe {
           let mut message_data: Vec<u64> = Vec::new();
           for input_register in (*wasm_core).core.input.iter() {
             message_data.push(input_register.table);
           }
           let json_msg = serde_json::to_string(&WebsocketClientMessage::Listening(message_data)).unwrap();
           (*wasm_core).websocket.clone().unwrap().send_with_str(&json_msg);
-        }
+        }*/
       }) as Box<dyn FnMut(_)>);
       ws.set_onopen(Some(&closure.as_ref().unchecked_ref()));
       closure.forget();
@@ -95,7 +97,8 @@ impl Core {
     // Set On Messaged
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::MessageEvent| {
-        let deserialized: Result<WebsocketClientMessage, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
+        log!("On Message: {:?}", event);
+        /*let deserialized: Result<WebsocketClientMessage, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
         unsafe {
           match deserialized {
             Ok(WebsocketClientMessage::Listening(remote_tables)) => {
@@ -110,7 +113,7 @@ impl Core {
             },
             _ => (),
           }
-
+*/
         }
       }) as Box<dyn FnMut(_)>);
       ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
@@ -119,12 +122,13 @@ impl Core {
     // Set On Close
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+        log!("Closing");
       }) as Box<dyn FnMut(_)>);
       ws.set_onclose(Some(&closure.as_ref().unchecked_ref()));
       closure.forget();
     }
     self.websocket = Some(ws);
-  */
+  
   }
 
   pub fn compile_code(&mut self, code: String) {
@@ -139,8 +143,23 @@ impl Core {
     self.core.step();
     self.core.process_transaction(&Transaction::from_changeset(changes));
     self.programs = compiler.programs.clone();
-    self.render_program();
+    //self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
+  }
+
+  pub fn load_blocks(&mut self, blocks: Vec<u8>) {
+    let miniblocks: Vec<MiniBlock> = bincode::deserialize(&blocks).unwrap();
+    let mut blocks: Vec<Block> = Vec::new() ;
+    for miniblock in miniblocks {
+      let mut block = Block::new();
+      for constraint in miniblock.constraints {
+        block.add_constraints(constraint);
+      }
+      blocks.push(block);
+    }
+    log!("Loaded {} blocks.", blocks.len());
+    self.core.register_blocks(blocks);
+    self.core.step();
   }
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
@@ -1028,6 +1047,7 @@ impl Core {
   }
 
   pub fn add_application(&mut self) -> Result<(), JsValue> {
+  
     let table_id = Hasher::hash_str("app/main");
     let core = &mut self.core as *mut mech_core::Core;
     let table;
@@ -1040,7 +1060,6 @@ impl Core {
         let app_table = app_table.borrow();
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-        let body = document.body().expect("document should have a body");
         for row in 0..app_table.rows as usize {
           let root_id = app_table.data[0][row].as_string().unwrap();
           self.roots.insert(root_id.clone());
