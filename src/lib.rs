@@ -106,6 +106,13 @@ impl Core {
     self.store.get_table(table_id)
   }
 
+  pub fn get_table_by_id(&mut self, table_id: &TableId) -> Option<&Rc<RefCell<Table>>> {
+    match table_id {
+      TableId::Local(id) => None,
+      TableId::Global(id) => self.store.get_table(*id)
+    }
+  }
+
   pub fn register_blocks(&mut self, blocks: Vec<Block>) {
     self.runtime.register_blocks(blocks, &mut self.store);
     for (id, block) in self.runtime.blocks.iter() {
