@@ -37,6 +37,8 @@ use mech::{
   ClientMessage, 
   Parser,
   MechCode,
+  WebsocketMessage,
+  NetworkTable,
 };
 use mech::QuantityMath;
 
@@ -361,88 +363,157 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use std::time::{Duration, Instant};
     // How often heartbeat pings are sent
-    const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
+    const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(5000);
     /// How long before lack of client response causes a timeout
     const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
     /// do websocket handshake and start `MyWebSocket` actor
-    async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
-        println!("{:?}", r);
-        let res = ws::start(MyWebSocket::new(), &r, stream);
-        println!("{:?}", res);
-        res
+    async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>)>) -> Result<HttpResponse, Error> {
+      println!("{:?}", r);
+      let (incoming, outgoing, _) = data.get_ref();
+      let res = ws::start(MyWebSocket::new(incoming.clone(), outgoing.clone()), &r, stream);
+      println!("{:?}", res);
+      res
     }
 
     /// websocket connection is long running connection, it easier
     /// to handle with an actor
     struct MyWebSocket {
-        /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
-        /// otherwise we drop connection.
-        hb: Instant,
+      outgoing: Sender<RunLoopMessage>,
+      incoming: Receiver<ClientMessage>,
+      thread: Option<JoinHandle<()>>,
+      /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
+      /// otherwise we drop connection.
+      hb: Instant,
     }
 
     impl Actor for MyWebSocket {
-        type Context = ws::WebsocketContext<Self>;
+      type Context = ws::WebsocketContext<Self>;
 
-        /// Method is called on actor start. We start the heartbeat process here.
-        fn started(&mut self, ctx: &mut Self::Context) {
-            self.hb(ctx);
-        }
+      /// Method is called on actor start. We start the heartbeat process here.
+      fn started(&mut self, ctx: &mut Self::Context) {
+        let thread_receiver = self.incoming.clone();
+        // Start a receive loop. Generally this will just pass messages on to the websocket client:
+        let thread = thread::Builder::new().name("Websocket Receiving Thread".to_string()).spawn(move || {
+          // Get all responses from the thread
+          'receive_loop: loop {
+            match thread_receiver.recv() {
+              (Ok(ClientMessage::Pause)) => {
+                //println!("{} Paused", formatted_name);
+              },
+              (Ok(ClientMessage::Resume)) => {
+                //println!("{} Resumed", formatted_name);
+              },
+              (Ok(ClientMessage::Clear)) => {
+                //println!("{} Cleared", formatted_name);
+              },
+              (Ok(ClientMessage::NewBlocks(count))) => {
+                //println!("Compiled {} blocks.", count);
+              },
+              (Ok(ClientMessage::String(message))) => {
+                //println!("{} {}", formatted_name, message);
+                //print!("{}", ">: ".bright_yellow());
+              },
+              (Ok(ClientMessage::Table(table))) => {
+                // Send the table received from the client over the websocket
+                match table {
+                  Some(table) => {
+                    let ntable = NetworkTable::new(&table);
+                    let msg = bincode::serialize(&WebsocketMessage::Table(ntable)).unwrap();
+                    //ctx.binary(msg);
+                  }
+                  None => (),
+                }
+              },
+              (Ok(ClientMessage::Transaction(txn))) => {
+                //println!("{} Transaction: {:?}", formatted_name, txn);
+              },
+              (Ok(ClientMessage::Done)) => {
+                // Do nothing
+              },
+              (Err(x)) => {
+                //println!("{} {}", "[Error]".bright_red(), x);
+                break 'receive_loop;
+              }
+              q => {
+                //println!("else: {:?}", q);
+              },
+            };
+          }
+        }).unwrap();
+        self.thread = Some(thread);
+        self.hb(ctx);
+      }
     }
 
     /// Handler for `ws::Message`
     impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
-        fn handle(
-            &mut self,
-            msg: Result<ws::Message, ws::ProtocolError>,
-            ctx: &mut Self::Context,
-        ) {
-            // process websocket messages
-            println!("WS: {:?}", msg);
-            match msg {
-                Ok(ws::Message::Ping(msg)) => {
-                    self.hb = Instant::now();
-                    ctx.pong(&msg);
-                }
-                Ok(ws::Message::Pong(_)) => {
-                    self.hb = Instant::now();
-                    ctx.text("Message!");
-                }
-                Ok(ws::Message::Text(text)) => ctx.text(text),
-                Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
-                Ok(ws::Message::Close(_)) => {
-                    ctx.stop();
-                }
-                _ => ctx.stop(),
+      fn handle(
+        &mut self,
+        msg: Result<ws::Message, ws::ProtocolError>,
+        ctx: &mut Self::Context,
+      ) {
+        // process websocket messages
+        println!("WS: {:?}", msg);
+        match msg {
+          Ok(ws::Message::Ping(msg)) => {
+            self.hb = Instant::now();
+            ctx.pong(&msg);
+          }
+          Ok(ws::Message::Pong(_)) => {
+            self.hb = Instant::now();
+            ctx.text("Message!");
+          }
+          Ok(ws::Message::Text(text)) => ctx.text(text),
+          Ok(ws::Message::Binary(bin)) => {
+            let message: WebsocketMessage = bincode::deserialize(&bin).unwrap();
+            match message {
+              WebsocketMessage::Listening(register) => {
+                self.outgoing.send(RunLoopMessage::Listening(register));
+              },
+              _ => (),
             }
+            
+            //ctx.binary(bin)
+          },
+          Ok(ws::Message::Close(_)) => {
+              ctx.stop();
+          }
+          _ => ctx.stop(),
         }
+      }
     }
 
     impl MyWebSocket {
-        fn new() -> Self {
-            Self { hb: Instant::now() }
+      fn new(outgoing: Sender<RunLoopMessage>, incoming: Receiver<ClientMessage>) -> MyWebSocket {
+        MyWebSocket { 
+          outgoing,
+          incoming,
+          thread: None,
+          hb: Instant::now() 
         }
+      }
 
-        /// helper method that sends ping to client every second.
-        ///
-        /// also this method checks heartbeats from client
-        fn hb(&self, ctx: &mut <Self as Actor>::Context) {
-            ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-                // check client heartbeats
-                if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-                    // heartbeat timed out
-                    println!("Websocket Client heartbeat failed, disconnecting!");
+      /// helper method that sends ping to client every second.
+      ///
+      /// also this method checks heartbeats from client
+      fn hb(&self, ctx: &mut <Self as Actor>::Context) {
+        ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
+          // check client heartbeats
+          if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
+            // heartbeat timed out
+            println!("Websocket Client heartbeat failed, disconnecting!");
 
-                    // stop actor
-                    ctx.stop();
+            // stop actor
+            ctx.stop();
 
-                    // don't try to send a ping
-                    return;
-                }
+            // don't try to send a ping
+            return;
+          }
 
-                ctx.ping(b"");
-            });
-        }
+          ctx.ping(b"");
+        });
+      }
     }
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
@@ -598,9 +669,6 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
-
-
-
   let runner = ProgramRunner::new("Mech REPL", 1000);
   let mech_client = runner.run();
 
@@ -701,7 +769,7 @@ clear   - reset the current core
             break 'REPL;
           },
           ReplCommand::Table(id) => {
-            mech_client.send(RunLoopMessage::Table(id));
+            //mech_client.send(RunLoopMessage::Table(id));
           },
           ReplCommand::Clear => {
             mech_client.send(RunLoopMessage::Clear);
