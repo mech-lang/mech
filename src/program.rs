@@ -21,7 +21,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode};
+use mech_utilities::{RunLoopMessage, MechCode, NetworkTable};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -79,7 +79,7 @@ pub struct Program {
   pub outgoing: Sender<RunLoopMessage>,
   pub errors: Vec<Error>,
   programs: u64,
-  pub listeners: HashSet<TableId>,
+  pub listeners: HashSet<Register>,
 }
 
 impl Program {
@@ -357,7 +357,7 @@ impl Persister {
     self.thread.join().unwrap();
   }
 
-  pub fn get_channel(&self) -> Sender<PersisterMessage> {
+    pub fn get_channel(&self) -> Sender<PersisterMessage> {
     self.outgoing.clone()
   }
 
@@ -446,6 +446,197 @@ impl ProgramRunner {
       for core in program.cores.values_mut() {
         core.step();
       }
+      extern crate ws;
+      use ws::{connect, Handler, Sender, Handshake, Result, Message, CloseCode};
+/*
+// Our Handler struct.
+// Here we explicity indicate that the Client needs a Sender,
+// whereas a closure captures the Sender for us automatically.
+struct Client {
+  out: Sender,
+}
+
+// We implement the Handler trait for Client so that we can get more
+// fine-grained control of the connection.
+impl Handler for Client {
+
+  // `on_open` will be called only after the WebSocket handshake is successful
+  // so at this point we know that the connection is ready to send/receive messages.
+  // We ignore the `Handshake` for now, but you could also use this method to setup
+  // Handler state or reject the connection based on the details of the Request
+  // or Response, such as by checking cookies or Auth headers.
+  fn on_open(&mut self, _: Handshake) -> Result<()> {
+      // Now we don't need to call unwrap since `on_open` returns a `Result<()>`.
+      // If this call fails, it will only result in this connection disconnecting.
+      self.out.send("Hello WebSocket")
+  }
+
+  // `on_message` is roughly equivalent to the Handler closure. It takes a `Message`
+  // and returns a `Result<()>`.
+  fn on_message(&mut self, msg: Message) -> Result<()> {
+      // Close the connection when we get a response from the server
+      println!("Got message: {}", msg);
+      Ok(())
+      //self.out.close(CloseCode::Normal)
+  }
+}
+//connect("ws://127.0.0.1:3012/ws/", |out| Client { out: out } ).unwrap();
+let thread = thread::Builder::new().name("wsthread".to_string()).spawn(move || {
+    println!("Connecting to websocket!");
+    // Connect to the url and call the closure
+    if let Err(error) = connect("ws://127.0.0.1:3012/ws/", |out| {
+      Client { out: out }
+    }) {
+        // Inform the user of failure
+        println!("Failed to create WebSocket due to: {:?}", error);
+    }
+  });
+  */
+      /*  
+  use tungstenite::{connect, Message};
+  use url::Url;
+
+  println!("Attepmpting to connect to websocket...");
+  match connect(Url::parse("ws://localhost:3012/ws/").unwrap()) {
+    Ok((mut socket, response)) => {
+      println!("Connected to the server");
+      println!("Response HTTP code: {}", response.status());
+      println!("Response contains the following headers:");
+      for (ref header, _value) in response.headers() {
+          println!("* {}", header);
+      }
+    
+      socket
+          .write_message(Message::Text("Hello WebSocket".into()))
+          .unwrap();
+      loop {
+          let msg = socket.read_message().expect("Error reading message");
+          println!("Received: {}", msg);
+      }
+    }
+    Err(e) => println!("ERROR::: {:?}", e),
+  }
+*/
+
+//(mut socket, response)
+
+
+
+// socket.close(None);
+      // Check to see if there are any remote cores...
+      // Simple websocket client.
+      /*
+use std::time::Duration;
+use std::{io, thread};
+
+use actix::io::SinkWrite;
+use actix::*;
+use actix_codec::Framed;
+use awc::{
+    error::WsProtocolError,
+    ws::{Codec, Frame, Message},
+    BoxedSocket, Client,
+};
+use bytes::Bytes;
+use futures::stream::{SplitSink, StreamExt};
+
+
+    //let sys = System::new("websocket-client");
+    Arbiter::spawn(async {
+        let result = Client::new()
+            .ws("http://127.0.0.1:3012/ws/")
+            .connect()
+            .await
+            .map_err(|e| {
+                println!("Error: {}", e);
+            });
+            //(response, framed)
+        println!("{:?}", result);
+        /*let (sink, stream) = framed.split();
+        let addr = ChatClient::create(|ctx| {
+            ChatClient::add_stream(stream, ctx);
+            ChatClient(SinkWrite::new(sink, ctx))
+        });*/
+/*
+        // start console loop
+        thread::spawn(move || loop {
+            let mut cmd = String::new();
+            if io::stdin().read_line(&mut cmd).is_err() {
+                println!("error");
+                return;
+            }
+            addr.do_send(ClientCommand(cmd));
+        });*/
+    });
+    println!("Down here!!!");
+    //let run = sys.run();
+    //println!("{:?}", run);
+*/
+/*
+struct ChatClient(SinkWrite<Message, SplitSink<Framed<BoxedSocket, Codec>, Message>>);
+
+#[derive(Message)]
+#[rtype(result = "()")]
+struct ClientCommand(String);
+
+impl Actor for ChatClient {
+    type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Context<Self>) {
+        // start heartbeats otherwise server will disconnect after 10 seconds
+        self.hb(ctx)
+    }
+
+    fn stopped(&mut self, _: &mut Context<Self>) {
+        println!("Disconnected");
+
+        // Stop application on disconnect
+        System::current().stop();
+    }
+}
+
+impl ChatClient {
+    fn hb(&self, ctx: &mut Context<Self>) {
+        ctx.run_later(Duration::new(1, 0), |act, ctx| {
+            act.0.write(Message::Ping(Bytes::from_static(b""))).unwrap();
+            act.hb(ctx);
+
+            // client should also check for a timeout here, similar to the
+            // server code
+        });
+    }
+}
+
+/// Handle stdin commands
+impl Handler<ClientCommand> for ChatClient {
+    type Result = ();
+
+    fn handle(&mut self, msg: ClientCommand, _ctx: &mut Context<Self>) {
+        self.0.write(Message::Text(msg.0)).unwrap();
+    }
+}
+
+/// Handle server websocket messages
+impl StreamHandler<Result<Frame, WsProtocolError>> for ChatClient {
+    fn handle(&mut self, msg: Result<Frame, WsProtocolError>, _: &mut Context<Self>) {
+        if let Ok(Frame::Text(txt)) = msg {
+            println!("Server: {:?}", txt)
+        }
+    }
+
+    fn started(&mut self, _ctx: &mut Context<Self>) {
+        println!("Connected");
+    }
+
+    fn finished(&mut self, ctx: &mut Context<Self>) {
+        println!("Server disconnected");
+        ctx.stop()
+    }
+}
+
+impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
+*/
+
 
       // Send the first done to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Done);
@@ -463,7 +654,7 @@ impl ProgramRunner {
             //program.compile_string(String::from(text.clone()));
             ////println!("{:?}", program.mech);
             ////println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
-            let mut changes: Vec<Change> = Vec::new();
+            /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
               let change = &program.mech.store.changes[i-1];
               match change {
@@ -479,26 +670,34 @@ impl ProgramRunner {
             if !changes.is_empty() {
               let txn = Transaction::from_changeset(changes);
               client_outgoing.send(ClientMessage::Transaction(txn));
-            }
+            }*/
           },
-          (Ok(RunLoopMessage::Listening(table_ids)), _) => {
-            for table_id in table_ids {
-              match program.mech.output.get(&Register::new(table_id, Index::Index(0))) {
-                Some(_) => {program.listeners.insert(table_id);}, // We produce a table for which they're listening, so let's mark that
-                _ => (),
-              }
+          (Ok(RunLoopMessage::Listening(ref register)), _) => {
+            println!("Someone is listening for: {:?}", register);
+            match program.mech.output.get(register) {
+              Some(_) => {
+                // We produce a table for which they're listening, so let's mark that
+                // so we can send updates
+                program.listeners.insert(register.clone()); 
+                // Send over the table we have now
+                let table_ref = program.mech.get_table_by_id(&register.table);
+                client_outgoing.send(ClientMessage::Table(Some(table_ref.unwrap().borrow().clone())));
+              }, 
+              _ => (),
             }
+            
           },
           (Ok(RunLoopMessage::Stop), _) => { 
             client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
           (Ok(RunLoopMessage::Table(table_id)), _) => { 
+            /*
             let table_msg = match program.mech.store.get_table(table_id) {
               Some(table) => ClientMessage::Table(Some(table.borrow().clone())),
               None => ClientMessage::Table(None),
             };
-            client_outgoing.send(table_msg);
+            client_outgoing.send(table_msg);*/
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
