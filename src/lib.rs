@@ -29,8 +29,9 @@ use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{Block, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
-use mech_utilities::{WebsocketClientMessage, MiniBlock};
+use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
+use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 
 #[macro_export]
 macro_rules! log {
@@ -74,14 +75,109 @@ impl Core {
       remote_tables: HashMap::new(),
     }
   }
-  pub fn connect_remote_core(&mut self, address: String) {
-    
+
+  pub fn start_websocket(&mut self, address: String) -> Result<(), JsValue> {
+    let ws = WebSocket::new(&address)?;
+    ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
+
+    // create callback
+    let cloned_ws = ws.clone();
+   
+    // OnMessage
+    let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
+      log!("Got a message: {:?}", e);
+      // Handle difference Text/Binary,...
+      if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
+        log!("message event, received arraybuffer: {:?}", abuf);
+        let array = js_sys::Uint8Array::new(&abuf);
+        let len = array.byte_length() as usize;
+        log!("Arraybuffer received {}bytes: {:?}", len, array.to_vec());
+        // here you can for example use Serde Deserialize decode the message
+        // for demo purposes we switch back to Blob-type and send off another binary message
+        cloned_ws.set_binary_type(web_sys::BinaryType::Blob);
+        match cloned_ws.send_with_u8_array(&vec![5, 6, 7, 8]) {
+          Ok(_) => log!("binary message successfully sent"),
+          Err(err) => log!("error sending message: {:?}", err),
+        }
+      } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
+        log!("message event, received blob: {:?}", blob);
+        // better alternative to juggling with FileReader is to use https://crates.io/crates/gloo-file
+        let fr = web_sys::FileReader::new().unwrap();
+        let fr_c = fr.clone();
+        // create onLoadEnd callback
+        let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
+          let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
+          let len = array.byte_length() as usize;
+          log!("Blob received {}bytes: {:?}", len, array.to_vec());
+          // here you can for example use the received image/png data
+        })
+            as Box<dyn FnMut(web_sys::ProgressEvent)>);
+        fr.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
+        fr.read_as_array_buffer(&blob).expect("blob not readable");
+        onloadend_cb.forget();
+      } else if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
+        log!("message event, received Text: {:?}", txt);
+      } else {
+        log!("message event, received Unknown: {:?}", e.data());
+      }
+    }) as Box<dyn FnMut(MessageEvent)>);
+    ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
+    onmessage_callback.forget();
+
+    // OnError
+    let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
+      log!("error event: {:?}", e);
+    }) as Box<dyn FnMut(ErrorEvent)>);
+    ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
+    onerror_callback.forget();
+
+    // OnOpen
+    {
+      let wasm_core = self as *mut Core;
+      let cloned_ws = ws.clone();
+      let onopen_callback = Closure::wrap(Box::new(move |_| {
+        log!("socket opened");
+        // Upon an open connection, send the server a list of tables about which we want updates
+        unsafe {
+          log!("{:?}", (*wasm_core).core.input);
+          log!("{:?}", (*wasm_core).core.output);
+          for input_table_id in (*wasm_core).core.input.iter() {
+            let result = bincode::serialize(&WebsocketMessage::Listening(input_table_id.clone())).unwrap();
+            // send off binary message
+            match cloned_ws.send_with_u8_array(&result) {
+              Ok(_) => log!("binary message successfully sent"),
+              Err(err) => log!("error sending message: {:?}", err),
+            }
+          }
+        }
+
+
+        /*
+        match cloned_ws.send_with_str("ping") {
+          Ok(_) => log!("message successfully sent"),
+          Err(err) => log!("error sending message: {:?}", err),
+        }
+        // send off binary message
+        match cloned_ws.send_with_u8_array(&vec![0, 1, 2, 3]) {
+          Ok(_) => log!("binary message successfully sent"),
+          Err(err) => log!("error sending message: {:?}", err),
+        }*/
+      }) as Box<dyn FnMut(JsValue)>);
+      ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
+      onopen_callback.forget();
+    }
+    // Todo, make sef.websocket int oa vector of websockets.
+    self.websocket = Some(ws);
+    Ok(())
+  }
+
+    /*
     let mut ws = web_sys::WebSocket::new(&address).unwrap();
-    let wasm_core = self as *mut Core;
+    //let wasm_core = self as *mut Core;
     // Set On Opened
     {
       let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-        log!("Opened {:?}", event.time_stamp());
+        log!("Opened {:?}", event);
         /*unsafe {
           let mut message_data: Vec<u64> = Vec::new();
           for input_register in (*wasm_core).core.input.iter() {
@@ -113,8 +209,8 @@ impl Core {
             },
             _ => (),
           }
-*/
-        }
+
+        }*/
       }) as Box<dyn FnMut(_)>);
       ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
       closure.forget();
@@ -128,7 +224,24 @@ impl Core {
       closure.forget();
     }
     self.websocket = Some(ws);
-  
+    */
+
+
+
+  pub fn connect_remote_cores(&mut self) {
+    let wasm_core = self as *mut Core;
+    match self.core.get_table("mech/remote-cores".to_string()) {
+      Some(table_ref_rc) => {
+        let table_ref = table_ref_rc.borrow();
+        for i in 0..table_ref.rows as usize {
+          let address = table_ref.data[1][i].as_string().unwrap().clone();
+          unsafe {
+            (*wasm_core).start_websocket(address);
+          }
+        }
+      }
+      _ => (),
+    }
   }
 
   pub fn compile_code(&mut self, code: String) {
@@ -997,7 +1110,7 @@ impl Core {
           } 
         }
         let txn = Transaction::from_changeset(changes);
-        let txn_msg = serde_json::to_string(&WebsocketClientMessage::Transaction(txn.clone())).unwrap();
+        let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
         ws.send_with_str(&txn_msg);
       }
     }
