@@ -235,7 +235,7 @@ impl fmt::Debug for Address {
   }
 }
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Register {
   pub table: TableId,
   pub column: Index,
