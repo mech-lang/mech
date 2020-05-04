@@ -27,6 +27,7 @@ extern crate serde;
 #[cfg(feature = "no-std")] use alloc::sync::ArC;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 use hashbrown::hash_set::HashSet;
+use hashbrown::hash_map::{HashMap, Entry};
 
 use std::cell::RefCell;
 
@@ -134,6 +135,25 @@ impl Core {
           };
         }
       }
+    }
+  }
+
+  pub fn register_table(&mut self, table: Table) {
+    let table_id = table.id;
+    self.store.tables.insert(table);
+    let register = Register::new(TableId::Global(table_id),Index::Index(0));
+    match self.runtime.pipes_map.entry(register.clone()) {
+      Entry::Occupied(addresses) => {
+        for address in addresses.get().iter() {
+          let block_id = address.block;
+          let block = self.runtime.blocks.get_mut(&block_id).unwrap();
+          block.ready.insert(register.clone());
+          if (block.is_ready()) {
+            self.runtime.ready_blocks.insert(block.id);
+          }
+        }
+      },
+      _ => (),    
     }
   }
 
