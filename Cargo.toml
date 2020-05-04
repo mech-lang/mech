@@ -31,3 +31,7 @@ lazy_static = "1.4.0"
 reqwest = "0.9.22"
 colored = "1.9.3"
 crossbeam-channel = "0.4"
+
+tungstenite = "0.10.1"
+url = "2.1.0"
+ws = "0.9.1"
