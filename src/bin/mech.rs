@@ -135,7 +135,7 @@ async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn
                     let file = File::open(name)?;
                     let mut reader = BufReader::new(file);
                     let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                    code.push(MechCode::MiniBlock(miniblocks));
+                    code.push(MechCode::MiniBlocks(miniblocks));
                   }
                   Some("mec") => {
                     println!("{} {}", "[Building]".bright_green(), name);
@@ -161,7 +161,7 @@ async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn
                 let file = File::open(name)?;
                 let mut reader = BufReader::new(file);
                 let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                code.push(MechCode::MiniBlock(miniblocks));
+                code.push(MechCode::MiniBlocks(miniblocks));
               }
               Some("mec") => {
                 println!("{} {}", "[Building]".bright_green(), name);
@@ -186,7 +186,7 @@ fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
   for c in code {
     match c {
       MechCode::String(c) => {compiler.compile_string(c);},
-      MechCode::MiniBlock(c) => {
+      MechCode::MiniBlocks(c) => {
         let mut blocks: Vec<Block> = Vec::new();
         for miniblock in c {
           let mut block = Block::new();
@@ -207,7 +207,7 @@ fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.0.4";
+  let version = "0.0.5";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
@@ -269,7 +269,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .multiple(true)))
     .get_matches();
 
-  let core: Option<Core> = if let Some(matches) = matches.subcommand_matches("serve") {
+  let mech_client: Option<RunLoop> = if let Some(matches) = matches.subcommand_matches("serve") {
 
     let port = matches.value_of("port").unwrap_or("8081");
     let address = matches.value_of("address").unwrap_or("127.0.0.1");
@@ -609,28 +609,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
 
-    // Spin up a mech core and add the new blocks
-    let mut core = Core::new(1000,1000);
-    core.register_blocks(blocks);
-    let output_id: u64 = Hasher::hash_str("mech/output");  
+    println!("{}", "[Running]".bright_green());
+    let runner = ProgramRunner::new("Mech REPL", 1000);
+    let mech_client = runner.run();
+  
+    let mut miniblocks = Vec::new();
+    for block in &blocks {
+      let mut miniblock = MiniBlock::new();
+      miniblock.constraints = block.constraints.clone();
+      miniblocks.push(miniblock);
+    }
+    mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
 
-    if !repl {
-      println!("{}", "[Running]".bright_green());
-      core.step();
-      match core.store.get_table(output_id) {
-        Some(output_table) => {
-          let output_table = output_table.borrow();
-          for i in 0..output_table.rows as usize {
-            for j in 0..output_table.columns as usize {
-              println!("{:?}", output_table.data[j][i]);
+    let mut skip_receive = false;
+  
+    //ClientHandler::new("Mech REPL", None, None, None, cores);
+    let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+    let thread_receiver = mech_client.incoming.clone();
+    
+    // Get all responses from the thread
+    'receive_loop: loop {
+      match thread_receiver.recv() {
+        (Ok(ClientMessage::String(message))) => {
+          println!("{} {}", formatted_name, message);
+        },
+        (Ok(ClientMessage::Table(table))) => {
+          if !repl {
+            match table {
+              Some(table) => {
+                for i in 0..table.rows as usize {
+                  for j in 0..table.columns as usize {
+                    println!("{:?}", table.data[j][i]);
+                  }
+                }
+              }
+              None => (), //println!("{} Table not found", formatted_name),
             }
+            std::process::exit(0);
+          } else {
+            break 'receive_loop;
           }
         },
-        _ => (),
-      }
-      std::process::exit(0);
+        (Ok(ClientMessage::Transaction(txn))) => {
+          println!("{} Transaction: {:?}", formatted_name, txn);
+        },
+        (Ok(ClientMessage::Done)) => {
+          // Do nothing
+        },
+        Ok(ClientMessage::StepDone) => {
+          let output_id: u64 = Hasher::hash_str("mech/output"); 
+          mech_client.send(RunLoopMessage::GetTable(output_id));
+        },
+        (Err(x)) => {
+          println!("{} {}", "[Error]".bright_red(), x);
+          std::process::exit(1);
+        }
+        q => {
+          println!("else: {:?}", q);
+        },
+      };
+      io::stdout().flush().unwrap();
     }
-    Some(core)
+    Some(mech_client)
   // Build a .blx file from .mec and other .blx files
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
@@ -691,21 +731,14 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
-  let runner = ProgramRunner::new("Mech REPL", 1000);
-  let mech_client = runner.run();
-
-  match core {
-    Some(core) => {
-      let mut miniblocks = Vec::new();
-      for (_, block) in core.runtime.blocks.iter() {
-        let mut miniblock = MiniBlock::new();
-        miniblock.constraints = block.constraints.clone();
-        miniblocks.push(miniblock);
-      }
-      mech_client.send(RunLoopMessage::Blocks(miniblocks));
+  // Start a new mech client if we didn't get one from another command
+  let mech_client = match mech_client {
+    Some(mech_client) => mech_client,
+    None => {
+      let runner = ProgramRunner::new("Mech REPL", 1000);
+      runner.run()
     }
-    None =>(),
-  }
+  };
 
   let mut skip_receive = false;
 
