@@ -691,13 +691,12 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
-          (Ok(RunLoopMessage::Table(table_id)), _) => { 
-            /*
+          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
             let table_msg = match program.mech.store.get_table(table_id) {
               Some(table) => ClientMessage::Table(Some(table.borrow().clone())),
               None => ClientMessage::Table(None),
             };
-            client_outgoing.send(table_msg);*/
+            client_outgoing.send(table_msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
