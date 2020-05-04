@@ -59,7 +59,7 @@ impl MiniBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
-  MiniBlock(Vec<MiniBlock>),
+  MiniBlocks(Vec<MiniBlock>),
 }
 
 // TODO This is a kludge to get around having to write a serialize method for
