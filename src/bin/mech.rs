@@ -82,6 +82,12 @@ use actix_session::{CookieSession, Session};
 use ahash::AHasher;
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
+//extern crate ws;
+//use ws::{listen, Handler as WsHandler, Sender as WsSender, Result as WsResult, Message as WsMessage, Handshake, CloseCode, Error as WsError};
+use std::time::Duration;
+
+use std::rc::Rc;
+use std::cell::Cell;
 
 #[macro_use]
 extern crate crossbeam_channel;
@@ -301,7 +307,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     }
 
-    async fn tables(session: Session, req: web::HttpRequest, info: web::Path<(String)>, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>, Vec<u8>)>) -> impl Responder {
+    async fn tables(
+      session: Session, 
+      req: web::HttpRequest, 
+      info: web::Path<(String)>, 
+      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>
+    ) -> impl Responder {
       println!("Serving");
       use core::hash::Hasher;
       //println!("Connection Info {:?}", req.connection_info());
@@ -356,97 +367,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{:x}", id)
     }
 
-    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>)>) -> impl Responder {
-      let (sender, receiver, miniblocks) = data.get_ref();
+    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>) -> impl Responder {
+      let (sender, receiver, miniblocks, _) = data.get_ref();
       format!("{{\"blocks\": {:?} }}", miniblocks)
     }
 
-    use std::time::{Duration, Instant};
-    // How often heartbeat pings are sent
-    const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(5000);
-    /// How long before lack of client response causes a timeout
-    const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
-
-    /// do websocket handshake and start `MyWebSocket` actor
-    async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>)>) -> Result<HttpResponse, Error> {
-      println!("{:?}", r);
-      let (incoming, outgoing, _) = data.get_ref();
-      let res = ws::start(MyWebSocket::new(incoming.clone(), outgoing.clone()), &r, stream);
-      println!("{:?}", res);
-      res
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct RegisterWSClient {
+        addr: Addr<MyWebSocket>,
     }
 
-    /// websocket connection is long running connection, it easier
-    /// to handle with an actor
+    #[derive(Message, Debug)]
+    #[rtype(result = "()")]
+    struct ServerEvent {
+        event: Vec<u8>,
+    }
+
+    async fn ws_index(
+      r: HttpRequest, 
+      stream: web::Payload, 
+      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>,
+    ) -> Result<HttpResponse, Error> {
+      let (outgoing, _, _, monitor) = data.get_ref();
+      let (addr, res) = ws::start_with_addr(MyWebSocket {mech_outgoing: outgoing.clone()}, &r, stream).unwrap();
+      monitor.do_send(RegisterWSClient { addr: addr });
+      Ok(res)
+    }
+
+
     struct MyWebSocket {
-      outgoing: Sender<RunLoopMessage>,
-      incoming: Receiver<ClientMessage>,
-      thread: Option<JoinHandle<()>>,
-      /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
-      /// otherwise we drop connection.
-      hb: Instant,
+      mech_outgoing: Sender<RunLoopMessage>,
     }
 
     impl Actor for MyWebSocket {
       type Context = ws::WebsocketContext<Self>;
-
-      /// Method is called on actor start. We start the heartbeat process here.
-      fn started(&mut self, ctx: &mut Self::Context) {
-        let thread_receiver = self.incoming.clone();
-        // Start a receive loop. Generally this will just pass messages on to the websocket client:
-        let thread = thread::Builder::new().name("Websocket Receiving Thread".to_string()).spawn(move || {
-          // Get all responses from the thread
-          'receive_loop: loop {
-            match thread_receiver.recv() {
-              (Ok(ClientMessage::Pause)) => {
-                //println!("{} Paused", formatted_name);
-              },
-              (Ok(ClientMessage::Resume)) => {
-                //println!("{} Resumed", formatted_name);
-              },
-              (Ok(ClientMessage::Clear)) => {
-                //println!("{} Cleared", formatted_name);
-              },
-              (Ok(ClientMessage::NewBlocks(count))) => {
-                //println!("Compiled {} blocks.", count);
-              },
-              (Ok(ClientMessage::String(message))) => {
-                //println!("{} {}", formatted_name, message);
-                //print!("{}", ">: ".bright_yellow());
-              },
-              (Ok(ClientMessage::Table(table))) => {
-                // Send the table received from the client over the websocket
-                match table {
-                  Some(table) => {
-                    let ntable = NetworkTable::new(&table);
-                    let msg = bincode::serialize(&WebsocketMessage::Table(ntable)).unwrap();
-                    //ctx.binary(msg);
-                  }
-                  None => (),
-                }
-              },
-              (Ok(ClientMessage::Transaction(txn))) => {
-                //println!("{} Transaction: {:?}", formatted_name, txn);
-              },
-              (Ok(ClientMessage::Done)) => {
-                // Do nothing
-              },
-              (Err(x)) => {
-                //println!("{} {}", "[Error]".bright_red(), x);
-                break 'receive_loop;
-              }
-              q => {
-                //println!("else: {:?}", q);
-              },
-            };
-          }
-        }).unwrap();
-        self.thread = Some(thread);
-        self.hb(ctx);
-      }
     }
 
-    /// Handler for `ws::Message`
     impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
       fn handle(
         &mut self,
@@ -457,11 +414,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("WS: {:?}", msg);
         match msg {
           Ok(ws::Message::Ping(msg)) => {
-            self.hb = Instant::now();
             ctx.pong(&msg);
           }
           Ok(ws::Message::Pong(_)) => {
-            self.hb = Instant::now();
             ctx.text("Message!");
           }
           Ok(ws::Message::Text(text)) => ctx.text(text),
@@ -469,12 +424,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let message: WebsocketMessage = bincode::deserialize(&bin).unwrap();
             match message {
               WebsocketMessage::Listening(register) => {
-                self.outgoing.send(RunLoopMessage::Listening(register));
+                self.mech_outgoing.send(RunLoopMessage::Listening(register));
               },
               _ => (),
             }
-            
-            //ctx.binary(bin)
           },
           Ok(ws::Message::Close(_)) => {
               ctx.stop();
@@ -484,40 +437,109 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     }
 
-    impl MyWebSocket {
-      fn new(outgoing: Sender<RunLoopMessage>, incoming: Receiver<ClientMessage>) -> MyWebSocket {
-        MyWebSocket { 
-          outgoing,
-          incoming,
-          thread: None,
-          hb: Instant::now() 
-        }
+    impl Handler<ServerEvent> for MyWebSocket {
+      type Result = ();
+
+      fn handle(&mut self, msg: ServerEvent, ctx: &mut Self::Context) {
+        println!("Handling a server event: {:?}", msg);
+        ctx.binary(msg.event);
       }
+    }
 
-      /// helper method that sends ping to client every second.
-      ///
-      /// also this method checks heartbeats from client
-      fn hb(&self, ctx: &mut <Self as Actor>::Context) {
-        ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-          // check client heartbeats
-          if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-            // heartbeat timed out
-            println!("Websocket Client heartbeat failed, disconnecting!");
+    struct ServerMonitor {
+      listeners: Vec<Addr<MyWebSocket>>,
+      incoming: Receiver<Vec<u8>>,
+    }
 
-            // stop actor
-            ctx.stop();
+    impl Actor for ServerMonitor {
+      type Context = Context<Self>;
 
-            // don't try to send a ping
-            return;
+      fn started(&mut self, ctx: &mut Self::Context) {
+        ctx.run_interval(Duration::from_millis(10), |act, _| {
+          loop {
+            match &act.incoming.try_recv() {
+              Ok(message) => {
+                println!("GOTA A MESSAGE {:?}", message);
+                for listener in &act.listeners {
+                  listener.do_send(ServerEvent{ event: message.to_vec() });
+                }
+              }
+              Err(_) => break,
+            }
           }
-
-          ctx.ping(b"");
         });
       }
     }
 
+    impl Handler<RegisterWSClient> for ServerMonitor {
+        type Result = ();
+
+        fn handle(&mut self, msg: RegisterWSClient, _: &mut Context<Self>) {
+          println!("Adding a new connection to the server monitor");
+          self.listeners.push(msg.addr);
+        }
+    }
+
+    let (ws_outgoing, ws_incoming) = crossbeam_channel::unbounded();
+    let thread_receiver = mech_client.incoming.clone();
+    // Start a receive loop. Generally this will just pass messages on to the websocket client:
+    let thread = thread::Builder::new().name("Websocket Receiving Thread".to_string()).spawn(move || {
+      // Get all responses from the thread
+      'receive_loop: loop {
+        match thread_receiver.recv() {
+          (Ok(ClientMessage::Pause)) => {
+            //println!("{} Paused", formatted_name);
+          },
+          (Ok(ClientMessage::Resume)) => {
+            //println!("{} Resumed", formatted_name);
+          },
+          (Ok(ClientMessage::Clear)) => {
+            //println!("{} Cleared", formatted_name);
+          },
+          (Ok(ClientMessage::NewBlocks(count))) => {
+            //println!("Compiled {} blocks.", count);
+          },
+          (Ok(ClientMessage::String(message))) => {
+            //println!("{} {}", formatted_name, message);
+            //print!("{}", ">: ".bright_yellow());
+          },
+          (Ok(ClientMessage::Table(table))) => {
+            // Send the table received from the client over the websocket
+            match table {
+              Some(table) => {
+                let ntable = NetworkTable::new(&table);
+                let msg: Vec<u8> = bincode::serialize(&WebsocketMessage::Table(ntable)).unwrap();
+                ws_outgoing.send(msg);
+                //ctx.binary(msg);
+              }
+              None => (),
+            }
+          },
+          (Ok(ClientMessage::Transaction(txn))) => {
+            //println!("{} Transaction: {:?}", formatted_name, txn);
+          },
+          (Ok(ClientMessage::Done)) => {
+            // Do nothing
+          },
+          (Err(x)) => {
+            //println!("{} {}", "[Error]".bright_red(), x);
+            break 'receive_loop;
+          }
+          q => {
+            //println!("else: {:?}", q);
+          },
+        };
+      }
+    }).unwrap();
+
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
-    let data = web::Data::new((mech_client.outgoing.clone(), mech_client.incoming.clone(), serialized_miniblocks.clone()));
+    let srvmon = ServerMonitor { listeners: vec![], incoming: ws_incoming }.start();
+    let data = web::Data::new((
+      mech_client.outgoing.clone(), 
+      mech_client.incoming.clone(), 
+      serialized_miniblocks.clone(),
+      srvmon.clone(),
+    ));
     HttpServer::new(move || {
         ActixApp::new()
           .app_data(data.clone())
