@@ -33,6 +33,7 @@ pub enum RunLoopMessage {
   PrintRuntime,
   Listening(Register),
   Table(NetworkTable),
+  GetTable(u64),
   Transaction(Transaction),
   Code((u64,MechCode)),
   EchoCode(String),
