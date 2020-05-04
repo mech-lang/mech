@@ -241,6 +241,7 @@ pub enum ClientMessage {
   Transaction(Transaction),
   String(String),
   //Block(Block),
+  StepDone,
   Done,
 }
 
@@ -671,6 +672,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
               let txn = Transaction::from_changeset(changes);
               client_outgoing.send(ClientMessage::Transaction(txn));
             }*/
+            client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening(ref register)), _) => {
             println!("Someone is listening for: {:?}", register);
@@ -727,6 +729,21 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
                 program.mech.step();
+                client_outgoing.send(ClientMessage::StepDone);
+              },
+              (0, MechCode::MiniBlocks(miniblocks)) => {
+                let mut blocks: Vec<Block> = Vec::new();
+                for miniblock in miniblocks {
+                  let mut block = Block::new();
+                  for constraint in miniblock.constraints {
+                    block.add_constraints(constraint);
+                  }
+                  blocks.push(block);
+                }
+                program.mech.register_blocks(blocks);
+                program.download_dependencies(Some(client_outgoing.clone()));
+                program.mech.step();
+                client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
 
@@ -757,6 +774,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
 
             // Send it
             client_outgoing.send(ClientMessage::Table(echo_table));
+            client_outgoing.send(ClientMessage::StepDone);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
             program.clear();
@@ -783,6 +801,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             }
             program.mech.register_blocks(blocks);
             program.mech.step();
+            client_outgoing.send(ClientMessage::StepDone);
           }
           (Err(_), _) => {
             break 'runloop
