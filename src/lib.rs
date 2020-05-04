@@ -2,7 +2,6 @@ extern crate mech_core;
 extern crate mech_utilities;
 use mech_core::{Interner, Transaction};
 use mech_core::{Value, Table};
-use mech_utilities::Watcher;
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 
 #[no_mangle]
