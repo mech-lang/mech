@@ -84,45 +84,64 @@ impl Core {
     let cloned_ws = ws.clone();
    
     // OnMessage
-    let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
-      log!("Got a message: {:?}", e);
-      // Handle difference Text/Binary,...
-      if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-        log!("message event, received arraybuffer: {:?}", abuf);
-        let array = js_sys::Uint8Array::new(&abuf);
-        let len = array.byte_length() as usize;
-        log!("Arraybuffer received {}bytes: {:?}", len, array.to_vec());
-        // here you can for example use Serde Deserialize decode the message
-        // for demo purposes we switch back to Blob-type and send off another binary message
-        cloned_ws.set_binary_type(web_sys::BinaryType::Blob);
-        match cloned_ws.send_with_u8_array(&vec![5, 6, 7, 8]) {
-          Ok(_) => log!("binary message successfully sent"),
-          Err(err) => log!("error sending message: {:?}", err),
-        }
-      } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
-        log!("message event, received blob: {:?}", blob);
-        // better alternative to juggling with FileReader is to use https://crates.io/crates/gloo-file
-        let fr = web_sys::FileReader::new().unwrap();
-        let fr_c = fr.clone();
-        // create onLoadEnd callback
-        let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
-          let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
+    {
+      let wasm_core = self as *mut Core;
+      let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
+        log!("Got a message: {:?}", e);
+        // Handle difference Text/Binary,...
+        if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
+          log!("message event, received arraybuffer: {:?}", abuf);
+          let array = js_sys::Uint8Array::new(&abuf);
           let len = array.byte_length() as usize;
-          log!("Blob received {}bytes: {:?}", len, array.to_vec());
-          // here you can for example use the received image/png data
-        })
-            as Box<dyn FnMut(web_sys::ProgressEvent)>);
-        fr.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
-        fr.read_as_array_buffer(&blob).expect("blob not readable");
-        onloadend_cb.forget();
-      } else if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
-        log!("message event, received Text: {:?}", txt);
-      } else {
-        log!("message event, received Unknown: {:?}", e.data());
-      }
-    }) as Box<dyn FnMut(MessageEvent)>);
-    ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
-    onmessage_callback.forget();
+          log!("Arraybuffer received {}bytessss: {:?}", len, array.to_vec());
+
+          let msg: WebsocketMessage = bincode::deserialize(&array.to_vec()).unwrap();
+          log!("{:?}", msg);
+          match msg {
+            WebsocketMessage::Table(mut ntable) => {
+              let table = ntable.to_table();
+              unsafe {
+                (*wasm_core).core.register_table(table);
+                (*wasm_core).core.step();
+              }
+            }
+            _ => (),
+          }
+
+
+          /*
+          // here you can for example use Serde Deserialize decode the message
+          // for demo purposes we switch back to Blob-type and send off another binary message
+          cloned_ws.set_binary_type(web_sys::BinaryType::Blob);
+          match cloned_ws.send_with_u8_array(&vec![5, 6, 7, 8]) {
+            Ok(_) => log!("binary message successfully sent"),
+            Err(err) => log!("error sending message: {:?}", err),
+          }*/
+        } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
+          log!("message event, received blob: {:?}", blob);
+          // better alternative to juggling with FileReader is to use https://crates.io/crates/gloo-file
+          let fr = web_sys::FileReader::new().unwrap();
+          let fr_c = fr.clone();
+          // create onLoadEnd callback
+          let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
+            let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
+            let len = array.byte_length() as usize;
+            log!("Blob received {}bytes: {:?}", len, array.to_vec());
+            // here you can for example use the received image/png data
+          })
+              as Box<dyn FnMut(web_sys::ProgressEvent)>);
+          fr.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
+          fr.read_as_array_buffer(&blob).expect("blob not readable");
+          onloadend_cb.forget();
+        } else if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
+          log!("message event, received Text: {:?}", txt);
+        } else {
+          log!("message event, received Unknown: {:?}", e.data());
+        }
+      }) as Box<dyn FnMut(MessageEvent)>);
+      ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
+      onmessage_callback.forget();
+    }
 
     // OnError
     let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
