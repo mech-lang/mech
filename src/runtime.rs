@@ -231,7 +231,7 @@ pub struct Address {
 impl fmt::Debug for Address {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "@(block: {:?}, register: {:?})", self.block, self.register)
+    write!(f, "@(block: {:x}, register: {:?})", self.block, self.register)
   }
 }
 
