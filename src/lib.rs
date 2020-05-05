@@ -103,6 +103,7 @@ impl Core {
               unsafe {
                 (*wasm_core).core.register_table(table);
                 (*wasm_core).core.step();
+                (*wasm_core).add_application();
               }
             }
             _ => (),
