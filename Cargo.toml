@@ -1,6 +1,6 @@
 [package]
 name = "mech-stats"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Statistics library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -18,5 +18,5 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = "0.0.5"
+mech-utilities = "0.0.5"
