@@ -17,7 +17,7 @@ This repository serves as a table of contents for the constellation of tools and
 
 1. [Core](https://gitlab.com/mech-lang/core) - The language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
 2. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
-3. [Notebook](https://gitlab.com/mech-lang/notebook) / [Mech-wasm](https://github.com/mech-lang/wasm) - An editor that allows users to write and run programs using the textual syntax.
+3. [Program](https://gitlab.com/mech-lang/program) - Coordinates distributed Mech cores as a coherent program.
 
 ## Documentation
 
@@ -35,21 +35,17 @@ You can download the the latest release for your platform [here](https://github.
 
 ### From Source
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) and [NodeJS](https://nodejs.org/) (v. 10.x) before building Mech. When those are installed, follow these instructions:
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) before building Mech. When those are installed, follow these instructions:
 
 ```bash
 > git clone https://gitlab.com/mech-lang/mech
 > cd mech
-> git submodule update --init --recursive
-> cd notebook
-> npm install
-> cd..
 > cargo build --bin mech --release
 ```
 
 ## Project Status
 
-Mech is currently in the **v0.0.3 alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
+Mech is currently in the **v0.0.5 alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
 
 Feel free to use the language for your own satisfaction, but please don't use it for anything important.
 
