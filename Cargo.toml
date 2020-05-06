@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Main crate for the Mech programming language. Provides a REPL and hosted editor."
 documentation = "http://docs.mech-lang.org"
@@ -17,10 +17,10 @@ gitlab = { repository = "mech-lang/mech", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = "0.0.5"
+mech-syntax = "0.0.5"
+mech-program = "0.0.5"
+mech-utilities = "0.0.5"
 
 clap = "2.33.0"
 colored = "1.9.3"
