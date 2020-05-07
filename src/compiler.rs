@@ -846,7 +846,7 @@ impl Compiler {
             },
             _ => 0,
           };
-          constraints.push(Constraint::CopyTable{from_table, to_table});
+          constraints.push(Constraint::DefineTable{from_table, to_table});
         } else {
           // TODO error if there are no children
         }
