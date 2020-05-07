@@ -1268,6 +1268,8 @@ pub enum Constraint {
   Reference{table: TableId, destination: u64},
   Scan {table: TableId, indices: Vec<(Option<Parameter>, Option<Parameter>)>, output: TableId},
   Whenever {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
+  Wait {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
+  Until {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
   Identifier {id: u64, text: String},
   // Transform Constraints
   Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
