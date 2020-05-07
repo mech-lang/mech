@@ -347,7 +347,7 @@ impl Block {
       match constraint {
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
-        Constraint::ChangeScan{..} |
+        Constraint::Whenever{..} |
         Constraint::Append{..} |
         Constraint::Scan{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
@@ -387,7 +387,7 @@ impl Block {
             _ => (),
           }
         },
-        Constraint::ChangeScan{tables} => {
+        Constraint::Whenever{tables} => {
           for (table, indices) in tables {
             match (table, indices) {
               (TableId::Global(id), x) => {
@@ -826,7 +826,7 @@ impl Block {
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
         },
-        Constraint::ChangeScan{tables} => {
+        Constraint::Whenever{tables} => {
           for (table, indices) in tables {
             match (table, indices.as_slice()) {
               (TableId::Global(id), [(None, Some(Parameter::Index(index)))]) => {
@@ -1267,7 +1267,7 @@ pub enum Constraint {
   // Input Constraints
   Reference{table: TableId, destination: u64},
   Scan {table: TableId, indices: Vec<(Option<Parameter>, Option<Parameter>)>, output: TableId},
-  ChangeScan {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
+  Whenever {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
   Identifier {id: u64, text: String},
   // Transform Constraints
   Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
@@ -1290,7 +1290,9 @@ impl fmt::Debug for Constraint {
       Constraint::Reference{table, destination} => write!(f, "Reference({:?} -> {:#x})", table, destination),
       Constraint::NewTable{id, rows, columns} => write!(f, "NewTable(#{:?}({:?}x{:?}))", id, rows, columns),
       Constraint::Scan{table, indices, output} => write!(f, "Scan(#{:?}({:?}) -> {:?})", table, indices, output),
-      Constraint::ChangeScan{tables} => write!(f, "ChangeScan({:?})", tables),
+      Constraint::Whenever{tables} => write!(f, "Whenever({:?})", tables),
+      Constraint::Wait{tables} => write!(f, "Wait({:?})", tables),
+      Constraint::Until{tables} => write!(f, "Until({:?})", tables),
       Constraint::Function{fnstring, parameters, output} => write!(f, "Function({:?}({:?}) -> {:?})", fnstring, parameters, output),
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
