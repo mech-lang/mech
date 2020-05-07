@@ -348,6 +348,14 @@ impl Formatter {
           code = format!("|~ {}", table);
         };
       }
+      Node::Until{children} => {
+        let table = self.write_node(&children[0]);
+        if self.html {
+          code = format!("<span class=\"highlight-watch\">~|</span> {}", table);
+        } else {
+          code = format!("~| {}", table);
+        };
+      }
       Node::TableHeader{children} => {
         self.rows += 1;
         node_type = "parameter";
