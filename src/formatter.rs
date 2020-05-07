@@ -332,7 +332,7 @@ impl Formatter {
           code = format!("{}: {}", lhs, rhs);
         };
       }
-      Node::DataWatch{children} => {
+      Node::Whenever{children} => {
         let table = self.write_node(&children[0]);
         if self.html {
           code = format!("<span class=\"highlight-watch\">~</span> {}", table);
