@@ -28,7 +28,7 @@ pub enum Node {
   Constraint{ children: Vec<Node> },
   Select { children: Vec<Node> },
   Whenever { children: Vec<Node> },
-  AsSoonAs { children: Vec<Node> },
+  Wait { children: Vec<Node> },
   Until { children: Vec<Node> },
   Insert { children: Vec<Node> },
   VariableDefine { children: Vec<Node> },
@@ -227,7 +227,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::JoinData{children} => {print!("JoinData\n"); Some(children)},
-    Node::AsSoonAs{children} => {print!("AsSoonAs\n"); Some(children)},
+    Node::Wait{children} => {print!("Wait\n"); Some(children)},
     Node::Until{children} => {print!("Until\n"); Some(children)},
     Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
     Node::AddOperator{children} => {print!("AddOperator\n"); Some(children)},
@@ -743,7 +743,7 @@ fn until_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Null))
 }
 
-fn as_soon_as_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+fn wait_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("|~")(input)?;
   Ok((input, Node::Null))
 }
@@ -755,11 +755,11 @@ fn whenever_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Whenever{children: vec![watch]}))
 }
 
-fn as_soon_as_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, _) = as_soon_as_operator(input)?;
+fn wait_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = wait_operator(input)?;
   let (input, _) = space(input)?;
   let (input, watch) = alt((variable_define, expression, data))(input)?;
-  Ok((input, Node::AsSoonAs{children: vec![watch]}))
+  Ok((input, Node::Wait{children: vec![watch]}))
 }
 
 fn until_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
@@ -770,7 +770,7 @@ fn until_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn statement(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, as_soon_as_data, until_data, set_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
