@@ -33,6 +33,8 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   Whenever{ children: Vec<Node> },
+  Wait{ children: Vec<Node> },
+  Until{ children: Vec<Node> },
   SelectData{name: String, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
@@ -123,6 +125,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::Whenever{children} => {print!("Whenever\n"); Some(children)},
+    Node::Wait{children} => {print!("Wait\n"); Some(children)},
+    Node::Until{children} => {print!("Until\n"); Some(children)},
     Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
@@ -694,6 +698,42 @@ impl Compiler {
         }
         constraints.append(&mut result);
       },
+      Node::Until{children} => {
+        let mut result = self.compile_constraints(&children);
+        match &result[1] {
+          Constraint::Scan{table, indices, output} => constraints.push(Constraint::Until{tables: vec![(table.clone(), indices.clone())]}),
+          Constraint::Function{fnstring, parameters, output} => {
+            let mut scans: Vec<(TableId,Vec<(Option<Parameter>,Option<Parameter>)>)> = result.iter().filter_map(|x|{
+              match x {
+                Constraint::Scan{table,indices,..} => Some((table.clone(),indices.clone())),
+                _ => None,
+              }
+            }).collect::<Vec<_>>();
+            scans.push((output[0].clone(), vec![(None, None)]));
+            constraints.push(Constraint::Until{tables: scans});
+            constraints.append(&mut result);
+          }
+          _ => (),
+        }
+      },
+      Node::Wait{children} => {
+        let mut result = self.compile_constraints(&children);
+        match &result[1] {
+          Constraint::Scan{table, indices, output} => constraints.push(Constraint::Wait{tables: vec![(table.clone(), indices.clone())]}),
+          Constraint::Function{fnstring, parameters, output} => {
+            let mut scans: Vec<(TableId,Vec<(Option<Parameter>,Option<Parameter>)>)> = result.iter().filter_map(|x|{
+              match x {
+                Constraint::Scan{table,indices,..} => Some((table.clone(),indices.clone())),
+                _ => None,
+              }
+            }).collect::<Vec<_>>();
+            scans.push((output[0].clone(), vec![(None, None)]));
+            constraints.push(Constraint::Wait{tables: scans});
+            constraints.append(&mut result);
+          }
+          _ => (),
+        }
+      },
       Node::Whenever{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
@@ -1264,6 +1304,14 @@ impl Compiler {
       parser::Node::Whenever{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::Whenever{children: result});
+      },
+      parser::Node::Wait{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Wait{children: result});
+      },
+      parser::Node::Until{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Until{children: result});
       },
       parser::Node::SelectAll => {
         compiled.push(Node::SelectAll);
