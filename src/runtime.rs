@@ -347,7 +347,10 @@ impl Block {
       match constraint {
         Constraint::Function{..} |
         Constraint::CopyTable{..} |
+        Constraint::DefineTable{..} |
         Constraint::Whenever{..} |
+        Constraint::Wait{..} |
+        Constraint::Until{..} |
         Constraint::Append{..} |
         Constraint::Scan{..} |
         Constraint::Insert{..} => self.plan.push(constraint.clone()),
@@ -359,6 +362,9 @@ impl Block {
     for (constraint_ix, constraint) in constraints.iter().enumerate() {
       match constraint {
         Constraint::CopyTable{from_table, to_table} => {
+          self.output_registers.insert(Register::new(TableId::Global(*to_table), Index::Index(0)));
+        },
+        Constraint::DefineTable{from_table, to_table} => {
           self.output_registers.insert(Register::new(TableId::Global(*to_table), Index::Index(0)));
         },
         Constraint::Append{from_table, to_table} => {
@@ -388,6 +394,40 @@ impl Block {
           }
         },
         Constraint::Whenever{tables} => {
+          for (table, indices) in tables {
+            match (table, indices) {
+              (TableId::Global(id), x) => {
+                let column = match x[0] {
+                  (None, Some(Parameter::Index(index))) => index,
+                  _ => Index::Index(0),
+                };
+                self.input_registers.insert(Register{table: *table, column});
+              },
+              (TableId::Local(id), _) => {
+                self.input_registers.insert(Register{table: *table, column: Index::Index(0)});
+              },
+              _ => (),
+            }
+          }
+        },
+        Constraint::Wait{tables} => {
+          for (table, indices) in tables {
+            match (table, indices) {
+              (TableId::Global(id), x) => {
+                let column = match x[0] {
+                  (None, Some(Parameter::Index(index))) => index,
+                  _ => Index::Index(0),
+                };
+                self.input_registers.insert(Register{table: *table, column});
+              },
+              (TableId::Local(id), _) => {
+                self.input_registers.insert(Register{table: *table, column: Index::Index(0)});
+              },
+              _ => (),
+            }
+          }
+        },
+        Constraint::Until{tables} => {
           for (table, indices) in tables {
             match (table, indices) {
               (TableId::Global(id), x) => {
@@ -855,6 +895,63 @@ impl Block {
             }
           }
         },
+        Constraint::Wait{tables} => {
+          for (table, indices) in tables {
+            match (table, indices.as_slice()) {
+              (TableId::Global(id), [(None, Some(Parameter::Index(index)))]) => {
+                let register = Register{table: TableId::Global(*id), column: index.clone()};
+                //self.ready.remove(&register);
+              }
+              (TableId::Global(id), _) => {
+                let register = Register{table:TableId::Global(*id), column: Index::Index(0)};
+                //self.ready.remove(&register);
+              }
+              /*
+              (TableId::Global(id), [None, None]) => {
+                let register = Register{table: *id, column: Index::Index(0)};
+                self.ready.remove(&register);
+              }*/
+              (TableId::Local(id), _) => {
+                // test value at table
+                let table = self.memory.get(*id).unwrap().borrow_mut();
+                if table.data[0][0] == Value::Bool(true) {
+                  self.state = BlockState::Ready;
+                  break 'solve_loop;
+                }
+              },
+              _ => (),
+            }
+          }
+        },
+        Constraint::Until{tables} => {
+          for (table, indices) in tables {
+            match (table, indices.as_slice()) {
+              (TableId::Global(id), [(None, Some(Parameter::Index(index)))]) => {
+                let register = Register{table: TableId::Global(*id), column: index.clone()};
+                self.ready.remove(&register);
+              }
+              (TableId::Global(id), _) => {
+                let register = Register{table:TableId::Global(*id), column: Index::Index(0)};
+                self.ready.remove(&register);
+              }
+              /*
+              (TableId::Global(id), [None, None]) => {
+                let register = Register{table: *id, column: Index::Index(0)};
+                self.ready.remove(&register);
+              }*/
+              (TableId::Local(id), _) => {
+                // test value at table
+                let table = self.memory.get(*id).unwrap().borrow_mut();
+                if table.data[0][0] == Value::Bool(true) {
+                  self.block_changes.clear();
+                  self.state = BlockState::Unsatisfied;
+                  break 'solve_loop;
+                }
+              },
+              _ => (),
+            }
+          }
+        },
         Constraint::Function{fnstring, parameters, output} => {
           if *fnstring == "table/split" {
             let out_table = &output[0];
@@ -1151,6 +1248,31 @@ impl Block {
           }
           self.block_changes.append(&mut changes);
         },
+        // Like copy table but we do this only once!
+        Constraint::DefineTable{from_table, to_table} => {
+          match store.tables.get(*to_table) {
+            //Some(_) => (), // The table has already been created
+            _ => {
+              let mut from_table_ref = self.memory.get(*from_table).unwrap().borrow();
+              let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
+              for (alias, ix) in from_table_ref.column_aliases.iter() {
+                changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
+              }
+              for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+                for (row_ix, data) in column.iter().enumerate() {
+                  match data {
+                    Value::Reference(id) => {
+                      copy_tables.insert(*id);
+                    }, 
+                    _ => (),
+                  }
+                  changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
+                }
+              }
+              self.block_changes.append(&mut changes);
+            }
+          }
+        },
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Global(id) => {
@@ -1277,6 +1399,7 @@ pub enum Constraint {
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
   CopyTable {from_table: u64, to_table: u64},
+  DefineTable {from_table: u64, to_table: u64},
   AliasTable {table: TableId, alias: u64},
   // Output Constraints
   Insert {from: (TableId, Vec<(Option<Parameter>,Option<Parameter>)>), to: (TableId, Vec<(Option<Parameter>,Option<Parameter>)>)},
@@ -1299,6 +1422,7 @@ impl fmt::Debug for Constraint {
       Constraint::Constant{table, row, column, value, unit} => write!(f, "Constant({}{:?} -> #{:?})", value.to_float(), unit, table),
       Constraint::String{table, row, column, value} => write!(f, "String({:?} -> #{:?})", value, table),
       Constraint::CopyTable{from_table, to_table} => write!(f, "CopyTable({:#x} -> {:#x})", from_table, to_table),
+      Constraint::DefineTable{from_table, to_table} => write!(f, "DefineTable({:#x} -> {:#x})", from_table, to_table),
       Constraint::AliasTable{table, alias} => write!(f, "AliasTable({:?} -> {:#x})", table, alias),
       Constraint::Identifier{id, text} => write!(f, "Identifier(\"{}\" = {:#x})", text, id),
       Constraint::Insert{from, to} => write!(f, "Insert({:?} -> {:?})",  from, to),
