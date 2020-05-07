@@ -32,7 +32,7 @@ pub enum Node {
   MathExpression{ children: Vec<Node> },
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
-  DataWatch{ children: Vec<Node> },
+  Whenever{ children: Vec<Node> },
   SelectData{name: String, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
@@ -122,7 +122,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
-    Node::DataWatch{children} => {print!("DataWatch\n"); Some(children)},
+    Node::Whenever{children} => {print!("Whenever\n"); Some(children)},
     Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
@@ -694,7 +694,7 @@ impl Compiler {
         }
         constraints.append(&mut result);
       },
-      Node::DataWatch{children} => {
+      Node::Whenever{children} => {
         let mut result = self.compile_constraints(&children);
         match &result[1] {
           Constraint::Scan{table, indices, output} => constraints.push(Constraint::ChangeScan{tables: vec![(table.clone(), indices.clone())]}),
@@ -1261,9 +1261,9 @@ impl Compiler {
         }
         compiled.push(Node::Attribute{children});
       },
-      parser::Node::DataWatch{children} => {
+      parser::Node::Whenever{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(Node::DataWatch{children: result});
+        compiled.push(Node::Whenever{children: result});
       },
       parser::Node::SelectAll => {
         compiled.push(Node::SelectAll);
