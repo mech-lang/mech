@@ -118,3 +118,29 @@ impl NetworkTable {
 
 
 }
+
+pub trait Machine {
+  fn name(&self) -> String;
+  fn call(&self) -> Result<(), String>;
+}
+
+#[derive(Copy, Clone)]
+pub struct MachineDeclaration {
+    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar),
+}
+
+pub trait MachineRegistrar {
+    fn register_machine(&mut self, machine: Box<dyn Machine>);
+}
+
+#[macro_export]
+macro_rules! export_machine {
+    ($name:ident, $register:expr) => {
+        #[doc(hidden)]
+        #[no_mangle]
+        pub static $name: $crate::MachineDeclaration =
+            $crate::MachineDeclaration {
+                register: $register,
+            };
+    };
+}
