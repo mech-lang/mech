@@ -47,13 +47,12 @@ pub use self::database::{Transaction, Change, Interner};
 pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Parameter};
-pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};
+pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register, Machine, MachineRegistrar, MachineDeclaration};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 pub use self::errors::{Error, ErrorType};
 
 // ## Core
 
-#[derive(Clone)]
 pub struct Core {
   pub id: u64,
   pub epoch: usize,
@@ -72,7 +71,6 @@ pub struct Core {
 }
 
 impl Core {
-
   pub fn new(change_capacity: usize, table_capacity: usize) -> Core {
     Core {
       id: 0,

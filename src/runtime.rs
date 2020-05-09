@@ -26,9 +26,33 @@ use errors::{Error, ErrorType};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-// ## Runtime
+pub trait Machine {
+  fn name(&self) -> String;
+  fn call(&self) -> Result<(), String>;
+}
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
+pub struct MachineDeclaration {
+    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar),
+}
+
+pub trait MachineRegistrar {
+    fn register_machine(&mut self, machine: Box<dyn Machine>);
+}
+
+#[macro_export]
+macro_rules! export_machine {
+    ($name:ident, $register:expr) => {
+        #[doc(hidden)]
+        #[no_mangle]
+        pub static $name: $crate::MachineDeclaration =
+            $crate::MachineDeclaration {
+                register: $register,
+            };
+    };
+}
+
+// ## Runtime
 pub struct Runtime {
   pub blocks: HashMap<usize, Block>,
   pub pipes_map: HashMap<Register, HashSet<Address>>,
@@ -36,6 +60,7 @@ pub struct Runtime {
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
   pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>,
+  pub machines: HashMap<String, Box<dyn Machine>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -50,6 +75,7 @@ impl Runtime {
       output: HashSet::new(),
       tables_map: HashMap::new(),
       functions: HashMap::new(),
+      machines: HashMap::new(),
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
