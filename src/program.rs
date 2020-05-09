@@ -21,7 +21,7 @@ use mech_core::{Value, Index};
 use mech_core::Block;
 use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, NetworkTable};
+use mech_utilities::{RunLoopMessage, MechCode, NetworkTable, Machine, MachineRegistrar};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -29,6 +29,63 @@ use libloading::Library;
 use std::io::copy;
 
 use time;
+
+struct Registrar {
+  lib: Rc<Library>,
+  machines: HashMap<String, MachineProxy>,
+}
+
+impl Registrar {
+  fn new(lib: Rc<Library>) -> Registrar {
+    Registrar {
+      lib,
+      machines: HashMap::default(),
+    }
+  }
+}
+
+impl MachineRegistrar for Registrar {
+  fn register_machine(&mut self, machine: Box<dyn Machine>) {
+    let proxy = MachineProxy {
+      machine,
+      _lib: Rc::clone(&self.lib),
+    };
+    self.machines.insert(proxy.name(), proxy);
+  }
+}
+
+// A proxy object which wraps a Machine and makes sure it can't outlive the associated library
+pub struct MachineProxy {
+  machine: Box<dyn Machine>,
+  _lib: Rc<Library>,
+}
+
+impl Machine for MachineProxy {
+  fn name(&self) -> String {
+    self.machine.name()
+  }
+
+  fn call(&self) -> Result<(), String> {
+    self.machine.call()
+  }
+
+}
+
+/*
+
+  unsafe {
+    let lib = Rc::new(Library::new("../machines/time/target/release/mech_time.dll").expect("Can't load library"));
+    let decl = lib.get::<*mut MachineDeclaration>(b"time_timer\0").unwrap().read();
+    let mut registrar = Registrar::new(Rc::clone(&lib));
+    (decl.register)(&mut registrar);
+    let fxn = registrar.machines.get("time/timer").unwrap();
+    println!("{:?}", fxn.name());
+    fxn.call();
+    loop{}
+    //let m = lib.get::<*mut Machine>(b"Timer\0").expect("Could not load symbol");
+  }  
+
+*/
 
 fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
   create_dir("machines");
@@ -72,7 +129,7 @@ pub struct Program {
   pub mech: Core,
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
-  pub machines: HashMap<String, Library>,
+  pub libraries: HashMap<String, Library>,
   pub machine_registry: HashMap<String, (String, String)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -94,7 +151,7 @@ impl Program {
       machine_registry: HashMap::new(), 
       mech,
       cores: HashMap::new(),
-      machines: HashMap::new(),
+      libraries: HashMap::new(),
       input_map: HashMap::new(),
       incoming,
       outgoing,
@@ -162,7 +219,7 @@ impl Program {
       let machine_name = format!("mech_{}.dll", m[0]);
       match (&fun, self.machine_registry.get(m[0])) {
         (None, Some((ver, path))) => {
-          let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
+          let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
               Ok(_) => {
                 Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
@@ -174,7 +231,7 @@ impl Program {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+            let m = library.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
@@ -194,7 +251,7 @@ impl Program {
         match (&fun, self.machine_registry.get(m[0])) {
           (None, Some((ver, path))) => {
   
-            let machine = self.machines.entry(m[0].to_string()).or_insert_with(||{
+            let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
               match File::open(format!("machines/{}",machine_name)) {
                 Ok(_) => {
                   Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
@@ -206,7 +263,7 @@ impl Program {
               // Replace slashes with underscores and then add a null terminator
               let mut s = format!("{}\0", fun_name.replace("/","_"));
               let error_msg = format!("Symbol {} not found",s);
-              let m = machine.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+              let m = library.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
               m.into_raw()
             };
             *fun = Some(*native_rust);
