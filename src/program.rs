@@ -217,16 +217,41 @@ impl Program {
       }
     }
 
-    fn load_machine() -> Registrar {
-      let mut registrar = Registrar::new();
-      unsafe{
-        let lib = Rc::new(Library::new("../machines/time/target/release/mech_time.dll").expect("Can't load library"));
-        let decl = lib.get::<*mut MachineDeclaration>(b"time_timer\0").unwrap().read();
-        (decl.register)(&mut registrar);
-      }
-      registrar
-    }
     
+    for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
+      println!("{:?}", needed_table);
+      let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
+      let m: Vec<_> = needed_table_name.split('/').collect();
+      #[cfg(unix)]
+      let machine_name = format!("libmech_{}.so", m[0]);
+      #[cfg(windows)]
+      let machine_name = format!("mech_{}.dll", m[0]);
+      match self.machine_repository.get(m[0]) {
+        Some((ver, path)) => {
+
+          let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
+            match File::open(format!("machines/{}",machine_name)) {
+              Ok(_) => {
+                Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+              }
+              _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
+            }
+          });          
+          // Replace slashes with underscores and then add a null terminator
+          let mut s = format!("{}\0", needed_table_name);
+          let error_msg = format!("Symbol {} not found",s);
+          let mut registrar = Registrar::new();
+          unsafe{
+            let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
+            (declaration.register)(&mut registrar);
+          }        
+        },
+        _ => (),
+      }
+
+
+    }
+
     // Do it for the the other core
     for core in self.cores.values_mut() {
       for (fun_name, fun) in core.runtime.functions.iter_mut() {
