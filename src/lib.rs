@@ -5,7 +5,7 @@ extern crate mech_core;
 extern crate hashbrown;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Aliases, Transaction, Interner, TableId, Core, Constraint, Register};
+use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register, Machine};
 
 // ## Client Message
 
@@ -38,7 +38,6 @@ pub enum RunLoopMessage {
   Code((u64,MechCode)),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
-  //Core(Core),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -119,28 +118,3 @@ impl NetworkTable {
 
 }
 
-pub trait Machine {
-  fn name(&self) -> String;
-  fn call(&self) -> Result<(), String>;
-}
-
-#[derive(Copy, Clone)]
-pub struct MachineDeclaration {
-    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar),
-}
-
-pub trait MachineRegistrar {
-    fn register_machine(&mut self, machine: Box<dyn Machine>);
-}
-
-#[macro_export]
-macro_rules! export_machine {
-    ($name:ident, $register:expr) => {
-        #[doc(hidden)]
-        #[no_mangle]
-        pub static $name: $crate::MachineDeclaration =
-            $crate::MachineDeclaration {
-                register: $register,
-            };
-    };
-}
