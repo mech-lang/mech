@@ -63,6 +63,7 @@ pub struct Core {
   pub runtime: Runtime,
   pub change_capacity: usize,
   pub table_capacity: usize,
+  pub defined_tables: HashSet<Register>,
   pub input: HashSet<Register>,
   pub output: HashSet<Register>,
   pub paused: bool,
@@ -82,6 +83,7 @@ impl Core {
       table_capacity,
       store: Interner::new(change_capacity, table_capacity),
       runtime: Runtime::new(),
+      defined_tables: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
       paused: false,
@@ -129,6 +131,9 @@ impl Core {
             Constraint::Identifier{id, text} => {
               self.store.names.insert(id.clone() as u64, text.clone());
             },
+            Constraint::DefineTable{to_table, ..} => {
+              self.defined_tables.insert(Register{table: TableId::Global(*to_table), column: Index::Index(0)});
+            }
             _ =>(),
           };
         }
@@ -328,6 +333,7 @@ impl fmt::Debug for Core {
     write!(f, "│ Capacity: {:0.2}%\n", 100.0 * (self.store.changes.len() as f64 / self.store.changes.capacity() as f64)).unwrap();
     write!(f, "│ Tables: {:?}\n", self.store.tables.len()).unwrap();
     write!(f, "│ Blocks: {:?}\n", self.runtime.blocks.len()).unwrap();
+    write!(f, "│   Defined Tables: {:?}\n", self.defined_tables).unwrap();
     write!(f, "│   Input: {:?}\n", self.input).unwrap();
     write!(f, "│   Output: {:?}\n", self.output).unwrap();
     write!(f, "│   Errors:\n").unwrap();
