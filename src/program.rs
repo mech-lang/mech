@@ -19,9 +19,9 @@ use std::path::{Path, PathBuf};
 use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
-use mech_core::{Table, TableIndex, Hasher, TableId};
+use mech_core::{Table, TableIndex, Hasher, TableId, Machine, MachineRegistrar, MachineDeclaration};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, NetworkTable, Machine, MachineRegistrar};
+use mech_utilities::{RunLoopMessage, MechCode, NetworkTable};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -29,47 +29,6 @@ use libloading::Library;
 use std::io::copy;
 
 use time;
-
-struct Registrar {
-  lib: Rc<Library>,
-  machines: HashMap<String, MachineProxy>,
-}
-
-impl Registrar {
-  fn new(lib: Rc<Library>) -> Registrar {
-    Registrar {
-      lib,
-      machines: HashMap::default(),
-    }
-  }
-}
-
-impl MachineRegistrar for Registrar {
-  fn register_machine(&mut self, machine: Box<dyn Machine>) {
-    let proxy = MachineProxy {
-      machine,
-      _lib: Rc::clone(&self.lib),
-    };
-    self.machines.insert(proxy.name(), proxy);
-  }
-}
-
-// A proxy object which wraps a Machine and makes sure it can't outlive the associated library
-pub struct MachineProxy {
-  machine: Box<dyn Machine>,
-  _lib: Rc<Library>,
-}
-
-impl Machine for MachineProxy {
-  fn name(&self) -> String {
-    self.machine.name()
-  }
-
-  fn call(&self) -> Result<(), String> {
-    self.machine.call()
-  }
-
-}
 
 /*
 
@@ -86,6 +45,24 @@ impl Machine for MachineProxy {
   }  
 
 */
+
+struct Registrar {
+  machines: HashMap<String, Box<dyn Machine>>,
+}
+
+impl Registrar {
+  fn new() -> Registrar {
+    Registrar {
+      machines: HashMap::default(),
+    }
+  }
+}
+
+impl MachineRegistrar for Registrar {
+  fn register_machine(&mut self, machine: Box<dyn Machine>) {
+    self.machines.insert(machine.name(), machine);
+  }
+}
 
 fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
   create_dir("machines");
@@ -130,7 +107,7 @@ pub struct Program {
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
-  pub machine_registry: HashMap<String, (String, String)>,
+  pub machine_repository: HashMap<String, (String, String)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
@@ -148,7 +125,7 @@ impl Program {
     Program { 
       name: name.to_owned(), 
       capacity,
-      machine_registry: HashMap::new(), 
+      machine_repository: HashMap::new(), 
       mech,
       cores: HashMap::new(),
       libraries: HashMap::new(),
@@ -189,8 +166,8 @@ impl Program {
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
 
-    if self.machine_registry.len() == 0 {
-      // Download repository index
+    if self.machine_repository.len() == 0 {
+      // Download machine_repository index
       let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
       let mut response = reqwest::get(registry_url)?.text()?;
       let mut registry_compiler = Compiler::new();
@@ -206,7 +183,7 @@ impl Program {
         let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
         let version = registry_table.index(&row_index, &Index::Index(2)).unwrap().as_string().unwrap();
         let url = registry_table.index(&row_index, &Index::Index(3)).unwrap().as_string().unwrap();
-        self.machine_registry.insert(name, (version, url));
+        self.machine_repository.insert(name, (version, url));
       }
     }
 
@@ -217,7 +194,7 @@ impl Program {
       let machine_name = format!("libmech_{}.so", m[0]);
       #[cfg(windows)]
       let machine_name = format!("mech_{}.dll", m[0]);
-      match (&fun, self.machine_registry.get(m[0])) {
+      match (&fun, self.machine_repository.get(m[0])) {
         (None, Some((ver, path))) => {
           let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
@@ -239,6 +216,16 @@ impl Program {
         _ => (),
       }
     }
+
+    fn load_machine() -> Registrar {
+      let mut registrar = Registrar::new();
+      unsafe{
+        let lib = Rc::new(Library::new("../machines/time/target/release/mech_time.dll").expect("Can't load library"));
+        let decl = lib.get::<*mut MachineDeclaration>(b"time_timer\0").unwrap().read();
+        (decl.register)(&mut registrar);
+      }
+      registrar
+    }
     
     // Do it for the the other core
     for core in self.cores.values_mut() {
@@ -248,7 +235,7 @@ impl Program {
         let machine_name = format!("libmech_{}.so", m[0]);
         #[cfg(windows)]
         let machine_name = format!("mech_{}.dll", m[0]);
-        match (&fun, self.machine_registry.get(m[0])) {
+        match (&fun, self.machine_repository.get(m[0])) {
           (None, Some((ver, path))) => {
   
             let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
