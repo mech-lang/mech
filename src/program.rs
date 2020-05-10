@@ -219,7 +219,6 @@ impl Program {
 
     
     for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
-      println!("{:?}", needed_table);
       let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
       let m: Vec<_> = needed_table_name.split('/').collect();
       #[cfg(unix)]
@@ -238,18 +237,17 @@ impl Program {
             }
           });          
           // Replace slashes with underscores and then add a null terminator
-          let mut s = format!("{}\0", needed_table_name);
+          let mut s = format!("{}\0", needed_table_name.replace("/","_"));
           let error_msg = format!("Symbol {} not found",s);
           let mut registrar = Registrar::new();
           unsafe{
             let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
             (declaration.register)(&mut registrar);
           }        
+          self.mech.runtime.machines.extend(registrar.machines);
         },
         _ => (),
       }
-
-
     }
 
     // Do it for the the other core
