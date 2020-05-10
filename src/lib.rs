@@ -47,7 +47,7 @@ pub use self::database::{Transaction, Change, Interner};
 pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Parameter};
-pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register, Machine, MachineRegistrar, MachineDeclaration};
+pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};
 pub use self::quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 pub use self::errors::{Error, ErrorType};
 
