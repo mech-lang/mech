@@ -3,9 +3,12 @@ extern crate serde_derive;
 extern crate serde;
 extern crate mech_core;
 extern crate hashbrown;
+extern crate crossbeam_channel;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register, Machine};
+use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register};
+
+use crossbeam_channel::Sender;
 
 // ## Client Message
 
@@ -116,5 +119,32 @@ impl NetworkTable {
   }
 
 
+}
+
+pub trait Machine {
+  fn name(&self) -> String;
+  fn id(&self) -> u64;
+  fn call(&self) -> Result<(), String>;
+}
+
+#[derive(Copy, Clone)]
+pub struct MachineDeclaration {
+    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>),
+}
+
+pub trait MachineRegistrar {
+    fn register_machine(&mut self, machine: Box<dyn Machine>);
+}
+
+#[macro_export]
+macro_rules! export_machine {
+    ($name:ident, $register:expr) => {
+        #[doc(hidden)]
+        #[no_mangle]
+        pub static $name: $crate::MachineDeclaration =
+            $crate::MachineDeclaration {
+                register: $register,
+            };
+    };
 }
 
