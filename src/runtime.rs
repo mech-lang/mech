@@ -28,6 +28,7 @@ use std::cell::RefCell;
 
 pub trait Machine {
   fn name(&self) -> String;
+  fn id(&self) -> u64;
   fn call(&self) -> Result<(), String>;
 }
 
@@ -60,7 +61,6 @@ pub struct Runtime {
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
   pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>,
-  pub machines: HashMap<String, Box<dyn Machine>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -75,7 +75,6 @@ impl Runtime {
       output: HashSet::new(),
       tables_map: HashMap::new(),
       functions: HashMap::new(),
-      machines: HashMap::new(),
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
@@ -396,7 +395,7 @@ impl Block {
         Constraint::Append{from_table, to_table} => {
           match to_table {
             TableId::Global(id) => {
-              self.input_registers.insert(Register::new(*to_table, Index::Index(0)));
+              //self.input_registers.insert(Register::new(*to_table, Index::Index(0)));
               self.output_registers.insert(Register::new(*to_table, Index::Index(0)));
             }
             _ => (),
