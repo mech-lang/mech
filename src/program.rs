@@ -30,24 +30,8 @@ use std::io::copy;
 
 use time;
 
-/*
-
-  unsafe {
-    let lib = Rc::new(Library::new("../machines/time/target/release/mech_time.dll").expect("Can't load library"));
-    let decl = lib.get::<*mut MachineDeclaration>(b"time_timer\0").unwrap().read();
-    let mut registrar = Registrar::new(Rc::clone(&lib));
-    (decl.register)(&mut registrar);
-    let fxn = registrar.machines.get("time/timer").unwrap();
-    println!("{:?}", fxn.name());
-    fxn.call();
-    loop{}
-    //let m = lib.get::<*mut Machine>(b"Timer\0").expect("Could not load symbol");
-  }  
-
-*/
-
 struct Registrar {
-  machines: HashMap<String, Box<dyn Machine>>,
+  machines: HashMap<u64, Box<dyn Machine>>,
 }
 
 impl Registrar {
@@ -60,7 +44,7 @@ impl Registrar {
 
 impl MachineRegistrar for Registrar {
   fn register_machine(&mut self, machine: Box<dyn Machine>) {
-    self.machines.insert(machine.name(), machine);
+    self.machines.insert(machine.id(), machine);
   }
 }
 
@@ -107,6 +91,7 @@ pub struct Program {
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
+  pub machines: HashMap<u64, Box<dyn Machine>>,
   pub machine_repository: HashMap<String, (String, String)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
@@ -129,6 +114,7 @@ impl Program {
       mech,
       cores: HashMap::new(),
       libraries: HashMap::new(),
+      machines: HashMap::new(),
       input_map: HashMap::new(),
       incoming,
       outgoing,
@@ -216,8 +202,8 @@ impl Program {
         _ => (),
       }
     }
-
     
+    let mut changes = Vec::new();
     for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
       let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
       let m: Vec<_> = needed_table_name.split('/').collect();
@@ -227,7 +213,6 @@ impl Program {
       let machine_name = format!("mech_{}.dll", m[0]);
       match self.machine_repository.get(m[0]) {
         Some((ver, path)) => {
-
           let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
               Ok(_) => {
@@ -244,11 +229,15 @@ impl Program {
             let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
             (declaration.register)(&mut registrar);
           }        
-          self.mech.runtime.machines.extend(registrar.machines);
+          self.machines.extend(registrar.machines);
+          let needed_table_id = Hasher::hash_str(needed_table_name);
+          changes.push(Change::NewTable{id: needed_table_id, rows: 0, columns: 1});
         },
         _ => (),
       }
     }
+    let txn = Transaction::from_changeset(changes);
+    self.mech.process_transaction(&txn);
 
     // Do it for the the other core
     for core in self.cores.values_mut() {
@@ -260,7 +249,6 @@ impl Program {
         let machine_name = format!("mech_{}.dll", m[0]);
         match (&fun, self.machine_repository.get(m[0])) {
           (None, Some((ver, path))) => {
-  
             let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
               match File::open(format!("machines/{}",machine_name)) {
                 Ok(_) => {
@@ -796,6 +784,15 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
                 program.mech.step();
+                for (table, column) in &program.mech.runtime.changed_this_round {
+                  match (program.machines.get(&table), column) {
+                    // Invoke the machine!
+                    (Some(machine), Index::Index(1)) => {
+                      machine.call();
+                    },
+                    _ => (),
+                  }
+                }
                 client_outgoing.send(ClientMessage::StepDone);
               },
               (0, MechCode::MiniBlocks(miniblocks)) => {
@@ -855,6 +852,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             };
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
+            //println!("{:?}", program.mech.runtime);
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
           (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
