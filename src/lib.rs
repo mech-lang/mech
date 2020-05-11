@@ -182,8 +182,8 @@ impl Core {
     
   }
 
-  pub fn step(&mut self) {
-    self.runtime.run_network(&mut self.store, 10_000);
+  pub fn step(&mut self, max_iterations: u64) {
+    self.runtime.run_network(&mut self.store, max_iterations);
     self.transaction_boundaries.push(self.store.change_pointer);
   }
 
