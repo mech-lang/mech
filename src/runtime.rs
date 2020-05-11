@@ -1219,13 +1219,13 @@ impl Block {
           let from_width = from.columns;
           let to_width = to.columns;
 
-          if from_width == to_width {
+          //if from_width == to_width {
             for i in 0..from_width as usize {
               for j in 0..from.rows as usize {
                 self.block_changes.push(Change::Set{table: *to_id, row: Index::Index((j as u64 + to.rows) + 1), column: Index::Index(i as u64 + 1), value: from.data[i][j].clone() });
               }
             }
-          }
+          //}
         },
         Constraint::CopyTable{from_table, to_table} => {
           let mut from_table_ref = self.memory.get(*from_table).unwrap().borrow();
