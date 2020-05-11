@@ -6,7 +6,7 @@ extern crate hashbrown;
 extern crate crossbeam_channel;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register};
+use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register, Change};
 
 use crossbeam_channel::Sender;
 
@@ -129,7 +129,7 @@ pub trait Machine {
 
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
-    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>),
+    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->Vec<Change>,
 }
 
 pub trait MachineRegistrar {
