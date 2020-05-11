@@ -19,9 +19,9 @@ use std::path::{Path, PathBuf};
 use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
-use mech_core::{Table, TableIndex, Hasher, TableId, Machine, MachineRegistrar, MachineDeclaration};
+use mech_core::{Table, TableIndex, Hasher, TableId};
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, NetworkTable};
+use mech_utilities::{RunLoopMessage, MechCode, NetworkTable, Machine, MachineRegistrar, MachineDeclaration};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -103,7 +103,7 @@ pub struct Program {
 
 impl Program {
   pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
-    let mut mech = Core::new(capacity, 100);
+    let mut mech = Core::new(capacity, 10000);
     let mech_code = Hasher::hash_str("mech/code");
     let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
     mech.process_transaction(&txn);
@@ -227,11 +227,10 @@ impl Program {
           let mut registrar = Registrar::new();
           unsafe{
             let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
-            (declaration.register)(&mut registrar);
+            let mut init_changes = (declaration.register)(&mut registrar, self.outgoing.clone());
+            changes.append(&mut init_changes);
           }        
           self.machines.extend(registrar.machines);
-          let needed_table_id = Hasher::hash_str(needed_table_name);
-          changes.push(Change::NewTable{id: needed_table_id, rows: 0, columns: 1});
         },
         _ => (),
       }
@@ -700,7 +699,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            //println!("{} Txn started:\n {:?}", name, txn);
+            println!("Txn started:\n {:?}", txn);
             let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
