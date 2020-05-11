@@ -17,9 +17,9 @@ gitlab = { repository = "mech-lang/program", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.0.5"
-mech-syntax = "0.0.5"
-mech-utilities = "0.0.5"
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 time = "0.1.39"
 serde = "1.0.106"
@@ -35,3 +35,4 @@ crossbeam-channel = "0.4"
 tungstenite = "0.10.1"
 url = "2.1.0"
 ws = "0.9.1"
+hashbrown = {version = "0.7.1", features = ["nightly"]}
