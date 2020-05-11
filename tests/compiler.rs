@@ -27,7 +27,7 @@ macro_rules! test_mech {
       let input = String::from($input);
       compiler.compile_string(input);
       core.register_blocks(compiler.blocks);
-      core.step();
+      core.step(10_000);
       let table = Hasher::hash_str("test");
       let row = Index::Index(1);
       let column = Index::Index(1);
@@ -891,5 +891,3 @@ block
   x = [7;8;9]
   y >- x
   #z = y"#, Value::from_u64(24));
-
-
