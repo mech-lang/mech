@@ -5,7 +5,7 @@
 use mech_core::{Block, BlockState, Constraint, Index, TableId};
 use mech_core::{Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::Hasher;
-use mech_core::ErrorType;
+use mech_core::{Error, ErrorType};
 use parser;
 use parser::Parser;
 use lexer::Token;
@@ -526,10 +526,12 @@ impl Compiler {
         for constraint_node in children {
           let constraint_text = formatter.format(&constraint_node, false);
           let mut result = self.compile_constraint(&constraint_node);
+          println!("RESULT {:?}", result);
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
           for constraint in result {
+            println!("{:?}", constraint);
             match &constraint {
               Constraint::AliasTable{table, alias} => {
                 produces.insert(*alias);
@@ -538,43 +540,44 @@ impl Compiler {
                 match id {
                   TableId::Local(id) => {
                     block_produced.insert(*id);
-                    produces.insert(*id)
+                    produces.insert(*id);
                   },
-                  _ => false,
+                  _ => (),
                 };
               },
               Constraint::Append{from_table, to_table} => {
                 match from_table {
-                  TableId::Local(id) => consumes.insert(*id),
-                  _ => false,
+                  TableId::Local(id) => {consumes.insert(*id);},
+                  _ => (),
                 };
               },
               Constraint::Scan{table, indices, output} => {
                 match table {
-                  TableId::Local(id) => consumes.insert(*id),
-                  TableId::Global(id) => false, // TODO handle global
+                  TableId::Local(id) => {consumes.insert(*id);},
+                  TableId::Global(id) => (), // TODO handle global
                 };
                 match output {
-                  TableId::Local(id) => produces.insert(*id),
-                  _ => false,
+                  TableId::Local(id) => {produces.insert(*id);},
+                  _ => (),
                 };
               },
               Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes)} => {
                 // TODO Handle other cases of from and parameters
                 let to_rows = to_ixes[0];
                 match to_rows {
-                  (Some(Parameter::TableId(TableId::Local(id))),_) => consumes.insert(id),
-                  _ => false,
+                  (Some(Parameter::TableId(TableId::Local(id))),_) => {consumes.insert(id);},
+                  _ => (),
                 };
                 match to_table {
-                  TableId::Global(id) => produces.insert(*id),
-                  _ => false,
+                  TableId::Global(id) => {produces.insert(*id);},
+                  _ => (),
                 };
               },
               _ => (),
             }
             constraints.push(constraint.clone());
           }
+          println!("The constraints {:?}", constraints);
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
@@ -607,6 +610,7 @@ impl Compiler {
           plan.append(&mut now_satisfied);
         }
         // Do a final check on unsatisfied constraints that are now satisfied
+        
         let mut now_satisfied = unsatisfied_constraints.drain_filter(|unsatisfied_constraint| {
           let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
           let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
@@ -618,11 +622,23 @@ impl Compiler {
             false => false
           }
         }).collect::<Vec<_>>();
+        
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (constraint_text, _, _, step_constraints) = step;
           block.add_constraints((constraint_text, step_constraints));
+        }
+        for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_constraints {
+          block.errors.push(Error {
+            block: block.id as u64,
+            constraint: step_constraints,
+            error_id: ErrorType::UnsatisfiedConstraint(
+              unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
+            ),
+          });
+            
+            
         }
         //block.id = block.gen_block_id();
         self.blocks.push(block.clone());
