@@ -12,7 +12,7 @@ use runtime::Constraint;
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Error { 
   pub block: u64,
-  pub constraint: Constraint,
+  pub constraint: Vec<Constraint>,
   pub error_id: ErrorType,
 }
 
@@ -23,4 +23,5 @@ pub enum ErrorType {
   IndexOutOfBounds(((u64, u64), (u64, u64))),
   DuplicateAlias(u64),
   DomainMismatch(u64, u64),
+  UnsatisfiedConstraint(Vec<u64>),
 }

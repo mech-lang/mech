@@ -450,7 +450,7 @@ impl Block {
                 Err(mech_error) => {
                   self.errors.push(Error{
                     block: self.id as u64,
-                    constraint: constraint.clone(),
+                    constraint: vec![constraint.clone()],
                     error_id: mech_error,
                   });
                 },
