@@ -220,7 +220,7 @@ impl Interner {
       },
       Change::NewTable{id, rows, columns } => {
         self.tables.insert(Table::new(*id, *rows, *columns));
-        self.tables.changed_this_round.insert((*id, Index::Index(0)));
+        //self.tables.changed_this_round.insert((*id, Index::Index(0)));
       }
       Change::RemoveTable{id, rows: _, columns: _} => {
         self.tables.remove(&id);
