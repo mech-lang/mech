@@ -16,7 +16,7 @@ fn compile_test(input: String, test: Value) {
   let mut core = Core::new(10, 10);
   compiler.compile_string(input);
   core.register_blocks(compiler.blocks);
-  core.step();
+  core.step(1000);
   let table = Hasher::hash_str("test");
   let row = Index::Index(1);
   let column = Index::Index(1);
@@ -30,13 +30,15 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"
-block
-  ~ #q > 100
-  #test = #q * 3
-  
-block
-  #q = 10"#);
+  let input = String::from(r#"# Mech Website
+
+## Homepage
+
+This is where the drawing is added to the DOM
+  a = [1]
+  b = [c: [a; b; #c]]
+  #d = [|c|
+        [c]]"#);
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -53,7 +55,7 @@ block
   println!("{:?}", compiler.unparsed);
   println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
-  core.step();
+  core.step(100000);
   println!("{:?}", core);
   println!("{:?}", core.runtime);
   /*let block_ast = match &programs[0].sections[0].elements[1] {
