@@ -160,7 +160,7 @@ impl Program {
       registry_compiler.compile_string(response);
       let mut registry_core = Core::new(1,1);
       registry_core.register_blocks(registry_compiler.blocks);
-      registry_core.step();
+      registry_core.step(10_000);
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap().borrow();
@@ -497,9 +497,9 @@ impl ProgramRunner {
       program.download_dependencies(Some(client_outgoing.clone()));
 
       // Step cores
-      program.mech.step();
+      program.mech.step(10_000);
       for core in program.cores.values_mut() {
-        core.step();
+        core.step(10_000);
       }
       extern crate ws;
       use ws::{connect, Handler, Sender, Handshake, Result, Message, CloseCode};
@@ -782,7 +782,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step();
+                program.mech.step(10_000);
                 for (table, column) in &program.mech.runtime.changed_this_round {
                   match (program.machines.get(&table), column) {
                     // Invoke the machine!
@@ -805,7 +805,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 }
                 program.mech.register_blocks(blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step();
+                program.mech.step(10_000);
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
@@ -827,7 +827,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             compiler.compile_string(code);
             program.mech.register_blocks(compiler.blocks);
             program.download_dependencies(Some(client_outgoing.clone()));
-            program.mech.step();
+            program.mech.step(10_000);
 
             // Get the result
             let echo_table = match program.mech.get_table("ans".to_string()) {
@@ -864,7 +864,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
               blocks.push(block);
             }
             program.mech.register_blocks(blocks);
-            program.mech.step();
+            program.mech.step(10_000);
             client_outgoing.send(ClientMessage::StepDone);
           }
           (Err(_), _) => {
