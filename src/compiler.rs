@@ -127,7 +127,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Whenever{children} => {print!("Whenever\n"); Some(children)},
     Node::Wait{children} => {print!("Wait\n"); Some(children)},
     Node::Until{children} => {print!("Until\n"); Some(children)},
-    Node::SelectData{name, id, children} => {print!("SelectData({:?}))\n", id); Some(children)},
+    Node::SelectData{name, id, children} => {print!("SelectData({:?} {:?}))\n", name, id); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::Range => {print!("Range\n"); None},
@@ -526,12 +526,10 @@ impl Compiler {
         for constraint_node in children {
           let constraint_text = formatter.format(&constraint_node, false);
           let mut result = self.compile_constraint(&constraint_node);
-          println!("RESULT {:?}", result);
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
           for constraint in result {
-            println!("{:?}", constraint);
             match &constraint {
               Constraint::AliasTable{table, alias} => {
                 produces.insert(*alias);
@@ -577,7 +575,6 @@ impl Compiler {
             }
             constraints.push(constraint.clone());
           }
-          println!("The constraints {:?}", constraints);
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
@@ -1120,6 +1117,7 @@ impl Compiler {
         }
         compiled.reverse();
         constraints.append(&mut compiled);
+        constraints.push(Constraint::Identifier{id: *scan_id.unwrap(), text: name.clone()});
         let scan_output = Hasher::hash_string(format!("ScanTable{:?},{:?}-{:?}-{:?}", self.section, self.block, scan_id, indices));
         constraints.push(Constraint::Scan{table: scan_id.clone(), indices: indices.clone(), output: TableId::Local(scan_output)});
         constraints.push(Constraint::NewTable{id: TableId::Local(scan_output), rows: 0, columns: 0});
@@ -1558,7 +1556,9 @@ impl Compiler {
       parser::Node::Table{children} => {
         let result = self.compile_nodes(children);
         match &result[0] {
-          Node::Identifier{name, id} => compiled.push(Node::Table{name: name.to_string(), id: *id}),
+          Node::Identifier{name, id} => {
+            compiled.push(Node::Table{name: name.to_string(), id: *id});
+          },
           _ => (),
         };
       },  
