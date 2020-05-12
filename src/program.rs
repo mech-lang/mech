@@ -699,7 +699,6 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            println!("Txn started:\n {:?}", txn);
             let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
@@ -778,16 +777,25 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let block_count = program.mech.runtime.blocks.len();
             match code_tuple {
               (0, MechCode::String(code)) => {
-                let mut compiler = Compiler::new();
+                let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
                 program.mech.step(10_000);
                 for (table, column) in &program.mech.runtime.changed_this_round {
-                  match (program.machines.get(&table), column) {
+                  match program.machines.get(&table) {
                     // Invoke the machine!
-                    (Some(machine), Index::Index(1)) => {
-                      machine.call();
+                    Some(machine) => {
+                      for change in &program.mech.store.changes {
+                        match change {
+                          Change::Set{table: change_table, ..} => {
+                            if table == change_table {
+                              machine.on_change(change);
+                            }
+                          }
+                          _ => (),
+                        }
+                      }
                     },
                     _ => (),
                   }
