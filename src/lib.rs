@@ -68,7 +68,7 @@ pub struct Core {
   pub output: HashSet<Register>,
   pub paused: bool,
   pub remote_tables: Vec<Arc<Table>>,
-  transaction_boundaries: Vec<usize>,
+  pub transaction_boundaries: Vec<usize>,
 }
 
 impl Core {
