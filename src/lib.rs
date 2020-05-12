@@ -102,7 +102,7 @@ impl Core {
               let table = ntable.to_table();
               unsafe {
                 (*wasm_core).core.register_table(table);
-                (*wasm_core).core.step();
+                (*wasm_core).core.step(10_000);
                 (*wasm_core).add_application();
               }
             }
@@ -273,7 +273,7 @@ impl Core {
     let mut compiler = Compiler::new();
     compiler.compile_string(code);
     self.core.register_blocks(compiler.blocks.clone());
-    self.core.step();
+    self.core.step(10_000);
     self.core.process_transaction(&Transaction::from_changeset(changes));
     self.programs = compiler.programs.clone();
     //self.render_program();
@@ -292,7 +292,7 @@ impl Core {
     }
     log!("Loaded {} blocks.", blocks.len());
     self.core.register_blocks(blocks);
-    self.core.step();
+    self.core.step(10_000);
   }
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
@@ -601,7 +601,7 @@ impl Core {
                       (*core).remove_block(&block_id);
                       (*core).register_blocks(vec![new_block.clone()]);
                       (*core).runtime.ready_blocks.insert(block_id);
-                      (*core).step();
+                      (*core).step(10_000);
                       (*wasm_core).render();
                     }
                     if new_block.errors.is_empty() && target.get_attribute("state").unwrap() == "error".to_string() {
