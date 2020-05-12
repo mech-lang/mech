@@ -124,7 +124,7 @@ impl NetworkTable {
 pub trait Machine {
   fn name(&self) -> String;
   fn id(&self) -> u64;
-  fn call(&self) -> Result<(), String>;
+  fn on_change(&self, change: &Change) -> Result<(), String>;
 }
 
 #[derive(Copy, Clone)]
