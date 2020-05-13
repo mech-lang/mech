@@ -8,6 +8,8 @@ use mech_core::{Core, Transaction, Change};
 use mech_core::{Table, Value, Index};
 use mech_core::Hasher;
 
+use std::rc::Rc;
+
 #[bench]
 fn db_new(b:&mut Bencher) {
     b.iter(|| {
@@ -42,7 +44,7 @@ fn db_register_add(b: &mut Bencher) {
     );
     b.iter(|| {
         let txn = Transaction::from_change(
-            Change::Set{table: students, row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(100)}
+            Change::Set{table: students, column: Index::Index(1), values: vec![(Index::Index(1), Rc::new(Value::from_u64(100)))]}
         );
         db.process_transaction(&txn);
     });

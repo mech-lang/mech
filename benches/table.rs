@@ -3,6 +3,7 @@
 extern crate test;
 extern crate mech_core;
 
+use std::rc::Rc;
 use test::Bencher;
 use mech_core::{Table, Value, Index};
 
@@ -24,7 +25,7 @@ fn make_table_100_x_100(b: &mut Bencher) {
 fn set_cell(b: &mut Bencher) {
     let mut table = Table::new(0, 1, 1);
     b.iter(|| {
-        table.set_cell(&Index::Index(1), &Index::Index(1), Value::from_u64(100));
+        table.set_cell(&Index::Index(1), &Index::Index(1), Rc::new(Value::from_u64(100)));
     });
 }
 
@@ -32,7 +33,7 @@ fn set_cell(b: &mut Bencher) {
 fn set_clear_cell(b: &mut Bencher) {
     let mut table = Table::new(0, 1, 1);
     b.iter(|| {
-        table.set_cell(&Index::Index(1), &Index::Index(1), Value::from_u64(100));
+        table.set_cell(&Index::Index(1), &Index::Index(1),  Rc::new(Value::from_u64(100)));
         table.clear_cell(&Index::Index(1), &Index::Index(1));
     });
 }
