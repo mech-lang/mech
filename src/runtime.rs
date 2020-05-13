@@ -290,7 +290,7 @@ pub struct Block {
   lhs_columns_empty:Vec<Rc<Value>>,
   rhs_rows_empty: Vec<Rc<Value>>,
   rhs_columns_empty: Vec<Rc<Value>>,
-  block_changes: Vec<Change>,
+  block_changes: Vec<Rc<Change>>,
   current_step: Option<Constraint>,
   scratch_tables: Vec<Option<Rc<RefCell<Table>>>>,
 }
@@ -1197,7 +1197,7 @@ impl Block {
                 column: Index::Index(cix as u64 + 1),
                 values 
               };                               
-              self.block_changes.push(change); 
+              self.block_changes.push(Rc::new(change));
             }
           // from and to are the same size
           } else if to_height == from_height && to_width == from_width {
@@ -1227,7 +1227,7 @@ impl Block {
                 column: Index::Index(tcix as u64 + 1),
                 values,
               };
-              self.block_changes.push(change);
+              self.block_changes.push(Rc::new(change));
             }
           }
           self.rhs_columns_empty.clear();
@@ -1265,15 +1265,19 @@ impl Block {
                 column: column_index, 
                 values,
               };
-              self.block_changes.push(change);
+              self.block_changes.push(Rc::new(change));
             }
           //}
         },
         Constraint::CopyTable{from_table, to_table} => {
           let mut from_table_ref = self.memory.get(*from_table).unwrap().borrow();
-          let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
+          let mut changes = vec![
+            Rc::new(Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns})
+          ];
           for (alias, ix) in from_table_ref.column_aliases.iter() {
-            changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
+            changes.push(
+              Rc::new(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias})
+            );
           }
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
             let mut values = Vec::with_capacity(column.len());
@@ -1292,7 +1296,7 @@ impl Block {
               column: Index::Index(col_ix as u64 + 1), 
               values,
             };
-            changes.push(change);
+            changes.push(Rc::new(change));
           }
           self.block_changes.append(&mut changes);
         },
@@ -1302,9 +1306,13 @@ impl Block {
             //Some(_) => (), // The table has already been created
             _ => {
               let mut from_table_ref = self.memory.get(*from_table).unwrap().borrow();
-              let mut changes = vec![Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns}];
+              let mut changes: Vec<Rc<Change>> = vec![
+                Rc::new(Change::NewTable{id: *to_table, rows: from_table_ref.rows, columns: from_table_ref.columns})
+              ];
               for (alias, ix) in from_table_ref.column_aliases.iter() {
-                changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
+                changes.push(
+                  Rc::new(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias})
+                );
               }
               for (col_ix, column) in from_table_ref.data.iter().enumerate() {
                 let mut values = Vec::with_capacity(column.len());
@@ -1323,7 +1331,7 @@ impl Block {
                   column: Index::Index(col_ix as u64 + 1), 
                   values,
                 };
-                changes.push(change);
+                changes.push(Rc::new(change));
               }
               self.block_changes.append(&mut changes);
             }
@@ -1332,7 +1340,7 @@ impl Block {
         Constraint::NewTable{id, rows, columns} => {
           match id {
             TableId::Global(id) => {
-              self.block_changes.push(Change::NewTable{id: *id, rows: *rows, columns: *columns});
+              self.block_changes.push(Rc::new(Change::NewTable{id: *id, rows: *rows, columns: *columns}));
             }
             _ => (),
           }
@@ -1371,9 +1379,11 @@ impl Block {
       TableId::Local(id) => id,
       TableId::Global(id) => id,
     };
-    let mut changes = vec![Change::NewTable{id: to_table_id, rows: from_table_ref.rows, columns: from_table_ref.columns}];
+    let mut changes = vec![
+      Rc::new(Change::NewTable{id: to_table_id, rows: from_table_ref.rows, columns: from_table_ref.columns})
+    ];
     for (alias, ix) in from_table_ref.column_aliases.iter() {
-      changes.push(Change::RenameColumn{table: to_table_id, column_ix: *ix, column_alias: *alias});
+      changes.push(Rc::new(Change::RenameColumn{table: to_table_id, column_ix: *ix, column_alias: *alias}));
     }
     for (col_ix, column) in from_table_ref.data.iter().enumerate() {
       let mut values = Vec::with_capacity(column.len());
@@ -1392,7 +1402,7 @@ impl Block {
         column: Index::Index(col_ix as u64 + 1), 
         values,
       };
-      changes.push(change);
+      changes.push(Rc::new(change));
     }
     for c in copy_tables.iter() {
       self.copy_table(*c, *c, store);

@@ -39,10 +39,10 @@ impl fmt::Debug for Change {
 
 #[derive(Clone)]
 pub struct Transaction {
-  pub tables: Vec<Change>,
-  pub adds: Vec<Change>,
-  pub removes: Vec<Change>,
-  pub names: Vec<Change>,
+  pub tables: Vec<Rc<Change>>,
+  pub adds: Vec<Rc<Change>>,
+  pub removes: Vec<Rc<Change>>,
+  pub names: Vec<Rc<Change>>,
 }
 
 impl Transaction {
@@ -55,28 +55,28 @@ impl Transaction {
     }
   }
 
-  pub fn from_changeset(changes: Vec<Change>) -> Transaction {
+  pub fn from_changeset(changes: Vec<Rc<Change>>) -> Transaction {
     let mut txn = Transaction::new();
     for change in changes {
-      match change {
-        Change::Set{..} => txn.adds.push(change),
-        Change::Remove{..} => txn.removes.push(change),
+      match *change {
+        Change::Set{..} => txn.adds.push(change.clone()),
+        Change::Remove{..} => txn.removes.push(change.clone()),
         Change::RemoveTable{..} |
-        Change::NewTable{..} => txn.tables.push(change),
-        Change::RenameColumn{..} => txn.names.push(change),
+        Change::NewTable{..} => txn.tables.push(change.clone()),
+        Change::RenameColumn{..} => txn.names.push(change.clone()),
       }
     }
     txn
   }
 
-  pub fn from_change(change: Change) -> Transaction {
+  pub fn from_change(change: Rc<Change>) -> Transaction {
     let mut txn = Transaction::new();
-    match change {
-      Change::Set{..} => txn.adds.push(change),
-      Change::Remove{..} => txn.removes.push(change),
+    match *change {
+      Change::Set{..} => txn.adds.push(change.clone()),
+      Change::Remove{..} => txn.removes.push(change.clone()),
       Change::RemoveTable{..} |
-      Change::NewTable{..} => txn.tables.push(change),
-      Change::RenameColumn{..} => txn.names.push(change),
+      Change::NewTable{..} => txn.tables.push(change.clone()),
+      Change::RenameColumn{..} => txn.names.push(change.clone()),
     }
     txn
   }
@@ -109,7 +109,7 @@ pub struct Interner {
   pub offset: usize,
   pub tables: TableIndex,
   pub names: HashMap<u64,String>,
-  pub changes: Vec<Change>,
+  pub changes: Vec<Rc<Change>>,
   pub changes_count: usize,
   pub change_pointer: usize, // points at the next available slot in memory that can hold a change
   pub rollover: usize,
@@ -141,30 +141,30 @@ impl Interner {
   pub fn process_transaction(&mut self, txn: &Transaction) {
     // First make any tables
     for table in txn.tables.iter() {
-      self.intern_change(table);
+      self.intern_change(table.clone());
     }
     // Change names
     for name in txn.names.iter() {
-      self.intern_change(name);
+      self.intern_change(name.clone());
     }
     // Handle the removes
     for remove in txn.removes.iter() {
-      self.intern_change(remove);
+      self.intern_change(remove.clone());
     }
     // Handle the adds
     for add in txn.adds.iter() {
-      self.intern_change(add);
+      self.intern_change(add.clone());
     }    
   }
 
-  fn intern_change(&mut self, change: &Change) { 
-    match change {
+  fn intern_change(&mut self, change: Rc<Change>) { 
+    match &*change {
       Change::Set{table, column, values} => {
         let mut changed = false;
         let mut alias: Option<u64> = None;
         match self.tables.get(*table) {
           Some(table_ref) => {
-            alias = table_ref.borrow().get_column_alias(column);
+            alias = table_ref.borrow().get_column_alias(&column);
             for (row, value) in values {
               let old_value = table_ref.borrow_mut().set_cell(&row, &column, value.clone());
               if old_value != *value {
@@ -239,7 +239,7 @@ impl Interner {
   // Save the change. If there's enough room in memory, store it there. 
   // If not, make room by evicting some old change and throw that on disk. 
   // For now, we'll make the policy that the oldest record get evicted first.
-  fn save_change(&mut self, change: &Change) {
+  fn save_change(&mut self, change: Rc<Change>) {
     if self.changes.len() < self.changes.capacity() {
       self.changes.push(change.clone());
     } else if self.change_pointer == self.changes.capacity() {

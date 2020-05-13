@@ -226,18 +226,18 @@ impl Core {
       // Now process the transactions in reverse order
       for ix in (prev_ix..now_ix).rev() {
         let core = self as *mut Core;
-        match &self.store.changes[ix] {
+        match &*self.store.changes[ix] {
           Change::Set{table, column, values} => {
             unsafe {
               (*core).store.process_transaction(&Transaction::from_change(
-                Change::Remove{table: table.clone(), column: column.clone(), values: values.clone()}
+                Rc::new(Change::Remove{table: table.clone(), column: column.clone(), values: values.clone()})
               ));
             }
           },
           Change::Remove{table, column, values} => {
             unsafe {
               (*core).store.process_transaction(&Transaction::from_change(
-                Change::Set{table: table.clone(), column: column.clone(), values: values.clone()}
+                Rc::new(Change::Set{table: table.clone(), column: column.clone(), values: values.clone()})
               ));
             }
           },
