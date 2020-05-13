@@ -44,7 +44,7 @@ mod errors;
 // ## Exported Modules
 
 pub use self::database::{Transaction, Change, Interner};
-pub use self::table::{Value, Index, TableId, Table, Bar, Aliases};
+pub use self::table::{Value, Index, TableId, Table};
 pub use self::indexes::{TableIndex, Hasher};
 pub use self::operations::{Parameter};
 pub use self::runtime::{Runtime, Block, BlockState, Constraint, Register};

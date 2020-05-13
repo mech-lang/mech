@@ -226,63 +226,6 @@ impl fmt::Debug for Index {
   }
 }
 
-// I've wrapped this hashmap just so I can implement SERDE.
-// It's so sad I have to do this.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Aliases(HashMap<u64,u64>);
-
-impl Aliases {
-
-  pub fn new() -> Aliases {
-    Aliases{
-      0: HashMap::new()
-    }
-  }
-
-  pub fn len(&self) -> usize {
-    self.0.len()
-  } 
-
-  pub fn insert(&mut self, key: u64, value: u64) {
-    self.0.insert(key,value);
-  } 
-
-  pub fn iter(&self) -> hashbrown::hash_map::Iter<u64,u64> {
-    self.0.iter()
-  } 
-  
-}
-
-impl Serialize for Aliases {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut x = serializer.serialize_map(Some(self.0.len()))?;
-        for (k, v) in &self.0 {
-            x.serialize_entry(&k.to_string(), &v)?;
-        }
-        x.end()
-    }
-}
-
-
-impl<'de> Deserialize<'de> for Aliases
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-      Ok(Aliases::new())
-    }
-}
-
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Bar {
-  pub id: u64,
-  pub x: Aliases,
-}
-
 // ### Table
 
 #[derive(Clone, PartialEq)]
@@ -290,7 +233,7 @@ pub struct Table {
   pub id: u64,
   pub rows: u64,
   pub columns: u64,
-  pub column_aliases: Aliases,
+  pub column_aliases: HashMap<u64,u64>,
   pub column_index_to_alias: Vec<Option<u64>>, 
   pub row_aliases: HashMap<u64, u64>,
   pub data: Vec<Vec<Value>>,
@@ -303,7 +246,7 @@ impl Table {
       id: tag,
       rows: rows,
       columns: columns,
-      column_aliases: Aliases::new(),
+      column_aliases: HashMap::new(),
       column_index_to_alias: Vec::new(),
       row_aliases: HashMap::with_capacity(rows as usize),
       data: vec![vec![Value::Empty; rows as usize]; columns as usize], 
@@ -314,7 +257,7 @@ impl Table {
     self.rows = 0;
     self.columns = 0;
     self.row_aliases.clear();
-    self.column_aliases.0.clear();
+    self.column_aliases.clear();
     self.data.clear();
   }
 
@@ -344,7 +287,7 @@ impl Table {
   pub fn get_column_index(&self, column: &Index) -> Option<u64> {
     match column {
       Index::Index(ix) => Some(*ix),
-      Index::Alias(alias) => match self.column_aliases.0.get(&alias) {
+      Index::Alias(alias) => match self.column_aliases.get(&alias) {
         Some(ix) => Some(ix.clone()),
         None => None,
       },
@@ -361,7 +304,7 @@ impl Table {
   }
 
   pub fn set_column_alias(&mut self, alias: u64, ix: u64) {
-    match self.column_aliases.0.entry(alias) {
+    match self.column_aliases.entry(alias) {
       Entry::Occupied(_) => {
         ()
       },
@@ -511,10 +454,10 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let cell_width: usize = 30;
-    let columns: usize = if self.columns > self.column_aliases.0.len() as u64 {
+    let columns: usize = if self.columns > self.column_aliases.len() as u64 {
       self.columns as usize
     } else {
-      self.column_aliases.0.len()
+      self.column_aliases.len()
     };
     let mut table_width: usize = cell_width * columns + columns * 2;
     if table_width < 20 {
@@ -553,7 +496,7 @@ impl fmt::Debug for Table {
       for i in 1..columns + 1 {
         column_labels.push(Value::from_string(format!("{}", i)));
       }
-      for (alias, ix) in self.column_aliases.0.iter() {
+      for (alias, ix) in self.column_aliases.iter() {
         column_labels[*ix as usize - 1] = Value::from_string(format!("{:?} ({:#x})", ix, alias));
       }
       print_row(column_labels, cell_width as usize, f);

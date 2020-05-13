@@ -750,7 +750,7 @@ impl Block {
                     else { column_ixes.len() as u64 };      
       let height = if row_ixes.is_empty() { table_ref.rows }
                     else { row_ixes.len() as u64 };
-      self.scratch.grow_to_fit(height, width);
+      old = Table::new(0, height, width);
       let mut iix = 0;
       let mut actual_width = 0;
       let mut actual_height = 0;
@@ -797,15 +797,16 @@ impl Block {
             }
             match table_ref.column_index_to_alias.get(cix) {
               Some(Some(alias)) => {
-                self.scratch.column_aliases.insert(*alias, iix as u64 + 1);
-                if self.scratch.column_index_to_alias.len() < iix + 1 {
-                  self.scratch.column_index_to_alias.resize_with(iix + 1, ||{None});
+                //println!("REFERFERF {:?}", table_ref);
+                old.column_aliases.insert(*alias, iix as u64 + 1);
+                if old.column_index_to_alias.len() < iix + 1 {
+                  old.column_index_to_alias.resize_with(iix + 1, ||{None});
                 }
-                self.scratch.column_index_to_alias[iix] = Some(*alias);
+                old.column_index_to_alias[iix] = Some(*alias);
               },
               _ => (),
             };
-            self.scratch.data[iix][jix] = table_ref.data[cix][rix].clone();
+            old.data[iix][jix] = table_ref.data[cix][rix].clone();
             jix += 1;
             actual_height = jix;
           }
@@ -815,9 +816,9 @@ impl Block {
           actual_width = iix;
         }
       }
-      self.scratch.shrink_to_fit(actual_height as u64, actual_width as u64);
-      old = self.scratch.clone();
-      self.scratch.clear();
+      old.shrink_to_fit(actual_height as u64, actual_width as u64);
+      //old = self.scratch.clone();
+      //self.scratch.clear();
       match &old.index(&Index::Index(1),&Index::Index(1)) {
         Some(Value::Reference(id)) => {
           // Make block depend on reference
@@ -837,9 +838,8 @@ impl Block {
     }
     self.rhs_columns_empty.clear();
     self.lhs_columns_empty.clear();
-    let out = old.clone();
-    self.scratch.clear();
-    out
+    //self.scratch.clear();
+    old
   }
 
   pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>) {
@@ -1025,10 +1025,7 @@ impl Block {
             from_table_ref = (*block).resolve_subscript(store,from_table,from_ixes);
           } 
 
-          let to_table_ref: Table;
-          unsafe {
-            to_table_ref = (*block).resolve_subscript(store,to_table,&vec![(None, None)]);
-          } 
+          let to_table_ref = store.get_table(*to_table.unwrap()).unwrap().borrow();
 
           // TODO This thing is a little hacky. It merges two subscripts together. Maybe this should be in the compiler?
           let to_ixes = if to_ixes.len() == 2 {
