@@ -15,8 +15,8 @@ use std::cell::RefCell;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Change {
-  Set{table: u64, row: Index, column: Index, value: Value},
-  Remove{table: u64, row: Index, column: Index, value: Value},
+  Set{table: u64, column: Index, values: Vec<(Index, Value)>},
+  Remove{table: u64, column: Index, values: Vec<(Index, Value)>},
   NewTable{id: u64, rows: u64, columns: u64},
   RenameColumn{table: u64, column_ix: u64, column_alias: u64},
   RemoveTable{id: u64, rows: u64, columns: u64},
@@ -26,8 +26,8 @@ impl fmt::Debug for Change {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      Change::Set{table, row, column, value} => write!(f, "<set> #{:#x} [{:?} {:?} {:?}]", table, row, column, value),
-      Change::Remove{table, row, column, value} => write!(f, "<remove> #{:#x} [{:?} {:?}: {:?}]", table, row, column, value),
+      Change::Set{table, column, values} => write!(f, "<set> #{:#x} {:?} {:?}", table, column, values),
+      Change::Remove{table, column, values} => write!(f, "<remove> #{:#x} {:?} {:?}", table, column, values),
       Change::NewTable{id, rows, columns} => write!(f, "<newtable> #{:#x} [{:?} x {:?}]", id, rows, columns),
       Change::RenameColumn{table, column_ix, column_alias} => write!(f, "<renamecolumn> #{:#x} {:#x} -> {:#x}", table, column_ix, column_alias),
       Change::RemoveTable{id, rows, columns} => write!(f, "<removetable> #{:#x} [{:?} x {:?}]", id, rows, columns),
@@ -79,17 +79,6 @@ impl Transaction {
       Change::RenameColumn{..} => txn.names.push(change),
     }
     txn
-  }
-
-  pub fn from_adds_removes(adds: Vec<(u64, Index, Index, String)>, removes: Vec<(u64, Index, Index, String)>) -> Transaction {
-    let mut txn = Transaction::new();
-    for (table, row, column, value) in adds {
-      txn.adds.push(Change::Set{table, row, column, value: Value::from_string(value)});
-    }
-    for (table, row, column, value) in removes {
-      txn.removes.push(Change::Remove{table, row, column, value: Value::from_string(value)});
-    }
-    txn    
   }
 
 }
@@ -170,39 +159,40 @@ impl Interner {
 
   fn intern_change(&mut self, change: &Change) { 
     match change {
-      Change::Set{table, row, column, value} => {
+      Change::Set{table, column, values} => {
         let mut changed = false;
         let mut alias: Option<u64> = None;
         match self.tables.get(*table) {
           Some(table_ref) => {
             alias = table_ref.borrow().get_column_alias(column);
-            let old_value = table_ref.borrow_mut().set_cell(&row, &column, value.clone());
-            if old_value != *value {
-              changed = true;
-            }
-            if self.offset == 0 && changed == true {
-              match old_value {
-                Value::Empty => (),
-                // Save a remove so that we can rewind
-                _ => self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
+            for (row, value) in values {
+              let old_value = table_ref.borrow_mut().set_cell(&row, &column, value.clone());
+              if old_value != *value {
+                changed = true;
+              }
+              if self.offset == 0 && changed == true {
+                match old_value {
+                  Value::Empty => (),
+                  // Save a remove so that we can rewind
+                  _ => (), //self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
+                }
               }
             }
-            
+            if changed == true {
+              match alias {
+                Some(id) => {
+                  self.tables.changed_this_round.insert((table.clone(), Index::Alias(id)))
+                },
+                _ => false,
+              };
+              self.tables.changed_this_round.insert((table.clone(), column.clone()));
+              self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
+            }
           }
           None => (),
         };
-        if changed == true {
-          match alias {
-            Some(id) => {
-              self.tables.changed_this_round.insert((table.clone(), Index::Alias(id)))
-            },
-            _ => false,
-          };
-          self.tables.changed_this_round.insert((table.clone(), column.clone()));
-          self.tables.changed_this_round.insert((table.clone(), Index::Index(0)));
-        }
       },
-      Change::Remove{table, row, column, value} => {
+      Change::Remove{table, column, values} => {
         /*
         match value {
           Value::Empty => (),

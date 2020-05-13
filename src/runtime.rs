@@ -1138,6 +1138,7 @@ impl Block {
             for i in 0..to_width as usize {
               let cix = if to_column_values.is_empty() { i }
                         else { to_column_values[i].as_u64().unwrap() as usize - 1 };
+              let mut values = Vec::with_capacity(to_height as usize);
               for j in 0..to_height as usize {
                 // If to_row_values are empty, it means we're matching over all the rows
                 // otherwise we take the truth value from the vector and use it
@@ -1148,27 +1149,23 @@ impl Block {
                 };
                 match truth {
                   Value::Bool(true) => {
-                    let change = Change::Set{table: to_table_id.clone(), 
-                                             row: Index::Index(j as u64 + 1), 
-                                             column: Index::Index(cix as u64 + 1),
-                                             value: from_table_ref.data[0][0].clone() 
-                                            };
-                    self.block_changes.push(change);
+                    values.push((Index::Index(j as u64 + 1), from_table_ref.data[0][0].clone()));
                   },
                   Value::Number(index) => {
                     let ix = index.mantissa() as usize;
                     if ix <= to_table_ref.rows as usize {
-                      let change = Change::Set{table: to_table_id.clone(), 
-                                              row: Index::Index(ix as u64), 
-                                              column: Index::Index(cix as u64 + 1),
-                                              value: from_table_ref.data[0][0].clone() 
-                                              };
-                      self.block_changes.push(change); 
+                      values.push((Index::Index(ix as u64), from_table_ref.data[0][0].clone()));
                     }
                   }
                   _ => (),
                 }
               }
+              let change = Change::Set{
+                table: to_table_id.clone(), 
+                column: Index::Index(cix as u64 + 1),
+                values 
+              };                               
+              self.block_changes.push(change); 
             }
           // from and to are the same size
           } else if to_height == from_height && to_width == from_width {
@@ -1181,6 +1178,7 @@ impl Block {
                              _ => {continue; 0},
                            }
                          };
+              let mut values = Vec::with_capacity(from_height as usize);
               for j in 0..from_height as usize {
                 let trix = if to_row_values.is_empty() { j }
                            else {
@@ -1190,13 +1188,14 @@ impl Block {
                                _ => {continue; 0},
                              }
                            };
-                let change = Change::Set{table: to_table_id.clone(), 
-                                          row: Index::Index(trix as u64 + 1), 
-                                          column: Index::Index(tcix as u64 + 1),
-                                          value: from_table_ref.data[i][j].clone() 
-                                        };
-                self.block_changes.push(change);
+                values.push((Index::Index(trix as u64 + 1), from_table_ref.data[i][j].clone()));
               }
+              let change = Change::Set{
+                table: to_table_id.clone(),
+                column: Index::Index(tcix as u64 + 1),
+                values,
+              };
+              self.block_changes.push(change);
             }
           }
           self.rhs_columns_empty.clear();
@@ -1220,13 +1219,20 @@ impl Block {
 
           //if from_width == to_width {
             for i in 0..from_width as usize {
+              let mut values = Vec::with_capacity(from.rows as usize);
+              let column_index = match from.column_index_to_alias[i] {
+                Some(alias) => Index::Alias(alias),
+                None => Index::Index(i as u64 + 1),
+              };
               for j in 0..from.rows as usize {
-                let column_index = match from.column_index_to_alias[i] {
-                  Some(alias) => Index::Alias(alias),
-                  None => Index::Index(i as u64 + 1),
-                };
-                self.block_changes.push(Change::Set{table: *to_id, row: Index::Index((j as u64 + to.rows) + 1), column: column_index, value: from.data[i][j].clone() });
+                values.push((Index::Index((j as u64 + to.rows) + 1), from.data[i][j].clone()));
               }
+              let change = Change::Set{
+                table: *to_id, 
+                column: column_index, 
+                values,
+              };
+              self.block_changes.push(change);
             }
           //}
         },
@@ -1237,6 +1243,7 @@ impl Block {
             changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
           }
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+            let mut values = Vec::with_capacity(column.len());
             for (row_ix, data) in column.iter().enumerate() {
               match data {
                 Value::Reference(id) => {
@@ -1244,8 +1251,14 @@ impl Block {
                 }, 
                 _ => (),
               }
-              changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
+              values.push((Index::Index(row_ix as u64 + 1), data.clone()));
             }
+            let change = Change::Set{
+              table: *to_table, 
+              column: Index::Index(col_ix as u64 + 1), 
+              values,
+            };
+            changes.push(change);
           }
           self.block_changes.append(&mut changes);
         },
@@ -1260,6 +1273,7 @@ impl Block {
                 changes.push(Change::RenameColumn{table: *to_table, column_ix: *ix, column_alias: *alias});
               }
               for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+                let mut values = Vec::with_capacity(column.len());
                 for (row_ix, data) in column.iter().enumerate() {
                   match data {
                     Value::Reference(id) => {
@@ -1267,8 +1281,14 @@ impl Block {
                     }, 
                     _ => (),
                   }
-                  changes.push(Change::Set{table: *to_table, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
+                  values.push((Index::Index(row_ix as u64 + 1), data.clone()));
                 }
+                let change = Change::Set{
+                  table: *to_table, 
+                  column: Index::Index(col_ix as u64 + 1), 
+                  values,
+                };
+                changes.push(change);
               }
               self.block_changes.append(&mut changes);
             }
@@ -1321,6 +1341,7 @@ impl Block {
       changes.push(Change::RenameColumn{table: to_table_id, column_ix: *ix, column_alias: *alias});
     }
     for (col_ix, column) in from_table_ref.data.iter().enumerate() {
+      let mut values = Vec::with_capacity(column.len());
       for (row_ix, data) in column.iter().enumerate() {
         match data {
           Value::Reference(id) => {
@@ -1328,8 +1349,14 @@ impl Block {
           }, 
           _ => (),
         }
-        changes.push(Change::Set{table: to_table_id, row: Index::Index(row_ix as u64 + 1), column: Index::Index(col_ix as u64 + 1), value: data.clone()});
+        values.push((Index::Index(row_ix as u64 + 1), data.clone()));
       }
+      let change = Change::Set{
+        table: to_table_id, 
+        column: Index::Index(col_ix as u64 + 1), 
+        values,
+      };
+      changes.push(change);
     }
     for c in copy_tables.iter() {
       self.copy_table(*c, *c, store);

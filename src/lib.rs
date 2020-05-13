@@ -227,17 +227,17 @@ impl Core {
       for ix in (prev_ix..now_ix).rev() {
         let core = self as *mut Core;
         match &self.store.changes[ix] {
-          Change::Set{table, row, column, value} => {
+          Change::Set{table, column, values} => {
             unsafe {
               (*core).store.process_transaction(&Transaction::from_change(
-                Change::Remove{table: table.clone(), row: row.clone(), column: column.clone(), value: value.clone()}
+                Change::Remove{table: table.clone(), column: column.clone(), values: values.clone()}
               ));
             }
           },
-          Change::Remove{table, row, column, value} => {
+          Change::Remove{table, column, values} => {
             unsafe {
               (*core).store.process_transaction(&Transaction::from_change(
-                Change::Set{table: table.clone(), row: row.clone(), column: column.clone(), value: value.clone()}
+                Change::Set{table: table.clone(), column: column.clone(), values: values.clone()}
               ));
             }
           },
