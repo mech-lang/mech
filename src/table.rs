@@ -454,6 +454,7 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let cell_width: usize = 30;
+    
     let columns: usize = if self.columns > self.column_aliases.len() as u64 {
       self.columns as usize
     } else {

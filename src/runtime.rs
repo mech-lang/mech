@@ -33,7 +33,7 @@ pub struct Runtime {
   pub output: HashSet<Register>,
   pub tables_map: HashMap<u64, u64>,
   pub ready_blocks: HashSet<usize>,
-  pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>,
+  pub functions: HashMap<String, Option<extern "C" fn(Vec<(String, Rc<RefCell<Table>>)>, Rc<RefCell<Table>>)>>,
   pub changed_this_round: HashSet<(u64, Index)>,
   pub errors: Vec<Error>,
 }
@@ -291,6 +291,7 @@ pub struct Block {
   rhs_columns_empty: Vec<Value>,
   block_changes: Vec<Change>,
   current_step: Option<Constraint>,
+  scratch_tables: Vec<Option<Rc<RefCell<Table>>>>,
 }
 
 impl Block {
@@ -319,6 +320,7 @@ impl Block {
       rhs_columns_empty: Vec::new(),
       block_changes: Vec::new(),
       current_step: None,
+      scratch_tables: Vec::new(),
     }
   }
 
@@ -597,8 +599,8 @@ impl Block {
     }    
   }
 
-  pub fn resolve_subscript(&mut self, store: &mut Interner, table: &TableId, indices: &Vec<(Option<Parameter>, Option<Parameter>)>) -> Table {
-    let mut old: Table = Table::new(0,0,0);
+  pub fn resolve_subscript(&mut self, store: &mut Interner, table: &TableId, indices: &Vec<(Option<Parameter>, Option<Parameter>)>, scratch_table: Rc<RefCell<Table>>) {
+    let mut old = scratch_table.borrow_mut();
     let mut table_id: TableId = table.clone();
     'solve_loop: for index in indices {
       let mut table_ref = match table_id {
@@ -750,12 +752,13 @@ impl Block {
                     else { column_ixes.len() as u64 };      
       let height = if row_ixes.is_empty() { table_ref.rows }
                     else { row_ixes.len() as u64 };
-      old = Table::new(0, height, width);
+      old.grow_to_fit(height, width);
       let mut iix = 0;
       let mut actual_width = 0;
       let mut actual_height = 0;
       for i in 0..width as usize {
         let mut column_mask = true;
+        // Get the column indices
         let cix = if column_ixes.is_empty() { i }
                   else { 
                     match column_ixes[i] {
@@ -767,9 +770,21 @@ impl Block {
                       },  
                     }
                   };
+        // Copy over the old column alias
+        match table_ref.column_index_to_alias.get(cix) {
+          Some(Some(alias)) => {
+            old.column_aliases.insert(*alias, iix as u64 + 1);
+            if old.column_index_to_alias.len() < iix + 1 {
+              old.column_index_to_alias.resize_with(iix + 1, ||{None});
+            }
+            old.column_index_to_alias[iix] = Some(*alias);
+          },
+          _ => (),
+        };
         let mut jix = 0;
         for j in 0..height as usize {
           let mut row_mask = true;
+          // Get the row indices
           let rix = if row_ixes.is_empty() { j }
                     else { 
                       match row_ixes[j] {
@@ -795,17 +810,7 @@ impl Block {
               );*/
               break 'solve_loop;
             }
-            match table_ref.column_index_to_alias.get(cix) {
-              Some(Some(alias)) => {
-                //println!("REFERFERF {:?}", table_ref);
-                old.column_aliases.insert(*alias, iix as u64 + 1);
-                if old.column_index_to_alias.len() < iix + 1 {
-                  old.column_index_to_alias.resize_with(iix + 1, ||{None});
-                }
-                old.column_index_to_alias[iix] = Some(*alias);
-              },
-              _ => (),
-            };
+            // Copy over the old data
             old.data[iix][jix] = table_ref.data[cix][rix].clone();
             jix += 1;
             actual_height = jix;
@@ -839,22 +844,28 @@ impl Block {
     self.rhs_columns_empty.clear();
     self.lhs_columns_empty.clear();
     //self.scratch.clear();
-    old
+    //old
   }
 
-  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Table)>)->Table>>) {
+  pub fn solve(&mut self, store: &mut Interner, functions: &HashMap<String, Option<extern "C" fn(Vec<(String, Rc<RefCell<Table>>)>, Rc<RefCell<Table>>)>>) {
     let block = self as *mut Block;
     let mut copy_tables: HashSet<TableId> = HashSet::new();
     self.tables_modified.clear();
-    'solve_loop: for step in &self.plan {
+    'solve_loop: for (ixx, step) in self.plan.iter().enumerate() {
+      let mut ix = 0;
       self.current_step = Some(step.clone());
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
-          let scanned;
-          unsafe {
-            scanned = (*block).resolve_subscript(store,table,indices);
+          if self.scratch_tables.len() <= ix {
+            self.scratch_tables.resize(ix+1, None);
+            self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
           }
+          let scratch_table = self.scratch_tables[ix].as_ref().unwrap().clone();
+          unsafe {
+            (*block).resolve_subscript(store,table,indices, scratch_table);
+          }
+          let scanned = self.scratch_tables[ix].as_ref().unwrap().borrow();
           let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
           out.rows = scanned.rows;
           out.columns = scanned.columns;
@@ -865,6 +876,7 @@ impl Block {
           self.scratch.clear();
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
+          ix += 1;
         },
         Constraint::Whenever{tables} => {
           for (table, indices) in tables {
@@ -989,25 +1001,40 @@ impl Block {
           } else {
             let out_table = &output[0];
             let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
-              let table_ref: Table;
+              let table_ref: Rc<RefCell<Table>>;
               unsafe {
-                table_ref = (*block).resolve_subscript(store,table_id,indices);
+                if (*block).scratch_tables.len() <= ix {
+                  (*block).scratch_tables.resize(ix+1, None);
+                  (*block).scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
+                }
+                let scratch_table = (*block).scratch_tables[ix].as_ref().unwrap().clone();
+                (*block).resolve_subscript(store,table_id,indices, scratch_table);
+                table_ref = (*block).scratch_tables[ix].as_ref().unwrap().clone();
               }
+              ix += 1;
               (arg_name.clone(), table_ref)
             }).collect::<Vec<_>>();
-            let result = match functions.get(fnstring) {
+            if self.scratch_tables.len() <= ix {
+              self.scratch_tables.resize(ix+1, None);
+              self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
+            }
+            let scratch_table = self.scratch_tables[ix].as_ref().unwrap().clone();
+            match functions.get(fnstring) {
               Some(Some(fn_ptr)) => {
-                fn_ptr(arguments)
+                
+                fn_ptr(arguments, scratch_table);
+               
               }
-              _ => Table::new(0,1,1),
-            };
-            self.scratch = result;
+              _ => (), // TODO Throw a function doesn't exist error
+            };    
+            let result = self.scratch_tables[ix].as_ref().unwrap().clone();
+            let foo = result.borrow();        
             let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
-            out.rows = self.scratch.rows;
-            out.columns = self.scratch.columns;
-            out.data = self.scratch.data.clone();
+            out.rows = foo.rows;
+            out.columns = foo.columns;
+            out.data = foo.data.clone();
             self.tables_modified.insert(out.id);
-            self.scratch.clear();
+            ix += 1;
           }
         },
         Constraint::Insert{from, to} => {
@@ -1020,11 +1047,15 @@ impl Block {
             TableId::Local(id) => 0,
           };
 
-          let from_table_ref: Table;
+          if self.scratch_tables.len() <= ix {
+            self.scratch_tables.resize(ix+1, None);
+            self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
+          }
+          let scratch_table = self.scratch_tables[ix].as_ref().unwrap().clone();
           unsafe {
-            from_table_ref = (*block).resolve_subscript(store,from_table,from_ixes);
+            (*block).resolve_subscript(store,from_table,from_ixes,scratch_table);
           } 
-
+          let from_table_ref = self.scratch_tables[ix].as_ref().unwrap().borrow();
           let to_table_ref = store.get_table(*to_table.unwrap()).unwrap().borrow();
 
           // TODO This thing is a little hacky. It merges two subscripts together. Maybe this should be in the compiler?
@@ -1202,6 +1233,7 @@ impl Block {
           self.lhs_columns_empty.clear();
           self.rhs_rows_empty.clear();
           self.lhs_rows_empty.clear();
+          ix += 1;
         },
         Constraint::Append{from_table, to_table} => {
           let from = match from_table {

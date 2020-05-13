@@ -8,6 +8,8 @@
 use table::{Table, Value, TableId, Index};
 use errors::ErrorType;
 use quantities::{Quantity, QuantityMath, ToQuantity};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
@@ -26,10 +28,12 @@ pub enum Parameter {
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
-    pub extern "C" fn $func_name(input: Vec<(String, Table)>) -> Table {
+    pub extern "C" fn $func_name(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
       // TODO Test for the right amount of inputs
-      let (_, lhs) = &input[0];
-      let (_, rhs) = &input[1];
+      let (_, lhs_rc) = &input[0];
+      let (_, rhs_rc) = &input[1];
+      let lhs = lhs_rc.borrow();
+      let rhs = rhs_rc.borrow();
 
       // Get the math dimensions
       let lhs_width  = lhs.columns;
@@ -40,15 +44,20 @@ macro_rules! binary_infix {
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
 
+      let mut out = output.borrow_mut();
+
       // The tables are the same size
-      let result: Table = if lhs_width == rhs_width && lhs_height == rhs_height {
-        let mut out = Table::new(0, lhs_height, lhs_width);
+      if lhs_width == rhs_width && lhs_height == rhs_height {
+        out.grow_to_fit(lhs_height,lhs_width);
         for i in 0..lhs_width as usize {
           for j in 0..lhs_height as usize {
             match (&lhs.data[i][j], &rhs.data[i][j]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
-                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  Ok(op_result) => {
+                    let value = Value::from_quantity(op_result);
+                    out.data[i][j] = value;
+                  },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }
@@ -60,10 +69,9 @@ macro_rules! binary_infix {
             }
           }
         }
-        out
       // Operate with scalar on the left
       } else if lhs_is_scalar {
-        let mut out = Table::new(0, rhs_height, rhs_width);
+        out.grow_to_fit(rhs_height,rhs_width);
         for i in 0..rhs_width as usize {
           for j in 0..rhs_height as usize {
             match (&lhs.data[0][0], &rhs.data[i][j]) {
@@ -78,10 +86,9 @@ macro_rules! binary_infix {
             }
           }
         }
-        out
       // Operate with scalar on the right
       } else if rhs_is_scalar {
-        let mut out = Table::new(0, lhs_height, lhs_width);
+        out.grow_to_fit(lhs_height,lhs_width);
         for i in 0..lhs_width as usize {
           for j in 0..lhs_height as usize {
             match (&lhs.data[i][j], &rhs.data[0][0]) {
@@ -96,11 +103,9 @@ macro_rules! binary_infix {
             }
           }
         }
-        out
       } else {
-        Table::new(0, 1, 1)
-      };
-      result
+        // TODO: Throw an error here
+      }
     }
   )
 }
@@ -120,10 +125,14 @@ binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than, less_than}
 
 #[no_mangle]
-pub extern "C" fn stats_sum(input: Vec<(String, Table)>) -> Table {
-  let (argument, table_ref) = &input[0];
-  let out = if argument == "row" {
-    let mut out = Table::new(0,table_ref.rows,1);
+pub extern "C" fn stats_sum(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
+  let (argument, table_ref_rc) = &input[0];
+  let table_ref = table_ref_rc.borrow();
+
+  let mut out = output.borrow_mut();
+
+  if argument == "row" {
+    out.grow_to_fit(table_ref.rows, 1);
     for i in 0..table_ref.rows as usize {
       let mut total = 0.to_quantity();
       for j in 0..table_ref.columns as usize {
@@ -136,9 +145,8 @@ pub extern "C" fn stats_sum(input: Vec<(String, Table)>) -> Table {
       }
       out.data[0][i] = Value::Number(total);
     }
-    out
   } else if argument == "column" {
-    let mut out = Table::new(0,1,table_ref.columns);
+    out.grow_to_fit(1, table_ref.columns);
     for i in 0..table_ref.columns as usize {
       let mut total = 0.to_quantity();
       for j in 0..table_ref.rows as usize {
@@ -151,9 +159,8 @@ pub extern "C" fn stats_sum(input: Vec<(String, Table)>) -> Table {
       }
       out.data[i][0] = Value::Number(total);
     }
-    out
   } else if argument == "table" {
-    let mut out = Table::new(0,1,1);
+    out.grow_to_fit(1,1);
     let mut total = 0.to_quantity();
     for i in 0..table_ref.columns as usize {
       for j in 0..table_ref.rows as usize {
@@ -166,29 +173,36 @@ pub extern "C" fn stats_sum(input: Vec<(String, Table)>) -> Table {
       }
       out.data[0][0] = Value::Number(total);
     }
-    out
   } else {
-    Table::new(0,1, 1)
-  };
-  out 
+    // TODO Throw error
+  }
 }
 
-pub extern "C" fn table_range(input: Vec<(String, Table)>) -> Table {
-  let (_, lhs) = &input[0];
-  let (_, rhs) = &input[1];
+pub extern "C" fn table_range(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
+  let (_, lhs_rc) = &input[0];
+  let (_, rhs_rc) = &input[1];
+  let lhs = lhs_rc.borrow();
+  let rhs = rhs_rc.borrow();
+
+  let mut out = output.borrow_mut();
+
   let start = lhs.data[0][0].as_i64().unwrap();
   let end = rhs.data[0][0].as_i64().unwrap();
   let steps = (end - start) as usize + 1;
-  let mut out = Table::new(0,steps as u64,1);
+  out.grow_to_fit(steps as u64, 1);
   for i in 0..steps {
     out.data[0][i] = Value::Number((start + i as i64).to_quantity())
   }
-  out
 }
 
-pub extern "C" fn set_any(input: Vec<(String, Table)>) -> Table {
-  let mut out = Table::new(0,1,1);
-  let (field, table_ref) = &input[0];
+pub extern "C" fn set_any(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
+  
+  let (field, table_ref_rc) = &input[0];
+  let table_ref = table_ref_rc.borrow();
+
+  let mut out = output.borrow_mut();
+  out.grow_to_fit(1,1);
+
   if field == "column" {
     let mut result = Value::Bool(false);
     for i in 0..table_ref.rows as usize {
@@ -211,17 +225,22 @@ pub extern "C" fn set_any(input: Vec<(String, Table)>) -> Table {
       }
     }
     out.data[0][0] = result;    
+  } else {
+    // TODO Throw error
   }
-  out
 }
 
-pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> Table {
-  let mut cat_table = Table::new(0,0,0);
-  for (_, scanned) in input {
+pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
+  
+  let mut cat_table = output.borrow_mut();
+
+  for (_, scanned_rc) in input {
+    let scanned = scanned_rc.borrow();
+
     // Do all the work here:
     if cat_table.rows == 0 {
       cat_table.grow_to_fit(scanned.rows,scanned.columns);
-      cat_table.data = scanned.data;
+      cat_table.data = scanned.data.clone();
     // We're adding a scalar to the table. Auto fill to height
     } else if scanned.rows == 1 {
       let start_col: usize = cat_table.columns as usize;
@@ -253,20 +272,27 @@ pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Table)>) -> T
     // We are cating two tables of the same height
     } else if cat_table.rows == scanned.rows {
       let cols = cat_table.columns as usize;
-      cat_table.grow_to_fit(cat_table.rows, cat_table.columns + scanned.columns);
+      let rows = cat_table.rows;
+      let columns = cat_table.columns + scanned.columns;
+      cat_table.grow_to_fit(rows, columns);
       for i in 0..scanned.columns as usize {
         for j in 0..cat_table.rows as usize {
           cat_table.data[cols+i][j] = scanned.data[i][j].clone();
         }
       }
+    } else {
+      // TODO Throw size error
     }
   }
-  cat_table
 }
 
-pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Table {
-  let mut cat_table = Table::new(0,0,0);
-  for (_, scanned) in input {
+pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
+
+  let mut cat_table = output.borrow_mut();
+
+  for (_, scanned_rc) in input {
+    let scanned = scanned_rc.borrow();
+
     if cat_table.rows == 0 {
       cat_table.grow_to_fit(scanned.rows, scanned.columns);
       cat_table.data = scanned.data.clone();
@@ -277,12 +303,13 @@ pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Tab
         column.append(&mut col);
         i += 1;
       }
-      cat_table.grow_to_fit(cat_table.rows + scanned.rows, cat_table.columns);
+      let rows = cat_table.rows + scanned.rows;
+      let columns = cat_table.columns;
+      cat_table.grow_to_fit(rows, columns);
     } else {
       // TODO Throw size error
     }
   }
-  cat_table
 }
 
 // ## Logic
@@ -290,10 +317,12 @@ pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Table)>) -> Tab
 #[macro_export]
 macro_rules! logic {
   ($func_name:ident, $op:tt) => (
-    pub extern "C" fn $func_name(input: Vec<(String, Table)>) -> Table {
+    pub extern "C" fn $func_name(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
       // TODO Test for the right amount of inputs
-      let (_, lhs) = &input[0];
-      let (_, rhs) = &input[1];
+      let (_, lhs_rc) = &input[0];
+      let (_, rhs_rc) = &input[1];
+      let lhs = lhs_rc.borrow();
+      let rhs = rhs_rc.borrow();
 
       // Get the math dimensions
       let lhs_width  = lhs.columns;
@@ -304,8 +333,10 @@ macro_rules! logic {
       let lhs_is_scalar = lhs_width == 1 && lhs_height == 1;
       let rhs_is_scalar = rhs_width == 1 && rhs_height == 1;
 
+      let mut out = output.borrow_mut();
+
       // The tables are the same size
-      let result: Table = if lhs_width == rhs_width && lhs_height == rhs_height {
+      if lhs_width == rhs_width && lhs_height == rhs_height {
         let mut out = Table::new(0, lhs_height, lhs_width);
         for i in 0..lhs_width as usize {
           for j in 0..lhs_height as usize {
@@ -317,7 +348,6 @@ macro_rules! logic {
             }
           }
         }
-        out
       // Operate with scalar on the left
       } else if lhs_is_scalar {
         let mut out = Table::new(0, rhs_height, rhs_width);
@@ -331,7 +361,6 @@ macro_rules! logic {
             }
           }
         }
-        out
       // Operate with scalar on the right
       } else if rhs_is_scalar {
         let mut out = Table::new(0, lhs_height, lhs_width);
@@ -345,11 +374,9 @@ macro_rules! logic {
             }
           }
         }
-        out
       } else {
-        Table::new(0, 1, 1)
+        // TODO Throw error
       };
-      result
     }
   )
 }
