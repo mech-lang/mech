@@ -24,7 +24,7 @@ pub enum Parameter {
   Index (Index),
   All,
 }
-
+/*
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
@@ -382,4 +382,4 @@ macro_rules! logic {
 }
 
 logic!{logic_and, &&}
-logic!{logic_or, ||}
+logic!{logic_or, ||}*/

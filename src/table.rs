@@ -10,6 +10,7 @@ use quantities::{Quantity, ToQuantity, QuantityMath};
 use hashbrown::hash_map::{HashMap, Entry};
 use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
+use std::rc::Rc;
 
 // ## Row and Column
 
@@ -236,7 +237,7 @@ pub struct Table {
   pub column_aliases: HashMap<u64,u64>,
   pub column_index_to_alias: Vec<Option<u64>>, 
   pub row_aliases: HashMap<u64, u64>,
-  pub data: Vec<Vec<Value>>,
+  pub data: Vec<Vec<Rc<Value>>>,
 }
 
 impl Table {
@@ -249,7 +250,7 @@ impl Table {
       column_aliases: HashMap::new(),
       column_index_to_alias: Vec::new(),
       row_aliases: HashMap::with_capacity(rows as usize),
-      data: vec![vec![Value::Empty; rows as usize]; columns as usize], 
+      data: vec![vec![Rc::new(Value::Empty); rows as usize]; columns as usize], 
     }
   }
 
@@ -294,12 +295,12 @@ impl Table {
     }
   }
 
-  pub fn set_cell(&mut self, row: &Index, column: &Index, value: Value) -> Value {
+  pub fn set_cell(&mut self, row: &Index, column: &Index, value: Rc<Value>) -> Rc<Value> {
     let row_ix = self.get_row_index(row).unwrap() as usize;
     let column_ix = self.get_column_index(column).unwrap() as usize;
     self.grow_to_fit(row_ix as u64, column_ix as u64);
     let old_value = self.data[column_ix - 1][row_ix - 1].clone();
-    self.data[column_ix - 1][row_ix - 1] = value;
+    self.data[column_ix - 1][row_ix - 1] = value.clone();
     old_value
   }
 
@@ -377,14 +378,14 @@ impl Table {
     if columns > self.columns {
       // The new row is larger than the underlying column structure
       if columns > self.data.len() as u64 {
-        let new_column = vec![Value::Empty; self.rows as usize];
+        let new_column = vec![Rc::new(Value::Empty); self.rows as usize];
         self.data.resize(columns as usize, new_column);
       }
       self.columns = columns;
     }
     if rows > self.rows {
       for column in &mut self.data {
-        column.resize(rows as usize, Value::Empty);
+        column.resize(rows as usize, Rc::new(Value::Empty));
       }
       self.rows = rows;
     }    
@@ -394,20 +395,20 @@ impl Table {
     if columns < self.columns {
       // The new row is larger than the underlying column structure
       if columns > self.data.len() as u64 {
-        let new_column = vec![Value::Empty; self.rows as usize];
+        let new_column = vec![Rc::new(Value::Empty); self.rows as usize];
         self.data.resize(columns as usize, new_column);
       }
       self.columns = columns;
     }
     if rows < self.rows {
       for column in &mut self.data {
-        column.resize(rows as usize, Value::Empty);
+        column.resize(rows as usize, Rc::new(Value::Empty));
       }
       self.rows = rows;
     }    
   }
   
-  pub fn get_column(&self, column: &Index) -> Option<&Vec<Value>> {
+  pub fn get_column(&self, column: &Index) -> Option<&Vec<Rc<Value>>> {
     match self.get_column_index(column) {
       Some(column_ix) => {
         Some(&self.data[column_ix as usize - 1])
@@ -416,10 +417,10 @@ impl Table {
     }
   }
 
-  pub fn get_row(&self, row: &Index) -> Option<Vec<Value>> {
+  pub fn get_row(&self, row: &Index) -> Option<Vec<Rc<Value>>> {
     match self.get_row_index(row) {
       Some(row_ix) => {
-        let mut row: Vec<Value> = vec![];
+        let mut row: Vec<Rc<Value>> = vec![];
         // Get the index for the given attribute
         for column_ix in 0 .. self.columns as usize {
           let cell = self.data[column_ix][row_ix as usize - 1].clone();
@@ -444,7 +445,7 @@ impl Table {
 
   // Clear a cell, setting it's value to Value::Empty
   pub fn clear_cell(&mut self, row: &Index, column: &Index) {
-    self.set_cell(row, column, Value::Empty);
+    self.set_cell(row, column, Rc::new(Value::Empty));
   }
 
 }
@@ -493,12 +494,12 @@ impl fmt::Debug for Table {
       } else {
         self.rows
       };
-      let mut column_labels: Vec<Value> = Vec::new();
+      let mut column_labels: Vec<Rc<Value>> = Vec::new();
       for i in 1..columns + 1 {
-        column_labels.push(Value::from_string(format!("{}", i)));
+        column_labels.push(Rc::new(Value::from_string(format!("{}", i))));
       }
       for (alias, ix) in self.column_aliases.iter() {
-        column_labels[*ix as usize - 1] = Value::from_string(format!("{:?} ({:#x})", ix, alias));
+        column_labels[*ix as usize - 1] = Rc::new(Value::from_string(format!("{:?} ({:#x})", ix, alias)));
       }
       print_row(column_labels, cell_width as usize, f);
       print_inner_border(self.columns as usize, cell_width as usize,  f);
@@ -527,7 +528,7 @@ fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   write!(f, "┐\n").unwrap();
 }
 
-fn print_row(row: Vec<Value>, cell_width: usize, f: &mut fmt::Formatter) {
+fn print_row(row: Vec<Rc<Value>>, cell_width: usize, f: &mut fmt::Formatter) {
   write!(f, "│").unwrap();
   for value in row {
     let content_string = format!("{:?}", value);

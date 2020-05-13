@@ -13,10 +13,10 @@ use std::cell::RefCell;
 
 // ## Changes
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
 pub enum Change {
-  Set{table: u64, column: Index, values: Vec<(Index, Value)>},
-  Remove{table: u64, column: Index, values: Vec<(Index, Value)>},
+  Set{table: u64, column: Index, values: Vec<(Index, Rc<Value>)>},
+  Remove{table: u64, column: Index, values: Vec<(Index, Rc<Value>)>},
   NewTable{id: u64, rows: u64, columns: u64},
   RenameColumn{table: u64, column_ix: u64, column_alias: u64},
   RemoveTable{id: u64, rows: u64, columns: u64},
@@ -34,10 +34,10 @@ impl fmt::Debug for Change {
     }
   }
 }
-  
+
 // ## Transaction
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Transaction {
   pub tables: Vec<Change>,
   pub adds: Vec<Change>,
@@ -171,7 +171,7 @@ impl Interner {
                 changed = true;
               }
               if self.offset == 0 && changed == true {
-                match old_value {
+                match *old_value {
                   Value::Empty => (),
                   // Save a remove so that we can rewind
                   _ => (), //self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
@@ -261,7 +261,7 @@ impl Interner {
     self.tables.contains(*table.unwrap())
   }
 
-  pub fn get_column(&self, table: TableId, column: Index) -> Option<&Vec<Value>> {
+  pub fn get_column(&self, table: TableId, column: Index) -> Option<&Vec<Rc<Value>>> {
     match self.tables.get(*table.unwrap()) {
       Some(stored_table) => {
         match unsafe{(*stored_table.as_ptr()).get_column(&column)} {

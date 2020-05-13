@@ -19,8 +19,8 @@ use database::{Transaction, Interner, Change};
 use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
-use operations;
-use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stats_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal, Parameter};
+use operations::Parameter;
+//use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stats_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use errors::{Error, ErrorType};
 use std::rc::Rc;
@@ -51,6 +51,7 @@ impl Runtime {
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
+    /*
     runtime.functions.insert("math/add".to_string(),Some(math_add));
     runtime.functions.insert("math/multiply".to_string(),Some(math_multiply));
     runtime.functions.insert("math/divide".to_string(),Some(math_divide));
@@ -67,7 +68,7 @@ impl Runtime {
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
     runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
     runtime.functions.insert("table/vertical-concatenate".to_string(),Some(table_vertical_concatenate));
-    runtime.functions.insert("set/any".to_string(),Some(set_any));
+    runtime.functions.insert("set/any".to_string(),Some(set_any));*/
     runtime
   }
 
@@ -285,10 +286,10 @@ pub struct Block {
   memory: TableIndex,
   tables_modified: HashSet<u64>,
   scratch: Table,
-  lhs_rows_empty: Vec<Value>,
-  lhs_columns_empty: Vec<Value>,
-  rhs_rows_empty: Vec<Value>,
-  rhs_columns_empty: Vec<Value>,
+  lhs_rows_empty: Vec<Rc<Value>>,
+  lhs_columns_empty:Vec<Rc<Value>>,
+  rhs_rows_empty: Vec<Rc<Value>>,
+  rhs_columns_empty: Vec<Rc<Value>>,
   block_changes: Vec<Change>,
   current_step: Option<Constraint>,
   scratch_tables: Vec<Option<Rc<RefCell<Table>>>>,
@@ -493,7 +494,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get_mut();
-              table_ref.borrow_mut().set_cell(&row, &column, Value::Empty);
+              table_ref.borrow_mut().set_cell(&row, &column, Rc::new(Value::Empty));
             },
             Entry::Vacant(v) => {    
             },
@@ -521,7 +522,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get();
-              table_ref.borrow_mut().set_cell(&row, &column, Value::from_quantity(test));
+              table_ref.borrow_mut().set_cell(&row, &column, Rc::new(Value::from_quantity(test)));
             },
             Entry::Vacant(v) => {    
             },
@@ -532,7 +533,7 @@ impl Block {
           match self.memory.map.entry(*destination) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get();
-              table_ref.borrow_mut().set_cell(&Index::Index(1), &Index::Index(1), Value::Reference(*table));
+              table_ref.borrow_mut().set_cell(&Index::Index(1), &Index::Index(1), Rc::new(Value::Reference(*table)));
             },
             Entry::Vacant(v) => {    
             },
@@ -546,7 +547,7 @@ impl Block {
           match self.memory.map.entry(table_id) {
             Entry::Occupied(mut o) => {
               let table_ref = o.get();
-              table_ref.borrow_mut().set_cell(&row, &column, Value::from_string(value.clone()));
+              table_ref.borrow_mut().set_cell(&row, &column, Rc::new(Value::from_string(value.clone())));
             },
             Entry::Vacant(v) => {    
             },
@@ -610,13 +611,13 @@ impl Block {
         },
         TableId::Global(id) => store.get_table(id).unwrap().borrow(),
       };
-      let one = vec![Value::from_u64(1)];
+      let one = vec![Rc::new(Value::from_u64(1))];
       let (row_ixes, column_ixes) = match index {
         // If we only have one index, we have two options:
         // #x{3}
         (Some(parameter), None) => {
           // Get the ixes
-          let ixes: &Vec<Value> = match &parameter {
+          let ixes: &Vec<Rc<Value>> = match &parameter {
             Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
             Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
@@ -635,7 +636,7 @@ impl Block {
                   break 'solve_loop;
                 }, 
               };
-              self.lhs_columns_empty.push(Value::from_u64(ix));
+              self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
               &self.lhs_columns_empty
             },
             _ => &self.rhs_rows_empty,
@@ -657,7 +658,7 @@ impl Block {
         // #x.y
         (None, Some(parameter)) => {
           // Get the ixes
-          let ixes: &Vec<Value> = match &parameter {
+          let ixes: &Vec<Rc<Value>> = match &parameter {
             Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
             Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
@@ -676,7 +677,7 @@ impl Block {
                   break 'solve_loop;
                 }, 
               };
-              self.lhs_columns_empty.push(Value::from_u64(ix));
+              self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
               &self.lhs_columns_empty
             },
             _ => &self.rhs_rows_empty,
@@ -687,12 +688,12 @@ impl Block {
         // #x{1,2}
         // #x.y{1}
         (Some(row_parameter), Some(column_parameter)) => {
-          let row_ixes: &Vec<Value> = match &row_parameter {
+          let row_ixes: &Vec<Rc<Value>> = match &row_parameter {
             Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
             Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             _ => &self.rhs_rows_empty,
           };
-          let column_ixes: &Vec<Value> = match &column_parameter {
+          let column_ixes: &Vec<Rc<Value>> = match &column_parameter {
             Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
             Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
@@ -711,7 +712,7 @@ impl Block {
                   break 'solve_loop;
                 }, 
               };
-              self.lhs_columns_empty.push(Value::from_u64(ix));
+              self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
               &self.lhs_columns_empty
             },
             _ => &self.lhs_rows_empty,
@@ -719,7 +720,7 @@ impl Block {
           (row_ixes, column_ixes)
         },
         (Some(parameter), Some(Parameter::All)) => {
-          let ixes: &Vec<Value> = match &parameter {
+          let ixes: &Vec<Rc<Value>> = match &parameter {
             Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
             Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
             Parameter::Index(index) => {
@@ -738,7 +739,7 @@ impl Block {
                   break 'solve_loop;
                 }, 
               };
-              self.lhs_columns_empty.push(Value::from_u64(ix));
+              self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
               &self.lhs_columns_empty
             },
             _ => &self.rhs_rows_empty,
@@ -761,7 +762,7 @@ impl Block {
         // Get the column indices
         let cix = if column_ixes.is_empty() { i }
                   else { 
-                    match column_ixes[i] {
+                    match *column_ixes[i] {
                       Value::Number(n) => n.to_u64() as usize  - 1,
                       Value::Bool(true) => i,
                       _ => {
@@ -787,7 +788,7 @@ impl Block {
           // Get the row indices
           let rix = if row_ixes.is_empty() { j }
                     else { 
-                      match row_ixes[j] {
+                      match *row_ixes[j] {
                         Value::Number(n) => n.to_u64() as usize - 1,
                         Value::Bool(true) => j,
                         _ => {
@@ -897,7 +898,7 @@ impl Block {
               (TableId::Local(id), _) => {
                 // test value at table
                 let table = self.memory.get(*id).unwrap().borrow_mut();
-                if table.data[0][0] == Value::Bool(false) || self.tables_modified.get(id) == None {
+                if table.data[0][0] == Rc::new(Value::Bool(false)) || self.tables_modified.get(id) == None {
                   self.block_changes.clear();
                   self.state = BlockState::Unsatisfied;
                   break 'solve_loop;
@@ -926,7 +927,7 @@ impl Block {
               (TableId::Local(id), _) => {
                 // test value at table
                 let table = self.memory.get(*id).unwrap().borrow_mut();
-                if table.data[0][0] == Value::Bool(true) {
+                if table.data[0][0] == Rc::new(Value::Bool(true)) {
                   self.state = BlockState::Ready;
                   break 'solve_loop;
                 }
@@ -954,7 +955,7 @@ impl Block {
               (TableId::Local(id), _) => {
                 // test value at table
                 let table = self.memory.get(*id).unwrap().borrow_mut();
-                if table.data[0][0] == Value::Bool(true) {
+                if table.data[0][0] == Rc::new(Value::Bool(true)) {
                   self.block_changes.clear();
                   self.state = BlockState::Unsatisfied;
                   break 'solve_loop;
@@ -990,7 +991,7 @@ impl Block {
               unsafe{
                 (*block).memory.insert(new_table);
               }
-              self.scratch.data[0][i] = Value::Reference(TableId::Local(id));
+              self.scratch.data[0][i] = Rc::new(Value::Reference(TableId::Local(id)));
             }
             let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
             out.rows = self.scratch.rows;
@@ -1070,7 +1071,7 @@ impl Block {
             to_ixes[0]
           };
 
-          let one = vec![Value::from_u64(1)];
+          let one = vec![Rc::new(Value::from_u64(1))];
           let (to_row_values, to_column_values) = match to_ixes {
             // If we only have one index, we have two options:
             // #x{3}
@@ -1078,7 +1079,7 @@ impl Block {
             (None, Some(parameter)) |
             (Some(parameter), None) => {
               // Get the ixes
-              let ixes: &Vec<Value> = match &parameter {
+              let ixes: &Vec<Rc<Value>> = match &parameter {
                 Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
                 Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 Parameter::Index(index) => {
@@ -1097,7 +1098,7 @@ impl Block {
                       break 'solve_loop;
                     }, 
                   };
-                  self.lhs_columns_empty.push(Value::from_u64(ix));
+                  self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
                   &self.lhs_columns_empty
                 },
                 _ => &self.rhs_rows_empty,
@@ -1120,12 +1121,12 @@ impl Block {
             // #x{1,2}
             // #x.y{1}
             (Some(row_parameter), Some(column_parameter)) => {
-              let row_ixes: &Vec<Value> = match &row_parameter {
+              let row_ixes: &Vec<Rc<Value>> = match &row_parameter {
                 Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
                 Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 _ => &self.rhs_rows_empty,
               };
-              let column_ixes: &Vec<Value> = match &column_parameter {
+              let column_ixes: &Vec<Rc<Value>> = match &column_parameter {
                 Parameter::TableId(TableId::Local(id)) => unsafe{&(*self.memory.get(*id).unwrap().as_ptr()).data[0]},
                 Parameter::TableId(TableId::Global(id)) => unsafe{&(*store.get_table(*id).unwrap().as_ptr()).data[0]},
                 Parameter::Index(index) => {
@@ -1144,7 +1145,7 @@ impl Block {
                       break 'solve_loop;
                     }, 
                   };
-                  self.lhs_columns_empty.push(Value::from_u64(ix));
+                  self.lhs_columns_empty.push(Rc::new(Value::from_u64(ix)));
                   &self.lhs_columns_empty
                 },
                 _ => &self.lhs_rows_empty,
@@ -1203,7 +1204,7 @@ impl Block {
             for i in 0..from_width as usize {
               let tcix = if to_column_values.is_empty() { i }
                          else {
-                           match to_column_values[i] {
+                           match *to_column_values[i] {
                              Value::Number(x) => x.mantissa() as usize  - 1,
                              Value::Bool(true) => i,
                              _ => {continue; 0},
@@ -1213,7 +1214,7 @@ impl Block {
               for j in 0..from_height as usize {
                 let trix = if to_row_values.is_empty() { j }
                            else {
-                             match to_row_values[j] {
+                             match *to_row_values[j] {
                                Value::Number(x) => x.mantissa() as usize  - 1,
                                Value::Bool(true) => j,
                                _ => {continue; 0},
@@ -1277,9 +1278,10 @@ impl Block {
           for (col_ix, column) in from_table_ref.data.iter().enumerate() {
             let mut values = Vec::with_capacity(column.len());
             for (row_ix, data) in column.iter().enumerate() {
-              match data {
+              let data = data.clone();
+              match *data {
                 Value::Reference(id) => {
-                  copy_tables.insert(*id);
+                  copy_tables.insert(id);
                 }, 
                 _ => (),
               }
@@ -1307,9 +1309,10 @@ impl Block {
               for (col_ix, column) in from_table_ref.data.iter().enumerate() {
                 let mut values = Vec::with_capacity(column.len());
                 for (row_ix, data) in column.iter().enumerate() {
-                  match data {
+                  let data = data.clone();
+                  match *data {
                     Value::Reference(id) => {
-                      copy_tables.insert(*id);
+                      copy_tables.insert(id);
                     }, 
                     _ => (),
                   }
@@ -1375,9 +1378,10 @@ impl Block {
     for (col_ix, column) in from_table_ref.data.iter().enumerate() {
       let mut values = Vec::with_capacity(column.len());
       for (row_ix, data) in column.iter().enumerate() {
-        match data {
+        let data = data.clone();
+        match *data {
           Value::Reference(id) => {
-            copy_tables.insert(*id);
+            copy_tables.insert(id);
           }, 
           _ => (),
         }

@@ -4,7 +4,6 @@ extern crate serde; // 1.0.68
 extern crate serde_derive; // 1.0.68
 
 use mech_core::{Core, Quantity, ToQuantity, QuantityMath, make_quantity};
-use mech_core::{Bar, Aliases};
 
 extern crate hashbrown;
 use hashbrown::hash_map::HashMap;
