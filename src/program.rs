@@ -131,7 +131,7 @@ impl Program {
     self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = Hasher::hash_str("mech/code");
     self.programs += 1;
-    let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
@@ -146,7 +146,7 @@ impl Program {
     self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = Hasher::hash_str("mech/code");
     self.programs += 1;
-    let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
@@ -699,6 +699,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
+            use std::time::Instant;
             let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
@@ -707,7 +708,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let time = (end_ns - start_ns) as f64;              
             //program.compile_string(String::from(text.clone()));
             ////println!("{:?}", program.mech);
-            ////println!("{} Txn took {:0.4?} ms ({:0.0?} cps)", name, time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            println!("Txn took {:0.4?} ms ({:0.0?} cps)", time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
               let change = &program.mech.store.changes[i-1];
