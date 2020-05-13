@@ -6,7 +6,7 @@ extern crate hashbrown;
 extern crate crossbeam_channel;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Aliases, Transaction, TableId, Constraint, Register, Change};
+use mech_core::{Table, Value, Transaction, TableId, Constraint, Register, Change};
 
 use crossbeam_channel::Sender;
 
@@ -99,7 +99,7 @@ impl NetworkTable {
   }
 
   pub fn to_table(&mut self) -> Table {
-    let mut column_aliases = Aliases::new(); 
+    let mut column_aliases = HashMap::new(); 
     for (k,v) in self.column_aliases.iter() {
       column_aliases.insert(k.clone(),v.clone());
     };
