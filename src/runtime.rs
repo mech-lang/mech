@@ -472,7 +472,7 @@ impl Block {
         },
         Constraint::Function{fnstring, parameters, output} => {
           self.functions.insert(fnstring.to_string());
-          for (arg_name, table, indices) in parameters {
+          /*for (arg_name, table, indices) in parameters {
             match (table, indices) {
               (TableId::Global(id), x) => {
                 let column = match x[0] {
@@ -483,7 +483,7 @@ impl Block {
               },
               _ => (),
             }
-          }
+          }*/
         },
         Constraint::NewTable{id, rows, columns} => {
           match id {
@@ -865,26 +865,13 @@ impl Block {
       match step {
         Constraint::Scan{table, indices, output} => {
           let out_table = &output;
-          if self.scratch_tables.len() <= ix {
-            self.scratch_tables.resize(ix+1, None);
-            self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
-          }
-          let scratch_table = self.scratch_tables[ix].as_ref().unwrap().clone();
+          let out = self.memory.get(*out_table.unwrap()).unwrap().clone();
           unsafe {
-            (*block).resolve_subscript(store,table,indices, scratch_table);
+            (*block).resolve_subscript(store,table,indices, out);
           }
-          let scanned = self.scratch_tables[ix].as_ref().unwrap().borrow();
-          let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
-          out.rows = scanned.rows;
-          out.columns = scanned.columns;
-          out.data = scanned.data.clone();
-          out.column_index_to_alias = scanned.column_index_to_alias.clone();
-          out.column_aliases = scanned.column_aliases.clone();
-          self.tables_modified.insert(out.id);
-          self.scratch.clear();
+          self.tables_modified.insert(*output.unwrap());
           self.rhs_columns_empty.clear();
           self.lhs_columns_empty.clear();
-          ix += 1;
         },
         Constraint::Whenever{tables} => {
           for (table, indices) in tables {
@@ -975,7 +962,7 @@ impl Block {
         Constraint::Function{fnstring, parameters, output} => {
           if *fnstring == "table/split" {
             let out_table = &output[0];
-            let (_, in_table, _) = &parameters[0];
+            /*let (_, in_table) = &parameters[0];
             let table_ref = match in_table {
               TableId::Local(id) => self.memory.get(*id).unwrap().borrow(),
               TableId::Global(id) => store.get_table(*id).unwrap().borrow(),
@@ -999,7 +986,7 @@ impl Block {
                 (*block).memory.insert(new_table);
               }
               self.scratch.data[0][i] = Rc::new(Value::Reference(TableId::Local(id)));
-            }
+            }*/
             let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
@@ -1008,7 +995,7 @@ impl Block {
             self.scratch.clear();
           } else {
             let out_table = &output[0];
-            let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
+            /*let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
               let table_ref: Rc<RefCell<Table>>;
               unsafe {
                 if (*block).scratch_tables.len() <= ix {
@@ -1021,7 +1008,7 @@ impl Block {
               }
               ix += 1;
               (arg_name.clone(), table_ref)
-            }).collect::<Vec<_>>();
+            }).collect::<Vec<_>>();*/
             if self.scratch_tables.len() <= ix {
               self.scratch_tables.resize(ix+1, None);
               self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
@@ -1030,7 +1017,7 @@ impl Block {
             match functions.get(fnstring) {
               Some(Some(fn_ptr)) => {
                 
-                fn_ptr(arguments, scratch_table);
+                //fn_ptr(arguments, scratch_table);
                
               }
               _ => (), // TODO Throw a function doesn't exist error
@@ -1475,7 +1462,7 @@ pub enum Constraint {
   Until {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
   Identifier {id: u64, text: String},
   // Transform Constraints
-  Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
+  Function {fnstring: String, parameters: Vec<(String, TableId)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: Quantity, unit: Option<String>},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
