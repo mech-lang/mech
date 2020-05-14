@@ -968,7 +968,7 @@ impl Compiler {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
           constraints.push(Constraint::Reference{table: TableId::Local(self.table), destination: table_reference});
           constraints.push(Constraint::CopyTable{from_table: self.table, to_table: self.table });
-          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: self.row as u64, columns: 1});
+          constraints.push(Constraint::NewTable{id: TableId::Local(self.table), rows: 0, columns: 0});
           constraints.push(Constraint::Function{fnstring: "table/vertical-concatenate".to_string(), parameters, output: vec![TableId::Local(self.table)]});
         } else if alt_id != 0 {
           constraints.push(Constraint::NewTable{id: TableId::Local(table_reference), rows: 1, columns: 1});
