@@ -24,7 +24,7 @@ pub enum Parameter {
   Index (Index),
   All,
 }
-/*
+
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
@@ -51,19 +51,20 @@ macro_rules! binary_infix {
         out.grow_to_fit(lhs_height,lhs_width);
         for i in 0..lhs_width as usize {
           for j in 0..lhs_height as usize {
-            match (&lhs.data[i][j], &rhs.data[i][j]) {
+            match (&*lhs.data[i][j], &*rhs.data[i][j]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
                   Ok(op_result) => {
                     let value = Value::from_quantity(op_result);
-                    out.data[i][j] = value;
+                    let rc = Rc::new(value);
+                    out.data[i][j] = rc;
                   },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }
               },
               (Value::String(x), Value::String(y)) => {
-                out.data[i][j] = Value::Bool(lhs.data[i][j].$op(&rhs.data[i][j]).unwrap());
+                out.data[i][j] = Rc::new(Value::Bool(lhs.data[i][j].$op(&rhs.data[i][j]).unwrap()));
               },
               _ => (),
             }
@@ -74,10 +75,10 @@ macro_rules! binary_infix {
         out.grow_to_fit(rhs_height,rhs_width);
         for i in 0..rhs_width as usize {
           for j in 0..rhs_height as usize {
-            match (&lhs.data[0][0], &rhs.data[i][j]) {
+            match (&*lhs.data[0][0], &*rhs.data[i][j]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
-                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  Ok(op_result) => out.data[i][j] = Rc::new(Value::from_quantity(op_result)),
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }
@@ -91,10 +92,10 @@ macro_rules! binary_infix {
         out.grow_to_fit(lhs_height,lhs_width);
         for i in 0..lhs_width as usize {
           for j in 0..lhs_height as usize {
-            match (&lhs.data[i][j], &rhs.data[0][0]) {
+            match (&*lhs.data[i][j], &*rhs.data[0][0]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
-                  Ok(op_result) => out.data[i][j] = Value::from_quantity(op_result),
+                  Ok(op_result) => out.data[i][j] = Rc::new(Value::from_quantity(op_result)),
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }
@@ -116,7 +117,7 @@ binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
 // FIXME this isn't actually right at all. ^ is not power in Rust
 //binary_math!{math_power, add}
-
+/*
 binary_infix!{compare_not_equal, not_equal}
 binary_infix!{compare_equal, equal}
 binary_infix!{compare_less_than_equal, less_than_equal}
@@ -177,7 +178,7 @@ pub extern "C" fn stats_sum(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc
     // TODO Throw error
   }
 }
-
+*/
 pub extern "C" fn table_range(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
   let (_, lhs_rc) = &input[0];
   let (_, rhs_rc) = &input[1];
@@ -191,10 +192,10 @@ pub extern "C" fn table_range(input: Vec<(String, Rc<RefCell<Table>>)>, output: 
   let steps = (end - start) as usize + 1;
   out.grow_to_fit(steps as u64, 1);
   for i in 0..steps {
-    out.data[0][i] = Value::Number((start + i as i64).to_quantity())
+    out.data[0][i] = Rc::new(Value::Number((start + i as i64).to_quantity()))
   }
 }
-
+/*
 pub extern "C" fn set_any(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
   
   let (field, table_ref_rc) = &input[0];
@@ -229,7 +230,7 @@ pub extern "C" fn set_any(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<R
     // TODO Throw error
   }
 }
-
+*/
 pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
   
   let mut cat_table = output.borrow_mut();
@@ -313,7 +314,7 @@ pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Rc<RefCell<Tabl
 }
 
 // ## Logic
-
+/*
 #[macro_export]
 macro_rules! logic {
   ($func_name:ident, $op:tt) => (

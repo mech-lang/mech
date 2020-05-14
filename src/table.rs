@@ -295,13 +295,13 @@ impl Table {
     }
   }
 
-  pub fn set_cell(&mut self, row: &Index, column: &Index, value: Rc<Value>) -> Rc<Value> {
+  pub fn set_cell(&mut self, row: &Index, column: &Index, value: Rc<Value>) {
     let row_ix = self.get_row_index(row).unwrap() as usize;
     let column_ix = self.get_column_index(column).unwrap() as usize;
     self.grow_to_fit(row_ix as u64, column_ix as u64);
-    let old_value = self.data[column_ix - 1][row_ix - 1].clone();
+    //let old_value = self.data[column_ix - 1][row_ix - 1].clone();
     self.data[column_ix - 1][row_ix - 1] = value.clone();
-    old_value
+    //old_value
   }
 
   pub fn set_column_alias(&mut self, alias: u64, ix: u64) {

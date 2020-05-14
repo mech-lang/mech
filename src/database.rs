@@ -166,8 +166,9 @@ impl Interner {
           Some(table_ref) => {
             alias = table_ref.borrow().get_column_alias(&column);
             for (row, value) in values {
-              let old_value = table_ref.borrow_mut().set_cell(&row, &column, value.clone());
-              if old_value != *value {
+              table_ref.borrow_mut().set_cell(&row, &column, value.clone());
+              changed = true;
+              /*if old_value != *value {
                 changed = true;
               }
               if self.offset == 0 && changed == true {
@@ -176,7 +177,7 @@ impl Interner {
                   // Save a remove so that we can rewind
                   _ => (), //self.save_change(&Change::Remove{table: *table, row: row.clone(), column: column.clone(), value: old_value}),
                 }
-              }
+              }*/
             }
             if changed == true {
               match alias {
@@ -232,7 +233,7 @@ impl Interner {
       },
     }
     if self.offset == 0 {
-      self.save_change(change);
+      //self.save_change(change);
     }    
   }
 

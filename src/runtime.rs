@@ -20,7 +20,14 @@ use hashbrown::hash_map::{HashMap, Entry};
 use hashbrown::hash_set::HashSet;
 use indexes::TableIndex;
 use operations::Parameter;
-//use operations::{set_any, table_vertical_concatenate, table_horizontal_concatenate, logic_and, logic_or, table_range, stats_sum, math_add, math_subtract, math_multiply, math_divide, compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal};
+use operations::{
+  //set_any, 
+  //logic_and, logic_or, 
+  table_range, table_vertical_concatenate, table_horizontal_concatenate, 
+  //stats_sum, 
+  math_add, math_subtract, math_multiply, math_divide, 
+  //compare_equal, compare_greater_than, compare_greater_than_equal, compare_less_than, compare_less_than_equal, compare_not_equal
+};
 use quantities::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use errors::{Error, ErrorType};
 use std::rc::Rc;
@@ -51,23 +58,23 @@ impl Runtime {
       changed_this_round: HashSet::new(),
       errors: Vec::new(),
     };
-    /*
+    
     runtime.functions.insert("math/add".to_string(),Some(math_add));
     runtime.functions.insert("math/multiply".to_string(),Some(math_multiply));
     runtime.functions.insert("math/divide".to_string(),Some(math_divide));
     runtime.functions.insert("math/subtract".to_string(),Some(math_subtract));
-    runtime.functions.insert("compare/greater-than".to_string(),Some(compare_greater_than));
+    runtime.functions.insert("table/range".to_string(),Some(table_range));
+    runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
+    runtime.functions.insert("table/vertical-concatenate".to_string(),Some(table_vertical_concatenate));
+    /*runtime.functions.insert("compare/greater-than".to_string(),Some(compare_greater_than));
     runtime.functions.insert("compare/less-than".to_string(),Some(compare_less_than));
     runtime.functions.insert("compare/greater-than-equal".to_string(),Some(compare_greater_than_equal));
     runtime.functions.insert("compare/less-than-equal".to_string(),Some(compare_less_than_equal));
     runtime.functions.insert("compare/equal".to_string(),Some(compare_equal));
     runtime.functions.insert("compare/not-equal".to_string(),Some(compare_not_equal));
     runtime.functions.insert("stats/sum".to_string(),Some(stats_sum));
-    runtime.functions.insert("table/range".to_string(),Some(table_range));
     runtime.functions.insert("logic/and".to_string(),Some(logic_and));
     runtime.functions.insert("logic/or".to_string(),Some(logic_or));
-    runtime.functions.insert("table/horizontal-concatenate".to_string(),Some(table_horizontal_concatenate));
-    runtime.functions.insert("table/vertical-concatenate".to_string(),Some(table_vertical_concatenate));
     runtime.functions.insert("set/any".to_string(),Some(set_any));*/
     runtime
   }
