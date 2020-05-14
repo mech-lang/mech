@@ -56,8 +56,9 @@ macro_rules! binary_infix {
                 match x.$op(*y) {
                   Ok(op_result) => {
                     let value = Value::from_quantity(op_result);
-                    let rc = Rc::new(value);
-                    out.data[i][j] = rc;
+                    unsafe {
+                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
+                    }
                   },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
@@ -78,7 +79,12 @@ macro_rules! binary_infix {
             match (&*lhs.data[0][0], &*rhs.data[i][j]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
-                  Ok(op_result) => out.data[i][j] = Rc::new(Value::from_quantity(op_result)),
+                  Ok(op_result) => {
+                    let value = Value::from_quantity(op_result);
+                    unsafe {
+                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
+                    }
+                  },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }
@@ -95,7 +101,12 @@ macro_rules! binary_infix {
             match (&*lhs.data[i][j], &*rhs.data[0][0]) {
               (Value::Number(x), Value::Number(y)) => {
                 match x.$op(*y) {
-                  Ok(op_result) => out.data[i][j] = Rc::new(Value::from_quantity(op_result)),
+                  Ok(op_result) => {
+                    let value = Value::from_quantity(op_result);
+                    unsafe {
+                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
+                    }
+                  },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
                 }

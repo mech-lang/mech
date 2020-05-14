@@ -9,6 +9,7 @@ systems.
 
 #![cfg_attr(feature = "no-std", no_std)]
 #![feature(nll)]
+#![feature(get_mut_unchecked)]
 
 #[cfg(feature = "no-std")] extern crate rlibc;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
