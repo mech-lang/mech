@@ -705,7 +705,7 @@ impl Compiler {
           let intermediate_table = Hasher::hash_string(format!("tablesplit{:?},{:?}-{:?}-{:?}", self.section, self.block, self.expression, self.table));
           constraints.push(Constraint::AliasTable{table: TableId::Local(intermediate_table), alias});
           constraints.push(Constraint::NewTable{id: TableId::Local(intermediate_table), rows: 1, columns: 1});
-          constraints.push(Constraint::Function{fnstring: "table/split".to_string(), parameters: vec![("row".to_string(), table, vec![(None, None)])], output: vec![TableId::Local(intermediate_table)]});
+          constraints.push(Constraint::Function{fnstring: "table/split".to_string(), parameters: vec![("row".to_string(), table)], output: vec![TableId::Local(intermediate_table)]});
         } else {
           // TODO error if there are no children
         }
@@ -875,7 +875,7 @@ impl Compiler {
         self.table = Hasher::hash_string(format!("InlineTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
         let mut i = 0;
         let mut column_names = vec![];
-        let mut parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
+        let mut parameters: Vec<(String, TableId)> = vec![]; 
         let mut compiled = vec![];
         for (ix, child) in children.iter().enumerate() {
           let mut result = self.compile_constraint(child);
@@ -888,10 +888,10 @@ impl Compiler {
           if result.len() > 1 {
             match &result[1] {
               Constraint::NewTable{id, rows, columns} => {
-                parameters.push(("".to_string(), id.clone(), vec![(None, None)]));
+                parameters.push(("".to_string(), id.clone()));
               }
               Constraint::Identifier{id, ..} => {
-                parameters.push(("".to_string(),TableId::Local(id.clone()), vec![(None, None)]));
+                parameters.push(("".to_string(),TableId::Local(id.clone())));
               }
               _ => (),
             }
@@ -940,14 +940,14 @@ impl Compiler {
         let anon_table_rows = 0;
         let anon_table_cols = 0;
         self.table = Hasher::hash_string(format!("AnonymousTable{:?},{:?}-{:?}", self.section, self.block, self.expression));
-        let mut parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
+        let mut parameters: Vec<(String, TableId)> = vec![]; 
         let mut compiled = vec![];
         let mut alt_id = 0;
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::NewTable{id, rows, columns} => {
-              parameters.push(("".to_string(), id.clone(), vec![(None, None)]));
+              parameters.push(("".to_string(), id.clone()));
               match id {
                 TableId::Local(id) => alt_id = *id,
                 TableId::Global(id) => alt_id = *id,
@@ -1041,34 +1041,36 @@ impl Compiler {
           parameters.push(c);
         }
         
-        let mut parameter_registers: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![];
-        for parameter in &parameters {
-          match &parameter[0] {
+        let mut parameter_registers: Vec<(String, TableId)> = vec![];
+        for parameter_constraints in &parameters {
+          match &parameter_constraints[0] {
             /*Constraint::Constant{table, row, column, value} => {
               parameter_registers.push((*table, *row, *column));
             },*/
             Constraint::Identifier{id, text} => {
               //parameter_registers.push(("".to_string(),TableId::Local(*id),vec![(None, None)]));
-              match &parameter[1] {
+              match &parameter_constraints[1] {
                 Constraint::NewTable{id, rows, columns} => {
-                  parameter_registers.push((text.clone(), id.clone(), vec![(None, None)]));
+                  parameter_registers.push((text.clone(), id.clone()));
                 },
                 _ => (),
               }
             },
             Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
+              parameter_registers.push(("".to_string(), id.clone()));
             },
             Constraint::Scan{table, indices, output} => {
-              parameter_registers.push(("".to_string(), table.clone(), indices.clone()));
+              parameter_registers.push(("".to_string(), table.clone()));
             },
             Constraint::Function{fnstring, parameters, output} => {
               for o in output {
-                parameter_registers.push(("".to_string(), o.clone(), vec![(None, None)]));
+                parameter_registers.push(("".to_string(), o.clone()));
               }
             },
             _ => (),
           };
+          let mut pc = parameter_constraints.clone();
+          constraints.append(&mut pc);
         }
         constraints.push(Constraint::Function{fnstring: name.to_string(), parameters: parameter_registers, output});
         for mut p in &parameters {
@@ -1139,20 +1141,20 @@ impl Compiler {
       Node::TableRow{children} => {
         self.row += 1;
         self.column = 0;
-        let mut parameter_registers: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)> = vec![]; 
+        let mut parameter_registers: Vec<(String, TableId)> = vec![]; 
         let mut compiled = vec![];
         let table = Hasher::hash_string(format!("TableRow{:?},{:?}", self.table, self.row));
         for child in children {
           let mut result = self.compile_constraint(child);
           match &result[0] {
             Constraint::Identifier{id, ..} => {
-              parameter_registers.push(("".to_string(), TableId::Local(id.clone()), vec![(None, None)]));
+              parameter_registers.push(("".to_string(), TableId::Local(id.clone())));
             },
             Constraint::NewTable{id, rows, columns} => {
-              parameter_registers.push(("".to_string(), id.clone(), vec![(None, None)]));
+              parameter_registers.push(("".to_string(), id.clone()));
             },
             Constraint::Scan{table, indices, output} => {
-              parameter_registers.push(("".to_string(), table.clone(), indices.clone()));
+              parameter_registers.push(("".to_string(), table.clone()));
             },
             _ => (),
           }
