@@ -962,7 +962,7 @@ impl Block {
         Constraint::Function{fnstring, parameters, output} => {
           if *fnstring == "table/split" {
             let out_table = &output[0];
-            /*let (_, in_table) = &parameters[0];
+            let (_, in_table) = &parameters[0];
             let table_ref = match in_table {
               TableId::Local(id) => self.memory.get(*id).unwrap().borrow(),
               TableId::Global(id) => store.get_table(*id).unwrap().borrow(),
@@ -986,7 +986,7 @@ impl Block {
                 (*block).memory.insert(new_table);
               }
               self.scratch.data[0][i] = Rc::new(Value::Reference(TableId::Local(id)));
-            }*/
+            }
             let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
             out.rows = self.scratch.rows;
             out.columns = self.scratch.columns;
@@ -994,41 +994,24 @@ impl Block {
             self.tables_modified.insert(out.id);
             self.scratch.clear();
           } else {
-            let out_table = &output[0];
-            /*let arguments = parameters.iter().map(|(arg_name, table_id, indices)| {
-              let table_ref: Rc<RefCell<Table>>;
-              unsafe {
-                if (*block).scratch_tables.len() <= ix {
-                  (*block).scratch_tables.resize(ix+1, None);
-                  (*block).scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
-                }
-                let scratch_table = (*block).scratch_tables[ix].as_ref().unwrap().clone();
-                (*block).resolve_subscript(store,table_id,indices, scratch_table);
-                table_ref = (*block).scratch_tables[ix].as_ref().unwrap().clone();
-              }
-              ix += 1;
-              (arg_name.clone(), table_ref)
-            }).collect::<Vec<_>>();*/
-            if self.scratch_tables.len() <= ix {
-              self.scratch_tables.resize(ix+1, None);
-              self.scratch_tables[ix] = Some(Rc::new(RefCell::new(Table::new(0,0,0))));
+            let mut arguments = Vec::with_capacity(parameters.len());
+            for (arg_name, table_id) in parameters {
+              let table_ref = match table_id {
+                TableId::Local(id) => self.memory.get(*id).unwrap().clone(),
+                TableId::Global(id) => store.get_table(*id).unwrap().clone(),
+              };     
+              arguments.push((arg_name.clone(), table_ref));
             }
-            let scratch_table = self.scratch_tables[ix].as_ref().unwrap().clone();
+            let mut out = self.memory.get(*output[0].unwrap()).unwrap().clone();
             match functions.get(fnstring) {
               Some(Some(fn_ptr)) => {
                 
-                //fn_ptr(arguments, scratch_table);
+                fn_ptr(arguments, out);
                
               }
               _ => (), // TODO Throw a function doesn't exist error
             };    
-            let result = self.scratch_tables[ix].as_ref().unwrap().clone();
-            let foo = result.borrow();        
-            let mut out = self.memory.get(*out_table.unwrap()).unwrap().borrow_mut();
-            out.rows = foo.rows;
-            out.columns = foo.columns;
-            out.data = foo.data.clone();
-            self.tables_modified.insert(out.id);
+            self.tables_modified.insert(*output[0].unwrap());
             ix += 1;
           }
         },
