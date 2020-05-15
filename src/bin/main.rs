@@ -8,8 +8,10 @@ use mech_core::{Change, Transaction};
 use mech_core::{Value, Index};
 use mech_core::Hasher;
 use mech_core::Core;
-use mech_core::make_quantity;
+use mech_core::{make_quantity, Quantity, ToQuantity, QuantityMath};
 use std::time::{Duration, SystemTime};
+
+use std::rc::Rc;
 
 fn compile_test(input: String, test: Value) {
   let mut compiler = Compiler::new();
@@ -30,15 +32,27 @@ fn compile_test(input: String, test: Value) {
 }
 
 fn main() {
-  let input = String::from(r#"# Mech Website
+  /*let input = String::from(r#"# Bouncing Balls
 
-## Homepage
+Define the environment
+  x = 1:4000
+  #gravity = 1
+  #ball = [|x   y   vx  vy|
+            x   x   20  3 ]
 
-This is where the drawing is added to the DOM
-  a = [1]
-  b = [c: [a; b; #c]]
-  #d = [|c|
-        [c]]"#);
+Update the block positions on each tick of the timer
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity"#);*/
+
+
+let input = String::from(r#"# Bouncing Balls
+
+Define the environment
+  #x = 1 + 2"#);
+
+
   
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -51,13 +65,168 @@ This is where the drawing is added to the DOM
   println!("{:?}", programs);
  
   core.register_blocks(compiler.blocks.clone());
-  println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.unparsed);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.unparsed);
+  //println!("{:?}", compiler.syntax_tree);
   //println!("{:?}", core.runtime);
-  core.step(100000);
+  //core.step(100000);
+  
+  /*
+  let changes = vec![
+    Rc::new(Change::NewTable{id: 0xd2d75008, rows: 0, columns: 2}),
+    Rc::new(Change::RenameColumn{table: 0xd2d75008, column_ix: 1, column_alias: 0x6972c9df}),
+    Rc::new(Change::RenameColumn{table: 0xd2d75008, column_ix: 2, column_alias: 0x6b6369e7}),
+  ];
+
+  let txn = Transaction::from_changeset(changes);
+
+  core.process_transaction(&txn);
+
+  let txn = Transaction::from_change(Rc::new(Change::Set{
+    table: 0xd2d75008, 
+    column: Index::Alias(0x6972c9df), 
+    values: vec![(Index::Index(1), Rc::new(Value::from_u64(16)))]
+  }));
+
+  core.process_transaction(&txn);
+
+  extern crate time;
+
+  let mut counter = 0;
+  let start_ns = time::precise_time_ns();
+  let rounds = 2000.0;
+  for i in 0..rounds as u64 {
+    let txn = Transaction::from_change(Rc::new(Change::Set{
+      table: 0xd2d75008, 
+      column: Index::Alias(0x6b6369e7), 
+      values: vec![(Index::Index(1), Rc::new(Value::from_u64(counter)))],
+    }));
+    core.process_transaction(&txn);
+    counter = counter + 1;
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64 / 1000000.0;   
+  let per_iteration_time = time / rounds;
+  
+  */
+
   println!("{:?}", core);
   println!("{:?}", core.runtime);
+
+  println!("{:?}", std::mem::size_of::<Value>());
+
+  let mut v: Vec<Vec<Value>> = vec![];
+
+  let qq = 400_000;
+
+  for i in 0..4 {
+    let mut q = vec![];
+    for j in 0..qq as usize {
+      q.push(Value::from_u64(j as u64));
+    }
+    v.push(q);
+  }
+  
+  let gravity = Value::from_u64(1);
+
+  let rounds = 100.0;
+
+  let start_ns = time::precise_time_ns();
+  for i in 0..rounds as usize {
+    for j in 0..qq {
+      v[0][j] = Value::from_quantity(v[0][j].as_quantity().unwrap().add(v[2][j].as_quantity().unwrap()).unwrap());
+      v[1][j] = Value::from_quantity(v[1][j].as_quantity().unwrap().add(v[3][j].as_quantity().unwrap()).unwrap());
+      v[3][j] = Value::from_quantity(v[3][j].as_quantity().unwrap().add(gravity.as_quantity().unwrap()).unwrap());
+    }
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64 / 1000000.0;   
+  let per_iteration_time = time / rounds;
+  println!("{:?}s total", time / 1000.0);  
+  println!("{:?}ms per iteration", per_iteration_time);  
+
+  //println!("{:?}s total", time / 1000.0);  
+  //println!("{:?}ms per iteration", per_iteration_time);  
+
+  /*
+  let rows = 10000;
+  let columns = 4;
+  let mut vec1: Vec<Vec<Rc<Value>>> = vec![vec![]];
+  vec1.resize(columns, vec![]);
+  for i in 0..columns {
+    for j in 0..rows {
+      vec1[i].resize(rows, Rc::new(Value::Empty));
+    }
+  }
+
+  let value = Rc::new(Value::from_string("Hello world".to_string()));
+  let start_ns = time::precise_time_ns();
+  for i in 0..columns {
+    for j in 0..rows {
+      vec1[i][j] = value.clone();
+    }
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64;   
+  let per_iteration_time = time;
+  println!("{:?}ns per iteration", per_iteration_time);  
+
+
+  let mut vec2: Vec<Rc<Value>> = Vec::with_capacity(rows*columns);
+  vec2.resize((rows*columns), Rc::new(Value::Empty));
+
+  let value = Rc::new(Value::from_string("Hello world".to_string()));
+  let start_ns = time::precise_time_ns();
+  for i in 0..(rows*columns) {
+    vec2[i] = value.clone();
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64;   
+  let per_iteration_time = time;
+  println!("{:?}ns per iteration", per_iteration_time);  
+
+*/
+
+/*
+  let value = Value::from_string("Hello world".to_string());
+  let rounds = 10000.0;
+
+  
+  let rows = 10000;
+  let columns = 10;
+  let mut table = vec![vec![Value::Empty; rows as usize]; columns as usize];
+
+
+  let start_ns = time::precise_time_ns();
+  for i in 0..columns as usize {
+    for j in 0..rows as usize {
+      table[i][j] = value.clone();
+    }
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64;   
+  let per_iteration_time = time / (rows * columns) as f64;
+  println!("{:?}ns per iteration", per_iteration_time);  
+
+  use std::rc::Rc;
+  let value = Rc::new(Value::from_string("Hello world".to_string()));
+  let rows = 10000;
+  let columns = 10;
+  let mut table = vec![vec![Rc::new(Value::Empty); rows as usize]; columns as usize];
+
+
+  let start_ns = time::precise_time_ns();
+  for i in 0..columns as usize {
+    for j in 0..rows as usize {
+      table[i][j] = value.clone();
+    }
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64;   
+  let per_iteration_time = time / (rows * columns) as f64;
+  println!("{:?}ns per iteration", per_iteration_time);  */
+
+
   /*let block_ast = match &programs[0].sections[0].elements[1] {
   Element::Block((id, node)) => node,
     _ => &Node::Null,
