@@ -3,7 +3,7 @@ extern crate serde; // 1.0.68
 #[macro_use]
 extern crate serde_derive; // 1.0.68
 
-use mech_core::{Core, Value, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Index, Value, Quantity, ToQuantity, QuantityMath, make_quantity};
 
 extern crate hashbrown;
 use hashbrown::hash_map::HashMap;
@@ -14,13 +14,16 @@ use std::cell::RefCell;
 extern crate core;
 use core::fmt;
 use std::time::{Duration, SystemTime};
+use std::io;
+use std::io::prelude::*;
 
 
+// A 2D table of values.
 pub struct Table {
   pub store:  Rc<RefCell<Store>>,
   pub rows: usize,
   pub columns: usize,
-  pub data: Vec<usize>,
+  pub data: Vec<usize>, // Each entry is a memory address into the store
 }
 
 impl Table {
@@ -30,11 +33,11 @@ impl Table {
       store,
       rows,
       columns,
-      data: vec![0; rows*columns],
+      data: vec![0; rows*columns], // Initialize with zeros, indicating Value::Empty (always the zeroth element of the store)
     }
   }
 
-  
+  // Transform a (row, column) into a linear address into the data. If it's out of range, return None
   pub fn index(&self, row: usize, column: usize) -> Option<usize> {
     if row <= self.rows && column <= self.columns && row > 0 && column > 0 {
       Some((row - 1) * self.columns + (column - 1))
@@ -44,6 +47,7 @@ impl Table {
     
   }
 
+  // Get the memory address into the store at a (row, column)
   pub fn get(&self, row: usize, column: usize) -> Option<usize> {
     match self.index(row, column) {
       Some(ix) => Some(self.data[ix]),
@@ -51,7 +55,9 @@ impl Table {
     }
   }
 
-  
+  // Set the value of at a (row, column). This will decrement the reference count of the value
+  // at the old address, and insert the new value into the store while pointing the cell to the
+  // new address.
   pub fn set(&mut self, row: usize, column: usize, value: Value) {
     let mut s = self.store.borrow_mut();
     let ix = self.index(row, column).unwrap();
@@ -90,6 +96,9 @@ impl fmt::Debug for Table {
   }
 }
 
+// Holds all of the values of the program in a 1D vector. We keep track of how many times a value
+// is referenced using a counter. When the counter goes to zero, the memory location is marked as
+// free and is available to be overwritten by a new value.
 pub struct Store {
   capacity: usize,
   next: usize,
@@ -118,9 +127,11 @@ impl Store {
     }
   }
 
+  // Decrement the reference counter for a given address. If the reference counter goes to zero,
+  // mark that address as available for allocation
   pub fn dereference(&mut self, address: usize) {
     if address == 0 {
-      // Do nothing
+      // Do nothing, Value::Empty stays here, and is always referenced
     } else if self.reference_counts[address] == 1 {
       self.reference_counts[address] = 0;
       self.free[self.free_end] = address;
@@ -134,6 +145,8 @@ impl Store {
     }
   }
 
+  // Intern a value into the store at the next available memory address.
+  // If we are out of memory, 
   pub fn intern(&mut self, value: Value) -> usize {
     self.reference_counts[self.next] = 1;
     let address = self.next;
@@ -155,6 +168,105 @@ impl Store {
 
 }
 
+struct Transaction {
+  changes: Vec<Change>,
+}
+
+enum Change {
+  Set{table: u64, values: Vec<(Index, Index, Value)>},
+}
+
+struct Database {
+  pub tables: HashMap<u64, Rc<RefCell<Table>>>,
+  pub store: Rc<RefCell<Store>>,
+}
+
+
+impl Database {
+
+  pub fn new(store: Rc<RefCell<Store>>) -> Database {
+    Database {
+      tables: HashMap::new(),
+      store,
+    }
+  }
+
+  pub fn process_transaction(&mut self) -> Result<(), Error> {
+    Ok(())
+  }
+
+}
+
+
+struct Core {
+  runtime: Runtime,
+  database: Database,
+}
+
+impl Core {
+  pub fn new(capacity: usize) -> Core {
+    let mut store = Rc::new(RefCell::new(Store::new(capacity)));
+    Core {
+      runtime: Runtime::new(store.clone()),
+      database: Database::new(store.clone()),
+    }
+  }
+
+  pub fn process_transaction(&mut self, txn: Transaction) -> Result<(),Error> {
+
+    self.database.process_transaction(txn)?;
+    self.runtime.run_network()?;
+
+    Ok(())
+  }
+
+}
+
+
+
+struct Runtime {
+  pub store: Rc<RefCell<Store>>,
+  pub blocks: HashMap<u64, Block>,
+}
+
+impl Runtime {
+
+  pub fn new(store: Rc<RefCell<Store>>) -> Runtime {
+    Runtime {
+      store,
+      blocks: HashMap::new(),
+    }
+  }
+
+  pub fn run_network(&mut self) -> Result<(), Error> {
+    Ok(())
+  }
+
+}
+
+
+struct Block {
+  pub id: usize,
+}
+
+impl Block {
+  pub fn new() -> Block {
+    Block {
+      id: 0,
+    }
+  }
+}
+
+
+enum Error {
+  TableNotFound,
+}
+
+
+
+
+
+
 impl fmt::Debug for Store {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -172,9 +284,13 @@ impl fmt::Debug for Store {
 }
 
 fn main() {
-  
-  let mut store = Rc::new(RefCell::new(Store::new(4000*4 * 4)));
-  let balls = 4000;
+
+
+  let balls = 4_000;
+
+  print!("Allocating memory...");
+  let mut store = Rc::new(RefCell::new(Store::new(balls * 4 * 4)));
+  println!("Done!");
 
   let mut table = Table::new(store.clone(),balls,4);
   for i in 1..balls+1 {
@@ -183,7 +299,7 @@ fn main() {
     table.set(i,3,Value::from_u64(20));
     table.set(i,4,Value::from_u64(0));
   }
-   
+  
   println!("{:?}\n", table);
 
   let mut gravity = Table::new(store.clone(),1,1);  
@@ -191,6 +307,8 @@ fn main() {
 
   println!("{:?}\n", gravity);
 
+  print!("Running computation...");
+  io::stdout().flush().unwrap();
   let rounds = 1000.0;
   let start_ns = time::precise_time_ns();
   for j in 0..rounds as usize {
@@ -229,10 +347,12 @@ fn main() {
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f64 / 1000000.0;   
   let per_iteration_time = time / rounds;
+  println!("Done!");
   println!("{:?}s total", time / 1000.0);  
   println!("{:?}ms per iteration", per_iteration_time);  
 
   println!("{:?}\n", table);
+
   //println!("{:?}", store);
 
 }
