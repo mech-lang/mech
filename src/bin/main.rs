@@ -146,7 +146,8 @@ impl Store {
   }
 
   // Intern a value into the store at the next available memory address.
-  // If we are out of memory, 
+  // If we are out of memory, we have to look at the list of free spaces
+  // and choice one there.
   pub fn intern(&mut self, value: Value) -> usize {
     self.reference_counts[self.next] = 1;
     let address = self.next;
@@ -168,14 +169,21 @@ impl Store {
 
 }
 
+// Holds changes to be applied to the database
 struct Transaction {
   changes: Vec<Change>,
 }
 
+// Updates the database
 enum Change {
   Set{table: u64, values: Vec<(Index, Index, Value)>},
+  NewTable{table: u64, rows: usize, columns: usize},
 }
 
+// The database holds a map of tables, and a data store that holds a data array of values. 
+// Cells in the tables contain memory addresses that point to elements of the store data array.
+// The database processes transactions, which are arrays of changes that ar applies to the tables
+// in the database.
 struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
   pub store: Rc<RefCell<Store>>,
@@ -191,13 +199,18 @@ impl Database {
     }
   }
 
-  pub fn process_transaction(&mut self) -> Result<(), Error> {
+  pub fn process_transaction(&mut self, txn: Transaction) -> Result<(), Error> {
     Ok(())
   }
 
 }
 
-
+// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the 
+// subparts of Mech, including the database (defines the what) and the runtime (defines the how).
+// The core accepts transactions and applies those to the database. Updated tables in the database
+// trigger computation in the runtime, which can further update the database. Execution terminates
+// when a steady state is reached, or an iteration limit is reached (whichever comes first). The 
+// core then waits for further transactions.
 struct Core {
   runtime: Runtime,
   database: Database,
@@ -222,8 +235,21 @@ impl Core {
 
 }
 
-
-
+// Defines the function of a Mech program. The runtime consists of a series of blocks, defined
+// by the user. Each block has a number of table dependencies, and produces new values that update
+// existing tables. Blocks can also create new tables. The data dependencies of each block define
+// a computational network of operations that runs until a steady state is reached (no more tables
+// are updated after a computational round).
+// For example, say we have three tables: #a, #b, and #c.
+// Block1 takes #a as input and writes to #b. Block2 takes #b as input and writes to #c.
+// If we update table #a with a transaction, this will trigger Block1 to execute, which will update
+// #b. This in turn will trigger Block2 to execute and it will update block #c. After this, there is
+// nothing left to update so the round of execution is complete.
+//
+// Now consider Block3 that takes #b as input and update #a and #c. Block3 will be triggered to execute
+// after Block1, and it will update #a and #c. But since Block1 takes #a as input, this causes an infinite
+// loop. This loop will terminate after a fixed number of iterations. Practically, this can be checked at
+// compile time and the user can be warned of this and instructed to include some stop condition.
 struct Runtime {
   pub store: Rc<RefCell<Store>>,
   pub blocks: HashMap<u64, Block>,
@@ -244,7 +270,7 @@ impl Runtime {
 
 }
 
-
+// Blocks are the smallest unit of code in a Mech program. Blocks consist of a number of "Constraints"
 struct Block {
   pub id: usize,
 }
@@ -289,9 +315,19 @@ fn main() {
   let balls = 4_000;
 
   print!("Allocating memory...");
-  let mut store = Rc::new(RefCell::new(Store::new(balls * 4 * 4)));
+  let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
 
+  let txn = Transaction{
+    changes: vec![
+      Change::NewTable{table: 123, rows: 4000, columns: 4}
+    ]
+  };
+
+  core.process_transaction(txn);
+
+
+  /*
   let mut table = Table::new(store.clone(),balls,4);
   for i in 1..balls+1 {
     table.set(i,1,Value::from_u64(i as u64));
@@ -354,5 +390,6 @@ fn main() {
   println!("{:?}\n", table);
 
   //println!("{:?}", store);
+  */
 
 }
