@@ -7,6 +7,7 @@ use mech_core::{Index, Value, Quantity, ToQuantity, QuantityMath, make_quantity}
 
 extern crate hashbrown;
 use hashbrown::hash_map::HashMap;
+use hashbrown::hash_set::HashSet;
 use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 use std::rc::Rc;
@@ -17,6 +18,7 @@ use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
 
+// ## Table
 
 // A 2D table of values.
 pub struct Table {
@@ -46,7 +48,6 @@ impl Table {
     } else {
       None
     }
-    
   }
 
   // Get the memory address into the store at a (row, column)
@@ -65,11 +66,13 @@ impl Table {
     let row_ix = match row {
       Index::Index(ix) => ix,
       Index::Alias(alias) => 0, // TODO get ix from alias
+      Index::All => 0,
     };
 
     let column_ix = match column {
       Index::Index(ix) => ix,
       Index::Alias(alias) => 0, // TODO get ix from alias
+      Index::All => 0,
     };
 
     let mut s = self.store.borrow_mut();
@@ -110,6 +113,8 @@ impl fmt::Debug for Table {
   }
 }
 
+// ## Store
+
 // Holds all of the values of the program in a 1D vector. We keep track of how many times a value
 // is referenced using a counter. When the counter goes to zero, the memory location is marked as
 // free and is available to be overwritten by a new value.
@@ -123,7 +128,6 @@ pub struct Store {
   reference_counts: Vec<u16>,
   data: Vec<Value>,
 }
-
 
 impl Store {
   pub fn new(capacity: usize) -> Store {
@@ -197,16 +201,7 @@ impl fmt::Debug for Store {
   }
 }
 
-// Holds changes to be applied to the database
-struct Transaction {
-  changes: Vec<Change>,
-}
-
-// Updates the database
-enum Change {
-  Set{table_id: u64, values: Vec<(Index, Index, Value)>},
-  NewTable{table_id: u64, rows: usize, columns: usize},
-}
+// ## Database
 
 // The database holds a map of tables, and a data store that holds a data array of values. 
 // Cells in the tables contain memory addresses that point to elements of the store data array.
@@ -216,7 +211,6 @@ struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
   pub store: Rc<RefCell<Store>>,
 }
-
 
 impl Database {
 
@@ -263,6 +257,19 @@ impl fmt::Debug for Database {
   }
 }
 
+// Holds changes to be applied to the database
+struct Transaction {
+  changes: Vec<Change>,
+}
+
+// Updates the database
+enum Change {
+  Set{table_id: u64, values: Vec<(Index, Index, Value)>},
+  NewTable{table_id: u64, rows: usize, columns: usize},
+}
+
+// ## Core
+
 // Cores are the smallest unit of a mech program exposed to a user. They hold references to all the 
 // subparts of Mech, including the database (defines the what) and the runtime (defines the how).
 // The core accepts transactions and applies those to the database. Updated tables in the database
@@ -292,6 +299,8 @@ impl Core {
   }
 
 }
+
+// ## Runtime
 
 // Defines the function of a Mech program. The runtime consists of a series of blocks, defined
 // by the user. Each block has a number of table dependencies, and produces new values that update
@@ -326,7 +335,13 @@ impl Runtime {
     Ok(())
   }
 
+  pub fn register_block(&mut self, block: Block) {
+    self.blocks.insert(block.id, block);
+  }
+
 }
+
+// ## Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
 // other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape 
@@ -335,8 +350,9 @@ impl Runtime {
 // block, which allows the programmer to break a computation down into steps. The result of the computation 
 // is then output to one or more global tables, which triggers the execution of other blocks in the network.
 struct Block {
-  pub id: usize,
+  pub id: u64,
   pub status: BlockStatus,
+  pub input: HashSet<Register>,
   pub tables: HashMap<u64, Table>,
   pub store: Store,
   pub transformations: Vec<Transformation>,
@@ -347,6 +363,7 @@ impl Block {
   pub fn new(capacity: usize) -> Block {
     Block {
       id: 0,
+      input: HashSet::new(),
       status: BlockStatus::New,
       tables: HashMap::new(),
       store: Store::new(capacity),
@@ -354,8 +371,34 @@ impl Block {
       plan: Vec::new(),
     }
   }
+
+  pub fn register_transformation(&mut self, tfm: Transformation) {
+    match tfm {
+      Transformation::Whenever{table_id, row, column} => {
+        self.input.insert(Register{table_id, row, column});
+      }
+      _ => (),
+    }
+    self.transformations.push(tfm);
+
+
+  }
+
 }
 
+impl fmt::Debug for Block {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "id: {:?}\n", self.id)?;
+    write!(f, "status: {:?}\n", self.status)?;
+    write!(f, "input: {:?}\n", self.input)?;
+    write!(f, "transformations: {:?}\n", self.transformations)?;
+    
+    Ok(())
+  }
+}
+
+#[derive(Debug)]
 enum BlockStatus {
   New,          // Has just been created, but has not been tested for satisfaction
   Ready,        // All inputs are satisfied and the block is ready to execute
@@ -369,11 +412,18 @@ enum Error {
   TableNotFound,
 }
 
+#[derive(Debug)]
 enum Transformation {
-  Scan
+  Whenever{table_id: u64, row: Index, column: Index},
+  Scan,
 }
 
-
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct Register {
+  pub table_id: u64,
+  pub row: Index,
+  pub column: Index,
+}
 
 fn main() {
 
@@ -417,9 +467,24 @@ fn main() {
   core.process_transaction(txn);
   println!("{:?}", core.database);
 
- /*
-  println!("{:?}\n", gravity);
+  let mut block = Block::new(1000);
+  block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
 
+  println!("{:?}", block);
+
+  core.runtime.register_block(block);
+
+
+  // Hand compile this...
+  /*
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity"#);*
+  */
+
+
+ /*
   print!("Running computation...");
   io::stdout().flush().unwrap();
   let rounds = 1000.0;
