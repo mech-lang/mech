@@ -20,6 +20,7 @@ use std::io::prelude::*;
 
 // A 2D table of values.
 pub struct Table {
+  pub id: u64,
   pub store:  Rc<RefCell<Store>>,
   pub rows: usize,
   pub columns: usize,
@@ -28,8 +29,9 @@ pub struct Table {
 
 impl Table {
 
-  pub fn new(store: Rc<RefCell<Store>>, rows: usize, columns: usize) -> Table {
+  pub fn new(table_id: u64, rows: usize, columns: usize, store: Rc<RefCell<Store>>) -> Table {
     Table {
+      id: table_id,
       store,
       rows,
       columns,
@@ -58,9 +60,20 @@ impl Table {
   // Set the value of at a (row, column). This will decrement the reference count of the value
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
-  pub fn set(&mut self, row: usize, column: usize, value: Value) {
+  pub fn set(&mut self, row: Index, column: Index, value: Value) {
+    
+    let row_ix = match row {
+      Index::Index(ix) => ix,
+      Index::Alias(alias) => 0, // TODO get ix from alias
+    };
+
+    let column_ix = match column {
+      Index::Index(ix) => ix,
+      Index::Alias(alias) => 0, // TODO get ix from alias
+    };
+
     let mut s = self.store.borrow_mut();
-    let ix = self.index(row, column).unwrap();
+    let ix = self.index(row_ix, column_ix).unwrap();
     let old_address = self.data[ix];
     s.dereference(old_address);
     let new_address = s.intern(value);
@@ -77,6 +90,7 @@ impl fmt::Debug for Table {
     } else {
       self.rows
     };
+    write!(f, "#{:x}\n", self.id)?;
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
@@ -165,8 +179,22 @@ impl Store {
     }
     address
   }
+}
 
-
+impl fmt::Debug for Store {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "capacity: {:?}\n", self.capacity)?;
+    write!(f, "next: {:?}\n", self.next)?;
+    write!(f, "end: {:?}\n", self.data_end)?;
+    write!(f, "free-next: {:?}\n", self.free_next)?;
+    write!(f, "free-end: {:?}\n", self.free_end)?;
+    //write!(f, "free: {:?}\n", self.free)?;
+    //write!(f, "rc  : {:?}\n", self.reference_counts)?;
+    //write!(f, "data: {:?}\n", self.data)?;
+    
+    Ok(())
+  }
 }
 
 // Holds changes to be applied to the database
@@ -176,8 +204,8 @@ struct Transaction {
 
 // Updates the database
 enum Change {
-  Set{table: u64, values: Vec<(Index, Index, Value)>},
-  NewTable{table: u64, rows: usize, columns: usize},
+  Set{table_id: u64, values: Vec<(Index, Index, Value)>},
+  NewTable{table_id: u64, rows: usize, columns: usize},
 }
 
 // The database holds a map of tables, and a data store that holds a data array of values. 
@@ -200,9 +228,39 @@ impl Database {
   }
 
   pub fn process_transaction(&mut self, txn: Transaction) -> Result<(), Error> {
+    for change in txn.changes {
+      match change {
+        Change::NewTable{table_id, rows, columns} => {
+          self.tables.insert(table_id, Rc::new(RefCell::new(Table::new(table_id, rows, columns, self.store.clone()))));
+        },
+        Change::Set{table_id, values} => {
+          match self.tables.get(&table_id) {
+            Some(table) => {
+              for (row, column, value) in values {
+                table.borrow_mut().set(row, column, value);
+              }
+            },
+            None => {
+              // TODO Throw an error here and roll back all changes
+            }
+          }
+        },
+        _ => (),
+      }
+    }
     Ok(())
   }
 
+}
+
+impl fmt::Debug for Database {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for (id,table) in self.tables.iter() {
+      write!(f, "{:?}\n", table.borrow())?;   
+    }
+    Ok(())
+  }
 }
 
 // Cores are the smallest unit of a mech program exposed to a user. They hold references to all the 
@@ -270,77 +328,96 @@ impl Runtime {
 
 }
 
-// Blocks are the smallest unit of code in a Mech program. Blocks consist of a number of "Constraints"
+// Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
+// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape 
+// them or perform computations on them. Blocks can be thought of as pure functions where the input and 
+// output are tables. Blocks have their own internal table store. Local tables can be defined within a 
+// block, which allows the programmer to break a computation down into steps. The result of the computation 
+// is then output to one or more global tables, which triggers the execution of other blocks in the network.
 struct Block {
   pub id: usize,
+  pub status: BlockStatus,
+  pub tables: HashMap<u64, Table>,
+  pub store: Store,
+  pub transformations: Vec<Transformation>,
+  pub plan: Vec<Transformation>,
 }
 
 impl Block {
-  pub fn new() -> Block {
+  pub fn new(capacity: usize) -> Block {
     Block {
       id: 0,
+      status: BlockStatus::New,
+      tables: HashMap::new(),
+      store: Store::new(capacity),
+      transformations: Vec::new(),
+      plan: Vec::new(),
     }
   }
 }
 
+enum BlockStatus {
+  New,          // Has just been created, but has not been tested for satisfaction
+  Ready,        // All inputs are satisfied and the block is ready to execute
+  Done,         // All inputs are satisfied and the block has executed
+  Unsatisfied,  // One or more inputs are not satisfied
+  Error,        // One or more errors exist on the block
+  Disabled,     // The block is disabled will not execute if it otherwise would
+}
 
 enum Error {
   TableNotFound,
 }
 
-
-
-
-
-
-impl fmt::Debug for Store {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "capacity: {:?}\n", self.capacity)?;
-    write!(f, "next: {:?}\n", self.next)?;
-    write!(f, "end: {:?}\n", self.data_end)?;
-    write!(f, "free-next: {:?}\n", self.free_next)?;
-    write!(f, "free-end: {:?}\n", self.free_end)?;
-    write!(f, "free: {:?}\n", self.free)?;
-    write!(f, "rc  : {:?}\n", self.reference_counts)?;
-    write!(f, "data: {:?}\n", self.data)?;
-    
-    Ok(())
-  }
+enum Transformation {
+  Scan
 }
+
+
 
 fn main() {
 
 
-  let balls = 4_000;
+  let balls = 10;
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
 
-  let txn = Transaction{
+  let mut txn = Transaction{
     changes: vec![
-      Change::NewTable{table: 123, rows: 4000, columns: 4}
+      Change::NewTable{table_id: 123, rows: balls, columns: 4},
+    ]
+  };
+  let mut values = vec![];
+  for i in 1..balls+1 {
+    let mut v = vec![
+      (Index::Index(i), Index::Index(1), Value::from_u64(i as u64)),
+      (Index::Index(i), Index::Index(2), Value::from_u64(i as u64)),
+      (Index::Index(i), Index::Index(3), Value::from_u64(20)),
+      (Index::Index(i), Index::Index(4), Value::from_u64(0)),
+    ];
+    values.append(&mut v);
+  }
+  txn.changes.push(Change::Set{table_id: 123, values});
+  core.process_transaction(txn);
+
+  let mut txn = Transaction{
+    changes: vec![
+      Change::NewTable{table_id: 456, rows: 1, columns: 1},
+      Change::Set{table_id: 456, values: vec![(Index::Index(1), Index::Index(1), Value::from_u64(9))]},
+      Change::NewTable{table_id: 789, rows: 1, columns: 2},
+      Change::Set{table_id: 789, values: vec![
+        (Index::Index(1), Index::Index(1), Value::from_u64(10)),
+        (Index::Index(1), Index::Index(2), Value::from_u64(0))
+      ]},
     ]
   };
 
   core.process_transaction(txn);
+  println!("{:?}", core.database);
 
-
-  /*
-  let mut table = Table::new(store.clone(),balls,4);
-  for i in 1..balls+1 {
-    table.set(i,1,Value::from_u64(i as u64));
-    table.set(i,2,Value::from_u64(i as u64));
-    table.set(i,3,Value::from_u64(20));
-    table.set(i,4,Value::from_u64(0));
-  }
-  
-  println!("{:?}\n", table);
-
-  let mut gravity = Table::new(store.clone(),1,1);  
-  gravity.set(1,1,Value::from_u64(9));  
-
+ /*
   println!("{:?}\n", gravity);
 
   print!("Running computation...");
