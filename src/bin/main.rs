@@ -17,6 +17,9 @@ use core::fmt;
 use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
+extern crate ahash;
+use std::hash::Hasher;
+use ahash::AHasher;
 
 // ## Table
 
@@ -209,6 +212,7 @@ impl fmt::Debug for Store {
 // in the database.
 struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
+  pub changed_this_round: HashSet<u64>,
   pub store: Rc<RefCell<Store>>,
 }
 
@@ -217,6 +221,7 @@ impl Database {
   pub fn new(store: Rc<RefCell<Store>>) -> Database {
     Database {
       tables: HashMap::new(),
+      changed_this_round: HashSet::new(),
       store,
     }
   }
@@ -231,7 +236,10 @@ impl Database {
           match self.tables.get(&table_id) {
             Some(table) => {
               for (row, column, value) in values {
+                // Set the value
                 table.borrow_mut().set(row, column, value);
+                // Mark the table as updated
+                self.changed_this_round.insert(Register{table_id, row: Index::All, column}.hash());
               }
             },
             None => {
@@ -250,6 +258,10 @@ impl Database {
 impl fmt::Debug for Database {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "changed this round: \n")?;
+    for changed in self.changed_this_round.iter() {
+      write!(f, "       {}\n", humanize(changed))?;
+    }
     for (id,table) in self.tables.iter() {
       write!(f, "{:?}\n", table.borrow())?;   
     }
@@ -352,7 +364,7 @@ impl Runtime {
 struct Block {
   pub id: u64,
   pub status: BlockStatus,
-  pub input: HashSet<Register>,
+  pub input: HashSet<u64>,
   pub tables: HashMap<u64, Table>,
   pub store: Store,
   pub transformations: Vec<Transformation>,
@@ -375,7 +387,7 @@ impl Block {
   pub fn register_transformation(&mut self, tfm: Transformation) {
     match tfm {
       Transformation::Whenever{table_id, row, column} => {
-        self.input.insert(Register{table_id, row, column});
+        self.input.insert(Register{table_id, row, column}.hash());
       }
       _ => (),
     }
@@ -391,7 +403,10 @@ impl fmt::Debug for Block {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "id: {:?}\n", self.id)?;
     write!(f, "status: {:?}\n", self.status)?;
-    write!(f, "input: {:?}\n", self.input)?;
+    write!(f, "input: \n")?;
+    for input in self.input.iter() {
+      write!(f, "       {}\n", humanize(input))?;
+    }
     write!(f, "transformations: {:?}\n", self.transformations)?;
     
     Ok(())
@@ -423,6 +438,16 @@ struct Register {
   pub table_id: u64,
   pub row: Index,
   pub column: Index,
+}
+
+impl Register {
+  pub fn hash(&self) -> u64 {
+    let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
+    hasher.write_u64(self.table_id);
+    hasher.write_u64(*self.row.unwrap() as u64);
+    hasher.write_u64(*self.column.unwrap() as u64);
+    hasher.finish()
+  }
 }
 
 fn main() {
@@ -465,16 +490,20 @@ fn main() {
   };
 
   core.process_transaction(txn);
-  println!("{:?}", core.database);
+  
 
   let mut block = Block::new(1000);
   block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
 
+  println!("{:?}", core.database);
   println!("{:?}", block);
 
   core.runtime.register_block(block);
 
 
+
+  
+  
   // Hand compile this...
   /*
   ~ #time/timer.ticks
@@ -535,3 +564,57 @@ fn main() {
   */
 
 }
+
+
+pub fn humanize(hash: &u64) -> String {
+  use std::mem::transmute;
+  let bytes: [u8; 8] = unsafe { transmute(hash.to_be()) };
+  let mut string = "".to_string();
+  let mut ix = 0;
+  for byte in bytes.iter() {
+    string.push_str(&DEFAULT_WORDLIST[*byte as usize]);
+    if ix < 7 {
+      string.push_str("-");
+    }
+    ix += 1;
+  }
+  string
+}
+
+pub const DEFAULT_WORDLIST: &[&str;256] = &[
+    "ack", "ama", "ine", "ska", "pha", "gel", "art", "ril",
+    "ona", "sas", "ist", "agus", "pen", "ust", "umn",
+    "ado", "con", "loo", "man", "eer", "lin", "ium",
+    "ack", "som", "lue", "ird", "avo", "dog", "ger",
+    "ter", "nia", "bon", "nal", "ina", "pet", "cat",
+    "ing", "lie", "ken", "fee", "ola", "old", "rad",
+    "met", "cut", "azy", "cup", "ota", "dec", "del",
+    "elt", "iet", "don", "ble", "ear", "rth", "eas", "ech",
+    "war", "eig", "tee", "ele", "emm", "enemy", "equal",
+    "failed", "fanta", "fifteen", "fillet", "finch", "fish", "five", "fix",
+    "floor", "florida", "football", "four", "fourteen", "foxtrot", "freddie",
+    "friend", "fruit", "gee", "gia", "glu", "olf", "gre", "grey",
+    "hamper", "happy", "harry", "hawaii", "helium", "high", "hot", "hotel",
+    "hydrogen", "idaho", "illinois", "india", "indigo", "ink", "iowa",
+    "island", "item", "jersey", "jig", "joh", "juliet", "uly", "jupiter",
+    "kansas", "kentucky", "kil", "kin", "kitten", "lactose", "lake", "lam",
+    "lemon", "ard", "lima", "lion", "lithium", "london", "louisiana",
+    "low", "magazine", "magnesium", "maine", "mango", "arc", "mar",
+    "maryland", "massachusetts", "may", "mex", "michigan", "mike",
+    "minnesota", "mirror", "mis", "missouri", "mobile", "mockingbird",
+    "monkey", "tan", "oon", "ain", "mup", "sic", "neb",
+    "une", "network", "nevada", "nine", "een", "nitrogen", "north",
+    "november", "nuts", "october", "ohio", "oklahoma", "one", "ora",
+    "ges", "oregon", "oscar", "oven", "oxygen", "papa", "paris", "pasta",
+    "pennsylvania", "pip", "pizza", "pluto", "potato", "princess", "purple",
+    "quebec", "queen", "quiet", "red", "river", "robert", "robin", "romeo",
+    "rugby", "sad", "salami", "saturn", "september", "seven", "eve",
+    "shade", "sierra", "single", "sink", "six", "sixteen", "skylark", "snake",
+    "soc", "sodium", "solar", "south", "tti", "ker", "spr",
+    "stairway", "steak", "stream", "mer", "swe", "table", "tango", "ten",
+    "tennessee", "tennis", "texas", "thirteen", "three", "timing", "triple",
+    "twe", "twenty", "two", "uncle", "ess", "uniform", "uranus", "uta",
+    "vegan", "venus", "vermont", "vic", "video", "violet", "vir",
+    "was", "est", "whiskey", "white", "iam", "win", "his",
+    "wisconsin", "wolfram", "wyo", "xray", "yankee", "yellow", "zebra",
+    "zulu" ];
