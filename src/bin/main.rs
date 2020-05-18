@@ -218,15 +218,16 @@ struct Database {
 
 impl Database {
 
-  pub fn new(store: Rc<RefCell<Store>>) -> Database {
+  pub fn new(capacity: usize) -> Database {    
     Database {
       tables: HashMap::new(),
       changed_this_round: HashSet::new(),
-      store,
+      store: Rc::new(RefCell::new(Store::new(capacity))),
     }
   }
 
   pub fn process_transaction(&mut self, txn: Transaction) -> Result<(), Error> {
+    self.changed_this_round.clear();
     for change in txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
@@ -239,7 +240,8 @@ impl Database {
                 // Set the value
                 table.borrow_mut().set(row, column, value);
                 // Mark the table as updated
-                self.changed_this_round.insert(Register{table_id, row: Index::All, column}.hash());
+                let register_hash = Register{table_id, row: Index::All, column}.hash();
+                self.changed_this_round.insert(register_hash);
               }
             },
             None => {
@@ -270,10 +272,12 @@ impl fmt::Debug for Database {
 }
 
 // Holds changes to be applied to the database
+#[derive(Clone)]
 struct Transaction {
   changes: Vec<Change>,
 }
 
+#[derive(Clone)]
 // Updates the database
 enum Change {
   Set{table_id: u64, values: Vec<(Index, Index, Value)>},
@@ -290,22 +294,22 @@ enum Change {
 // core then waits for further transactions.
 struct Core {
   runtime: Runtime,
-  database: Database,
+  database: Rc<RefCell<Database>>,
 }
 
 impl Core {
   pub fn new(capacity: usize) -> Core {
-    let mut store = Rc::new(RefCell::new(Store::new(capacity)));
+    let mut database = Rc::new(RefCell::new(Database::new(capacity)));
     Core {
-      runtime: Runtime::new(store.clone()),
-      database: Database::new(store.clone()),
+      runtime: Runtime::new(database.clone()),
+      database,
     }
   }
 
   pub fn process_transaction(&mut self, txn: Transaction) -> Result<(),Error> {
 
-    self.database.process_transaction(txn)?;
-    self.runtime.run_network()?;
+    self.database.borrow_mut().process_transaction(txn)?;
+    //self.runtime.run_network()?;
 
     Ok(())
   }
@@ -330,15 +334,15 @@ impl Core {
 // loop. This loop will terminate after a fixed number of iterations. Practically, this can be checked at
 // compile time and the user can be warned of this and instructed to include some stop condition.
 struct Runtime {
-  pub store: Rc<RefCell<Store>>,
+  pub database: Rc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
 }
 
 impl Runtime {
 
-  pub fn new(store: Rc<RefCell<Store>>) -> Runtime {
+  pub fn new(database: Rc<RefCell<Database>>) -> Runtime {
     Runtime {
-      store,
+      database,
       blocks: HashMap::new(),
     }
   }
@@ -453,7 +457,7 @@ impl Register {
 fn main() {
 
 
-  let balls = 10;
+  let balls = 4000;
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
@@ -513,13 +517,54 @@ fn main() {
   */
 
 
- /*
+ 
   print!("Running computation...");
   io::stdout().flush().unwrap();
   let rounds = 1000.0;
   let start_ns = time::precise_time_ns();
+
+  let mut values = vec![];
+  for i in 1..balls+1 {
+    let mut v = vec![
+      (Index::Index(i), Index::Index(1), Value::from_u64(i as u64 + 5)),
+      (Index::Index(i), Index::Index(2), Value::from_u64(i as u64 + 10)),
+      (Index::Index(i), Index::Index(4), Value::from_u64(i as u64)),
+    ];
+    values.append(&mut v);
+  }
+
+  let txn = Transaction{
+    changes: vec![
+      Change::Set{table_id: 123, values}
+    ]
+  };
+
   for j in 0..rounds as usize {
+    /*let mut values = vec![];
     for i in 1..balls+1 {
+      let mut v = vec![
+        (Index::Index(i), Index::Index(1), Value::from_u64(i as u64)),
+        (Index::Index(i), Index::Index(2), Value::from_u64(i as u64)),
+        (Index::Index(i), Index::Index(3), Value::from_u64(20)),
+        (Index::Index(i), Index::Index(4), Value::from_u64(0)),
+      ];
+      values.append(&mut v);
+      /*match core.database.tables.get(&123) {
+        Some(table) => {
+          // Set the value
+          let mut t = table.borrow_mut();
+          t.set(Index::Index(i), Index::Index(1), Value::from_u64(j as u64));
+          t.set(Index::Index(i), Index::Index(2), Value::from_u64(j as u64));
+          t.set(Index::Index(i), Index::Index(4), Value::from_u64(j as u64));
+          // Mark the table as updated
+          //self.changed_this_round.insert(Register{table_id, row: Index::All, column}.hash());
+        },
+        None => {
+          // TODO Throw an error here and roll back all changes
+        }
+      }*/
+      //table.borrow_mut().set(row, column, value);
+      /*
       let v3;
       {
         let s = store.borrow();
@@ -548,8 +593,14 @@ fn main() {
         v3 = v1.as_quantity().unwrap().add(v2.as_quantity().unwrap()).unwrap();
       }
       let v3 = Value::from_quantity(v3);
-      table.set(i,4,v3);
+      table.set(i,4,v3);*/
     }
+    /*let mut txn = Transaction{
+      changes: vec![
+        Change::Set{table_id: 123, values},
+      ]
+    };*/*/
+    core.process_transaction(txn.clone());
   }
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f64 / 1000000.0;   
@@ -558,10 +609,8 @@ fn main() {
   println!("{:?}s total", time / 1000.0);  
   println!("{:?}ms per iteration", per_iteration_time);  
 
-  println!("{:?}\n", table);
-
-  //println!("{:?}", store);
-  */
+  //println!("{:?}", core.database.tables);
+  
 
 }
 
