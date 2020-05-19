@@ -301,7 +301,7 @@ impl Core {
   pub fn new(capacity: usize) -> Core {
     let mut database = Rc::new(RefCell::new(Database::new(capacity)));
     Core {
-      runtime: Runtime::new(database.clone()),
+      runtime: Runtime::new(database.clone(), 1000),
       database,
     }
   }
@@ -309,11 +309,20 @@ impl Core {
   pub fn process_transaction(&mut self, txn: Transaction) -> Result<(),Error> {
 
     self.database.borrow_mut().process_transaction(txn)?;
-    //self.runtime.run_network()?;
+    self.runtime.run_network()?;
 
     Ok(())
   }
 
+}
+
+impl fmt::Debug for Core {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}\n", self.database)?;   
+    write!(f, "{:?}\n", self.runtime)?;
+    Ok(())
+  }
 }
 
 // ## Runtime
@@ -334,27 +343,99 @@ impl Core {
 // loop. This loop will terminate after a fixed number of iterations. Practically, this can be checked at
 // compile time and the user can be warned of this and instructed to include some stop condition.
 struct Runtime {
+  pub recursion_limit: u64,
   pub database: Rc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
+  pub ready_blocks: HashSet<u64>,
+  pub register_to_block: HashMap<u64,HashSet<u64>>,
+  pub changed_this_round: HashSet<u64>,
 }
 
 impl Runtime {
 
-  pub fn new(database: Rc<RefCell<Database>>) -> Runtime {
+  pub fn new(database: Rc<RefCell<Database>>, recursion_limit: u64) -> Runtime {
     Runtime {
+      recursion_limit,
       database,
       blocks: HashMap::new(),
+      ready_blocks: HashSet::new(),
+      register_to_block: HashMap::new(),
+      changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
     }
   }
 
-  pub fn run_network(&mut self) -> Result<(), Error> {
+  pub fn run_network(&mut self) -> Result<(), Error> {    
+    let mut recursion_ix = 0;
+
+    // We are going to execute ready blocks until there aren't any left or until
+    // the recursion limit is reached
+    loop {
+
+      // Solve all of the ready blocks
+      for block_id in self.ready_blocks.drain() {
+        let mut block = self.blocks.get_mut(&block_id).unwrap();
+        block.solve(self.database.clone());
+      }
+
+      // Figure out which blocks are now ready and add them to the list
+      // of ready blocks
+      for register in self.database.borrow_mut().changed_this_round.drain() {
+        self.changed_this_round.insert(register);
+        match self.register_to_block.get(&register) {
+          Some(listening_block_id) => {
+            for block_id in listening_block_id.iter() {
+              let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+              block.ready.insert(register);
+              if block.is_ready() {
+                self.ready_blocks.insert(register);
+              }
+            }
+          },
+          _ => (), // No listeners
+        }
+      }
+
+      // Break the loop if there are no more blocks that are ready
+      if self.ready_blocks.is_empty() {
+        break;
+      // Break the loop if we hit the recursion limit
+      } else if self.recursion_limit == recursion_ix {
+        // TODO Emit a warning here
+        println!("Recursion limit reached");
+        break;
+      }
+      recursion_ix += 1;
+    }
+    
+
+
     Ok(())
   }
 
   pub fn register_block(&mut self, block: Block) {
+
+    // Add the block id as a listener for a particular register
+    for input_register in block.input.iter() {
+      let listeners = self.register_to_block.entry(*input_register).or_insert(HashSet::new());
+      listeners.insert(block.id);
+    }
+
+    // Add the block to the list of blocks
     self.blocks.insert(block.id, block);
   }
 
+}
+
+impl fmt::Debug for Runtime {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "blocks: \n")?;
+    for block in self.blocks.iter() {
+      write!(f, "{:?}\n", block)?;
+    }
+    
+    Ok(())
+  }
 }
 
 // ## Block
@@ -368,6 +449,7 @@ impl Runtime {
 struct Block {
   pub id: u64,
   pub status: BlockStatus,
+  pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
   pub tables: HashMap<u64, Table>,
   pub store: Store,
@@ -379,6 +461,7 @@ impl Block {
   pub fn new(capacity: usize) -> Block {
     Block {
       id: 0,
+      ready: HashSet::new(),
       input: HashSet::new(),
       status: BlockStatus::New,
       tables: HashMap::new(),
@@ -396,8 +479,14 @@ impl Block {
       _ => (),
     }
     self.transformations.push(tfm);
+  }
 
+  pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
+    
+  }
 
+  pub fn is_ready(&self) -> bool {
+    false
   }
 
 }
@@ -407,6 +496,10 @@ impl fmt::Debug for Block {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "id: {:?}\n", self.id)?;
     write!(f, "status: {:?}\n", self.status)?;
+    write!(f, "ready: \n")?;
+    for input in self.ready.iter() {
+      write!(f, "       {}\n", humanize(input))?;
+    }
     write!(f, "input: \n")?;
     for input in self.input.iter() {
       write!(f, "       {}\n", humanize(input))?;
@@ -499,15 +592,13 @@ fn main() {
   let mut block = Block::new(1000);
   block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
 
-  println!("{:?}", core.database);
-  println!("{:?}", block);
+  //println!("{:?}", core.database);
+  //println!("{:?}", block);
 
   core.runtime.register_block(block);
 
 
-
-  
-  
+ 
   // Hand compile this...
   /*
   ~ #time/timer.ticks
@@ -520,26 +611,14 @@ fn main() {
  
   print!("Running computation...");
   io::stdout().flush().unwrap();
-  let rounds = 1000.0;
-  let start_ns = time::precise_time_ns();
-
-  let mut values = vec![];
-  for i in 1..balls+1 {
-    let mut v = vec![
-      (Index::Index(i), Index::Index(1), Value::from_u64(i as u64 + 5)),
-      (Index::Index(i), Index::Index(2), Value::from_u64(i as u64 + 10)),
-      (Index::Index(i), Index::Index(4), Value::from_u64(i as u64)),
-    ];
-    values.append(&mut v);
-  }
-
-  let txn = Transaction{
-    changes: vec![
-      Change::Set{table_id: 123, values}
-    ]
-  };
-
+  let rounds = 10.0;
+  let start_ns = time::precise_time_ns(); 
   for j in 0..rounds as usize {
+    let txn = Transaction{
+      changes: vec![
+        Change::Set{table_id: 789, values: vec![(Index::Index(1), Index::Index(2), Value::from_u64(j as u64))]}
+      ]
+    };
     /*let mut values = vec![];
     for i in 1..balls+1 {
       let mut v = vec![
@@ -609,7 +688,7 @@ fn main() {
   println!("{:?}s total", time / 1000.0);  
   println!("{:?}ms per iteration", per_iteration_time);  
 
-  //println!("{:?}", core.database.tables);
+  println!("{:?}", core);
   
 
 }
@@ -621,7 +700,7 @@ pub fn humanize(hash: &u64) -> String {
   let mut string = "".to_string();
   let mut ix = 0;
   for byte in bytes.iter() {
-    string.push_str(&DEFAULT_WORDLIST[*byte as usize]);
+    string.push_str(&WORDLIST[*byte as usize]);
     if ix < 7 {
       string.push_str("-");
     }
@@ -630,40 +709,40 @@ pub fn humanize(hash: &u64) -> String {
   string
 }
 
-pub const DEFAULT_WORDLIST: &[&str;256] = &[
+pub const WORDLIST: &[&str;256] = &[
     "ack", "ama", "ine", "ska", "pha", "gel", "art", "ril",
-    "ona", "sas", "ist", "agus", "pen", "ust", "umn",
+    "ona", "sas", "ist", "aus", "pen", "ust", "umn",
     "ado", "con", "loo", "man", "eer", "lin", "ium",
     "ack", "som", "lue", "ird", "avo", "dog", "ger",
     "ter", "nia", "bon", "nal", "ina", "pet", "cat",
     "ing", "lie", "ken", "fee", "ola", "old", "rad",
     "met", "cut", "azy", "cup", "ota", "dec", "del",
     "elt", "iet", "don", "ble", "ear", "rth", "eas", "ech",
-    "war", "eig", "tee", "ele", "emm", "enemy", "equal",
-    "failed", "fanta", "fifteen", "fillet", "finch", "fish", "five", "fix",
-    "floor", "florida", "football", "four", "fourteen", "foxtrot", "freddie",
-    "friend", "fruit", "gee", "gia", "glu", "olf", "gre", "grey",
-    "hamper", "happy", "harry", "hawaii", "helium", "high", "hot", "hotel",
-    "hydrogen", "idaho", "illinois", "india", "indigo", "ink", "iowa",
-    "island", "item", "jersey", "jig", "joh", "juliet", "uly", "jupiter",
-    "kansas", "kentucky", "kil", "kin", "kitten", "lactose", "lake", "lam",
-    "lemon", "ard", "lima", "lion", "lithium", "london", "louisiana",
-    "low", "magazine", "magnesium", "maine", "mango", "arc", "mar",
-    "maryland", "massachusetts", "may", "mex", "michigan", "mike",
-    "minnesota", "mirror", "mis", "missouri", "mobile", "mockingbird",
-    "monkey", "tan", "oon", "ain", "mup", "sic", "neb",
-    "une", "network", "nevada", "nine", "een", "nitrogen", "north",
-    "november", "nuts", "october", "ohio", "oklahoma", "one", "ora",
-    "ges", "oregon", "oscar", "oven", "oxygen", "papa", "paris", "pasta",
-    "pennsylvania", "pip", "pizza", "pluto", "potato", "princess", "purple",
-    "quebec", "queen", "quiet", "red", "river", "robert", "robin", "romeo",
-    "rugby", "sad", "salami", "saturn", "september", "seven", "eve",
-    "shade", "sierra", "single", "sink", "six", "sixteen", "skylark", "snake",
-    "soc", "sodium", "solar", "south", "tti", "ker", "spr",
-    "stairway", "steak", "stream", "mer", "swe", "table", "tango", "ten",
-    "tennessee", "tennis", "texas", "thirteen", "three", "timing", "triple",
-    "twe", "twenty", "two", "uncle", "ess", "uniform", "uranus", "uta",
-    "vegan", "venus", "vermont", "vic", "video", "violet", "vir",
-    "was", "est", "whiskey", "white", "iam", "win", "his",
-    "wisconsin", "wolfram", "wyo", "xray", "yankee", "yellow", "zebra",
-    "zulu" ];
+    "war", "eig", "tee", "ele", "emm", "ene", "qua",
+    "fai", "fan", "fif", "fil", "fin", "fis", "fiv", "fix",
+    "flo", "for", "foo", "fou", "fot", "fox", "fre",
+    "fri", "fru", "gee", "gia", "glu", "olf", "gre", "gry",
+    "ham", "hap", "har", "haw", "hel", "hig", "hot", "hol",
+    "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
+    "and", "ite", "jer", "jig", "joh", "jul", "uly", "jup",
+    "kan", "ket", "kil", "kin", "kit", "lac", "lak", "lam",
+    "lem", "ard", "lim", "lio", "lit", "lon", "lou",
+    "low", "mag", "nes", "mai", "mag", "arc", "mar",
+    "mao", "mas", "may", "mex", "mic", "mik",
+    "min", "mir", "mis", "mio", "mob", "moc",
+    "moe", "tan", "oon", "ain", "mup", "sic", "neb",
+    "une", "net", "nev", "nin", "een", "nit", "nor",
+    "nov", "nut", "oct", "ohi", "okl", "one", "ora",
+    "ges", "ore", "osc", "ove", "oxy", "pap", "par", "pas",
+    "pey", "pip", "piz", "plu", "pot", "pri", "pur",
+    "que", "que", "qui", "red", "riv", "rob", "roi", "rom",
+    "rug", "sad", "sal", "sat", "sep", "sev", "eve",
+    "sha", "sie", "sin", "sik", "six", "sit", "sky", "sne",
+    "soc", "sod", "sol", "sot", "tir", "ker", "spr",
+    "sta", "ste", "mam", "mer", "swe", "tab", "tag", "ten",
+    "see", "nis", "tex", "thi", "the", "tim", "tri",
+    "twe", "ent", "two", "unc", "ess", "uni", "ura", "uta",
+    "veg", "ven", "ver", "vic", "vid", "vio", "vir",
+    "was", "est", "whi", "hit", "iam", "win", "his",
+    "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
+    "ulu" ];
