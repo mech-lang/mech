@@ -10,7 +10,7 @@ use std::io::prelude::*;
 fn main() {
 
 
-  let balls = 100_000;
+  let balls = 100000;
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
@@ -32,7 +32,7 @@ fn main() {
     values.append(&mut v);
   }
   txn.changes.push(Change::Set{table_id: 123, values});
-  core.process_transaction(txn);
+  core.process_transaction(&txn);
 
   let mut txn = Transaction{
     changes: vec![
@@ -46,7 +46,7 @@ fn main() {
     ]
   };
 
-  core.process_transaction(txn);
+  core.process_transaction(&txn);
   
   let mut block = Block::new(1000);
   block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
@@ -86,10 +86,11 @@ fn main() {
   */
 
 
- 
+  println!("{:?}", std::mem::size_of::<Value>());
+
   print!("Running computation...");
   io::stdout().flush().unwrap();
-  let rounds = 100.0;
+  let rounds = 1000.0;
   let start_ns = time::precise_time_ns(); 
   for j in 0..rounds as usize {
     let txn = Transaction{
@@ -157,7 +158,7 @@ fn main() {
         Change::Set{table_id: 123, values},
       ]
     };*/*/
-    core.process_transaction(txn.clone());
+    core.process_transaction(&txn);
   }
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f64 / 1000000.0;   

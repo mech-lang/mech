@@ -20,34 +20,27 @@ use std::cell::RefCell;
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   Number(Quantity),
-  String(String),
-  Bool(bool),
-  Reference(TableId),
-  Empty,
+  //Bool(bool),
+  //Reference(TableId),
+  //Empty,
 }
 
 impl Value {
 
-  pub fn from_string(string: String) -> Value {
+  /*pub fn from_string(string: String) -> Value {
     Value::String(string)
-  }
+  }*/
 
-  pub fn from_str(string: &str) -> Value {
+  /*pub fn from_str(string: &str) -> Value {
     Value::String(String::from(string))
-  }
+  }*/
 
   pub fn from_u64(num: u64) -> Value {
     Value::Number(num.to_quantity())
   }
 
   pub fn from_quantity(num: Quantity) -> Value {
-    if num == ((1 as u64)<<62) {
-      Value::Bool(true)
-    } else if num == ((1 as u64)<<63) {
-      Value::Bool(false)
-    } else {
-      Value::Number(num)
-    }
+    Value::Number(num)
   }
 
   pub fn from_i64(num: i64) -> Value {
@@ -61,7 +54,7 @@ impl Value {
   pub fn as_quantity(&self) -> Option<Quantity> {
     match self {
       Value::Number(n) => Some(*n),
-      Value::Empty => Some(0.to_quantity()),
+      //Value::Empty => Some(0.to_quantity()),
       _ => None,
     }
   }
@@ -69,8 +62,8 @@ impl Value {
   pub fn as_u64(&self) -> Option<u64> {
     match self {
       Value::Number(n) => Some(n.to_float() as u64),
-      Value::Reference(TableId::Local(n)) => Some(*n),
-      Value::Reference(TableId::Global(n)) => Some(*n),
+      //Value::Reference(TableId::Local(n)) => Some(*n),
+      //Value::Reference(TableId::Global(n)) => Some(*n),
       _ => None,
     }
   }
@@ -91,38 +84,38 @@ impl Value {
 
   pub fn as_string(&self) -> Option<String> {
     match self {
-      Value::String(n) => Some(n.clone()),
+      //Value::String(n) => Some(n.clone()),
       Value::Number(q) => Some(q.format()),
-      Value::Reference(TableId::Global(r)) |
-      Value::Reference(TableId::Local(r)) => {
-        Some(format!("{:?}", r))
-      },
-      Value::Empty => Some(String::from("")),
-      Value::Bool(t) => match t {
-        true => Some(String::from("true")),
-        false => Some(String::from("false")),
-      },
+      //Value::Reference(TableId::Global(r)) |
+      //Value::Reference(TableId::Local(r)) => {
+      //  Some(format!("{:?}", r))
+      //},
+      //Value::Empty => Some(String::from("")),
+      //Value::Bool(t) => match t {
+      //  true => Some(String::from("true")),
+      //  false => Some(String::from("false")),
+      //},
       _ => None,
     }
   }
 
-  pub fn equal(&self, other: &Value) -> Option<bool> {
+  /*pub fn equal(&self, other: &Value) -> Option<bool> {
     match (self, other) {
       (Value::String(ref x), Value::String(ref y)) => {
         Some(x.to_owned() == y.to_owned())
       }
       _ => None,
     }
-  }
+  }*/
 
-  pub fn not_equal(&self, other: &Value) -> Option<bool> {
+  /*pub fn not_equal(&self, other: &Value) -> Option<bool> {
     match (self, other) {
       (Value::String(ref x), Value::String(ref y)) => {
         Some(x.to_owned() != y.to_owned())
       }
       _ => None,
     }
-  }
+  }*/
 
   pub fn less_than(&self, other: &Value) -> Option<bool> {
     None
@@ -163,10 +156,10 @@ impl fmt::Debug for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       &Value::Number(x) => write!(f, "{}", x.to_string()),
-      &Value::String(ref x) => write!(f, "{}", x),
-      &Value::Empty => write!(f, ""),
-      &Value::Bool(ref b) => write!(f, "{}", b),
-      &Value::Reference(ref b) => write!(f, "{:?}", b),
+      //&Value::String(ref x) => write!(f, "{}", x),
+      //&Value::Empty => write!(f, ""),
+      //&Value::Bool(ref b) => write!(f, "{}", b),
+      //&Value::Reference(ref b) => write!(f, "{:?}", b),
     }
   }
 }
@@ -258,13 +251,13 @@ impl Table {
   }
 
   // Transform a (row, column) into a linear address into the data. If it's out of range, return None
-  pub fn index(&self, row: Index, column: Index) -> Option<usize> {
+  pub fn index(&self, row: &Index, column: &Index) -> Option<usize> {
     let rix = match row {
-      Index::Index(ix) => ix,
+      &Index::Index(ix) => ix,
       _ => 0, // TODO aliases and all
     };
     let cix = match column {
-      Index::Index(ix) => ix,
+      &Index::Index(ix) => ix,
       _ => 0, // TODO aliases and all
     };
     if rix <= self.rows && cix <= self.columns && rix > 0 && cix > 0 {
@@ -275,7 +268,7 @@ impl Table {
   }
 
   // Get the memory address into the store at a (row, column)
-  pub fn get(&self, row: Index, column: Index) -> Option<usize> {
+  pub fn get(&self, row: &Index, column: &Index) -> Option<usize> {
     match self.index(row, column) {
       Some(ix) => Some(self.data[ix]),
       None => None,
@@ -285,12 +278,12 @@ impl Table {
   // Set the value of at a (row, column). This will decrement the reference count of the value
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
-  pub fn set(&mut self, row: Index, column: Index, value: Value) {
+  pub fn set(&mut self, row: &Index, column: &Index, value: &Value) {
     let mut s = self.store.borrow_mut();
     let ix = self.index(row, column).unwrap();
     let old_address = self.data[ix];
     s.dereference(old_address);
-    let new_address = s.intern(value);
+    let new_address = s.intern(&value);
     self.data[ix] = new_address;
   }
 
@@ -308,7 +301,7 @@ impl fmt::Debug for Table {
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
-        match self.get(Index::Index(i+1),Index::Index(j+1)) {
+        match self.get(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
             let value = &self.store.borrow().data[x];
             write!(f, "{:?} │ ", value)?;

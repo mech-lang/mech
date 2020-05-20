@@ -33,7 +33,7 @@ impl Store {
       free: vec![0; capacity],
       data_end: 1,
       reference_counts: rc,
-      data: vec![Value::Empty; capacity],
+      data: vec![Value::from_u64(0); capacity],
     }
   }
 
@@ -58,10 +58,10 @@ impl Store {
   // Intern a value into the store at the next available memory address.
   // If we are out of memory, we have to look at the list of free spaces
   // and choice one there.
-  pub fn intern(&mut self, value: Value) -> usize {
+  pub fn intern(&mut self, value: &Value) -> usize {
     self.reference_counts[self.next] = 1;
     let address = self.next;
-    self.data[address] = value;
+    self.data[address] = value.clone();
     if self.data_end + 1 == self.capacity {
       self.next = self.free[self.free_next];
       if self.free_next + 1 == self.free.len() {
@@ -103,6 +103,7 @@ pub struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
   pub changed_this_round: HashSet<u64>,
   pub store: Rc<RefCell<Store>>,
+  pub transactions: Vec<Transaction>,
 }
 
 impl Database {
@@ -112,24 +113,29 @@ impl Database {
       tables: HashMap::new(),
       changed_this_round: HashSet::new(),
       store: Rc::new(RefCell::new(Store::new(capacity))),
+      transactions: Vec::with_capacity(100_000),
     }
   }
 
-  pub fn process_transaction(&mut self, txn: Transaction) -> Result<(), Error> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(), Error> {
     self.changed_this_round.clear();
-    for change in txn.changes {
+    for change in &txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
-          self.tables.insert(table_id, Rc::new(RefCell::new(Table::new(table_id, rows, columns, self.store.clone()))));
+          self.tables.insert(*table_id, Rc::new(RefCell::new(Table::new(
+            *table_id, 
+            *rows, 
+            *columns, self.store.clone()))));
         },
         Change::Set{table_id, values} => {
           match self.tables.get(&table_id) {
             Some(table) => {
+              let mut t = table.borrow_mut();
               for (row, column, value) in values {
                 // Set the value
-                table.borrow_mut().set(row, column, value);
+                t.set(row, column, value);
                 // Mark the table as updated
-                let register_hash = Register{table_id, row: Index::All, column}.hash();
+                let register_hash = Register{table_id: *table_id, row: Index::All, column: *column}.hash();
                 self.changed_this_round.insert(register_hash);
               }
             },
