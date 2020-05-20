@@ -7,7 +7,7 @@
 // Also credit to Josh Cole for coming up with the spec
 // Adapted and extended for Mech by Corey Montella
 
-use core::mem;
+use rust_core::mem;
 use errors::{Error, ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;

@@ -5,14 +5,14 @@
 // ## Prelude
 
 use table::{Index};
-use runtime::Constraint;
+use block::Transformation;
 
 // ## The Error Struct
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Error { 
   pub block: u64,
-  pub constraint: Vec<Constraint>,
+  pub constraint: Vec<Transformation>,
   pub error_id: ErrorType,
 }
 

@@ -1,3 +1,126 @@
+use block::{Block, Error};
+use database::Database;
+use std::cell::RefCell;
+use std::rc::Rc;
+use hashbrown::{HashSet, HashMap};
+use rust_core::fmt;
+
+
+// ## Runtime
+
+// Defines the function of a Mech program. The runtime consists of a series of blocks, defined
+// by the user. Each block has a number of table dependencies, and produces new values that update
+// existing tables. Blocks can also create new tables. The data dependencies of each block define
+// a computational network of operations that runs until a steady state is reached (no more tables
+// are updated after a computational round).
+// For example, say we have three tables: #a, #b, and #c.
+// Block1 takes #a as input and writes to #b. Block2 takes #b as input and writes to #c.
+// If we update table #a with a transaction, this will trigger Block1 to execute, which will update
+// #b. This in turn will trigger Block2 to execute and it will update block #c. After this, there is
+// nothing left to update so the round of execution is complete.
+//
+// Now consider Block3 that takes #b as input and update #a and #c. Block3 will be triggered to execute
+// after Block1, and it will update #a and #c. But since Block1 takes #a as input, this causes an infinite
+// loop. This loop will terminate after a fixed number of iterations. Practically, this can be checked at
+// compile time and the user can be warned of this and instructed to include some stop condition.
+pub struct Runtime {
+  pub recursion_limit: u64,
+  pub database: Rc<RefCell<Database>>,
+  pub blocks: HashMap<u64, Block>,
+  pub ready_blocks: HashSet<u64>,
+  pub register_to_block: HashMap<u64,HashSet<u64>>,
+  pub changed_this_round: HashSet<u64>,
+}
+
+impl Runtime {
+
+  pub fn new(database: Rc<RefCell<Database>>, recursion_limit: u64) -> Runtime {
+    Runtime {
+      recursion_limit,
+      database,
+      blocks: HashMap::new(),
+      ready_blocks: HashSet::new(),
+      register_to_block: HashMap::new(),
+      changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+    }
+  }
+
+  pub fn run_network(&mut self) -> Result<(), Error> {    
+    let mut recursion_ix = 0;
+
+    // We are going to execute ready blocks until there aren't any left or until
+    // the recursion limit is reached
+    loop {
+
+      // Solve all of the ready blocks
+      for block_id in self.ready_blocks.drain() {
+        let mut block = self.blocks.get_mut(&block_id).unwrap();
+        block.solve(self.database.clone());
+      }
+
+      // Figure out which blocks are now ready and add them to the list
+      // of ready blocks
+      for register in self.database.borrow_mut().changed_this_round.drain() {
+        self.changed_this_round.insert(register);
+        match self.register_to_block.get(&register) {
+          Some(listening_block_id) => {
+            for block_id in listening_block_id.iter() {
+              let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+              block.ready.insert(register);
+              if block.is_ready() {
+                self.ready_blocks.insert(block.id);
+              }
+            }
+          },
+          _ => (), // No listeners
+        }
+      }
+
+      // Break the loop if there are no more blocks that are ready
+      if self.ready_blocks.is_empty() {
+        break;
+      // Break the loop if we hit the recursion limit
+      } else if self.recursion_limit == recursion_ix {
+        // TODO Emit a warning here
+        println!("Recursion limit reached");
+        break;
+      }
+      recursion_ix += 1;
+    }
+    
+
+
+    Ok(())
+  }
+
+  pub fn register_block(&mut self, block: Block) {
+
+    // Add the block id as a listener for a particular register
+    for input_register in block.input.iter() {
+      let listeners = self.register_to_block.entry(*input_register).or_insert(HashSet::new());
+      listeners.insert(block.id);
+    }
+
+    // Add the block to the list of blocks
+    self.blocks.insert(block.id, block);
+  }
+
+}
+
+impl fmt::Debug for Runtime {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "blocks: \n")?;
+    for block in self.blocks.iter() {
+      write!(f, "{:?}\n", block)?;
+    }
+    
+    Ok(())
+  }
+}
+
+
+/*
 // # Mech Runtime
 
 /* 
@@ -472,7 +595,7 @@ impl Block {
         },
         Constraint::Function{fnstring, parameters, output} => {
           self.functions.insert(fnstring.to_string());
-          /*for (arg_name, table, indices) in parameters {
+          for (arg_name, table, indices) in parameters {
             match (table, indices) {
               (TableId::Global(id), x) => {
                 let column = match x[0] {
@@ -483,7 +606,7 @@ impl Block {
               },
               _ => (),
             }
-          }*/
+          }
         },
         Constraint::NewTable{id, rows, columns} => {
           match id {
@@ -622,6 +745,8 @@ impl Block {
       let (row_ixes, column_ixes) = match index {
         // If we only have one index, we have two options:
         // #x{3}
+        // #x{ix}
+        // #x{#y}
         (Some(parameter), None) => {
           // Get the ixes
           let ixes: &Vec<Rc<Value>> = match &parameter {
@@ -962,7 +1087,7 @@ impl Block {
         Constraint::Function{fnstring, parameters, output} => {
           if *fnstring == "table/split" {
             let out_table = &output[0];
-            let (_, in_table) = &parameters[0];
+            let (_, in_table, _) = &parameters[0];
             let table_ref = match in_table {
               TableId::Local(id) => self.memory.get(*id).unwrap().borrow(),
               TableId::Global(id) => store.get_table(*id).unwrap().borrow(),
@@ -994,19 +1119,19 @@ impl Block {
             self.tables_modified.insert(out.id);
             self.scratch.clear();
           } else {
-            let mut arguments = Vec::with_capacity(parameters.len());
-            for (arg_name, table_id) in parameters {
+            //let mut arguments = Vec::with_capacity(parameters.len());
+            /*for (arg_name, table_id) in parameters {
               let table_ref = match table_id {
                 TableId::Local(id) => self.memory.get(*id).unwrap().clone(),
                 TableId::Global(id) => store.get_table(*id).unwrap().clone(),
               };     
               arguments.push((arg_name.clone(), table_ref));
-            }
+            }*/
             let mut out = self.memory.get(*output[0].unwrap()).unwrap().clone();
             match functions.get(fnstring) {
               Some(Some(fn_ptr)) => {
                 
-                fn_ptr(arguments, out);
+                //fn_ptr(arguments, out);
                
               }
               _ => (), // TODO Throw a function doesn't exist error
@@ -1158,12 +1283,12 @@ impl Block {
                 };
                 match truth {
                   Value::Bool(true) => {
-                    values.push((Index::Index(j as u64 + 1), from_table_ref.data[0][0].clone()));
+                    values.push((Index::Index(j + 1), from_table_ref.data[0][0].clone()));
                   },
                   Value::Number(index) => {
                     let ix = index.mantissa() as usize;
                     if ix <= to_table_ref.rows as usize {
-                      values.push((Index::Index(ix as u64), from_table_ref.data[0][0].clone()));
+                      values.push((Index::Index(ix), from_table_ref.data[0][0].clone()));
                     }
                   }
                   _ => (),
@@ -1171,7 +1296,7 @@ impl Block {
               }
               let change = Change::Set{
                 table: to_table_id.clone(), 
-                column: Index::Index(cix as u64 + 1),
+                column: Index::Index(cix + 1),
                 values 
               };                               
               self.block_changes.push(Rc::new(change));
@@ -1197,11 +1322,11 @@ impl Block {
                                _ => {continue; 0},
                              }
                            };
-                values.push((Index::Index(trix as u64 + 1), from_table_ref.data[i][j].clone()));
+                values.push((Index::Index(trix + 1), from_table_ref.data[i][j].clone()));
               }
               let change = Change::Set{
                 table: to_table_id.clone(),
-                column: Index::Index(tcix as u64 + 1),
+                column: Index::Index(tcix + 1),
                 values,
               };
               self.block_changes.push(Rc::new(change));
@@ -1231,11 +1356,11 @@ impl Block {
             for i in 0..from_width as usize {
               let mut values = Vec::with_capacity(from.rows as usize);
               let column_index = match from.column_index_to_alias[i] {
-                Some(alias) => Index::Alias(alias),
-                None => Index::Index(i as u64 + 1),
+                Some(alias) => Index::Alias(alias as usize),
+                None => Index::Index(i + 1),
               };
               for j in 0..from.rows as usize {
-                values.push((Index::Index((j as u64 + to.rows) + 1), from.data[i][j].clone()));
+                values.push((Index::Index((j + to.rows as usize) + 1), from.data[i][j].clone()));
               }
               let change = Change::Set{
                 table: *to_id, 
@@ -1266,11 +1391,11 @@ impl Block {
                 }, 
                 _ => (),
               }
-              values.push((Index::Index(row_ix as u64 + 1), data.clone()));
+              values.push((Index::Index(row_ix + 1), data.clone()));
             }
             let change = Change::Set{
               table: *to_table, 
-              column: Index::Index(col_ix as u64 + 1), 
+              column: Index::Index(col_ix + 1), 
               values,
             };
             changes.push(Rc::new(change));
@@ -1301,11 +1426,11 @@ impl Block {
                     }, 
                     _ => (),
                   }
-                  values.push((Index::Index(row_ix as u64 + 1), data.clone()));
+                  values.push((Index::Index(row_ix + 1), data.clone()));
                 }
                 let change = Change::Set{
                   table: *to_table, 
-                  column: Index::Index(col_ix as u64 + 1), 
+                  column: Index::Index(col_ix + 1), 
                   values,
                 };
                 changes.push(Rc::new(change));
@@ -1372,11 +1497,11 @@ impl Block {
           }, 
           _ => (),
         }
-        values.push((Index::Index(row_ix as u64 + 1), data.clone()));
+        values.push((Index::Index(row_ix + 1), data.clone()));
       }
       let change = Change::Set{
         table: to_table_id, 
-        column: Index::Index(col_ix as u64 + 1), 
+        column: Index::Index(col_ix + 1), 
         values,
       };
       changes.push(Rc::new(change));
@@ -1445,7 +1570,7 @@ pub enum Constraint {
   Until {tables: Vec<(TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>},
   Identifier {id: u64, text: String},
   // Transform Constraints
-  Function {fnstring: String, parameters: Vec<(String, TableId)>, output: Vec<TableId>},
+  Function {fnstring: String, parameters: Vec<(String, TableId, Vec<(Option<Parameter>, Option<Parameter>)>)>, output: Vec<TableId>},
   Constant {table: TableId, row: Index, column: Index, value: Quantity, unit: Option<String>},
   String {table: TableId, row: Index, column: Index, value: String},
   // Identity Constraints
@@ -1508,3 +1633,4 @@ pub fn clear_bit(solved: u64, bit: usize) -> u64 {
 pub fn check_bit(solved: u64, bit: usize) -> bool {
     solved & (1 << bit) != 0
 }
+*/

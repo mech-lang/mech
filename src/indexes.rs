@@ -1,3 +1,4 @@
+/*
 // # Index
 
 // ## Prelude
@@ -203,4 +204,4 @@ impl<'a> Iterator for CharChunks<'a> {
     self.s = "";
     Some(s)
   }
-}
+}*/

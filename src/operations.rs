@@ -1,3 +1,4 @@
+/*
 // # Operations
 
 // ## Prelude
@@ -56,9 +57,8 @@ macro_rules! binary_infix {
                 match x.$op(*y) {
                   Ok(op_result) => {
                     let value = Value::from_quantity(op_result);
-                    unsafe {
-                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
-                    }
+                    let value_rc = Rc::new(value);
+                    out.data[i][j] = value_rc;
                   },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
@@ -81,9 +81,8 @@ macro_rules! binary_infix {
                 match x.$op(*y) {
                   Ok(op_result) => {
                     let value = Value::from_quantity(op_result);
-                    unsafe {
-                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
-                    }
+                    let value_rc = Rc::new(value);
+                    out.data[i][j] = value_rc;
                   },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
@@ -103,9 +102,8 @@ macro_rules! binary_infix {
                 match x.$op(*y) {
                   Ok(op_result) => {
                     let value = Value::from_quantity(op_result);
-                    unsafe {
-                      *Rc::get_mut_unchecked(&mut out.data[i][j]) = value;
-                    }
+                    let value_rc = Rc::new(value);
+                    out.data[i][j] = value_rc;
                   },
                   //Err(error) => errors.push(error), // TODO Throw an error here
                   _ => (),
@@ -299,7 +297,6 @@ pub extern "C" fn table_horizontal_concatenate(input: Vec<(String, Rc<RefCell<Ta
 }
 
 pub extern "C" fn table_vertical_concatenate(input: Vec<(String, Rc<RefCell<Table>>)>, output: Rc<RefCell<Table>>) {
-
   let mut cat_table = output.borrow_mut();
 
   for (_, scanned_rc) in input {
@@ -395,3 +392,4 @@ macro_rules! logic {
 
 logic!{logic_and, &&}
 logic!{logic_or, ||}*/
+*/

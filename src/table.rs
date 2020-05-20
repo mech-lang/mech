@@ -5,12 +5,15 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use quantities::{Quantity, ToQuantity, QuantityMath};
+use database::Store;
 use hashbrown::hash_map::{HashMap, Entry};
 use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
 use std::rc::Rc;
+use std::cell::RefCell;
+
 
 // ## Row and Column
 
@@ -168,6 +171,7 @@ impl fmt::Debug for Value {
   }
 }
 
+
 // ## Table
 
 // A table starts with a tag, and has a matrix of memory available for data, 
@@ -204,15 +208,17 @@ impl fmt::Debug for TableId {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Index {
-  Index(u64),
-  Alias(u64)
+  Index(usize),
+  Alias(usize),
+  All,
 }
 
 impl Index {
-  pub fn unwrap(&self) -> &u64 {
+  pub fn unwrap(&self) -> &usize {
     match self {
       Index::Index(ix) => ix,
       Index::Alias(alias) => alias,
+      Index::All => &0,
     }
   }
 }
@@ -223,10 +229,102 @@ impl fmt::Debug for Index {
     match self {
       &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
       &Index::Alias(ref alias) => write!(f, "Alias({:#x})", alias),
+      &Index::All => write!(f, "All"),
     }
   }
 }
 
+// ## Table
+
+// A 2D table of values.
+pub struct Table {
+  pub id: u64,
+  pub store:  Rc<RefCell<Store>>,
+  pub rows: usize,
+  pub columns: usize,
+  pub data: Vec<usize>, // Each entry is a memory address into the store
+}
+
+impl Table {
+
+  pub fn new(table_id: u64, rows: usize, columns: usize, store: Rc<RefCell<Store>>) -> Table {
+    Table {
+      id: table_id,
+      store,
+      rows,
+      columns,
+      data: vec![0; rows*columns], // Initialize with zeros, indicating Value::Empty (always the zeroth element of the store)
+    }
+  }
+
+  // Transform a (row, column) into a linear address into the data. If it's out of range, return None
+  pub fn index(&self, row: Index, column: Index) -> Option<usize> {
+    let rix = match row {
+      Index::Index(ix) => ix,
+      _ => 0, // TODO aliases and all
+    };
+    let cix = match column {
+      Index::Index(ix) => ix,
+      _ => 0, // TODO aliases and all
+    };
+    if rix <= self.rows && cix <= self.columns && rix > 0 && cix > 0 {
+      Some((rix - 1) * self.columns + (cix - 1))
+    } else {
+      None
+    }
+  }
+
+  // Get the memory address into the store at a (row, column)
+  pub fn get(&self, row: Index, column: Index) -> Option<usize> {
+    match self.index(row, column) {
+      Some(ix) => Some(self.data[ix]),
+      None => None,
+    }
+  }
+
+  // Set the value of at a (row, column). This will decrement the reference count of the value
+  // at the old address, and insert the new value into the store while pointing the cell to the
+  // new address.
+  pub fn set(&mut self, row: Index, column: Index, value: Value) {
+    let mut s = self.store.borrow_mut();
+    let ix = self.index(row, column).unwrap();
+    let old_address = self.data[ix];
+    s.dereference(old_address);
+    let new_address = s.intern(value);
+    self.data[ix] = new_address;
+  }
+
+}
+
+impl fmt::Debug for Table {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let rows = if self.rows > 10 {
+      10
+    } else {
+      self.rows
+    };
+    write!(f, "#{:x} ({} x {})\n", self.id, self.rows, self.columns)?;
+    for i in 0..rows {
+      write!(f, "│ ", )?;
+      for j in 0..self.columns {
+        match self.get(Index::Index(i+1),Index::Index(j+1)) {
+          Some(x) => {
+            let value = &self.store.borrow().data[x];
+            write!(f, "{:?} │ ", value)?;
+          },
+          _ => (),
+        }
+        
+      }
+      write!(f, "\n")?;
+    }
+    
+    Ok(())
+  }
+}
+
+/*
 // ### Table
 
 #[derive(Clone, PartialEq)]
@@ -262,13 +360,14 @@ impl Table {
     self.data.clear();
   }
 
-  pub fn get_row_index(&self, row: &Index) -> Option<u64> {
+  pub fn get_row_index(&self, row: &Index) -> Option<usize> {
     match row {
       Index::Index(ix) => Some(*ix),
-      Index::Alias(alias) => match self.row_aliases.get(&alias) {
-        Some(ix) => Some(ix.clone()),
+      Index::Alias(alias) => match self.row_aliases.get(&(*alias as u64)) {
+        Some(ix) => Some(ix.clone() as usize),
         None => None,
       },
+      Index::All => None,
     }
   }
 
@@ -281,17 +380,19 @@ impl Table {
           None
         }
       },
-      Index::Alias(alias) => Some(*alias),
+      Index::Alias(alias) => Some(*alias as u64),
+      Index::All => None,
     }
   }
 
   pub fn get_column_index(&self, column: &Index) -> Option<u64> {
     match column {
-      Index::Index(ix) => Some(*ix),
-      Index::Alias(alias) => match self.column_aliases.get(&alias) {
+      Index::Index(ix) => Some(*ix as u64),
+      Index::Alias(alias) => match self.column_aliases.get(&(*alias as u64)) {
         Some(ix) => Some(ix.clone()),
         None => None,
       },
+      Index::All => None,
     }
   }
 
@@ -436,7 +537,7 @@ impl Table {
   pub fn index(&self, row: &Index, column: &Index) -> Option<&Value> {
     let row_ix = self.get_row_index(row).unwrap();
     let column_ix = self.get_column_index(column).unwrap();
-    if column_ix <= self.columns && row_ix <= self.rows {
+    if column_ix <= self.columns && row_ix <= self.rows as usize {
       Some(&self.data[column_ix as usize - 1][row_ix as usize - 1])
     } else {
       None
@@ -504,7 +605,7 @@ impl fmt::Debug for Table {
       print_row(column_labels, cell_width as usize, f);
       print_inner_border(self.columns as usize, cell_width as usize,  f);
       for m in 1 .. max_rows + 1 {
-        print_row(self.get_row(&Index::Index(m)).unwrap(), cell_width as usize, f);
+        print_row(self.get_row(&Index::Index(m as usize)).unwrap(), cell_width as usize, f);
       }
       print_bottom_border(self.columns as usize, cell_width as usize,  f);
     }
@@ -573,4 +674,4 @@ fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) {
   }
   print_repeated_char("─", m, f);
   write!(f, "┘\n").unwrap();
-}
+}*/
