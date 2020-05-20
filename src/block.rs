@@ -58,51 +58,87 @@ impl Block {
 
   pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
     let mut changes = Vec::with_capacity(4000);
-    for step in &self.plan {
+    'step_loop: for step in &self.plan {
       match step {
-        Transformation::Function{name, lhs_table, lhs_column, rhs_table, rhs_column, output_table, output_column} => {
-          match name {
-            0x13166E07A8EF9CC3 => {
-              let db = database.borrow_mut();
+        Transformation::Function{name, lhs, rhs, out} => {
+          let (lhs_table_id, lhs_rows, lhs_columns) = lhs;
+          let (rhs_table_id, rhs_rows, rhs_columns) = rhs;
+          let (out_table_id, out_rows, out_columns) = out;
+          let db = database.borrow_mut();
+          let lhs_table = db.tables.get(&lhs_table_id).unwrap().borrow();
+          let rhs_table = db.tables.get(&rhs_table_id).unwrap().borrow();
+          let store = &db.store.borrow();
+          // Figure out dimensions
+          let equal_dimensions = if lhs_table.rows == rhs_table.rows && lhs_table.columns == rhs_table.columns 
+          { true } else { false };
+          let lhs_scalar = if lhs_table.rows == 1 && lhs_table.columns == 1 
+          { true } else { false };
+          let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
+          { true } else { false };
 
-              let mut rows = 0;
-              {
-                let lhs = db.tables.get(&lhs_table).unwrap().borrow();
-                rows = lhs.rows;
-              }
+          match (name, lhs_rows, rhs_rows, equal_dimensions, lhs_scalar, rhs_scalar) {
+            // Same size
+            (0x13166E07A8EF9CC3, Index::All, Index::All, true, _, _) => {
               let mut function_result = Value::from_u64(0);
-              let mut values = Vec::with_capacity(rows);
-              for i in 1..rows+1 {
-                {
-                  let lhs = db.tables.get(&lhs_table).unwrap().borrow();
-                  let rhs = db.tables.get(&rhs_table).unwrap().borrow();
-                  match (lhs.get(&Index::Index(i), lhs_column), rhs.get(&Index::Index(i), rhs_column)) {
-                    (Some(lhs_ix), Some(rhs_ix)) => {
-                      let lhs_value = &db.store.borrow().data[lhs_ix];
-                      let rhs_value = &db.store.borrow().data[rhs_ix];
-                      match (lhs_value, rhs_value) {
-                        (Value::Number(x), Value::Number(y)) => {
-                          match x.add(*y) {
-                            Ok(result) => {
-                              function_result = Value::from_quantity(result);
-                            }
-                            Err(_) => (), // TODO Handle error here
+              let mut values = Vec::with_capacity(lhs_table.rows);
+              for (lix,rix) in (1..=lhs_table.rows).zip(1..=rhs_table.rows) {
+                match (lhs_table.get(&Index::Index(lix), lhs_columns), rhs_table.get(&Index::Index(rix), rhs_columns)) {
+                  (Some(lhs_ix), Some(rhs_ix)) => {
+                    let lhs_value = &store.data[lhs_ix];
+                    let rhs_value = &store.data[rhs_ix];
+                    match (lhs_value, rhs_value) {
+                      (Value::Number(x), Value::Number(y)) => {
+                        match x.add(*y) {
+                          Ok(result) => {
+                            function_result = Value::from_quantity(result);
                           }
+                          Err(_) => (), // TODO Handle error here
                         }
-                        _ => (),
                       }
-                      
+                      _ => (),
                     }
-                    _ => (),
+                    
                   }
+                  _ => (),
                 }
-                values.push((Index::Index(i), *output_column, function_result.clone()));
+                values.push((Index::Index(lix), *out_columns, function_result.clone()));
               }
               changes.push(Change::Set{
-                table_id: *output_table,
+                table_id: *out_table_id,
                 values,
               });
-            }
+            },
+            // RHS is scalar
+            (0x13166E07A8EF9CC3, Index::All, Index::All, false, _, true) => {
+              let mut function_result = Value::from_u64(0);
+              let mut values = Vec::with_capacity(lhs_table.rows);
+              for (lix,rix) in (1..=lhs_table.rows).zip(std::iter::repeat(1)) {
+                match (lhs_table.get(&Index::Index(lix), lhs_columns), rhs_table.get(&Index::Index(rix), &Index::Index(rix))) {
+                  (Some(lhs_ix), Some(rhs_ix)) => {
+                    let lhs_value = &store.data[lhs_ix];
+                    let rhs_value = &store.data[rhs_ix];
+                    match (lhs_value, rhs_value) {
+                      (Value::Number(x), Value::Number(y)) => {
+                        match x.add(*y) {
+                          Ok(result) => {
+                            function_result = Value::from_quantity(result);
+                          }
+                          Err(_) => (), // TODO Handle error here
+                        }
+                      }
+                      _ => (),
+                    }
+                    
+                  }
+                  _ => (),
+                }
+                values.push((Index::Index(lix), *out_columns, function_result.clone()));
+              }
+              changes.push(Change::Set{
+                table_id: *out_table_id,
+                values,
+              });
+            },
             _ => (),
           }
         }
@@ -177,7 +213,7 @@ pub enum Error {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
   Whenever{table_id: u64, row: Index, column: Index},
-  Function{name: u64, lhs_table: u64, lhs_column: Index, rhs_table: u64, rhs_column: Index, output_table: u64, output_column: Index},
+  Function{name: u64, lhs: (u64, Index, Index), rhs: (u64, Index, Index), out: (u64, Index, Index)},
   Scan,
 }
 
@@ -215,39 +251,40 @@ pub fn humanize(hash: &u64) -> String {
 }
 
 pub const WORDLIST: &[&str;256] = &[
-    "ack", "ama", "ine", "ska", "pha", "gel", "art", "ril",
-    "ona", "sas", "ist", "aus", "pen", "ust", "umn",
-    "ado", "con", "loo", "man", "eer", "lin", "ium",
-    "ack", "som", "lue", "ird", "avo", "dog", "ger",
-    "ter", "nia", "bon", "nal", "ina", "pet", "cat",
-    "ing", "lie", "ken", "fee", "ola", "old", "rad",
-    "met", "cut", "azy", "cup", "ota", "dec", "del",
-    "elt", "iet", "don", "ble", "ear", "rth", "eas", "ech",
-    "war", "eig", "tee", "ele", "emm", "ene", "qua",
-    "fai", "fan", "fif", "fil", "fin", "fis", "fiv", "fix",
-    "flo", "for", "foo", "fou", "fot", "fox", "fre",
-    "fri", "fru", "gee", "gia", "glu", "olf", "gre", "gry",
-    "ham", "hap", "har", "haw", "hel", "hig", "hot", "hol",
-    "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
-    "and", "ite", "jer", "jig", "joh", "jul", "uly", "jup",
-    "kan", "ket", "kil", "kin", "kit", "lac", "lak", "lam",
-    "lem", "ard", "lim", "lio", "lit", "lon", "lou",
-    "low", "mag", "nes", "mai", "mag", "arc", "mar",
-    "mao", "mas", "may", "mex", "mic", "mik",
-    "min", "mir", "mis", "mio", "mob", "moc",
-    "moe", "tan", "oon", "ain", "mup", "sic", "neb",
-    "une", "net", "nev", "nin", "een", "nit", "nor",
-    "nov", "nut", "oct", "ohi", "okl", "one", "ora",
-    "ges", "ore", "osc", "ove", "oxy", "pap", "par", "pas",
-    "pey", "pip", "piz", "plu", "pot", "pri", "pur",
-    "que", "que", "qui", "red", "riv", "rob", "roi", "rom",
-    "rug", "sad", "sal", "sat", "sep", "sev", "eve",
-    "sha", "sie", "sin", "sik", "six", "sit", "sky", "sne",
-    "soc", "sod", "sol", "sot", "tir", "ker", "spr",
-    "sta", "ste", "mam", "mer", "swe", "tab", "tag", "ten",
-    "see", "nis", "tex", "thi", "the", "tim", "tri",
-    "twe", "ent", "two", "unc", "ess", "uni", "ura", "uta",
-    "veg", "ven", "ver", "vic", "vid", "vio", "vir",
-    "was", "est", "whi", "hit", "iam", "win", "his",
-    "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
-    "ulu" ];
+  "ack", "ama", "ine", "ska", "pha", "gel", "art", 
+  "ona", "sas", "ist", "aus", "pen", "ust", "umn",
+  "ado", "con", "loo", "man", "eer", "lin", "ium",
+  "ack", "som", "lue", "ird", "avo", "dog", "ger",
+  "ter", "nia", "bon", "nal", "ina", "pet", "cat",
+  "ing", "lie", "ken", "fee", "ola", "old", "rad",
+  "met", "cut", "azy", "cup", "ota", "dec", "del",
+  "elt", "iet", "don", "ble", "ear", "rth", "eas", 
+  "war", "eig", "tee", "ele", "emm", "ene", "qua",
+  "fai", "fan", "fif", "fil", "fin", "fis", "fiv", 
+  "flo", "for", "foo", "fou", "fot", "fox", "fre",
+  "fri", "fru", "gee", "gia", "glu", "olf", "gre", 
+  "ham", "hap", "har", "haw", "hel", "hig", "hot", 
+  "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
+  "and", "ite", "jer", "jig", "joh", "jul", "uly", 
+  "kan", "ket", "kil", "kin", "kit", "lac", "lak", 
+  "lem", "ard", "lim", "lio", "lit", "lon", "lou",
+  "low", "mag", "nes", "mai", "mag", "arc", "mar",
+  "mao", "mas", "may", "mex", "mic", "mik", "ril",
+  "min", "mir", "mis", "mio", "mob", "moc", "ech",
+  "moe", "tan", "oon", "ain", "mup", "sic", "neb",
+  "une", "net", "nev", "nin", "een", "nit", "nor",
+  "nov", "nut", "oct", "ohi", "okl", "one", "ora",
+  "ges", "ore", "osc", "ove", "oxy", "pap", "par", 
+  "pey", "pip", "piz", "plu", "pot", "pri", "pur",
+  "que", "que", "qui", "red", "riv", "rob", "roi", 
+  "rug", "sad", "sal", "sat", "sep", "sev", "eve",
+  "sha", "sie", "sin", "sik", "six", "sit", "sky", 
+  "soc", "sod", "sol", "sot", "tir", "ker", "spr",
+  "sta", "ste", "mam", "mer", "swe", "tab", "tag", 
+  "see", "nis", "tex", "thi", "the", "tim", "tri",
+  "twe", "ent", "two", "unc", "ess", "uni", "ura", 
+  "veg", "ven", "ver", "vic", "vid", "vio", "vir",
+  "was", "est", "whi", "hit", "iam", "win", "his",
+  "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
+  "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
+  "rom", "sne", "ten", "uta"];

@@ -10,11 +10,20 @@ use std::io::prelude::*;
 fn main() {
 
 
-  let balls = 100000;
+  let balls = 4000;
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
+
+/*
+  x = 1:4000
+  y = 1:4000
+  #ball = [|x   y   vx  vy|
+            x   y   20  0]
+  #gravity = 1
+  #time/timer = [period: 1, ticks: 0]
+*/
 
   let mut txn = Transaction{
     changes: vec![
@@ -27,7 +36,7 @@ fn main() {
       (Index::Index(i), Index::Index(1), Value::from_u64(i as u64)),
       (Index::Index(i), Index::Index(2), Value::from_u64(i as u64)),
       (Index::Index(i), Index::Index(3), Value::from_u64(20)),
-      (Index::Index(i), Index::Index(4), Value::from_u64(0)),
+      (Index::Index(i), Index::Index(4), Value::from_u64(1)),
     ];
     values.append(&mut v);
   }
@@ -47,26 +56,33 @@ fn main() {
   };
 
   core.process_transaction(&txn);
-  
+
+/*
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+*/
+
   let mut block = Block::new(1000);
   block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
   block.register_transformation(Transformation::Function{
     name: 0x13166E07A8EF9CC3, 
-    lhs_table: 123, lhs_column: Index::Index(1), 
-    rhs_table: 123, rhs_column: Index::Index(3),
-    output_table: 123, output_column: Index::Index(1)
+    lhs: (123, Index::All, Index::Index(1)), 
+    rhs: (123, Index::All, Index::Index(3)),
+    out: (123, Index::All, Index::Index(1))
   });
   block.register_transformation(Transformation::Function{
     name: 0x13166E07A8EF9CC3, 
-    lhs_table: 123, lhs_column: Index::Index(2), 
-    rhs_table: 123, rhs_column: Index::Index(4),
-    output_table: 123, output_column: Index::Index(2)
+    lhs: (123, Index::All, Index::Index(2)), 
+    rhs: (123, Index::All, Index::Index(4)),
+    out: (123, Index::All, Index::Index(2))
   });
   block.register_transformation(Transformation::Function{
     name: 0x13166E07A8EF9CC3, 
-    lhs_table: 123, lhs_column: Index::Index(3), 
-    rhs_table: 123, rhs_column: Index::Index(4),
-    output_table: 123, output_column: Index::Index(4)
+    lhs: (123, Index::All, Index::Index(4)), 
+    rhs: (456, Index::All, Index::All),
+    out: (123, Index::All, Index::Index(4))
   });
 
 
@@ -164,8 +180,8 @@ fn main() {
   let time = (end_ns - start_ns) as f64 / 1000000.0;   
   let per_iteration_time = time / rounds;
   println!("Done!");
-  println!("{:?}s total", time / 1000.0);  
-  println!("{:?}ms per iteration", per_iteration_time);  
+  println!("{:0.4?}s total", time / 1000.0);  
+  println!("{:0.4?}ms per iteration", per_iteration_time);  
 
   println!("{:?}", core);
   

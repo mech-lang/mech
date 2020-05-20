@@ -101,6 +101,7 @@ impl fmt::Debug for Store {
 // in the database.
 pub struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
+  pub alias_map: HashMap<(u64, u64), u64>,
   pub changed_this_round: HashSet<u64>,
   pub store: Rc<RefCell<Store>>,
   pub transactions: Vec<Transaction>,
@@ -111,6 +112,7 @@ impl Database {
   pub fn new(capacity: usize) -> Database {    
     Database {
       tables: HashMap::new(),
+      alias_map: HashMap::new(),
       changed_this_round: HashSet::new(),
       store: Rc::new(RefCell::new(Store::new(capacity))),
       transactions: Vec::with_capacity(100_000),
