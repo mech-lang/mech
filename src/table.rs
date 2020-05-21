@@ -298,13 +298,21 @@ impl fmt::Debug for Table {
       self.rows
     };
     write!(f, "#{:x} ({} x {})\n", self.id, self.rows, self.columns)?;
+    print_top_border(self.columns, 5, f)?;
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
         match self.get(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
             let value = &self.store.borrow().data[x];
-            write!(f, "{:?} │ ", value)?;
+            let text = format!("{:?}", value);
+            write!(f, "{:?}", value)?;
+            if text.len() < 3 {
+              for _ in 0..3-text.len() {
+                write!(f, " ")?;
+              }
+            }
+            write!(f, " │ ")?;
           },
           _ => (),
         }
@@ -312,9 +320,46 @@ impl fmt::Debug for Table {
       }
       write!(f, "\n")?;
     }
+    if self.rows > 10 {
+      write!(f, "│")?;
+      for j in 0..self.columns {
+        write!(f, " ... │")?;
+      }
+      write!(f, "\n")?;
+    }
+    print_bottom_border(self.columns, 5, f)?;
     
     Ok(())
   }
+}
+
+fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  write!(f, "┌")?;
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "┬")?;
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┐\n")?;
+  Ok(())
+}
+
+fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  write!(f, "└")?;
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "┴")?;
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┘\n")?;
+  Ok(())
+}
+
+fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  for _ in 0..n {
+    write!(f, "{}", to_print)?;
+  }
+  Ok(())
 }
 
 /*
