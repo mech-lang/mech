@@ -1,4 +1,4 @@
-use table::{Table, Index, Value};
+use table::{Table, TableId, Index, Value};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity};
@@ -25,8 +25,8 @@ pub struct Block {
   pub state: BlockState,
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
-  pub tables: HashMap<u64, Table>,
-  pub store: Store,
+  pub tables: HashMap<u64, Rc<RefCell<Table>>>,
+  pub store: Rc<RefCell<Store>>,
   pub transformations: Vec<Transformation>,
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
@@ -40,7 +40,7 @@ impl Block {
       input: HashSet::new(),
       state: BlockState::New,
       tables: HashMap::new(),
-      store: Store::new(capacity),
+      store: Rc::new(RefCell::new(Store::new(capacity))),
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
@@ -69,8 +69,14 @@ impl Block {
           let (rhs_table_id, rhs_rows, rhs_columns) = rhs;
           let (out_table_id, out_rows, out_columns) = out;
           let db = database.borrow_mut();
-          let lhs_table = db.tables.get(&lhs_table_id).unwrap().borrow();
-          let rhs_table = db.tables.get(&rhs_table_id).unwrap().borrow();
+          let lhs_table = match lhs_table_id {
+            TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
+            TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+          };
+          let rhs_table = match rhs_table_id {
+            TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
+            TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+          };
           let store = &db.store.borrow();
 
           // Figure out dimensions
@@ -131,7 +137,7 @@ impl Block {
             values.push((Index::Index(lrix), *out_columns, function_result.clone()));
           }
           changes.push(Change::Set{
-            table_id: *out_table_id,
+            table_id: *out_table_id.unwrap(),
             values,
           });
         }
@@ -206,7 +212,7 @@ pub enum Error {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
   Whenever{table_id: u64, row: Index, column: Index},
-  Function{name: u64, lhs: (u64, Index, Index), rhs: (u64, Index, Index), out: (u64, Index, Index)},
+  Function{name: u64, lhs: (TableId, Index, Index), rhs: (TableId, Index, Index), out: (TableId, Index, Index)},
   Scan,
 }
 
