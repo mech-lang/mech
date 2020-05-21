@@ -47,6 +47,14 @@ impl Block {
     }
   }
 
+  pub fn gen_id(&mut self) {
+    let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
+    for tfm in &self.transformations {
+      hasher.write(format!("{:?}", tfm).as_bytes());
+    }
+    self.id = hasher.finish();   
+  }
+
   pub fn register_transformation(&mut self, tfm: Transformation) {
     match tfm {
       Transformation::Whenever{table_id, row, column} => {
@@ -64,9 +72,9 @@ impl Block {
     let mut changes = Vec::with_capacity(4000);
     'step_loop: for step in &self.plan {
       match step {
-        Transformation::Function{name, lhs, rhs, out} => {
-          let (lhs_table_id, lhs_rows, lhs_columns) = lhs;
-          let (rhs_table_id, rhs_rows, rhs_columns) = rhs;
+        Transformation::Function{name, arguments, out} => {
+          let (lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
+          let (rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
           let (out_table_id, out_rows, out_columns) = out;
           let db = database.borrow_mut();
           let lhs_table = match lhs_table_id {
@@ -172,7 +180,7 @@ impl Block {
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "id: {:?}\n", self.id)?;
+    write!(f, "id: {:x}\n", self.id)?;
     write!(f, "state: {:?}\n", self.state)?;
     write!(f, "ready: \n")?;
     for input in self.ready.iter() {
@@ -212,7 +220,7 @@ pub enum Error {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
   Whenever{table_id: u64, row: Index, column: Index},
-  Function{name: u64, lhs: (TableId, Index, Index), rhs: (TableId, Index, Index), out: (TableId, Index, Index)},
+  Function{name: u64, arguments: Vec<(TableId, Index, Index)>, out: (TableId, Index, Index)},
   Scan,
 }
 
