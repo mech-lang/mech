@@ -1,5 +1,5 @@
-use block::{Block, Error};
-use database::Database;
+use block::{Block, BlockState, Error};
+use database::{Database, Transaction, Change};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::{HashSet, HashMap};
@@ -93,7 +93,7 @@ impl Runtime {
     Ok(())
   }
 
-  pub fn register_block(&mut self, block: Block) {
+  pub fn register_block(&mut self, mut block: Block) {
 
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
@@ -101,8 +101,15 @@ impl Runtime {
       listeners.insert(block.id);
     }
 
+    if block.state == BlockState::New && block.input.len() == 0 {
+      block.state == BlockState::Ready;
+      self.ready_blocks.insert(block.id);
+    }
+
     // Add the block to the list of blocks
     self.blocks.insert(block.id, block);
+
+    self.run_network();
   }
 
 }
