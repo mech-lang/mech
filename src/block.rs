@@ -25,6 +25,7 @@ pub struct Block {
   pub state: BlockState,
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
+  pub output: HashSet<u64>,
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
   pub store: Rc<RefCell<Store>>,
   pub transformations: Vec<Transformation>,
@@ -38,6 +39,7 @@ impl Block {
       id: 0,
       ready: HashSet::new(),
       input: HashSet::new(),
+      output: HashSet::new(),
       state: BlockState::New,
       tables: HashMap::new(),
       store: Rc::new(RefCell::new(Store::new(capacity))),
@@ -60,7 +62,9 @@ impl Block {
       Transformation::Whenever{table_id, row, column} => {
         self.input.insert(Register{table_id, row, column}.hash());
       }
-      Transformation::Function{..} => {
+      Transformation::Function{name, ref arguments, out} => {
+        let (out_id, _, _) = out;
+        self.output.insert(*out_id.unwrap());
         self.plan.push(tfm.clone());
       }
       _ => (),
@@ -190,6 +194,10 @@ impl fmt::Debug for Block {
     for input in self.input.iter() {
       write!(f, "       {}\n", humanize(input))?;
     }
+    write!(f, "output: \n")?;
+    for output in self.output.iter() {
+      write!(f, "       {}\n", humanize(output))?;
+    }
     write!(f, "transformations: \n")?;
     for tfm in self.transformations.iter() {
       write!(f, "       {:?}\n", tfm)?;
@@ -219,6 +227,9 @@ pub enum Error {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
+  NewTable{table_id: TableId, rows: usize, columns: usize },
+  ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
+  RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: u64, row: Index, column: Index},
   Function{name: u64, arguments: Vec<(TableId, Index, Index)>, out: (TableId, Index, Index)},
   Scan,
@@ -311,7 +322,7 @@ pub fn humanize(hash: &u64) -> String {
 }
 
 pub const WORDLIST: &[&str;256] = &[
-  "ack", "ama", "ine", "ska", "pha", "gel", "art", 
+  "nil", "ama", "ine", "ska", "pha", "gel", "art", 
   "ona", "sas", "ist", "aus", "pen", "ust", "umn",
   "ado", "con", "loo", "man", "eer", "lin", "ium",
   "ack", "som", "lue", "ird", "avo", "dog", "ger",
@@ -322,13 +333,13 @@ pub const WORDLIST: &[&str;256] = &[
   "war", "eig", "tee", "ele", "emm", "ene", "qua",
   "fai", "fan", "fif", "fil", "fin", "fis", "fiv", 
   "flo", "for", "foo", "fou", "fot", "fox", "fre",
-  "fri", "fru", "gee", "gia", "glu", "olf", "gre", 
+  "fri", "fru", "gee", "gia", "glu", "fol", "gre", 
   "ham", "hap", "har", "haw", "hel", "hig", "hot", 
   "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
   "and", "ite", "jer", "jig", "joh", "jul", "uly", 
   "kan", "ket", "kil", "kin", "kit", "lac", "lak", 
   "lem", "ard", "lim", "lio", "lit", "lon", "lou",
-  "low", "mag", "nes", "mai", "mag", "arc", "mar",
+  "low", "mag", "nes", "mai", "gam", "arc", "mar",
   "mao", "mas", "may", "mex", "mic", "mik", "ril",
   "min", "mir", "mis", "mio", "mob", "moc", "ech",
   "moe", "tan", "oon", "ain", "mup", "sic", "neb",
@@ -336,7 +347,7 @@ pub const WORDLIST: &[&str;256] = &[
   "nov", "nut", "oct", "ohi", "okl", "one", "ora",
   "ges", "ore", "osc", "ove", "oxy", "pap", "par", 
   "pey", "pip", "piz", "plu", "pot", "pri", "pur",
-  "que", "que", "qui", "red", "riv", "rob", "roi", 
+  "que", "uqi", "qui", "red", "riv", "rob", "roi", 
   "rug", "sad", "sal", "sat", "sep", "sev", "eve",
   "sha", "sie", "sin", "sik", "six", "sit", "sky", 
   "soc", "sod", "sol", "sot", "tir", "ker", "spr",
