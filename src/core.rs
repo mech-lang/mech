@@ -41,7 +41,7 @@ impl Core {
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}\n", self.database)?;   
+    write!(f, "{:?}\n", self.database.borrow())?;   
     write!(f, "{:?}\n", self.runtime)?;
     Ok(())
   }
