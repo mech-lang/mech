@@ -17,7 +17,7 @@ use std::cell::RefCell;
 
 // ## Row and Column
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Value {
   Number(Quantity),
   //Bool(bool),
@@ -268,9 +268,21 @@ impl Table {
   }
 
   // Get the memory address into the store at a (row, column)
-  pub fn get(&self, row: &Index, column: &Index) -> Option<usize> {
+  pub fn get_address(&self, row: &Index, column: &Index) -> Option<usize> {
     match self.index(row, column) {
       Some(ix) => Some(self.data[ix]),
+      None => None,
+    }
+  }
+
+  // Get the value in the store at memory address (row, column)
+  pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let s = self.store.borrow();
+        Some(s.data[address])
+      },
       None => None,
     }
   }
@@ -292,23 +304,23 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let rows = if self.rows > 10 {
+    let rows = if self.rows > 15 {
       10
     } else {
       self.rows
     };
     write!(f, "#{:x} ({} x {})\n", self.id, self.rows, self.columns)?;
-    print_top_border(self.columns, 5, f)?;
+    print_top_border(self.columns, 7, f)?;
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
-        match self.get(&Index::Index(i+1),&Index::Index(j+1)) {
+        match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
             let value = &self.store.borrow().data[x];
             let text = format!("{:?}", value);
             write!(f, "{:?}", value)?;
-            if text.len() < 3 {
-              for _ in 0..3-text.len() {
+            if text.len() < 5 {
+              for _ in 0..5-text.len() {
                 write!(f, " ")?;
               }
             }
@@ -323,11 +335,32 @@ impl fmt::Debug for Table {
     if self.rows > 10 {
       write!(f, "│")?;
       for j in 0..self.columns {
-        write!(f, " ... │")?;
+        write!(f, "  ...  │")?;
       }
       write!(f, "\n")?;
+      for i in self.rows-3..self.rows {
+        write!(f, "│ ", )?;
+        for j in 0..self.columns {
+          match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
+            Some(x) => {
+              let value = &self.store.borrow().data[x];
+              let text = format!("{:?}", value);
+              write!(f, "{:?}", value)?;
+              if text.len() < 5 {
+                for _ in 0..5-text.len() {
+                  write!(f, " ")?;
+                }
+              }
+              write!(f, " │ ")?;
+            },
+            _ => (),
+          }
+          
+        }
+        write!(f, "\n")?;
+      }
     }
-    print_bottom_border(self.columns, 5, f)?;
+    print_bottom_border(self.columns, 7, f)?;
     
     Ok(())
   }
