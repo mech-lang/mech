@@ -111,7 +111,7 @@ impl fmt::Debug for Runtime {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "blocks: \n")?;
-    for block in self.blocks.iter() {
+    for (k,block) in self.blocks.iter() {
       write!(f, "{:?}\n", block)?;
     }
     
