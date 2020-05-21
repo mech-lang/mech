@@ -8,6 +8,10 @@ use std::hash::Hasher;
 use ahash::AHasher;
 use rust_core::fmt;
 
+
+
+
+
 // ## Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
@@ -68,79 +72,68 @@ impl Block {
           let lhs_table = db.tables.get(&lhs_table_id).unwrap().borrow();
           let rhs_table = db.tables.get(&rhs_table_id).unwrap().borrow();
           let store = &db.store.borrow();
+
           // Figure out dimensions
-          let equal_dimensions = if lhs_table.rows == rhs_table.rows && lhs_table.columns == rhs_table.columns 
+          let equal_dimensions = if lhs_table.rows == rhs_table.rows
           { true } else { false };
           let lhs_scalar = if lhs_table.rows == 1 && lhs_table.columns == 1 
           { true } else { false };
           let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
           { true } else { false };
 
-          match (name, lhs_rows, rhs_rows, equal_dimensions, lhs_scalar, rhs_scalar) {
-            // Same size
-            (0x13166E07A8EF9CC3, Index::All, Index::All, true, _, _) => {
-              let mut function_result = Value::from_u64(0);
-              let mut values = Vec::with_capacity(lhs_table.rows);
-              for (lix,rix) in (1..=lhs_table.rows).zip(1..=rhs_table.rows) {
-                match (lhs_table.get(&Index::Index(lix), lhs_columns), rhs_table.get(&Index::Index(rix), rhs_columns)) {
-                  (Some(lhs_ix), Some(rhs_ix)) => {
-                    let lhs_value = &store.data[lhs_ix];
-                    let rhs_value = &store.data[rhs_ix];
-                    match (lhs_value, rhs_value) {
-                      (Value::Number(x), Value::Number(y)) => {
-                        match x.add(*y) {
-                          Ok(result) => {
-                            function_result = Value::from_quantity(result);
-                          }
-                          Err(_) => (), // TODO Handle error here
-                        }
+          let iterator_zip = if equal_dimensions {
+            IndexIteratorZip::new(
+              IndexIterator::Range(1..=lhs_table.rows),
+              IndexIterator::Constant(std::iter::repeat(*lhs_columns.unwrap())),
+              IndexIterator::Range(1..=rhs_table.rows),
+              IndexIterator::Constant(std::iter::repeat(*rhs_columns.unwrap())),
+            )
+          } else if rhs_scalar {
+            IndexIteratorZip::new(
+              IndexIterator::Range(1..=lhs_table.rows),
+              IndexIterator::Constant(std::iter::repeat(*lhs_columns.unwrap())),
+              IndexIterator::Constant(std::iter::repeat(1)),
+              IndexIterator::Constant(std::iter::repeat(1)),
+            )
+          } else {
+            IndexIteratorZip::new(
+              IndexIterator::Constant(std::iter::repeat(1)),
+              IndexIterator::Constant(std::iter::repeat(1)),
+              IndexIterator::Range(1..=rhs_table.rows),
+              IndexIterator::Constant(std::iter::repeat(*rhs_columns.unwrap())),
+            )
+          };
+
+          let mut function_result = Value::from_u64(0);
+          let mut values = Vec::with_capacity(lhs_table.rows);
+          for (lrix, lcix, rrix, rcix) in iterator_zip {
+            match (lhs_table.get(&Index::Index(lrix), &Index::Index(lcix)), 
+                   rhs_table.get(&Index::Index(rrix), &Index::Index(rcix))
+                  ) 
+            {
+              (Some(lhs_ix), Some(rhs_ix)) => {
+                let lhs_value = &store.data[lhs_ix];
+                let rhs_value = &store.data[rhs_ix];
+                match (lhs_value, rhs_value) {
+                  (Value::Number(x), Value::Number(y)) => {
+                    match x.add(*y) {
+                      Ok(result) => {
+                        function_result = Value::from_quantity(result);
                       }
-                      _ => (),
+                      Err(_) => (), // TODO Handle error here
                     }
-                    
                   }
                   _ => (),
                 }
-                values.push((Index::Index(lix), *out_columns, function_result.clone()));
               }
-              changes.push(Change::Set{
-                table_id: *out_table_id,
-                values,
-              });
-            },
-            // RHS is scalar
-            (0x13166E07A8EF9CC3, Index::All, Index::All, false, _, true) => {
-              let mut function_result = Value::from_u64(0);
-              let mut values = Vec::with_capacity(lhs_table.rows);
-              for (lix,rix) in (1..=lhs_table.rows).zip(std::iter::repeat(1)) {
-                match (lhs_table.get(&Index::Index(lix), lhs_columns), rhs_table.get(&Index::Index(rix), &Index::Index(rix))) {
-                  (Some(lhs_ix), Some(rhs_ix)) => {
-                    let lhs_value = &store.data[lhs_ix];
-                    let rhs_value = &store.data[rhs_ix];
-                    match (lhs_value, rhs_value) {
-                      (Value::Number(x), Value::Number(y)) => {
-                        match x.add(*y) {
-                          Ok(result) => {
-                            function_result = Value::from_quantity(result);
-                          }
-                          Err(_) => (), // TODO Handle error here
-                        }
-                      }
-                      _ => (),
-                    }
-                    
-                  }
-                  _ => (),
-                }
-                values.push((Index::Index(lix), *out_columns, function_result.clone()));
-              }
-              changes.push(Change::Set{
-                table_id: *out_table_id,
-                values,
-              });
-            },
-            _ => (),
+              _ => (),
+            }
+            values.push((Index::Index(lrix), *out_columns, function_result.clone()));
           }
+          changes.push(Change::Set{
+            table_id: *out_table_id,
+            values,
+          });
         }
         _ => (),
       }
@@ -231,6 +224,59 @@ impl Register {
     hasher.write_u64(*self.row.unwrap() as u64);
     hasher.write_u64(*self.column.unwrap() as u64);
     hasher.finish()
+  }
+}
+
+pub enum IndexIterator {
+  Range(std::ops::RangeInclusive<usize>),
+  Constant(std::iter::Repeat<usize>),
+}
+
+impl Iterator for IndexIterator {
+  type Item = usize;
+  
+  fn next(&mut self) -> Option<usize> {
+    match self {
+      IndexIterator::Range(itr) => itr.next(),
+      IndexIterator::Constant(itr) => itr.next(),
+    }
+  }
+}
+
+pub struct IndexIteratorZip {
+  lhs_row: IndexIterator,
+  lhs_col: IndexIterator,
+  rhs_row: IndexIterator, 
+  rhs_col: IndexIterator,
+}
+
+impl IndexIteratorZip {
+  pub fn new(
+    lhs_row: IndexIterator,
+    lhs_col: IndexIterator,
+    rhs_row: IndexIterator, 
+    rhs_col: IndexIterator
+  ) -> IndexIteratorZip {
+    IndexIteratorZip {
+      lhs_row,
+      lhs_col,
+      rhs_row,
+      rhs_col,      
+    }
+  }
+}
+
+impl Iterator for IndexIteratorZip {
+  type Item = (usize,usize,usize,usize);
+  
+  fn next(&mut self) -> Option<(usize,usize,usize,usize)> {
+    match (self.lhs_row.next(), self.lhs_col.next(), self.rhs_row.next(), self.rhs_col.next()) {
+      (Some(a),Some(b),Some(c),Some(d)) => Some((a,b,c,d)),
+      (None,_,_,_) |
+      (_,None,_,_) |
+      (_,_,None,_) |
+      (_,_,_,None) => None,
+    }
   }
 }
 
