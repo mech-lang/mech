@@ -17,7 +17,7 @@ mod block;
 
 pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, Transformation};
-pub use self::table::{Table, Index, Value};
+pub use self::table::{Table, TableId, Index, Value};
 pub use self::core::Core;
 
 
