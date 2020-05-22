@@ -19,6 +19,8 @@ pub struct Store {
   pub data_end: usize,
   pub reference_counts: Vec<u16>,
   pub data: Vec<Value>,
+  pub column_aliases: HashMap<(u64, usize), u64>,
+  pub identifiers: HashMap<u64, &'static str>,
 }
 
 impl Store {
@@ -34,6 +36,8 @@ impl Store {
       data_end: 1,
       reference_counts: rc,
       data: vec![Value::from_u64(0); capacity],
+      column_aliases: HashMap::new(),
+      identifiers: HashMap::new(),
     }
   }
 
@@ -109,7 +113,6 @@ impl fmt::Debug for Store {
 // in the database.
 pub struct Database {
   pub tables: HashMap<u64, Rc<RefCell<Table>>>,
-  pub alias_map: HashMap<(u64, u64), u64>,
   pub changed_this_round: HashSet<u64>,
   pub store: Rc<RefCell<Store>>,
   pub transactions: Vec<Transaction>,
@@ -120,7 +123,6 @@ impl Database {
   pub fn new(capacity: usize) -> Database {    
     Database {
       tables: HashMap::new(),
-      alias_map: HashMap::new(),
       changed_this_round: HashSet::new(),
       store: Rc::new(RefCell::new(Store::new(capacity))),
       transactions: Vec::with_capacity(100_000),
@@ -137,6 +139,9 @@ impl Database {
             *rows, 
             *columns, self.store.clone()))));
         },
+        Change::SetColumnAlias{table_id, column_ix, column_alias} => {
+          self.store.borrow_mut().column_aliases.insert((*table_id,*column_ix),*column_alias);
+        }
         Change::Set{table_id, values} => {
           match self.tables.get(&table_id) {
             Some(table) => {
@@ -187,6 +192,7 @@ pub struct Transaction {
 // Updates the database
 pub enum Change {
   Set{table_id: u64, values: Vec<(Index, Index, Value)>},
+  SetColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
   NewTable{table_id: u64, rows: usize, columns: usize},
 }
 
