@@ -67,8 +67,8 @@ fn main() {
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x03), value: Value::from_u64(20)});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x04), rows: 1, columns: 1});
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x04), value: Value::from_u64(0)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x78), rows: balls, columns: 1});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x79), rows: balls, columns: 1});
+  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(x_id), rows: balls, columns: 1});
+  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(y_id), rows: balls, columns: 1});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Global(balls_id), rows: balls, columns: 4});
   block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 1, column_alias: x_id});
   block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 2, column_alias: y_id});
@@ -86,7 +86,7 @@ fn main() {
       (TableId::Local(0x01), Index::All, Index::All), 
       (TableId::Local(0x02), Index::All, Index::All),
     ],
-    out: (TableId::Local(0x78), Index::All, Index::All)
+    out: (TableId::Local(x_id), Index::All, Index::All)
   });
   block.register_transformation(Transformation::Function{
     name: table_range, 
@@ -94,13 +94,13 @@ fn main() {
       (TableId::Local(0x01), Index::All, Index::All), 
       (TableId::Local(0x02), Index::All, Index::All),
     ],
-    out: (TableId::Local(0x79), Index::All, Index::All)
+    out: (TableId::Local(y_id), Index::All, Index::All)
   });
   block.register_transformation(Transformation::Function{
     name: table_horzcat, 
     arguments: vec![
-      (TableId::Local(0x78), Index::All, Index::All), 
-      (TableId::Local(0x79), Index::All, Index::All),
+      (TableId::Local(x_id), Index::All, Index::All), 
+      (TableId::Local(y_id), Index::All, Index::All),
       (TableId::Local(0x03), Index::All, Index::All),
       (TableId::Local(0x04), Index::All, Index::All),
     ],

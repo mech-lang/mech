@@ -363,7 +363,7 @@ impl fmt::Debug for Block {
       let tfm_string = format_transformation(&self,&tfm);
       write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
-    write!(f, "│ tables: \n")?;
+    write!(f, "│ tables: {} \n", self.tables.len())?;
     for (_, table) in self.tables.iter() {
       write!(f, "{:?}\n", table.borrow())?;
     }
@@ -374,6 +374,20 @@ impl fmt::Debug for Block {
 
 fn format_transformation(block: &Block, tfm: &Transformation) -> String {
   match tfm {
+    Transformation::NewTable{table_id, rows, columns} => {
+      let mut tfm = format!("+ ");
+      match table_id {
+        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.identifiers.get(id).unwrap()),
+        TableId::Local(id) => {
+          match block.identifiers.get(id) {
+            Some(name) =>  tfm=format!("{}{}",tfm,name),
+            None => tfm=format!("{}0x{:x}",tfm,id),
+          }
+        }
+      };
+      tfm = format!("{} = ({} x {})",tfm,rows,columns);
+      tfm
+    }
     Transformation::Whenever{table_id, row, column} => {
       let mut arg = format!("~ ");
       arg=format!("{}#{}",arg,block.identifiers.get(&table_id).unwrap());
@@ -401,7 +415,12 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       for (ix,(table, row, column)) in arguments.iter().enumerate() {
         match table {
           TableId::Global(id) => arg=format!("{}#{}",arg,block.identifiers.get(id).unwrap()),
-          TableId::Local(id) => arg=format!("{}#{:x}",arg,id),
+          TableId::Local(id) => {
+            match block.identifiers.get(id) {
+              Some(name) =>  arg=format!("{}{}",arg,name),
+              None => arg=format!("{}0x{:x}",arg,id),
+            }
+          }
         };
         match row {
           Index::All => arg=format!("{}{{:,",arg),
