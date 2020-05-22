@@ -122,14 +122,14 @@ impl Block {
         self.input.insert(Register{table_id, row, column}.hash());
       }
       Transformation::Function{name, ref arguments, out} => {
-        let (out_id, _, _) = out;
+        let (out_id, row, column) = out;
         match out_id {
-          TableId::Global(id) => {self.output.insert(id);},
+          TableId::Global(id) => {self.output.insert(Register{table_id: id, row, column}.hash());},
           _ => (),
         }
-        for (table_id, _, _) in arguments {
+        for (table_id, row, column) in arguments {
           match table_id {
-            TableId::Global(id) => {self.input.insert(*id);},
+            TableId::Global(id) => {self.input.insert(Register{table_id: *id, row: *row, column: *column}.hash());},
             _ => (),
           }
         }
