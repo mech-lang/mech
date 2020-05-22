@@ -19,6 +19,8 @@ fn main() {
 
   let balls = 4000;
 
+  println!("{:x}", hash_string("table/horizontal-concatenate"));
+
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
@@ -28,6 +30,10 @@ fn main() {
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0)});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1});
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64)});
+  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x03), rows: 1, columns: 1});
+  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x03), value: Value::from_u64(20)});
+  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x04), rows: 1, columns: 1});
+  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x04), value: Value::from_u64(0)});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x78), rows: balls, columns: 1});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x79), rows: balls, columns: 1});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Global(0x123), rows: balls, columns: 4});
@@ -50,6 +56,16 @@ fn main() {
       (TableId::Local(0x02), Index::All, Index::All),
     ],
     out: (TableId::Local(0x79), Index::All, Index::All)
+  });
+  block.register_transformation(Transformation::Function{
+    name: 0x1c6a44c6bafc67f1, 
+    arguments: vec![
+      (TableId::Local(0x78), Index::All, Index::All), 
+      (TableId::Local(0x79), Index::All, Index::All),
+      (TableId::Local(0x03), Index::All, Index::All),
+      (TableId::Local(0x04), Index::All, Index::All),
+    ],
+    out: (TableId::Global(0x123), Index::All, Index::All)
   });
   block.gen_id();
   core.runtime.register_block(block);
