@@ -25,7 +25,16 @@ fn main() {
   let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
 
-  let mut block = Block::new(6);
+/*
+  x = 1:4000
+  y = 1:4000
+  #ball = [|x   y   vx  vy|
+            x   y   20  0]
+  #gravity = 1
+  #time/timer = [period: 1, ticks: 0]
+*/
+
+  let mut block = Block::new(100);
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1});
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0)});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1});
@@ -71,54 +80,13 @@ fn main() {
   core.runtime.register_block(block);
 
 /*
-  x = 1:4000
-  y = 1:4000
-  #ball = [|x   y   vx  vy|
-            x   y   20  0]
-  #gravity = 1
-  #time/timer = [period: 1, ticks: 0]
-*/
-/*
-  let mut txn = Transaction{
-    changes: vec![
-      Change::NewTable{table_id: 123, rows: balls, columns: 4},
-    ]
-  };
-  let mut values = vec![];
-  for i in 1..balls+1 {
-    let mut v = vec![
-      (Index::Index(i), Index::Index(1), Value::from_u64(i as u64)),
-      (Index::Index(i), Index::Index(2), Value::from_u64(i as u64)),
-      (Index::Index(i), Index::Index(3), Value::from_u64(20)),
-      (Index::Index(i), Index::Index(4), Value::from_u64(1)),
-    ];
-    values.append(&mut v);
-  }
-  txn.changes.push(Change::Set{table_id: 123, values});
-  core.process_transaction(&txn);
-
-  let mut txn = Transaction{
-    changes: vec![
-      Change::NewTable{table_id: 456, rows: 1, columns: 1},
-      Change::Set{table_id: 456, values: vec![(Index::Index(1), Index::Index(1), Value::from_u64(9))]},
-      Change::NewTable{table_id: 789, rows: 1, columns: 2},
-      Change::Set{table_id: 789, values: vec![
-        (Index::Index(1), Index::Index(1), Value::from_u64(10)),
-        (Index::Index(1), Index::Index(2), Value::from_u64(0))
-      ]},
-    ]
-  };
-
-  core.process_transaction(&txn);*/
-
-/*
   ~ #time/timer.ticks
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
 */
 
-  let mut block = Block::new(8500);
+  let mut block = Block::new(100);
   block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
   block.register_transformation(Transformation::Function{
     name: 0x13166E07A8EF9CC3, 
