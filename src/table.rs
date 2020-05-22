@@ -232,7 +232,7 @@ impl fmt::Debug for Index {
 // A 2D table of values.
 pub struct Table {
   pub id: u64,
-  pub store:  Rc<RefCell<Store>>,
+  pub store: Rc<RefCell<Store>>,
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<usize>, // Each entry is a memory address into the store
@@ -304,13 +304,49 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let cell_width = 7;
     let rows = if self.rows > 15 {
       10
     } else {
       self.rows
     };
-    write!(f, "#{:x} ({} x {})\n", self.id, self.rows, self.columns)?;
-    print_top_border(self.columns, 7, f)?;
+    
+    
+    let table_name = match self.store.borrow().identifiers.get(&self.id) {
+      Some(name) => name.to_string(),
+      None => format!("0x{:x}", self.id),
+    };
+    
+    let table_header = format!("#{} ({} x {})", table_name, self.rows, self.columns);
+    let header_width = table_header.len()+2;
+    let aggregate_cell_width = (cell_width+2) * self.columns + self.columns-1;
+    let cell_width = if header_width > aggregate_cell_width {
+      header_width / self.columns - 2
+    } else {
+      cell_width
+    };
+    let table_width = if header_width > aggregate_cell_width {
+      header_width
+    } else  {
+      aggregate_cell_width
+    };
+    print_top_span_border(self.columns, cell_width+2, f)?;
+    write!(f,"│ ")?;
+    print_cell_contents(&table_header, table_width-2, f);
+    write!(f," │\n")?;
+    print_inner_span_border(self.columns, cell_width+2, f)?;
+    write!(f, "│ ", )?;
+    for i in 1..=self.columns {
+      let s = self.store.borrow();
+      let column_header = match s.column_aliases.get(&(self.id,i)) {
+        Some(alias) => self.store.borrow().identifiers.get(alias).unwrap().to_string(),
+        None => format!("{}", i),
+      };
+      print_cell_contents(&column_header, cell_width, f);
+      write!(f, " │ ", )?;
+    }
+    write!(f, "\n")?;
+    print_inner_border(self.columns, cell_width + 2, f)?;
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
@@ -319,8 +355,8 @@ impl fmt::Debug for Table {
             let value = &self.store.borrow().data[x];
             let text = format!("{:?}", value);
             write!(f, "{:?}", value)?;
-            if text.len() < 5 {
-              for _ in 0..5-text.len() {
+            if text.len() < cell_width {
+              for _ in 0..cell_width-text.len() {
                 write!(f, " ")?;
               }
             }
@@ -333,9 +369,10 @@ impl fmt::Debug for Table {
       write!(f, "\n")?;
     }
     if self.rows > 10 {
-      write!(f, "│")?;
+      write!(f, "│ ")?;
       for j in 0..self.columns {
-        write!(f, "  ...  │")?;
+        print_cell_contents(&"...".to_string(), cell_width, f);
+        write!(f, " │ ")?;
       }
       write!(f, "\n")?;
       for i in self.rows-3..self.rows {
@@ -345,12 +382,7 @@ impl fmt::Debug for Table {
             Some(x) => {
               let value = &self.store.borrow().data[x];
               let text = format!("{:?}", value);
-              write!(f, "{:?}", value)?;
-              if text.len() < 5 {
-                for _ in 0..5-text.len() {
-                  write!(f, " ")?;
-                }
-              }
+              print_cell_contents(&text, cell_width, f);
               write!(f, " │ ")?;
             },
             _ => (),
@@ -360,10 +392,21 @@ impl fmt::Debug for Table {
         write!(f, "\n")?;
       }
     }
-    print_bottom_border(self.columns, 7, f)?;
+    print_bottom_border(self.columns, cell_width + 2, f)?;
     
     Ok(())
   }
+}
+
+fn print_top_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  write!(f, "┌")?;
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "─")?;
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┐\n")?;
+  Ok(())
 }
 
 fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
@@ -385,6 +428,47 @@ fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Resul
   }
   print_repeated_char("─", m, f);
   write!(f, "┘\n")?;
+  Ok(())
+}
+
+
+fn print_cell_contents(content_string: &String, cell_width: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  // If the contents exceed the cell width, truncate it and add ellipsis
+  if content_string.len() > cell_width {
+    let mut truncated_content_string = content_string.clone();
+    let content_width = cell_width - 3; 
+    truncated_content_string.truncate(content_width);
+    truncated_content_string.insert_str(content_width, "...");
+    write!(f, "{}", truncated_content_string.clone())?;
+  } else {
+    write!(f, "{}", content_string.clone())?;
+    let cell_padding = cell_width - content_string.len();
+    for _ in 0 .. cell_padding {
+      write!(f, " ")?;
+    }
+  }
+  Ok(())
+}
+
+fn print_inner_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  write!(f, "├")?;
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "┬")?;
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┤\n")?;
+  Ok(())
+}
+
+fn print_inner_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
+  write!(f, "├")?;
+  for _ in 0 .. n - 1 {
+    print_repeated_char("─", m, f);
+    write!(f, "┼")?;
+  }
+  print_repeated_char("─", m, f);
+  write!(f, "┤\n")?;
   Ok(())
 }
 
