@@ -202,16 +202,18 @@ impl fmt::Debug for TableId {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Index {
   Index(usize),
-  Alias(usize),
+  Alias(u64),
   All,
 }
 
 impl Index {
-  pub fn unwrap(&self) -> &usize {
+  pub fn unwrap(&self) -> usize {
     match self {
-      Index::Index(ix) => ix,
-      Index::Alias(alias) => alias,
-      Index::All => &0,
+      Index::Index(ix) => *ix,
+      Index::Alias(alias) => {
+        alias.clone() as usize
+      },
+      Index::All => 0,
     }
   }
 }
