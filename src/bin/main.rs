@@ -24,12 +24,6 @@ fn main() {
   let mut core = Core::new(balls * 4 * 4);
   println!("Done!");
 
-  println!("{:x}", hash_string("balls"));
-  println!("{:x}", hash_string("x"));
-  println!("{:x}", hash_string("y"));
-  println!("{:x}", hash_string("vx"));
-  println!("{:x}", hash_string("vy"));
-
   let period = hash_string("period");
   let ticks = hash_string("ticks");
   let time_timer = hash_string("time/timer");
@@ -39,6 +33,10 @@ fn main() {
   let y_id = hash_string("y");
   let vx_id = hash_string("vx");
   let vy_id = hash_string("vy");
+  let math_add = hash_string("math/add");
+  let table_range = hash_string("table/range");
+  let table_horzcat = hash_string("table/horizontal-concatenate");
+
 
 /*
   x = 1:4000
@@ -59,6 +57,8 @@ fn main() {
   block.identifiers.insert(y_id, "y");
   block.identifiers.insert(vx_id, "vx");
   block.identifiers.insert(vy_id, "vy");
+  block.identifiers.insert(table_range, "table/range");
+  block.identifiers.insert(table_horzcat, "table/horizontal-concatenate");
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1});
   block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0)});
   block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1});
@@ -81,7 +81,7 @@ fn main() {
   block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 2, column_alias: ticks});
   block.register_transformation(Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)});
   block.register_transformation(Transformation::Function{
-    name: 0x285a4efbfcdc2ef4, 
+    name: table_range, 
     arguments: vec![
       (TableId::Local(0x01), Index::All, Index::All), 
       (TableId::Local(0x02), Index::All, Index::All),
@@ -89,7 +89,7 @@ fn main() {
     out: (TableId::Local(0x78), Index::All, Index::All)
   });
   block.register_transformation(Transformation::Function{
-    name: 0x285a4efbfcdc2ef4, 
+    name: table_range, 
     arguments: vec![
       (TableId::Local(0x01), Index::All, Index::All), 
       (TableId::Local(0x02), Index::All, Index::All),
@@ -97,7 +97,7 @@ fn main() {
     out: (TableId::Local(0x79), Index::All, Index::All)
   });
   block.register_transformation(Transformation::Function{
-    name: 0x1c6a44c6bafc67f1, 
+    name: table_horzcat, 
     arguments: vec![
       (TableId::Local(0x78), Index::All, Index::All), 
       (TableId::Local(0x79), Index::All, Index::All),
@@ -117,30 +117,40 @@ fn main() {
 */
 
   let mut block = Block::new(100);
-  block.register_transformation(Transformation::Whenever{table_id: 789, row: Index::All, column: Index::Index(2)});
+  block.identifiers.insert(time_timer, "time/timer");
+  block.identifiers.insert(ticks, "ticks");
+  block.identifiers.insert(gravity, "gravity");
+  block.identifiers.insert(balls_id, "balls");
+  block.identifiers.insert(x_id, "x");
+  block.identifiers.insert(y_id, "y");
+  block.identifiers.insert(vx_id, "vx");
+  block.identifiers.insert(vy_id, "vy");
+  block.identifiers.insert(vy_id, "vy");
+  block.identifiers.insert(math_add, "math_add");
+  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)});
   block.register_transformation(Transformation::Function{
-    name: 0x13166E07A8EF9CC3, 
+    name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Index(1)), 
-      (TableId::Global(balls_id), Index::All, Index::Index(3))
+      (TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
+      (TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Index(1))
+    out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
   });
   block.register_transformation(Transformation::Function{
-    name: 0x13166E07A8EF9CC3, 
+    name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Index(2)), 
-      (TableId::Global(balls_id), Index::All, Index::Index(4)),
+      (TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
+      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Index(2))
+    out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
   });
   block.register_transformation(Transformation::Function{
-    name: 0x13166E07A8EF9CC3, 
+    name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Index(4)), 
-      (TableId::Global(456), Index::All, Index::All),
+      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
+      (TableId::Global(gravity), Index::All, Index::All),
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Index(4))
+    out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
   });
   block.gen_id();
 
