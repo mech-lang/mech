@@ -93,7 +93,7 @@ impl Runtime {
     Ok(())
   }
 
-  pub fn register_block(&mut self, mut block: Block) {
+  pub fn register_block(&mut self, block: Block) {
 
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
@@ -104,6 +104,12 @@ impl Runtime {
     if block.state == BlockState::New && block.input.len() == 0 {
       block.state == BlockState::Ready;
       self.ready_blocks.insert(block.id);
+    }
+
+    {
+      let db = self.database.borrow();
+      let mut s = db.store.borrow_mut();
+      s.identifiers.extend(&block.identifiers);
     }
 
     // Add the block to the list of blocks
