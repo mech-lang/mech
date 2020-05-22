@@ -31,12 +31,14 @@ pub struct Block {
   pub transformations: Vec<Transformation>,
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
+  pub identifiers: HashMap<u64, &'static str>,
 }
 
 impl Block {
   pub fn new(capacity: usize) -> Block {
     Block {
       id: 0,
+      identifiers: HashMap::new(),
       ready: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
@@ -73,6 +75,22 @@ impl Block {
           }
           TableId::Local(id) => {
             self.tables.insert(id, Rc::new(RefCell::new(Table::new(id, rows, columns, self.store.clone()))));
+          }
+        }
+      }
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        match table_id {
+          TableId::Global(id) => {
+            self.changes.push(
+              Change::SetColumnAlias{
+                table_id: id,
+                column_ix,
+                column_alias,
+              }
+            );
+          }
+          TableId::Local(id) => {
+
           }
         }
       }
