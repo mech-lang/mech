@@ -241,6 +241,51 @@ impl Block {
                 }
               }
             }
+            // table/horizontal-concatenate
+            0x1c6a44c6bafc67f1 => {
+              let (out_table_id, out_rows, out_columns) = out;
+              let db = database.borrow_mut();
+              let mut column = 0;
+              let mut out_rows = 0;
+              let mut values = vec![];
+              // First pass, make sure the dimensions work out
+              for (table_id, rows, columns) in arguments {
+                let table = match table_id {
+                  TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
+                  TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                };
+                if out_rows == 0 {
+                  out_rows = table.rows;
+                } else if table.rows != 1 && out_rows != table.rows {
+                  // TODO Throw an error here
+                } else if table.rows > out_rows && out_rows == 1 {
+                  out_rows = table.rows
+                }
+              }
+
+              for (table_id, rows, columns) in arguments {
+                let table = match table_id {
+                  TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
+                  TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                };
+                let rows_iter = if table.rows == 1 {
+                  IndexIterator::Constant(std::iter::repeat(1))
+                } else {
+                  IndexIterator::Range(1..=table.rows)
+                };
+                for (i,k) in (1..=out_rows).zip(rows_iter) {
+                  for j in 1..=table.columns {
+                    let value = table.get(&Index::Index(k),&Index::Index(j)).unwrap();
+                    values.push((Index::Index(i), Index::Index(column+j), value));
+                  }
+                }
+                column += 1;
+              }
+              changes.push(Change::Set{
+                table_id: *out_table_id.unwrap(),
+                values,
+              });
+            }
             _ => () // TODO Unknown function
           }
         }
