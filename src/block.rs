@@ -71,7 +71,7 @@ impl Block {
                 columns,
               }
             );
-            self.output.insert(id);
+            self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
           }
           TableId::Local(id) => {
             self.tables.insert(id, Rc::new(RefCell::new(Table::new(id, rows, columns, self.store.clone()))));
@@ -88,6 +88,7 @@ impl Block {
                 column_alias,
               }
             );
+            self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
           }
           TableId::Local(id) => {
 
@@ -148,7 +149,7 @@ impl Block {
         Transformation::Function{name, arguments, out} => {
           match name {
             // math/add
-            0x13166E07A8EF9CC3 => {
+            14999395184590496183 => {
               // TODO test argument count is 2
               let (lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
               let (rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
@@ -175,14 +176,14 @@ impl Block {
               let iterator_zip = if equal_dimensions {
                 IndexIteratorZip::new(
                   IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(*lhs_columns.unwrap())),
+                  IndexIterator::Constant(std::iter::repeat(lhs_columns.unwrap())),
                   IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(*rhs_columns.unwrap())),
+                  IndexIterator::Constant(std::iter::repeat(rhs_columns.unwrap())),
                 )
               } else if rhs_scalar {
                 IndexIteratorZip::new(
                   IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(*lhs_columns.unwrap())),
+                  IndexIterator::Constant(std::iter::repeat(lhs_columns.unwrap())),
                   IndexIterator::Constant(std::iter::repeat(1)),
                   IndexIterator::Constant(std::iter::repeat(1)),
                 )
@@ -191,7 +192,7 @@ impl Block {
                   IndexIterator::Constant(std::iter::repeat(1)),
                   IndexIterator::Constant(std::iter::repeat(1)),
                   IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(*rhs_columns.unwrap())),
+                  IndexIterator::Constant(std::iter::repeat(rhs_columns.unwrap())),
                 )
               };
 
@@ -228,7 +229,7 @@ impl Block {
 
             }
             // table/range
-            0x285A4EFBFCDC2EF4 => {
+            2907723353607122676 => {
               // TODO test argument count is 2 or 3
               // 2 -> start, end
               // 3 -> start, increment, end
@@ -260,7 +261,7 @@ impl Block {
               }
             }
             // table/horizontal-concatenate
-            0x1c6a44c6bafc67f1 => {
+            2047524600924628977 => {
               let (out_table_id, out_rows, out_columns) = out;
               let db = database.borrow_mut();
               let mut column = 0;
@@ -338,34 +339,93 @@ impl Block {
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "id: {}\n", humanize(&self.id))?;
-    write!(f, "state: {:?}\n", self.state)?;
-    write!(f, "ready: \n")?;
+    write!(f, "│ id: {}\n", humanize(&self.id))?;
+    write!(f, "│ state: {:?}\n", self.state)?;
+    write!(f, "│ ready: \n")?;
     for input in self.ready.iter() {
-      write!(f, "   {}\n", humanize(input))?;
+      write!(f, "│    {}\n", humanize(input))?;
     }
-    write!(f, "input: \n")?;
+    write!(f, "│ input: \n")?;
     for input in self.input.iter() {
-      write!(f, "   {}\n", humanize(input))?;
+      write!(f, "│    {}\n", humanize(input))?;
     }
-    write!(f, "output: \n")?;
+    write!(f, "│ output: \n")?;
     for output in self.output.iter() {
-      write!(f, "   {}\n", humanize(output))?;
+      write!(f, "│    {}\n", humanize(output))?;
     }
-    write!(f, "transformations: \n")?;
-    for tfm in self.transformations.iter() {
-      write!(f, "   {:?}\n", tfm)?;
+    write!(f, "│ transformations: \n")?;
+    for (ix, tfm) in self.transformations.iter().enumerate() {
+      let tfm_string = format_transformation(&self,&tfm);
+      write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
-    write!(f, "plan: \n")?;
-    for tfm in self.plan.iter() {
-      write!(f, "   {:?}\n", tfm)?;
+    write!(f, "│ plan: \n")?;
+    for (ix, tfm) in self.plan.iter().enumerate() {
+      let tfm_string = format_transformation(&self,&tfm);
+      write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
-    write!(f, "tables: \n")?;
+    write!(f, "│ tables: \n")?;
     for (_, table) in self.tables.iter() {
       write!(f, "{:?}\n", table.borrow())?;
     }
     
     Ok(())
+  }
+}
+
+fn format_transformation(block: &Block, tfm: &Transformation) -> String {
+  match tfm {
+    Transformation::Whenever{table_id, row, column} => {
+      let mut arg = format!("~ ");
+      arg=format!("{}#{}",arg,block.identifiers.get(&table_id).unwrap());
+      match row {
+        Index::All => arg=format!("{}{{:,",arg),
+        Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
+        Index::Alias(alias) => {
+          let alias_name = block.identifiers.get(alias).unwrap();
+          arg=format!("{}{{{},",arg,alias_name);
+        },
+      }
+      match column {
+        Index::All => arg=format!("{}:}}",arg),
+        Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
+        Index::Alias(alias) => {
+          let alias_name = block.identifiers.get(alias).unwrap();
+          arg=format!("{}{}}}",arg,alias_name);
+        },
+      }
+      arg      
+    }
+    Transformation::Function{name, arguments, out} => {
+      let name_string = block.identifiers.get(name).unwrap();
+      let mut arg = format!("");
+      for (ix,(table, row, column)) in arguments.iter().enumerate() {
+        match table {
+          TableId::Global(id) => arg=format!("{}#{}",arg,block.identifiers.get(id).unwrap()),
+          TableId::Local(id) => arg=format!("{}#{:x}",arg,id),
+        };
+        match row {
+          Index::All => arg=format!("{}{{:,",arg),
+          Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
+          Index::Alias(alias) => {
+            let alias_name = block.identifiers.get(alias).unwrap();
+            arg=format!("{}{{{},",arg,alias_name);
+          },
+        }
+        match column {
+          Index::All => arg=format!("{}:}}",arg),
+          Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
+          Index::Alias(alias) => {
+            let alias_name = block.identifiers.get(alias).unwrap();
+            arg=format!("{}{}}}",arg,alias_name);
+          },
+        }
+        if ix < arguments.len()-1 {
+          arg=format!("{}, ", arg);
+        }
+      }
+      format!("{}({})",name_string,arg)
+    },
+    x => format!("{:?}", x),
   }
 }
 
@@ -406,8 +466,8 @@ impl Register {
   pub fn hash(&self) -> u64 {
     let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
     hasher.write_u64(self.table_id);
-    hasher.write_u64(*self.row.unwrap() as u64);
-    hasher.write_u64(*self.column.unwrap() as u64);
+    hasher.write_u64(self.row.unwrap() as u64);
+    hasher.write_u64(self.column.unwrap() as u64);
     hasher.finish()
   }
 }
