@@ -260,7 +260,8 @@ impl Table {
     };
     let cix = match column {
       &Index::Index(ix) => ix,
-      _ => 0, // TODO aliases and all
+      &Index::Alias(alias) => *self.store.borrow().column_alias_to_index.get(&(self.id,alias)).unwrap(),
+      _ => 0, // TODO all
     };
     if rix <= self.rows && cix <= self.columns && rix > 0 && cix > 0 {
       Some((rix - 1) * self.columns + (cix - 1))
@@ -293,8 +294,8 @@ impl Table {
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
   pub fn set(&mut self, row: &Index, column: &Index, value: &Value) {
-    let mut s = self.store.borrow_mut();
     let ix = self.index(row, column).unwrap();
+    let mut s = self.store.borrow_mut();
     let old_address = self.data[ix];
     s.dereference(old_address);
     let new_address = s.intern(&value);
@@ -340,7 +341,7 @@ impl fmt::Debug for Table {
     write!(f, "│ ", )?;
     for i in 1..=self.columns {
       let s = self.store.borrow();
-      let column_header = match s.column_aliases.get(&(self.id,i)) {
+      let column_header = match s.column_index_to_alias.get(&(self.id,i)) {
         Some(alias) => self.store.borrow().identifiers.get(alias).unwrap().to_string(),
         None => format!("{}", i),
       };
