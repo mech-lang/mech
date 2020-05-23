@@ -30,6 +30,7 @@ pub struct Runtime {
   pub ready_blocks: HashSet<u64>,
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
+  pub output: HashSet<u64>,
 }
 
 impl Runtime {
@@ -42,6 +43,7 @@ impl Runtime {
       ready_blocks: HashSet::new(),
       register_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+      output: HashSet::new(),
     }
   }
 
@@ -56,12 +58,14 @@ impl Runtime {
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
         block.solve(self.database.clone());
+        self.changed_this_round.extend(&block.output);
       }
+
+      self.changed_this_round.extend(&self.database.borrow().changed_this_round);
 
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
-      for register in self.database.borrow_mut().changed_this_round.drain() {
-        self.changed_this_round.insert(register);
+      for register in self.changed_this_round.drain() {
         match self.register_to_block.get(&register) {
           Some(listening_block_id) => {
             for block_id in listening_block_id.iter() {
@@ -93,7 +97,7 @@ impl Runtime {
     Ok(())
   }
 
-  pub fn register_block(&mut self, block: Block) {
+  pub fn register_block(&mut self, mut block: Block) {
 
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
@@ -110,6 +114,15 @@ impl Runtime {
       let db = self.database.borrow();
       let mut s = db.store.borrow_mut();
       s.identifiers.extend(&block.identifiers);
+    }
+
+    let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
+    block.ready.extend(&ready);
+
+    self.output.extend(&block.output);
+
+    if block.is_ready() {
+      self.ready_blocks.insert(block.id);
     }
 
     // Add the block to the list of blocks
