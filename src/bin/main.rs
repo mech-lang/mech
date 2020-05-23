@@ -47,7 +47,7 @@ fn main() {
   #time/timer = [period: 1, ticks: 0]
 */
 
-  let mut block = Block::new(100);
+  let mut block = Block::new(4000 * 10 * 10);
   block.identifiers.insert(time_timer, "time/timer");
   block.identifiers.insert(period, "period");
   block.identifiers.insert(ticks, "ticks");
@@ -116,7 +116,7 @@ fn main() {
   #ball.vy := #ball.vy + #gravity
 */
 
-  let mut block = Block::new(100);
+  let mut block = Block::new(4000 * 10 * 10);
   block.identifiers.insert(time_timer, "time/timer");
   block.identifiers.insert(ticks, "ticks");
   block.identifiers.insert(gravity, "gravity");
@@ -127,30 +127,30 @@ fn main() {
   block.identifiers.insert(vy_id, "vy");
   block.identifiers.insert(vy_id, "vy");
   block.identifiers.insert(math_add, "math_add");
-  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)});
+  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Index(2)});
   block.register_transformation(Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
-      (TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
+      (TableId::Global(balls_id), Index::All, Index::Index(1)), 
+      (TableId::Global(balls_id), Index::All, Index::Index(3))
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
+    out: (TableId::Global(balls_id), Index::All, Index::Index(1))
   });
   block.register_transformation(Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
-      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
+      (TableId::Global(balls_id), Index::All, Index::Index(2)), 
+      (TableId::Global(balls_id), Index::All, Index::Index(4)),
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
+    out: (TableId::Global(balls_id), Index::All, Index::Index(2))
   });
   block.register_transformation(Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
+      (TableId::Global(balls_id), Index::All, Index::Index(4)), 
       (TableId::Global(gravity), Index::All, Index::All),
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
+    out: (TableId::Global(balls_id), Index::All, Index::Index(4))
   });
   block.gen_id();
 
@@ -158,12 +158,12 @@ fn main() {
 
   print!("Running computation...");
   io::stdout().flush().unwrap();
-  let rounds = 0.0;
+  let rounds = 1000.0;
   let start_ns = time::precise_time_ns(); 
   for j in 0..rounds as usize {
     let txn = Transaction{
       changes: vec![
-        Change::Set{table_id: 789, values: vec![(Index::Index(1), Index::Index(2), Value::from_u64(j as u64))]}
+        Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Index(2), Value::from_u64(j as u64))]}
       ]
     };
     core.process_transaction(&txn);
