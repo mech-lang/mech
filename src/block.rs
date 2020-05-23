@@ -8,10 +8,6 @@ use std::hash::Hasher;
 use ahash::AHasher;
 use rust_core::fmt;
 
-
-
-
-
 // ## Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
@@ -32,6 +28,7 @@ pub struct Block {
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
   pub identifiers: HashMap<u64, &'static str>,
+
 }
 
 impl Block {
@@ -48,6 +45,7 @@ impl Block {
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
+
     }
   }
 
@@ -71,6 +69,9 @@ impl Block {
                 columns,
               }
             );
+            for i in 1..=columns {
+              self.output.insert(Register{table_id: id, row: Index::All, column: Index::Index(i)}.hash());
+            }
             self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
           }
           TableId::Local(id) => {
@@ -120,6 +121,7 @@ impl Block {
       }
       Transformation::Whenever{table_id, row, column} => {
         self.input.insert(Register{table_id, row, column}.hash());
+        self.plan.push(tfm.clone());
       }
       Transformation::Function{name, ref arguments, out} => {
         let (out_id, row, column) = out;
@@ -146,6 +148,10 @@ impl Block {
     self.changes.clear();
     'step_loop: for step in &self.plan {
       match step {
+        Transformation::Whenever{table_id, row, column} => {
+          let register = Register{table_id: *table_id, row: *row, column: *column}.hash();
+          self.ready.remove(&register);
+        },
         Transformation::Function{name, arguments, out} => {
           match name {
             // math/add
@@ -226,7 +232,6 @@ impl Block {
                 table_id: *out_table_id.unwrap(),
                 values,
               });
-
             }
             // table/range
             2907723353607122676 => {
