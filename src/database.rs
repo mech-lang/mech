@@ -68,7 +68,7 @@ impl Store {
     self.reference_counts[self.next] = 1;
     let address = self.next;
     self.data[address] = value.clone();
-    if self.data_end + 1 == self.capacity && self.free_next != 0 {
+    if self.data_end + 1 == self.capacity && self.free[0] != 0 {
       self.next = self.free[self.free_next];
       if self.free_next + 1 == self.free.len() {
         self.free_next = 0;
@@ -76,7 +76,7 @@ impl Store {
         self.free_next += 1;
       }
     // Extend the data if it's full and there is no free space
-    } else if self.data_end + 1 == self.capacity && self.free_next == 0 {
+    } else if self.data_end + 1 == self.capacity && self.free[0] == 0 {
       self.data.resize(self.capacity * 2, Value::from_u64(0));
       self.reference_counts.resize(self.capacity * 2, 0);
       self.free.resize(self.capacity * 2, 0);
@@ -177,6 +177,7 @@ impl fmt::Debug for Database {
     for changed in self.changed_this_round.iter() {
       write!(f, "       {}\n", humanize(changed))?;
     }
+    write!(f,"{:?}", self.store);
     write!(f, "tables: \n")?;
     for (id,table) in self.tables.iter() {
       write!(f, "{:?}\n", table.borrow())?;   

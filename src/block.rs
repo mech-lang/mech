@@ -162,12 +162,12 @@ impl Block {
               let (out_table_id, out_rows, out_columns) = out;
               let db = database.borrow_mut();
               let lhs_table = match lhs_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                TableId::Global(id) => unsafe{db.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
+                TableId::Local(id) => unsafe{self.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
               };
               let rhs_table = match rhs_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                TableId::Global(id) => unsafe{db.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
+                TableId::Local(id) => unsafe{self.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
               };
               let store = &db.store.borrow();
 
@@ -203,7 +203,11 @@ impl Block {
               };
 
               let mut function_result = Value::from_u64(0);
-              let mut values = Vec::with_capacity(lhs_table.rows);
+              //let mut values = Vec::with_capacity(lhs_table.rows);
+              let mut out_table = match out_table_id {
+                TableId::Global(id) => db.tables.get(id).unwrap().borrow_mut(),
+                TableId::Local(id) => self.tables.get(id).unwrap().borrow_mut(),
+              }; 
               for (lrix, lcix, rrix, rcix) in iterator_zip {
                 match (lhs_table.get_address(&Index::Index(lrix), &Index::Index(lcix)), 
                       rhs_table.get_address(&Index::Index(rrix), &Index::Index(rcix))
@@ -226,12 +230,13 @@ impl Block {
                   }
                   _ => (),
                 }
-                values.push((Index::Index(lrix), *out_columns, function_result.clone()));
+                out_table.set(&Index::Index(lrix), &out_columns, &function_result);
+                //values.push((Index::Index(lrix), *out_columns, function_result));
               }
-              changes.push(Change::Set{
-                table_id: *out_table_id.unwrap(),
+              /*changes.push(Change::Set{
+               10. table_id: *out_table_id.unwrap(),
                 values,
-              });
+              });*/
             }
             // table/range
             2907723353607122676 => {
