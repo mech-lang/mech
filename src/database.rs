@@ -19,7 +19,8 @@ pub struct Store {
   pub data_end: usize,
   pub reference_counts: Vec<u16>,
   pub data: Vec<Value>,
-  pub column_aliases: HashMap<(u64, usize), u64>,
+  pub column_alias_to_index: HashMap<(u64,u64),usize>,
+  pub column_index_to_alias: HashMap<(u64,usize),u64>,
   pub identifiers: HashMap<u64, &'static str>,
 }
 
@@ -36,7 +37,8 @@ impl Store {
       data_end: 1,
       reference_counts: rc,
       data: vec![Value::from_u64(0); capacity],
-      column_aliases: HashMap::new(),
+      column_alias_to_index: HashMap::new(),
+      column_index_to_alias: HashMap::new(),
       identifiers: HashMap::new(),
     }
   }
@@ -140,7 +142,8 @@ impl Database {
             *columns, self.store.clone()))));
         },
         Change::SetColumnAlias{table_id, column_ix, column_alias} => {
-          self.store.borrow_mut().column_aliases.insert((*table_id,*column_ix),*column_alias);
+          self.store.borrow_mut().column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
+          self.store.borrow_mut().column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
         }
         Change::Set{table_id, values} => {
           match self.tables.get(&table_id) {
