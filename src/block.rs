@@ -187,35 +187,6 @@ impl Block {
 
               let out_rows_count = unsafe{(*out_table).rows};
 
-              let iterator_zip = if equal_dimensions {
-                IndexIteratorZip2::new(
-                  IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(*lhs_columns),
-                  IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(*rhs_columns),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              } else if rhs_scalar {
-                IndexIteratorZip2::new(
-                  IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(*lhs_columns),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              } else {
-                IndexIteratorZip2::new(
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(*rhs_columns),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              };
-
               let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if equal_dimensions {
                 (
                   IndexIterator::Range(1..=lhs_table.rows),
@@ -248,10 +219,10 @@ impl Block {
               let mut i = 1;
 
               loop {
-                match (lhs_table.get_address(&lrix.next().unwrap(), &lcix.next().unwrap()), 
-                       rhs_table.get_address(&rrix.next().unwrap(), &rcix.next().unwrap()))
+                match (lhs_table.get_address_unchecked(lrix.next().unwrap().unwrap(), lcix.next().unwrap().unwrap()), 
+                       rhs_table.get_address_unchecked(rrix.next().unwrap().unwrap(), rcix.next().unwrap().unwrap()))
                 {
-                  (Some(lhs_ix), Some(rhs_ix)) => {
+                  (lhs_ix, rhs_ix) => {
                     let lhs_value = &store.data[lhs_ix];
                     let rhs_value = &store.data[rhs_ix];
                     match (lhs_value, rhs_value) {
@@ -272,7 +243,7 @@ impl Block {
                   _ => (),
                 }
                 //values.push((Index::Index(lrix), *out_columns, function_result));
-                if i >= 4000 {
+                if i >= lhs_table.rows {
                   break;
                 }
                 i += 1;
@@ -464,6 +435,38 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       }
       arg      
     }
+    Transformation::Constant{table_id, value} => {
+      format!("{:?} -> {:?}", value, table_id)
+    }
+    Transformation::Set{table_id, row, column, value} => {
+      let mut tfm = format!("");
+      match table_id {
+        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.identifiers.get(id).unwrap()),
+        TableId::Local(id) => {
+          match block.identifiers.get(id) {
+            Some(name) => tfm = format!("{}{}",tfm,name),
+            None => tfm = format!("{}0x{:x}",tfm,id),
+          }
+        }
+      }
+      tfm = format!("{}{{{:?}, {:?}}} := {:?}", tfm, row.unwrap(), column.unwrap(), value);
+      tfm      
+    }
+    Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+      let mut tfm = format!("");
+      match table_id {
+        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.identifiers.get(id).unwrap()),
+        TableId::Local(id) => {
+          match block.identifiers.get(id) {
+            Some(name) => tfm = format!("{}{}",tfm,name),
+            None => tfm = format!("{}0x{:x}",tfm,id),
+          }
+        }
+      }
+      tfm = format!("{}({:x})",tfm,column_ix);
+      tfm = format!("{} -> {}",tfm,block.identifiers.get(column_alias).unwrap());
+      tfm
+    }
     Transformation::Function{name, arguments, out} => {
       let name_string = block.identifiers.get(name).unwrap();
       let mut arg = format!("");
@@ -472,8 +475,8 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           TableId::Global(id) => arg=format!("{}#{}",arg,block.identifiers.get(id).unwrap()),
           TableId::Local(id) => {
             match block.identifiers.get(id) {
-              Some(name) =>  arg=format!("{}{}",arg,name),
-              None => arg=format!("{}0x{:x}",arg,id),
+              Some(name) => arg = format!("{}{}",arg,name),
+              None => arg = format!("{}0x{:x}",arg,id),
             }
           }
         };
