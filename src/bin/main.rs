@@ -46,7 +46,7 @@ fn main() {
   #time/timer = [period: 1, ticks: 0]
 */
 
-  let mut block = Block::new(4000 * 10 * 10);
+  let mut block = Block::new(balls * 10 * 10);
   block.identifiers.insert(time_timer, "time/timer");
   block.identifiers.insert(period, "period");
   block.identifiers.insert(ticks, "ticks");
@@ -115,7 +115,7 @@ fn main() {
   #ball.vy := #ball.vy + #gravity
 */
 
-  let mut block = Block::new(4000 * 10 * 10);
+  let mut block = Block::new(balls * 10 * 10);
   block.identifiers.insert(time_timer, "time/timer");
   block.identifiers.insert(ticks, "ticks");
   block.identifiers.insert(gravity, "gravity");
