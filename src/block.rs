@@ -25,7 +25,7 @@ pub struct Block {
   pub tables: HashMap<u64, Table>,
   pub store: Rc<Store>,
   pub transformations: Vec<Transformation>,
-  pub plan: Vec<(Vec<u8>,Transformation)>,
+  pub plan: Vec<(Vec<TransformMap>,Transformation)>,
   pub changes: Vec<Change>,
   pub identifiers: HashMap<u64, &'static str>,
 
@@ -507,6 +507,15 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     x => format!("{:?}", x),
   }
 }
+
+
+pub enum TransformMap {
+  All,
+  Index(usize),
+  Range((usize,usize,usize)),
+  Mask(Vec<u8>),
+}
+
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BlockState {
