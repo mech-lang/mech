@@ -234,7 +234,7 @@ impl fmt::Debug for Index {
 // A 2D table of values.
 pub struct Table {
   pub id: u64,
-  pub store: Rc<RefCell<Store>>,
+  pub store: Rc<Store>,
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<usize>, // Each entry is a memory address into the store
@@ -242,7 +242,7 @@ pub struct Table {
 
 impl Table {
 
-  pub fn new(table_id: u64, rows: usize, columns: usize, store: Rc<RefCell<Store>>) -> Table {
+  pub fn new(table_id: u64, rows: usize, columns: usize, store: Rc<Store>) -> Table {
     Table {
       id: table_id,
       store,
@@ -260,7 +260,7 @@ impl Table {
     };
     let cix = match column {
       &Index::Index(ix) => ix,
-      &Index::Alias(alias) => *self.store.borrow().column_alias_to_index.get(&(self.id,alias)).unwrap(),
+      &Index::Alias(alias) => *self.store.column_alias_to_index.get(&(self.id,alias)).unwrap(),
       _ => 0, // TODO all
     };
     if rix <= self.rows && cix <= self.columns && rix > 0 && cix > 0 {
@@ -283,8 +283,7 @@ impl Table {
     match self.index(row, column) {
       Some(ix) => {
         let address = self.data[ix];
-        let s = self.store.borrow();
-        Some(s.data[address])
+        Some(self.store.data[address])
       },
       None => None,
     }
@@ -295,10 +294,10 @@ impl Table {
   // new address.
   pub fn set(&mut self, row: &Index, column: &Index, value: &Value) {
     let ix = self.index(row, column).unwrap();
-    let mut s = self.store.borrow_mut();
     let old_address = self.data[ix];
-    s.dereference(old_address);
-    let new_address = s.intern(&value);
+    let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+    store.dereference(old_address);
+    let new_address = store.intern(&value);
     self.data[ix] = new_address;
   }
 
@@ -315,7 +314,7 @@ impl fmt::Debug for Table {
     };
     
     
-    let table_name = match self.store.borrow().identifiers.get(&self.id) {
+    let table_name = match self.store.identifiers.get(&self.id) {
       Some(name) => name.to_string(),
       None => format!("0x{:x}", self.id),
     };
@@ -340,9 +339,8 @@ impl fmt::Debug for Table {
     print_inner_span_border(self.columns, cell_width+2, f)?;
     write!(f, "│ ", )?;
     for i in 1..=self.columns {
-      let s = self.store.borrow();
-      let column_header = match s.column_index_to_alias.get(&(self.id,i)) {
-        Some(alias) => self.store.borrow().identifiers.get(alias).unwrap().to_string(),
+      let column_header = match self.store.column_index_to_alias.get(&(self.id,i)) {
+        Some(alias) => self.store.identifiers.get(alias).unwrap().to_string(),
         None => format!("{}", i),
       };
       print_cell_contents(&column_header, cell_width, f);
@@ -355,7 +353,7 @@ impl fmt::Debug for Table {
       for j in 0..self.columns {
         match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
-            let value = &self.store.borrow().data[x];
+            let value = &self.store.data[x];
             let text = format!("{:?}", value);
             write!(f, "{:?}", value)?;
             if text.len() < cell_width {
@@ -383,7 +381,7 @@ impl fmt::Debug for Table {
         for j in 0..self.columns {
           match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
             Some(x) => {
-              let value = &self.store.borrow().data[x];
+              let value = &self.store.data[x];
               let text = format!("{:?}", value);
               print_cell_contents(&text, cell_width, f);
               write!(f, " │ ")?;

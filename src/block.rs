@@ -22,8 +22,8 @@ pub struct Block {
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
-  pub tables: HashMap<u64, Rc<RefCell<Table>>>,
-  pub store: Rc<RefCell<Store>>,
+  pub tables: HashMap<u64, Table>,
+  pub store: Rc<Store>,
   pub transformations: Vec<Transformation>,
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
@@ -41,7 +41,7 @@ impl Block {
       output: HashSet::new(),
       state: BlockState::New,
       tables: HashMap::new(),
-      store: Rc::new(RefCell::new(Store::new(capacity))),
+      store: Rc::new(Store::new(capacity)),
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
@@ -75,7 +75,7 @@ impl Block {
             self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
           }
           TableId::Local(id) => {
-            self.tables.insert(id, Rc::new(RefCell::new(Table::new(id, rows, columns, self.store.clone()))));
+            self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
           }
         }
       }
@@ -99,7 +99,7 @@ impl Block {
       Transformation::Constant{table_id, ref value} => {
         match table_id {
           TableId::Local(id) => {
-            let mut table = self.tables.get(&id).unwrap().borrow_mut();
+            let mut table = self.tables.get_mut(&id).unwrap();
             table.set(&Index::Index(1), &Index::Index(1), &value);
           }
           _ => (),
@@ -160,16 +160,22 @@ impl Block {
               let (lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
               let (rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
               let (out_table_id, out_rows, out_columns) = out;
-              let db = database.borrow_mut();
+              let mut db = database.borrow_mut();
+
+              let mut out_table = match out_table_id {
+                TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+                TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
+              };
+
               let lhs_table = match lhs_table_id {
-                TableId::Global(id) => unsafe{db.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
-                TableId::Local(id) => unsafe{self.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
+                TableId::Global(id) => db.tables.get(id).unwrap(),
+                TableId::Local(id) => self.tables.get(id).unwrap(),
               };
               let rhs_table = match rhs_table_id {
-                TableId::Global(id) => unsafe{db.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
-                TableId::Local(id) => unsafe{self.tables.get(id).unwrap().try_borrow_unguarded()}.unwrap(),
+                TableId::Global(id) => db.tables.get(id).unwrap(),
+                TableId::Local(id) => self.tables.get(id).unwrap(),
               };
-              let store = &db.store.borrow();
+              let store = &db.store;
 
               // Figure out dimensions
               let equal_dimensions = if lhs_table.rows == rhs_table.rows
@@ -202,12 +208,6 @@ impl Block {
                 )
               };
 
-              let mut function_result = Value::from_u64(0);
-              //let mut values = Vec::with_capacity(lhs_table.rows);
-              let mut out_table = match out_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap().borrow_mut(),
-                TableId::Local(id) => self.tables.get(id).unwrap().borrow_mut(),
-              }; 
               for (lrix, lcix, rrix, rcix) in iterator_zip {
                 match (lhs_table.get_address(&Index::Index(lrix), &Index::Index(lcix)), 
                       rhs_table.get_address(&Index::Index(rrix), &Index::Index(rcix))
@@ -220,7 +220,10 @@ impl Block {
                       (Value::Number(x), Value::Number(y)) => {
                         match x.add(*y) {
                           Ok(result) => {
-                            function_result = Value::from_quantity(result);
+                            let function_result = Value::from_quantity(result);
+                            unsafe {
+                              (*out_table).set(&Index::Index(lrix),&Index::Index(lcix), &function_result);
+                            }
                           }
                           Err(_) => (), // TODO Handle error here
                         }
@@ -230,7 +233,6 @@ impl Block {
                   }
                   _ => (),
                 }
-                out_table.set(&Index::Index(lrix), &out_columns, &function_result);
                 //values.push((Index::Index(lrix), *out_columns, function_result));
               }
               /*changes.push(Change::Set{
@@ -248,19 +250,19 @@ impl Block {
               let (out_table_id, out_rows, out_columns) = out;
               let db = database.borrow_mut();
               let start_table = match start_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                TableId::Global(id) => db.tables.get(id).unwrap(),
+                TableId::Local(id) => self.tables.get(id).unwrap(),
               };
               let end_table = match end_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                TableId::Global(id) => db.tables.get(id).unwrap(),
+                TableId::Local(id) => self.tables.get(id).unwrap(),
               };
               let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
               let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
               let range = end_value.as_u64().unwrap() - start_value.as_u64().unwrap();
               match out_table_id {
                 TableId::Local(id) => {
-                  let mut out_table = self.tables.get(id).unwrap().borrow_mut();
+                  let mut out_table = self.tables.get_mut(id).unwrap();
                   for i in 1..=range as usize {
                     out_table.set(&Index::Index(i), &Index::Index(1), &Value::from_u64(i as u64));
                   }
@@ -280,8 +282,8 @@ impl Block {
               // First pass, make sure the dimensions work out
               for (table_id, rows, columns) in arguments {
                 let table = match table_id {
-                  TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                  TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                  TableId::Global(id) => db.tables.get(id).unwrap(),
+                  TableId::Local(id) => self.tables.get(id).unwrap(),
                 };
                 if out_rows == 0 {
                   out_rows = table.rows;
@@ -294,8 +296,8 @@ impl Block {
 
               for (table_id, rows, columns) in arguments {
                 let table = match table_id {
-                  TableId::Global(id) => db.tables.get(id).unwrap().borrow(),
-                  TableId::Local(id) => self.tables.get(id).unwrap().borrow(),
+                  TableId::Global(id) => db.tables.get(id).unwrap(),
+                  TableId::Local(id) => self.tables.get(id).unwrap(),
                 };
                 let rows_iter = if table.rows == 1 {
                   IndexIterator::Constant(std::iter::repeat(1))
@@ -349,6 +351,7 @@ impl Block {
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "┌─────────────────────────────────────────────┐\n")?;
     write!(f, "│ id: {}\n", humanize(&self.id))?;
     write!(f, "│ state: {:?}\n", self.state)?;
     write!(f, "│ ready: \n")?;
@@ -375,7 +378,7 @@ impl fmt::Debug for Block {
     }
     write!(f, "│ tables: {} \n", self.tables.len())?;
     for (_, table) in self.tables.iter() {
-      write!(f, "{:?}\n", table.borrow())?;
+      write!(f, "{:?}\n", table)?;
     }
     
     Ok(())

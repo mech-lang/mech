@@ -114,9 +114,9 @@ impl fmt::Debug for Store {
 // The database processes transactions, which are arrays of changes that ar applies to the tables
 // in the database.
 pub struct Database {
-  pub tables: HashMap<u64, Rc<RefCell<Table>>>,
+  pub tables: HashMap<u64, Table>,
   pub changed_this_round: HashSet<u64>,
-  pub store: Rc<RefCell<Store>>,
+  pub store: Rc<Store>,
   pub transactions: Vec<Transaction>,
 }
 
@@ -126,7 +126,7 @@ impl Database {
     Database {
       tables: HashMap::new(),
       changed_this_round: HashSet::new(),
-      store: Rc::new(RefCell::new(Store::new(capacity))),
+      store: Rc::new(Store::new(capacity)),
       transactions: Vec::with_capacity(100_000),
     }
   }
@@ -136,22 +136,22 @@ impl Database {
     for change in &txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
-          self.tables.insert(*table_id, Rc::new(RefCell::new(Table::new(
+          self.tables.insert(*table_id, Table::new(
             *table_id, 
             *rows, 
-            *columns, self.store.clone()))));
+            *columns, self.store.clone()));
         },
         Change::SetColumnAlias{table_id, column_ix, column_alias} => {
-          self.store.borrow_mut().column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
-          self.store.borrow_mut().column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
+          let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+          store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
+          store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
         }
         Change::Set{table_id, values} => {
-          match self.tables.get(&table_id) {
+          match self.tables.get_mut(&table_id) {
             Some(table) => {
-              let mut t = table.borrow_mut();
               for (row, column, value) in values {
                 // Set the value
-                t.set(row, column, value);
+                table.set(row, column, value);
                 // Mark the table as updated
                 let register_hash = Register{table_id: *table_id, row: Index::All, column: *column}.hash();
                 self.changed_this_round.insert(register_hash);
@@ -180,7 +180,7 @@ impl fmt::Debug for Database {
     write!(f,"{:?}", self.store);
     write!(f, "tables: \n")?;
     for (id,table) in self.tables.iter() {
-      write!(f, "{:?}\n", table.borrow())?;   
+      write!(f, "{:?}\n", table)?;   
     }
     Ok(())
   }

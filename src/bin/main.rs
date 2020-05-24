@@ -1,7 +1,6 @@
 extern crate mech_core;
 
-
-use mech_core::{Core, TableId, Index, Value, Change, Transaction, Transformation, Block};
+use mech_core::{Core, Table, TableId, Index, Value, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
 extern crate ahash;
 use ahash::AHasher;
@@ -176,7 +175,6 @@ fn main() {
   println!("{:0.4?}ms per iteration", per_iteration_time);  
 
   println!("{:?}", core);
-  
   
 
 }

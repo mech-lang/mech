@@ -1,5 +1,5 @@
 use block::{Block, BlockState, Error};
-use database::{Database, Transaction, Change};
+use database::{Database, Transaction, Change, Store};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::{HashSet, HashMap};
@@ -111,9 +111,9 @@ impl Runtime {
     }
 
     {
-      let db = self.database.borrow();
-      let mut s = db.store.borrow_mut();
-      s.identifiers.extend(&block.identifiers);
+      let mut db = self.database.borrow_mut();
+      let store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
+      store.identifiers.extend(&block.identifiers);
     }
 
     let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
