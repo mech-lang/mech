@@ -185,30 +185,38 @@ impl Block {
               let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
               { true } else { false };
 
+              let out_rows_count = unsafe{(*out_table).rows};
+
               let iterator_zip = if equal_dimensions {
-                IndexIteratorZip::new(
+                IndexIteratorZip2::new(
                   IndexIterator::Range(1..=lhs_table.rows),
                   IndexIterator::Constant(*lhs_columns),
                   IndexIterator::Range(1..=rhs_table.rows),
                   IndexIterator::Constant(*rhs_columns),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
                 )
               } else if rhs_scalar {
-                IndexIteratorZip::new(
+                IndexIteratorZip2::new(
                   IndexIterator::Range(1..=lhs_table.rows),
                   IndexIterator::Constant(*lhs_columns),
                   IndexIterator::Constant(Index::Index(1)),
                   IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
                 )
               } else {
-                IndexIteratorZip::new(
+                IndexIteratorZip2::new(
                   IndexIterator::Constant(Index::Index(1)),
                   IndexIterator::Constant(Index::Index(1)),
                   IndexIterator::Range(1..=rhs_table.rows),
                   IndexIterator::Constant(*rhs_columns),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
                 )
               };
 
-              for (lrix, lcix, rrix, rcix) in iterator_zip {
+              for (lrix, lcix, rrix, rcix, out_rix, out_cix) in iterator_zip {
                 match (lhs_table.get_address(&lrix, &lcix), 
                        rhs_table.get_address(&rrix, &rcix))
                 {
@@ -221,7 +229,7 @@ impl Block {
                           Ok(result) => {
                             let function_result = Value::from_quantity(result);
                             unsafe {
-                              (*out_table).set(&lrix, &lcix, &function_result);
+                              (*out_table).set(&out_rix, &out_cix, &function_result);
                             }
                           }
                           Err(_) => (), // TODO Handle error here
@@ -524,39 +532,47 @@ impl Iterator for IndexIterator {
   }
 }
 
-pub struct IndexIteratorZip {
-  lhs_row: IndexIterator,
-  lhs_col: IndexIterator,
-  rhs_row: IndexIterator, 
-  rhs_col: IndexIterator,
+pub struct IndexIteratorZip2 {
+  arg1_row: IndexIterator,
+  arg1_col: IndexIterator,
+  arg2_row: IndexIterator, 
+  arg2_col: IndexIterator,
+  out_row: IndexIterator,
+  out_col: IndexIterator,
 }
 
-impl IndexIteratorZip {
+impl IndexIteratorZip2 {
   pub fn new(
-    lhs_row: IndexIterator,
-    lhs_col: IndexIterator,
-    rhs_row: IndexIterator, 
-    rhs_col: IndexIterator
-  ) -> IndexIteratorZip {
-    IndexIteratorZip {
-      lhs_row,
-      lhs_col,
-      rhs_row,
-      rhs_col,      
+    arg1_row: IndexIterator,
+    arg1_col: IndexIterator,
+    arg2_row: IndexIterator, 
+    arg2_col: IndexIterator,
+    out_row: IndexIterator,
+    out_col: IndexIterator,
+  ) -> IndexIteratorZip2 {
+    IndexIteratorZip2 {
+      arg1_row,
+      arg1_col,
+      arg2_row,
+      arg2_col,      
+      out_row,
+      out_col,
     }
   }
 }
 
-impl Iterator for IndexIteratorZip {
-  type Item = (Index,Index,Index,Index);
+impl Iterator for IndexIteratorZip2 {
+  type Item = (Index,Index,Index,Index,Index,Index);
   
-  fn next(&mut self) -> Option<(Index,Index,Index,Index)> {
-    match (self.lhs_row.next(), self.lhs_col.next(), self.rhs_row.next(), self.rhs_col.next()) {
-      (Some(a),Some(b),Some(c),Some(d)) => Some((a,b,c,d)),
-      (None,_,_,_) |
-      (_,None,_,_) |
-      (_,_,None,_) |
-      (_,_,_,None) => None,
+  fn next(&mut self) -> Option<(Index,Index,Index,Index,Index,Index)> {
+    match (self.arg1_row.next(), self.arg1_col.next(), self.arg2_row.next(), self.arg2_col.next(),self.out_row.next(),self.out_col.next()) {
+      (Some(a),Some(b),Some(c),Some(d),Some(e),Some(f)) => Some((a,b,c,d,e,f)),
+      (None,_,_,_,_,_) |
+      (_,None,_,_,_,_) |
+      (_,_,None,_,_,_) |
+      (_,_,_,None,_,_) |
+      (_,_,_,_,None,_) |
+      (_,_,_,_,_,None) => None,
     }
   }
 }
