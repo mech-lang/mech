@@ -77,10 +77,10 @@ impl Store {
       }
     // Extend the data if it's full and there is no free space
     } else if self.data_end + 1 == self.capacity && self.free[0] == 0 {
-      self.data.resize(self.capacity * 2, Value::from_u64(0));
-      self.reference_counts.resize(self.capacity * 2, 0);
-      self.free.resize(self.capacity * 2, 0);
       self.capacity = self.capacity * 2;
+      self.data.resize(self.capacity, Value::from_u64(0));
+      self.reference_counts.resize(self.capacity, 0);
+      self.free.resize(self.capacity, 0);
       self.data_end += 1;
       self.next = self.data_end;
     } else {
