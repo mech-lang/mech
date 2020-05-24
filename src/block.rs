@@ -216,9 +216,40 @@ impl Block {
                 )
               };
 
-              for (lrix, lcix, rrix, rcix, out_rix, out_cix) in iterator_zip {
-                match (lhs_table.get_address(&lrix, &lcix), 
-                       rhs_table.get_address(&rrix, &rcix))
+              let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if equal_dimensions {
+                (
+                  IndexIterator::Range(1..=lhs_table.rows),
+                  IndexIterator::Constant(*lhs_columns),
+                  IndexIterator::Range(1..=rhs_table.rows),
+                  IndexIterator::Constant(*rhs_columns),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
+                )
+              } else if rhs_scalar {
+                (
+                  IndexIterator::Range(1..=lhs_table.rows),
+                  IndexIterator::Constant(*lhs_columns),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
+                )
+              } else {
+                (
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Range(1..=rhs_table.rows),
+                  IndexIterator::Constant(*rhs_columns),
+                  IndexIterator::Range(1..=out_rows_count),
+                  IndexIterator::Constant(*out_columns),
+                )
+              };
+
+              let mut i = 1;
+
+              loop {
+                match (lhs_table.get_address(&lrix.next().unwrap(), &lcix.next().unwrap()), 
+                       rhs_table.get_address(&rrix.next().unwrap(), &rcix.next().unwrap()))
                 {
                   (Some(lhs_ix), Some(rhs_ix)) => {
                     let lhs_value = &store.data[lhs_ix];
@@ -229,7 +260,7 @@ impl Block {
                           Ok(result) => {
                             let function_result = Value::from_quantity(result);
                             unsafe {
-                              (*out_table).set(&out_rix, &out_cix, &function_result);
+                              (*out_table).set(&out_rix.next().unwrap(), &out_cix.next().unwrap(), &function_result);
                             }
                           }
                           Err(_) => (), // TODO Handle error here
@@ -241,6 +272,10 @@ impl Block {
                   _ => (),
                 }
                 //values.push((Index::Index(lrix), *out_columns, function_result));
+                if i >= 4000 {
+                  break;
+                }
+                i += 1;
               }
               /*changes.push(Change::Set{
                10. table_id: *out_table_id.unwrap(),
@@ -531,52 +566,6 @@ impl Iterator for IndexIterator {
     }
   }
 }
-
-pub struct IndexIteratorZip2 {
-  arg1_row: IndexIterator,
-  arg1_col: IndexIterator,
-  arg2_row: IndexIterator, 
-  arg2_col: IndexIterator,
-  out_row: IndexIterator,
-  out_col: IndexIterator,
-}
-
-impl IndexIteratorZip2 {
-  pub fn new(
-    arg1_row: IndexIterator,
-    arg1_col: IndexIterator,
-    arg2_row: IndexIterator, 
-    arg2_col: IndexIterator,
-    out_row: IndexIterator,
-    out_col: IndexIterator,
-  ) -> IndexIteratorZip2 {
-    IndexIteratorZip2 {
-      arg1_row,
-      arg1_col,
-      arg2_row,
-      arg2_col,      
-      out_row,
-      out_col,
-    }
-  }
-}
-
-impl Iterator for IndexIteratorZip2 {
-  type Item = (Index,Index,Index,Index,Index,Index);
-  
-  fn next(&mut self) -> Option<(Index,Index,Index,Index,Index,Index)> {
-    match (self.arg1_row.next(), self.arg1_col.next(), self.arg2_row.next(), self.arg2_col.next(),self.out_row.next(),self.out_col.next()) {
-      (Some(a),Some(b),Some(c),Some(d),Some(e),Some(f)) => Some((a,b,c,d,e,f)),
-      (None,_,_,_,_,_) |
-      (_,None,_,_,_,_) |
-      (_,_,None,_,_,_) |
-      (_,_,_,None,_,_) |
-      (_,_,_,_,None,_) |
-      (_,_,_,_,_,None) => None,
-    }
-  }
-}
-
 
 pub fn humanize(hash: &u64) -> String {
   use std::mem::transmute;
