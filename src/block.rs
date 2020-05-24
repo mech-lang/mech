@@ -25,7 +25,7 @@ pub struct Block {
   pub tables: HashMap<u64, Table>,
   pub store: Rc<Store>,
   pub transformations: Vec<Transformation>,
-  pub plan: Vec<Transformation>,
+  pub plan: Vec<(Vec<u8>,Transformation)>,
   pub changes: Vec<Change>,
   pub identifiers: HashMap<u64, &'static str>,
 
@@ -121,7 +121,7 @@ impl Block {
       }
       Transformation::Whenever{table_id, row, column} => {
         self.input.insert(Register{table_id, row, column}.hash());
-        self.plan.push(tfm.clone());
+        self.plan.push((vec![],tfm.clone()));
       }
       Transformation::Function{name, ref arguments, out} => {
         let (out_id, row, column) = out;
@@ -135,7 +135,7 @@ impl Block {
             _ => (),
           }
         }
-        self.plan.push(tfm.clone());
+        self.plan.push((vec![],tfm.clone()) );
       }
       _ => (),
     }
@@ -146,7 +146,7 @@ impl Block {
     let mut changes = Vec::with_capacity(4000);
     changes.append(&mut self.changes);
     self.changes.clear();
-    'step_loop: for step in &self.plan {
+    'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
           let register = Register{table_id: *table_id, row: *row, column: *column}.hash();
@@ -367,26 +367,28 @@ impl fmt::Debug for Block {
     write!(f, "┌─────────────────────────────────────────────┐\n")?;
     write!(f, "│ id: {}\n", humanize(&self.id))?;
     write!(f, "│ state: {:?}\n", self.state)?;
-    write!(f, "│ ready: \n")?;
-    for input in self.ready.iter() {
-      write!(f, "│    {}\n", humanize(input))?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+    write!(f, "│ ready: {}\n", self.ready.len())?;
+    for (ix, input) in self.ready.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, humanize(input))?;
     }
-    write!(f, "│ input: \n")?;
-    for input in self.input.iter() {
-      write!(f, "│    {}\n", humanize(input))?;
+    write!(f, "│ input: {} \n", self.input.len())?;
+    for (ix, input) in self.input.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, humanize(input))?;
     }
-    write!(f, "│ output: \n")?;
-    for output in self.output.iter() {
-      write!(f, "│    {}\n", humanize(output))?;
+    write!(f, "│ output: {}\n", self.output.len())?;
+    for (ix, output) in self.output.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
     }
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ transformations: \n")?;
     for (ix, tfm) in self.transformations.iter().enumerate() {
       let tfm_string = format_transformation(&self,&tfm);
       write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
     write!(f, "│ plan: \n")?;
-    for (ix, tfm) in self.plan.iter().enumerate() {
-      let tfm_string = format_transformation(&self,&tfm);
+    for (ix, (_,tfm)) in self.plan.iter().enumerate() {
+      let tfm_string = format_transformation(&self,tfm);
       write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
     write!(f, "│ tables: {} \n", self.tables.len())?;
