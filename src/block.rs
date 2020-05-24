@@ -143,9 +143,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
-    let mut changes = Vec::with_capacity(4000);
-    changes.append(&mut self.changes);
-    self.changes.clear();
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
@@ -242,16 +239,11 @@ impl Block {
                   }
                   _ => (),
                 }
-                //values.push((Index::Index(lrix), *out_columns, function_result));
                 if i >= lhs_table.rows {
                   break;
                 }
                 i += 1;
               }
-              /*changes.push(Change::Set{
-               10. table_id: *out_table_id.unwrap(),
-                values,
-              });*/
             }
             // table/range
             2907723353607122676 => {
@@ -288,10 +280,9 @@ impl Block {
             // table/horizontal-concatenate
             2047524600924628977 => {
               let (out_table_id, out_rows, out_columns) = out;
-              let db = database.borrow_mut();
+              let mut db = database.borrow_mut();
               let mut column = 0;
               let mut out_rows = 0;
-              let mut values = vec![];
               // First pass, make sure the dimensions work out
               for (table_id, rows, columns) in arguments {
                 let table = match table_id {
@@ -306,7 +297,10 @@ impl Block {
                   out_rows = table.rows
                 }
               }
-
+              let mut out_table = match out_table_id {
+                TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+                TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
+              };
               for (table_id, rows, columns) in arguments {
                 let table = match table_id {
                   TableId::Global(id) => db.tables.get(id).unwrap(),
@@ -320,15 +314,13 @@ impl Block {
                 for (i,k) in (1..=out_rows).zip(rows_iter) {
                   for j in 1..=table.columns {
                     let value = table.get(&k,&Index::Index(j)).unwrap();
-                    values.push((Index::Index(i), Index::Index(column+j), value));
+                    unsafe {
+                      (*out_table).set(&Index::Index(i), &Index::Index(column+j), &value);
+                    }
                   }
                 }
                 column += 1;
               }
-              changes.push(Change::Set{
-                table_id: *out_table_id.unwrap(),
-                values,
-              });
             }
             _ => () // TODO Unknown function
           }
@@ -336,11 +328,6 @@ impl Block {
         _ => (),
       }
     }
-    let txn = Transaction{
-      changes,
-    };
-    database.borrow_mut().process_transaction(&txn);
-    database.borrow_mut().transactions.push(txn);
     self.state = BlockState::Done;
   }
 
