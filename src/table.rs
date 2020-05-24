@@ -384,7 +384,7 @@ impl fmt::Debug for Table {
     if self.rows > 10 {
       write!(f, "│ ")?;
       for j in 0..self.columns {
-        print_cell_contents(&"...".to_string(), cell_width, f);
+        print_cell_contents(&"...".to_string(), cell_width, f)?;
         write!(f, " │ ")?;
       }
       write!(f, "\n")?;
@@ -395,7 +395,7 @@ impl fmt::Debug for Table {
             Some(x) => {
               let value = &self.store.data[x];
               let text = format!("{:?}", value);
-              print_cell_contents(&text, cell_width, f);
+              print_cell_contents(&text, cell_width, f)?;
               write!(f, " │ ")?;
             },
             _ => (),
@@ -414,10 +414,10 @@ impl fmt::Debug for Table {
 fn print_top_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "┌")?;
   for _ in 0 .. n - 1 {
-    print_repeated_char("─", m, f);
+    print_repeated_char("─", m, f)?;
     write!(f, "─")?;
   }
-  print_repeated_char("─", m, f);
+  print_repeated_char("─", m, f)?;
   write!(f, "┐\n")?;
   Ok(())
 }
@@ -425,10 +425,10 @@ fn print_top_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Res
 fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "┌")?;
   for _ in 0 .. n - 1 {
-    print_repeated_char("─", m, f);
+    print_repeated_char("─", m, f)?;
     write!(f, "┬")?;
   }
-  print_repeated_char("─", m, f);
+  print_repeated_char("─", m, f)?;
   write!(f, "┐\n")?;
   Ok(())
 }
@@ -436,10 +436,10 @@ fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
 fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "└")?;
   for _ in 0 .. n - 1 {
-    print_repeated_char("─", m, f);
+    print_repeated_char("─", m, f)?;
     write!(f, "┴")?;
   }
-  print_repeated_char("─", m, f);
+  print_repeated_char("─", m, f)?;
   write!(f, "┘\n")?;
   Ok(())
 }
@@ -466,10 +466,10 @@ fn print_cell_contents(content_string: &String, cell_width: usize, f: &mut fmt::
 fn print_inner_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "├")?;
   for _ in 0 .. n - 1 {
-    print_repeated_char("─", m, f);
+    print_repeated_char("─", m, f)?;
     write!(f, "┬")?;
   }
-  print_repeated_char("─", m, f);
+  print_repeated_char("─", m, f)?;
   write!(f, "┤\n")?;
   Ok(())
 }
@@ -477,10 +477,10 @@ fn print_inner_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::R
 fn print_inner_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "├")?;
   for _ in 0 .. n - 1 {
-    print_repeated_char("─", m, f);
+    print_repeated_char("─", m, f)?;
     write!(f, "┼")?;
   }
-  print_repeated_char("─", m, f);
+  print_repeated_char("─", m, f)?;
   write!(f, "┤\n")?;
   Ok(())
 }
