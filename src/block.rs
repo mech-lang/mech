@@ -188,30 +188,29 @@ impl Block {
               let iterator_zip = if equal_dimensions {
                 IndexIteratorZip::new(
                   IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(lhs_columns.unwrap())),
+                  IndexIterator::Constant(*lhs_columns),
                   IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(rhs_columns.unwrap())),
+                  IndexIterator::Constant(*rhs_columns),
                 )
               } else if rhs_scalar {
                 IndexIteratorZip::new(
                   IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(lhs_columns.unwrap())),
-                  IndexIterator::Constant(std::iter::repeat(1)),
-                  IndexIterator::Constant(std::iter::repeat(1)),
+                  IndexIterator::Constant(*lhs_columns),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
                 )
               } else {
                 IndexIteratorZip::new(
-                  IndexIterator::Constant(std::iter::repeat(1)),
-                  IndexIterator::Constant(std::iter::repeat(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
                   IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(std::iter::repeat(rhs_columns.unwrap())),
+                  IndexIterator::Constant(*rhs_columns),
                 )
               };
 
               for (lrix, lcix, rrix, rcix) in iterator_zip {
-                match (lhs_table.get_address(&Index::Index(lrix), &Index::Index(lcix)), 
-                      rhs_table.get_address(&Index::Index(rrix), &Index::Index(rcix))
-                      ) 
+                match (lhs_table.get_address(&lrix, &lcix), 
+                       rhs_table.get_address(&rrix, &rcix))
                 {
                   (Some(lhs_ix), Some(rhs_ix)) => {
                     let lhs_value = &store.data[lhs_ix];
@@ -222,7 +221,7 @@ impl Block {
                           Ok(result) => {
                             let function_result = Value::from_quantity(result);
                             unsafe {
-                              (*out_table).set(&Index::Index(lrix),&Index::Index(lcix), &function_result);
+                              (*out_table).set(&lrix, &lcix, &function_result);
                             }
                           }
                           Err(_) => (), // TODO Handle error here
@@ -300,13 +299,13 @@ impl Block {
                   TableId::Local(id) => self.tables.get(id).unwrap(),
                 };
                 let rows_iter = if table.rows == 1 {
-                  IndexIterator::Constant(std::iter::repeat(1))
+                  IndexIterator::Constant(Index::Index(1))
                 } else {
                   IndexIterator::Range(1..=table.rows)
                 };
                 for (i,k) in (1..=out_rows).zip(rows_iter) {
                   for j in 1..=table.columns {
-                    let value = table.get(&Index::Index(k),&Index::Index(j)).unwrap();
+                    let value = table.get(&k,&Index::Index(j)).unwrap();
                     values.push((Index::Index(i), Index::Index(column+j), value));
                   }
                 }
@@ -506,16 +505,21 @@ impl Register {
 
 pub enum IndexIterator {
   Range(std::ops::RangeInclusive<usize>),
-  Constant(std::iter::Repeat<usize>),
+  Constant(Index),
 }
 
 impl Iterator for IndexIterator {
-  type Item = usize;
+  type Item = Index;
   
-  fn next(&mut self) -> Option<usize> {
+  fn next(&mut self) -> Option<Index> {
     match self {
-      IndexIterator::Range(itr) => itr.next(),
-      IndexIterator::Constant(itr) => itr.next(),
+      IndexIterator::Range(itr) => {
+        match itr.next() {
+          Some(ix) => Some(Index::Index(ix)),
+          None => None,
+        }
+      }
+      IndexIterator::Constant(itr) => Some(*itr),
     }
   }
 }
@@ -544,9 +548,9 @@ impl IndexIteratorZip {
 }
 
 impl Iterator for IndexIteratorZip {
-  type Item = (usize,usize,usize,usize);
+  type Item = (Index,Index,Index,Index);
   
-  fn next(&mut self) -> Option<(usize,usize,usize,usize)> {
+  fn next(&mut self) -> Option<(Index,Index,Index,Index)> {
     match (self.lhs_row.next(), self.lhs_col.next(), self.rhs_row.next(), self.rhs_col.next()) {
       (Some(a),Some(b),Some(c),Some(d)) => Some((a,b,c,d)),
       (None,_,_,_) |
