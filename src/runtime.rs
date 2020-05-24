@@ -105,9 +105,18 @@ impl Runtime {
       listeners.insert(block.id);
     }
 
+    // If the block is new and has no input, it can be run immediately
     if block.state == BlockState::New && block.input.len() == 0 {
       block.state == BlockState::Ready;
       self.ready_blocks.insert(block.id);
+
+      // Process changes queued on the block
+      let txn = Transaction{
+        changes: block.changes.clone(),
+      };
+      block.changes.clear();
+      self.database.borrow_mut().process_transaction(&txn);
+      self.database.borrow_mut().transactions.push(txn);
     }
 
     {
@@ -116,9 +125,11 @@ impl Runtime {
       store.identifiers.extend(&block.identifiers);
     }
 
+    // Mark ready registers
     let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
     block.ready.extend(&ready);
 
+    // Add to the list of output registers
     self.output.extend(&block.output);
 
     if block.is_ready() {
