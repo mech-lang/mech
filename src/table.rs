@@ -270,6 +270,11 @@ impl Table {
     }
   }
 
+  // Transform a (row, column) into a linear address into the data. If it's out of range, return None
+  pub fn index_unchecked(&self, row: usize, column: usize) -> usize {
+    (row - 1) * self.columns + (column - 1)
+  }
+
   // Get the memory address into the store at a (row, column)
   pub fn get_address(&self, row: &Index, column: &Index) -> Option<usize> {
     match self.index(row, column) {
@@ -277,6 +282,13 @@ impl Table {
       None => None,
     }
   }
+
+  // Get the memory address into the store at a (row, column)
+  pub fn get_address_unchecked(&self, row: usize, column: usize) -> usize {
+    let ix = self.index_unchecked(row, column);
+    self.data[ix]
+  }
+  
 
   // Get the value in the store at memory address (row, column)
   pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
