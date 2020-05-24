@@ -346,7 +346,7 @@ impl fmt::Debug for Table {
     };
     print_top_span_border(self.columns, cell_width+2, f)?;
     write!(f,"│ ")?;
-    print_cell_contents(&table_header, table_width-2, f);
+    print_cell_contents(&table_header, table_width-2, f)?;
     write!(f," │\n")?;
     print_inner_span_border(self.columns, cell_width+2, f)?;
     write!(f, "│ ", )?;
@@ -355,7 +355,7 @@ impl fmt::Debug for Table {
         Some(alias) => self.store.identifiers.get(alias).unwrap().to_string(),
         None => format!("{}", i),
       };
-      print_cell_contents(&column_header, cell_width, f);
+      print_cell_contents(&column_header, cell_width, f)?;
       write!(f, " │ ", )?;
     }
     write!(f, "\n")?;
