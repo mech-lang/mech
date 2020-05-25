@@ -153,8 +153,8 @@ impl Database {
                 // Set the value
                 table.set(row, column, *value);
                 // Mark the table as updated
-                let register_hash = Register{table_id: *table_id, row: Index::All, column: *column}.hash();
-                self.changed_this_round.insert(register_hash);
+                let register_hash = Register{table_id: *table_id, row: Index::All, column: *column};
+                self.changed_this_round.insert(register_hash.hash());
               }
             },
             None => {
