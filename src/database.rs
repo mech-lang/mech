@@ -64,10 +64,10 @@ impl Store {
   // Intern a value into the store at the next available memory address.
   // If we are out of memory, we have to look at the list of free spaces
   // and choice one there.
-  pub fn intern(&mut self, value: &Value) -> usize {
+  pub fn intern(&mut self, value: Value) -> usize {
     self.reference_counts[self.next] = 1;
     let address = self.next;
-    self.data[address] = value.clone();
+    self.data[address] = value;
     if self.data_end + 1 == self.capacity && self.free[0] != 0 {
       self.next = self.free[self.free_next];
       if self.free_next + 1 == self.free.len() {
@@ -151,7 +151,7 @@ impl Database {
             Some(table) => {
               for (row, column, value) in values {
                 // Set the value
-                table.set(row, column, value);
+                table.set(row, column, *value);
                 // Mark the table as updated
                 let register_hash = Register{table_id: *table_id, row: Index::All, column: *column}.hash();
                 self.changed_this_round.insert(register_hash);
