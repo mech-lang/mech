@@ -127,7 +127,7 @@ fn main() {
   block.identifiers.insert(vy_id, "vy");
   block.identifiers.insert(vy_id, "vy");
   block.identifiers.insert(math_add, "math/add");
-  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Index(2)});
+  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)});
   block.register_transformation(Transformation::Function{
     name: math_add, 
     arguments: vec![
