@@ -156,8 +156,8 @@ impl Block {
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
-          let register = Register{table_id: *table_id, row: *row, column: *column}.hash();
-          self.ready.remove(&register);
+          let register = Register{table_id: *table_id, row: *row, column: *column};
+          self.ready.remove(&register.hash());
         },
         Transformation::Function{name, arguments, out} => {
           match name {
@@ -378,6 +378,12 @@ impl fmt::Debug for Block {
     write!(f, "│ input: {} \n", self.input.len())?;
     for (ix, input) in self.input.iter().enumerate() {
       write!(f, "│    {}. {}\n", ix+1, humanize(input))?;
+    }
+    if self.ready.len() < self.input.len() {
+      write!(f, "│ missing: \n")?;
+      for (ix, missing) in self.input.difference(&self.ready).enumerate() {
+        write!(f, "│    {}. {}\n", ix+1, humanize(missing))?;
+      }
     }
     write!(f, "│ output: {}\n", self.output.len())?;
     for (ix, output) in self.output.iter().enumerate() {
