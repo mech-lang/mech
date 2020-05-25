@@ -62,6 +62,7 @@ impl Runtime {
       }
 
       self.changed_this_round.extend(&self.database.borrow().changed_this_round);
+      &self.database.borrow_mut().changed_this_round.clear();
 
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
