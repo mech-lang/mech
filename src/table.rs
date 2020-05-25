@@ -304,12 +304,21 @@ impl Table {
   // Set the value of at a (row, column). This will decrement the reference count of the value
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
-  pub fn set(&mut self, row: &Index, column: &Index, value: &Value) {
+  pub fn set(&mut self, row: &Index, column: &Index, value: Value) {
     let ix = self.index(row, column).unwrap();
     let old_address = self.data[ix];
     let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
     store.dereference(old_address);
-    let new_address = store.intern(&value);
+    let new_address = store.intern(value);
+    self.data[ix] = new_address;
+  }
+
+  pub fn set_unchecked(&mut self, row: usize, column: usize, value: Value) {
+    let ix = self.index_unchecked(row, column);
+    let old_address = self.data[ix];
+    let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+    store.dereference(old_address);
+    let new_address = store.intern(value);
     self.data[ix] = new_address;
   }
 
