@@ -1,5 +1,6 @@
-use block::{Block, BlockState, Error};
+use block::{Block, BlockState, Register, Error, Transformation, humanize};
 use database::{Database, Transaction, Change, Store};
+use table::{Index, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::{HashSet, HashMap};
@@ -98,6 +99,18 @@ impl Runtime {
     Ok(())
   }
 
+  pub fn remap_column(&self, table_id: u64, column: Index) -> Index {
+    match column {
+      Index::Alias(alias) => {
+        match self.database.borrow().store.column_alias_to_index.get(&(table_id,alias)) {
+          Some(ix) => Index::Index(*ix),
+          None => Index::Alias(alias),
+        }
+      },
+      x => x,
+    }    
+  }
+
   pub fn register_block(&mut self, mut block: Block) {
 
     // Add the block id as a listener for a particular register
@@ -106,23 +119,68 @@ impl Runtime {
       listeners.insert(block.id);
     }
 
-    // If the block is new and has no input, it can be run immediately
+    // If the block is new and has no input, it can be marked to run immediately
     if block.state == BlockState::New && block.input.len() == 0 {
       block.state == BlockState::Ready;
-      self.ready_blocks.insert(block.id);
     }
 
+    // Extend block identifiers
     {
       let mut db = self.database.borrow_mut();
       let store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
       store.identifiers.extend(&block.identifiers);
     }
 
+    // Remap input registers
+    let mut new_plan = vec![];
+    for step in block.plan {
+      let new_step = match step {
+        (_, Transformation::Function{name, arguments, out}) => {
+          let mut new_args: Vec<(TableId, Index, Index)> = vec![];
+          for (table_id, row, column) in arguments {
+            let new_row = row;
+            let new_column = self.remap_column(*table_id.unwrap(),column);
+            match table_id {
+              TableId::Global(id) => {
+                let new_input_register = Register{table_id: id, row: new_row, column: new_column}.hash();
+                let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
+                listeners.insert(block.id);
+                block.input.insert(new_input_register);
+              },
+              _ => (),
+            }
+            new_args.push((table_id, new_row, new_column));
+          }
+          let (out_table_id, out_row, out_column) = out;
+          let new_out_row = out_row;
+          let new_out_column = self.remap_column(*out_table_id.unwrap(),out_column);
+          match out_table_id {
+            TableId::Global(id) => {block.output.insert(Register{table_id: id, row: new_out_row, column: new_out_column}.hash());},
+            _ => (),
+          }
+          let new_out = (out_table_id, new_out_row, new_out_column);          
+          (vec![], Transformation::Function{name, arguments: new_args, out: new_out})
+        }
+        (_, Transformation::Whenever{table_id, row, column}) => {
+          let new_row = row;
+          let new_column = self.remap_column(table_id,column);
+          let new_input_register = Register{table_id, row: new_row, column: new_column}.hash();
+          let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
+          listeners.insert(block.id);
+          block.input.insert(new_input_register);
+          (vec![], Transformation::Whenever{table_id, row: new_row, column: new_column})
+        }
+        x => x,
+      };
+      new_plan.push(new_step);
+    }
+    block.plan = new_plan;
+
     // Mark ready registers
     let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
     block.ready.extend(&ready);
 
-    // Add to the list of output registers
+    // Add to the list of runtime output registers
     self.output.extend(&block.output);
 
     if block.is_ready() {
