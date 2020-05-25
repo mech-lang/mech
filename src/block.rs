@@ -28,7 +28,6 @@ pub struct Block {
   pub plan: Vec<(Vec<TransformMap>,Transformation)>,
   pub changes: Vec<Change>,
   pub identifiers: HashMap<u64, &'static str>,
-
 }
 
 impl Block {
@@ -45,7 +44,6 @@ impl Block {
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
-
     }
   }
 
@@ -96,11 +94,11 @@ impl Block {
           }
         }
       }
-      Transformation::Constant{table_id, ref value} => {
+      Transformation::Constant{table_id, value} => {
         match table_id {
           TableId::Local(id) => {
             let mut table = self.tables.get_mut(&id).unwrap();
-            table.set(&Index::Index(1), &Index::Index(1), &value);
+            table.set(&Index::Index(1), &Index::Index(1), value);
           }
           _ => (),
         }
@@ -164,7 +162,7 @@ impl Block {
         Transformation::Function{name, arguments, out} => {
           match name {
             // math/add
-            14999395184590496183 => {
+            0xD0288E733F38A1B7 => {
               // TODO test argument count is 2
               let (lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
               let (rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
@@ -228,8 +226,14 @@ impl Block {
               let mut i = 1;
 
               loop {
-                match (lhs_table.get_address_unchecked(lrix.next().unwrap().unwrap(), lcix.next().unwrap().unwrap()), 
-                       rhs_table.get_address_unchecked(rrix.next().unwrap().unwrap(), rcix.next().unwrap().unwrap()))
+                let l1 = lrix.next().unwrap().unwrap();
+                let l2 = lcix.next().unwrap().unwrap();
+                let r1 = rrix.next().unwrap().unwrap();
+                let r2 = rcix.next().unwrap().unwrap();
+                let o1 = out_rix.next().unwrap().unwrap();
+                let o2 = out_cix.next().unwrap().unwrap();
+                match (lhs_table.get_address_unchecked(l1,l2), 
+                       rhs_table.get_address_unchecked(r1,r2))
                 {
                   (lhs_ix, rhs_ix) => {
                     let lhs_value = &store.data[lhs_ix];
@@ -240,7 +244,7 @@ impl Block {
                           Ok(result) => {
                             let function_result = Value::from_quantity(result);
                             unsafe {
-                              (*out_table).set(&out_rix.next().unwrap(), &out_cix.next().unwrap(), &function_result);
+                              (*out_table).set_unchecked(o1, o2, function_result);
                             }
                           }
                           Err(_) => (), // TODO Handle error here
@@ -258,7 +262,7 @@ impl Block {
               }
             }
             // table/range
-            2907723353607122676 => {
+            0x285A4EFBFCDC2EF4 => {
               // TODO test argument count is 2 or 3
               // 2 -> start, end
               // 3 -> start, increment, end
@@ -281,7 +285,7 @@ impl Block {
                 TableId::Local(id) => {
                   let mut out_table = self.tables.get_mut(id).unwrap();
                   for i in 1..=range as usize {
-                    out_table.set(&Index::Index(i), &Index::Index(1), &Value::from_u64(i as u64));
+                    out_table.set(&Index::Index(i), &Index::Index(1), Value::from_u64(i as u64));
                   }
                 }
                 TableId::Global(id) => {
@@ -290,7 +294,7 @@ impl Block {
               }
             }
             // table/horizontal-concatenate
-            2047524600924628977 => {
+            0x1C6A44C6BAFC67F1 => {
               let (out_table_id, out_rows, out_columns) = out;
               let mut db = database.borrow_mut();
               let mut column = 0;
@@ -327,7 +331,7 @@ impl Block {
                   for j in 1..=table.columns {
                     let value = table.get(&k,&Index::Index(j)).unwrap();
                     unsafe {
-                      (*out_table).set(&Index::Index(i), &Index::Index(column+j), &value);
+                      (*out_table).set(&Index::Index(i), &Index::Index(column+j), value);
                     }
                   }
                 }
