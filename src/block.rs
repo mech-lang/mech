@@ -142,6 +142,18 @@ impl Block {
     self.transformations.push(tfm);
   }
 
+  // Process changes queued on the block
+  pub fn process_changes(&mut self, database: Rc<RefCell<Database>>) {
+    if !self.changes.is_empty() {
+      let txn = Transaction {
+        changes: self.changes.clone(),
+      };
+      self.changes.clear();
+      database.borrow_mut().process_transaction(&txn);
+      database.borrow_mut().transactions.push(txn);        
+    }
+  }
+
   pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
     'step_loop: for (masks, step) in &self.plan {
       match step {

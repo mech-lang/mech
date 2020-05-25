@@ -109,14 +109,6 @@ impl Runtime {
     if block.state == BlockState::New && block.input.len() == 0 {
       block.state == BlockState::Ready;
       self.ready_blocks.insert(block.id);
-
-      // Process changes queued on the block
-      let txn = Transaction{
-        changes: block.changes.clone(),
-      };
-      block.changes.clear();
-      self.database.borrow_mut().process_transaction(&txn);
-      self.database.borrow_mut().transactions.push(txn);
     }
 
     {
@@ -133,6 +125,7 @@ impl Runtime {
     self.output.extend(&block.output);
 
     if block.is_ready() {
+      block.process_changes(self.database.clone());
       self.ready_blocks.insert(block.id);
     }
 
