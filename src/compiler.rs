@@ -2,10 +2,10 @@
 
 // ## Preamble
 
-use mech_core::{Block, BlockState, Constraint, Index, TableId};
-use mech_core::{Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
-use mech_core::Hasher;
-use mech_core::{Error, ErrorType};
+use mech_core::{Block, BlockState, Transformation, Index, TableId};
+use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::hash_string;
+//use mech_core::{Error, ErrorType};
 use parser;
 use parser::Parser;
 use lexer::Token;
@@ -257,7 +257,7 @@ impl fmt::Debug for Element {
 pub struct Compiler {
   pub blocks: Vec<Block>,
   pub programs: Vec<Program>,
-  pub constraints: Vec<Constraint>,
+  pub transformations: Vec<Transformation>,
   depth: usize,
   row: usize,
   column: usize,
@@ -284,7 +284,7 @@ impl Compiler {
     Compiler {
       blocks: Vec::new(),
       programs: Vec::new(),
-      constraints: Vec::new(),
+      transformations: Vec::new(),
       node_stack: Vec::new(),
       depth: 0,
       expression: 0,
@@ -309,7 +309,7 @@ impl Compiler {
   pub fn clear(&mut self) {
     self.blocks.clear();
     self.programs.clear();
-    self.constraints.clear();
+    self.transformations.clear();
     self.node_stack.clear();
     self.depth = 0;
     self.expression = 0;
@@ -400,8 +400,8 @@ impl Compiler {
               self.expression += 1;
               let mut formatter = Formatter::new();
               let name = formatter.format(&children[0], false);
-              let name = format!("mech/inline/{}", Hasher::hash_string(name.clone()));
-              let id = Hasher::hash_string(name.clone());
+              let name = format!("mech/inline/{}", hash_string(&name));
+              let id = hash_string(&name);
               let block_tree = Node::Block{children: vec![
                             Node::Constraint{children: vec![
                               Node::Statement{children: vec![
@@ -490,7 +490,7 @@ impl Compiler {
         match children[0] {
           Node::String{ref text} => {
             match text.as_ref() {
-              "pending" => self.blocks.last_mut().unwrap().state = BlockState::Pending,
+              //"pending" => self.blocks.last_mut().unwrap().state = BlockState::Pending,
               "disabled" => self.blocks.last_mut().unwrap().state = BlockState::Disabled,
               _ => (),
             }
@@ -508,6 +508,7 @@ impl Compiler {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
+        /*
         let mut block = Block::new();
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -627,26 +628,33 @@ impl Compiler {
           block.add_constraints((constraint_text, step_constraints));
         }
         for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_constraints {
-          block.errors.push(Error {
+          /*block.errors.push(Error {
             block: block.id as u64,
             constraint: step_constraints,
             error_id: ErrorType::UnsatisfiedConstraint(
               unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
             ),
-          });
+          });*/
             
             
         }
         //block.id = block.gen_block_id();
         self.blocks.push(block.clone());
-        Some((block.id, node))
+        Some((block.id, node))*/
+        None
       },
       _ => None,
     };
     block
   }
 
-  pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
+  pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
+    vec![]
+  }
+
+
+
+  /*pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
     let mut constraints: Vec<Constraint> = Vec::new();
     match node {
       Node::SetData{children} => {
@@ -1193,8 +1201,9 @@ impl Compiler {
       _ => ()
     }
     constraints
-  }
+  }*/
 
+  /*
   pub fn compile_constraints(&mut self, nodes: &Vec<Node>) -> Vec<Constraint> {
     let mut compiled = Vec::new();
     for node in nodes {
@@ -1202,7 +1211,7 @@ impl Compiler {
       compiled.append(&mut result);
     }
     compiled
-  }
+  }*/
 
   pub fn build_syntax_tree(&mut self, node: parser::Node) -> Vec<Node> {
     let mut compiled = Vec::new();
@@ -1736,7 +1745,7 @@ impl Compiler {
             _ => compiled.push(node),
           }
         }
-        let id = Hasher::hash_string(word.clone());
+        let id = hash_string(&word);
         compiled.push(Node::Identifier{name: word, id});
       },
       // Math
