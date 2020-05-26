@@ -3,7 +3,7 @@
 // ## Prelude
 
 use lexer::Token;
-use mech_core::{Hasher};
+use mech_core::{hash_string};
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
