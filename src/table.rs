@@ -27,13 +27,17 @@ pub enum Value {
 
 impl Value {
 
-  /*pub fn from_string(string: String) -> Value {
-    Value::String(string)
-  }*/
+  pub fn from_string(string: String) -> Value {
+    Value::Number(0)
+  }
 
-  /*pub fn from_str(string: &str) -> Value {
-    Value::String(String::from(string))
-  }*/
+  pub fn from_str(string: &str) -> Value {
+    Value::Number(0)
+  }
+
+  pub fn from_bool(boolean: bool) -> Value {
+    Value::Number(0)
+  }
 
   pub fn from_u64(num: u64) -> Value {
     Value::Number(num.to_quantity())
@@ -232,6 +236,7 @@ impl fmt::Debug for Index {
 // ## Table
 
 // A 2D table of values.
+#[derive(Clone)]
 pub struct Table {
   pub id: u64,
   pub store: Rc<Store>,
