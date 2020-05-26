@@ -4,38 +4,25 @@ extern crate mech_core;
 
 use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{Hasher, Core, Index, Value, make_quantity};
-
-macro_rules! compile_string {
-  ($func:ident, $test:tt) => (
-    #[test]
-    fn $func() {
-      let mut compiler = Compiler::new();
-      let input = String::from($test);
-      compiler.compile_string(input);
-      assert_eq!(compiler.errors.is_empty(), true);
-    }
-  )
-}
+use mech_core::{hash_string, Core, Index, Value, make_quantity};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
     #[test]
     fn $func() {
       let mut compiler = Compiler::new();
-      let mut core = Core::new(10, 10);
+      let mut core = Core::new(100);
       let input = String::from($input);
       compiler.compile_string(input);
-      core.register_blocks(compiler.blocks);
-      core.step(10_000);
-      let table = Hasher::hash_str("test");
+      core.runtime.register_blocks(compiler.blocks);
+      let table = hash_string("test");
       let row = Index::Index(1);
       let column = Index::Index(1);
       let test: Value = $test;
-      let actual = core.index(table, &row, &column);
+      let actual = core.get_cell_in_table(table, &row, &column);
       match actual {
         Some(value) => {
-          assert_eq!(*value, test);
+          assert_eq!(value, test);
         },
         None => assert_eq!(0,1),
       }
@@ -43,11 +30,7 @@ macro_rules! test_mech {
   )
 }
 
-compile_string!(empty, "");
-
 // ## Constant
-
-compile_string!(constant_digit, "1");
 
 test_mech!(constant_empty, "
 block
@@ -59,15 +42,6 @@ block
 test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i64(123));
 
 // ## Table
-
-compile_string!(table, "#table");
-
-compile_string!(table_define, "#table = [x y z]");
-
-compile_string!(table_define_data, "#table =  [x y z | 1 2 3]");
-
-compile_string!(table_define_data_math, "#table = [x      y          z|
-                                                   1 * 2, 4 + 7 * 9, 3]");
 
 test_mech!(table_define_inline_expressions, "
 block
@@ -757,13 +731,13 @@ test_mech!(function_set_any,r#"
 block
   x = [1; 2; 3; 4; 5]
   y = x > 4
-  #test = set/any(column: y)"#, Value::Bool(true));
+  #test = set/any(column: y)"#, Value::from_bool(true));
 
 test_mech!(function_set_any_false,r#"
 block
   x = [1; 2; 3; 4; 5]
   y = x > 5
-  #test = set/any(column: y)"#, Value::Bool(false));
+  #test = set/any(column: y)"#, Value::from_bool(false));
 
 test_mech!(function_inline_args,r#"
 block
