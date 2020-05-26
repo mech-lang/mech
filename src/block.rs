@@ -16,6 +16,7 @@ use rust_core::fmt;
 // output are tables. Blocks have their own internal table store. Local tables can be defined within a 
 // block, which allows the programmer to break a computation down into steps. The result of the computation 
 // is then output to one or more global tables, which triggers the execution of other blocks in the network.
+#[derive(Clone)]
 pub struct Block {
   pub id: u64,
   pub state: BlockState,
@@ -517,7 +518,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
   }
 }
 
-
+#[derive(Clone)]
 pub enum TransformMap {
   All,
   Index(usize),
@@ -526,7 +527,7 @@ pub enum TransformMap {
 }
 
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BlockState {
   New,          // Has just been created, but has not been tested for satisfaction
   Ready,        // All inputs are satisfied and the block is ready to execute
