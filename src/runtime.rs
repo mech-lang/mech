@@ -111,6 +111,12 @@ impl Runtime {
     }    
   }
 
+  pub fn register_blocks(&mut self, blocks: Vec<Block>) {
+    for block in blocks {
+      self.register_block(block);
+    }
+  }
+
   pub fn register_block(&mut self, mut block: Block) {
 
     // Add the block id as a listener for a particular register
