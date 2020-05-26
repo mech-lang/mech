@@ -1,5 +1,5 @@
-use mech_core::{Block, Constraint, TableId};
-use mech_core::{Parameter, Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Block, Transformation, TableId};
+use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use super::compiler::Node;
 use hashbrown::hash_map::{HashMap, Entry};
 
