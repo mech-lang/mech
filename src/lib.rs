@@ -7,6 +7,9 @@ extern crate hashbrown;
 extern crate serde_derive;
 extern crate serde;
 
+use std::hash::Hasher;
+use ahash::AHasher;
+
 mod database;
 mod runtime;
 mod table;
@@ -18,10 +21,16 @@ mod core;
 mod block;
 
 pub use self::database::{Database, Store, Transaction, Change};
-pub use self::block::{Block, Transformation};
+pub use self::block::{Block, BlockState, Transformation};
 pub use self::table::{Table, TableId, Index, Value};
 pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
+
+pub fn hash_string(input: &str) -> u64 {
+  let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
+  hasher.write(input.to_string().as_bytes());
+  hasher.finish()
+}
 
 /*
 // # Mech
