@@ -6,30 +6,12 @@ use mech_syntax::formatter::Formatter;
 use mech_core::Block;
 use mech_core::{Change, Transaction};
 use mech_core::{Value, Index};
-use mech_core::Hasher;
+use mech_core::hash_string;
 use mech_core::Core;
 use mech_core::{make_quantity, Quantity, ToQuantity, QuantityMath};
 use std::time::{Duration, SystemTime};
 
 use std::rc::Rc;
-
-fn compile_test(input: String, test: Value) {
-  let mut compiler = Compiler::new();
-  let mut core = Core::new(10, 10);
-  compiler.compile_string(input);
-  core.register_blocks(compiler.blocks);
-  core.step(1000);
-  let table = Hasher::hash_str("test");
-  let row = Index::Index(1);
-  let column = Index::Index(1);
-  let actual = core.index(table, &row, &column);
-  match actual {
-    Some(value) => {
-      assert_eq!(*value, test);
-    },
-    None => assert_eq!(0,1),
-  }
-}
 
 fn main() {
   /*let input = String::from(r#"# Bouncing Balls
@@ -59,12 +41,12 @@ Define the environment
 
   let mut compiler = Compiler::new();
   let mut formatter = Formatter::new();
-  let mut core = Core::new(1_000, 250);
+  let mut core = Core::new(1_000);
   let programs = compiler.compile_string(input.clone());
 
   println!("{:?}", programs);
  
-  core.register_blocks(compiler.blocks.clone());
+  core.runtime.register_blocks(compiler.blocks);
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.unparsed);
   //println!("{:?}", compiler.syntax_tree);
@@ -109,7 +91,7 @@ Define the environment
   let per_iteration_time = time / rounds;
   
   */
-
+/*
   println!("{:?}", core);
   println!("{:?}", core.runtime);
 
@@ -117,7 +99,7 @@ Define the environment
 
   let mut v: Vec<Vec<Value>> = vec![];
 
-  let qq = 400_000;
+  let qq = 4000;
 
   for i in 0..4 {
     let mut q = vec![];
@@ -129,7 +111,7 @@ Define the environment
   
   let gravity = Value::from_u64(1);
 
-  let rounds = 100.0;
+  let rounds = 1000.0;
 
   let start_ns = time::precise_time_ns();
   for i in 0..rounds as usize {
@@ -139,11 +121,12 @@ Define the environment
       v[3][j] = Value::from_quantity(v[3][j].as_quantity().unwrap().add(gravity.as_quantity().unwrap()).unwrap());
     }
   }
+  
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f64 / 1000000.0;   
   let per_iteration_time = time / rounds;
   println!("{:?}s total", time / 1000.0);  
-  println!("{:?}ms per iteration", per_iteration_time);  
+  println!("{:?}ms per iteration", per_iteration_time);  */
 
   //println!("{:?}s total", time / 1000.0);  
   //println!("{:?}ms per iteration", per_iteration_time);  
