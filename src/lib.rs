@@ -21,7 +21,7 @@ pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, Transformation};
 pub use self::table::{Table, TableId, Index, Value};
 pub use self::core::Core;
-pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
+pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 
 /*
 // # Mech
