@@ -232,7 +232,7 @@ impl fmt::Debug for Section {
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
-  Block((usize, Node)),
+  Block((u64, Node)),
   List(Node),
   CodeBlock(Node),
   Paragraph(Node),
@@ -337,6 +337,7 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
+    println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -504,29 +505,30 @@ impl Compiler {
     element
   }
 
-  pub fn compile_block(&mut self, node: Node) -> Option<(usize, Node)> {
+  pub fn compile_block(&mut self, node: Node) -> Option<(u64, Node)> {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
-        /*
-        let mut block = Block::new();
+        
+        let mut block = Block::new(100);
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
-        block.id = Hasher::hash_string(block.text.clone()) as usize;
+        block.id = hash_string(&block.text);
         block.name = format!("{:?},{:?},{:?}", self.program, self.section, self.block);
         self.block += 1;
-        let mut constraints = Vec::new();
-        let mut plan: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
-        let mut unsatisfied_constraints: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Constraint>)> = Vec::new();
+        let mut transformations: Vec<Transformation> = Vec::new();
+        let mut plan: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Transformation>)> = Vec::new();
+        let mut unsatisfied_transformations: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Transformation>)> = Vec::new();
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
         // ----------------------------------------------------------------------------------------------------------
         // Planner
         // ----------------------------------------------------------------------------------------------------------
         // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
-        for constraint_node in children {
-          let constraint_text = formatter.format(&constraint_node, false);
-          let mut result = self.compile_constraint(&constraint_node);
+        for transformation_node in children {
+          let constraint_text = formatter.format(&transformation_node, false);
+          /*
+          let mut result = self.compile_constraint(&transformation_node);
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
           let this_one = result.clone();
@@ -590,11 +592,11 @@ impl Compiler {
               block_produced = block_produced.union(&produces).cloned().collect();
               plan.push((constraint_text, produces, consumes, this_one));
             } else {
-              unsatisfied_constraints.push((constraint_text, produces, consumes, this_one));
+              unsatisfied_transformations.push((constraint_text, produces, consumes, this_one));
             }
           }
           // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
-          let mut now_satisfied = unsatisfied_constraints.drain_filter(|unsatisfied_constraint| {
+          let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_constraint| {
             let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
             let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
             match unsatisfied.is_empty() {
@@ -606,10 +608,11 @@ impl Compiler {
             }
           }).collect::<Vec<_>>();
           plan.append(&mut now_satisfied);
+          */
         }
         // Do a final check on unsatisfied constraints that are now satisfied
         
-        let mut now_satisfied = unsatisfied_constraints.drain_filter(|unsatisfied_constraint| {
+        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_constraint| {
           let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
           let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
           match unsatisfied.is_empty() {
@@ -625,9 +628,9 @@ impl Compiler {
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (constraint_text, _, _, step_constraints) = step;
-          block.add_constraints((constraint_text, step_constraints));
+          //block.add_constraints((constraint_text, step_constraints));
         }
-        for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_constraints {
+        for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_transformations {
           /*block.errors.push(Error {
             block: block.id as u64,
             constraint: step_constraints,
@@ -640,8 +643,7 @@ impl Compiler {
         }
         //block.id = block.gen_block_id();
         self.blocks.push(block.clone());
-        Some((block.id, node))*/
-        None
+        Some((block.id, node))
       },
       _ => None,
     };
