@@ -29,13 +29,22 @@ Update the block positions on each tick of the timer
   #ball.vy := #ball.vy + #gravity"#);*/
 
 
-let input = String::from(r#"# Bouncing Balls
-
-Define the environment
-  #x = 1 + 2"#);
+  let input = String::from(r#"#test = 10"#);
 
 
-  
+  let mut compiler = Compiler::new();
+  let mut core = Core::new(100);
+  compiler.compile_string(input);
+  core.runtime.register_blocks(compiler.blocks);
+  let table = hash_string("test");
+  let row = Index::Index(1);
+  let column = Index::Index(1);
+  let actual = core.get_cell_in_table(table, &row, &column);
+  println!("{:?}", core);
+  println!("{:?}", actual);
+
+
+/*  
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
 
@@ -47,11 +56,11 @@ Define the environment
   println!("{:?}", programs);
  
   core.runtime.register_blocks(compiler.blocks);
-  //println!("{:?}", compiler.parse_tree);
+  println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.unparsed);
   //println!("{:?}", compiler.syntax_tree);
-  //println!("{:?}", core.runtime);
-  //core.step(100000);
+  println!("{:?}", core);
+  //core.step(100000);*/
   
   /*
   let changes = vec![
