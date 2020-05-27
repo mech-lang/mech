@@ -134,7 +134,10 @@ impl Runtime {
     {
       let mut db = self.database.borrow_mut();
       let store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
-      store.identifiers.extend(&block.identifiers);
+      for (k,v) in block.identifiers.iter() {
+        store.identifiers.insert(*k,v.clone());
+      }
+      
     }
 
     // Remap input registers
