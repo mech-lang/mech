@@ -40,12 +40,7 @@ impl Core {
   pub fn get_cell_in_table(&mut self, table: u64, row: &Index, column: &Index) -> Option<Value> {
     match self.database.borrow().tables.get(&table) {
       Some(table_ref) => {
-        match table_ref.index(row, column) {
-          Some(value_address) => {
-            Some(self.database.borrow().store.data[value_address])
-          } 
-          None => None,
-        }
+        table_ref.get(row, column)
       },
       None => None,
     }
