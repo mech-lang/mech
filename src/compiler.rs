@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Block, BlockState, Transformation, Index, TableId};
+use mech_core::{Value, Block, BlockState, Transformation, Index, TableId};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 //use mech_core::{Error, ErrorType};
@@ -14,6 +14,7 @@ use lexer::Token;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
+use hashbrown::hash_map::{HashMap};
 use super::formatter::Formatter;
 
 // ## Compiler Nodes
@@ -265,6 +266,7 @@ pub struct Compiler {
   table: u64,
   expression: usize,
   pub text: String,
+  pub identifiers: HashMap<u64, String>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -298,6 +300,7 @@ impl Compiler {
       current_char: 0,
       current_line: 1,
       current_col: 1,
+      identifiers: HashMap::new(),
       unparsed: String::new(),
       text: String::new(),
       parse_tree: parser::Node::Root{ children: Vec::new() },
@@ -320,6 +323,7 @@ impl Compiler {
     self.section = 1;
     self.program = 1;
     self.block = 1;
+    self.identifiers.clear();
     self.current_char = 0;
     self.current_line = 1;
     self.current_col = 1;
@@ -337,7 +341,6 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -527,18 +530,17 @@ impl Compiler {
         // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
         for transformation_node in children {
           let constraint_text = formatter.format(&transformation_node, false);
-          /*
-          let mut result = self.compile_constraint(&transformation_node);
+          let mut compiled_tfm = self.compile_transformation(&transformation_node);
           let mut produces: HashSet<u64> = HashSet::new();
           let mut consumes: HashSet<u64> = HashSet::new();
-          let this_one = result.clone();
-          for constraint in result {
-            match &constraint {
-              Constraint::AliasTable{table, alias} => {
+          let this_one = compiled_tfm.clone();
+          for transformation in compiled_tfm {
+            match &transformation {
+              /*Constraint::AliasTable{table, alias} => {
                 produces.insert(*alias);
-              },
-              Constraint::NewTable{id, ..} => {
-                match id {
+              },*/
+              Transformation::NewTable{table_id, ..} => {
+                match table_id {
                   TableId::Local(id) => {
                     block_produced.insert(*id);
                     produces.insert(*id);
@@ -546,12 +548,14 @@ impl Compiler {
                   _ => (),
                 };
               },
+              /*
               Constraint::Append{from_table, to_table} => {
                 match from_table {
                   TableId::Local(id) => {consumes.insert(*id);},
                   _ => (),
                 };
-              },
+              },*/
+              /*
               Constraint::Scan{table, indices, output} => {
                 match table {
                   TableId::Local(id) => {consumes.insert(*id);},
@@ -561,7 +565,8 @@ impl Compiler {
                   TableId::Local(id) => {produces.insert(*id);},
                   _ => (),
                 };
-              },
+              },*/
+              /*
               Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes)} => {
                 // TODO Handle other cases of from and parameters
                 let to_rows = to_ixes[0];
@@ -573,10 +578,10 @@ impl Compiler {
                   TableId::Global(id) => {produces.insert(*id);},
                   _ => (),
                 };
-              },
+              },*/
               _ => (),
             }
-            constraints.push(constraint.clone());
+            transformations.push(transformation.clone());
           }
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
@@ -608,7 +613,6 @@ impl Compiler {
             }
           }).collect::<Vec<_>>();
           plan.append(&mut now_satisfied);
-          */
         }
         // Do a final check on unsatisfied constraints that are now satisfied
         
@@ -628,7 +632,7 @@ impl Compiler {
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (constraint_text, _, _, step_constraints) = step;
-          //block.add_constraints((constraint_text, step_constraints));
+          block.register_transformations((constraint_text, step_constraints));
         }
         for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_transformations {
           /*block.errors.push(Error {
@@ -642,6 +646,9 @@ impl Compiler {
             
         }
         //block.id = block.gen_block_id();
+        for (k,v) in self.identifiers.iter() {
+          block.identifiers.insert(*k,v.clone());
+        }
         self.blocks.push(block.clone());
         Some((block.id, node))
       },
@@ -651,10 +658,68 @@ impl Compiler {
   }
 
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
-    vec![]
+    let mut transformations: Vec<Transformation> = Vec::new();
+    match node {
+      Node::Statement{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
+      Node::TableDefine{children} => {
+        let mut output = self.compile_transformation(&children[0]);
+        let mut input = self.compile_transformation(&children[1]);
+
+        let output_table_id = match output[0] {
+          Transformation::NewTable{table_id,..} => Some(table_id),
+          _ => None,
+        };
+
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => Some(table_id),
+          _ => None,
+        };
+
+        let fxn = Transformation::Function{
+          name: 0x1C6A44C6BAFC67F1,
+          arguments: vec![
+            (input_table_id.unwrap(), Index::All, Index::All)
+          ],
+          out: (output_table_id.unwrap(), Index::All, Index::All),
+        };
+        transformations.push(fxn);
+        transformations.append(&mut output);
+        transformations.append(&mut input);
+      }
+      Node::Table{name, id} => {
+        self.identifiers.insert(*id, name.to_string());
+        transformations.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
+      }
+      Node::Expression{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
+      Node::Constant{value, unit} => {
+        let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
+        
+        let unit = match unit {
+          Some(unit_string) => hash_string(unit_string),
+          None => 0,
+        };
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: Value::Number(*value), unit: unit.clone()});
+      } 
+      _ => (),
+    }
+    transformations
   }
 
-
+  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+    let mut compiled = Vec::new();
+    for node in nodes {
+      let mut result = self.compile_transformation(node);
+      compiled.append(&mut result);
+    }
+    compiled
+  }
 
   /*pub fn compile_constraint(&mut self, node: &Node) -> Vec<Constraint> {
     let mut constraints: Vec<Constraint> = Vec::new();
