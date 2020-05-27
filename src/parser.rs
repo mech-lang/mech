@@ -351,7 +351,13 @@ impl Parser {
         self.unparsed = rest.to_string();
         self.parse_tree = tree;
       },
-      Err(q) => (), 
+      Err(q) => match q {
+        nom::Err::Error(qq) =>  {
+          println!("{}", nom::error::convert_error(text, qq));
+        }
+        _ => (),
+      }
+      _ => (),
     }
   }
 
