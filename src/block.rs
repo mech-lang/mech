@@ -20,21 +20,25 @@ use rust_core::fmt;
 pub struct Block {
   pub id: u64,
   pub state: BlockState,
+  pub text: String,
+  pub name: String,
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
   pub tables: HashMap<u64, Table>,
   pub store: Rc<Store>,
-  pub transformations: Vec<Transformation>,
+  pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<(Vec<TransformMap>,Transformation)>,
   pub changes: Vec<Change>,
-  pub identifiers: HashMap<u64, &'static str>,
+  pub identifiers: HashMap<u64, String>,
 }
 
 impl Block {
   pub fn new(capacity: usize) -> Block {
     Block {
       id: 0,
+      text: String::new(),
+      name: String::new(),
       identifiers: HashMap::new(),
       ready: HashSet::new(),
       input: HashSet::new(),
@@ -56,89 +60,94 @@ impl Block {
     self.id = hasher.finish();   
   }
 
-  pub fn register_transformation(&mut self, tfm: Transformation) {
-    match tfm {
-      Transformation::NewTable{table_id, rows, columns} => {
-        match table_id {
-          TableId::Global(id) => {
-            self.changes.push(
-              Change::NewTable{
-                table_id: id,
-                rows,
-                columns,
-              }
-            );
-            for i in 1..=columns {
-              self.output.insert(Register{table_id: id, row: Index::All, column: Index::Index(i)}.hash());
-            }
-            self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
-          }
-          TableId::Local(id) => {
-            self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
-          }
-        }
-      }
-      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-        match table_id {
-          TableId::Global(id) => {
-            self.changes.push(
-              Change::SetColumnAlias{
-                table_id: id,
-                column_ix,
-                column_alias,
-              }
-            );
-            self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
-          }
-          TableId::Local(id) => {
+  pub fn register_transformations(&mut self, tfm_tuple: (String, Vec<Transformation>)) {
+    self.transformations.push(tfm_tuple.clone());
 
-          }
-        }
-      }
-      Transformation::Constant{table_id, value} => {
-        match table_id {
-          TableId::Local(id) => {
-            let mut table = self.tables.get_mut(&id).unwrap();
-            table.set(&Index::Index(1), &Index::Index(1), value);
-          }
-          _ => (),
-        }
-      }
-      Transformation::Set{table_id, row, column, value} => {
-        match table_id {
-          TableId::Global(id) => {
-            self.changes.push(
-              Change::Set{
-                table_id: id,
-                values: vec![(row, column, value)],
-              }
-            );
-            self.output.insert(id);
-          }
-          _ => (),
-        }        
-      }
-      Transformation::Whenever{table_id, row, column} => {
-        self.input.insert(Register{table_id, row, column}.hash());
-        self.plan.push((vec![],tfm.clone()));
-      }
-      Transformation::Function{name, ref arguments, out} => {
-        let (out_id, row, column) = out;
-        match out_id {
-          TableId::Global(id) => {self.output.insert(Register{table_id: id, row, column}.hash());},
-          _ => (),
-        }
-        for (table_id, row, column) in arguments {
+    let (_, transformations) = tfm_tuple;
+
+    for tfm in transformations {
+      match tfm {
+        Transformation::NewTable{table_id, rows, columns} => {
           match table_id {
-            TableId::Global(id) => {self.input.insert(Register{table_id: *id, row: *row, column: *column}.hash());},
+            TableId::Global(id) => {
+              self.changes.push(
+                Change::NewTable{
+                  table_id: id,
+                  rows,
+                  columns,
+                }
+              );
+              for i in 1..=columns {
+                self.output.insert(Register{table_id: id, row: Index::All, column: Index::Index(i)}.hash());
+              }
+              self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
+            }
+            TableId::Local(id) => {
+              self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
+            }
+          }
+        }
+        Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+          match table_id {
+            TableId::Global(id) => {
+              self.changes.push(
+                Change::SetColumnAlias{
+                  table_id: id,
+                  column_ix,
+                  column_alias,
+                }
+              );
+              self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
+            }
+            TableId::Local(id) => {
+
+            }
+          }
+        }
+        Transformation::Constant{table_id, value, unit} => {
+          match table_id {
+            TableId::Local(id) => {
+              let mut table = self.tables.get_mut(&id).unwrap();
+              table.set(&Index::Index(1), &Index::Index(1), value);
+            }
             _ => (),
           }
         }
-        self.plan.push((vec![],tfm.clone()) );
+        Transformation::Set{table_id, row, column, value} => {
+          match table_id {
+            TableId::Global(id) => {
+              self.changes.push(
+                Change::Set{
+                  table_id: id,
+                  values: vec![(row, column, value)],
+                }
+              );
+              self.output.insert(id);
+            }
+            _ => (),
+          }        
+        }
+        Transformation::Whenever{table_id, row, column} => {
+          self.input.insert(Register{table_id, row, column}.hash());
+          self.plan.push((vec![],tfm.clone()));
+        }
+        Transformation::Function{name, ref arguments, out} => {
+          let (out_id, row, column) = out;
+          match out_id {
+            TableId::Global(id) => {self.output.insert(Register{table_id: id, row, column}.hash());},
+            _ => (),
+          }
+          for (table_id, row, column) in arguments {
+            match table_id {
+              TableId::Global(id) => {self.input.insert(Register{table_id: *id, row: *row, column: *column}.hash());},
+              _ => (),
+            }
+          }
+          self.plan.push((vec![],tfm.clone()) );
+        }
+        _ => (),
       }
-      _ => (),
     }
-    self.transformations.push(tfm);
   }
 
   // Process changes queued on the block
@@ -392,9 +401,12 @@ impl fmt::Debug for Block {
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ transformations: \n")?;
-    for (ix, tfm) in self.transformations.iter().enumerate() {
-      let tfm_string = format_transformation(&self,&tfm);
-      write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
+    for (ix, (text, tfms)) in self.transformations.iter().enumerate() {
+      write!(f, "│  {}. {}\n", ix+1, text)?;
+      for tfm in tfms {
+        let tfm_string = format_transformation(&self,&tfm);
+        write!(f, "│     > {}\n", tfm_string)?;
+      }
     }
     write!(f, "│ plan: \n")?;
     for (ix, (_,tfm)) in self.plan.iter().enumerate() {
@@ -447,7 +459,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       }
       arg      
     }
-    Transformation::Constant{table_id, value} => {
+    Transformation::Constant{table_id, value, unit} => {
       format!("{:?} -> {:?}", value, table_id)
     }
     Transformation::Set{table_id, row, column, value} => {
@@ -480,7 +492,10 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       tfm
     }
     Transformation::Function{name, arguments, out} => {
-      let name_string = block.identifiers.get(name).unwrap();
+      let name_string = match block.identifiers.get(name) {
+        Some(name_string) => name_string.clone(),
+        None => format!("0x{:x}", name),
+      };
       let mut arg = format!("");
       for (ix,(table, row, column)) in arguments.iter().enumerate() {
         match table {
@@ -544,7 +559,7 @@ pub enum Error {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
   NewTable{table_id: TableId, rows: usize, columns: usize },
-  Constant{table_id: TableId, value: Value},
+  Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   Set{table_id: TableId, row: Index, column: Index, value: Value},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
