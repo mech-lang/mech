@@ -37,121 +37,129 @@ fn init(balls: usize) -> Core {
   let table_range = hash_string("table/range");
   let table_horzcat = hash_string("table/horizontal-concatenate");
 
-
-/*
-  x = 1:4000
-  y = 1:4000
-  #ball = [|x   y   vx  vy|
-            x   y   20  0]
-  #gravity = 1
-  #time/timer = [period: 1, ticks: 0]
-*/
-
   let mut block = Block::new(balls * 10 * 10);
-  block.identifiers.insert(time_timer, "time/timer");
-  block.identifiers.insert(period, "period");
-  block.identifiers.insert(ticks, "ticks");
-  block.identifiers.insert(gravity, "gravity");
-  block.identifiers.insert(balls_id, "balls");
-  block.identifiers.insert(x_id, "x");
-  block.identifiers.insert(y_id, "y");
-  block.identifiers.insert(vx_id, "vx");
-  block.identifiers.insert(vy_id, "vy");
-  block.identifiers.insert(table_range, "table/range");
-  block.identifiers.insert(table_horzcat, "table/horizontal-concatenate");
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1});
-  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1});
-  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x03), rows: 1, columns: 1});
-  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x03), value: Value::from_u64(20)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(0x04), rows: 1, columns: 1});
-  block.register_transformation(Transformation::Constant{table_id: TableId::Local(0x04), value: Value::from_u64(0)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(x_id), rows: balls, columns: 1});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Local(y_id), rows: balls, columns: 1});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Global(balls_id), rows: balls, columns: 4});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 1, column_alias: x_id});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 2, column_alias: y_id});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 3, column_alias: vx_id});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 4, column_alias: vy_id});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Global(gravity), rows: 1, columns: 1});
-  block.register_transformation(Transformation::Set{table_id: TableId::Global(gravity), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(9)});
-  block.register_transformation(Transformation::NewTable{table_id: TableId::Global(time_timer), rows: 1, columns: 2});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 1, column_alias: period});
-  block.register_transformation(Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 2, column_alias: ticks});
-  block.register_transformation(Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)});
-  block.register_transformation(Transformation::Function{
-    name: table_range, 
-    arguments: vec![
-      (TableId::Local(0x01), Index::All, Index::All), 
-      (TableId::Local(0x02), Index::All, Index::All),
-    ],
-    out: (TableId::Local(x_id), Index::All, Index::All)
-  });
-  block.register_transformation(Transformation::Function{
-    name: table_range, 
-    arguments: vec![
-      (TableId::Local(0x01), Index::All, Index::All), 
-      (TableId::Local(0x02), Index::All, Index::All),
-    ],
-    out: (TableId::Local(y_id), Index::All, Index::All)
-  });
-  block.register_transformation(Transformation::Function{
-    name: table_horzcat, 
-    arguments: vec![
-      (TableId::Local(x_id), Index::All, Index::All), 
-      (TableId::Local(y_id), Index::All, Index::All),
-      (TableId::Local(0x03), Index::All, Index::All),
-      (TableId::Local(0x04), Index::All, Index::All),
-    ],
-    out: (TableId::Global(balls_id), Index::All, Index::All)
-  });
+  block.identifiers.insert(time_timer, "time/timer".to_string());
+  block.identifiers.insert(period, "period".to_string());
+  block.identifiers.insert(ticks, "ticks".to_string());
+  block.identifiers.insert(gravity, "gravity".to_string());
+  block.identifiers.insert(balls_id, "balls".to_string());
+  block.identifiers.insert(x_id, "x".to_string());
+  block.identifiers.insert(y_id, "y".to_string());
+  block.identifiers.insert(vx_id, "vx".to_string());
+  block.identifiers.insert(vy_id, "vy".to_string());
+  block.identifiers.insert(table_range, "table/range".to_string());
+  block.identifiers.insert(table_horzcat, "table/horizontal-concatenate".to_string());
+  block.register_transformations(("x = 1:4000".to_string(), vec![
+    Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0), unit: 0},
+    Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64), unit: 0},
+    Transformation::Function{
+      name: table_range, 
+      arguments: vec![
+        (TableId::Local(0x01), Index::All, Index::All), 
+        (TableId::Local(0x02), Index::All, Index::All),
+      ],
+      out: (TableId::Local(x_id), Index::All, Index::All)
+    },
+    Transformation::NewTable{table_id: TableId::Local(x_id), rows: balls, columns: 1},
+  ]));
+  block.register_transformations(("y = 1:4000".to_string(), vec![
+    Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0), unit: 0},
+    Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64), unit: 0},
+    Transformation::Function{
+      name: table_range, 
+      arguments: vec![
+        (TableId::Local(0x01), Index::All, Index::All), 
+        (TableId::Local(0x02), Index::All, Index::All),
+      ],
+      out: (TableId::Local(y_id), Index::All, Index::All)
+    },
+    Transformation::NewTable{table_id: TableId::Local(y_id), rows: balls, columns: 1},
+  ]));
+  block.register_transformations((r#"#ball = [|x   y   vx  vy|
+x   y   20  0]"#.to_string(), vec![
+    Transformation::NewTable{table_id: TableId::Local(0x03), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x03), value: Value::from_u64(20), unit: 0},
+    Transformation::NewTable{table_id: TableId::Local(0x04), rows: 1, columns: 1},
+    Transformation::Constant{table_id: TableId::Local(0x04), value: Value::from_u64(0), unit: 0},
+    Transformation::Function{
+      name: table_horzcat, 
+      arguments: vec![
+        (TableId::Local(x_id), Index::All, Index::All), 
+        (TableId::Local(y_id), Index::All, Index::All),
+        (TableId::Local(0x03), Index::All, Index::All),
+        (TableId::Local(0x04), Index::All, Index::All),
+      ],
+      out: (TableId::Global(balls_id), Index::All, Index::All)
+    },
+    Transformation::NewTable{table_id: TableId::Global(balls_id), rows: balls, columns: 4},
+    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 1, column_alias: x_id},
+    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 2, column_alias: y_id},
+    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 3, column_alias: vx_id},
+    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 4, column_alias: vy_id},
+  ]));
+  block.register_transformations(("#gravity = 9".to_string(), vec![
+    Transformation::NewTable{table_id: TableId::Global(gravity), rows: 1, columns: 1},
+    Transformation::Set{table_id: TableId::Global(gravity), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(9)},
+  ]));
+
+  block.register_transformations(("#time/timer = [period: 1, ticks: 0]".to_string(), vec![
+    Transformation::NewTable{table_id: TableId::Global(time_timer), rows: 1, columns: 2},
+    Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 1, column_alias: period},
+    Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 2, column_alias: ticks},
+    Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)},
+  ]));
   block.gen_id();
   core.runtime.register_block(block);
 
-/*
-  ~ #time/timer.ticks
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
-*/
 
   let mut block = Block::new(balls * 10 * 10);
-  block.identifiers.insert(time_timer, "time/timer");
-  block.identifiers.insert(ticks, "ticks");
-  block.identifiers.insert(gravity, "gravity");
-  block.identifiers.insert(balls_id, "balls");
-  block.identifiers.insert(x_id, "x");
-  block.identifiers.insert(y_id, "y");
-  block.identifiers.insert(vx_id, "vx");
-  block.identifiers.insert(vy_id, "vy");
-  block.identifiers.insert(vy_id, "vy");
-  block.identifiers.insert(math_add, "math/add");
-  block.register_transformation(Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)});
-  block.register_transformation(Transformation::Function{
-    name: math_add, 
-    arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
-      (TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
-    ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
-  });
-  block.register_transformation(Transformation::Function{
-    name: math_add, 
-    arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
-      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
-    ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
-  });
-  block.register_transformation(Transformation::Function{
-    name: math_add, 
-    arguments: vec![
-      (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
-      (TableId::Global(gravity), Index::All, Index::All),
-    ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
-  });
+  block.identifiers.insert(time_timer, "time/timer".to_string());
+  block.identifiers.insert(ticks, "ticks".to_string());
+  block.identifiers.insert(gravity, "gravity".to_string());
+  block.identifiers.insert(balls_id, "balls".to_string());
+  block.identifiers.insert(x_id, "x".to_string());
+  block.identifiers.insert(y_id, "y".to_string());
+  block.identifiers.insert(vx_id, "vx".to_string());
+  block.identifiers.insert(vy_id, "vy".to_string());
+  block.identifiers.insert(vy_id, "vy".to_string());
+  block.identifiers.insert(math_add, "math/add".to_string());
+  block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
+    Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)},
+  ]));
+  block.register_transformations(("#ball.x := #ball.x + #ball.vx".to_string(), vec![
+    Transformation::Function{
+      name: math_add, 
+      arguments: vec![
+        (TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
+        (TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
+      ],
+      out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
+    },
+  ]));
+  block.register_transformations(("#ball.y := #ball.y + #ball.vy".to_string(), vec![
+    Transformation::Function{
+      name: math_add, 
+      arguments: vec![
+        (TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
+        (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
+      ],
+      out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
+    }
+  ]));
+  block.register_transformations(("#ball.vy := #ball.vy + #gravity".to_string(), vec![
+    Transformation::Function{
+      name: math_add, 
+      arguments: vec![
+        (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
+        (TableId::Global(gravity), Index::All, Index::All),
+      ],
+      out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
+    },
+  ]));
   block.gen_id();
 
   core.runtime.register_block(block);
