@@ -405,7 +405,7 @@ impl fmt::Debug for Block {
       write!(f, "│  {}. {}\n", ix+1, text)?;
       for tfm in tfms {
         let tfm_string = format_transformation(&self,&tfm);
-        write!(f, "│     > {}\n", tfm_string)?;
+        write!(f, "│       > {}\n", tfm_string)?;
       }
     }
     write!(f, "│ plan: \n")?;
