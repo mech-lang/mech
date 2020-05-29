@@ -535,7 +535,34 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           arg=format!("{}, ", arg);
         }
       }
-      format!("{}({})",name_string,arg)
+      let mut arg = format!("{}({}) -> ",name_string,arg);
+      let (out_table, out_row, out_column) = out;
+      match out_table {
+        TableId::Global(id) => arg=format!("{}#{}",arg,block.identifiers.get(id).unwrap()),
+        TableId::Local(id) => {
+          match block.identifiers.get(id) {
+            Some(name) => arg = format!("{}{}",arg,name),
+            None => arg = format!("{}0x{:x}",arg,id),
+          }
+        }
+      };
+      match out_row {
+        Index::All => arg=format!("{}{{:,",arg),
+        Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
+        Index::Alias(alias) => {
+          let alias_name = block.identifiers.get(alias).unwrap();
+          arg=format!("{}{{{},",arg,alias_name);
+        },
+      }
+      match out_column {
+        Index::All => arg=format!("{}:}}",arg),
+        Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
+        Index::Alias(alias) => {
+          let alias_name = block.identifiers.get(alias).unwrap();
+          arg=format!("{}{}}}",arg,alias_name);
+        },
+      }
+      arg      
     },
     x => format!("{:?}", x),
   }
