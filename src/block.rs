@@ -163,6 +163,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
+    
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
@@ -204,7 +205,16 @@ impl Block {
 
               let out_rows_count = unsafe{(*out_table).rows};
 
-              let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if equal_dimensions {
+              let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
+                (
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),
+                  IndexIterator::Constant(Index::Index(1)),               
+                )
+              } else if equal_dimensions {
                 (
                   IndexIterator::Range(1..=lhs_table.rows),
                   IndexIterator::Constant(*lhs_columns),
@@ -242,15 +252,13 @@ impl Block {
                 let r2 = rcix.next().unwrap().unwrap();
                 let o1 = out_rix.next().unwrap().unwrap();
                 let o2 = out_cix.next().unwrap().unwrap();
-                match (lhs_table.get_address_unchecked(l1,l2), 
-                       rhs_table.get_address_unchecked(r1,r2))
+                match (lhs_table.get_unchecked(l1,l2), 
+                       rhs_table.get_unchecked(r1,r2))
                 {
-                  (lhs_ix, rhs_ix) => {
-                    let lhs_value = &store.data[lhs_ix];
-                    let rhs_value = &store.data[rhs_ix];
+                  (lhs_value, rhs_value) => {
                     match (lhs_value, rhs_value) {
                       (Value::Number(x), Value::Number(y)) => {
-                        match x.add(*y) {
+                        match x.add(y) {
                           Ok(result) => {
                             let function_result = Value::from_quantity(result);
                             unsafe {
