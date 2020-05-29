@@ -439,7 +439,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         TableId::Local(id) => {
           match block.identifiers.get(id) {
             Some(name) =>  tfm=format!("{}{}",tfm,name),
-            None => tfm=format!("{}0x{:x}",tfm,id),
+            None => tfm=format!("{}{}",tfm,humanize(id)),
           }
         }
       };
@@ -468,7 +468,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       arg      
     }
     Transformation::Constant{table_id, value, unit} => {
-      format!("{:?} -> {:?}", value, table_id)
+      format!("{:?} -> {}", value, humanize(table_id.unwrap()))
     }
     Transformation::Set{table_id, row, column, value} => {
       let mut tfm = format!("");
@@ -511,7 +511,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           TableId::Local(id) => {
             match block.identifiers.get(id) {
               Some(name) => arg = format!("{}{}",arg,name),
-              None => arg = format!("{}0x{:x}",arg,id),
+              None => arg = format!("{}{}",arg,humanize(id)),
             }
           }
         };
@@ -647,6 +647,10 @@ pub fn humanize(hash: &u64) -> String {
   let mut string = "".to_string();
   let mut ix = 0;
   for byte in bytes.iter() {
+    if ix % 2 == 0 {
+      ix += 1;
+      continue;
+    }
     string.push_str(&WORDLIST[*byte as usize]);
     if ix < 7 {
       string.push_str("-");
