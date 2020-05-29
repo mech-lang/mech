@@ -21,6 +21,7 @@ fn main() {
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
+  core.load_standard_library();
   println!("Done!");
 
   let period = hash_string("period");
@@ -56,8 +57,8 @@ fn main() {
     Transformation::Function{
       name: table_range, 
       arguments: vec![
-        (TableId::Local(0x01), Index::All, Index::All), 
-        (TableId::Local(0x02), Index::All, Index::All),
+        (0, TableId::Local(0x01), Index::All, Index::All), 
+        (0, TableId::Local(0x02), Index::All, Index::All),
       ],
       out: (TableId::Local(x_id), Index::All, Index::All)
     },
@@ -71,8 +72,8 @@ fn main() {
     Transformation::Function{
       name: table_range, 
       arguments: vec![
-        (TableId::Local(0x01), Index::All, Index::All), 
-        (TableId::Local(0x02), Index::All, Index::All),
+        (0, TableId::Local(0x01), Index::All, Index::All), 
+        (0, TableId::Local(0x02), Index::All, Index::All),
       ],
       out: (TableId::Local(y_id), Index::All, Index::All)
     },
@@ -87,10 +88,10 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Function{
       name: table_horzcat, 
       arguments: vec![
-        (TableId::Local(x_id), Index::All, Index::All), 
-        (TableId::Local(y_id), Index::All, Index::All),
-        (TableId::Local(0x03), Index::All, Index::All),
-        (TableId::Local(0x04), Index::All, Index::All),
+        (0, TableId::Local(x_id), Index::All, Index::All), 
+        (0, TableId::Local(y_id), Index::All, Index::All),
+        (0, TableId::Local(0x03), Index::All, Index::All),
+        (0, TableId::Local(0x04), Index::All, Index::All),
       ],
       out: (TableId::Global(balls_id), Index::All, Index::All)
     },
@@ -133,8 +134,8 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Function{
       name: math_add, 
       arguments: vec![
-        (TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
-        (TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
+        (0, TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
+        (0, TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
       ],
       out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
     },
@@ -143,8 +144,8 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Function{
       name: math_add, 
       arguments: vec![
-        (TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
-        (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
+        (0, TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
+        (0, TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
       ],
       out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
     }
@@ -153,8 +154,8 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Function{
       name: math_add, 
       arguments: vec![
-        (TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
-        (TableId::Global(gravity), Index::All, Index::All),
+        (0, TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
+        (0, TableId::Global(gravity), Index::All, Index::All),
       ],
       out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
     },
