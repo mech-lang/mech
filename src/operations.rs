@@ -29,7 +29,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
       TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => self.tables.get(id).unwrap(),
+      TableId::Local(id) => block_tables.get(id).unwrap(),
     };
     if out_rows == 0 {
       out_rows = table.rows;
@@ -41,12 +41,12 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   }
   let mut out_table = match out_table_id {
     TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
       TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => self.tables.get(id).unwrap(),
+      TableId::Local(id) => block_tables.get(id).unwrap(),
     };
     let rows_iter = if table.rows == 1 {
       IndexIterator::Constant(Index::Index(1))
@@ -75,18 +75,18 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>, out
   let db = database.borrow_mut();
   let start_table = match start_table_id {
     TableId::Global(id) => db.tables.get(id).unwrap(),
-    TableId::Local(id) => self.tables.get(id).unwrap(),
+    TableId::Local(id) => block_tables.get(id).unwrap(),
   };
   let end_table = match end_table_id {
     TableId::Global(id) => db.tables.get(id).unwrap(),
-    TableId::Local(id) => self.tables.get(id).unwrap(),
+    TableId::Local(id) => block_tables.get(id).unwrap(),
   };
   let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let range = end_value.as_u64().unwrap() - start_value.as_u64().unwrap();
   match out_table_id {
     TableId::Local(id) => {
-      let mut out_table = self.tables.get_mut(id).unwrap();
+      let mut out_table = block_tables.get_mut(id).unwrap();
       for i in 1..=range as usize {
         out_table.set(&Index::Index(i), &Index::Index(1), Value::from_u64(i as u64));
       }
