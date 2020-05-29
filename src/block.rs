@@ -2,6 +2,7 @@ use table::{Table, TableId, Index, Value};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity};
+use operations::MechFunction;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::hash::Hasher;
@@ -137,7 +138,7 @@ impl Block {
             TableId::Global(id) => {self.output.insert(Register{table_id: id, row, column}.hash());},
             _ => (),
           }
-          for (table_id, row, column) in arguments {
+          for (_, table_id, row, column) in arguments {
             match table_id {
               TableId::Global(id) => {self.input.insert(Register{table_id: *id, row: *row, column: *column}.hash());},
               _ => (),
@@ -162,7 +163,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self, database: Rc<RefCell<Database>>) {
+  pub fn solve(&mut self, database: Rc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
     
     'step_loop: for (masks, step) in &self.plan {
       match step {
@@ -172,120 +173,13 @@ impl Block {
         },
         Transformation::Function{name, arguments, out} => {
           match name {
-            // math/add
-            0xD0288E733F38A1B7 => {
-              // TODO test argument count is 2
-              let (lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
-              let (rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
-              let (out_table_id, out_rows, out_columns) = out;
-              let mut db = database.borrow_mut();
-
-              let mut out_table = match out_table_id {
-                TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-                TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
-              };
-
-              let lhs_table = match lhs_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap(),
-                TableId::Local(id) => self.tables.get(id).unwrap(),
-              };
-              let rhs_table = match rhs_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap(),
-                TableId::Local(id) => self.tables.get(id).unwrap(),
-              };
-              let store = &db.store;
-
-              // Figure out dimensions
-              let equal_dimensions = if lhs_table.rows == rhs_table.rows
-              { true } else { false };
-              let lhs_scalar = if lhs_table.rows == 1 && lhs_table.columns == 1 
-              { true } else { false };
-              let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
-              { true } else { false };
-
-              let out_rows_count = unsafe{(*out_table).rows};
-
-              let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
-                (
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),               
-                )
-              } else if equal_dimensions {
-                (
-                  IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(*lhs_columns),
-                  IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(*rhs_columns),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              } else if rhs_scalar {
-                (
-                  IndexIterator::Range(1..=lhs_table.rows),
-                  IndexIterator::Constant(*lhs_columns),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              } else {
-                (
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Constant(Index::Index(1)),
-                  IndexIterator::Range(1..=rhs_table.rows),
-                  IndexIterator::Constant(*rhs_columns),
-                  IndexIterator::Range(1..=out_rows_count),
-                  IndexIterator::Constant(*out_columns),
-                )
-              };
-
-              let mut i = 1;
-
-              loop {
-                let l1 = lrix.next().unwrap().unwrap();
-                let l2 = lcix.next().unwrap().unwrap();
-                let r1 = rrix.next().unwrap().unwrap();
-                let r2 = rcix.next().unwrap().unwrap();
-                let o1 = out_rix.next().unwrap().unwrap();
-                let o2 = out_cix.next().unwrap().unwrap();
-                match (lhs_table.get_unchecked(l1,l2), 
-                       rhs_table.get_unchecked(r1,r2))
-                {
-                  (lhs_value, rhs_value) => {
-                    match (lhs_value, rhs_value) {
-                      (Value::Number(x), Value::Number(y)) => {
-                        match x.add(y) {
-                          Ok(result) => {
-                            let function_result = Value::from_quantity(result);
-                            unsafe {
-                              (*out_table).set_unchecked(o1, o2, function_result);
-                            }
-                          }
-                          Err(_) => (), // TODO Handle error here
-                        }
-                      }
-                      _ => (),
-                    }
-                  }
-                  _ => (),
-                }
-                if i >= lhs_table.rows {
-                  break;
-                }
-                i += 1;
-              }
-            }
             // table/range
             0x285A4EFBFCDC2EF4 => {
               // TODO test argument count is 2 or 3
               // 2 -> start, end
               // 3 -> start, increment, end
-              let (start_table_id, start_rows, start_columns) = &arguments[0];
-              let (end_table_id, end_rows, end_columns) = &arguments[1];
+              let (_, start_table_id, start_rows, start_columns) = &arguments[0];
+              let (_, end_table_id, end_rows, end_columns) = &arguments[1];
               let (out_table_id, out_rows, out_columns) = out;
               let db = database.borrow_mut();
               let start_table = match start_table_id {
@@ -318,7 +212,7 @@ impl Block {
               let mut column = 0;
               let mut out_rows = 0;
               // First pass, make sure the dimensions work out
-              for (table_id, rows, columns) in arguments {
+              for (_, table_id, rows, columns) in arguments {
                 let table = match table_id {
                   TableId::Global(id) => db.tables.get(id).unwrap(),
                   TableId::Local(id) => self.tables.get(id).unwrap(),
@@ -335,7 +229,7 @@ impl Block {
                 TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
                 TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
               };
-              for (table_id, rows, columns) in arguments {
+              for (_, table_id, rows, columns) in arguments {
                 let table = match table_id {
                   TableId::Global(id) => db.tables.get(id).unwrap(),
                   TableId::Local(id) => self.tables.get(id).unwrap(),
@@ -356,7 +250,17 @@ impl Block {
                 column += 1;
               }
             }
-            _ => () // TODO Unknown function
+            // Any other function
+            _ => {
+              match functions.get(name) {
+                Some(Some(mech_fn)) => {
+                  mech_fn(&arguments, out, &mut self.tables, &database);
+                }
+                _ => {
+                  ()
+                },// TODO Error: Function not found
+              }
+            }
           }
         }
         _ => (),
@@ -505,7 +409,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         None => format!("0x{:x}", name),
       };
       let mut arg = format!("");
-      for (ix,(table, row, column)) in arguments.iter().enumerate() {
+      for (ix,(arg_id, table, row, column)) in arguments.iter().enumerate() {
         match table {
           TableId::Global(id) => arg=format!("{}#{}",arg,block.identifiers.get(id).unwrap()),
           TableId::Local(id) => {
@@ -599,7 +503,7 @@ pub enum Transformation {
   Set{table_id: TableId, row: Index, column: Index, value: Value},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: u64, row: Index, column: Index},
-  Function{name: u64, arguments: Vec<(TableId, Index, Index)>, out: (TableId, Index, Index)},
+  Function{name: u64, arguments: Vec<(u64, TableId, Index, Index)>, out: (TableId, Index, Index)},
   Scan,
 }
 
