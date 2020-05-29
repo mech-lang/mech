@@ -76,6 +76,8 @@ test_mech!(math_constant,"#test = 10", Value::from_i64(10));
 
 test_mech!(math_add,"#test = 1 + 1", Value::from_i64(2));
 
+test_mech!(math_subtract,"#test = 1 - 1", Value::from_i64(0));
+
 test_mech!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::Number(make_quantity(20000,-4,0)));
