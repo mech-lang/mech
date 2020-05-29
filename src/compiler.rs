@@ -686,7 +686,7 @@ impl Compiler {
         let fxn = Transformation::Function{
           name: 0x1C6A44C6BAFC67F1,
           arguments: vec![
-            (input_table_id.unwrap(), Index::All, Index::All)
+            (0, input_table_id.unwrap(), Index::All, Index::All)
           ],
           out: (output_table_id.unwrap(), Index::All, Index::All),
         };
@@ -713,7 +713,7 @@ impl Compiler {
           let mut result = self.compile_transformation(child);
           match result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((table_id, Index::All, Index::All));
+              args.push((0, table_id, Index::All, Index::All));
             },
             _ => (),
           }

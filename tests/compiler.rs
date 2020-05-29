@@ -12,6 +12,7 @@ macro_rules! test_mech {
     fn $func() {
       let mut compiler = Compiler::new();
       let mut core = Core::new(100);
+      core.load_standard_library();
       let input = String::from($input);
       compiler.compile_string(input);
       core.runtime.register_blocks(compiler.blocks);
