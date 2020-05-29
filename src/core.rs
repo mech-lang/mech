@@ -5,6 +5,8 @@ use table::{Value, Index};
 use std::rc::Rc;
 use std::cell::RefCell;
 use rust_core::fmt;
+use operations::math_add;
+use ::hash_string;
 
 
 // ## Core
@@ -27,6 +29,10 @@ impl Core {
       runtime: Runtime::new(database.clone(), 1000),
       database,
     }
+  }
+
+  pub fn load_standard_library(&mut self) {
+    self.runtime.functions.insert(hash_string("math/add"),Some(math_add));
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
