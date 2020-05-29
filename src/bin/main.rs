@@ -31,7 +31,7 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = 1 + 1
+  #test = 1 - 1
   #foo = 123 + 456"#);
 
   
