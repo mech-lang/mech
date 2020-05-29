@@ -13,6 +13,7 @@ use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
 use std::rc::Rc;
 use std::cell::RefCell;
+use block::humanize;
 
 
 // ## Row and Column
@@ -348,7 +349,7 @@ impl fmt::Debug for Table {
     
     let table_name = match self.store.identifiers.get(&self.id) {
       Some(name) => name.to_string(),
-      None => format!("0x{:x}", self.id),
+      None => format!("{}", humanize(&self.id)),
     };
     
     let table_header = format!("#{} ({} x {})", table_name, self.rows, self.columns);
