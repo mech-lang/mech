@@ -175,35 +175,7 @@ impl Block {
           match name {
             // table/range
             0x285A4EFBFCDC2EF4 => {
-              // TODO test argument count is 2 or 3
-              // 2 -> start, end
-              // 3 -> start, increment, end
-              let (_, start_table_id, start_rows, start_columns) = &arguments[0];
-              let (_, end_table_id, end_rows, end_columns) = &arguments[1];
-              let (out_table_id, out_rows, out_columns) = out;
-              let db = database.borrow_mut();
-              let start_table = match start_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap(),
-                TableId::Local(id) => self.tables.get(id).unwrap(),
-              };
-              let end_table = match end_table_id {
-                TableId::Global(id) => db.tables.get(id).unwrap(),
-                TableId::Local(id) => self.tables.get(id).unwrap(),
-              };
-              let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
-              let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
-              let range = end_value.as_u64().unwrap() - start_value.as_u64().unwrap();
-              match out_table_id {
-                TableId::Local(id) => {
-                  let mut out_table = self.tables.get_mut(id).unwrap();
-                  for i in 1..=range as usize {
-                    out_table.set(&Index::Index(i), &Index::Index(1), Value::from_u64(i as u64));
-                  }
-                }
-                TableId::Global(id) => {
 
-                }
-              }
             }
             // table/horizontal-concatenate
             0x1C6A44C6BAFC67F1 => {
