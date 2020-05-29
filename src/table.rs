@@ -294,6 +294,12 @@ impl Table {
     self.data[ix]
   }
   
+  // Get the value in the store at memory address (row, column)
+  pub fn get_unchecked(&self, row: usize, column: usize) -> Value {
+    let ix = self.index_unchecked(row, column);
+    let address = self.data[ix];
+    self.store.data[address]
+  }
 
   // Get the value in the store at memory address (row, column)
   pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
