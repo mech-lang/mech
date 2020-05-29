@@ -172,67 +172,13 @@ impl Block {
           self.ready.remove(&register.hash());
         },
         Transformation::Function{name, arguments, out} => {
-          match name {
-            // table/range
-            0x285A4EFBFCDC2EF4 => {
-
+          match functions.get(name) {
+            Some(Some(mech_fn)) => {
+              mech_fn(&arguments, out, &mut self.tables, &database);
             }
-            // table/horizontal-concatenate
-            0x1C6A44C6BAFC67F1 => {
-              let (out_table_id, out_rows, out_columns) = out;
-              let mut db = database.borrow_mut();
-              let mut column = 0;
-              let mut out_rows = 0;
-              // First pass, make sure the dimensions work out
-              for (_, table_id, rows, columns) in arguments {
-                let table = match table_id {
-                  TableId::Global(id) => db.tables.get(id).unwrap(),
-                  TableId::Local(id) => self.tables.get(id).unwrap(),
-                };
-                if out_rows == 0 {
-                  out_rows = table.rows;
-                } else if table.rows != 1 && out_rows != table.rows {
-                  // TODO Throw an error here
-                } else if table.rows > out_rows && out_rows == 1 {
-                  out_rows = table.rows
-                }
-              }
-              let mut out_table = match out_table_id {
-                TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-                TableId::Local(id) => self.tables.get_mut(id).unwrap() as *mut Table,
-              };
-              for (_, table_id, rows, columns) in arguments {
-                let table = match table_id {
-                  TableId::Global(id) => db.tables.get(id).unwrap(),
-                  TableId::Local(id) => self.tables.get(id).unwrap(),
-                };
-                let rows_iter = if table.rows == 1 {
-                  IndexIterator::Constant(Index::Index(1))
-                } else {
-                  IndexIterator::Range(1..=table.rows)
-                };
-                for (i,k) in (1..=out_rows).zip(rows_iter) {
-                  for j in 1..=table.columns {
-                    let value = table.get(&k,&Index::Index(j)).unwrap();
-                    unsafe {
-                      (*out_table).set(&Index::Index(i), &Index::Index(column+j), value);
-                    }
-                  }
-                }
-                column += 1;
-              }
-            }
-            // Any other function
             _ => {
-              match functions.get(name) {
-                Some(Some(mech_fn)) => {
-                  mech_fn(&arguments, out, &mut self.tables, &database);
-                }
-                _ => {
-                  ()
-                },// TODO Error: Function not found
-              }
-            }
+              ()
+            },// TODO Error: Function not found
           }
         }
         _ => (),
