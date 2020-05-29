@@ -5,7 +5,13 @@ use table::{Value, Index};
 use std::rc::Rc;
 use std::cell::RefCell;
 use rust_core::fmt;
-use operations::{math_add, math_subtract, table_range, table_horizontal_concatenate};
+use operations::{
+  math_add, math_subtract, 
+  math_multiply, 
+  math_divide, 
+  table_range, 
+  table_horizontal_concatenate
+};
 use ::hash_string;
 
 
@@ -34,6 +40,8 @@ impl Core {
   pub fn load_standard_library(&mut self) {
     self.runtime.functions.insert(hash_string("math/add"),Some(math_add));
     self.runtime.functions.insert(hash_string("math/subtract"),Some(math_subtract));
+    self.runtime.functions.insert(hash_string("math/multiply"),Some(math_multiply));
+    self.runtime.functions.insert(hash_string("math/divide"),Some(math_divide));
     self.runtime.functions.insert(hash_string("table/range"),Some(table_range));
     self.runtime.functions.insert(hash_string("table/horizontal-concatenate"),Some(table_horizontal_concatenate));
   }
