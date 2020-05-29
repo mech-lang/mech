@@ -1,10 +1,11 @@
 use block::{Block, BlockState, Register, Error, Transformation, humanize};
 use database::{Database, Transaction, Change, Store};
-use table::{Index, TableId};
+use table::{Index, Table, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
+use operations::{MechFunction};
 
 
 // ## Runtime
@@ -32,6 +33,7 @@ pub struct Runtime {
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
   pub output: HashSet<u64>,
+  pub functions: HashMap<u64, Option<MechFunction>>,
 }
 
 impl Runtime {
@@ -45,6 +47,7 @@ impl Runtime {
       register_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
       output: HashSet::new(),
+      functions: HashMap::new(),
     }
   }
 
@@ -58,7 +61,7 @@ impl Runtime {
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
-        block.solve(self.database.clone());
+        block.solve(self.database.clone(), &self.functions);
         self.changed_this_round.extend(&block.output);
       }
 
@@ -145,8 +148,8 @@ impl Runtime {
     for step in block.plan {
       let new_step = match step {
         (_, Transformation::Function{name, arguments, out}) => {
-          let mut new_args: Vec<(TableId, Index, Index)> = vec![];
-          for (table_id, row, column) in arguments {
+          let mut new_args: Vec<(u64, TableId, Index, Index)> = vec![];
+          for (arg_id, table_id, row, column) in arguments {
             let new_row = row;
             let new_column = self.remap_column(*table_id.unwrap(),column);
             match table_id {
@@ -158,7 +161,7 @@ impl Runtime {
               },
               _ => (),
             }
-            new_args.push((table_id, new_row, new_column));
+            new_args.push((arg_id, table_id, new_row, new_column));
           }
           let (out_table_id, out_row, out_column) = out;
           let new_out_row = out_row;
