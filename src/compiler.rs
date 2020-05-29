@@ -512,7 +512,7 @@ impl Compiler {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
-        
+        //println!("{:?}", children);
         let mut block = Block::new(100);
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -667,14 +667,15 @@ impl Compiler {
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
         let mut input = self.compile_transformation(&children[1]);
-
         let output_table_id = match output[0] {
           Transformation::NewTable{table_id,..} => Some(table_id),
           _ => None,
         };
 
         let input_table_id = match input[0] {
-          Transformation::NewTable{table_id,..} => Some(table_id),
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
           _ => None,
         };
 
@@ -685,9 +686,9 @@ impl Compiler {
           ],
           out: (output_table_id.unwrap(), Index::All, Index::All),
         };
-        transformations.push(fxn);
         transformations.append(&mut output);
         transformations.append(&mut input);
+        transformations.push(fxn);
       }
       Node::Table{name, id} => {
         self.identifiers.insert(*id, name.to_string());
@@ -696,6 +697,33 @@ impl Compiler {
       Node::Expression{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
+      }
+      Node::MathExpression{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
+      Node::Function{name, children} => {
+        let mut args = vec![];
+        let mut arg_tfms = vec![];
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          match result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((table_id, Index::All, Index::All));
+            },
+            _ => (),
+          }
+          arg_tfms.append(&mut result);
+        }
+        let name_hash = hash_string(name);
+        self.identifiers.insert(name_hash,name.to_string());
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(123456), rows: 1, columns: 1});
+        transformations.push(Transformation::Function{
+          name: name_hash,
+          arguments: args,
+          out: (TableId::Local(123456), Index::All, Index::All),
+        });
+        transformations.append(&mut arg_tfms);
       }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
