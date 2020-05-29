@@ -393,7 +393,7 @@ impl Formatter {
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::Statement{children} |
-      Node::Constraint{children, ..} => { 
+      Node::Transformation{children, ..} => { 
         for child in children {
           code = self.write_node(child);
         }

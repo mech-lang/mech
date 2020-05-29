@@ -25,7 +25,7 @@ use nom::{
 pub enum Node {
   Root{ children: Vec<Node> },
   Block{ children: Vec<Node> },
-  Constraint{ children: Vec<Node> },
+  Transformation{ children: Vec<Node> },
   Select { children: Vec<Node> },
   Whenever { children: Vec<Node> },
   Wait { children: Vec<Node> },
@@ -168,7 +168,7 @@ pub fn print_recurse(node: &Node, level: usize) {
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
     Node::Block{children} => {print!("Block\n"); Some(children)},
-    Node::Constraint{children} => {print!("Constraint\n"); Some(children)},
+    Node::Transformation{children} => {print!("Transformation\n"); Some(children)},
     Node::Select{children} => {print!("Select\n"); Some(children)},
     Node::Whenever{children} => {print!("Whenever\n"); Some(children)},
     Node::Insert{children} => {print!("Insert\n"); Some(children)},
@@ -1030,17 +1030,17 @@ fn expression(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 // ### Block Basics
 
-fn constraint(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+fn transformation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((space,space))(input)?;
   let (input, statement) = statement(input)?;
   let (input, _) = tuple((space0,opt(newline)))(input)?;
-  Ok((input, Node::Constraint { children: vec![statement] }))
+  Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
 fn block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, constraints) = many1(constraint)(input)?; 
+  let (input, transformations) = many1(transformation)(input)?; 
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Block { children: constraints }))
+  Ok((input, Node::Block { children: transformations }))
 }
 
 // ## Markdown
@@ -1195,17 +1195,17 @@ fn parse_mech(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Root { children:  vec![program] }))
 }
 
-fn raw_constraint(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+fn raw_transformation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, statement) = statement(input)?;
   let (input, _) = space0(input)?;
   let (input, _) = opt(newline)(input)?;
-  Ok((input, Node::Constraint { children:  vec![statement] }))
+  Ok((input, Node::Transformation { children:  vec![statement] }))
 }
 
 pub fn parse_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, constraints) = many1(raw_constraint)(input)?;
+  let (input, transformations) = many1(raw_transformation)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Block { children:  constraints }))
+  Ok((input, Node::Block { children:  transformations }))
 }
 
 pub fn parse_fragment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
