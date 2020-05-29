@@ -1,16 +1,139 @@
-/*
+
 // # Operations
 
 // ## Prelude
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
-#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, Value, TableId, Index};
+use runtime::Runtime;
+use block::{Block, IndexIterator};
+use database::Database;
 use errors::ErrorType;
 use quantities::{Quantity, QuantityMath, ToQuantity};
 use std::rc::Rc;
 use std::cell::RefCell;
+use hashbrown::HashMap;
+
+
+pub type MechFunction = extern "C" fn(&Vec<(u64, TableId, Index, Index)>, &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>);
+
+pub extern "C" fn math_add(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+  // TODO test argument count is 2
+  let (_, lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
+  let (_, rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
+  let (out_table_id, out_rows, out_columns) = out;
+  let mut db = database.borrow_mut();
+
+  let mut out_table = match out_table_id {
+    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+  };
+
+  let lhs_table = match lhs_table_id {
+    TableId::Global(id) => db.tables.get(id).unwrap(),
+    TableId::Local(id) => block_tables.get(id).unwrap(),
+  };
+  let rhs_table = match rhs_table_id {
+    TableId::Global(id) => db.tables.get(id).unwrap(),
+    TableId::Local(id) => block_tables.get(id).unwrap(),
+  };
+  let store = &db.store;
+
+  // Figure out dimensions
+  let equal_dimensions = if lhs_table.rows == rhs_table.rows
+  { true } else { false };
+  let lhs_scalar = if lhs_table.rows == 1 && lhs_table.columns == 1 
+  { true } else { false };
+  let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
+  { true } else { false };
+
+  let out_rows_count = unsafe{(*out_table).rows};
+
+  let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
+    (
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),               
+    )
+  } else if equal_dimensions {
+    (
+      IndexIterator::Range(1..=lhs_table.rows),
+      IndexIterator::Constant(*lhs_columns),
+      IndexIterator::Range(1..=rhs_table.rows),
+      IndexIterator::Constant(*rhs_columns),
+      IndexIterator::Range(1..=out_rows_count),
+      IndexIterator::Constant(*out_columns),
+    )
+  } else if rhs_scalar {
+    (
+      IndexIterator::Range(1..=lhs_table.rows),
+      IndexIterator::Constant(*lhs_columns),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Range(1..=out_rows_count),
+      IndexIterator::Constant(*out_columns),
+    )
+  } else {
+    (
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Constant(Index::Index(1)),
+      IndexIterator::Range(1..=rhs_table.rows),
+      IndexIterator::Constant(*rhs_columns),
+      IndexIterator::Range(1..=out_rows_count),
+      IndexIterator::Constant(*out_columns),
+    )
+  };
+
+  let mut i = 1;
+
+  loop {
+    let l1 = lrix.next().unwrap().unwrap();
+    let l2 = lcix.next().unwrap().unwrap();
+    let r1 = rrix.next().unwrap().unwrap();
+    let r2 = rcix.next().unwrap().unwrap();
+    let o1 = out_rix.next().unwrap().unwrap();
+    let o2 = out_cix.next().unwrap().unwrap();
+    match (lhs_table.get_unchecked(l1,l2), 
+            rhs_table.get_unchecked(r1,r2))
+    {
+      (lhs_value, rhs_value) => {
+        match (lhs_value, rhs_value) {
+          (Value::Number(x), Value::Number(y)) => {
+            match x.add(y) {
+              Ok(result) => {
+                let function_result = Value::from_quantity(result);
+                unsafe {
+                  (*out_table).set_unchecked(o1, o2, function_result);
+                }
+              }
+              Err(_) => (), // TODO Handle error here
+            }
+          }
+          _ => (),
+        }
+      }
+      _ => (),
+    }
+    if i >= lhs_table.rows {
+      break;
+    }
+    i += 1;
+  }
+}
+
+
+
+
+
+
+
+
+/*
 
 /*
 Queries are compiled down to a Plan, which is a sequence of Operations that 
