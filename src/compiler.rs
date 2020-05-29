@@ -56,7 +56,7 @@ pub enum Node {
   TableRow {children: Vec<Node> },
   Comment {children: Vec<Node> },
   AddRow {children: Vec<Node> },
-  Constraint{ children: Vec<Node> },
+  Transformation{ children: Vec<Node> },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
   Constant {value: Quantity, unit: Option<String>},
@@ -137,7 +137,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::Constraint{children, ..} => {print!("Constraint\n"); Some(children)},
+    Node::Transformation{children, ..} => {print!("Transformation\n"); Some(children)},
     Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {print!("String({:?})\n", text); None},
     Node::Constant{value, unit} => {print!("Constant({}{:?})\n", value.to_float(), unit); None},
@@ -407,7 +407,7 @@ impl Compiler {
               let name = format!("mech/inline/{}", hash_string(&name));
               let id = hash_string(&name);
               let block_tree = Node::Block{children: vec![
-                            Node::Constraint{children: vec![
+                            Node::Transformation{children: vec![
                               Node::Statement{children: vec![
                                 Node::TableDefine{children: vec![
                                   Node::Table{name, id},
@@ -660,6 +660,10 @@ impl Compiler {
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
     let mut transformations: Vec<Transformation> = Vec::new();
     match node {
+      Node::Transformation{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
       Node::Statement{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
@@ -717,11 +721,12 @@ impl Compiler {
         }
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
-        transformations.push(Transformation::NewTable{table_id: TableId::Local(123456), rows: 1, columns: 1});
+        let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         transformations.push(Transformation::Function{
           name: name_hash,
           arguments: args,
-          out: (TableId::Local(123456), Index::All, Index::All),
+          out: (TableId::Local(id), Index::All, Index::All),
         });
         transformations.append(&mut arg_tfms);
       }
@@ -1492,7 +1497,7 @@ impl Compiler {
         }
         compiled.push(Node::FunctionBinding{children});
       },
-      parser::Node::Constraint{children} => {
+      parser::Node::Transformation{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
@@ -1503,7 +1508,7 @@ impl Compiler {
           }
         }
         if !children.is_empty() {
-          compiled.push(Node::Constraint{children});
+          compiled.push(Node::Transformation{children});
         }
       },
       parser::Node::SelectExpression{children} => {
