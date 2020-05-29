@@ -324,7 +324,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     Transformation::Function{name, arguments, out} => {
       let name_string = match block.identifiers.get(name) {
         Some(name_string) => name_string.clone(),
-        None => format!("0x{:x}", name),
+        None => format!("{}", humanize(name)),
       };
       let mut arg = format!("");
       for (ix,(arg_id, table, row, column)) in arguments.iter().enumerate() {
@@ -364,7 +364,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         TableId::Local(id) => {
           match block.identifiers.get(id) {
             Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}0x{:x}",arg,id),
+            None => arg = format!("{}{}",arg,humanize(id)),
           }
         }
       };
