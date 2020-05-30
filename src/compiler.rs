@@ -722,13 +722,13 @@ impl Compiler {
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
+        transformations.append(&mut arg_tfms);
         transformations.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         transformations.push(Transformation::Function{
           name: name_hash,
           arguments: args,
           out: (TableId::Local(id), Index::All, Index::All),
         });
-        transformations.append(&mut arg_tfms);
       }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
