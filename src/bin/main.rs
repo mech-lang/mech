@@ -185,21 +185,5 @@ x   y   20  0]"#.to_string(), vec![
   println!("{:0.4?}ms per iteration", per_iteration_time);
   println!("{:?}", core);
 
-  /*
-  for j in 0..rounds as usize {
-    let txn = Transaction{
-      changes: vec![
-        Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Index(2), Value::from_u64(j as u64))]}
-      ]
-    };
-    let start_ns = time::precise_time_ns(); 
-    core.process_transaction(&txn);
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64 / 1000000.0;   
-  }*/
-
-  
-  
-
 }
 
