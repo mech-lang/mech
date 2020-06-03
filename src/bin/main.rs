@@ -1,3 +1,5 @@
+#![feature(get_mut_unchecked)]
+
 extern crate mech_core;
 
 use mech_core::{Core, Table, TableId, Index, Value, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
@@ -7,6 +9,7 @@ use ahash::AHasher;
 use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
+use std::rc::Rc;
 
 fn hash_string(input: &str) -> u64 {
   let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
@@ -38,17 +41,18 @@ fn main() {
   let table_horzcat = hash_string("table/horizontal-concatenate");
 
   let mut block = Block::new(balls * 10 * 10);
-  block.identifiers.insert(time_timer, "time/timer".to_string());
-  block.identifiers.insert(period, "period".to_string());
-  block.identifiers.insert(ticks, "ticks".to_string());
-  block.identifiers.insert(gravity, "gravity".to_string());
-  block.identifiers.insert(balls_id, "balls".to_string());
-  block.identifiers.insert(x_id, "x".to_string());
-  block.identifiers.insert(y_id, "y".to_string());
-  block.identifiers.insert(vx_id, "vx".to_string());
-  block.identifiers.insert(vy_id, "vy".to_string());
-  block.identifiers.insert(table_range, "table/range".to_string());
-  block.identifiers.insert(table_horzcat, "table/horizontal-concatenate".to_string());
+  let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
+  store.identifiers.insert(time_timer, "time/timer".to_string());
+  store.identifiers.insert(period, "period".to_string());
+  store.identifiers.insert(ticks, "ticks".to_string());
+  store.identifiers.insert(gravity, "gravity".to_string());
+  store.identifiers.insert(balls_id, "balls".to_string());
+  store.identifiers.insert(x_id, "x".to_string());
+  store.identifiers.insert(y_id, "y".to_string());
+  store.identifiers.insert(vx_id, "vx".to_string());
+  store.identifiers.insert(vy_id, "vy".to_string());
+  store.identifiers.insert(table_range, "table/range".to_string());
+  store.identifiers.insert(table_horzcat, "table/horizontal-concatenate".to_string());
   block.register_transformations(("x = 1:4000".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
     Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0), unit: 0},
@@ -117,16 +121,17 @@ x   y   20  0]"#.to_string(), vec![
 
 
   let mut block = Block::new(balls * 10 * 10);
-  block.identifiers.insert(time_timer, "time/timer".to_string());
-  block.identifiers.insert(ticks, "ticks".to_string());
-  block.identifiers.insert(gravity, "gravity".to_string());
-  block.identifiers.insert(balls_id, "balls".to_string());
-  block.identifiers.insert(x_id, "x".to_string());
-  block.identifiers.insert(y_id, "y".to_string());
-  block.identifiers.insert(vx_id, "vx".to_string());
-  block.identifiers.insert(vy_id, "vy".to_string());
-  block.identifiers.insert(vy_id, "vy".to_string());
-  block.identifiers.insert(math_add, "math/add".to_string());
+  let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
+  store.identifiers.insert(time_timer, "time/timer".to_string());
+  store.identifiers.insert(ticks, "ticks".to_string());
+  store.identifiers.insert(gravity, "gravity".to_string());
+  store.identifiers.insert(balls_id, "balls".to_string());
+  store.identifiers.insert(x_id, "x".to_string());
+  store.identifiers.insert(y_id, "y".to_string());
+  store.identifiers.insert(vx_id, "vx".to_string());
+  store.identifiers.insert(vy_id, "vy".to_string());
+  store.identifiers.insert(vy_id, "vy".to_string());
+  store.identifiers.insert(math_add, "math/add".to_string());
   block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
     Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)},
   ]));
