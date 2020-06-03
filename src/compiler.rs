@@ -583,6 +583,7 @@ impl Compiler {
             }
             transformations.push(transformation.clone());
           }
+          //transformations.append(&mut functions);
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
           if consumes.len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
@@ -700,7 +701,17 @@ impl Compiler {
       }
       Node::Expression{children} => {
         let mut result = self.compile_transformations(children);
-        transformations.append(&mut result);
+        let mut others = vec![];
+        let mut fxns = vec![];
+        for tfm in result {
+          match tfm {
+            Transformation::Function{..} => fxns.push(tfm),
+            _ => others.push(tfm),
+          }
+        }
+        fxns.reverse();
+        transformations.append(&mut others);
+        transformations.append(&mut fxns);
       }
       Node::MathExpression{children} => {
         let mut result = self.compile_transformations(children);
@@ -722,13 +733,13 @@ impl Compiler {
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
-        transformations.append(&mut arg_tfms);
         transformations.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         transformations.push(Transformation::Function{
           name: name_hash,
           arguments: args,
           out: (TableId::Local(id), Index::All, Index::All),
         });
+        transformations.append(&mut arg_tfms);
       }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
