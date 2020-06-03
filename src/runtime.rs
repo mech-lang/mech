@@ -137,7 +137,7 @@ impl Runtime {
     {
       let mut db = self.database.borrow_mut();
       let store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
-      for (k,v) in block.identifiers.iter() {
+      for (k,v) in block.store.identifiers.iter() {
         store.identifiers.insert(*k,v.clone());
       }
       
