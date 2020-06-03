@@ -16,6 +16,7 @@ use lexer::Token;
 use hashbrown::hash_set::{HashSet};
 use hashbrown::hash_map::{HashMap};
 use super::formatter::Formatter;
+use std::rc::Rc;
 
 // ## Compiler Nodes
 
@@ -512,7 +513,6 @@ impl Compiler {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
-        //println!("{:?}", children);
         let mut block = Block::new(100);
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -539,15 +539,35 @@ impl Compiler {
               /*Constraint::AliasTable{table, alias} => {
                 produces.insert(*alias);
               },*/
+              Transformation::Constant{table_id, ..} => {
+                match table_id {
+                  TableId::Local(id) => {
+                    produces.insert(*id);
+                  },
+                  _ => (),
+                };                
+              }
               Transformation::NewTable{table_id, ..} => {
                 match table_id {
                   TableId::Local(id) => {
-                    block_produced.insert(*id);
                     produces.insert(*id);
                   },
                   _ => (),
                 };
               },
+              Transformation::Function{name, arguments, out} => {
+                for (_, table_id, _, _) in arguments {
+                  match table_id {
+                    TableId::Local(id) => {consumes.insert(*id);},
+                    _ => (),
+                  }
+                }
+                let (out_id, _, _) = out;
+                match out_id {
+                  TableId::Local(id) => {produces.insert(*id);},
+                  _ => (),
+                }
+              }
               /*
               Constraint::Append{from_table, to_table} => {
                 match from_table {
@@ -585,15 +605,15 @@ impl Compiler {
           }
           //transformations.append(&mut functions);
           // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
-          if consumes.len() == 0 {
+          if consumes.len() == 0 || consumes.difference(&produces).cloned().collect::<HashSet<u64>>().len() == 0 {
             block_produced = block_produced.union(&produces).cloned().collect();
             plan.insert(0, (constraint_text, produces, consumes, this_one));
           // Otherwise, the constraint consumes something, and we have to see if it's satisfied
           } else {
             let mut satisfied = false;
             //let (step_node, step_produces, step_consumes, step_constraints) = step;
-            //let intersection: HashSet<u64> = block_produces.intersection(&consumes).cloned().collect();
-            let unsatisfied: HashSet<u64> = consumes.difference(&block_produced).cloned().collect();
+            let union: HashSet<u64> = block_produced.union(&produces).cloned().collect();
+            let unsatisfied: HashSet<u64> = consumes.difference(&union).cloned().collect();
             if unsatisfied.is_empty() {
               block_produced = block_produced.union(&produces).cloned().collect();
               plan.push((constraint_text, produces, consumes, this_one));
@@ -601,10 +621,13 @@ impl Compiler {
               unsatisfied_transformations.push((constraint_text, produces, consumes, this_one));
             }
           }
+
+          
           // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
-          let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_constraint| {
-            let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
-            let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
+          let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
+            let (text, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
+            let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
+            let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
             match unsatisfied.is_empty() {
               true => {
                 block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
@@ -617,9 +640,10 @@ impl Compiler {
         }
         // Do a final check on unsatisfied constraints that are now satisfied
         
-        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_constraint| {
-          let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_constraint;
-          let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&block_produced).cloned().collect();
+        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
+          let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
+          let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
+          let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
           match unsatisfied.is_empty() {
             true => {
               block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
@@ -648,7 +672,8 @@ impl Compiler {
         }
         //block.id = block.gen_block_id();
         for (k,v) in self.identifiers.iter() {
-          block.identifiers.insert(*k,v.clone());
+          let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
+          store.identifiers.insert(*k,v.to_string());
         }
         self.blocks.push(block.clone());
         Some((block.id, node))
@@ -668,6 +693,42 @@ impl Compiler {
       Node::Statement{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
+      }
+      Node::SelectData{name, id, children} => {
+        let name_hash = hash_string(name);
+        self.identifiers.insert(name_hash, name.to_string());
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);        
+        transformations.push(Transformation::Select{table_id: TableId::Local(name_hash), row: Index::All, column: Index::All});
+      }
+      Node::VariableDefine{children} => {
+        let output_table_id = match &children[0] {
+          Node::Identifier{name,..} => {
+            let name_hash = hash_string(name);
+            self.identifiers.insert(name_hash, name.to_string());
+            transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
+            TableId::Local(name_hash)
+          }
+          _ => TableId::Local(0),
+        };
+        let mut input = self.compile_transformation(&children[1]);
+
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          _ => None,
+        };
+
+        let fxn = Transformation::Function{
+          name: 0x1C6A44C6BAFC67F1,
+          arguments: vec![
+            (0, input_table_id.unwrap(), Index::All, Index::All)
+          ],
+          out: (output_table_id, Index::All, Index::All),
+        };
+        transformations.append(&mut input);
+        transformations.push(fxn);
       }
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
@@ -726,6 +787,9 @@ impl Compiler {
             Transformation::NewTable{table_id,..} => {
               args.push((0, table_id, Index::All, Index::All));
             },
+            Transformation::Select{table_id,..} => {
+              args.push((0, table_id, Index::All, Index::All));
+            }
             _ => (),
           }
           arg_tfms.append(&mut result);

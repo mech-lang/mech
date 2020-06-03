@@ -3,6 +3,7 @@
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
 #![feature(drain_filter)]
+#![feature(get_mut_unchecked)]
 
 extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
