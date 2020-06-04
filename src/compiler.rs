@@ -639,8 +639,7 @@ impl Compiler {
           plan.append(&mut now_satisfied);
         }
         // Do a final check on unsatisfied constraints that are now satisfied
-        
-        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
+         let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
           let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
           let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
           let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
@@ -695,11 +694,10 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::SelectData{name, id, children} => {
-        let name_hash = hash_string(name);
-        self.identifiers.insert(name_hash, name.to_string());
+        self.identifiers.insert(*id.unwrap(), name.to_string());
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);        
-        transformations.push(Transformation::Select{table_id: TableId::Local(name_hash), row: Index::All, column: Index::All});
+        transformations.push(Transformation::Select{table_id: *id, row: Index::All, column: Index::All});
       }
       Node::VariableDefine{children} => {
         let output_table_id = match &children[0] {
@@ -783,6 +781,7 @@ impl Compiler {
         let mut arg_tfms = vec![];
         for child in children {
           let mut result = self.compile_transformation(child);
+          println!("{:?}", result);
           match result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((0, table_id, Index::All, Index::All));
