@@ -781,7 +781,6 @@ impl Compiler {
         let mut arg_tfms = vec![];
         for child in children {
           let mut result = self.compile_transformation(child);
-          println!("{:?}", result);
           match result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((0, table_id, Index::All, Index::All));
