@@ -729,6 +729,7 @@ impl Compiler {
         transformations.push(fxn);
       }
       Node::TableDefine{children} => {
+        println!("{:?}", children);
         let mut output = self.compile_transformation(&children[0]);
         let mut input = self.compile_transformation(&children[1]);
         let output_table_id = match output[0] {
