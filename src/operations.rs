@@ -65,6 +65,51 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   }
 }
 
+pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+  let (out_table_id, out_rows, out_columns) = out;
+  let mut db = database.borrow_mut();
+  let mut row = 0;
+  let mut out_columns = 0;
+  // First pass, make sure the dimensions work out
+  for (_, table_id, rows, columns) in arguments {
+    let table = match table_id {
+      TableId::Global(id) => db.tables.get(id).unwrap(),
+      TableId::Local(id) => block_tables.get(id).unwrap(),
+    };
+    if out_columns == 0 {
+      out_columns = table.columns;
+    } else if table.columns != 1 && out_columns != table.columns {
+      // TODO Throw an error here
+    } else if table.columns > out_columns && out_columns == 1 {
+      out_columns = table.columns
+    }
+  }
+  let mut out_table = match out_table_id {
+    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+  };
+  for (_, table_id, rows, columns) in arguments {
+    let table = match table_id {
+      TableId::Global(id) => db.tables.get(id).unwrap(),
+      TableId::Local(id) => block_tables.get(id).unwrap(),
+    };
+    let columns_iter = if table.columns == 1 {
+      IndexIterator::Constant(Index::Index(1))
+    } else {
+      IndexIterator::Range(1..=table.columns)
+    };
+    for (i,k) in (1..=out_columns).zip(columns_iter) {
+      for j in 1..=table.rows {
+        let value = table.get(&Index::Index(j),&k).unwrap();
+        unsafe {
+          (*out_table).set(&Index::Index(row + j), &Index::Index(i), value);
+        }
+      }
+    }
+    row += 1;
+  }
+}
+
 pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
   // TODO test argument count is 2 or 3
   // 2 -> start, end

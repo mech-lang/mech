@@ -10,7 +10,8 @@ use operations::{
   math_multiply, 
   math_divide, 
   table_range, 
-  table_horizontal_concatenate
+  table_horizontal_concatenate,
+  table_vertical_concatenate,
 };
 use ::hash_string;
 
@@ -44,6 +45,7 @@ impl Core {
     self.runtime.functions.insert(hash_string("math/divide"),Some(math_divide));
     self.runtime.functions.insert(hash_string("table/range"),Some(table_range));
     self.runtime.functions.insert(hash_string("table/horizontal-concatenate"),Some(table_horizontal_concatenate));
+    self.runtime.functions.insert(hash_string("table/vertical-concatenate"),Some(table_vertical_concatenate));
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
