@@ -685,6 +685,51 @@ impl Compiler {
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
     let mut transformations: Vec<Transformation> = Vec::new();
     match node {
+      Node::InlineTable{children} => {
+        let table = self.table;
+        self.table = hash_string(&format!("{:?}",children));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 1, columns: children.len()});
+        let mut ix = 1;
+        let mut args = vec![];
+        for child in children {
+          match child {
+            Node::Binding{children} => {
+              match &children[0] {
+                Node::Identifier{name, id} => {
+                  transformations.push(
+                    Transformation::ColumnAlias{table_id: TableId::Local(self.table), column_ix: ix, column_alias: hash_string(&name.to_string())});
+                  ix += 1;
+                }
+                _ => (),
+              }
+              let mut result = self.compile_transformation(&children[1]);
+              match result[0] {
+                Transformation::NewTable{table_id,..} => {
+                  args.push((0, table_id, Index::All, Index::All));
+                }
+                _ => (),
+              }
+              transformations.append(&mut result);
+            }
+            _ => (),
+          }
+          let mut result = self.compile_transformation(child);
+        }
+        let fxn = Transformation::Function{
+          name: 0x1C6A44C6BAFC67F1,
+          arguments: args,
+          out: (TableId::Local(self.table), Index::All, Index::All),
+        };
+        transformations.push(fxn);
+        self.table=table;
+      }
+      Node::Binding{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
+      Node::Identifier{name, id} => {
+        self.identifiers.insert(hash_string(&name.to_string()), name.to_string());
+      }
       Node::Transformation{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
@@ -729,21 +774,26 @@ impl Compiler {
         transformations.push(fxn);
       }
       Node::TableDefine{children} => {
-        println!("{:?}", children);
         let mut output = self.compile_transformation(&children[0]);
         let mut input = self.compile_transformation(&children[1]);
-        let output_table_id = match output[0] {
-          Transformation::NewTable{table_id,..} => Some(table_id),
-          _ => None,
-        };
+        let mut nt_rows = 1;
+        let mut nt_columns = 1;
 
         let input_table_id = match input[0] {
-          Transformation::NewTable{table_id,..} => {
+          Transformation::NewTable{table_id,rows,columns} => {
+            nt_rows=rows;
+            nt_columns=columns;
             Some(table_id)
           }
           _ => None,
         };
-
+        let output_table_id = match output[0] {
+          Transformation::NewTable{table_id,..} => {
+            transformations.push(Transformation::NewTable{table_id,rows: nt_rows,columns: nt_columns});
+            Some(table_id)
+          },
+          _ => None,
+        };
         let fxn = Transformation::Function{
           name: 0x1C6A44C6BAFC67F1,
           arguments: vec![
@@ -751,7 +801,7 @@ impl Compiler {
           ],
           out: (output_table_id.unwrap(), Index::All, Index::All),
         };
-        transformations.append(&mut output);
+        //transformations.append(&mut output);
         transformations.append(&mut input);
         transformations.push(fxn);
       }
