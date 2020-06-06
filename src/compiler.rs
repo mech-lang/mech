@@ -40,7 +40,7 @@ pub enum Node {
   SelectData{name: String, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
-  Column{ children: Vec<Node> },
+  TableColumn{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   FunctionBinding{ children: Vec<Node> },
   Function{ name: String, children: Vec<Node> },
@@ -110,7 +110,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Head{children} => {print!("Head\n"); Some(children)},
     Node::Body{children} => {print!("Body\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
-    Node::Column{children} => {print!("Column\n"); Some(children)},
+    Node::TableColumn{children} => {print!("TableColumn\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
     Node::FunctionBinding{children} => {print!("FunctionBinding\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
@@ -342,6 +342,7 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
+    println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -723,6 +724,36 @@ impl Compiler {
         transformations.push(fxn);
         self.table=table;
       }
+      Node::AnonymousTableDefine{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
+      Node::TableRow{children} => {
+        let new_table_id = TableId::Local(hash_string(&format!("{:?}", children)));
+        let new_table = Transformation::NewTable{table_id: new_table_id, rows: 1, columns: children.len()};
+        transformations.push(new_table);
+        let mut args = vec![];
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0, *table_id, Index::All, Index::All));
+            }
+            _ => (),
+          }
+          transformations.append(&mut result);       
+        }
+        let fxn = Transformation::Function{
+          name: 0x1C6A44C6BAFC67F1,
+          arguments: args,
+          out: (new_table_id, Index::All, Index::All),
+        };   
+        transformations.push(fxn);
+      }
+      Node::TableColumn{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
       Node::Binding{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
@@ -864,6 +895,7 @@ impl Compiler {
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: Value::Number(*value), unit: unit.clone()});
       } 
+
       _ => (),
     }
     transformations
@@ -1594,7 +1626,7 @@ impl Compiler {
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Column{children});
+        compiled.push(Node::TableColumn{children});
       },
       parser::Node::Empty => {
         compiled.push(Node::Empty);
@@ -1730,7 +1762,7 @@ impl Compiler {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
                   children: vec![Node::TableRow{
-                    children: vec![Node::Column{
+                    children: vec![Node::TableColumn{
                       children: vec![node]}]}]}]});
             },
             _ => children.push(node),
@@ -1748,7 +1780,7 @@ impl Compiler {
               children.push(Node::Expression{
                 children: vec![Node::AnonymousTableDefine{
                   children: vec![Node::TableRow{
-                    children: vec![Node::Column{
+                    children: vec![Node::TableColumn{
                       children: vec![node]}]}]}]});
             },
             _ => children.push(node),
