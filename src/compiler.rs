@@ -656,10 +656,10 @@ impl Compiler {
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
-          let (constraint_text, _, _, step_constraints) = step;
-          block.register_transformations((constraint_text, step_constraints));
+          let (step_text, _, _, step_transformations) = step;
+          block.register_transformations((step_text, step_transformations));
         }
-        for (constraint_text, _, unsatisfied_consumes, step_constraints) in unsatisfied_transformations {
+        for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
             block: block.id as u64,
             constraint: step_constraints,
@@ -725,11 +725,34 @@ impl Compiler {
         self.table=table;
       }
       Node::AnonymousTableDefine{children} => {
-        let mut result = self.compile_transformations(children);
-        transformations.append(&mut result);
+        let rows = self.row;
+        let new_table_id = TableId::Local(hash_string(&format!("{:?}", children)));
+        let new_table = Transformation::NewTable{table_id: new_table_id, rows: 2, columns: 3};
+        transformations.push(new_table);
+        let mut args = vec![];
+        let mut tfms = vec![];
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          match &result[0] {
+            Transformation::NewTable{table_id, rows, columns} => {
+              args.push((0, table_id.clone(), Index::All, Index::All));
+            }
+            _ => (),
+          }
+          tfms.append(&mut result);
+        }
+        let fxn = Transformation::Function{
+          name: 0x4c606e0853f32c99,
+          arguments: args,
+          out: (new_table_id, Index::All, Index::All),
+        };
+        transformations.push(fxn);
+        transformations.append(&mut tfms);
+        self.row = rows;
       }
       Node::TableRow{children} => {
-        let new_table_id = TableId::Local(hash_string(&format!("{:?}", children)));
+        self.row += 1;
+        let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
         let new_table = Transformation::NewTable{table_id: new_table_id, rows: 1, columns: children.len()};
         transformations.push(new_table);
         let mut args = vec![];
