@@ -383,7 +383,7 @@ impl Formatter {
         };
         code = format!("{}{}", indent, code)
       }
-      Node::Column{children} => {
+      Node::TableColumn{children} => {
         self.cols += 1;
         for child in children {
           code = self.write_node(child);
