@@ -99,7 +99,9 @@ impl Block {
               self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
             }
             TableId::Local(id) => {
-
+              let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+              store.column_index_to_alias.insert((*table_id.unwrap(),column_ix),column_alias);
+              store.column_alias_to_index.insert((*table_id.unwrap(),column_alias),column_ix);
             }
           }
         }
@@ -311,7 +313,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         TableId::Local(id) => {
           match block.store.identifiers.get(id) {
             Some(name) => tfm = format!("{}{}",tfm,name),
-            None => tfm = format!("{}0x{:x}",tfm,id),
+            None => tfm = format!("{}{}",tfm,humanize(id)),
           }
         }
       }
