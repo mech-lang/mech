@@ -729,20 +729,28 @@ impl Compiler {
       Node::AnonymousTableDefine{children} => {
         let rows = self.row;
         let new_table_id = TableId::Local(hash_string(&format!("{:?}", children)));
-        let new_table = Transformation::NewTable{table_id: new_table_id, rows: 2, columns: 3};
-        transformations.push(new_table);
         let mut args = vec![];
         let mut tfms = vec![];
+        let mut nrows = 0;
+        let mut ncols = 0;
         for child in children {
           let mut result = self.compile_transformation(child);
           match &result[0] {
             Transformation::NewTable{table_id, rows, columns} => {
+              ncols = if ncols > *columns {
+                ncols
+              } else {
+                *columns
+              };
+              nrows += rows;
               args.push((0, table_id.clone(), Index::All, Index::All));
             }
             _ => (),
           }
           tfms.append(&mut result);
         }
+        let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
+        transformations.push(new_table);
         let fxn = Transformation::Function{
           name: 0x4c606e0853f32c99,
           arguments: args,
