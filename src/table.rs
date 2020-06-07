@@ -13,7 +13,7 @@ use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
 use std::rc::Rc;
 use std::cell::RefCell;
-use block::humanize;
+use ::humanize;
 
 
 // ## Row and Column

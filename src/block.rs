@@ -8,6 +8,7 @@ use std::rc::Rc;
 use std::hash::Hasher;
 use ahash::AHasher;
 use rust_core::fmt;
+use ::humanize;
 
 // ## Block
 
@@ -461,6 +462,7 @@ impl Register {
   }
 }
 
+#[derive(Debug)]
 pub enum IndexIterator {
   Range(std::ops::RangeInclusive<usize>),
   Constant(Index),
@@ -481,61 +483,3 @@ impl Iterator for IndexIterator {
     }
   }
 }
-
-pub fn humanize(hash: &u64) -> String {
-  use std::mem::transmute;
-  let bytes: [u8; 8] = unsafe { transmute(hash.to_be()) };
-  let mut string = "".to_string();
-  let mut ix = 0;
-  for byte in bytes.iter() {
-    if ix % 2 == 0 {
-      ix += 1;
-      continue;
-    }
-    string.push_str(&WORDLIST[*byte as usize]);
-    if ix < 7 {
-      string.push_str("-");
-    }
-    ix += 1;
-  }
-  string
-}
-
-pub const WORDLIST: &[&str;256] = &[
-  "nil", "ama", "ine", "ska", "pha", "gel", "art", 
-  "ona", "sas", "ist", "aus", "pen", "ust", "umn",
-  "ado", "con", "loo", "man", "eer", "lin", "ium",
-  "ack", "som", "lue", "ird", "avo", "dog", "ger",
-  "ter", "nia", "bon", "nal", "ina", "pet", "cat",
-  "ing", "lie", "ken", "fee", "ola", "old", "rad",
-  "met", "cut", "azy", "cup", "ota", "dec", "del",
-  "elt", "iet", "don", "ble", "ear", "rth", "eas", 
-  "war", "eig", "tee", "ele", "emm", "ene", "qua",
-  "fai", "fan", "fif", "fil", "fin", "fis", "fiv", 
-  "flo", "for", "foo", "fou", "fot", "fox", "fre",
-  "fri", "fru", "gee", "gia", "glu", "fol", "gre", 
-  "ham", "hap", "har", "haw", "hel", "hig", "hot", 
-  "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
-  "and", "ite", "jer", "jig", "joh", "jul", "uly", 
-  "kan", "ket", "kil", "kin", "kit", "lac", "lak", 
-  "lem", "ard", "lim", "lio", "lit", "lon", "lou",
-  "low", "mag", "nes", "mai", "gam", "arc", "mar",
-  "mao", "mas", "may", "mex", "mic", "mik", "ril",
-  "min", "mir", "mis", "mio", "mob", "moc", "ech",
-  "moe", "tan", "oon", "ain", "mup", "sic", "neb",
-  "une", "net", "nev", "nin", "een", "nit", "nor",
-  "nov", "nut", "oct", "ohi", "okl", "one", "ora",
-  "ges", "ore", "osc", "ove", "oxy", "pap", "par", 
-  "pey", "pip", "piz", "plu", "pot", "pri", "pur",
-  "que", "uqi", "qui", "red", "riv", "rob", "roi", 
-  "rug", "sad", "sal", "sat", "sep", "sev", "eve",
-  "sha", "sie", "sin", "sik", "six", "sit", "sky", 
-  "soc", "sod", "sol", "sot", "tir", "ker", "spr",
-  "sta", "ste", "mam", "mer", "swe", "tab", "tag", 
-  "see", "nis", "tex", "thi", "the", "tim", "tri",
-  "twe", "ent", "two", "unc", "ess", "uni", "ura", 
-  "veg", "ven", "ver", "vic", "vid", "vio", "vir",
-  "was", "est", "whi", "hit", "iam", "win", "his",
-  "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
-  "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
-  "rom", "sne", "ten", "uta"];

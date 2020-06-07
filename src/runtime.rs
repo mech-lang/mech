@@ -1,4 +1,5 @@
-use block::{Block, BlockState, Register, Error, Transformation, humanize};
+use block::{Block, BlockState, Register, Error, Transformation};
+use ::humanize;
 use database::{Database, Transaction, Change, Store};
 use table::{Index, Table, TableId};
 use std::cell::RefCell;

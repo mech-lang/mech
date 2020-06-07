@@ -1,5 +1,6 @@
 use table::{Table, Value, Index};
-use block::{Error, Register, humanize};
+use block::{Error, Register};
+use ::humanize;
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::{HashSet, HashMap};
