@@ -96,102 +96,102 @@ pub enum Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    print_recurse(self, 0);
+    print_recurse(self, 0, f);
     Ok(())
   }
 }
 
-pub fn print_recurse(node: &Node, level: usize) {
-  spacer(level);
+pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
+  spacer(level,f);
   let children: Option<&Vec<Node>> = match node {
-    Node::Root{children} => {print!("Root\n"); Some(children)},
-    Node::Fragment{children, ..} => {print!("Fragment\n"); Some(children)},
-    Node::Program{title, children} => {print!("Program({:?})\n", title); Some(children)},
-    Node::Head{children} => {print!("Head\n"); Some(children)},
-    Node::Body{children} => {print!("Body\n"); Some(children)},
-    Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
-    Node::TableColumn{children} => {print!("TableColumn\n"); Some(children)},
-    Node::Binding{children} => {print!("Binding\n"); Some(children)},
-    Node::FunctionBinding{children} => {print!("FunctionBinding\n"); Some(children)},
-    Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
-    Node::AnonymousTableDefine{children} => {print!("AnonymousTableDefine\n"); Some(children)},
-    Node::InlineTable{children} => {print!("InlineTable\n"); Some(children)},
-    Node::TableHeader{children} => {print!("TableHeader\n"); Some(children)},
-    Node::Attribute{children} => {print!("Attribute\n"); Some(children)},
-    Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
-    Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
-    Node::Section{title, children} => {print!("Section({:?})\n", title); Some(children)},
-    Node::Block{children, ..} => {print!("Block\n"); Some(children)},
-    Node::Statement{children} => {print!("Statement\n"); Some(children)},
-    Node::SetData{children} => {print!("SetData\n"); Some(children)},
-    Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
-    Node::Data{children} => {print!("Data\n"); Some(children)},
-    Node::Whenever{children} => {print!("Whenever\n"); Some(children)},
-    Node::Wait{children} => {print!("Wait\n"); Some(children)},
-    Node::Until{children} => {print!("Until\n"); Some(children)},
-    Node::SelectData{name, id, children} => {print!("SelectData({:?} {:?}))\n", name, id); Some(children)},
-    Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
-    Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
-    Node::Range => {print!("Range\n"); None},
-    Node::Expression{children} => {print!("Expression\n"); Some(children)},
-    Node::Function{name, children} => {print!("Function({:?})\n", name); Some(children)},
-    Node::MathExpression{children} => {print!("MathExpression\n"); Some(children)},
-    Node::Comment{children} => {print!("Comment\n"); Some(children)},
-    Node::SelectExpression{children} => {print!("SelectExpression\n"); Some(children)},
-    Node::Transformation{children, ..} => {print!("Transformation\n"); Some(children)},
-    Node::Identifier{name, id} => {print!("Identifier({}({:#x}))\n", name, id); None},
-    Node::String{text} => {print!("String({:?})\n", text); None},
-    Node::Constant{value, unit} => {print!("Constant({}{:?})\n", value.to_float(), unit); None},
-    Node::Table{name,id} => {print!("Table(#{}({:#x}))\n", name, id); None},
-    Node::Define{name,id} => {print!("Define #{}({:?})\n", name, id); None},
-    Node::Token{token, byte} => {print!("Token({:?})\n", token); None},
-    Node::SelectAll => {print!("SelectAll\n"); None},
-    Node::LessThan => {print!("LessThan\n"); None},
-    Node::GreaterThan => {print!("GreaterThan\n"); None},
-    Node::GreaterThanEqual => {print!("GreaterThanEqual\n"); None},
-    Node::LessThanEqual => {print!("LessThanEqual\n"); None},
-    Node::Equal => {print!("Equal\n"); None},
-    Node::NotEqual => {print!("NotEqual\n"); None},
-    Node::Empty => {print!("Empty\n"); None},
-    Node::Null => {print!("Null\n"); None},
-    Node::Add => {print!("Add\n"); None},
-    Node::Subtract => {print!("Subtract\n"); None},
-    Node::Multiply => {print!("Multiply\n"); None},
-    Node::Divide => {print!("Divide\n"); None},
-    Node::Exponent => {print!("Exponent\n"); None},
+    Node::Root{children} => {write!(f,"Root\n"); Some(children)},
+    Node::Fragment{children, ..} => {write!(f,"Fragment\n"); Some(children)},
+    Node::Program{title, children} => {write!(f,"Program({:?})\n", title); Some(children)},
+    Node::Head{children} => {write!(f,"Head\n"); Some(children)},
+    Node::Body{children} => {write!(f,"Body\n"); Some(children)},
+    Node::VariableDefine{children} => {write!(f,"VariableDefine\n"); Some(children)},
+    Node::TableColumn{children} => {write!(f,"TableColumn\n"); Some(children)},
+    Node::Binding{children} => {write!(f,"Binding\n"); Some(children)},
+    Node::FunctionBinding{children} => {write!(f,"FunctionBinding\n"); Some(children)},
+    Node::TableDefine{children} => {write!(f,"TableDefine\n"); Some(children)},
+    Node::AnonymousTableDefine{children} => {write!(f,"AnonymousTableDefine\n"); Some(children)},
+    Node::InlineTable{children} => {write!(f,"InlineTable\n"); Some(children)},
+    Node::TableHeader{children} => {write!(f,"TableHeader\n"); Some(children)},
+    Node::Attribute{children} => {write!(f,"Attribute\n"); Some(children)},
+    Node::TableRow{children} => {write!(f,"TableRow\n"); Some(children)},
+    Node::AddRow{children} => {write!(f,"AddRow\n"); Some(children)},
+    Node::Section{title, children} => {write!(f,"Section({:?})\n", title); Some(children)},
+    Node::Block{children, ..} => {write!(f,"Block\n"); Some(children)},
+    Node::Statement{children} => {write!(f,"Statement\n"); Some(children)},
+    Node::SetData{children} => {write!(f,"SetData\n"); Some(children)},
+    Node::SplitData{children} => {write!(f,"SplitData\n"); Some(children)},
+    Node::Data{children} => {write!(f,"Data\n"); Some(children)},
+    Node::Whenever{children} => {write!(f,"Whenever\n"); Some(children)},
+    Node::Wait{children} => {write!(f,"Wait\n"); Some(children)},
+    Node::Until{children} => {write!(f,"Until\n"); Some(children)},
+    Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id); Some(children)},
+    Node::DotIndex{children} => {write!(f,"DotIndex\n"); Some(children)},
+    Node::SubscriptIndex{children} => {write!(f,"SubscriptIndex\n"); Some(children)},
+    Node::Range => {write!(f,"Range\n"); None},
+    Node::Expression{children} => {write!(f,"Expression\n"); Some(children)},
+    Node::Function{name, children} => {write!(f,"Function({:?})\n", name); Some(children)},
+    Node::MathExpression{children} => {write!(f,"MathExpression\n"); Some(children)},
+    Node::Comment{children} => {write!(f,"Comment\n"); Some(children)},
+    Node::SelectExpression{children} => {write!(f,"SelectExpression\n"); Some(children)},
+    Node::Transformation{children, ..} => {write!(f,"Transformation\n"); Some(children)},
+    Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id); None},
+    Node::String{text} => {write!(f,"String({:?})\n", text); None},
+    Node::Constant{value, unit} => {write!(f,"Constant({}{:?})\n", value.to_float(), unit); None},
+    Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
+    Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id); None},
+    Node::Token{token, byte} => {write!(f,"Token({:?})\n", token); None},
+    Node::SelectAll => {write!(f,"SelectAll\n"); None},
+    Node::LessThan => {write!(f,"LessThan\n"); None},
+    Node::GreaterThan => {write!(f,"GreaterThan\n"); None},
+    Node::GreaterThanEqual => {write!(f,"GreaterThanEqual\n"); None},
+    Node::LessThanEqual => {write!(f,"LessThanEqual\n"); None},
+    Node::Equal => {write!(f,"Equal\n"); None},
+    Node::NotEqual => {write!(f,"NotEqual\n"); None},
+    Node::Empty => {write!(f,"Empty\n"); None},
+    Node::Null => {write!(f,"Null\n"); None},
+    Node::Add => {write!(f,"Add\n"); None},
+    Node::Subtract => {write!(f,"Subtract\n"); None},
+    Node::Multiply => {write!(f,"Multiply\n"); None},
+    Node::Divide => {write!(f,"Divide\n"); None},
+    Node::Exponent => {write!(f,"Exponent\n"); None},
     // Markdown Nodes
-    Node::Title{text} => {print!("Title({:?})\n", text); None},
-    Node::ParagraphText{text} => {print!("ParagraphText({:?})\n", text); None},
-    Node::UnorderedList{children} => {print!("UnorderedList\n"); Some(children)},
-    Node::ListItem{children} => {print!("ListItem\n"); Some(children)},
-    Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
-    Node::InlineCode{children} => {print!("InlineCode\n"); Some(children)},
-    Node::CodeBlock{children} => {print!("CodeBlock\n"); Some(children)},
+    Node::Title{text} => {write!(f,"Title({:?})\n", text); None},
+    Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text); None},
+    Node::UnorderedList{children} => {write!(f,"UnorderedList\n"); Some(children)},
+    Node::ListItem{children} => {write!(f,"ListItem\n"); Some(children)},
+    Node::Paragraph{children} => {write!(f,"Paragraph\n"); Some(children)},
+    Node::InlineCode{children} => {write!(f,"InlineCode\n"); Some(children)},
+    Node::CodeBlock{children} => {write!(f,"CodeBlock\n"); Some(children)},
     // Extended Mechdown
-    Node::InlineMechCode{children} => {print!("InlineMechCode\n"); Some(children)},
-    Node::MechCodeBlock{children} => {print!("MechCodeBlock\n"); Some(children)},
-    _ => {print!("Unhandled Compiler Node"); None},
+    Node::InlineMechCode{children} => {write!(f,"InlineMechCode\n"); Some(children)},
+    Node::MechCodeBlock{children} => {write!(f,"MechCodeBlock\n"); Some(children)},
+    _ => {write!(f,"Unhandled Compiler Node"); None},
   };  
   match children {
     Some(childs) => {
       for child in childs {
-        print_recurse(child, level + 1)
+        print_recurse(child, level + 1,f)
       }
     },
     _ => (),
   }    
 }
 
-pub fn spacer(width: usize) {
+pub fn spacer(width: usize, f: &mut fmt::Formatter) {
   let limit = if width > 0 {
     width - 1
   } else {
     width
   };
   for _ in 0..limit {
-    print!("│");
+    write!(f,"│");
   }
-  print!("├");
+  write!(f,"├");
 }
 
 // ## Program
@@ -342,7 +342,7 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    println!("{:?}", ast);
+    //println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -514,6 +514,7 @@ impl Compiler {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
+        
         let mut block = Block::new(100);
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -529,6 +530,7 @@ impl Compiler {
         // Planner
         // ----------------------------------------------------------------------------------------------------------
         // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
+        
         for transformation_node in children {
           let constraint_text = formatter.format(&transformation_node, false);
           let mut compiled_tfm = self.compile_transformation(&transformation_node);
