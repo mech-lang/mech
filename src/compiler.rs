@@ -860,35 +860,63 @@ impl Compiler {
       }
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
-        let mut input = self.compile_transformation(&children[1]);
+
         let mut nt_rows = 1;
         let mut nt_columns = 1;
 
-        let input_table_id = match input[0] {
-          Transformation::NewTable{table_id,rows,columns} => {
-            nt_rows=rows;
-            nt_columns=columns;
-            Some(table_id)
-          }
-          _ => None,
-        };
+        // Get the output table id
         let output_table_id = match output[0] {
           Transformation::NewTable{table_id,..} => {
-            transformations.push(Transformation::NewTable{table_id,rows: nt_rows,columns: nt_columns});
             Some(table_id)
           },
           _ => None,
         };
-        let fxn = Transformation::Function{
-          name: 0x1C6A44C6BAFC67F1,
-          arguments: vec![
-            (0, input_table_id.unwrap(), Index::All, Index::All)
-          ],
-          out: (output_table_id.unwrap(), Index::All, Index::All),
+
+        // Rewrite input rows
+        let mut input = self.compile_transformation(&children[1]);
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          },
+          _ => None,
         };
-        //transformations.append(&mut output);
-        transformations.append(&mut input);
-        transformations.push(fxn);
+
+        let mut input_tfms = vec![];
+        for tfm in input {
+          match tfm {
+            Transformation::NewTable{table_id,rows,columns} => {
+              if table_id == input_table_id.unwrap() {
+                input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows, columns});
+              } else {
+                input_tfms.push(tfm);
+              }
+            }
+            Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+              if table_id == input_table_id.unwrap() {
+                input_tfms.push(Transformation::ColumnAlias{table_id: output_table_id.unwrap(), column_ix, column_alias});
+              } else {
+                input_tfms.push(tfm);
+              }              
+            }
+            Transformation::Function{name, ref arguments, out} => {
+              let (out_table, out_rows, out_columns) = out;
+              if out_table == input_table_id.unwrap() {
+                input_tfms.push(Transformation::Function{name, arguments: arguments.clone(), out: (output_table_id.unwrap(), out_rows, out_columns)});
+              } else {
+                input_tfms.push(tfm);
+              }   
+            }
+            Transformation::Constant{table_id, value, unit} => {
+              if table_id == input_table_id.unwrap() {
+                input_tfms.push(Transformation::Constant{table_id: output_table_id.unwrap(), value, unit});
+              } else {
+                input_tfms.push(tfm);
+              }              
+            }
+            _ => input_tfms.push(tfm),
+          };
+        }
+        transformations.append(&mut input_tfms);
       }
       Node::Table{name, id} => {
         self.identifiers.insert(*id, name.to_string());
