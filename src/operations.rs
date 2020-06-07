@@ -233,7 +233,10 @@ macro_rules! binary_infix {
       } else if equal_dimensions {
         (
           IndexIterator::Range(1..=lhs_table.rows),
-          IndexIterator::Constant(*lhs_columns),
+          match lhs_columns {
+            Index::All => IndexIterator::Range(1..=lhs_table.columns),
+            _ => IndexIterator::Constant(*lhs_columns),
+          },
           IndexIterator::Range(1..=rhs_table.rows),
           match rhs_columns {
             Index::All => IndexIterator::Range(1..=rhs_table.columns),
@@ -248,26 +251,36 @@ macro_rules! binary_infix {
       } else if rhs_scalar {
         (
           IndexIterator::Range(1..=lhs_table.rows),
-          IndexIterator::Constant(*lhs_columns),
+          match lhs_columns {
+            Index::All => IndexIterator::Range(1..=lhs_table.columns),
+            _ => IndexIterator::Constant(*lhs_columns),
+          },
           IndexIterator::Constant(Index::Index(1)),
           IndexIterator::Constant(Index::Index(1)),
           IndexIterator::Range(1..=out_rows_count),
-          IndexIterator::Constant(*out_columns),
+          match out_columns {
+            Index::All => IndexIterator::Range(1..=out_columns_count),
+            _ => IndexIterator::Constant(*out_columns),
+          },
         )
       } else {
         (
           IndexIterator::Constant(Index::Index(1)),
           IndexIterator::Constant(Index::Index(1)),
           IndexIterator::Range(1..=rhs_table.rows),
-          IndexIterator::Constant(*rhs_columns),
+          match rhs_columns {
+            Index::All => IndexIterator::Range(1..=rhs_table.columns),
+            _ => IndexIterator::Constant(*rhs_columns),
+          },
           IndexIterator::Range(1..=out_rows_count),
-          IndexIterator::Constant(*out_columns),
+          match out_columns {
+            Index::All => IndexIterator::Range(1..=out_columns_count),
+            _ => IndexIterator::Constant(*out_columns),
+          },
         )
       };
 
       let mut i = 1;
-
-      println!("{:?} {:?} {:?} {:?} {:?} {:?}", lrix, lcix, rrix, rcix, out_rix, out_cix);
 
       loop {
         let l1 = lrix.next().unwrap().unwrap();
@@ -276,7 +289,7 @@ macro_rules! binary_infix {
         let r2 = rcix.next().unwrap().unwrap();
         let o1 = out_rix.next().unwrap().unwrap();
         let o2 = out_cix.next().unwrap().unwrap();
-        println!("{:?} {:?} {:?} {:?} {:?} {:?}", l1, l2, r1, r2, o1, o2);
+
         match (lhs_table.get_unchecked(l1,l2), 
                rhs_table.get_unchecked(r1,r2))
         {
