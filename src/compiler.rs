@@ -821,7 +821,10 @@ impl Compiler {
                 _ => (),
               }
             }
-            _ => (),
+            _ => {
+              indices.push(Index::All);
+              indices.push(Index::All);
+            },
           }
         }
         transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
