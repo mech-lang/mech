@@ -16,10 +16,16 @@ use std::cell::RefCell;
 use hashbrown::HashMap;
 
 
-pub type MechFunction = extern "C" fn(&Vec<(u64, TableId, Index, Index)>, &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>);
+pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                                      out: &(TableId, Index, Index), 
+                                      block_tables: &mut HashMap<u64, Table>, 
+                                      database: &Rc<RefCell<Database>>);
 
 
-pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                                               out: &(TableId, Index, Index), 
+                                               block_tables: &mut HashMap<u64, Table>, 
+                                               database: &Rc<RefCell<Database>>) {
   let (out_table_id, out_rows, out_columns) = out;
   let mut db = database.borrow_mut();
   let mut column = 0;
@@ -82,7 +88,10 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   }
 }
 
-pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                                             out: &(TableId, Index, Index), 
+                                             block_tables: &mut HashMap<u64, Table>, 
+                                             database: &Rc<RefCell<Database>>) {
   let (out_table_id, out_rows, out_columns) = out;
   let mut db = database.borrow_mut();
   let mut row = 0;
@@ -137,7 +146,10 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Inde
   }
 }
 
-pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                              out: &(TableId, Index, Index), 
+                              block_tables: &mut HashMap<u64, Table>, 
+                              database: &Rc<RefCell<Database>>) {
   // TODO test argument count is 2 or 3
   // 2 -> start, end
   // 3 -> start, increment, end
@@ -172,8 +184,12 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>, out
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
-    pub extern "C" fn $func_name(arguments: &Vec<(u64, TableId, Index, Index)>, out: &(TableId, Index, Index), block_tables: &mut HashMap<u64, Table>, database: &Rc<RefCell<Database>>) {
+    pub extern "C" fn $func_name(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                                 out: &(TableId, Index, Index), 
+                                 block_tables: &mut HashMap<u64, Table>, 
+                                 database: &Rc<RefCell<Database>>) {
       // TODO test argument count is 2
+      println!("{:?}", arguments);
       let (_, lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
       let (_, rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
       let (out_table_id, out_rows, out_columns) = out;
@@ -203,6 +219,7 @@ macro_rules! binary_infix {
       { true } else { false };
 
       let out_rows_count = unsafe{(*out_table).rows};
+      let out_columns_count = unsafe{(*out_table).columns};
 
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
@@ -218,9 +235,15 @@ macro_rules! binary_infix {
           IndexIterator::Range(1..=lhs_table.rows),
           IndexIterator::Constant(*lhs_columns),
           IndexIterator::Range(1..=rhs_table.rows),
-          IndexIterator::Constant(*rhs_columns),
+          match rhs_columns {
+            Index::All => IndexIterator::Range(1..=rhs_table.columns),
+            _ => IndexIterator::Constant(*rhs_columns),
+          },
           IndexIterator::Range(1..=out_rows_count),
-          IndexIterator::Constant(*out_columns),
+          match out_columns {
+            Index::All => IndexIterator::Range(1..=out_columns_count),
+            _ => IndexIterator::Constant(*out_columns),
+          },
         )
       } else if rhs_scalar {
         (
@@ -244,6 +267,8 @@ macro_rules! binary_infix {
 
       let mut i = 1;
 
+      println!("{:?} {:?} {:?} {:?} {:?} {:?}", lrix, lcix, rrix, rcix, out_rix, out_cix);
+
       loop {
         let l1 = lrix.next().unwrap().unwrap();
         let l2 = lcix.next().unwrap().unwrap();
@@ -251,8 +276,9 @@ macro_rules! binary_infix {
         let r2 = rcix.next().unwrap().unwrap();
         let o1 = out_rix.next().unwrap().unwrap();
         let o2 = out_cix.next().unwrap().unwrap();
+        println!("{:?} {:?} {:?} {:?} {:?} {:?}", l1, l2, r1, r2, o1, o2);
         match (lhs_table.get_unchecked(l1,l2), 
-                rhs_table.get_unchecked(r1,r2))
+               rhs_table.get_unchecked(r1,r2))
         {
           (lhs_value, rhs_value) => {
             match (lhs_value, rhs_value) {
