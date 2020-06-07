@@ -189,7 +189,6 @@ macro_rules! binary_infix {
                                  block_tables: &mut HashMap<u64, Table>, 
                                  database: &Rc<RefCell<Database>>) {
       // TODO test argument count is 2
-      println!("{:?}", arguments);
       let (_, lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
       let (_, rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
       let (out_table_id, out_rows, out_columns) = out;
@@ -211,15 +210,41 @@ macro_rules! binary_infix {
       let store = &db.store;
 
       // Figure out dimensions
-      let equal_dimensions = if lhs_table.rows == rhs_table.rows
+      let lhs_rows_count = match lhs_rows {
+        Index::All => lhs_table.rows,
+        _ => 1,
+      };
+      let lhs_columns_count = match lhs_columns {
+        Index::All => lhs_table.columns,
+        _ => 1,
+      };
+      let rhs_rows_count = match rhs_rows {
+        Index::All => rhs_table.rows,
+        _ => 1,
+      };
+      let rhs_columns_count = match rhs_columns {
+        Index::All => rhs_table.columns,
+        _ => 1,
+      };
+
+
+      let equal_dimensions = if lhs_rows_count == rhs_rows_count && lhs_columns_count == rhs_columns_count
       { true } else { false };
-      let lhs_scalar = if lhs_table.rows == 1 && lhs_table.columns == 1 
+      let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1 
       { true } else { false };
-      let rhs_scalar = if rhs_table.rows == 1 && rhs_table.columns == 1
+      let rhs_scalar = if rhs_rows_count == 1 && rhs_columns_count == 1
       { true } else { false };
 
-      let out_rows_count = unsafe{(*out_table).rows};
-      let out_columns_count = unsafe{(*out_table).columns};
+      let out_rows_count = if lhs_rows_count > rhs_rows_count {
+        lhs_rows_count
+      } else {
+        rhs_rows_count
+      };
+      let out_columns_count = if lhs_columns_count > rhs_columns_count {
+        lhs_columns_count
+      } else {
+        rhs_columns_count
+      };
 
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
@@ -231,6 +256,11 @@ macro_rules! binary_infix {
           IndexIterator::Constant(Index::Index(1)),               
         )
       } else if equal_dimensions {
+        unsafe {
+          (*out_table).rows = lhs_rows_count;
+          (*out_table).columns = lhs_columns_count;
+          (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
+        }
         (
           IndexIterator::Range(1..=lhs_table.rows),
           match lhs_columns {
@@ -243,10 +273,7 @@ macro_rules! binary_infix {
             _ => IndexIterator::Constant(*rhs_columns),
           },
           IndexIterator::Range(1..=out_rows_count),
-          match out_columns {
-            Index::All => IndexIterator::Range(1..=out_columns_count),
-            _ => IndexIterator::Constant(*out_columns),
-          },
+          IndexIterator::Constant(Index::Index(1)),
         )
       } else if rhs_scalar {
         (
