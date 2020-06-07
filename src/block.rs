@@ -111,6 +111,14 @@ impl Block {
               let mut table = self.tables.get_mut(&id).unwrap();
               table.set(&Index::Index(1), &Index::Index(1), value);
             }
+            TableId::Global(id) => {
+              self.changes.push(
+                Change::Set{
+                  table_id: id,
+                  values: vec![(Index::Index(1), Index::Index(1), value)],
+                }
+              );
+            }
             _ => (),
           }
         }
@@ -290,7 +298,18 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       arg      
     }
     Transformation::Constant{table_id, value, unit} => {
-      format!("{:?} -> {}", value, humanize(table_id.unwrap()))
+      let mut tfm = format!("");
+      tfm = format!("{}{:?} -> ", tfm, value);
+      match table_id {
+        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
+        TableId::Local(id) => {
+          match block.store.identifiers.get(id) {
+            Some(name) =>  tfm=format!("{}{}",tfm,name),
+            None => tfm=format!("{}{}",tfm,humanize(id)),
+          }
+        }
+      };
+      tfm
     }
     Transformation::Set{table_id, row, column, value} => {
       let mut tfm = format!("");
