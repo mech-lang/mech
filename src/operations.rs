@@ -38,7 +38,10 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     } else if table.rows > out_rows && out_rows == 1 {
       out_rows = table.rows
     }
-    out_columns += table.columns;
+    out_columns += match columns {
+      Index::All => table.columns,
+      _ => 1,
+    };
   }
   let mut out_table = match out_table_id {
     TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
@@ -60,10 +63,18 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
       IndexIterator::Range(1..=table.rows)
     };
     for (i,k) in (1..=out_rows).zip(rows_iter) {
-      for j in 1..=table.columns {
-        let value = table.get(&k,&Index::Index(j)).unwrap();
+      let columns_iter = match columns {
+        Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
+        _ => IndexIterator::Range(1..=table.columns),
+      };
+      let out_cols = match columns {
+        Index::All => table.columns,
+        _ => 1,
+      };
+      for (m,j) in (1..=out_cols).zip(columns_iter) {
+        let value = table.get(&k,&j).unwrap();
         unsafe {
-          (*out_table).set(&Index::Index(i), &Index::Index(column+j), value);
+          (*out_table).set(&Index::Index(i), &Index::Index(column+m), value);
         }
       }
     }
@@ -109,7 +120,10 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Inde
     let columns_iter = if table.columns == 1 {
       IndexIterator::Constant(Index::Index(1))
     } else {
-      IndexIterator::Range(1..=table.columns)
+      match columns {
+        Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
+        _ => IndexIterator::Range(1..=table.columns),
+      }      
     };
     for (i,k) in (1..=out_columns).zip(columns_iter) {
       for j in 1..=table.rows {
