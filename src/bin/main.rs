@@ -14,6 +14,7 @@ use std::time::{Duration, SystemTime};
 use std::rc::Rc;
 
 fn main() {
+
   /*let input = String::from(r#"# Bouncing Balls
 
 Define the environment
@@ -31,8 +32,9 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = 1 - 1
-  #foo = 123 + 456"#);
+  #ball = [x: 15 y: 9 vx: 18 vy: 0]
+block
+  #test = 9 + #ball.x"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -41,9 +43,10 @@ block
   let mut compiler = Compiler::new();
   let mut formatter = Formatter::new();
   let mut core = Core::new(1_000);
+  core.load_standard_library();
   let programs = compiler.compile_string(input.clone());
 
-  println!("{:?}", programs);
+  //println!("{:?}", programs);
   println!("{:?}", compiler.blocks);
 
   core.runtime.register_blocks(compiler.blocks);
