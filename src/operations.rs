@@ -25,6 +25,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   let mut db = database.borrow_mut();
   let mut column = 0;
   let mut out_rows = 0;
+  let mut out_columns = 0;
   // First pass, make sure the dimensions work out
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
@@ -38,11 +39,17 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     } else if table.rows > out_rows && out_rows == 1 {
       out_rows = table.rows
     }
+    out_columns += table.columns;
   }
   let mut out_table = match out_table_id {
     TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
     TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
+  unsafe {
+    (*out_table).rows = out_rows;
+    (*out_table).columns = out_columns;
+    (*out_table).data.resize(out_rows * out_columns, 0);
+  }
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
       TableId::Global(id) => db.tables.get(id).unwrap(),
@@ -70,6 +77,7 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Inde
   let mut db = database.borrow_mut();
   let mut row = 0;
   let mut out_columns = 0;
+  let mut out_rows = 0;
   // First pass, make sure the dimensions work out
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
@@ -83,11 +91,17 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Inde
     } else if table.columns > out_columns && out_columns == 1 {
       out_columns = table.columns
     }
+    out_rows += table.rows;
   }
   let mut out_table = match out_table_id {
     TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
     TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
+  unsafe {
+    (*out_table).rows = out_rows;
+    (*out_table).columns = out_columns;
+    (*out_table).data.resize(out_rows * out_columns, 0);
+  }
   for (_, table_id, rows, columns) in arguments {
     let table = match table_id {
       TableId::Global(id) => db.tables.get(id).unwrap(),
