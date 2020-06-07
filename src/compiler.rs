@@ -772,6 +772,9 @@ impl Compiler {
             Transformation::NewTable{table_id,..} => {
               args.push((0, *table_id, Index::All, Index::All));
             }
+            Transformation::Select{table_id, row, column} => {
+              args.push((0, *table_id, *row, *column));
+            }
             _ => (),
           }
           transformations.append(&mut result);       
@@ -802,11 +805,26 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
+      
       Node::SelectData{name, id, children} => {
         self.identifiers.insert(*id.unwrap(), name.to_string());
-        let mut result = self.compile_transformations(children);
-        transformations.append(&mut result);        
-        transformations.push(Transformation::Select{table_id: *id, row: Index::All, column: Index::All});
+        let mut indices = vec![];
+        for child in children {
+          match child {
+            Node::DotIndex{children} => {
+              match &children[1] {
+                Node::Identifier{name, id} => {
+                  self.identifiers.insert(hash_string(&name.to_string()), name.to_string());
+                  indices.push(Index::All);
+                  indices.push(Index::Alias(*id));
+                }
+                _ => (),
+              }
+            }
+            _ => (),
+          }
+        }
+        transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
       }
       Node::VariableDefine{children} => {
         let output_table_id = match &children[0] {
