@@ -108,7 +108,7 @@ test_mech!(select_column_by_id,"
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
 block
-  #test = #ball.x", Value::from_i64(56));
+  #test = #ball.y", Value::from_i64(2));
 
 test_mech!(math_multiple_rows_select,"
 block
