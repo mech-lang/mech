@@ -281,6 +281,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let mut arg = format!("~ ");
       arg=format!("{}#{}",arg,block.store.identifiers.get(&table_id).unwrap());
       match row {
+        Index::None => arg=format!("{}{{-,",arg),
         Index::All => arg=format!("{}{{:,",arg),
         Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
         Index::Alias(alias) => {
@@ -289,6 +290,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         },
       }
       match column {
+        Index::None => arg=format!("{}-}}",arg),
         Index::All => arg=format!("{}:}}",arg),
         Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
         Index::Alias(alias) => {
@@ -358,6 +360,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           }
         };
         match row {
+          Index::None => arg=format!("{}{{-,",arg),
           Index::All => arg=format!("{}{{:,",arg),
           Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
           Index::Alias(alias) => {
@@ -366,6 +369,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           },
         }
         match column {
+          Index::None => arg=format!("{}-}}",arg),
           Index::All => arg=format!("{}:}}",arg),
           Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
           Index::Alias(alias) => {
@@ -389,6 +393,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         }
       };
       match out_row {
+        Index::None => arg=format!("{}{{-,",arg),
         Index::All => arg=format!("{}{{:,",arg),
         Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
         Index::Alias(alias) => {
@@ -397,6 +402,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         },
       }
       match out_column {
+        Index::None => arg=format!("{}-}}",arg),
         Index::All => arg=format!("{}:}}",arg),
         Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
         Index::Alias(alias) => {

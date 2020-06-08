@@ -209,6 +209,7 @@ pub enum Index {
   Index(usize),
   Alias(u64),
   All,
+  None,
 }
 
 impl Index {
@@ -218,6 +219,7 @@ impl Index {
       Index::Alias(alias) => {
         alias.clone() as usize
       },
+      Index::None |
       Index::All => 0,
     }
   }
@@ -230,6 +232,7 @@ impl fmt::Debug for Index {
       &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
       &Index::Alias(ref alias) => write!(f, "Alias({:#x})", alias),
       &Index::All => write!(f, "All"),
+      &Index::None => write!(f, "None"),
     }
   }
 }
