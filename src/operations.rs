@@ -38,11 +38,17 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
       TableId::Local(id) => block_tables.get(id).unwrap(),
     };
     if out_rows == 0 {
-      out_rows = table.rows;
+      match rows {
+        Index::Index(ix) => out_rows = 1,
+        _ => out_rows = table.rows,
+      }
     } else if table.rows != 1 && out_rows != table.rows {
       // TODO Throw an error here
     } else if table.rows > out_rows && out_rows == 1 {
-      out_rows = table.rows
+      match rows {
+        Index::Index(ix) => out_rows = 1,
+        _ => out_rows = table.rows,
+      }
     }
     out_columns += match columns {
       Index::All => table.columns,
@@ -63,11 +69,11 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
       TableId::Global(id) => db.tables.get(id).unwrap(),
       TableId::Local(id) => block_tables.get(id).unwrap(),
     };
-    let rows_iter = if table.rows == 1 {
-      IndexIterator::Constant(Index::Index(1))
-    } else {
-      IndexIterator::Range(1..=table.rows)
+    let rows_iter = match rows {
+      Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
+      _ => IndexIterator::Range(1..=table.rows),
     };
+    
     for (i,k) in (1..=out_rows).zip(rows_iter) {
       let columns_iter = match columns {
         Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
@@ -248,10 +254,22 @@ macro_rules! binary_infix {
 
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),
+          match lhs_rows {
+            Index::All => IndexIterator::Constant(Index::Index(1)),
+            _ => IndexIterator::Constant(*lhs_rows),
+          },
+          match lhs_columns {
+            Index::All => IndexIterator::Constant(Index::Index(1)),
+            _ => IndexIterator::Constant(*lhs_columns),
+          },
+          match rhs_rows {
+            Index::All => IndexIterator::Constant(Index::Index(1)),
+            _ => IndexIterator::Constant(*rhs_rows),
+          },
+          match rhs_columns {
+            Index::All => IndexIterator::Constant(Index::Index(1)),
+            _ => IndexIterator::Constant(*rhs_columns),
+          },
           IndexIterator::Constant(Index::Index(1)),
           IndexIterator::Constant(Index::Index(1)),               
         )
@@ -308,7 +326,6 @@ macro_rules! binary_infix {
       };
 
       let mut i = 1;
-
       loop {
         let l1 = lrix.next().unwrap().unwrap();
         let l2 = lcix.next().unwrap().unwrap();
