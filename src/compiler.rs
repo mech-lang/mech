@@ -342,7 +342,7 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    //println!("{:?}", ast);
+    println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -844,6 +844,28 @@ impl Compiler {
                   indices.push(Index::Alias(*id));
                 }
                 _ => (),
+              }
+            }
+            Node::SubscriptIndex{children} => {
+              for child in children {
+                match child {
+                  Node::SelectAll => {
+                    indices.push(Index::All);
+                  }
+                  Node::Expression{..} => {
+                    let mut result = self.compile_transformation(child);
+                    match result[1] {
+                      Transformation::Constant{table_id, value, unit} => {
+                        indices.push(Index::Index(value.as_u64().unwrap() as usize));
+                      }
+                      _ => (),
+                    }
+                  }
+                  _ => (),
+                }
+              }
+              if children.len() == 1 {
+                indices.push(Index::None);
               }
             }
             _ => {

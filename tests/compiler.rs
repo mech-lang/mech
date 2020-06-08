@@ -151,13 +151,14 @@ block
 
 test_mech!(math_add_matrices,"
 block
-  x = [1 2 3
-       4 5 6
-       7 8 9]
-  y = [10 11 12
-       13 14 15
-       16 17 18]
-  #test = x + y", Value::from_i64(11));
+  x = [1 2
+       4 5
+       7 8]
+  y = [10 11
+       13 14
+       16 17]
+  z = x + y
+  #test = z{1} + z{2} + z{3} + z{4} + z{5} + z{6}", Value::from_i64(108));
 
 test_mech!(math_scalar_plus_vector,"
 block
