@@ -7,7 +7,7 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, Value, TableId, Index};
 use runtime::Runtime;
-use block::{Block, IndexIterator};
+use block::{Block, IndexIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
 use quantities::{Quantity, QuantityMath, ToQuantity};
@@ -280,18 +280,18 @@ macro_rules! binary_infix {
           (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexIterator::Range(1..=lhs_table.rows),
+          IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.rows,lhs_table.columns)),
           match lhs_columns {
-            Index::All => IndexIterator::Range(1..=lhs_table.columns),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.columns,1)),
             _ => IndexIterator::Constant(*lhs_columns),
           },
-          IndexIterator::Range(1..=rhs_table.rows),
+          IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.rows,rhs_table.columns)),
           match rhs_columns {
-            Index::All => IndexIterator::Range(1..=rhs_table.columns),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.columns,1)),
             _ => IndexIterator::Constant(*rhs_columns),
           },
-          IndexIterator::Range(1..=out_rows_count),
-          IndexIterator::Constant(Index::Index(1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
+          IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
         )
       } else if rhs_scalar {
         (
@@ -326,6 +326,9 @@ macro_rules! binary_infix {
       };
 
       let mut i = 1;
+      
+      let out_elements = unsafe { (*out_table).rows * (*out_table).columns };
+
       loop {
         let l1 = lrix.next().unwrap().unwrap();
         let l2 = lcix.next().unwrap().unwrap();
@@ -333,7 +336,6 @@ macro_rules! binary_infix {
         let r2 = rcix.next().unwrap().unwrap();
         let o1 = out_rix.next().unwrap().unwrap();
         let o2 = out_cix.next().unwrap().unwrap();
-
         match (lhs_table.get_unchecked(l1,l2), 
                rhs_table.get_unchecked(r1,r2))
         {
@@ -355,7 +357,7 @@ macro_rules! binary_infix {
           }
           _ => (),
         }
-        if i >= lhs_table.rows {
+        if i >= out_elements {
           break;
         }
         i += 1;
