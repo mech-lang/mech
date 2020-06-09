@@ -12,6 +12,7 @@ use operations::{
   table_range, 
   table_horizontal_concatenate,
   table_vertical_concatenate,
+  stats_sum
 };
 use ::hash_string;
 
@@ -46,6 +47,7 @@ impl Core {
     self.runtime.functions.insert(hash_string("table/range"),Some(table_range));
     self.runtime.functions.insert(hash_string("table/horizontal-concatenate"),Some(table_horizontal_concatenate));
     self.runtime.functions.insert(hash_string("table/vertical-concatenate"),Some(table_vertical_concatenate));
+    self.runtime.functions.insert(hash_string("stats/sum"),Some(stats_sum));
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {

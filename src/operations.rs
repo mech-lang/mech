@@ -22,6 +22,56 @@ pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, TableId, Index, Inde
                                       database: &Rc<RefCell<Database>>);
 
 
+pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>, 
+                              out: &(TableId, Index, Index), 
+                              block_tables: &mut HashMap<u64, Table>, 
+                              database: &Rc<RefCell<Database>>) {                               
+  // TODO test argument count is 1
+  let (in_arg_name, in_table_id, in_rows, in_columns) = &arguments[0];
+  let (out_table_id, out_rows, out_columns) = out;
+  let mut db = database.borrow_mut();
+  
+  let mut out_table = match out_table_id {
+    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+  };
+  
+  let in_table = match in_table_id {
+    TableId::Global(id) => db.tables.get(id).unwrap(),
+    TableId::Local(id) => block_tables.get(id).unwrap(),
+  };
+
+  unsafe {
+    (*out_table).rows = in_table.rows;
+    (*out_table).columns = 1;
+    (*out_table).data.resize(in_table.rows, 0);
+  }
+
+  let rows = in_table.rows;
+  let cols = in_table.columns;
+
+  match in_arg_name {
+    // rows
+    0x6a1e3f1182ea4d9d => {
+      for i in 1..=rows {
+        let mut sum: Value = Value::from_u64(0);
+        for j in 1..=cols {
+          let value = in_table.get(&Index::Index(i),&Index::Index(j)).unwrap();
+          match sum.add(&value) {
+            Ok(result) => sum = result,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+        unsafe {
+          (*out_table).set_unchecked(i, 1, sum);
+        }
+      }
+    }
+    _ => (), // TODO alert user that argument is unknown
+  }
+}
+        
+
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, Index, Index)>, 
                                                out: &(TableId, Index, Index), 
                                                block_tables: &mut HashMap<u64, Table>, 
@@ -301,17 +351,22 @@ macro_rules! binary_infix {
           IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
         )
       } else if rhs_scalar {
+        unsafe {
+          (*out_table).rows = lhs_rows_count;
+          (*out_table).columns = lhs_columns_count;
+          (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
+        }
         (
-          IndexIterator::Range(1..=lhs_table.rows),
+          IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.rows,lhs_table.columns)),
           match lhs_columns {
-            Index::All => IndexIterator::Range(1..=lhs_table.columns),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.columns,1)),
             _ => IndexIterator::Constant(*lhs_columns),
           },
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Range(1..=out_rows_count),
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
           match out_columns {
-            Index::All => IndexIterator::Range(1..=out_columns_count),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
             _ => IndexIterator::Constant(*out_columns),
           },
         )
