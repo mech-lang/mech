@@ -987,17 +987,33 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
+      Node::FunctionBinding{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);        
+      }
       Node::Function{name, children} => {
         let mut args = vec![];
         let mut arg_tfms = vec![];
         for child in children {
+          let arg = match child {
+            Node::FunctionBinding{children} => {
+              match &children[0] {
+                Node::Identifier{name, id} => {
+                  self.identifiers.insert(*id, name.to_string());
+                  *id
+                },
+                _ => 0,
+              }
+            }
+            _ => 0,
+          };
           let mut result = self.compile_transformation(child);
           match result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((0, table_id, Index::All, Index::All));
+              args.push((arg, table_id, Index::All, Index::All));
             },
             Transformation::Select{table_id, row, column} => {
-              args.push((0, table_id, row, column));
+              args.push((arg, table_id, row, column));
             }
             _ => (),
           }
