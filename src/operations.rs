@@ -173,12 +173,19 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>,
   };
   let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
-  let range = end_value.as_u64().unwrap() - start_value.as_u64().unwrap();
+  let start = start_value.as_u64().unwrap() as usize;
+  let end = end_value.as_u64().unwrap() as usize;
+  let range = end - start;
   match out_table_id {
     TableId::Local(id) => {
       let mut out_table = block_tables.get_mut(id).unwrap();
-      for i in 1..=range as usize {
-        out_table.set(&Index::Index(i), &Index::Index(1), Value::from_u64(i as u64));
+      out_table.rows = range+1;
+      out_table.columns = 1;
+      out_table.data.resize(range+1, 0);
+      let mut j = 1;
+      for i in start..=end {
+        out_table.set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
+        j += 1;
       }
     }
     TableId::Global(id) => {
@@ -255,23 +262,23 @@ macro_rules! binary_infix {
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
           match lhs_rows {
-            Index::All => IndexIterator::Constant(Index::Index(1)),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
             _ => IndexIterator::Constant(*lhs_rows),
           },
           match lhs_columns {
-            Index::All => IndexIterator::Constant(Index::Index(1)),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
             _ => IndexIterator::Constant(*lhs_columns),
           },
           match rhs_rows {
-            Index::All => IndexIterator::Constant(Index::Index(1)),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
             _ => IndexIterator::Constant(*rhs_rows),
           },
           match rhs_columns {
-            Index::All => IndexIterator::Constant(Index::Index(1)),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
             _ => IndexIterator::Constant(*rhs_columns),
           },
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),               
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
         )
       } else if equal_dimensions {
         unsafe {
@@ -309,17 +316,22 @@ macro_rules! binary_infix {
           },
         )
       } else {
+        unsafe {
+          (*out_table).rows = rhs_rows_count;
+          (*out_table).columns = rhs_columns_count;
+          (*out_table).data.resize(rhs_rows_count * rhs_columns_count, 0);
+        }
         (
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Constant(Index::Index(1)),
-          IndexIterator::Range(1..=rhs_table.rows),
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.rows,rhs_table.columns)),
           match rhs_columns {
-            Index::All => IndexIterator::Range(1..=rhs_table.columns),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.columns,1)),
             _ => IndexIterator::Constant(*rhs_columns),
           },
-          IndexIterator::Range(1..=out_rows_count),
+          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
           match out_columns {
-            Index::All => IndexIterator::Range(1..=out_columns_count),
+            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
             _ => IndexIterator::Constant(*out_columns),
           },
         )
