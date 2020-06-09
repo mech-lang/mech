@@ -161,7 +161,8 @@ block
 test_mech!(math_scalar_plus_vector,"
 block
   x = 3:6
-  #test = 5 + x", Value::from_i64(8));
+  y = 5 + x
+  #test = y{1,1} + y{2,1} + y{3,1} + y{4,1}", Value::from_i64(38));
 
 test_mech!(math_vector_plus_scalar_inline,"
 block
