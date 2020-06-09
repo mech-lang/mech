@@ -468,9 +468,47 @@ impl Register {
   }
 }
 
+
+#[derive(Debug)]
+pub struct IndexRepeater {
+  pub min: usize,
+  pub max: usize,
+  pub width: usize,
+  current: usize,
+  counter: usize,
+}
+
+impl IndexRepeater {
+
+  pub fn new(min: usize, max: usize, width: usize) -> IndexRepeater {
+    IndexRepeater {
+      min,
+      max,
+      width,
+      current: min,
+      counter: 0,
+    }
+  }
+
+  pub fn next(&mut self) -> Option<Index> {
+    if self.counter == self.width {
+      self.current += 1;
+      self.counter = 0;
+      if self.current > self.max {
+        self.current = self.min;
+      }
+    }
+    self.counter += 1;
+    Some(Index::Index(self.current))
+  }
+
+}
+
+
 #[derive(Debug)]
 pub enum IndexIterator {
   Range(std::ops::RangeInclusive<usize>),
+  Repeater(IndexRepeater),
   Constant(Index),
 }
 
@@ -486,6 +524,7 @@ impl Iterator for IndexIterator {
         }
       }
       IndexIterator::Constant(itr) => Some(*itr),
+      IndexIterator::Repeater(repeater) => repeater.next(),
     }
   }
 }
