@@ -13,6 +13,7 @@ use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
 use std::rc::Rc;
 use std::cell::RefCell;
+use errors::{Error, ErrorType};
 use ::humanize;
 
 
@@ -138,8 +139,16 @@ impl Value {
     None
   }
 
-  pub fn add(&self, other: &Value) -> Option<bool> {
-    None
+  pub fn add(&self, other: &Value) -> Result<Value, ErrorType> {
+    match (self, other) {
+      (Value::Number(lhs), Value::Number(rhs)) => {
+        match lhs.add(*rhs) {
+          Ok(result) => Ok(Value::Number(result)),
+          x => Err(ErrorType::IncorrectFunctionArgumentType),
+        }
+      }
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    }
   }
 
   pub fn sub(&self, other: &Value) -> Option<bool> {
