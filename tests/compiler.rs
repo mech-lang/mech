@@ -152,13 +152,11 @@ block
 test_mech!(math_add_matrices,"
 block
   x = [1 2
-       4 5
-       7 8]
+       4 5]
   y = [10 11
-       13 14
-       16 17]
+       13 14]
   z = x + y
-  #test = z{1} + z{2} + z{3} + z{4} + z{5} + z{6}", Value::from_i64(108));
+  #test = z{1,1} + z{1,2} + z{2,1} + z{2,2}", Value::from_i64(60));
 
 test_mech!(math_scalar_plus_vector,"
 block
