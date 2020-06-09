@@ -24,4 +24,5 @@ pub enum ErrorType {
   DuplicateAlias(u64),
   DomainMismatch(u64, u64),
   UnsatisfiedConstraint(Vec<u64>),
+  IncorrectFunctionArgumentType,
 }
