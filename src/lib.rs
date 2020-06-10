@@ -22,7 +22,7 @@ mod block;
 
 pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, BlockState, Transformation, IndexRepeater};
-pub use self::table::{Table, TableId, Index, Value};
+pub use self::table::{Table, TableId, Index, Value, ValueMethods};
 pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 

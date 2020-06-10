@@ -5,7 +5,7 @@
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
-use table::{Table, Value, TableId, Index};
+use table::{Table, Value, ValueMethods, TableId, Index};
 use runtime::Runtime;
 use block::{Block, IndexIterator, IndexRepeater};
 use database::Database;
@@ -57,7 +57,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=cols {
           let value = in_table.get(&Index::Index(i),&Index::Index(j)).unwrap();
-          match sum.add(&value) {
+          match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
           }
@@ -407,19 +407,14 @@ macro_rules! binary_infix {
                rhs_table.get_unchecked(r1,r2))
         {
           (lhs_value, rhs_value) => {
-            match (lhs_value, rhs_value) {
-              (Value::Number(x), Value::Number(y)) => {
-                match x.$op(y) {
-                  Ok(result) => {
-                    let function_result = Value::from_quantity(result);
-                    unsafe {
-                      (*out_table).set_unchecked(o1, o2, function_result);
-                    }
-                  }
-                  Err(_) => (), // TODO Handle error here
+            match lhs_value.$op(rhs_value) {
+              Ok(result) => {
+                let function_result = Value::from_quantity(result);
+                unsafe {
+                  (*out_table).set_unchecked(o1, o2, function_result);
                 }
               }
-              _ => (),
+              Err(_) => (), // TODO Handle error here
             }
           }
           _ => (),

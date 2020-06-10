@@ -14,170 +14,148 @@ use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStr
 use std::rc::Rc;
 use std::cell::RefCell;
 use errors::{Error, ErrorType};
-use ::humanize;
+use ::{humanize, hash_string};
 
 
 // ## Row and Column
 
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Value {
-  Number(Quantity),
-  //Bool(bool),
-  //Reference(TableId),
-  //Empty,
+pub type Value = u64;
+
+pub trait ValueMethods {
+  fn from_string(string: String) -> Value;
+  fn from_str(string: &str) -> Value;
+  fn from_bool(boolean: bool) -> Value;
+  fn from_u64(num: u64) -> Value;
+  fn from_quantity(num: Quantity) -> Value;
+  fn from_i64(num: i64) -> Value;
+  fn from_f64(num: f64) -> Value;
+  fn as_quantity(&self) -> Option<Quantity>;
+  fn as_u64(&self) -> Option<u64>;
+  fn as_i64(&self) -> Option<i64>;
+  fn as_float(&self) -> Option<f64>;
+  fn as_string(&self) -> Option<u64>;
+  fn equal(&self, other: &Value) -> Option<bool>;
+  fn not_equal(&self, other: &Value) -> Option<bool>;
+  fn less_than(&self, other: &Value) -> Option<bool>;
+  fn less_than_equal(&self, other: &Value) -> Option<bool>;
+  fn greater_than(&self, other: &Value) -> Option<bool>;
+  fn greater_than_equal(&self, other: &Value) -> Option<bool>;
+  fn add(&self, other: &Value) -> Result<Value, ErrorType>;
+  fn sub(&self, other: &Value) -> Result<Value, ErrorType>;
+  fn multiply(&self, other: &Value) -> Result<Value, ErrorType>;
+  fn divide(&self, other: &Value) -> Result<Value, ErrorType>;
 }
 
-impl Value {
 
-  pub fn from_string(string: String) -> Value {
-    Value::Number(0)
+impl ValueMethods for Value {
+
+  fn from_string(string: String) -> Value {
+    let mut string_hash = hash_string(&string);
+    string_hash = (string_hash & 0x00FFFFFFFFFFFFFF) + 0x8000000000000000;
+    string_hash
   }
 
-  pub fn from_str(string: &str) -> Value {
-    Value::Number(0)
+  fn from_str(string: &str) -> Value {
+    let mut string_hash = hash_string(string);
+    string_hash = (string_hash & 0x00FFFFFFFFFFFFFF) + 0x8000000000000000;
+    string_hash
   }
 
-  pub fn from_bool(boolean: bool) -> Value {
-    Value::Number(0)
+  fn from_bool(boolean: bool) -> Value {
+    match boolean {
+      true => 0x4000000000000001,
+      false => 0x4000000000000000,
+    }
   }
 
-  pub fn from_u64(num: u64) -> Value {
-    Value::Number(num.to_quantity())
+  fn from_u64(num: u64) -> Value {
+    num.to_quantity()
   }
 
-  pub fn from_quantity(num: Quantity) -> Value {
-    Value::Number(num)
+  fn from_quantity(num: Quantity) -> Value {
+    num
   }
 
-  pub fn from_i64(num: i64) -> Value {
-    Value::Number(num.to_quantity())
+  fn from_i64(num: i64) -> Value {
+    num.to_quantity()
   }
 
-  pub fn from_f64(num: f64) -> Value {
-    Value::Number(num.to_quantity())
+  fn from_f64(num: f64) -> Value {
+    num.to_quantity()
   }
 
-  pub fn as_quantity(&self) -> Option<Quantity> {
-    match self {
-      Value::Number(n) => Some(*n),
-      //Value::Empty => Some(0.to_quantity()),
+  fn as_quantity(&self) -> Option<Quantity> {
+    Some(*self)
+  }
+
+  fn as_u64(&self) -> Option<u64> {
+    match self & 0xC000000000000000 {
+      0x8000000000000000 => None,
+      0x4000000000000000 => None,
+      _ => Some(self.to_u64()),
+    }
+  }
+
+  fn as_float(&self) -> Option<f64> {
+    match self & 0xC000000000000000 {
+      0x8000000000000000 => None,
+      0x4000000000000000 => None,
+      _ => Some(self.to_float()),
+    }
+  }
+
+  fn as_i64(&self) -> Option<i64> {
+    None
+  }
+
+  fn as_string(&self) -> Option<u64> {
+    match self & 0xC000000000000000 {
+      0x8000000000000000 => Some(*self),
       _ => None,
     }
   }
 
-  pub fn as_u64(&self) -> Option<u64> {
-    match self {
-      Value::Number(n) => Some(n.to_float() as u64),
-      //Value::Reference(TableId::Local(n)) => Some(*n),
-      //Value::Reference(TableId::Global(n)) => Some(*n),
-      _ => None,
-    }
-  }
-
-  pub fn as_float(&self) -> Option<f64> {
-    match self {
-      Value::Number(n) => Some(n.to_float()),
-      _ => None,
-    }
-  }
-
-  pub fn as_i64(&self) -> Option<i64> {
-    match self {
-      Value::Number(n) => Some(n.mantissa()),
-      _ => None,
-    }
-  }
-
-  pub fn as_string(&self) -> Option<String> {
-    match self {
-      //Value::String(n) => Some(n.clone()),
-      Value::Number(q) => Some(q.format()),
-      //Value::Reference(TableId::Global(r)) |
-      //Value::Reference(TableId::Local(r)) => {
-      //  Some(format!("{:?}", r))
-      //},
-      //Value::Empty => Some(String::from("")),
-      //Value::Bool(t) => match t {
-      //  true => Some(String::from("true")),
-      //  false => Some(String::from("false")),
-      //},
-      _ => None,
-    }
-  }
-
-  /*pub fn equal(&self, other: &Value) -> Option<bool> {
-    match (self, other) {
-      (Value::String(ref x), Value::String(ref y)) => {
-        Some(x.to_owned() == y.to_owned())
-      }
-      _ => None,
-    }
-  }*/
-
-  /*pub fn not_equal(&self, other: &Value) -> Option<bool> {
-    match (self, other) {
-      (Value::String(ref x), Value::String(ref y)) => {
-        Some(x.to_owned() != y.to_owned())
-      }
-      _ => None,
-    }
-  }*/
-
-  pub fn less_than(&self, other: &Value) -> Option<bool> {
+  fn equal(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn less_than_equal(&self, other: &Value) -> Option<bool> {
+  fn not_equal(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn greater_than(&self, other: &Value) -> Option<bool> {
+  fn less_than(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn greater_than_equal(&self, other: &Value) -> Option<bool> {
+  fn less_than_equal(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn add(&self, other: &Value) -> Result<Value, ErrorType> {
-    match (self, other) {
-      (Value::Number(lhs), Value::Number(rhs)) => {
-        match lhs.add(*rhs) {
-          Ok(result) => Ok(Value::Number(result)),
-          x => Err(ErrorType::IncorrectFunctionArgumentType),
-        }
-      }
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    }
-  }
-
-  pub fn sub(&self, other: &Value) -> Option<bool> {
+  fn greater_than(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn multiply(&self, other: &Value) -> Option<bool> {
+  fn greater_than_equal(&self, other: &Value) -> Option<bool> {
     None
   }
 
-  pub fn divide(&self, other: &Value) -> Option<bool> {
-    None
+  fn add(&self, other: &Value) -> Result<Value, ErrorType> {
+    self.add(other)
+  }
+
+  fn sub(&self, other: &Value) -> Result<Value, ErrorType> {
+    self.sub(other)
+  }
+
+  fn multiply(&self, other: &Value) -> Result<Value, ErrorType> {
+    self.multiply(other)
+  }
+
+  fn divide(&self, other: &Value) -> Result<Value, ErrorType> {
+    self.divide(other)
   }
 
 }
-
-impl fmt::Debug for Value {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      &Value::Number(x) => write!(f, "{}", x.to_string()),
-      //&Value::String(ref x) => write!(f, "{}", x),
-      //&Value::Empty => write!(f, ""),
-      //&Value::Bool(ref b) => write!(f, "{}", b),
-      //&Value::Reference(ref b) => write!(f, "{:?}", b),
-    }
-  }
-}
-
 
 // ## Table
 

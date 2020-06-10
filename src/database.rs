@@ -1,4 +1,4 @@
-use table::{Table, Value, Index};
+use table::{Table, Value, Index, ValueMethods};
 use block::{Error, Register};
 use ::humanize;
 use std::cell::RefCell;
