@@ -1,4 +1,4 @@
-use table::{Table, TableId, Index, Value};
+use table::{Table, TableId, Index, Value, ValueMethods};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity};
@@ -302,7 +302,11 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     }
     Transformation::Constant{table_id, value, unit} => {
       let mut tfm = format!("");
-      tfm = format!("{}{:?} -> ", tfm, value);
+      match value.as_quantity() {
+        Some(quantity) => tfm = format!("{}{:?} -> ", tfm, value),
+        None => tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap()),
+      }
+      
       match table_id {
         TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
         TableId::Local(id) => {

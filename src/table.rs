@@ -85,7 +85,11 @@ impl ValueMethods for Value {
   }
 
   fn as_quantity(&self) -> Option<Quantity> {
-    Some(*self)
+    match self & 0xC000000000000000 {
+      0x8000000000000000 => None,
+      0x4000000000000000 => None,
+      _ => Some(*self),
+    }
   }
 
   fn as_u64(&self) -> Option<u64> {
@@ -336,7 +340,6 @@ impl fmt::Debug for Table {
       self.rows
     };
     
-    
     let table_name = match self.store.identifiers.get(&self.id) {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
@@ -377,13 +380,11 @@ impl fmt::Debug for Table {
         match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
             let value = &self.store.data[x];
-            let text = format!("{:?}", value);
-            write!(f, "{:?}", value)?;
-            if text.len() < cell_width {
-              for _ in 0..cell_width-text.len() {
-                write!(f, " ")?;
-              }
-            }
+            let text = match value.as_quantity() {
+              Some(quantity) => format!("{:?}", value),
+              None => format!("{:?}", self.store.identifiers.get(value).unwrap()),
+            };
+            print_cell_contents(&text, cell_width, f)?;
             write!(f, " │ ")?;
           },
           _ => (),
@@ -405,7 +406,10 @@ impl fmt::Debug for Table {
           match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
             Some(x) => {
               let value = &self.store.data[x];
-              let text = format!("{:?}", value);
+              let text = match value.as_quantity() {
+                Some(quantity) => format!("{:?}", value),
+                None => format!("{:?}", self.store.identifiers.get(value).unwrap()),
+              };
               print_cell_contents(&text, cell_width, f)?;
               write!(f, " │ ")?;
             },
