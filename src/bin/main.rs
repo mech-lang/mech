@@ -32,9 +32,7 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #ball = [x: 15 y: 9 vx: 18 vy: 0]
-block
-  #test = 9 + #ball.x"#);
+  #test = "Hello World""#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
