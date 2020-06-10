@@ -4,7 +4,7 @@ extern crate mech_core;
 
 use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{hash_string, Core, Index, Value, make_quantity};
+use mech_core::{hash_string, Core, Index, Value, ValueMethods, make_quantity};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -80,7 +80,7 @@ test_mech!(math_subtract,"#test = 1 - 1", Value::from_i64(0));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 
-test_mech!(math_divide,"#test = 4 / 2", Value::Number(make_quantity(20000,-4,0)));
+test_mech!(math_divide,"#test = 4 / 2", Value::from_quantity(make_quantity(20000,-4,0)));
 
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
@@ -602,7 +602,7 @@ Create ball on click
 
 test
   x = #ball.x + #ball.y
-  #test = stats/sum(column: x)", Value::Number(make_quantity(98,0,0)));*/
+  #test = stats/sum(column: x)", Value::from_quantity(make_quantity(98,0,0)));*/
 
 // ## Strings
 
@@ -696,23 +696,23 @@ block
 test_mech!(function_stats_sum,r#"
 block
   x = [1;2;3;4;5]
-  #test = stats/sum(column: x)"#, Value::Number(make_quantity(15,0,0)));
+  #test = stats/sum(column: x)"#, Value::from_quantity(make_quantity(15,0,0)));
 
 test_mech!(function_stats_sum_row,r#"
 block
   x = [1 2 3 4 5]
-  #test = stats/sum(row: x)"#, Value::Number(make_quantity(15,0,0)));
+  #test = stats/sum(row: x)"#, Value::from_quantity(make_quantity(15,0,0)));
 
 test_mech!(function_stats_sum_row_col,r#"
 block
   x = [1;2;3;4;5]
   y = stats/sum(row: x)
-  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::Number(make_quantity(15,0,0)));
+  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::from_quantity(make_quantity(15,0,0)));
 
 test_mech!(function_stats_sum_table,r#"
 block
   x = [1 2 3; 4 5 6]
-  #test = stats/sum(table: x)"#, Value::Number(make_quantity(21,0,0)));
+  #test = stats/sum(table: x)"#, Value::from_quantity(make_quantity(21,0,0)));
 
 test_mech!(function_add_functions,r#"
 block

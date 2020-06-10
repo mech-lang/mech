@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Value, Block, BlockState, Transformation, Index, TableId};
+use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 //use mech_core::{Error, ErrorType};
@@ -830,7 +830,6 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
-      
       Node::SelectData{name, id, children} => {
         self.identifiers.insert(*id.unwrap(), name.to_string());
         let mut indices = vec![];
@@ -1030,6 +1029,13 @@ impl Compiler {
         });
         transformations.append(&mut arg_tfms);
       }
+      Node::String{text} => {
+        let table = hash_string(&format!("Constant-{:?}", text));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        let value = Value::from_string(text.to_string());
+        self.identifiers.insert(value, text.to_string());
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
+      }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
         
@@ -1038,7 +1044,7 @@ impl Compiler {
           None => 0,
         };
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
-        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: Value::Number(*value), unit: unit.clone()});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});
       } 
 
       _ => (),
