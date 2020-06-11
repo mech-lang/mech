@@ -156,12 +156,12 @@ pub trait QuantityMath {
   fn sub(self, Quantity) -> Result<Quantity, ErrorType>;
   fn multiply(self, Quantity) -> Result<Quantity, ErrorType>;
   fn divide(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn less_than(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn greater_than(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn less_than_equal(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn greater_than_equal(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn equal(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn not_equal(self, Quantity) -> Result<Quantity, ErrorType>;
+  fn less_than(self, Quantity) -> Result<bool, ErrorType>;
+  fn greater_than(self, Quantity) -> Result<bool, ErrorType>;
+  fn less_than_equal(self, Quantity) -> Result<bool, ErrorType>;
+  fn greater_than_equal(self, Quantity) -> Result<bool, ErrorType>;
+  fn equal(self, Quantity) -> Result<bool, ErrorType>;
+  fn not_equal(self, Quantity) -> Result<bool, ErrorType>;
   fn to_string(self) -> String;
   fn format(self) -> String;
   fn to_float(self) -> f64;
@@ -325,70 +325,52 @@ impl QuantityMath for Quantity {
     Ok(make_quantity(result, -4 + self.range(), 0))
   }
 
-  fn less_than(self, other: Quantity) -> Result<Quantity, ErrorType> {
+  fn less_than(self, other: Quantity) -> Result<bool, ErrorType> {
     if self.is_negative() && !other.is_negative() {
-      Ok((1 as u64)<<62)
+      Ok(true)
     } else if !self.is_negative() && other.is_negative() {
-      Ok((1 as u64)<<63)
+      Ok(false)
     } else {
-      match self.to_float() < other.to_float() {
-        true => Ok((1 as u64)<<62),
-        false => Ok((1 as u64)<<63),
-      }
+      Ok(self.to_float() < other.to_float())
     }
   }
 
-  fn less_than_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
+  fn less_than_equal(self, other: Quantity) -> Result<bool, ErrorType> {
     if self.is_negative() && !other.is_negative() {
-      Ok((1 as u64)<<63) // false
+      Ok(false)
     } else if !self.is_negative() && other.is_negative() {
-      Ok((1 as u64)<<62) // true
+      Ok(true)
     } else {
-      match self.to_float() <= other.to_float() {
-        true => Ok((1 as u64)<<62),
-        false => Ok((1 as u64)<<63),
-      }
+      Ok(self.to_float() <= other.to_float())
     }
   }
 
-  fn greater_than_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
+  fn greater_than_equal(self, other: Quantity) -> Result<bool, ErrorType> {
     if self.is_negative() && !other.is_negative() {
-      Ok((1 as u64)<<63)
+      Ok(false)
     } else if !self.is_negative() && other.is_negative() {
-      Ok((1 as u64)<<62)
+      Ok(true)
     } else {
-      match self.to_float() >= other.to_float() {
-        true => Ok((1 as u64)<<62),
-        false => Ok((1 as u64)<<63),
-      }
+      Ok(self.to_float() >= other.to_float())
     }
   }
 
-  fn greater_than(self, other: Quantity) -> Result<Quantity, ErrorType> {
+  fn greater_than(self, other: Quantity) -> Result<bool, ErrorType> {
     if self.is_negative() && !other.is_negative() {
-      Ok((1 as u64)<<63)
+      Ok(false)
     } else if !self.is_negative() && other.is_negative() {
-      Ok((1 as u64)<<62)
+      Ok(true)
     } else {
-      match self.to_float() > other.to_float() {
-        true => Ok((1 as u64)<<62),
-        false => Ok((1 as u64)<<63),
-      }
+      Ok(self.to_float() > other.to_float())
     }
   }
 
-  fn equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
-    match self.to_float() == other.to_float() {
-      true => Ok((1 as u64)<<62),
-      false => Ok((1 as u64)<<63),
-    }
+  fn equal(self, other: Quantity) -> Result<bool, ErrorType> {
+    Ok(self.to_float() == other.to_float())
   }
 
-  fn not_equal(self, other: Quantity) -> Result<Quantity, ErrorType> {
-    match self.to_float() != other.to_float()  {
-      true => Ok((1 as u64)<<62),
-      false => Ok((1 as u64)<<63),
-    }
+  fn not_equal(self, other: Quantity) -> Result<bool, ErrorType> {
+    Ok(self.to_float() != other.to_float())
   }
 }
 

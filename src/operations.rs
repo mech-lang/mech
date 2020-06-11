@@ -445,7 +445,7 @@ macro_rules! binary_infix {
           (lhs_value, rhs_value) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                let function_result = Value::from_quantity(result);
+                let function_result = result;
                 unsafe {
                   (*out_table).set_unchecked(o1, o2, function_result);
                 }
@@ -468,6 +468,7 @@ binary_infix!{math_add, add}
 binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
+//binary_infix!{comparator_equal, equal}
 
 
 

@@ -34,16 +34,16 @@ pub trait ValueMethods {
   fn as_i64(&self) -> Option<i64>;
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
-  fn equal(&self, other: &Value) -> Option<bool>;
-  fn not_equal(&self, other: &Value) -> Option<bool>;
-  fn less_than(&self, other: &Value) -> Option<bool>;
-  fn less_than_equal(&self, other: &Value) -> Option<bool>;
-  fn greater_than(&self, other: &Value) -> Option<bool>;
-  fn greater_than_equal(&self, other: &Value) -> Option<bool>;
-  fn add(&self, other: &Value) -> Result<Value, ErrorType>;
-  fn sub(&self, other: &Value) -> Result<Value, ErrorType>;
-  fn multiply(&self, other: &Value) -> Result<Value, ErrorType>;
-  fn divide(&self, other: &Value) -> Result<Value, ErrorType>;
+  fn equal(&self, other: Value) -> Result<Value, ErrorType>;
+  fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
+  fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
+  fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
+  fn greater_than(&self, other: Value) -> Result<Value, ErrorType>;
+  fn greater_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
+  fn add(&self, other: Value) -> Result<Value, ErrorType>;
+  fn sub(&self, other: Value) -> Result<Value, ErrorType>;
+  fn multiply(&self, other: Value) -> Result<Value, ErrorType>;
+  fn divide(&self, other: Value) -> Result<Value, ErrorType>;
 }
 
 
@@ -119,44 +119,74 @@ impl ValueMethods for Value {
     }
   }
 
-  fn equal(&self, other: &Value) -> Option<bool> {
-    None
+  fn equal(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.equal(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn not_equal(&self, other: &Value) -> Option<bool> {
-    None
+  fn not_equal(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.not_equal(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn less_than(&self, other: &Value) -> Option<bool> {
-    None
+  fn less_than(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn less_than_equal(&self, other: &Value) -> Option<bool> {
-    None
+  fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than_equal(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn greater_than(&self, other: &Value) -> Option<bool> {
-    None
+  fn greater_than(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn greater_than_equal(&self, other: &Value) -> Option<bool> {
-    None
+  fn greater_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than_equal(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn add(&self, other: &Value) -> Result<Value, ErrorType> {
-    self.add(other)
+  fn add(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.add(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn sub(&self, other: &Value) -> Result<Value, ErrorType> {
-    self.sub(other)
+  fn sub(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.sub(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn multiply(&self, other: &Value) -> Result<Value, ErrorType> {
-    self.multiply(other)
+  fn multiply(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.multiply(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
-  fn divide(&self, other: &Value) -> Result<Value, ErrorType> {
-    self.divide(other)
+  fn divide(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.divide(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
   }
 
 }
