@@ -90,6 +90,13 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     if out_rows == 0 {
       match rows {
         Index::Index(ix) => out_rows = 1,
+        Index::Table(table_id) => {
+          let row_table = match table_id {
+            TableId::Global(id) => db.tables.get(id).unwrap(),
+            TableId::Local(id) => block_tables.get(id).unwrap(),
+          };
+          out_rows = row_table.rows;
+        },
         _ => out_rows = table.rows,
       }
     } else if table.rows != 1 && out_rows != table.rows {
@@ -126,7 +133,6 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
           TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
           TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
         };
-        ;
         IndexIterator::Table(TableIterator::new(row_table))
       }
       _ => IndexIterator::Range(1..=unsafe{(*table).rows}),
