@@ -268,7 +268,11 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>,
   let (_, start_table_id, start_rows, start_columns) = &arguments[0];
   let (_, end_table_id, end_rows, end_columns) = &arguments[1];
   let (out_table_id, out_rows, out_columns) = out;
-  let db = database.borrow_mut();
+  let mut db = database.borrow_mut();
+  let mut out_table = match out_table_id {
+    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+  };
   let start_table = match start_table_id {
     TableId::Global(id) => db.tables.get(id).unwrap(),
     TableId::Local(id) => block_tables.get(id).unwrap(),
@@ -277,27 +281,24 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>,
     TableId::Global(id) => db.tables.get(id).unwrap(),
     TableId::Local(id) => block_tables.get(id).unwrap(),
   };
+
   let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;
-  match out_table_id {
-    TableId::Local(id) => {
-      let mut out_table = block_tables.get_mut(id).unwrap();
-      out_table.rows = range+1;
-      out_table.columns = 1;
-      out_table.data.resize(range+1, 0);
-      let mut j = 1;
-      for i in start..=end {
-        out_table.set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
-        j += 1;
-      }
-    }
-    TableId::Global(id) => {
-
+  
+  unsafe{
+    (*out_table).rows = range+1;
+    (*out_table).columns = 1;
+    (*out_table).data.resize(range+1, 0);
+    let mut j = 1;
+    for i in start..=end {
+      (*out_table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
+      j += 1;
     }
   }
+  
 }
 
 #[macro_export]
