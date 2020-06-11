@@ -574,11 +574,41 @@ impl IndexRepeater {
 
 }
 
+#[derive(Debug, Clone)]
+pub struct TableIterator {
+  table: *mut Table,
+  current: usize,
+}
+
+impl TableIterator {
+
+  pub fn new(table: *mut Table) -> TableIterator {
+    TableIterator {
+      table,
+      current: 0,
+    }
+  }
+
+  pub fn next(&mut self) -> Option<Index> {
+    unsafe{
+      if self.current < (*self.table).data.len() {
+        let address = (*self.table).data[self.current];
+        self.current += 1;
+        Some(Index::Index((*self.table).store.data[address].as_u64().unwrap() as usize))
+      } else {
+        None
+      }
+    }
+  }
+
+}
+
 
 #[derive(Debug, Clone)]
 pub enum IndexIterator {
   Range(std::ops::RangeInclusive<usize>),
   Constant(Index),
+  Table(TableIterator),
 }
 
 impl Iterator for IndexIterator {
@@ -593,6 +623,7 @@ impl Iterator for IndexIterator {
         }
       }
       IndexIterator::Constant(itr) => Some(*itr),
+      IndexIterator::Table(itr) => itr.next(),
     }
   }
 }

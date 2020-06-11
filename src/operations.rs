@@ -7,7 +7,7 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, Value, ValueMethods, TableId, Index};
 use runtime::Runtime;
-use block::{Block, IndexIterator, IndexRepeater};
+use block::{Block, IndexIterator, TableIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
 use quantities::{Quantity, QuantityMath, ToQuantity};
@@ -115,26 +115,34 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     (*out_table).data.resize(out_rows * out_columns, 0);
   }
   for (_, table_id, rows, columns) in arguments {
-    let table = match table_id {
-      TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => block_tables.get(id).unwrap(),
+    let mut table = match table_id {
+      TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+      TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
     };
     let rows_iter = match rows {
       Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-      _ => IndexIterator::Range(1..=table.rows),
+      Index::Table(table_id) => {
+        let mut row_table = match table_id {
+          TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+          TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+        };
+        ;
+        IndexIterator::Table(TableIterator::new(row_table))
+      }
+      _ => IndexIterator::Range(1..=unsafe{(*table).rows}),
     };
     
     for (i,k) in (1..=out_rows).zip(rows_iter) {
       let columns_iter = match columns {
         Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-        _ => IndexIterator::Range(1..=table.columns),
+        _ => IndexIterator::Range(1..=unsafe{(*table).columns}),
       };
       let out_cols = match columns {
-        Index::All => table.columns,
+        Index::All => unsafe{(*table).columns},
         _ => 1,
       };
       for (m,j) in (1..=out_cols).zip(columns_iter) {
-        let value = table.get(&k,&j).unwrap();
+        let value = unsafe{(*table).get(&k,&j).unwrap()};
         unsafe {
           (*out_table).set(&Index::Index(i), &Index::Index(column+m), value);
         }
@@ -266,10 +274,12 @@ macro_rules! binary_infix {
         TableId::Global(id) => db.tables.get(id).unwrap(),
         TableId::Local(id) => block_tables.get(id).unwrap(),
       };
+
       let rhs_table = match rhs_table_id {
         TableId::Global(id) => db.tables.get(id).unwrap(),
         TableId::Local(id) => block_tables.get(id).unwrap(),
       };
+
       let store = &db.store;
 
       // Figure out dimensions
