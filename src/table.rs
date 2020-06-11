@@ -34,6 +34,7 @@ pub trait ValueMethods {
   fn as_i64(&self) -> Option<i64>;
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
+  fn as_bool(&self) -> Option<bool>;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
@@ -115,6 +116,14 @@ impl ValueMethods for Value {
   fn as_string(&self) -> Option<u64> {
     match self & 0xC000000000000000 {
       0x8000000000000000 => Some(*self),
+      _ => None,
+    }
+  }
+
+  fn as_bool(&self) -> Option<bool> {
+    match self {
+      0x4000000000000001 => Some(true),
+      0x4000000000000000 => Some(false),
       _ => None,
     }
   }
@@ -415,7 +424,12 @@ impl fmt::Debug for Table {
             let value = &self.store.data[x];
             let text = match value.as_quantity() {
               Some(quantity) => format!("{:?}", value),
-              None => format!("{:?}", self.store.identifiers.get(value).unwrap()),
+              None => {
+                match value.as_bool() {
+                  Some(b) => format!("{:?}", b),
+                  None => format!("{:?}", self.store.identifiers.get(value).unwrap())
+                }
+              },
             };
             print_cell_contents(&text, cell_width, f)?;
             write!(f, " │ ")?;
@@ -441,7 +455,12 @@ impl fmt::Debug for Table {
               let value = &self.store.data[x];
               let text = match value.as_quantity() {
                 Some(quantity) => format!("{:?}", value),
-                None => format!("{:?}", self.store.identifiers.get(value).unwrap()),
+                None => {
+                  match value.as_bool() {
+                    Some(b) => format!("{:?}", b),
+                    None => format!("{:?}", self.store.identifiers.get(value).unwrap())
+                  }
+                },
               };
               print_cell_contents(&text, cell_width, f)?;
               write!(f, " │ ")?;

@@ -9,6 +9,12 @@ use operations::{
   math_add, math_subtract, 
   math_multiply, 
   math_divide, 
+  compare_greater_than_equal,
+  compare_greater_than,
+  compare_less_than,
+  compare_less_than_equal,
+  compare_equal,
+  compare_not_equal,
   table_range, 
   table_horizontal_concatenate,
   table_vertical_concatenate,
@@ -44,6 +50,12 @@ impl Core {
     self.runtime.functions.insert(hash_string("math/subtract"),Some(math_subtract));
     self.runtime.functions.insert(hash_string("math/multiply"),Some(math_multiply));
     self.runtime.functions.insert(hash_string("math/divide"),Some(math_divide));
+    self.runtime.functions.insert(hash_string("compare/greater-than-equal"),Some(compare_greater_than_equal));
+    self.runtime.functions.insert(hash_string("compare/greater-than"),Some(compare_greater_than));
+    self.runtime.functions.insert(hash_string("compare/less-than-equal"),Some(compare_less_than_equal));
+    self.runtime.functions.insert(hash_string("compare/less-than"),Some(compare_less_than));
+    self.runtime.functions.insert(hash_string("compare/equal"),Some(compare_equal));
+    self.runtime.functions.insert(hash_string("compare/not-equal"),Some(compare_not_equal));
     self.runtime.functions.insert(hash_string("table/range"),Some(table_range));
     self.runtime.functions.insert(hash_string("table/horizontal-concatenate"),Some(table_horizontal_concatenate));
     self.runtime.functions.insert(hash_string("table/vertical-concatenate"),Some(table_vertical_concatenate));

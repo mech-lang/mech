@@ -10,7 +10,6 @@ use runtime::Runtime;
 use block::{Block, IndexIterator, TableIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
-use quantities::{Quantity, QuantityMath, ToQuantity};
 use std::rc::Rc;
 use std::cell::RefCell;
 use hashbrown::HashMap;
@@ -445,9 +444,8 @@ macro_rules! binary_infix {
           (lhs_value, rhs_value) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                let function_result = result;
                 unsafe {
-                  (*out_table).set_unchecked(o1, o2, function_result);
+                  (*out_table).set_unchecked(o1, o2, result);
                 }
               }
               Err(_) => (), // TODO Handle error here
@@ -468,7 +466,12 @@ binary_infix!{math_add, add}
 binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
-//binary_infix!{comparator_equal, equal}
+binary_infix!{compare_greater_than_equal, greater_than_equal}
+binary_infix!{compare_greater_than, greater_than}
+binary_infix!{compare_less_than_equal, less_than_equal}
+binary_infix!{compare_less_than, less_than}
+binary_infix!{compare_equal, equal}
+binary_infix!{compare_not_equal, not_equal}
 
 
 
