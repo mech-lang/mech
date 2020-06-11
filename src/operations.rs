@@ -41,18 +41,17 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     TableId::Local(id) => block_tables.get(id).unwrap(),
   };
 
-  unsafe {
-    (*out_table).rows = in_table.rows;
-    (*out_table).columns = 1;
-    (*out_table).data.resize(in_table.rows, 0);
-  }
-
   let rows = in_table.rows;
   let cols = in_table.columns;
 
   match in_arg_name {
     // rows
     0x6a1e3f1182ea4d9d => {
+      unsafe {
+        (*out_table).rows = in_table.rows;
+        (*out_table).columns = 1;
+        (*out_table).data.resize(in_table.rows, 0);
+      }
       for i in 1..=rows {
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=cols {
@@ -66,6 +65,27 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
           (*out_table).set_unchecked(i, 1, sum);
         }
       }
+    }
+    // columns
+    0x3b71b9e91df03940 => {
+      unsafe {
+        (*out_table).rows = 1;
+        (*out_table).columns = in_table.columns;
+        (*out_table).data.resize(in_table.columns, 0);
+      }
+      for i in 1..=cols {
+        let mut sum: Value = Value::from_u64(0);
+        for j in 1..=rows {
+          let value = in_table.get(&Index::Index(i),&Index::Index(j)).unwrap();
+          match sum.add(value) {
+            Ok(result) => sum = result,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+        unsafe {
+          (*out_table).set_unchecked(i, 1, sum);
+        }
+      }      
     }
     _ => (), // TODO alert user that argument is unknown
   }
