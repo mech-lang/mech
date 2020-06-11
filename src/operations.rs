@@ -35,26 +35,38 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
   
-  let in_table = match in_table_id {
-    TableId::Global(id) => db.tables.get(id).unwrap(),
-    TableId::Local(id) => block_tables.get(id).unwrap(),
+  let mut in_table = match in_table_id {
+    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
 
-  let rows = in_table.rows;
-  let cols = in_table.columns;
+  let rows = unsafe{(*in_table).rows};
+  let cols = unsafe{(*in_table).columns};
+
+  let rows_iter = match in_rows {
+    Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
+    Index::Table(table_id) => {
+      let mut row_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+        TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(row_table))
+    }
+    _ => IndexIterator::Range(1..=unsafe{(*in_table).rows}),
+  };
 
   match in_arg_name {
     // rows
     0x6a1e3f1182ea4d9d => {
       unsafe {
-        (*out_table).rows = in_table.rows;
+        (*out_table).rows = (*in_table).rows;
         (*out_table).columns = 1;
-        (*out_table).data.resize(in_table.rows, 0);
+        (*out_table).data.resize((*in_table).rows, 0);
       }
       for i in 1..=rows {
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=cols {
-          let value = in_table.get(&Index::Index(i),&Index::Index(j)).unwrap();
+          let value = unsafe{(*in_table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
@@ -69,13 +81,13 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     0x3b71b9e91df03940 => {
       unsafe {
         (*out_table).rows = 1;
-        (*out_table).columns = in_table.columns;
-        (*out_table).data.resize(in_table.columns, 0);
+        (*out_table).columns = (*in_table).columns;
+        (*out_table).data.resize((*in_table).columns, 0);
       }
       for i in 1..=cols {
         let mut sum: Value = Value::from_u64(0);
-        for j in 1..=rows {
-          let value = in_table.get(&Index::Index(j),&Index::Index(i)).unwrap();
+        for (j,k) in (1..=rows).zip(rows_iter.clone()) {
+          let value = unsafe{(*in_table).get(&k,&Index::Index(i)).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
