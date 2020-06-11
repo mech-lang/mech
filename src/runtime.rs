@@ -62,6 +62,7 @@ impl Runtime {
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
+        block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
         self.changed_this_round.extend(&block.output);
       }
@@ -122,7 +123,6 @@ impl Runtime {
   }
 
   pub fn register_block(&mut self, mut block: Block) {
-
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
       let listeners = self.register_to_block.entry(*input_register).or_insert(HashSet::new());
