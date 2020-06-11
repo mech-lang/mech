@@ -312,23 +312,23 @@ macro_rules! binary_infix {
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
           match lhs_rows {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-            _ => IndexIterator::Constant(*lhs_rows),
+            Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*lhs_rows),1),
           },
           match lhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-            _ => IndexIterator::Constant(*lhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
           match rhs_rows {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-            _ => IndexIterator::Constant(*rhs_rows),
+            Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*rhs_rows),1),
           },
           match rhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-            _ => IndexIterator::Constant(*rhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
         )
       } else if equal_dimensions {
         unsafe {
@@ -337,18 +337,18 @@ macro_rules! binary_infix {
           (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.rows,lhs_table.columns)),
+          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_table.columns),
           match lhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.columns,1)),
-            _ => IndexIterator::Constant(*lhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
-          IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.rows,rhs_table.columns)),
+          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_table.columns),
           match rhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.columns,1)),
-            _ => IndexIterator::Constant(*rhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
-          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
-          IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
+          IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
         )
       } else if rhs_scalar {
         unsafe {
@@ -357,17 +357,17 @@ macro_rules! binary_infix {
           (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.rows,lhs_table.columns)),
+          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_table.columns),
           match lhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,lhs_table.columns,1)),
-            _ => IndexIterator::Constant(*lhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
-            _ => IndexIterator::Constant(*out_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*out_columns),1),
           },
         )
       } else {
@@ -377,17 +377,17 @@ macro_rules! binary_infix {
           (*out_table).data.resize(rhs_rows_count * rhs_columns_count, 0);
         }
         (
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-          IndexIterator::Repeater(IndexRepeater::new(1,1,1)),
-          IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.rows,rhs_table.columns)),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_table.columns),
           match rhs_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,rhs_table.columns,1)),
-            _ => IndexIterator::Constant(*rhs_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
-          IndexIterator::Repeater(IndexRepeater::new(1,out_rows_count,out_columns_count)),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out_columns {
-            Index::All => IndexIterator::Repeater(IndexRepeater::new(1,out_columns_count,1)),
-            _ => IndexIterator::Constant(*out_columns),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(*out_columns),1),
           },
         )
       };
