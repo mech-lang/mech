@@ -199,6 +199,7 @@ impl fmt::Debug for TableId {
 pub enum Index {
   Index(usize),
   Alias(u64),
+  Table(TableId),
   All,
   None,
 }
@@ -210,6 +211,7 @@ impl Index {
       Index::Alias(alias) => {
         alias.clone() as usize
       },
+      Index::Table(table_id) => *table_id.unwrap() as usize,
       Index::None |
       Index::All => 0,
     }
@@ -222,6 +224,7 @@ impl fmt::Debug for Index {
     match self {
       &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
       &Index::Alias(ref alias) => write!(f, "Alias({:#x})", alias),
+      &Index::Table(ref table_id) => write!(f, "Table({:?})", table_id),
       &Index::All => write!(f, "All"),
       &Index::None => write!(f, "None"),
     }
