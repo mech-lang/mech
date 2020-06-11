@@ -93,7 +93,7 @@ impl Formatter {
           "logic/or" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
-            code = format!("{} & {}", lhs, rhs);
+            code = format!("{} | {}", lhs, rhs);
           },
           "compare/less-than" => {
             let lhs = self.write_node(&children[0]);
