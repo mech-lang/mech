@@ -149,7 +149,14 @@ impl Block {
           }
           for (_, table_id, row, column) in arguments {
             match table_id {
-              TableId::Global(id) => {self.input.insert(Register{table_id: *id, row: *row, column: *column}.hash());},
+              TableId::Global(id) => {
+                let rrow = match row {
+                  Index::Table{..} => Index::All,
+                  x => *x,
+                };
+                let hjh = Register{table_id: *id, row: rrow, column: *column}.hash();
+                self.input.insert(hjh);
+              },
               _ => (),
             }
           }
@@ -588,16 +595,37 @@ impl TableIterator {
       current: 0,
     }
   }
+}
 
-  pub fn next(&mut self) -> Option<Index> {
+impl Iterator for TableIterator {
+  type Item = Index;
+  fn next(&mut self) -> Option<Index> {
     unsafe{
-      if self.current < (*self.table).data.len() {
-        let address = (*self.table).data[self.current];
-        self.current += 1;
-        Some(Index::Index((*self.table).store.data[address].as_u64().unwrap() as usize))
-      } else {
-        None
+      let mut next = None;
+      loop {
+        if self.current < (*self.table).data.len() {
+          let address = (*self.table).data[self.current];
+          self.current += 1;
+          let value = (*self.table).store.data[address];
+          match value.as_u64() {
+            Some(v) => {
+              next = Some(Index::Index(v as usize));
+              break;
+            },
+            None => match value.as_bool() {
+              Some(true) => {
+                next = Some(Index::Index(self.current));
+                break;
+              },
+              _ => continue,
+            }
+          }
+        } else {
+          next = None;
+          break;
+        }
       }
+      next
     }
   }
 

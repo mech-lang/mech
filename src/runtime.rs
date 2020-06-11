@@ -153,14 +153,16 @@ impl Runtime {
           for (arg_id, table_id, row, column) in arguments {
             let new_row = row;
             let new_column = self.remap_column(*table_id.unwrap(),column);
-            match table_id {
-              TableId::Global(id) => {
-                let new_input_register = Register{table_id: id, row: new_row, column: new_column}.hash();
-                let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
-                listeners.insert(block.id);
-                block.input.insert(new_input_register);
-              },
-              _ => (),
+            if new_column != column {
+              match table_id {
+                TableId::Global(id) => {
+                  let new_input_register = Register{table_id: id, row: new_row, column: new_column}.hash();
+                  let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
+                  listeners.insert(block.id);
+                  block.input.insert(new_input_register);
+                },
+                _ => (),
+              }
             }
             new_args.push((arg_id, table_id, new_row, new_column));
           }

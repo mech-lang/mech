@@ -75,14 +75,14 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
       for i in 1..=cols {
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=rows {
-          let value = in_table.get(&Index::Index(i),&Index::Index(j)).unwrap();
+          let value = in_table.get(&Index::Index(j),&Index::Index(i)).unwrap();
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
           }
         }
         unsafe {
-          (*out_table).set_unchecked(i, 1, sum);
+          (*out_table).set_unchecked(1, i, sum);
         }
       }      
     }
@@ -97,6 +97,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
                                                database: &Rc<RefCell<Database>>) {
   let (out_table_id, out_rows, out_columns) = out;
   let mut db = database.borrow_mut();
+  let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -114,7 +115,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
             TableId::Global(id) => db.tables.get(id).unwrap(),
             TableId::Local(id) => block_tables.get(id).unwrap(),
           };
-          out_rows = row_table.rows;
+          out_rows = row_table.rows * row_table.columns;
         },
         _ => out_rows = table.rows,
       }
@@ -172,8 +173,18 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
           (*out_table).set(&Index::Index(i), &Index::Index(column+m), value);
         }
       }
+      if row < i {
+        row = i;
+      }
     }
     column += 1;
+  }
+  if row != out_rows {
+    unsafe {
+      (*out_table).rows = row;
+      (*out_table).columns = out_columns;
+      (*out_table).data.resize(row * out_columns, 0);
+    }
   }
 }
 
