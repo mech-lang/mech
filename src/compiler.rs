@@ -851,6 +851,10 @@ impl Compiler {
                   Node::SelectAll => {
                     indices.push(Index::All);
                   }
+                  Node::SelectData{name, id, children} => {
+                    self.identifiers.insert(*id.unwrap(), name.to_string());
+                    indices.push(Index::Table(*id));
+                  }
                   Node::Expression{..} => {
                     let mut result = self.compile_transformation(child);
                     match result[1] {
