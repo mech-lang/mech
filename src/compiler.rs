@@ -559,7 +559,11 @@ impl Compiler {
                 };
               },
               Transformation::Function{name, arguments, out} => {
-                for (_, table_id, _, _) in arguments {
+                for (_, table_id, row, column) in arguments {
+                  match row {
+                    Index::Table(TableId::Local(id)) => {consumes.insert(*id);},
+                    _ => (),
+                  }
                   match table_id {
                     TableId::Local(id) => {consumes.insert(*id);},
                     _ => (),
