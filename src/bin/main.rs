@@ -32,7 +32,12 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = "Hello World""#);
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x >= #y
+  #test = stats/sum(column: #x{ix,:})"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
