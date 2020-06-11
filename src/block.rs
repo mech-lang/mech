@@ -394,8 +394,10 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
               TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
               TableId::Local(id) => {
                 match block.store.identifiers.get(id) {
-                  Some(name) => arg = format!("{}{}",arg,name),
-                  None => arg = format!("{}{}",arg,humanize(id)),
+                  Some(name) => {
+                    arg = format!("{}{{{},",arg,name);
+                  },
+                  None => arg = format!("{}{{{},",arg,humanize(id)),
                 }
               }
             };
