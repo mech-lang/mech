@@ -416,7 +416,7 @@ macro_rules! binary_infix {
           (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_table.columns),
+          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_columns_count),
           match lhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
             _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
@@ -438,7 +438,7 @@ macro_rules! binary_infix {
         (
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
-          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_table.columns),
+          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_columns_count),
           match rhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
             _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
@@ -496,6 +496,8 @@ binary_infix!{compare_less_than_equal, less_than_equal}
 binary_infix!{compare_less_than, less_than}
 binary_infix!{compare_equal, equal}
 binary_infix!{compare_not_equal, not_equal}
+binary_infix!{logic_and, and}
+binary_infix!{logic_or, or}
 
 
 
