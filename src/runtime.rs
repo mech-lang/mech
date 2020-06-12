@@ -149,23 +149,6 @@ impl Runtime {
     for step in block.plan {
       let new_step = match step {
         (_, Transformation::Function{name, arguments, out}) => {
-          let mut new_args: Vec<(u64, TableId, Index, Index)> = vec![];
-          for (arg_id, table_id, row, column) in arguments {
-            let new_row = row;
-            let new_column = self.remap_column(*table_id.unwrap(),column);
-            if new_column != column {
-              match table_id {
-                TableId::Global(id) => {
-                  let new_input_register = Register{table_id: id, row: new_row, column: new_column}.hash();
-                  let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
-                  listeners.insert(block.id);
-                  block.input.insert(new_input_register);
-                },
-                _ => (),
-              }
-            }
-            new_args.push((arg_id, table_id, new_row, new_column));
-          }
           let (out_table_id, out_row, out_column) = out;
           let new_out_row = out_row;
           let new_out_column = self.remap_column(*out_table_id.unwrap(),out_column);
@@ -174,7 +157,7 @@ impl Runtime {
             _ => (),
           }
           let new_out = (out_table_id, new_out_row, new_out_column);          
-          (vec![], Transformation::Function{name, arguments: new_args, out: new_out})
+          (vec![], Transformation::Function{name, arguments, out: new_out})
         }
         (_, Transformation::Whenever{table_id, row, column}) => {
           let new_row = row;

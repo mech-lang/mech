@@ -7,7 +7,7 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, Value, ValueMethods, TableId, Index};
 use runtime::Runtime;
-use block::{Block, IndexIterator, TableIterator, IndexRepeater};
+use block::{Block, IndexIterator, TableIterator, AliasIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
 use std::rc::Rc;
@@ -376,6 +376,9 @@ macro_rules! binary_infix {
           },
           match lhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *lhs_table_id, store.clone())),1
+            ),
             _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
           match rhs_rows {
@@ -384,6 +387,9 @@ macro_rules! binary_infix {
           },
           match rhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *rhs_table_id, store.clone())),1
+            ),
             _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
@@ -399,11 +405,17 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_table.columns),
           match lhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *lhs_table_id, store.clone())),1
+            ),
             _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
           IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_table.columns),
           match rhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *rhs_table_id, store.clone())),1
+            ),            
             _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
@@ -419,6 +431,9 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_columns_count),
           match lhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *lhs_table_id, store.clone())),1
+            ),
             _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
@@ -441,6 +456,9 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_columns_count),
           match rhs_columns {
             Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            Index::Alias(alias) => IndexRepeater::new(
+              IndexIterator::Alias(AliasIterator::new(*alias, *rhs_table_id, store.clone())),1
+            ),
             _ => IndexRepeater::new(IndexIterator::Constant(*rhs_columns),1),
           },
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),

@@ -640,7 +640,7 @@ pub struct AliasIterator {
 
 impl AliasIterator {
 
-  fn new(alias: u64, table_id: TableId, store: Rc<Store>) -> AliasIterator {
+  pub fn new(alias: u64, table_id: TableId, store: Rc<Store>) -> AliasIterator {
     AliasIterator {
       alias,
       table_id,
