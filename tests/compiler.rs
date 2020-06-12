@@ -490,13 +490,14 @@ block
   ix1 = #foo.x < 7
   ix2 = #foo.x > 9
   ix3 = ix1 | ix2
-  #test = #foo{ix3, 1}
+  q = #foo{ix3, 1}
+  #test = q{1,1} + q{2,1}
 
 block
   #foo = [|x y z|
            5 6 7
            8 9 10
-           11 12 13]", Value::from_i64(5));
+           11 12 13]", Value::from_i64(16));
 
 // ## Change scan
 
