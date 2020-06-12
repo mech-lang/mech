@@ -628,14 +628,54 @@ impl Iterator for TableIterator {
       next
     }
   }
+}
+
+#[derive(Debug, Clone)]
+pub struct AliasIterator {
+  alias: u64,
+  table_id: TableId,
+  store: Rc<Store>,
+  index: Option<Index>,
+}
+
+impl AliasIterator {
+
+  fn new(alias: u64, table_id: TableId, store: Rc<Store>) -> AliasIterator {
+    AliasIterator {
+      alias,
+      table_id,
+      store,
+      index: None,
+    }
+  }
 
 }
 
+impl Iterator for AliasIterator {
+  type Item = Index;
+  
+  fn next(&mut self) -> Option<Index> {
+    match self.index {
+      None => {
+        let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+        match store.column_alias_to_index.get(&(*self.table_id.unwrap(), self.alias)) {
+          Some(ix) => {
+            self.index = Some(Index::Index(*ix));
+            self.index
+          },
+          None => None,
+        }
+      },
+      Some(index) => self.index
+    }
+  }
+}
 
 #[derive(Debug, Clone)]
 pub enum IndexIterator {
   Range(std::ops::RangeInclusive<usize>),
   Constant(Index),
+  Alias(AliasIterator),
   Table(TableIterator),
 }
 
@@ -652,6 +692,7 @@ impl Iterator for IndexIterator {
       }
       IndexIterator::Constant(itr) => Some(*itr),
       IndexIterator::Table(itr) => itr.next(),
+      IndexIterator::Alias(itr) => itr.next(),
     }
   }
 }
