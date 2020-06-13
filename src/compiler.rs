@@ -1044,6 +1044,12 @@ impl Compiler {
         self.identifiers.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
+      Node::Empty => {
+        let value = 0x2000000000000000;
+        let table = hash_string(&format!("Empty-{:?}", value.to_float()));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: value, unit: 0});
+      }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
         
