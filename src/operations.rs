@@ -40,8 +40,8 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
 
-  let rows = unsafe{(*in_table).rows};
-  let cols = unsafe{(*in_table).columns};
+  let mut rows = unsafe{(*in_table).rows};
+  let mut cols = unsafe{(*in_table).columns};
 
   let rows_iter = match in_rows {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
@@ -52,7 +52,24 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
       };
       IndexIterator::Table(TableIterator::new(row_table))
     }
+    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *in_table_id, db.store.clone())),
     _ => IndexIterator::Range(1..=unsafe{(*in_table).rows}),
+  };
+
+  let cols_iter = match in_columns {
+    Index::Index(ix) => {
+      cols = 1;
+      IndexIterator::Constant(Index::Index(*ix))
+    },
+    Index::Table(table_id) => {
+      let mut col_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
+        TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(col_table))
+    }
+    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *in_table_id, db.store.clone())),    
+    _ => IndexIterator::Range(1..=unsafe{(*in_table).columns}),
   };
 
   match in_arg_name {
@@ -81,13 +98,13 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     0x3b71b9e91df03940 => {
       unsafe {
         (*out_table).rows = 1;
-        (*out_table).columns = (*in_table).columns;
-        (*out_table).data.resize((*in_table).columns, 0);
+        (*out_table).columns = cols;
+        (*out_table).data.resize(cols, 0);
       }
-      for i in 1..=cols {
+      for (i,m) in (1..=cols).zip(cols_iter) {
         let mut sum: Value = Value::from_u64(0);
         for (j,k) in (1..=rows).zip(rows_iter.clone()) {
-          let value = unsafe{(*in_table).get(&k,&Index::Index(i)).unwrap()};
+          let value = unsafe{(*in_table).get(&k,&m).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
