@@ -18,6 +18,8 @@ use hashbrown::hash_map::{HashMap};
 use super::formatter::Formatter;
 use std::rc::Rc;
 
+const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
+
 // ## Compiler Nodes
 
 #[derive(Clone, PartialEq)]
@@ -723,7 +725,7 @@ impl Compiler {
           let mut result = self.compile_transformation(child);
         }
         let fxn = Transformation::Function{
-          name: 0x1C6A44C6BAFC67F1,
+          name: TABLE_HORZCAT,
           arguments: args,
           out: (TableId::Local(self.table), Index::All, Index::All),
         };
@@ -787,7 +789,7 @@ impl Compiler {
           transformations.append(&mut result);       
         }
         let fxn = Transformation::Function{
-          name: 0x1C6A44C6BAFC67F1,
+          name: TABLE_HORZCAT,
           arguments: args,
           out: (new_table_id, Index::All, Index::All),
         };   
@@ -833,6 +835,38 @@ impl Compiler {
       Node::Statement{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
+      }
+      Node::SetData{children} => {
+        let mut output = self.compile_transformation(&children[0]);
+        let mut output_tup = match output[0] {
+          Transformation::Select{table_id, row, column} => {
+            let tfm = Transformation::Set{table_id, row, column};
+            transformations.push(tfm);
+            Some((table_id,row,column))
+          }
+          _ => None,
+        };
+                
+
+        let mut input = self.compile_transformation(&children[1]);
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          _ => None,
+        };
+
+        let (output_table_id, output_row, output_col) = output_tup.unwrap();
+
+        let fxn = Transformation::Function{
+          name: TABLE_HORZCAT,
+          arguments: vec![
+            (0, input_table_id.unwrap(), Index::All, Index::All)
+          ],
+          out: (output_table_id, output_row, output_col),
+        };
+        transformations.append(&mut input);
+        transformations.push(fxn);
       }
       Node::SelectData{name, id, children} => {
         self.identifiers.insert(*id.unwrap(), name.to_string());
@@ -903,7 +937,7 @@ impl Compiler {
         };
 
         let fxn = Transformation::Function{
-          name: 0x1C6A44C6BAFC67F1,
+          name: TABLE_HORZCAT,
           arguments: vec![
             (0, input_table_id.unwrap(), Index::All, Index::All)
           ],

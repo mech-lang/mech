@@ -303,7 +303,7 @@ block
 
 test_mech!(set_column_simple,"
 block
-  #test.x{1} := 77
+  #test.x := 77
 
 block
   #test = [|x|
