@@ -190,6 +190,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     for (i,k) in (1..=out_rows).zip(rows_iter) {
       let columns_iter = match columns {
         Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
+        Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, db.store.clone())),
         _ => IndexIterator::Range(1..=unsafe{(*table).columns}),
       };
       let out_cols = match columns {
