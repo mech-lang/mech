@@ -35,6 +35,7 @@ pub trait ValueMethods {
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
+  fn is_empty(&self) -> bool;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
@@ -87,25 +88,36 @@ impl ValueMethods for Value {
     num.to_quantity()
   }
 
+  fn is_empty(&self) -> bool {
+    if *self == 0x2000000000000000 {
+      true
+    } else {
+      false
+    }
+  }
+
   fn as_quantity(&self) -> Option<Quantity> {
-    match self & 0xC000000000000000 {
-      0x8000000000000000 => None,
+    match self & 0xE000000000000000 {
+      0x2000000000000000 |
+      0x8000000000000000 |
       0x4000000000000000 => None,
       _ => Some(*self),
     }
   }
 
   fn as_u64(&self) -> Option<u64> {
-    match self & 0xC000000000000000 {
-      0x8000000000000000 => None,
+    match self & 0xE000000000000000 {
+      0x2000000000000000 |
+      0x8000000000000000 |
       0x4000000000000000 => None,
       _ => Some(self.to_u64()),
     }
   }
 
   fn as_float(&self) -> Option<f64> {
-    match self & 0xC000000000000000 {
-      0x8000000000000000 => None,
+    match self & 0xE000000000000000 {
+      0x2000000000000000 |
+      0x8000000000000000 |
       0x4000000000000000 => None,
       _ => Some(self.to_float()),
     }
@@ -443,7 +455,13 @@ impl fmt::Debug for Table {
               None => {
                 match value.as_bool() {
                   Some(b) => format!("{:?}", b),
-                  None => format!("{:?}", self.store.identifiers.get(value).unwrap())
+                  None => {
+                    if value.is_empty() {
+                      format!("_")
+                    } else {
+                      format!("{:?}", self.store.identifiers.get(value).unwrap())
+                    }
+                  }
                 }
               },
             };
@@ -474,7 +492,13 @@ impl fmt::Debug for Table {
                 None => {
                   match value.as_bool() {
                     Some(b) => format!("{:?}", b),
-                    None => format!("{:?}", self.store.identifiers.get(value).unwrap())
+                    None => {
+                      if value.is_empty() {
+                        format!("_")
+                      } else {
+                        format!("{:?}", self.store.identifiers.get(value).unwrap())
+                      }
+                    }
                   }
                 },
               };

@@ -333,7 +333,13 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let mut tfm = format!("");
       match value.as_quantity() {
         Some(quantity) => tfm = format!("{}{:?} -> ", tfm, value),
-        None => tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap()),
+        None => {
+          if value.is_empty() {
+            tfm = format!("{} _ -> ",tfm);
+          } else {
+            tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap());
+          }
+        },
       }
       
       match table_id {
