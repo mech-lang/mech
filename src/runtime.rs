@@ -32,6 +32,7 @@ pub struct Runtime {
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
   pub register_to_block: HashMap<u64,HashSet<u64>>,
+  pub output_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
   pub output: HashSet<u64>,
   pub functions: HashMap<u64, Option<MechFunction>>,
@@ -46,6 +47,7 @@ impl Runtime {
       blocks: HashMap::new(),
       ready_blocks: HashSet::new(),
       register_to_block: HashMap::new(),
+      output_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
       output: HashSet::new(),
       functions: HashMap::new(),
@@ -73,9 +75,23 @@ impl Runtime {
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
       for register in self.changed_this_round.drain() {
+        match self.output_to_block.get(&register) {
+          Some(producing_block_ids) => {
+            for block_id in producing_block_ids.iter() {
+              let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+              if block.state == BlockState::New {
+                block.output_dependencies_ready.insert(register);
+                if block.is_ready() {
+                  self.ready_blocks.insert(block.id);
+                }
+              }
+            }
+          }
+          _ => () // No producers
+        }
         match self.register_to_block.get(&register) {
-          Some(listening_block_id) => {
-            for block_id in listening_block_id.iter() {
+          Some(listening_block_ids) => {
+            for block_id in listening_block_ids.iter() {
               let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
               block.ready.insert(register);
               if block.is_ready() {
@@ -127,6 +143,12 @@ impl Runtime {
     for input_register in block.input.iter() {
       let listeners = self.register_to_block.entry(*input_register).or_insert(HashSet::new());
       listeners.insert(block.id);
+    }
+
+    // Keep track of which blocks produce which tables
+    for output_register in block.output.iter() {
+      let producers = self.output_to_block.entry(*output_register).or_insert(HashSet::new());
+      producers.insert(block.id);
     }
 
     // If the block is new and has no input, it can be marked to run immediately

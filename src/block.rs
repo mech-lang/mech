@@ -27,6 +27,8 @@ pub struct Block {
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
+  pub output_dependencies: HashSet<u64>,
+  pub output_dependencies_ready: HashSet<u64>,
   pub tables: HashMap<u64, Table>,
   pub store: Rc<Store>,
   pub transformations: Vec<(String, Vec<Transformation>)>,
@@ -43,6 +45,8 @@ impl Block {
       ready: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      output_dependencies: HashSet::new(),
+      output_dependencies_ready: HashSet::new(),
       state: BlockState::New,
       tables: HashMap::new(),
       store: Rc::new(Store::new(capacity)),
@@ -123,19 +127,9 @@ impl Block {
             _ => (),
           }
         }
-        Transformation::Set{table_id, row, column, value} => {
-          match table_id {
-            TableId::Global(id) => {
-              self.changes.push(
-                Change::Set{
-                  table_id: id,
-                  values: vec![(row, column, value)],
-                }
-              );
-              self.output.insert(id);
-            }
-            _ => (),
-          }        
+        Transformation::Set{table_id, row, column} => {
+          let hash = Register{table_id: *table_id.unwrap(), row: row, column}.hash();
+          self.output_dependencies.insert(hash);          
         }
         Transformation::Whenever{table_id, row, column} => {
           self.input.insert(Register{table_id, row, column}.hash());
@@ -208,8 +202,9 @@ impl Block {
       false
     } else {
       let set_diff: HashSet<u64> = self.input.difference(&self.ready).cloned().collect();
+      let out_diff: HashSet<u64> = self.output_dependencies.difference(&self.output_dependencies_ready).cloned().collect();
       // The block is ready if all input registers are ready i.e. the length of the set diff is 0
-      if set_diff.len() == 0 {
+      if set_diff.len() == 0 && out_diff.len() == 0 {
         self.state = BlockState::Ready;
         true
       } else {
@@ -243,6 +238,14 @@ impl fmt::Debug for Block {
     }
     write!(f, "│ output: {}\n", self.output.len())?;
     for (ix, output) in self.output.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
+    }
+    write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
+    for (ix, output) in self.output_dependencies.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
+    }
+    write!(f, "│ output ready: {}\n", self.output_dependencies_ready.len())?;
+    for (ix, output) in self.output_dependencies_ready.iter().enumerate() {
       write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
@@ -352,20 +355,6 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         }
       };
       tfm
-    }
-    Transformation::Set{table_id, row, column, value} => {
-      let mut tfm = format!("");
-      match table_id {
-        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
-        TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
-            Some(name) => tfm = format!("{}{}",tfm,name),
-            None => tfm = format!("{}0x{:x}",tfm,id),
-          }
-        }
-      }
-      tfm = format!("{}{{{:?}, {:?}}} := {:?}", tfm, row.unwrap(), column.unwrap(), value);
-      tfm      
     }
     Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
       let mut tfm = format!("");
@@ -529,7 +518,7 @@ pub enum Transformation {
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
-  Set{table_id: TableId, row: Index, column: Index, value: Value},
+  Set{table_id: TableId, row: Index, column: Index},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: u64, row: Index, column: Index},
   Function{name: u64, arguments: Vec<(u64, TableId, Index, Index)>, out: (TableId, Index, Index)},
