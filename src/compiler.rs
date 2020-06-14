@@ -832,6 +832,18 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
+      Node::Whenever{children} => {
+        let mut result = self.compile_transformations(children);
+        match result[0] {
+          Transformation::Select{table_id, row, column} => {
+            transformations.push(
+              Transformation::Whenever{table_id: *table_id.unwrap(), row, column},
+            );
+          }
+          _ => (),
+        }
+        transformations.append(&mut result);
+      }
       Node::Statement{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
