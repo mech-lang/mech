@@ -200,6 +200,9 @@ impl Runtime {
     let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
     block.ready.extend(&ready);
 
+    let ready: HashSet<u64> = block.output_dependencies.intersection(&self.output).cloned().collect();
+    block.output_dependencies_ready.extend(&ready);
+
     // Add to the list of runtime output registers
     self.output.extend(&block.output);
 
