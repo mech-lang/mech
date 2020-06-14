@@ -2,7 +2,7 @@
 
 extern crate mech_core;
 
-use mech_core::{Core, Table, TableId, Index, Value, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
+use mech_core::{Core, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
 extern crate ahash;
 use ahash::AHasher;
@@ -20,7 +20,6 @@ fn hash_string(input: &str) -> u64 {
 fn main() {
 
   let balls = 4000;
-
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
