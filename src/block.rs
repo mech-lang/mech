@@ -543,6 +543,28 @@ impl Register {
 }
 
 
+pub struct  ValueIterator {
+  table_id: TableId,
+  table: *mut Table,
+  store: Rc<Store>,
+  row: IndexIterator,
+  column: IndexIterator,
+}
+
+impl Iterator for ValueIterator {
+  type Item = Value;
+  fn next(&mut self) -> Option<Value> {
+    match (self.row.next(), self.column.next()) {
+      (Some(rix), Some(cix)) => {
+        let value = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
+        Some(value)
+      },     
+      _ => None,
+    }
+  }
+
+}
+
 #[derive(Debug)]
 pub struct IndexRepeater {
   iterator: std::iter::Cycle<IndexIterator>,
