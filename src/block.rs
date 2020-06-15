@@ -544,17 +544,15 @@ impl Register {
 
 
 pub struct  ValueIterator {
-  table_id: TableId,
   table: *mut Table,
-  store: Rc<Store>,
-  row: IndexIterator,
-  column: IndexIterator,
+  row_iter: IndexIterator,
+  column_iter: IndexIterator,
 }
 
 impl Iterator for ValueIterator {
   type Item = Value;
   fn next(&mut self) -> Option<Value> {
-    match (self.row.next(), self.column.next()) {
+    match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
         let value = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
         Some(value)
