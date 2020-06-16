@@ -59,6 +59,8 @@ pub fn resolve_subscript(
   
   ValueIterator{
     table,
+    row_index,
+    column_index,
     row_iter,
     column_iter,
   }
@@ -82,30 +84,21 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
   let (out_table_id, out_rows, out_columns) = out;
 
   let vi = resolve_subscript(*in_table_id, *in_rows, *in_columns, block_tables, database); 
+  let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database); 
 
-  let mut db = database.borrow_mut();
-  
-  let mut out_table = match out_table_id {
-    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-  };
-  
-  let rows_iter = vi.row_iter;
-  let cols_iter = vi.column_iter;
-
-  let mut rows = unsafe{(*vi.table).rows};
-  let mut cols = match cols_iter {
+  let mut rows = vi.rows();
+  let mut cols = match vi.column_iter {
     IndexIterator::Constant{..} => 1,
-    _ => unsafe{(*vi.table).columns},
+    _ => vi.columns(),
   };
 
   match in_arg_name {
     // rows
     0x6a1e3f1182ea4d9d => {
       unsafe {
-        (*out_table).rows = (*vi.table).rows;
-        (*out_table).columns = 1;
-        (*out_table).data.resize((*vi.table).rows, 0);
+        (*out_vi.table).rows = vi.rows();
+        (*out_vi.table).columns = 1;
+        (*out_vi.table).data.resize(vi.rows(), 0);
       }
       for i in 1..=rows {
         let mut sum: Value = Value::from_u64(0);
@@ -117,20 +110,20 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
           }
         }
         unsafe {
-          (*out_table).set_unchecked(i, 1, sum);
+          (*out_vi.table).set_unchecked(i, 1, sum);
         }
       }
     }
     // columns
     0x3b71b9e91df03940 => {
       unsafe {
-        (*out_table).rows = 1;
-        (*out_table).columns = cols;
-        (*out_table).data.resize(cols, 0);
+        (*out_vi.table).rows = 1;
+        (*out_vi.table).columns = cols;
+        (*out_vi.table).data.resize(cols, 0);
       }
-      for (i,m) in (1..=cols).zip(cols_iter) {
+      for (i,m) in (1..=cols).zip(vi.column_iter) {
         let mut sum: Value = Value::from_u64(0);
-        for (j,k) in (1..=rows).zip(rows_iter.clone()) {
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
           let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
@@ -138,7 +131,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
           }
         }
         unsafe {
-          (*out_table).set_unchecked(1, i, sum);
+          (*out_vi.table).set_unchecked(1, i, sum);
         }
       }      
     }
@@ -152,82 +145,63 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
                                                block_tables: &mut HashMap<u64, Table>, 
                                                database: &Rc<RefCell<Database>>) {
   let (out_table_id, out_rows, out_columns) = out;
+  let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database);
+
+  let mut vis = vec![];
+  for (_, table_id, rows, columns) in arguments {
+    vis.push(resolve_subscript(*table_id,*rows,*columns,block_tables,database));
+  }
+
+
   let mut db = database.borrow_mut();
+
   let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
   // First pass, make sure the dimensions work out
-  for (_, table_id, rows, columns) in arguments {
-    let table = match table_id {
-      TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => block_tables.get(id).unwrap(),
-    };
+  for vi in &vis {
     if out_rows == 0 {
-      match rows {
+      match vi.row_index {
         Index::Index(ix) => out_rows = 1,
         Index::Table(table_id) => {
           let row_table = match table_id {
-            TableId::Global(id) => db.tables.get(id).unwrap(),
-            TableId::Local(id) => block_tables.get(id).unwrap(),
+            TableId::Global(id) => db.tables.get(&id).unwrap(),
+            TableId::Local(id) => block_tables.get(&id).unwrap(),
           };
           out_rows = row_table.rows * row_table.columns;
         },
-        _ => out_rows = table.rows,
+        _ => out_rows = vi.rows(),
       }
-    } else if table.rows != 1 && out_rows != table.rows {
+    } else if vi.rows() != 1 && out_rows != vi.rows() {
       // TODO Throw an error here
-    } else if table.rows > out_rows && out_rows == 1 {
-      match rows {
+    } else if vi.rows() > out_rows && out_rows == 1 {
+      match vi.row_index {
         Index::Index(ix) => out_rows = 1,
-        _ => out_rows = table.rows,
+        _ => out_rows = vi.rows(),
       }
     }
-    out_columns += match columns {
-      Index::All => table.columns,
+    out_columns += match vi.column_index {
+      Index::All => vi.columns(),
       _ => 1,
     };
   }
-  let mut out_table = match out_table_id {
-    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-  };
+
   unsafe {
-    (*out_table).rows = out_rows;
-    (*out_table).columns = out_columns;
-    (*out_table).data.resize(out_rows * out_columns, 0);
+    (*out_vi.table).rows = out_rows;
+    (*out_vi.table).columns = out_columns;
+    (*out_vi.table).data.resize(out_rows * out_columns, 0);
   }
-  for (_, table_id, rows, columns) in arguments {
-    let mut table = match table_id {
-      TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-      TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-    };
-    let rows_iter = match rows {
-      Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-      Index::Table(table_id) => {
-        let mut row_table = match table_id {
-          TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-          TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-        };
-        IndexIterator::Table(TableIterator::new(row_table))
-      }
-      _ => IndexIterator::Range(1..=unsafe{(*table).rows}),
-    };
-    
-    for (i,k) in (1..=out_rows).zip(rows_iter) {
-      let columns_iter = match columns {
-        Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-        Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, db.store.clone())),
-        _ => IndexIterator::Range(1..=unsafe{(*table).columns}),
-      };
-      let out_cols = match columns {
-        Index::All => unsafe{(*table).columns},
+  for vi in &vis {   
+    for (i,k) in (1..=out_rows).zip(vi.row_iter.clone()) {
+      let out_cols = match vi.column_index {
+        Index::All => vi.columns(),
         _ => 1,
       };
-      for (m,j) in (1..=out_cols).zip(columns_iter) {
-        let value = unsafe{(*table).get(&k,&j).unwrap()};
+      for (m,j) in (1..=out_cols).zip(vi.column_iter.clone()) {
+        let value = unsafe{(*vi.table).get(&k,&j).unwrap()};
         unsafe {
-          (*out_table).set(&Index::Index(i), &Index::Index(column+m), value);
+          (*out_vi.table).set(&Index::Index(i), &Index::Index(column+m), value);
         }
       }
       if row < i {
@@ -238,9 +212,9 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
   }
   if row != out_rows {
     unsafe {
-      (*out_table).rows = row;
-      (*out_table).columns = out_columns;
-      (*out_table).data.resize(row * out_columns, 0);
+      (*out_vi.table).rows = row;
+      (*out_vi.table).columns = out_columns;
+      (*out_vi.table).data.resize(row * out_columns, 0);
     }
   }
 }
@@ -250,52 +224,38 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, TableId, Inde
                                              block_tables: &mut HashMap<u64, Table>, 
                                              database: &Rc<RefCell<Database>>) {
   let (out_table_id, out_rows, out_columns) = out;
-  let mut db = database.borrow_mut();
+  let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database);
+
+  let mut vis = vec![];
+  for (_, table_id, rows, columns) in arguments {
+    vis.push(resolve_subscript(*table_id,*rows,*columns,block_tables,database));
+  }
   let mut row = 0;
   let mut out_columns = 0;
   let mut out_rows = 0;
   // First pass, make sure the dimensions work out
-  for (_, table_id, rows, columns) in arguments {
-    let table = match table_id {
-      TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => block_tables.get(id).unwrap(),
-    };
+  for vi in &vis {
     if out_columns == 0 {
-      out_columns = table.columns;
-    } else if table.columns != 1 && out_columns != table.columns {
+      out_columns = vi.columns();
+    } else if vi.columns() != 1 && out_columns != vi.columns() {
       // TODO Throw an error here
-    } else if table.columns > out_columns && out_columns == 1 {
-      out_columns = table.columns
+    } else if vi.columns() > out_columns && out_columns == 1 {
+      out_columns = vi.columns()
     }
-    out_rows += table.rows;
+    out_rows += vi.rows();
   }
-  let mut out_table = match out_table_id {
-    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-  };
+
   unsafe {
-    (*out_table).rows = out_rows;
-    (*out_table).columns = out_columns;
-    (*out_table).data.resize(out_rows * out_columns, 0);
+    (*out_vi.table).rows = out_rows;
+    (*out_vi.table).columns = out_columns;
+    (*out_vi.table).data.resize(out_rows * out_columns, 0);
   }
-  for (_, table_id, rows, columns) in arguments {
-    let table = match table_id {
-      TableId::Global(id) => db.tables.get(id).unwrap(),
-      TableId::Local(id) => block_tables.get(id).unwrap(),
-    };
-    let columns_iter = if table.columns == 1 {
-      IndexIterator::Constant(Index::Index(1))
-    } else {
-      match columns {
-        Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-        _ => IndexIterator::Range(1..=table.columns),
-      }      
-    };
-    for (i,k) in (1..=out_columns).zip(columns_iter) {
-      for j in 1..=table.rows {
-        let value = table.get(&Index::Index(j),&k).unwrap();
+  for vi in &vis {
+    for (i,k) in (1..=out_columns).zip(vi.column_iter.clone()) {
+      for j in 1..=vi.rows() {
+        let value = unsafe{(*vi.table).get(&Index::Index(j),&k).unwrap()};
         unsafe {
-          (*out_table).set(&Index::Index(row + j), &Index::Index(i), value);
+          (*out_vi.table).set(&Index::Index(row + j), &Index::Index(i), value);
         }
       }
     }
@@ -311,35 +271,25 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, TableId, Index, Index)>,
   // 2 -> start, end
   // 3 -> start, increment, end
   let (_, start_table_id, start_rows, start_columns) = &arguments[0];
+  let start_vi = resolve_subscript(*start_table_id, *start_rows, *start_columns, block_tables, database);
   let (_, end_table_id, end_rows, end_columns) = &arguments[1];
+  let end_vi = resolve_subscript(*end_table_id, *end_rows, *end_columns, block_tables, database);
   let (out_table_id, out_rows, out_columns) = out;
-  let mut db = database.borrow_mut();
-  let mut out_table = match out_table_id {
-    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-  };
-  let start_table = match start_table_id {
-    TableId::Global(id) => db.tables.get(id).unwrap(),
-    TableId::Local(id) => block_tables.get(id).unwrap(),
-  };
-  let end_table = match end_table_id {
-    TableId::Global(id) => db.tables.get(id).unwrap(),
-    TableId::Local(id) => block_tables.get(id).unwrap(),
-  };
+  let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database);
 
-  let start_value = start_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
-  let end_value = end_table.get(&Index::Index(1),&Index::Index(1)).unwrap();
+  let start_value = unsafe{(*start_vi.table).get(&Index::Index(1),&Index::Index(1)).unwrap()};
+  let end_value = unsafe{(*end_vi.table).get(&Index::Index(1),&Index::Index(1)).unwrap()};
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;
   
   unsafe{
-    (*out_table).rows = range+1;
-    (*out_table).columns = 1;
-    (*out_table).data.resize(range+1, 0);
+    (*out_vi.table).rows = range+1;
+    (*out_vi.table).columns = 1;
+    (*out_vi.table).data.resize(range+1, 0);
     let mut j = 1;
     for i in start..=end {
-      (*out_table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
+      (*out_vi.table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
       j += 1;
     }
   }
@@ -355,42 +305,30 @@ macro_rules! binary_infix {
                                  database: &Rc<RefCell<Database>>) {
       // TODO test argument count is 2
       let (_, lhs_table_id, lhs_rows, lhs_columns) = &arguments[0];
+      let lhs_vi = resolve_subscript(*lhs_table_id, *lhs_rows, *lhs_columns, block_tables, database);
       let (_, rhs_table_id, rhs_rows, rhs_columns) = &arguments[1];
+      let rhs_vi = resolve_subscript(*rhs_table_id, *rhs_rows, *rhs_columns, block_tables, database);
       let (out_table_id, out_rows, out_columns) = out;
+      let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database);
       let mut db = database.borrow_mut();
-
-      let mut out_table = match out_table_id {
-        TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-        TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-      };
-
-      let lhs_table = match lhs_table_id {
-        TableId::Global(id) => db.tables.get(id).unwrap(),
-        TableId::Local(id) => block_tables.get(id).unwrap(),
-      };
-
-      let rhs_table = match rhs_table_id {
-        TableId::Global(id) => db.tables.get(id).unwrap(),
-        TableId::Local(id) => block_tables.get(id).unwrap(),
-      };
 
       let store = &db.store;
 
       // Figure out dimensions
-      let lhs_rows_count = match lhs_rows {
-        Index::All => lhs_table.rows,
+      let lhs_rows_count = match lhs_vi.row_index {
+        Index::All => lhs_vi.rows(),
         _ => 1,
       };
-      let lhs_columns_count = match lhs_columns {
-        Index::All => lhs_table.columns,
+      let lhs_columns_count = match lhs_vi.column_index {
+        Index::All => lhs_vi.columns(),
         _ => 1,
       };
-      let rhs_rows_count = match rhs_rows {
-        Index::All => rhs_table.rows,
+      let rhs_rows_count = match rhs_vi.row_index {
+        Index::All => rhs_vi.rows(),
         _ => 1,
       };
-      let rhs_columns_count = match rhs_columns {
-        Index::All => rhs_table.columns,
+      let rhs_columns_count = match rhs_vi.column_index {
+        Index::All => rhs_vi.columns(),
         _ => 1,
       };
 
@@ -442,22 +380,22 @@ macro_rules! binary_infix {
         )
       } else if equal_dimensions {
         unsafe {
-          (*out_table).rows = lhs_rows_count;
-          (*out_table).columns = lhs_columns_count;
-          (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
+          (*out_vi.table).rows = lhs_rows_count;
+          (*out_vi.table).columns = lhs_columns_count;
+          (*out_vi.table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_table.columns),
+          IndexRepeater::new(IndexIterator::Range(1..=lhs_vi.rows()),lhs_vi.columns()),
           match lhs_columns {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_vi.columns()),1),
             Index::Alias(alias) => IndexRepeater::new(
               IndexIterator::Alias(AliasIterator::new(*alias, *lhs_table_id, store.clone())),1
             ),
             _ => IndexRepeater::new(IndexIterator::Constant(*lhs_columns),1),
           },
-          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_table.columns),
+          IndexRepeater::new(IndexIterator::Range(1..=rhs_vi.rows()),rhs_vi.columns()),
           match rhs_columns {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_vi.columns()),1),
             Index::Alias(alias) => IndexRepeater::new(
               IndexIterator::Alias(AliasIterator::new(*alias, *rhs_table_id, store.clone())),1
             ),            
@@ -468,14 +406,14 @@ macro_rules! binary_infix {
         )
       } else if rhs_scalar {
         unsafe {
-          (*out_table).rows = lhs_rows_count;
-          (*out_table).columns = lhs_columns_count;
-          (*out_table).data.resize(lhs_rows_count * lhs_columns_count, 0);
+          (*out_vi.table).rows = lhs_rows_count;
+          (*out_vi.table).columns = lhs_columns_count;
+          (*out_vi.table).data.resize(lhs_rows_count * lhs_columns_count, 0);
         }
         (
-          IndexRepeater::new(IndexIterator::Range(1..=lhs_table.rows),lhs_columns_count),
+          IndexRepeater::new(IndexIterator::Range(1..=lhs_vi.rows()),lhs_columns_count),
           match lhs_columns {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_table.columns),1),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=lhs_vi.columns()),1),
             Index::Alias(alias) => IndexRepeater::new(
               IndexIterator::Alias(AliasIterator::new(*alias, *lhs_table_id, store.clone())),1
             ),
@@ -491,16 +429,16 @@ macro_rules! binary_infix {
         )
       } else {
         unsafe {
-          (*out_table).rows = rhs_rows_count;
-          (*out_table).columns = rhs_columns_count;
-          (*out_table).data.resize(rhs_rows_count * rhs_columns_count, 0);
+          (*out_vi.table).rows = rhs_rows_count;
+          (*out_vi.table).columns = rhs_columns_count;
+          (*out_vi.table).data.resize(rhs_rows_count * rhs_columns_count, 0);
         }
         (
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
-          IndexRepeater::new(IndexIterator::Range(1..=rhs_table.rows),rhs_columns_count),
+          IndexRepeater::new(IndexIterator::Range(1..=rhs_vi.rows()),rhs_columns_count),
           match rhs_columns {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_table.columns),1),
+            Index::All => IndexRepeater::new(IndexIterator::Range(1..=rhs_vi.columns()),1),
             Index::Alias(alias) => IndexRepeater::new(
               IndexIterator::Alias(AliasIterator::new(*alias, *rhs_table_id, store.clone())),1
             ),
@@ -516,34 +454,33 @@ macro_rules! binary_infix {
 
       let mut i = 1;
       
-      let out_elements = unsafe { (*out_table).rows * (*out_table).columns };
-
-      loop {
-        let l1 = lrix.next().unwrap().unwrap();
-        let l2 = lcix.next().unwrap().unwrap();
-        let r1 = rrix.next().unwrap().unwrap();
-        let r2 = rcix.next().unwrap().unwrap();
-        let o1 = out_rix.next().unwrap().unwrap();
-        let o2 = out_cix.next().unwrap().unwrap();
-        match (lhs_table.get_unchecked(l1,l2), 
-               rhs_table.get_unchecked(r1,r2))
-        {
-          (lhs_value, rhs_value) => {
-            match lhs_value.$op(rhs_value) {
-              Ok(result) => {
-                unsafe {
-                  (*out_table).set_unchecked(o1, o2, result);
+      let out_elements = out_vi.rows() * out_vi.columns();
+      unsafe{
+        loop {
+          let l1 = lrix.next().unwrap().unwrap();
+          let l2 = lcix.next().unwrap().unwrap();
+          let r1 = rrix.next().unwrap().unwrap();
+          let r2 = rcix.next().unwrap().unwrap();
+          let o1 = out_rix.next().unwrap().unwrap();
+          let o2 = out_cix.next().unwrap().unwrap();
+          match ((*lhs_vi.table).get_unchecked(l1,l2), 
+                (*rhs_vi.table).get_unchecked(r1,r2))
+          {
+            (lhs_value, rhs_value) => {
+              match lhs_value.$op(rhs_value) {
+                Ok(result) => {
+                  (*out_vi.table).set_unchecked(o1, o2, result);
                 }
+                Err(_) => (), // TODO Handle error here
               }
-              Err(_) => (), // TODO Handle error here
             }
+            _ => (),
           }
-          _ => (),
+          if i >= out_elements {
+            break;
+          }
+          i += 1;
         }
-        if i >= out_elements {
-          break;
-        }
-        i += 1;
       }
     }
   )
