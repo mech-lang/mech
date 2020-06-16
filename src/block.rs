@@ -544,9 +544,9 @@ impl Register {
 
 
 pub struct  ValueIterator {
-  table: *mut Table,
-  row_iter: IndexIterator,
-  column_iter: IndexIterator,
+  pub table: *mut Table,
+  pub row_iter: IndexIterator,
+  pub column_iter: IndexIterator,
 }
 
 impl Iterator for ValueIterator {
