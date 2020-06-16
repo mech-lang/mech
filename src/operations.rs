@@ -40,10 +40,10 @@ pub fn resolve_subscript(
       IndexIterator::Table(TableIterator::new(row_table))
     }
     Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    Index::None => IndexIterator::Constant(Index::Index(0)),
+    _ => IndexIterator::Range(1..=(*table).rows),
   }};
 
-  let column_iter = unsafe { match row_index {
+  let column_iter = unsafe { match column_index {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
     Index::All => IndexIterator::Range(1..=(*table).columns),
     Index::Table(table_id) => {
@@ -54,7 +54,7 @@ pub fn resolve_subscript(
       IndexIterator::Table(TableIterator::new(col_table))
     }
     Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    Index::None => IndexIterator::Constant(Index::Index(0)),
+    _ => IndexIterator::Range(1..=(*table).columns),
   }};
   
   ValueIterator{
@@ -75,10 +75,14 @@ pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, TableId, Index, Inde
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>, 
                               out: &(TableId, Index, Index), 
                               block_tables: &mut HashMap<u64, Table>, 
-                              database: &Rc<RefCell<Database>>) {                               
+                              database: &Rc<RefCell<Database>>) {                                        
+
   // TODO test argument count is 1
   let (in_arg_name, in_table_id, in_rows, in_columns) = &arguments[0];
   let (out_table_id, out_rows, out_columns) = out;
+
+  let vi = resolve_subscript(*in_table_id, *in_rows, *in_columns, block_tables, database); 
+
   let mut db = database.borrow_mut();
   
   let mut out_table = match out_table_id {
@@ -86,55 +90,27 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
     TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
   };
   
-  let mut in_table = match in_table_id {
-    TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-  };
+  let rows_iter = vi.row_iter;
+  let cols_iter = vi.column_iter;
 
-  let mut rows = unsafe{(*in_table).rows};
-  let mut cols = unsafe{(*in_table).columns};
-
-  let rows_iter = match in_rows {
-    Index::Index(ix) => IndexIterator::Constant(Index::Index(*ix)),
-    Index::Table(table_id) => {
-      let mut row_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-        TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(row_table))
-    }
-    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *in_table_id, db.store.clone())),
-    _ => IndexIterator::Range(1..=unsafe{(*in_table).rows}),
-  };
-
-  let cols_iter = match in_columns {
-    Index::Index(ix) => {
-      cols = 1;
-      IndexIterator::Constant(Index::Index(*ix))
-    },
-    Index::Table(table_id) => {
-      let mut col_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(id).unwrap() as *mut Table,
-        TableId::Local(id) => block_tables.get_mut(id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(col_table))
-    }
-    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *in_table_id, db.store.clone())),    
-    _ => IndexIterator::Range(1..=unsafe{(*in_table).columns}),
+  let mut rows = unsafe{(*vi.table).rows};
+  let mut cols = match cols_iter {
+    IndexIterator::Constant{..} => 1,
+    _ => unsafe{(*vi.table).columns},
   };
 
   match in_arg_name {
     // rows
     0x6a1e3f1182ea4d9d => {
       unsafe {
-        (*out_table).rows = (*in_table).rows;
+        (*out_table).rows = (*vi.table).rows;
         (*out_table).columns = 1;
-        (*out_table).data.resize((*in_table).rows, 0);
+        (*out_table).data.resize((*vi.table).rows, 0);
       }
       for i in 1..=rows {
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=cols {
-          let value = unsafe{(*in_table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
+          let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
@@ -155,7 +131,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, TableId, Index, Index)>,
       for (i,m) in (1..=cols).zip(cols_iter) {
         let mut sum: Value = Value::from_u64(0);
         for (j,k) in (1..=rows).zip(rows_iter.clone()) {
-          let value = unsafe{(*in_table).get(&k,&m).unwrap()};
+          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
           match sum.add(value) {
             Ok(result) => sum = result,
             _ => (), // TODO Alert user that there was an error
