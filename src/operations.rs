@@ -7,12 +7,63 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, Value, ValueMethods, TableId, Index};
 use runtime::Runtime;
-use block::{Block, IndexIterator, TableIterator, AliasIterator, IndexRepeater};
+use block::{Block, IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
 use std::rc::Rc;
 use std::cell::RefCell;
 use hashbrown::HashMap;
+
+
+pub fn resolve_subscript(
+  table_id: TableId, 
+  row_index: Index, 
+  column_index: Index,
+  block_tables: &mut HashMap<u64, Table>, 
+  database: &Rc<RefCell<Database>>) -> ValueIterator {
+
+  let mut db = database.borrow_mut();
+
+  let mut table = match table_id {
+    TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+    TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
+  };
+
+  let row_iter = unsafe { match row_index {
+    Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
+    Index::All => IndexIterator::Range(1..=(*table).rows),
+    Index::Table(table_id) => {
+      let mut row_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+        TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(row_table))
+    }
+    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+    Index::None => IndexIterator::Constant(Index::Index(0)),
+  }};
+
+  let column_iter = unsafe { match row_index {
+    Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
+    Index::All => IndexIterator::Range(1..=(*table).columns),
+    Index::Table(table_id) => {
+      let mut col_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+        TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(col_table))
+    }
+    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+    Index::None => IndexIterator::Constant(Index::Index(0)),
+  }};
+  
+  ValueIterator{
+    table,
+    row_iter,
+    column_iter,
+  }
+
+}
 
 
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, TableId, Index, Index)>, 
