@@ -545,8 +545,22 @@ impl Register {
 
 pub struct  ValueIterator {
   pub table: *mut Table,
+  pub row_index: Index,
+  pub column_index: Index,
   pub row_iter: IndexIterator,
   pub column_iter: IndexIterator,
+}
+
+impl ValueIterator {
+  
+  pub fn rows(&self) -> usize {
+    unsafe{ (*self.table).rows }
+  }
+
+  pub fn columns(&self) -> usize {
+    unsafe{ (*self.table).columns }
+  }
+
 }
 
 impl Iterator for ValueIterator {
