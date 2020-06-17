@@ -36,6 +36,7 @@ pub trait ValueMethods {
   fn as_string(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
   fn is_empty(&self) -> bool;
+  fn is_number(&self) -> bool;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
@@ -111,6 +112,15 @@ impl ValueMethods for Value {
       0x8000000000000000 |
       0x4000000000000000 => None,
       _ => Some(self.to_u64()),
+    }
+  }
+
+  fn is_number(&self) -> bool {
+    match self & 0xE000000000000000 {
+      0x2000000000000000 |
+      0x8000000000000000 |
+      0x4000000000000000 => false,
+      _ => true,
     }
   }
 
@@ -362,6 +372,12 @@ impl Table {
   // Get the value in the store at memory address (row, column)
   pub fn get_unchecked(&self, row: usize, column: usize) -> Value {
     let ix = self.index_unchecked(row, column);
+    let address = self.data[ix];
+    self.store.data[address]
+  }
+
+  // Get the value in the store at memory address (ix)
+  pub fn get_unchecked_linear(&self, ix: usize) -> Value {
     let address = self.data[ix];
     self.store.data[address]
   }
