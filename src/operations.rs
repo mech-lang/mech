@@ -152,39 +152,38 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     vis.push(resolve_subscript(*table_id,*rows,*columns,block_tables,database));
   }
 
-
-  let mut db = database.borrow_mut();
-
   let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
-  // First pass, make sure the dimensions work out
+
+  // Get the size of the output table
   for vi in &vis {
-    if out_rows == 0 {
-      match vi.row_index {
-        Index::Index(ix) => out_rows = 1,
-        Index::Table(table_id) => {
-          let row_table = match table_id {
-            TableId::Global(id) => db.tables.get(&id).unwrap(),
-            TableId::Local(id) => block_tables.get(&id).unwrap(),
-          };
-          out_rows = row_table.rows * row_table.columns;
-        },
-        _ => out_rows = vi.rows(),
-      }
-    } else if vi.rows() != 1 && out_rows != vi.rows() {
-      // TODO Throw an error here
-    } else if vi.rows() > out_rows && out_rows == 1 {
-      match vi.row_index {
-        Index::Index(ix) => out_rows = 1,
-        _ => out_rows = vi.rows(),
-      }
-    }
-    out_columns += match vi.column_index {
-      Index::All => vi.columns(),
-      _ => 1,
+    let vi_rows = match &vi.row_iter {
+      IndexIterator::Range(_) => vi.rows(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
     };
+    out_rows = if out_rows == 0 {
+      vi_rows
+    } else if vi_rows > out_rows && vi_rows == 1 {
+      vi_rows
+    } else if vi_rows == out_rows {
+      vi_rows
+    } else {
+      // TODO Throw a size error here
+      0
+    };
+
+    let vi_columns = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_columns += vi_columns;
+
   }
 
   unsafe {
@@ -192,29 +191,19 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     (*out_vi.table).columns = out_columns;
     (*out_vi.table).data.resize(out_rows * out_columns, 0);
   }
+
   for vi in &vis {   
-    for (i,k) in (1..=out_rows).zip(vi.row_iter.clone()) {
-      let out_cols = match vi.column_index {
-        Index::All => vi.columns(),
-        _ => 1,
-      };
-      for (m,j) in (1..=out_cols).zip(vi.column_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&j).unwrap()};
+    row = 1;
+    for i in vi.row_iter.clone() {
+      let mut c = 1;
+      for j in vi.column_iter.clone() {
+        let value = unsafe{(*vi.table).get(&i,&j).unwrap()};
         unsafe {
-          (*out_vi.table).set(&Index::Index(i), &Index::Index(column+m), value);
+          (*out_vi.table).set(&Index::Index(row), &Index::Index(column+c), value);
         }
+        c += 1;
       }
-      if row < i {
-        row = i;
-      }
-    }
-    column += 1;
-  }
-  if row != out_rows {
-    unsafe {
-      (*out_vi.table).rows = row;
-      (*out_vi.table).columns = out_columns;
-      (*out_vi.table).data.resize(row * out_columns, 0);
+      column += c - 1;
     }
   }
 }
