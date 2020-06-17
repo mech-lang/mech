@@ -15,6 +15,10 @@ use std::cell::RefCell;
 use hashbrown::HashMap;
 
 
+const ROWS: u64 = 0x6a1e3f1182ea4d9d;
+const COLUMNS: u64 = 0x3b71b9e91df03940;
+const TABLE: u64 = 0x7764ae06e4bbf825;
+
 pub fn resolve_subscript(
   table_id: TableId, 
   row_index: Index, 
@@ -82,8 +86,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
   };
 
   match in_arg_name {
-    // rows
-    0x6a1e3f1182ea4d9d => {
+    &ROWS => {
       unsafe {
         (*out.table).rows = vi.rows();
         (*out.table).columns = 1;
@@ -103,8 +106,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
         }
       }
     }
-    // columns
-    0x3b71b9e91df03940 => {
+    &COLUMNS => {
       unsafe {
         (*out.table).rows = 1;
         (*out.table).columns = cols;
@@ -123,6 +125,26 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
           (*out.table).set_unchecked(1, i, sum);
         }
       }      
+    }
+    &TABLE => {
+      unsafe {
+        (*out.table).rows = 1;
+        (*out.table).columns = 1;
+        (*out.table).data.resize(1, 0);
+      }
+      let mut sum: Value = Value::from_u64(0);
+      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+          match sum.add(value) {
+            Ok(result) => sum = result,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+      }  
+      unsafe {
+        (*out.table).set_unchecked(1, 1, sum);
+      }    
     }
     _ => (), // TODO alert user that argument is unknown
   }
