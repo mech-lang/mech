@@ -133,7 +133,6 @@ impl Block {
         }
         Transformation::Whenever{table_id, row, column} => {
           self.input.insert(Register{table_id, row, column}.hash());
-          self.plan.push((vec![],tfm.clone()));
         }
         Transformation::Function{name, ref arguments, out} => {
           let (out_id, row, column) = out;
@@ -154,7 +153,6 @@ impl Block {
               _ => (),
             }
           }
-          self.plan.push((vec![],tfm.clone()) );
         }
         _ => (),
       }
