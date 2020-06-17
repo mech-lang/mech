@@ -203,7 +203,7 @@ impl Block {
   }
 
   pub fn is_ready(&mut self) -> bool {
-    if self.state == BlockState::Error {
+    if self.state == BlockState::Error || self.state == BlockState::Disabled {
       false
     } else {
       let set_diff: HashSet<u64> = self.input.difference(&self.ready).cloned().collect();
