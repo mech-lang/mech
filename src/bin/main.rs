@@ -32,16 +32,8 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  ix1 = #foo.x > 5
-  ix2 = #foo.x < 11
-  ix3 = ix1 & ix2
-  #test = #foo{ix3, 1}
-
-block
-  #foo = [|x y z|
-           5 6 7
-           8 9 10
-           11 12 13]"#);
+  x = [1 2 3; 4 5 6]
+  #test = stats/sum(table: x)"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
