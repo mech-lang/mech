@@ -624,6 +624,21 @@ impl TableIterator {
       current: 0,
     }
   }
+
+  pub fn len(&self) -> usize {
+    let mut len = 0;
+    unsafe{
+      let max = (*self.table).data.len();
+      for ix in 0..max {
+        let val = (*self.table).get_unchecked_linear(ix);
+        if val.as_bool() == Some(true) || val.is_number() {
+          len += 1;
+        }
+      }
+    }
+    len
+  }
+
 }
 
 impl Iterator for TableIterator {
