@@ -19,6 +19,7 @@ use super::formatter::Formatter;
 use std::rc::Rc;
 
 const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
+const TABLE_VERTCAT: u64 = 0x4c606e0853f32c99;
 
 // ## Compiler Nodes
 
@@ -665,8 +666,19 @@ impl Compiler {
         // ----------------------------------------------------------------------------------------------------------
         for step in plan {
           let (step_text, _, _, step_transformations) = step;
+          let mut rtfms = step_transformations.clone();
+          rtfms.reverse();
+          for tfm in rtfms {
+            match tfm {
+              Transformation::Function{..} => {
+                block.plan.push((vec![], tfm.clone()));
+              }
+              _ => (),
+            }
+          }
           block.register_transformations((step_text, step_transformations));
         }
+               
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
             block: block.id as u64,
@@ -760,7 +772,7 @@ impl Compiler {
         let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
         transformations.push(new_table);
         let fxn = Transformation::Function{
-          name: 0x4c606e0853f32c99,
+          name: TABLE_VERTCAT,
           arguments: args,
           out: (new_table_id, Index::All, Index::All),
         };
@@ -955,8 +967,8 @@ impl Compiler {
           ],
           out: (output_table_id, Index::All, Index::All),
         };
-        transformations.append(&mut input);
         transformations.push(fxn);
+        transformations.append(&mut input);
       }
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
@@ -1024,17 +1036,7 @@ impl Compiler {
       }
       Node::Expression{children} => {
         let mut result = self.compile_transformations(children);
-        let mut others = vec![];
-        let mut fxns = vec![];
-        for tfm in result {
-          match tfm {
-            Transformation::Function{..} => fxns.push(tfm),
-            _ => others.push(tfm),
-          }
-        }
-        fxns.reverse();
-        transformations.append(&mut others);
-        transformations.append(&mut fxns);
+        transformations.append(&mut result);
       }
       Node::MathExpression{children} => {
         let mut result = self.compile_transformations(children);
@@ -1072,6 +1074,7 @@ impl Compiler {
           }
           arg_tfms.append(&mut result);
         }
+        println!("{:?}", arg_tfms);
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
