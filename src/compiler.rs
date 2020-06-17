@@ -891,8 +891,8 @@ impl Compiler {
           ],
           out: (output_table_id, output_row, output_col),
         };
-        transformations.append(&mut input);
         transformations.push(fxn);
+        transformations.append(&mut input);
       }
       Node::SelectData{name, id, children} => {
         self.identifiers.insert(*id.unwrap(), name.to_string());
