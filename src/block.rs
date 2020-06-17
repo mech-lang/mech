@@ -2,7 +2,7 @@ use table::{Table, TableId, Index, Value, ValueMethods};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity};
-use operations::MechFunction;
+use operations::{MechFunction, resolve_subscript};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::hash::Hasher;
@@ -184,7 +184,14 @@ impl Block {
         Transformation::Function{name, arguments, out} => {
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              mech_fn(&arguments, out, &mut self.tables, &database);
+              let mut vis = vec![];
+              for (arg, table, row, column) in arguments {
+                let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
+                vis.push((arg.clone(),vi));
+              }
+              let (out_table,out_row,out_col) = out;
+              let out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
+              mech_fn(&vis, &out_vi);
             }
             _ => {
               ()
