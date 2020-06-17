@@ -827,7 +827,7 @@ test_mech!(mechdown_block_directives, r#"
 block
   #test = 1
 
-```mech:pending
+```mech:disabled
   #test := 2
 ```
 "#, Value::from_i64(1));
