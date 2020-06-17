@@ -144,6 +144,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
                                                out: &(TableId, Index, Index), 
                                                block_tables: &mut HashMap<u64, Table>, 
                                                database: &Rc<RefCell<Database>>) {
+println!("----------------");
   let (out_table_id, out_rows, out_columns) = out;
   let out_vi = resolve_subscript(*out_table_id, *out_rows, *out_columns, block_tables, database);
 
@@ -159,6 +160,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
 
   // Get the size of the output table
   for vi in &vis {
+    println!("vi---{:?}", unsafe{&(*vi.table)});
     let vi_rows = match &vi.row_iter {
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
@@ -192,19 +194,23 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, TableId, In
     (*out_vi.table).data.resize(out_rows * out_columns, 0);
   }
 
-  for vi in &vis {   
-    row = 1;
-    for i in vi.row_iter.clone() {
-      let mut c = 1;
-      for j in vi.column_iter.clone() {
+  for vi in &vis {  
+    let width = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+      for (k,i) in (1..=out_rows).zip(vi.row_iter.clone()) {
         let value = unsafe{(*vi.table).get(&i,&j).unwrap()};
         unsafe {
-          (*out_vi.table).set(&Index::Index(row), &Index::Index(column+c), value);
+          (*out_vi.table).set(&Index::Index(k), &Index::Index(column+c), value);
         }
-        c += 1;
       }
-      column += c - 1;
     }
+    column += width;
+    
   }
 }
 
