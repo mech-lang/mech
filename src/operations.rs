@@ -15,8 +15,8 @@ use std::cell::RefCell;
 use hashbrown::HashMap;
 
 
-const ROWS: u64 = 0x6a1e3f1182ea4d9d;
-const COLUMNS: u64 = 0x3b71b9e91df03940;
+const ROW: u64 = 0x6a1e3f1182ea4d9d;
+const COLUMN: u64 = 0x3b71b9e91df03940;
 const TABLE: u64 = 0x7764ae06e4bbf825;
 
 pub fn resolve_subscript(
@@ -74,6 +74,83 @@ pub fn resolve_subscript(
 
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator);
 
+
+pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {                                        
+
+  // TODO test argument count is 1
+  let (in_arg_name, vi) = &arguments[0];
+
+  let mut rows = vi.rows();
+  let mut cols = match vi.column_iter {
+    IndexIterator::Constant{..} => 1,
+    _ => vi.columns(),
+  };
+
+  match in_arg_name {
+    &ROW => {
+      unsafe {
+        (*out.table).rows = vi.rows();
+        (*out.table).columns = 1;
+        (*out.table).data.resize(vi.rows(), 0);
+      }
+      for i in 1..=rows {
+        let mut flag: bool = false;
+        for j in 1..=cols {
+          let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
+          match value.as_bool() {
+            Some(true) => flag = true,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+        unsafe {
+          (*out.table).set_unchecked(i, 1, Value::from_bool(flag));
+        }
+      }
+    }
+    &COLUMN => {
+      unsafe {
+        (*out.table).rows = 1;
+        (*out.table).columns = cols;
+        (*out.table).data.resize(cols, 0);
+      }
+      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+        let mut flag: bool = false;
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+          match value.as_bool() {
+            Some(true) => flag = true,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+        unsafe {
+          (*out.table).set_unchecked(1, i, Value::from_bool(flag));
+        }
+      }      
+    }
+    &TABLE => {
+      unsafe {
+        (*out.table).rows = 1;
+        (*out.table).columns = 1;
+        (*out.table).data.resize(1, 0);
+      }
+      let mut flag: bool = false;
+      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+          match value.as_bool() {
+            Some(true) => flag = true,
+            _ => (), // TODO Alert user that there was an error
+          }
+        }
+      }  
+      unsafe {
+        (*out.table).set_unchecked(1, 1, Value::from_bool(flag));
+      }    
+    }
+    _ => (), // TODO alert user that argument is unknown
+  }
+}
+
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {                                        
 
   // TODO test argument count is 1
@@ -86,7 +163,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
   };
 
   match in_arg_name {
-    &ROWS => {
+    &ROW => {
       unsafe {
         (*out.table).rows = vi.rows();
         (*out.table).columns = 1;
@@ -106,7 +183,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
         }
       }
     }
-    &COLUMNS => {
+    &COLUMN => {
       unsafe {
         (*out.table).rows = 1;
         (*out.table).columns = cols;
