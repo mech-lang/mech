@@ -710,6 +710,7 @@ impl Compiler {
         let table = self.table;
         self.table = hash_string(&format!("{:?}",children));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 1, columns: children.len()});
+        let mut tfms = vec![];
         let mut ix = 1;
         let mut args = vec![];
         for child in children {
@@ -717,7 +718,7 @@ impl Compiler {
             Node::Binding{children} => {
               match &children[0] {
                 Node::Identifier{name, id} => {
-                  transformations.push(
+                  tfms.push(
                     Transformation::ColumnAlias{table_id: TableId::Local(self.table), column_ix: ix, column_alias: hash_string(&name.to_string())});
                   ix += 1;
                 }
@@ -730,7 +731,7 @@ impl Compiler {
                 }
                 _ => (),
               }
-              transformations.append(&mut result);
+              tfms.append(&mut result);
             }
             _ => (),
           }
@@ -742,6 +743,7 @@ impl Compiler {
           out: (TableId::Local(self.table), Index::All, Index::All),
         };
         transformations.push(fxn);
+        transformations.append(&mut tfms);
         self.table=table;
       }
       Node::AnonymousTableDefine{children} => {
