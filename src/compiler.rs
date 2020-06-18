@@ -572,7 +572,7 @@ impl Compiler {
                     _ => (),
                   }
                 }
-                let (out_id, _, _) = out;
+                let (out_id, row, column) = out;
                 match out_id {
                   TableId::Local(id) => {produces.insert(*id);},
                   _ => (),
@@ -920,13 +920,21 @@ impl Compiler {
                   }
                   Node::SelectData{name, id, children} => {
                     self.identifiers.insert(*id.unwrap(), name.to_string());
-                    indices.push(Index::Table(*id));
+                    if indices.len() == 2 && indices[0] == Index::All {
+                      indices[0] = Index::Table(*id);
+                    } else {
+                      indices.push(Index::Table(*id));
+                    }
                   }
                   Node::Expression{..} => {
                     let mut result = self.compile_transformation(child);
                     match result[1] {
                       Transformation::Constant{table_id, value, unit} => {
-                        indices.push(Index::Index(value.as_u64().unwrap() as usize));
+                        if indices.len() == 2 && indices[0] == Index::All {
+                          indices[0] = Index::Index(value.as_u64().unwrap() as usize);
+                        } else {
+                          indices.push(Index::Index(value.as_u64().unwrap() as usize));
+                        }
                       }
                       _ => (),
                     }
