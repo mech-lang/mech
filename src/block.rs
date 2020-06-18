@@ -2,7 +2,7 @@ use table::{Table, TableId, Index, Value, ValueMethods};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity};
-use operations::MechFunction;
+use operations::{MechFunction, resolve_subscript};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::hash::Hasher;
@@ -133,7 +133,6 @@ impl Block {
         }
         Transformation::Whenever{table_id, row, column} => {
           self.input.insert(Register{table_id, row, column}.hash());
-          self.plan.push((vec![],tfm.clone()));
         }
         Transformation::Function{name, ref arguments, out} => {
           let (out_id, row, column) = out;
@@ -154,7 +153,6 @@ impl Block {
               _ => (),
             }
           }
-          self.plan.push((vec![],tfm.clone()) );
         }
         _ => (),
       }
@@ -184,7 +182,14 @@ impl Block {
         Transformation::Function{name, arguments, out} => {
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              mech_fn(&arguments, out, &mut self.tables, &database);
+              let mut vis = vec![];
+              for (arg, table, row, column) in arguments {
+                let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
+                vis.push((arg.clone(),vi));
+              }
+              let (out_table,out_row,out_col) = out;
+              let out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
+              mech_fn(&vis, &out_vi);
             }
             _ => {
               ()
@@ -198,7 +203,7 @@ impl Block {
   }
 
   pub fn is_ready(&mut self) -> bool {
-    if self.state == BlockState::Error {
+    if self.state == BlockState::Error || self.state == BlockState::Disabled {
       false
     } else {
       let set_diff: HashSet<u64> = self.input.difference(&self.ready).cloned().collect();
