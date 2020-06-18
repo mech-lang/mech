@@ -729,6 +729,9 @@ impl Compiler {
                 Transformation::NewTable{table_id,..} => {
                   args.push((0, table_id, Index::All, Index::All));
                 }
+                Transformation::Select{table_id, row, column} => {
+                  args.push((0, table_id, row, column));
+                }
                 _ => (),
               }
               tfms.append(&mut result);
