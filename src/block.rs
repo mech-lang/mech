@@ -542,7 +542,7 @@ impl Register {
   }
 }
 
-
+#[derive(Debug)]
 pub struct  ValueIterator {
   pub table: *mut Table,
   pub row_index: Index,
