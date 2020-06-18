@@ -175,7 +175,7 @@ impl Runtime {
           let new_out_row = out_row;
           let new_out_column = self.remap_column(*out_table_id.unwrap(),out_column);
           match out_table_id {
-            TableId::Global(id) => {block.output.insert(Register{table_id: id, row: new_out_row, column: new_out_column}.hash());},
+            TableId::Global(id) => {block.output.insert(Register{table_id: id, row: Index::All, column: new_out_column}.hash());},
             _ => (),
           }
           let new_out = (out_table_id, new_out_row, new_out_column);          

@@ -128,7 +128,7 @@ impl Block {
           }
         }
         Transformation::Set{table_id, row, column} => {
-          let hash = Register{table_id: *table_id.unwrap(), row: row, column}.hash();
+          let hash = Register{table_id: *table_id.unwrap(), row: Index::All, column}.hash();
           self.output_dependencies.insert(hash);          
         }
         Transformation::Whenever{table_id, row, column} => {
@@ -145,10 +145,10 @@ impl Block {
               TableId::Global(id) => {
                 let rrow = match row {
                   Index::Table{..} => Index::All,
-                  x => *x,
+                  x => Index::All,
                 };
-                let hjh = Register{table_id: *id, row: rrow, column: *column}.hash();
-                self.input.insert(hjh);
+                let register_hash = Register{table_id: *id, row: rrow, column: *column}.hash();
+                self.input.insert(register_hash);
               },
               _ => (),
             }
@@ -172,7 +172,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Rc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
-    
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
