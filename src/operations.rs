@@ -158,7 +158,8 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
 
   let mut rows = vi.rows();
   let mut cols = match vi.column_iter {
-    IndexIterator::Constant{..} => 1,
+    IndexIterator::Constant{..} |
+    IndexIterator::Alias{..} => 1,
     _ => vi.columns(),
   };
 
@@ -245,10 +246,12 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     };
     out_rows = if out_rows == 0 {
       vi_rows
-    } else if vi_rows > out_rows && vi_rows == 1 {
+    } else if vi_rows > out_rows && out_rows == 1 {
       vi_rows
     } else if vi_rows == out_rows {
       vi_rows
+    } else if vi_rows == 1 {
+      out_rows
     } else {
       // TODO Throw a size error here
       0
@@ -278,7 +281,12 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       IndexIterator::Table(iter) => iter.len(),
     };
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
-      for (k,i) in (1..=out_rows).zip(vi.row_iter.clone()) {
+      let row_iter = if vi.rows() == 1 {
+        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
+      } else {
+        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
+      };
+      for (k,i) in row_iter {
         let value = unsafe{(*vi.table).get(&i,&j).unwrap()};
         unsafe {
           (*out.table).set(&Index::Index(k), &Index::Index(column+c), value);
@@ -288,6 +296,22 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     column += width;
     
   }
+}
+
+enum CycleIterator {
+  Cycle(std::iter::Cycle<IndexIterator>),
+  Index(IndexIterator),
+}
+
+impl Iterator for CycleIterator {
+  type Item = Index;
+  
+  fn next(&mut self) -> Option<Index> {
+    match self {
+      CycleIterator::Cycle(itr) => itr.next(),
+      CycleIterator::Index(itr) => itr.next(),
+    }
+  }  
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {
