@@ -300,10 +300,10 @@ impl fmt::Debug for Index {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
-      &Index::Alias(ref alias) => write!(f, "Alias({:#x})", alias),
-      &Index::Table(ref table_id) => write!(f, "Table({:?})", table_id),
-      &Index::All => write!(f, "All"),
-      &Index::None => write!(f, "None"),
+      &Index::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
+      &Index::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &Index::All => write!(f, "IxAll"),
+      &Index::None => write!(f, "IxNone"),
     }
   }
 }
