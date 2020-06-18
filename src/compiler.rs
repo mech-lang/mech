@@ -20,6 +20,7 @@ use std::rc::Rc;
 
 const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
 const TABLE_VERTCAT: u64 = 0x4c606e0853f32c99;
+const TABLE_SET: u64 = 0x9dca9f85275448a1;
 
 // ## Compiler Nodes
 
@@ -577,6 +578,18 @@ impl Compiler {
                   TableId::Local(id) => {produces.insert(*id);},
                   _ => (),
                 }
+                match row {
+                  Index::Table(TableId::Local(id)) => {
+                    consumes.insert(*id);
+                  }
+                  _ => (),
+                }
+                match column {
+                  Index::Table(TableId::Local(id)) => {
+                    consumes.insert(*id);
+                  }
+                  _ => (),
+                }
               }
               /*
               Constraint::Append{from_table, to_table} => {
@@ -888,7 +901,7 @@ impl Compiler {
         let (output_table_id, output_row, output_col) = output_tup.unwrap();
 
         let fxn = Transformation::Function{
-          name: TABLE_HORZCAT,
+          name: TABLE_SET,
           arguments: vec![
             (0, input_table_id.unwrap(), Index::All, Index::All)
           ],
