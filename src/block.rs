@@ -141,7 +141,7 @@ impl Block {
           }
         }
         Transformation::Set{table_id, row, column} => {
-          let hash = Register{table_id: *table_id.unwrap(), row: row, column}.hash();
+          let hash = Register{table_id: *table_id.unwrap(), row: Index::All, column}.hash();
           self.output_dependencies.insert(hash);          
         }
         Transformation::Whenever{table_id, row, column} => {
@@ -158,10 +158,10 @@ impl Block {
               TableId::Global(id) => {
                 let rrow = match row {
                   Index::Table{..} => Index::All,
-                  x => *x,
+                  x => Index::All,
                 };
-                let hjh = Register{table_id: *id, row: rrow, column: *column}.hash();
-                self.input.insert(hjh);
+                let register_hash = Register{table_id: *id, row: rrow, column: *column}.hash();
+                self.input.insert(register_hash);
               },
               _ => (),
             }
@@ -185,7 +185,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Rc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
-    
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column} => {
@@ -201,8 +200,8 @@ impl Block {
                 vis.push((arg.clone(),vi));
               }
               let (out_table,out_row,out_col) = out;
-              let out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
-              mech_fn(&vis, &out_vi);
+              let mut out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
+              mech_fn(&vis, &mut out_vi);
             }
             _ => {
               ()
@@ -444,7 +443,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           }
           Index::Alias(alias) => {
             let alias_name = block.store.identifiers.get(alias).unwrap();
-            arg=format!("{}{}}}",arg,alias_name);
+            arg=format!("{}.{}}}",arg,alias_name);
           },
         }
         if ix < arguments.len()-1 {
@@ -468,11 +467,11 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
         Index::Table(table) => {
           match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+            TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.identifiers.get(id).unwrap()),
             TableId::Local(id) => {
               match block.store.identifiers.get(id) {
-                Some(name) => arg = format!("{}{}",arg,name),
-                None => arg = format!("{}{}",arg,humanize(id)),
+                Some(name) => arg = format!("{}{{{},",arg,name),
+                None => arg = format!("{}{{{},",arg,humanize(id)),
               }
             }
           };
@@ -499,7 +498,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         }
         Index::Alias(alias) => {
           let alias_name = block.store.identifiers.get(alias).unwrap();
-          arg=format!("{}{}}}",arg,alias_name);
+          arg=format!("{}.{}}}",arg,alias_name);
         },
       }
       arg      
@@ -577,6 +576,23 @@ impl ValueIterator {
 
   pub fn columns(&self) -> usize {
     unsafe{ (*self.table).columns }
+  }
+
+  pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
+    unsafe{(*self.table).get(row,column)}
+  }
+
+  pub fn set(&self, row: &Index, column: &Index, value: Value) {
+    unsafe{(*self.table).set(row, column, value)};
+  }
+
+  pub fn next_address(&mut self) -> Option<(usize, usize)> {
+    match (self.row_iter.next(), self.column_iter.next()) {
+      (Some(rix), Some(cix)) => {
+        Some((rix.unwrap(),cix.unwrap()))
+      },     
+      _ => None,
+    }
   }
 
 }

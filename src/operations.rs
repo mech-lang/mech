@@ -72,10 +72,10 @@ pub fn resolve_subscript(
 }
 
 
-pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator);
+pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
 
 
-pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {                                        
+pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
 
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -151,7 +151,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIter
   }
 }
 
-pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {                                        
+pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
 
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -173,10 +173,14 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
       for i in 1..=rows {
         let mut sum: Value = Value::from_u64(0);
         for j in 1..=cols {
-          let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
-          match sum.add(value) {
-            Ok(result) => sum = result,
-            _ => (), // TODO Alert user that there was an error
+          match vi.get(&Index::Index(i),&Index::Index(j)) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
           }
         }
         unsafe {
@@ -193,10 +197,14 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
       for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
         let mut sum: Value = Value::from_u64(0);
         for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-          match sum.add(value) {
-            Ok(result) => sum = result,
-            _ => (), // TODO Alert user that there was an error
+          match vi.get(&k,&m) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
           }
         }
         unsafe {
@@ -213,10 +221,14 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
       let mut sum: Value = Value::from_u64(0);
       for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
         for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-          match sum.add(value) {
-            Ok(result) => sum = result,
-            _ => (), // TODO Alert user that there was an error
+          match vi.get(&k,&m) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
           }
         }
       }  
@@ -228,8 +240,75 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIt
   }
 }
         
+pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
-pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {
+  let mut row = 0;
+  let mut column = 0;
+  let mut out_rows = 0;
+  let mut out_columns = 0;
+
+  // Get the size of the output table
+  for (_, vi) in arguments {
+    let vi_rows = match &vi.row_iter {
+      IndexIterator::Range(_) => vi.rows(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_rows = if out_rows == 0 {
+      vi_rows
+    } else if vi_rows > out_rows && out_rows == 1 {
+      vi_rows
+    } else if vi_rows == out_rows {
+      vi_rows
+    } else if vi_rows == 1 {
+      out_rows
+    } else {
+      // TODO Throw a size error here
+      0
+    };
+
+    let vi_columns = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_columns += vi_columns;
+
+  }
+
+  for (_, vi) in arguments {
+    let width = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+      let row_iter = if vi.rows() == 1 {
+        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
+      } else {
+        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
+      };
+      for (k,i) in row_iter {
+        let value = vi.get(&i,&j).unwrap();
+        match (out.row_iter.next(), out.column_iter.next()) {
+          (Some(out_row), Some(out_col)) => {
+            unsafe {
+              (*out.table).set(&out_row, &out_col, value);
+            }
+          }
+          _ => continue,
+        }
+      }
+    }
+    column += width;
+    
+  }
+}
+
+pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
   let mut row = 0;
   let mut column = 0;
@@ -273,6 +352,8 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     (*out.table).data.resize(out_rows * out_columns, 0);
   }
 
+  
+
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
@@ -287,9 +368,13 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
       for (k,i) in row_iter {
-        let value = unsafe{(*vi.table).get(&i,&j).unwrap()};
-        unsafe {
-          (*out.table).set(&Index::Index(k), &Index::Index(column+c), value);
+        match vi.get(&i,&j) {
+          Some(value) => {
+            unsafe {
+              (*out.table).set(&Index::Index(k), &Index::Index(column+c), value);
+            }
+          }
+          _ => (),
         }
       }
     }
@@ -314,7 +399,7 @@ impl Iterator for CycleIterator {
   }  
 }
 
-pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {
+pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
   let mut row = 0;
   let mut out_columns = 0;
@@ -349,7 +434,7 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
   }
 }
 
-pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {
+pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
   // TODO test argument count is 2 or 3
   // 2 -> start, end
   // 3 -> start, increment, end
@@ -378,7 +463,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &Value
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
-    pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>, out: &ValueIterator) {
+    pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
       // TODO test argument count is 2
       let (_, lhs_vi) = &arguments[0];
       let (_, rhs_vi) = &arguments[1];
