@@ -1,7 +1,7 @@
 use table::{Table, TableId, Index, Value, ValueMethods};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
-use quantities::{Quantity, QuantityMath, ToQuantity};
+use quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 use operations::{MechFunction, resolve_subscript};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -111,10 +111,23 @@ impl Block {
           }
         }
         Transformation::Constant{table_id, value, unit} => {
+          let (domain, scale) = match unit {
+            unit_value => match unit_value {
+              0x01b779d3bf451717 => (1, 0),
+              0xc8df0fac549c1104 => (1, 3),
+//              "m" => (2, 0),
+//              "km" => (2, 3),
+//              "ms" => (3, 0),
+//              "s" => (3, 3),
+              _ => (0, 0),
+            },
+            _ => (0, 0),
+          };
+          let q = make_quantity(value.mantissa(), value.range() + scale, domain);
           match table_id {
             TableId::Local(id) => {
               let mut table = self.tables.get_mut(&id).unwrap();
-              table.set(&Index::Index(1), &Index::Index(1), value);
+              table.set(&Index::Index(1), &Index::Index(1), q);
             }
             TableId::Global(id) => {
               self.changes.push(
