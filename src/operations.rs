@@ -285,6 +285,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       IndexIterator::Alias(_) => 1,
       IndexIterator::Table(iter) => iter.len(),
     };
+    let mut out_row_iter = IndexRepeater::new(out.row_iter.clone(), out_columns);
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
         (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
@@ -293,7 +294,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       };
       for (k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
-        match (out.row_iter.next(), out.column_iter.next()) {
+        match (out_row_iter.next(), out.column_iter.next()) {
           (Some(out_row), Some(out_col)) => {
             unsafe {
               (*out.table).set(&out_row, &out_col, value);
