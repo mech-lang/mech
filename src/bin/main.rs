@@ -30,7 +30,15 @@ Update the block positions on each tick of the timer
   #ball.vy := #ball.vy + #gravity"#);*/
 
 
-  let input = String::from(r#"#test = 35g + 10kg"#);
+  let input = String::from(r#"
+block
+  #test = stats/sum(row: #launch-point)
+
+block
+  #launch-point = [x: 0 y: 0]
+
+block
+  #launch-point := [x: 10 y: 20]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
