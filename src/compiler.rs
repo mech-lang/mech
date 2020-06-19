@@ -916,10 +916,12 @@ impl Compiler {
         };
         transformations.push(fxn);
         transformations.append(&mut input);
+        transformations.append(&mut output);
       }
       Node::SelectData{name, id, children} => {
         self.identifiers.insert(*id.unwrap(), name.to_string());
         let mut indices = vec![];
+        let mut tfms = vec![];
         for child in children {
           match child {
             Node::DotIndex{children} => {
@@ -933,7 +935,6 @@ impl Compiler {
               }
             }
             Node::SubscriptIndex{children} => {
-              println!("qqq\n{:?}", children);
               for child in children {
                 match child {
                   Node::SelectAll => {
@@ -949,7 +950,7 @@ impl Compiler {
                   }
                   Node::Expression{..} => {
                     let mut result = self.compile_transformation(child);
-                    match result[1] {
+                    match &result[1] {
                       Transformation::Constant{table_id, value, unit} => {
                         if indices.len() == 2 && indices[0] == Index::All {
                           indices[0] = Index::Index(value.as_u64().unwrap() as usize);
@@ -957,8 +958,17 @@ impl Compiler {
                           indices.push(Index::Index(value.as_u64().unwrap() as usize));
                         }
                       }
+                      Transformation::Function{name, arguments, out} => {
+                        let (output_table_id, output_row, output_col) = out;
+                        if indices.len() == 2 && indices[0] == Index::All {
+                          indices[0] = Index::Table(*output_table_id);
+                        } else {
+                          indices.push(Index::Table(*output_table_id));
+                        }
+                      }
                       _ => (),
                     }
+                    tfms.append(&mut result);
                   }
                   _ => (),
                 }
@@ -977,6 +987,7 @@ impl Compiler {
           indices.push(Index::All);
         }
         transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
+        transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
         let output_table_id = match &children[0] {

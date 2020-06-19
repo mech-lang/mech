@@ -277,18 +277,12 @@ block
 
 test_mech!(comparator_equal_string,r#"
 block
-  #test = #ball.vx
+  #x = [1; 2; 3; 4]
+  #y = ["a"; "b"; "a"; "b"]
   
-Define the environment
-  #ball = [|x   y   vx vy|
-            10  10  0  0]
-  #x = 7
-
-Move the circle on arrow keys
-  ~ #x
-  k = "ArrowLeft"
-  d = 2
-  #ball.vx{k == "ArrowLeft"} := #ball.vx - d"#, Value::from_i64(-2)); 
+block
+  ix = #y == "a"
+  #test = stats/sum(column: #x{ix,:})"#, Value::from_i64(4)); 
 
 test_mech!(comparator_not_equal,"
 block
