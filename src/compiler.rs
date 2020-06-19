@@ -932,6 +932,7 @@ impl Compiler {
               }
             }
             Node::SubscriptIndex{children} => {
+              println!("qqq\n{:?}", children);
               for child in children {
                 match child {
                   Node::SelectAll => {
@@ -970,6 +971,9 @@ impl Compiler {
               indices.push(Index::All);
             },
           }
+        }
+        if indices.len() == 1 {
+          indices.push(Index::All);
         }
         transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
       }
