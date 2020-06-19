@@ -152,7 +152,9 @@ impl Runtime {
     }
 
     // If the block is new and has no input, it can be marked to run immediately
-    if block.state == BlockState::New && block.input.len() == 0 {
+    if !block.errors.is_empty() {
+      block.state == BlockState::Error;
+    } else if block.state == BlockState::New && block.input.len() == 0 {
       block.state == BlockState::Ready;
     }
 
@@ -166,36 +168,6 @@ impl Runtime {
       
     }
 
-    // Remap input registers
-    let mut new_plan = vec![];
-    for step in block.plan {
-      let new_step = match step {
-        (_, Transformation::Function{name, arguments, out}) => {
-          let (out_table_id, out_row, out_column) = out;
-          let new_out_row = out_row;
-          let new_out_column = self.remap_column(*out_table_id.unwrap(),out_column);
-          match out_table_id {
-            TableId::Global(id) => {block.output.insert(Register{table_id: id, row: Index::All, column: new_out_column}.hash());},
-            _ => (),
-          }
-          let new_out = (out_table_id, new_out_row, new_out_column);          
-          (vec![], Transformation::Function{name, arguments, out: new_out})
-        }
-        (_, Transformation::Whenever{table_id, row, column}) => {
-          let new_row = row;
-          let new_column = self.remap_column(table_id,column);
-          let new_input_register = Register{table_id, row: new_row, column: new_column}.hash();
-          let listeners = self.register_to_block.entry(new_input_register).or_insert(HashSet::new());
-          listeners.insert(block.id);
-          block.input.insert(new_input_register);
-          (vec![], Transformation::Whenever{table_id, row: new_row, column: new_column})
-        }
-        x => x,
-      };
-      new_plan.push(new_step);
-    }
-    block.plan = new_plan;
-
     // Mark ready registers
     let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
     block.ready.extend(&ready);
@@ -207,6 +179,7 @@ impl Runtime {
     self.output.extend(&block.output);
 
     if block.is_ready() {
+      println!("Doing the thing! {:?}", block);
       block.process_changes(self.database.clone());
       self.ready_blocks.insert(block.id);
     }

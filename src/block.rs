@@ -3,6 +3,7 @@ use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 use operations::{MechFunction, resolve_subscript};
+use errors::{ErrorType};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::hash::Hasher;
@@ -34,6 +35,7 @@ pub struct Block {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<(Vec<TransformMap>,Transformation)>,
   pub changes: Vec<Change>,
+  pub errors: Vec<ErrorType>,
 }
 
 impl Block {
@@ -53,6 +55,7 @@ impl Block {
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
+      errors: Vec::new(),
     }
   }
 
@@ -221,6 +224,9 @@ impl Block {
   pub fn is_ready(&mut self) -> bool {
     if self.state == BlockState::Error || self.state == BlockState::Disabled {
       false
+    } else if self.errors.len() > 0 {
+      self.state = BlockState::Error;
+      false
     } else {
       let set_diff: HashSet<u64> = self.input.difference(&self.ready).cloned().collect();
       let out_diff: HashSet<u64> = self.output_dependencies.difference(&self.output_dependencies_ready).cloned().collect();
@@ -242,6 +248,11 @@ impl fmt::Debug for Block {
     write!(f, "┌─────────────────────────────────────────────┐\n")?;
     write!(f, "│ id: {}\n", humanize(&self.id))?;
     write!(f, "│ state: {:?}\n", self.state)?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+    write!(f, "│ errors: {}\n", self.errors.len())?;
+    for (ix, error) in self.errors.iter().enumerate() {
+      write!(f, "│    {}. {:?}\n", ix+1, error)?;
+    }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ ready: {}\n", self.ready.len())?;
     for (ix, input) in self.ready.iter().enumerate() {

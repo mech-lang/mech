@@ -25,6 +25,7 @@ pub use self::block::{Block, BlockState, Transformation, IndexRepeater, IndexIte
 pub use self::table::{Table, TableId, Index, Value, ValueMethods};
 pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
+pub use self::errors::{Error, ErrorType};
 
 pub fn hash_string(input: &str) -> u64 {
   let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
