@@ -631,7 +631,7 @@ impl Iterator for ValueIterator {
 pub struct IndexRepeater {
   iterator: std::iter::Cycle<IndexIterator>,
   width: usize,
-  current: Index,
+  current: Option<Index>,
   counter: usize,
 }
 
@@ -641,21 +641,21 @@ impl IndexRepeater {
     IndexRepeater {
       iterator: iterator.cycle(),
       width,
-      current: Index::None,
+      current: None,
       counter: 0,
     }
   }
 
   pub fn next(&mut self) -> Option<Index> {
-    if self.current == Index::None {
-      self.current = self.iterator.next().unwrap();
+    if self.current == None {
+      self.current = self.iterator.next();
     }
     if self.counter == self.width {
       self.counter = 0;
-      self.current = self.iterator.next().unwrap();
+      self.current = self.iterator.next();
     }
     self.counter += 1;
-    Some(self.current)
+    self.current
   }
 
 }
@@ -695,31 +695,29 @@ impl Iterator for TableIterator {
   type Item = Index;
   fn next(&mut self) -> Option<Index> {
     unsafe{
-      let mut next = None;
-      loop {
-        if self.current < (*self.table).data.len() {
-          let address = (*self.table).data[self.current];
-          self.current += 1;
-          let value = (*self.table).store.data[address];
-          match value.as_u64() {
-            Some(v) => {
-              next = Some(Index::Index(v as usize));
-              break;
+      if self.current < (*self.table).data.len() {
+        let address = (*self.table).data[self.current];
+        self.current += 1;
+        let value = (*self.table).store.data[address];
+        match value.as_u64() {
+          Some(v) => {
+            Some(Index::Index(v as usize))
+          },
+          None => match value.as_bool() {
+            Some(true) => {
+              Some(Index::Index(self.current))
             },
-            None => match value.as_bool() {
-              Some(true) => {
-                next = Some(Index::Index(self.current));
-                break;
-              },
-              _ => continue,
+            Some(false) => {
+              Some(Index::None)
+            },
+            x => {
+              Some(Index::None)
             }
           }
-        } else {
-          next = None;
-          break;
         }
+      } else {
+        None
       }
-      next
     }
   }
 }

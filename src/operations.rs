@@ -285,7 +285,10 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       IndexIterator::Alias(_) => 1,
       IndexIterator::Table(iter) => iter.len(),
     };
-    let mut out_row_iter = IndexRepeater::new(out.row_iter.clone(), out_columns);
+    let mut out_row_iter = match out.row_iter {
+      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
+      _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
+    };
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
         (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
@@ -294,7 +297,11 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       };
       for (k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
-        match (out_row_iter.next(), out.column_iter.next()) {
+        let n = out_row_iter.next();
+        let m = out.column_iter.next();
+        match (n, m) {
+          (_, Some(Index::None)) |
+          (Some(Index::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
             unsafe {
               (*out.table).set(&out_row, &out_col, value);
@@ -363,13 +370,21 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       IndexIterator::Table(iter) => iter.len(),
     };
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
-      let row_iter = if vi.rows() == 1 {
-        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
+      let mut row_iter = if vi.rows() == 1 {
+        CycleIterator::Cycle(vi.row_iter.clone().cycle())
       } else {
-        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
+        CycleIterator::Index(vi.row_iter.clone())
       };
-      for (k,i) in row_iter {
-        match vi.get(&i,&j) {
+      for k in (1..=out_rows) {
+        // Fast forward to the next true value
+        let mut i = row_iter.next();
+        while i == Some(Index::None) {
+          i = row_iter.next();
+          if i == None {
+            break;
+          }
+        }
+        match vi.get(&i.unwrap(),&j) {
           Some(value) => {
             unsafe {
               (*out.table).set(&Index::Index(k), &Index::Index(column+c), value);
