@@ -5,6 +5,7 @@
 use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
+use mech_core::ErrorType;
 //use mech_core::{Error, ErrorType};
 use parser;
 use parser::Parser;
@@ -14,7 +15,7 @@ use lexer::Token;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
-use hashbrown::hash_map::{HashMap};
+use hashbrown::hash_map::{HashMap, Entry};
 use super::formatter::Formatter;
 use std::rc::Rc;
 
@@ -272,6 +273,7 @@ pub struct Compiler {
   expression: usize,
   pub text: String,
   pub identifiers: HashMap<u64, String>,
+  pub variable_names: HashSet<u64>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
   pub node_stack: Vec<Node>, 
@@ -281,7 +283,7 @@ pub struct Compiler {
   pub current_char: usize,
   pub current_line: usize,
   pub current_col: usize,
-  pub errors: Vec<u64>,
+  pub errors: Vec<ErrorType>,
   pub unparsed: String,
 }
 
@@ -308,6 +310,7 @@ impl Compiler {
       identifiers: HashMap::new(),
       unparsed: String::new(),
       text: String::new(),
+      variable_names: HashSet::new(),
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
       errors: Vec::new(),
@@ -500,7 +503,6 @@ impl Compiler {
         match children[0] {
           Node::String{ref text} => {
             match text.as_ref() {
-              //"pending" => self.blocks.last_mut().unwrap().state = BlockState::Pending,
               "disabled" => self.blocks.last_mut().unwrap().state = BlockState::Disabled,
               _ => (),
             }
@@ -704,10 +706,14 @@ impl Compiler {
             
         }
         //block.id = block.gen_block_id();
-        for (k,v) in self.identifiers.iter() {
+        for (k,v) in self.identifiers.drain() {
           let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
-          store.identifiers.insert(*k,v.to_string());
+          store.identifiers.insert(k,v.to_string());
         }
+        for err in self.errors.drain(..) {
+          block.errors.push(err);
+        }
+        self.variable_names.clear();
         self.blocks.push(block.clone());
         Some((block.id, node))
       },
@@ -971,7 +977,12 @@ impl Compiler {
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
-            self.identifiers.insert(name_hash, name.to_string());
+            // Check to make sure the name doesn't already exist 
+            if self.variable_names.contains(&name_hash) {
+              self.errors.push(ErrorType::DuplicateAlias(name_hash));
+            } else {
+              self.variable_names.insert(name_hash);
+            }
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
