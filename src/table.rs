@@ -155,7 +155,12 @@ impl ValueMethods for Value {
   fn equal(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
       (Some(q), Some(r)) => Ok(Value::from_bool(q.equal(r).unwrap())),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+      _ => {
+        match (self.as_string(), other.as_string()) {
+          (Some(q), Some(r)) => Ok(Value::from_bool(q == r)),
+          _ => Err(ErrorType::IncorrectFunctionArgumentType),
+        }
+      },
     } 
   }
 
