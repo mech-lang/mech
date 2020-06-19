@@ -685,6 +685,7 @@ impl Compiler {
           rtfms.reverse();
           for tfm in rtfms {
             match tfm {
+              Transformation::Whenever{..} |
               Transformation::Function{..} => {
                 block.plan.push((vec![], tfm.clone()));
               }
