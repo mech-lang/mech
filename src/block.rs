@@ -149,6 +149,7 @@ impl Block {
         }
         Transformation::Set{table_id, row, column} => {
           let hash = Register{table_id: *table_id.unwrap(), row: Index::All, column}.hash();
+          self.output.insert(hash);       
           self.output_dependencies.insert(hash);          
         }
         Transformation::Whenever{table_id, row, column} => {
