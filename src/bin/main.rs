@@ -32,13 +32,11 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = stats/sum(row: #launch-point)
+  ix = #foo >= 3
+  #test = #foo{ix, 1}
 
 block
-  #launch-point = [x: 0 y: 0]
-
-block
-  #launch-point := [x: 10 y: 20]"#);
+  #foo = 1:5"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
