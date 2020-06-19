@@ -113,8 +113,8 @@ impl Block {
         Transformation::Constant{table_id, value, unit} => {
           let (domain, scale) = match unit {
             unit_value => match unit_value {
-              0x01b779d3bf451717 => (1, 0),
-              0xc8df0fac549c1104 => (1, 3),
+              0x01b779d3bf451717 => (1, 0), // g
+              0xc8df0fac549c1104 => (1, 3), // kg
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),
@@ -123,7 +123,11 @@ impl Block {
             },
             _ => (0, 0),
           };
-          let q = make_quantity(value.mantissa(), value.range() + scale, domain);
+          let q = if value.is_number() {
+            Value::from_quantity(make_quantity(value.mantissa(), value.range() + scale, domain))
+          } else {
+            value
+          };
           match table_id {
             TableId::Local(id) => {
               let mut table = self.tables.get_mut(&id).unwrap();
@@ -133,7 +137,7 @@ impl Block {
               self.changes.push(
                 Change::Set{
                   table_id: id,
-                  values: vec![(Index::Index(1), Index::Index(1), value)],
+                  values: vec![(Index::Index(1), Index::Index(1), q)],
                 }
               );
             }
