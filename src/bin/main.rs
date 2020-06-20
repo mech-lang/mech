@@ -32,11 +32,9 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  ix = #foo >= 3
-  #test = #foo{ix, 1}
-
-block
-  #foo = 1:5"#);
+  x = 10:20
+  z = x > 15
+  #test = x{z, :}"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
