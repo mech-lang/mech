@@ -58,6 +58,7 @@ pub fn resolve_subscript(
       IndexIterator::Table(TableIterator::new(col_table))
     }
     Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+    Index::None => IndexIterator::Constant(Index::Index(0)),
     _ => IndexIterator::Range(1..=(*table).columns),
   }};
   
@@ -358,10 +359,8 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     (*out.table).rows = out_rows;
     (*out.table).columns = out_columns;
     (*out.table).data.resize(out_rows * out_columns, 0);
-  }
-
+  } 
   
-
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
@@ -591,8 +590,17 @@ macro_rules! binary_infix {
           let r2 = rcix.next().unwrap().unwrap();
           let o1 = out_rix.next().unwrap().unwrap();
           let o2 = out_cix.next().unwrap().unwrap();
-          match ((*lhs_vi.table).get_unchecked(l1,l2), 
-                (*rhs_vi.table).get_unchecked(r1,r2))
+          let v1 = if l2 == 0 {
+            (*lhs_vi.table).get_unchecked_linear(l1)
+          } else {
+            (*lhs_vi.table).get_unchecked(l1,l2)
+          };
+          let v2 = if r2 == 0 {
+            (*rhs_vi.table).get_unchecked_linear(r1)
+          } else {
+            (*rhs_vi.table).get_unchecked(r1,r2)
+          };
+          match (v1, v2)
           {
             (lhs_value, rhs_value) => {
               match lhs_value.$op(rhs_value) {

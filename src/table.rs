@@ -344,6 +344,7 @@ impl Table {
       _ => 0, // TODO aliases and all
     };
     let cix = match column {
+      &Index::Index(0) => return Some(rix - 1),
       &Index::Index(ix) => ix,
       &Index::Alias(alias) => *self.store.column_alias_to_index.get(&(self.id,alias)).unwrap(),
       _ => 0, // TODO all
@@ -383,7 +384,7 @@ impl Table {
 
   // Get the value in the store at memory address (ix)
   pub fn get_unchecked_linear(&self, ix: usize) -> Value {
-    let address = self.data[ix];
+    let address = self.data[ix-1];
     self.store.data[address]
   }
 
