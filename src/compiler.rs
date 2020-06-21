@@ -22,6 +22,7 @@ use std::rc::Rc;
 const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
 const TABLE_VERTCAT: u64 = 0x4c606e0853f32c99;
 const TABLE_SET: u64 = 0x9dca9f85275448a1;
+const TABLE_ADD_ROW: u64 = 0xd29d10c8c9a42b2d;
 
 // ## Compiler Nodes
 
@@ -868,6 +869,39 @@ impl Compiler {
       Node::Transformation{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
+      }
+      Node::AddRow{children} => {
+        let mut output = self.compile_transformation(&children[0]);
+
+        let mut output_tup = match output[0] {
+          Transformation::NewTable{table_id, ..} => {
+            let tfm = Transformation::Set{table_id, row: Index::All, column: Index::All};
+            transformations.push(tfm);
+            Some((table_id,Index::All,Index::All))
+          }
+          _ => None,
+        };                
+
+        let mut input = self.compile_transformation(&children[1]);
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          _ => None,
+        };
+
+        let (output_table_id, output_row, output_col) = output_tup.unwrap();
+
+        let fxn = Transformation::Function{
+          name: TABLE_ADD_ROW,
+          arguments: vec![
+            (0, input_table_id.unwrap(), Index::All, Index::All)
+          ],
+          out: (output_table_id, output_row, output_col),
+        };
+        transformations.push(fxn);
+        transformations.append(&mut input);
+        //transformations.append(&mut output);
       }
       Node::Whenever{children} => {
         let mut result = self.compile_transformations(children);
