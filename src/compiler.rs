@@ -870,6 +870,53 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
+      Node::SplitData{children} => {
+        //let mut output = self.compile_transformation(&children[0]);
+        let output_table_id = match &children[0] {
+          Node::Identifier{name,..} => {
+            let name_hash = hash_string(name);
+            // Check to make sure the name doesn't already exist 
+            if self.variable_names.contains(&name_hash) {
+              self.errors.push(ErrorType::DuplicateAlias(name_hash));
+            } else {
+              self.variable_names.insert(name_hash);
+            }
+            self.identifiers.insert(name_hash, name.to_string());
+            transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
+            TableId::Local(name_hash)
+          }
+          _ => TableId::Local(0),
+        };
+        /*let mut output_tup = match output[0] {
+          Transformation::NewTable{table_id, ..} => {
+            let tfm = Transformation::Set{table_id, row: Index::All, column: Index::All};
+            transformations.push(tfm);
+            Some((table_id,Index::All,Index::All))
+          }
+          _ => None,
+        };                
+
+        let mut input = self.compile_transformation(&children[1]);
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          _ => None,
+        };
+
+        let (output_table_id, output_row, output_col) = output_tup.unwrap();
+
+        let fxn = Transformation::Function{
+          name: TABLE_ADD_ROW,
+          arguments: vec![
+            (0, input_table_id.unwrap(), Index::All, Index::All)
+          ],
+          out: (output_table_id, output_row, output_col),
+        };
+        //transformations.push(fxn);
+        transformations.append(&mut input);*/
+        //transformations.append(&mut output);
+      }
       Node::AddRow{children} => {
         let mut output = self.compile_transformation(&children[0]);
 
@@ -1033,6 +1080,7 @@ impl Compiler {
             } else {
               self.variable_names.insert(name_hash);
             }
+            self.identifiers.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
