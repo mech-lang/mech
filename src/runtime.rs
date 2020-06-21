@@ -179,7 +179,6 @@ impl Runtime {
     self.output.extend(&block.output);
 
     if block.is_ready() {
-      println!("Doing the thing! {:?}", block);
       block.process_changes(self.database.clone());
       self.ready_blocks.insert(block.id);
     }

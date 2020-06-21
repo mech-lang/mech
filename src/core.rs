@@ -19,6 +19,7 @@ use operations::{
   logic_or,
   table_range, 
   table_set,
+  table_add_row,
   table_horizontal_concatenate,
   table_vertical_concatenate,
   stats_sum,
@@ -63,6 +64,7 @@ impl Core {
     self.runtime.functions.insert(hash_string("logic/and"),Some(logic_and));
     self.runtime.functions.insert(hash_string("logic/or"),Some(logic_or));
     self.runtime.functions.insert(hash_string("table/set"),Some(table_set));
+    self.runtime.functions.insert(hash_string("table/add-row"),Some(table_add_row));
     self.runtime.functions.insert(hash_string("table/range"),Some(table_range));
     self.runtime.functions.insert(hash_string("table/horizontal-concatenate"),Some(table_horizontal_concatenate));
     self.runtime.functions.insert(hash_string("table/vertical-concatenate"),Some(table_vertical_concatenate));

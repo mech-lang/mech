@@ -240,7 +240,90 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     _ => (), // TODO alert user that argument is unknown
   }
 }
-        
+    
+pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+
+  let mut row = 0;
+  let mut column = 0;
+  let mut out_rows = 0;
+  let mut out_columns = 0;
+
+  // Get the size of the output table
+  for (_, vi) in arguments {
+    let vi_rows = match &vi.row_iter {
+      IndexIterator::Range(_) => vi.rows(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_rows = if out_rows == 0 {
+      vi_rows
+    } else if vi_rows > out_rows && out_rows == 1 {
+      vi_rows
+    } else if vi_rows == out_rows {
+      vi_rows
+    } else if vi_rows == 1 {
+      out_rows
+    } else {
+      // TODO Throw a size error here
+      0
+    };
+
+    let vi_columns = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_columns += vi_columns;
+
+  }
+
+  let base_rows = out.rows();
+  unsafe {
+    (*out.table).rows = out_rows + out.rows();
+    (*out.table).columns = out_columns;
+    (*out.table).data.resize(out.rows() * out_columns, 0);
+  } 
+
+  for (_, vi) in arguments {
+    let width = match &vi.column_iter {
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    let mut out_row_iter = match out.row_iter {
+      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
+      _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
+    };
+    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+      let row_iter = if vi.rows() == 1 {
+        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
+      } else {
+        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
+      };
+      for (k,i) in row_iter {
+        let value = vi.get(&i,&j).unwrap();
+        let n = out_row_iter.next();
+        let m = out.column_iter.next();
+        match (n, m) {
+          (_, Some(Index::None)) |
+          (Some(Index::None), _) => continue,
+          (Some(out_row), Some(out_col)) => {
+            unsafe {
+              (*out.table).set_unchecked(out_row.unwrap() + base_rows, out_col.unwrap(), value);
+            }
+          }
+          _ => continue,
+        }
+      }
+    }
+    column += width;
+    
+  }
+}
+
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
   let mut row = 0;
