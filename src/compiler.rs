@@ -23,6 +23,7 @@ const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
 const TABLE_VERTCAT: u64 = 0x4c606e0853f32c99;
 const TABLE_SET: u64 = 0x9dca9f85275448a1;
 const TABLE_ADD_ROW: u64 = 0xd29d10c8c9a42b2d;
+const TABLE_SPLIT: u64 = 0xf115dc77a1771443;
 
 // ## Compiler Nodes
 
@@ -887,14 +888,6 @@ impl Compiler {
           }
           _ => TableId::Local(0),
         };
-        /*let mut output_tup = match output[0] {
-          Transformation::NewTable{table_id, ..} => {
-            let tfm = Transformation::Set{table_id, row: Index::All, column: Index::All};
-            transformations.push(tfm);
-            Some((table_id,Index::All,Index::All))
-          }
-          _ => None,
-        };                
 
         let mut input = self.compile_transformation(&children[1]);
         let input_table_id = match input[0] {
@@ -904,18 +897,15 @@ impl Compiler {
           _ => None,
         };
 
-        let (output_table_id, output_row, output_col) = output_tup.unwrap();
-
         let fxn = Transformation::Function{
-          name: TABLE_ADD_ROW,
+          name: TABLE_SPLIT,
           arguments: vec![
             (0, input_table_id.unwrap(), Index::All, Index::All)
           ],
-          out: (output_table_id, output_row, output_col),
+          out: (output_table_id, Index::All, Index::All),
         };
-        //transformations.push(fxn);
-        transformations.append(&mut input);*/
-        //transformations.append(&mut output);
+        transformations.push(fxn);
+        transformations.append(&mut input);
       }
       Node::AddRow{children} => {
         let mut output = self.compile_transformation(&children[0]);
