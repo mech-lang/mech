@@ -10,6 +10,7 @@ use std::hash::Hasher;
 use ahash::AHasher;
 use rust_core::fmt;
 use ::humanize;
+use ::hash_string;
 
 // ## Block
 
@@ -202,20 +203,45 @@ impl Block {
           self.ready.remove(&register.hash());
         },
         Transformation::Function{name, arguments, out} => {
+          let mut vis = vec![];
+          for (arg, table, row, column) in arguments {
+            let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
+            vis.push((arg.clone(),vi));
+          }
+          let (out_table,out_row,out_col) = out;
+          let mut out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              let mut vis = vec![];
-              for (arg, table, row, column) in arguments {
-                let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
-                vis.push((arg.clone(),vi));
-              }
-              let (out_table,out_row,out_col) = out;
-              let mut out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
               mech_fn(&vis, &mut out_vi);
             }
             _ => {
-              ()
-            },// TODO Error: Function not found
+              // table/split
+              if *name == 0xf115dc77a1771443 {
+                for (_, vi) in vis {
+                  unsafe{
+                    (*out_vi.table).rows = vi.rows();
+                    (*out_vi.table).columns = 1;
+                    (*out_vi.table).data.resize(vi.rows(), 0);
+                  }
+                  for row in vi.row_iter.clone() {
+                    let old_table_id = unsafe{(*vi.table).id};
+                    let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
+                    let columns = vi.columns().clone();
+                    let mut table = Table::new(new_table_id,1,columns,self.store.clone());
+                    for column in vi.column_iter.clone() {
+                      let value = vi.get(&row,&column).unwrap();
+                      table.set(&Index::Index(1),&column, value);
+                    }
+                    self.tables.insert(new_table_id, table);   
+                    unsafe {
+                      (*out_vi.table).set(&row,&Index::Index(1),Value::from_u64(new_table_id));
+                    }                 
+                  }
+                }
+              } else {
+                // TODO Error: Function not found
+              }
+            },
           }
         }
         _ => (),
