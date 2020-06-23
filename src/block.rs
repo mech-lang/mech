@@ -65,7 +65,7 @@ impl Block {
     for tfm in &self.transformations {
       hasher.write(format!("{:?}", tfm).as_bytes());
     }
-    self.id = hasher.finish();   
+    self.id = hasher.finish() & 0x00FFFFFFFFFFFFFF;  
   }
 
   pub fn register_transformations(&mut self, tfm_tuple: (String, Vec<Transformation>)) {
@@ -216,7 +216,7 @@ impl Block {
             }
             _ => {
               // table/split
-              if *name == 0xf115dc77a1771443 {
+              if *name == 0x0015dc77a1771443 {
                 for (_, vi) in vis {
                   unsafe{
                     (*out_vi.table).rows = vi.rows();
@@ -240,6 +240,7 @@ impl Block {
                 }
               } else {
                 // TODO Error: Function not found
+                println!("Function not found {:?}", name);
               }
             },
           }
@@ -599,7 +600,7 @@ impl Register {
     hasher.write_u64(self.table_id);
     hasher.write_u64(self.row.unwrap() as u64);
     hasher.write_u64(self.column.unwrap() as u64);
-    hasher.finish()
+    hasher.finish() & 0x00FFFFFFFFFFFFFF
   }
 }
 
