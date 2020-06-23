@@ -1,5 +1,5 @@
 use block::{Block, BlockState, Register, Error, Transformation};
-use ::humanize;
+use ::{humanize, hash_string};
 use database::{Database, Transaction, Change, Store};
 use table::{Index, Table, TableId};
 use std::cell::RefCell;
@@ -52,6 +52,14 @@ impl Runtime {
       output: HashSet::new(),
       functions: HashMap::new(),
     }
+  }
+
+  pub fn load_library_function(&mut self, name: &str, fxn: MechFunction) {
+    let name_hash = hash_string(name);
+    let mut db = self.database.borrow_mut();
+    let mut store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
+    store.identifiers.insert(name_hash, name.to_string());
+    self.functions.insert(name_hash,Some(fxn));
   }
 
   pub fn run_network(&mut self) -> Result<(), Error> {    
