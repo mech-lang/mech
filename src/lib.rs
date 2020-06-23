@@ -30,7 +30,8 @@ pub use self::errors::{Error, ErrorType};
 pub fn hash_string(input: &str) -> u64 {
   let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
   hasher.write(input.to_string().as_bytes());
-  hasher.finish()
+  let mut hash = hasher.finish();
+  hash & 0x00FFFFFFFFFFFFFF
 }
 
 pub fn humanize(hash: &u64) -> String {
