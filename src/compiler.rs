@@ -19,11 +19,12 @@ use hashbrown::hash_map::{HashMap, Entry};
 use super::formatter::Formatter;
 use std::rc::Rc;
 
-const TABLE_HORZCAT: u64 = 0x1C6A44C6BAFC67F1;
-const TABLE_VERTCAT: u64 = 0x4c606e0853f32c99;
-const TABLE_SET: u64 = 0x9dca9f85275448a1;
-const TABLE_ADD_ROW: u64 = 0xd29d10c8c9a42b2d;
-const TABLE_SPLIT: u64 = 0xf115dc77a1771443;
+                             
+const TABLE_HORZCAT: u64 = 0x006A44C6BAFC67F1;
+const TABLE_VERTCAT: u64 = 0x00606e0853f32c99;
+const TABLE_SET: u64 = 0x00ca9f85275448a1;
+const TABLE_ADD_ROW: u64 = 0x009d10c8c9a42b2d;
+const TABLE_SPLIT: u64 = 0x0015dc77a1771443;
 
 // ## Compiler Nodes
 
@@ -1199,7 +1200,6 @@ impl Compiler {
           }
           arg_tfms.append(&mut result);
         }
-        println!("{:?}", arg_tfms);
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
@@ -1219,7 +1219,7 @@ impl Compiler {
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::Empty => {
-        let value = 0x2000000000000000;
+        let value = Value::empty();
         let table = hash_string(&format!("Empty-{:?}", value.to_float()));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: value, unit: 0});
