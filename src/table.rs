@@ -30,12 +30,14 @@ pub trait ValueMethods {
   fn from_quantity(num: Quantity) -> Value;
   fn from_i64(num: i64) -> Value;
   fn from_f64(num: f64) -> Value;
+  fn from_id(id: u64) -> Value;
   fn as_quantity(&self) -> Option<Quantity>;
   fn as_u64(&self) -> Option<u64>;
   fn as_i64(&self) -> Option<i64>;
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
+  fn as_reference(&self) -> Option<u64>;
   fn is_empty(&self) -> bool;
   fn is_number(&self) -> bool;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
@@ -78,6 +80,10 @@ impl ValueMethods for Value {
     }
   }
 
+  fn from_id(id: u64) -> Value {
+    id & 0x20FFFFFFFFFFFFFF
+  }
+
   fn from_u64(num: u64) -> Value {
     num.to_quantity()
   }
@@ -103,7 +109,7 @@ impl ValueMethods for Value {
   }
 
   fn as_quantity(&self) -> Option<Quantity> {
-    match self & 0xE000000000000000 {
+    match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
       0x4000000000000000 => None,
@@ -111,8 +117,15 @@ impl ValueMethods for Value {
     }
   }
 
+  fn as_reference(&self) -> Option<u64> {
+    match self & 0xFF00000000000000 {
+      0x2000000000000000 => Some(self & 0x00FFFFFFFFFFFFFF),
+      _ => None,
+    }
+  }
+
   fn as_u64(&self) -> Option<u64> {
-    match self & 0xE000000000000000 {
+    match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
       0x4000000000000000 => None,
@@ -121,7 +134,7 @@ impl ValueMethods for Value {
   }
 
   fn is_number(&self) -> bool {
-    match self & 0xE000000000000000 {
+    match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
       0x4000000000000000 => false,
@@ -130,7 +143,7 @@ impl ValueMethods for Value {
   }
 
   fn as_float(&self) -> Option<f64> {
-    match self & 0xE000000000000000 {
+    match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
       0x4000000000000000 => None,
@@ -143,7 +156,7 @@ impl ValueMethods for Value {
   }
 
   fn as_string(&self) -> Option<u64> {
-    match self & 0xC000000000000000 {
+    match self & 0xFF00000000000000 {
       0x8000000000000000 => Some(*self),
       _ => None,
     }
