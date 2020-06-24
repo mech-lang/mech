@@ -117,8 +117,8 @@ impl Block {
         Transformation::Constant{table_id, value, unit} => {
           let (domain, scale) = match unit {
             unit_value => match unit_value {
-              0x01b779d3bf451717 => (1, 0), // g
-              0xc8df0fac549c1104 => (1, 3), // kg
+              0x00b779d3bf451717 => (1, 0), // g
+              0x00df0fac549c1104 => (1, 3), // kg
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),

@@ -15,9 +15,9 @@ use std::cell::RefCell;
 use hashbrown::HashMap;
 
 
-const ROW: u64 = 0x6a1e3f1182ea4d9d;
-const COLUMN: u64 = 0x3b71b9e91df03940;
-const TABLE: u64 = 0x7764ae06e4bbf825;
+const ROW: u64 = 0x001e3f1182ea4d9d;
+const COLUMN: u64 = 0x0071b9e91df03940;
+const TABLE: u64 = 0x0064ae06e4bbf825;
 
 pub fn resolve_subscript(
   table_id: TableId, 

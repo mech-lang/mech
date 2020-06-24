@@ -22,6 +22,7 @@ use ::{humanize, hash_string};
 pub type Value = u64;
 
 pub trait ValueMethods {
+  fn empty() -> Value;
   fn from_string(string: String) -> Value;
   fn from_str(string: &str) -> Value;
   fn from_bool(boolean: bool) -> Value;
@@ -54,15 +55,19 @@ pub trait ValueMethods {
 
 impl ValueMethods for Value {
 
+  fn empty() -> Value {
+    0x2000000000000000
+  }
+
   fn from_string(string: String) -> Value {
     let mut string_hash = hash_string(&string);
-    string_hash = (string_hash & 0x00FFFFFFFFFFFFFF) + 0x8000000000000000;
+    string_hash = string_hash + 0x8000000000000000;
     string_hash
   }
 
   fn from_str(string: &str) -> Value {
     let mut string_hash = hash_string(string);
-    string_hash = (string_hash & 0x00FFFFFFFFFFFFFF) + 0x8000000000000000;
+    string_hash = string_hash + 0x8000000000000000;
     string_hash
   }
 
@@ -90,7 +95,7 @@ impl ValueMethods for Value {
   }
 
   fn is_empty(&self) -> bool {
-    if *self == 0x2000000000000000 {
+    if *self == Value::empty() {
       true
     } else {
       false
