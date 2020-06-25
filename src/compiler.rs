@@ -747,6 +747,27 @@ impl Compiler {
                 }
                 _ => (),
               }
+              match &children[1] {
+                Node::Expression{children} => {
+                  match &children[0] {
+                    Node::AnonymousTableDefine{children} => {
+                      let mut result = self.compile_transformations(&children);
+                      match result[1] {
+                        Transformation::Select{table_id,..} => {
+                          let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
+                          transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
+                          transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
+                          args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+                          continue;
+                        }
+                        _ => (),
+                      }
+                    }
+                    _ => (),
+                  }
+                }
+                _ => (),
+              }
               let mut result = self.compile_transformation(&children[1]);
               match result[0] {
                 Transformation::NewTable{table_id,..} => {
@@ -762,6 +783,7 @@ impl Compiler {
             _ => (),
           }
           let mut result = self.compile_transformation(child);
+          transformations.append(&mut result);
         }
         let fxn = Transformation::Function{
           name: TABLE_HORZCAT,
@@ -816,6 +838,32 @@ impl Compiler {
         transformations.push(new_table);
         let mut args = vec![];
         for child in children {
+          match &child {
+            Node::TableColumn{children} => {
+              match &children[0] {
+                Node::Expression{children} => {
+                  match &children[0] {
+                    Node::AnonymousTableDefine{children} => {
+                      let mut result = self.compile_transformations(&children);
+                      match result[1] {
+                        Transformation::Select{table_id,..} => {
+                          let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
+                          transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
+                          transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
+                          args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+                          continue;
+                        }
+                        _ => (),
+                      }
+                    }
+                    _ => (),
+                  }
+                }
+                _ => (),
+              }
+            }
+            _ => (),
+          }
           let mut result = self.compile_transformation(child);
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
@@ -968,7 +1016,6 @@ impl Compiler {
           _ => None,
         };
                 
-
         let mut input = self.compile_transformation(&children[1]);
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
@@ -1054,11 +1101,14 @@ impl Compiler {
               indices.push(Index::All);
             },
           }
+          if indices.len() == 2 {
+            transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
+            indices.clear();
+          }
         }
         if indices.len() == 1 {
           indices.push(Index::All);
         }
-        transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
