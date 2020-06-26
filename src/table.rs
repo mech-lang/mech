@@ -81,7 +81,7 @@ impl ValueMethods for Value {
   }
 
   fn from_id(id: u64) -> Value {
-    id & 0x20FFFFFFFFFFFFFF
+    id + 0x2000000000000000
   }
 
   fn from_u64(num: u64) -> Value {
@@ -491,7 +491,9 @@ impl fmt::Debug for Table {
           Some(x) => {
             let value = &self.store.data[x];
             let text = match value.as_quantity() {
-              Some(quantity) => format!("{:?}", value),
+              Some(quantity) => {
+                format!("{:?}", value)
+              },
               None => {
                 match value.as_bool() {
                   Some(b) => format!("{:?}", b),
@@ -499,7 +501,16 @@ impl fmt::Debug for Table {
                     if value.is_empty() {
                       format!("_")
                     } else {
-                      format!("{:?}", self.store.identifiers.get(value).unwrap())
+                      match value.as_reference() {
+                        Some(value) => format!("@{}", humanize(&value)),
+                        None => {
+                          match self.store.identifiers.get(value) {
+                            Some(q) => format!("{:?}", q),
+                            None => format!("None"),
+                          }
+                          
+                        }
+                      }
                     }
                   }
                 }
@@ -528,7 +539,9 @@ impl fmt::Debug for Table {
             Some(x) => {
               let value = &self.store.data[x];
               let text = match value.as_quantity() {
-                Some(quantity) => format!("{:?}", value),
+                Some(quantity) => {
+                  format!("{:?}", value)
+                },
                 None => {
                   match value.as_bool() {
                     Some(b) => format!("{:?}", b),
@@ -536,7 +549,12 @@ impl fmt::Debug for Table {
                       if value.is_empty() {
                         format!("_")
                       } else {
-                        format!("{:?}", self.store.identifiers.get(value).unwrap())
+                        match value.as_reference() {
+                          Some(value) => format!("@{}", humanize(&value)),
+                          None => {
+                            format!("{:?}", self.store.identifiers.get(value).unwrap())
+                          }
+                        }
                       }
                     }
                   }
