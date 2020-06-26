@@ -402,7 +402,11 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           if value.is_empty() {
             tfm = format!("{} _ -> ",tfm);
           } else {
-            tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap());
+            match value.as_reference() {
+              Some(reference) => {tfm = format!("{}@{} -> ",tfm, humanize(value));}
+              None => {tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap());}
+            }
+            
           }
         },
       }
