@@ -107,14 +107,14 @@ x   y   20  0]"#.to_string(), vec![
   ]));
   block.register_transformations(("#gravity = 9".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Global(gravity), rows: 1, columns: 1},
-    Transformation::Set{table_id: TableId::Global(gravity), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(9)},
+    //Transformation::Set{table_id: TableId::Global(gravity), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(9)},
   ]));
 
   block.register_transformations(("#time/timer = [period: 1, ticks: 0]".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Global(time_timer), rows: 1, columns: 2},
     Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 1, column_alias: period},
     Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 2, column_alias: ticks},
-    Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)},
+    //Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)},
   ]));
   block.gen_id();
   core.runtime.register_block(block);
