@@ -845,7 +845,6 @@ impl Compiler {
                   match &children[0] {
                     Node::AnonymousTableDefine{children} => {
                       let mut result = self.compile_transformations(&children);
-                      println!("{:?}", result);
                       match result[1] {
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
