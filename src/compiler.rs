@@ -847,14 +847,8 @@ impl Compiler {
                       let mut result = self.compile_transformations(&children);
                       println!("{:?}", result);
                       match result[1] {
+                        Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
-                          let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
-                          transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
-                          transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
-                          args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
-                          continue;
-                        }
-                        Transformation::NewTAble{table_id, ..} => {
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
