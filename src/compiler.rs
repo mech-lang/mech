@@ -876,6 +876,24 @@ impl Compiler {
             }
             _ => (),
           }
+          let mut target_table_id = new_table_id;
+          let mut i = 1;
+          loop {
+            match result[i] { 
+              Transformation::Select{table_id, row, column} => {
+                let new_table_id = TableId::Global(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
+                let fxn = Transformation::Function{
+                  name: TABLE_HORZCAT,
+                  arguments: vec![(0, target_table_id, row, column)],
+                  out: (new_table_id, Index::All, Index::All),
+                };   
+                target_table_id = new_table_id;
+                transformations.push(fxn);
+                i += 1;
+              }
+              _ => break,
+            }
+          }
           transformations.append(&mut result);       
         }
         let fxn = Transformation::Function{
@@ -884,6 +902,7 @@ impl Compiler {
           out: (new_table_id, Index::All, Index::All),
         };   
         transformations.push(fxn);
+        println!("{:?}", transformations);
       }
       Node::TableHeader{children} => {
         let column = self.column;
