@@ -502,7 +502,13 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let mut arg = format!("{}({}) -> ",name_string,arg);
       let (out_table, out_row, out_column) = out;
       match out_table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+        TableId::Global(id) => {
+          let name = match block.store.identifiers.get(id) {
+            Some(name) => name.clone(),
+            None => format!("{:?}",humanize(id)),
+          };
+          arg=format!("{}#{}",arg,name);
+        } 
         TableId::Local(id) => {
           match block.store.identifiers.get(id) {
             Some(name) => arg = format!("{}{}",arg,name),
