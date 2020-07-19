@@ -852,10 +852,12 @@ impl Compiler {
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+                          transformations.append(&mut result);
                           continue;
                         }
                         _ => (),
                       }
+                      transformations.append(&mut result);
                     }
                     _ => (),
                   }
@@ -887,7 +889,7 @@ impl Compiler {
                   out: (new_table_id, Index::All, Index::All),
                 };   
                 target_table_id = new_table_id;
-                transformations.push(fxn);
+                //transformations.push(fxn);
                 i += 1;
               }
               _ => break,
