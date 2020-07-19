@@ -32,13 +32,10 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = #app{1,2}{1,3}
+  #test = #app{1,2}{2,1}
 
 block
-  h1 = [91 72 63 24]
-  #app = [|direction contains| 
-           "column"  [h1]
-           "row"     [h1]]"#);
+  #app = [2 [5 7]]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
