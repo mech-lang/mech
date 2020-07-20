@@ -1040,6 +1040,7 @@ impl Compiler {
       }
       Node::SetData{children} => {
         let mut output = self.compile_transformation(&children[0]);
+
         let mut output_tup = match output[0] {
           Transformation::Select{table_id, row, column} => {
             let tfm = Transformation::Set{table_id, row, column};
@@ -1047,6 +1048,18 @@ impl Compiler {
             Some((table_id,row,column))
           }
           _ => None,
+        };
+        let mut output_tup2 = if output.len() > 1 {
+          match output[1] {
+            Transformation::Select{table_id, row, column} => {
+              let tfm = Transformation::Set{table_id, row, column};
+              transformations.push(tfm);
+              Some((table_id,row,column))
+            }
+            _ => None,
+          }
+        } else {
+          None
         };
                 
         let mut input = self.compile_transformation(&children[1]);
@@ -1057,7 +1070,14 @@ impl Compiler {
           _ => None,
         };
 
-        let (output_table_id, output_row, output_col) = output_tup.unwrap();
+        let (output_table_id, output_row, output_col) = match (output_tup, output_tup2) {
+          (Some((table,row,col)), Some((_,row2,col2))) => {
+            (table,row2,col)
+          },
+          (Some(a),_) => a,
+          _ => (TableId::Global(0),Index::All,Index::All),
+        };
+        
 
         let fxn = Transformation::Function{
           name: TABLE_SET,
