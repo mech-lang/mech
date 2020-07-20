@@ -13,6 +13,7 @@ use errors::ErrorType;
 use std::rc::Rc;
 use std::cell::RefCell;
 use hashbrown::HashMap;
+use ::{humanize, hash_string};
 
 
 const ROW: u64 = 0x001e3f1182ea4d9d;
@@ -32,6 +33,18 @@ pub fn resolve_subscript(
     TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
     TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
   };
+  unsafe{
+    if (*table).rows == 1 && (*table).columns == 1 && (*table).get_unchecked(1,1).is_reference() {
+      match (row_index, column_index) {
+        (Index::All, Index::All) |
+        (Index::Index(1), Index::Index(1)) => (),
+        _ => {
+          let reference = (*table).get_unchecked(1,1).as_reference().unwrap();
+          table = db.tables.get_mut(&reference).unwrap() as *mut Table;
+        }
+      }
+    }
+  }
 
   let row_iter = unsafe { match row_index {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
