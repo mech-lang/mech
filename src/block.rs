@@ -338,7 +338,13 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     Transformation::NewTable{table_id, rows, columns} => {
       let mut tfm = format!("+ ");
       match table_id {
-        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
+        TableId::Global(id) => {
+          let name = match block.store.identifiers.get(id) {
+            Some(name) => name.clone(),
+            None => format!("{:?}",humanize(id)),
+          };
+          tfm=format!("{}#{}",tfm,name);
+        }
         TableId::Local(id) => {
           match block.store.identifiers.get(id) {
             Some(name) =>  tfm=format!("{}{}",tfm,name),
