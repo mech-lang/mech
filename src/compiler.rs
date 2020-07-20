@@ -888,21 +888,23 @@ impl Compiler {
           let horz_cat_id = new_table_id;
           let mut target_table_id = new_table_id;
           let mut i = 1;
-          loop {
-            match result[i] { 
-              Transformation::Select{table_id, row, column} => {
-                let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
-                let fxn = Transformation::Function{
-                  name: TABLE_HORZCAT,
-                  arguments: vec![(0, target_table_id, row, column)],
-                  out: (new_table_id, Index::All, Index::All),
-                };   
-                target_table_id = new_table_id;
-                transformations.insert(0, Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
-                transformations.push(fxn);
-                i += 1;
+          if result.len() > 1 {
+            loop {
+              match result[i] { 
+                Transformation::Select{table_id, row, column} => {
+                  let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
+                  let fxn = Transformation::Function{
+                    name: TABLE_HORZCAT,
+                    arguments: vec![(0, target_table_id, row, column)],
+                    out: (new_table_id, Index::All, Index::All),
+                  };   
+                  target_table_id = new_table_id;
+                  transformations.insert(0, Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+                  transformations.push(fxn);
+                  i += 1;
+                }
+                _ => break,
               }
-              _ => break,
             }
           }
           transformations.append(&mut result);       
