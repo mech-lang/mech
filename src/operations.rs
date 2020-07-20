@@ -36,8 +36,7 @@ pub fn resolve_subscript(
   unsafe{
     if (*table).rows == 1 && (*table).columns == 1 && (*table).get_unchecked(1,1).is_reference() {
       match (row_index, column_index) {
-        (Index::All, Index::All) |
-        (Index::Index(1), Index::Index(1)) => (),
+        (Index::All, Index::All) => (),
         _ => {
           let reference = (*table).get_unchecked(1,1).as_reference().unwrap();
           table = db.tables.get_mut(&reference).unwrap() as *mut Table;
