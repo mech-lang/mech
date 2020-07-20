@@ -287,8 +287,8 @@ impl fmt::Debug for TableId {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &TableId::Local(ref id) => write!(f, "Local({:#x})", id),
-      &TableId::Global(ref id) => write!(f, "Global({:#x})", id),
+      &TableId::Local(ref id) => write!(f, "Local({:})", humanize(id)),
+      &TableId::Global(ref id) => write!(f, "Global({:})", humanize(id)),
     }
   }
 }
