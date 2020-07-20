@@ -619,19 +619,10 @@ test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Va
 
 test_mech!(nesting_basic,r#"
 block
-  x = [#app{1,2}{1,1}]
-  y = [#app{1,2}{2,1}]
-  #test = x + y
+  #test = #app{1,2}{1,2}
 
 block
-  div = "div"
-  h1 = "h1"
-  container = [|type text| 
-                123   "A Mech Webpage"
-                456   "Hello World"]
-  #app = [|direction contains| 
-           "column"  [container]
-           "row"     [container]]"#, Value::from_u64(579));
+  #app = [2 [5 7]]"#, Value::from_u64(7));
 
 
 test_mech!(nesting_triple,r#"
