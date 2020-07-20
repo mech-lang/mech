@@ -40,6 +40,7 @@ pub trait ValueMethods {
   fn as_reference(&self) -> Option<u64>;
   fn is_empty(&self) -> bool;
   fn is_number(&self) -> bool;
+  fn is_reference(&self) -> bool;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
@@ -141,6 +142,13 @@ impl ValueMethods for Value {
       _ => true,
     }
   }
+
+  fn is_reference(&self) -> bool {
+    match self & 0xFF00000000000000 {
+      0x2000000000000000 => true,
+      _ => false,
+    }
+  }    
 
   fn as_float(&self) -> Option<f64> {
     match self & 0xFF00000000000000 {
