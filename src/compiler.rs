@@ -899,8 +899,8 @@ impl Compiler {
                     out: (new_table_id, Index::All, Index::All),
                   };   
                   target_table_id = new_table_id;
+                  transformations.insert(0,fxn);
                   transformations.insert(0, Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
-                  transformations.push(fxn);
                   i += 1;
                 }
                 _ => break,
