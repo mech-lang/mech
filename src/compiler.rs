@@ -821,7 +821,7 @@ impl Compiler {
         }
         let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
         transformations.push(new_table);
-        let fxn = Transformation::Function{
+        let fxn = Transformation::Function {
           name: TABLE_VERTCAT,
           arguments: args,
           out: (new_table_id, Index::All, Index::All),
@@ -845,13 +845,21 @@ impl Compiler {
                   match &children[0] {
                     Node::AnonymousTableDefine{children} => {
                       let mut result = self.compile_transformations(&children);
-                      match result[1] {
+                      match result[0] {
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+                          
+                          let fxn = Transformation::Function{
+                            name: TABLE_HORZCAT,
+                            arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
+                            out: (TableId::Global(*table_id.unwrap()), Index::All, Index::All),
+                          };
+                          transformations.push(fxn);
+                          transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
                           transformations.append(&mut result);
                           continue;
                         }
@@ -897,7 +905,7 @@ impl Compiler {
           }
           transformations.append(&mut result);       
         }
-        let fxn = Transformation::Function{
+        let fxn = Transformation::Function {
           name: TABLE_HORZCAT,
           arguments: args,
           out: (new_table_id, Index::All, Index::All),
