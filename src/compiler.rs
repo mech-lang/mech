@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId};
+use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId, Register};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 use mech_core::ErrorType;
@@ -25,6 +25,7 @@ const TABLE_VERTCAT: u64 = 0x00606e0853f32c99;
 const TABLE_SET: u64 = 0x00ca9f85275448a1;
 const TABLE_ADD_ROW: u64 = 0x009d10c8c9a42b2d;
 const TABLE_SPLIT: u64 = 0x0015dc77a1771443;
+const SET_ANY: u64 = 0x001d7d7fa28d84e8;
 
 // ## Compiler Nodes
 
@@ -682,22 +683,32 @@ impl Compiler {
         
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
+        let mut global_out = vec![];
         for step in plan {
           let (step_text, _, _, step_transformations) = step;
           let mut rtfms = step_transformations.clone();
           rtfms.reverse();
           for tfm in rtfms {
             match tfm {
-              Transformation::Whenever{..} |
-              Transformation::Function{..} => {
+              Transformation::Whenever{..} => {
                 block.plan.push((vec![], tfm.clone()));
+              }
+              Transformation::Function{name, ref arguments, out} => {
+                let (out_id, row, column) = out;
+                match out_id {
+                  TableId::Local(id) => block.plan.push((vec![], tfm.clone())),
+                  _ => {
+                    global_out.push((vec![], tfm.clone()));
+                  },
+                }
               }
               _ => (),
             }
           }
+          
           block.register_transformations((step_text, step_transformations));
         }
-               
+        block.plan.append(&mut global_out);     
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
             block: block.id as u64,
@@ -1027,8 +1038,20 @@ impl Compiler {
         match result[0] {
           Transformation::Select{table_id, row, column} => {
             transformations.push(
-              Transformation::Whenever{table_id: *table_id.unwrap(), row, column},
+              Transformation::Whenever{table_id, row, column, registers: vec![Register{table_id: *table_id.unwrap(), row, column}.hash()]},
             );
+          }
+          Transformation::NewTable{table_id, ..} => {
+            let mut registers = vec![];
+            for r in &result {
+              match r {
+                Transformation::Select{table_id,row,column} => {
+                  registers.push(Register{table_id: *table_id.unwrap(), row: *row, column: *column}.hash());
+                }
+                _ => (),
+              }
+            }
+            transformations.push(Transformation::Whenever{table_id, row: Index::All, column: Index::All, registers});
           }
           _ => (),
         }
