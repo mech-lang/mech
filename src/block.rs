@@ -155,8 +155,15 @@ impl Block {
           self.output.insert(hash2);       
           self.output_dependencies.insert(hash);          
         }
-        Transformation::Whenever{table_id, row, column} => {
-          self.input.insert(Register{table_id, row, column}.hash());
+        Transformation::Whenever{table_id, row, column, registers} => {
+          match table_id {
+            TableId::Global(id) => {
+              for register in registers {
+                self.input.insert(register);
+              }
+            }
+            _ => (),
+          }
         }
         Transformation::Function{name, ref arguments, out} => {
           let (out_id, row, column) = out;
@@ -198,9 +205,36 @@ impl Block {
   pub fn solve(&mut self, database: Rc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
     'step_loop: for (masks, step) in &self.plan {
       match step {
-        Transformation::Whenever{table_id, row, column} => {
-          let register = Register{table_id: *table_id, row: *row, column: *column};
-          self.ready.remove(&register.hash());
+        Transformation::Whenever{table_id, row, column, registers} => {
+          match table_id {
+            TableId::Global(id) => {
+              for register in registers {
+                self.ready.remove(&register);
+              }             
+            }
+            TableId::Local(id) => {
+              let mut flag = false;
+              let table = self.tables.get_mut(&id).unwrap() as *mut Table;
+              unsafe {
+                for i in 1..=(*table).rows {
+                  for j in 1..=(*table).columns {
+                    let value = (*table).get_unchecked(i,j);
+                    match value.as_bool() {
+                      Some(true) => flag = true,
+                      _ => (),
+                    } 
+                  }                  
+                }
+              }
+              if flag == false {
+                break 'step_loop;
+              } else { 
+                for register in registers {
+                  self.ready.remove(&register);
+                }
+              }
+            },
+          }
         },
         Transformation::Function{name, arguments, out} => {
           let mut vis = vec![];
@@ -355,9 +389,23 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       tfm = format!("{} = ({} x {})",tfm,rows,columns);
       tfm
     }
-    Transformation::Whenever{table_id, row, column} => {
+    Transformation::Whenever{table_id, row, column, registers} => {
       let mut arg = format!("~ ");
-      arg=format!("{}#{}",arg,block.store.identifiers.get(&table_id).unwrap());
+      match table_id {
+        TableId::Global(id) => {
+          let name = match block.store.identifiers.get(id) {
+            Some(name) => name.clone(),
+            None => format!("{:}",humanize(id)),
+          };
+          arg=format!("{}#{}",arg,name)
+        },
+        TableId::Local(id) => {
+          match block.store.identifiers.get(id) {
+            Some(name) => arg = format!("{}{}",arg,name),
+            None => arg = format!("{}{}",arg,humanize(id)),
+          }
+        }
+      };
       match row {
         Index::None => arg=format!("{}{{-,",arg),
         Index::All => arg=format!("{}{{:,",arg),
@@ -604,7 +652,7 @@ pub enum Transformation {
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   Set{table_id: TableId, row: Index, column: Index},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
-  Whenever{table_id: u64, row: Index, column: Index},
+  Whenever{table_id: TableId, row: Index, column: Index, registers: Vec<u64>},
   Function{name: u64, arguments: Vec<(u64, TableId, Index, Index)>, out: (TableId, Index, Index)},
   Select{table_id: TableId, row: Index, column: Index},
 }
