@@ -1291,7 +1291,21 @@ impl Compiler {
             }
             _ => 0,
           };
-          let mut result = self.compile_transformation(child);
+          let child = match child {
+            Node::SelectData{name, id, children} => {
+              if children.len() > 1 {
+                Node::Expression{
+                  children: vec![Node::AnonymousTableDefine{
+                    children: vec![Node::TableRow{
+                      children: vec![Node::TableColumn{
+                        children: vec![child.clone()]}]}]}]}
+              } else {
+                child.clone()
+              }
+            }
+            _ => child.clone(),
+          };
+          let mut result = self.compile_transformation(&child);
           match result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((arg, table_id, Index::All, Index::All));
