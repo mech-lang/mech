@@ -762,6 +762,7 @@ impl Compiler {
               match &children[1] {
                 Node::Expression{children} => {
                   match &children[0] {
+                    Node::InlineTable{..} |
                     Node::AnonymousTableDefine{..} => {
                       let mut result = self.compile_transformation(&children[0]);
                       match result[0] {
