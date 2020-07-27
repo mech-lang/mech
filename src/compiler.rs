@@ -1314,43 +1314,70 @@ impl Compiler {
         let mut args = vec![];
         let mut arg_tfms = vec![];
         for child in children {
-          let arg = match child {
+          match child {
             Node::FunctionBinding{children} => {
-              match &children[0] {
+              let arg = match &children[0] {
                 Node::Identifier{name, id} => {
                   self.identifiers.insert(*id, name.to_string());
                   *id
                 },
                 _ => 0,
+              };
+              let new_child = &children[1];
+              let child = match new_child {
+                Node::SelectData{name, id, children} => {
+                  if children.len() > 1 {
+                    Node::Expression{
+                      children: vec![Node::AnonymousTableDefine{
+                        children: vec![Node::TableRow{
+                          children: vec![Node::TableColumn{
+                            children: vec![new_child.clone()]}]}]}]}
+                  } else {
+                    new_child.clone()
+                  }
+                }
+                _ => new_child.clone(),
+              };
+              let mut result = self.compile_transformation(&child);
+              match result[0] {
+                Transformation::NewTable{table_id,..} => {
+                  args.push((arg, table_id, Index::All, Index::All));
+                },
+                Transformation::Select{table_id, row, column} => {
+                  args.push((arg, table_id, row, column));
+                }
+                _ => (),
               }
+              arg_tfms.append(&mut result);
             }
-            _ => 0,
-          };
-          let child = match child {
-            Node::SelectData{name, id, children} => {
-              if children.len() > 1 {
-                Node::Expression{
-                  children: vec![Node::AnonymousTableDefine{
-                    children: vec![Node::TableRow{
-                      children: vec![Node::TableColumn{
-                        children: vec![child.clone()]}]}]}]}
-              } else {
-                child.clone()
+            _ => {
+              let child = match child {
+                Node::SelectData{name, id, children} => {
+                  if children.len() > 1 {
+                    Node::Expression{
+                      children: vec![Node::AnonymousTableDefine{
+                        children: vec![Node::TableRow{
+                          children: vec![Node::TableColumn{
+                            children: vec![child.clone()]}]}]}]}
+                  } else {
+                    child.clone()
+                  }
+                }
+                _ => child.clone(),
+              };
+              let mut result = self.compile_transformation(&child);
+              match result[0] {
+                Transformation::NewTable{table_id,..} => {
+                  args.push((0, table_id, Index::All, Index::All));
+                },
+                Transformation::Select{table_id, row, column} => {
+                  args.push((0, table_id, row, column));
+                }
+                _ => (),
               }
-            }
-            _ => child.clone(),
-          };
-          let mut result = self.compile_transformation(&child);
-          match result[0] {
-            Transformation::NewTable{table_id,..} => {
-              args.push((arg, table_id, Index::All, Index::All));
+              arg_tfms.append(&mut result);
             },
-            Transformation::Select{table_id, row, column} => {
-              args.push((arg, table_id, row, column));
-            }
-            _ => (),
-          }
-          arg_tfms.append(&mut result);
+          };
         }
         let name_hash = hash_string(name);
         self.identifiers.insert(name_hash,name.to_string());
