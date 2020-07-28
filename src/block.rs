@@ -268,8 +268,25 @@ impl Block {
                     }
                     self.tables.insert(new_table_id, table);   
                     unsafe {
-                      (*out_vi.table).set(&row,&Index::Index(1),Value::from_u64(new_table_id));
-                    }                 
+                      (*out_vi.table).set(&row,&Index::Index(1),Value::from_id(new_table_id));
+                    }
+                    let txn = Transaction {
+                      changes: vec![Change::NewTable{
+                        table_id: new_table_id,
+                        rows: 1,
+                        columns: vi.columns(),
+                      }],
+                    };
+                    self.changes.clear();
+                    let mut db = database.borrow_mut();
+                    db.process_transaction(&txn);
+                    db.transactions.push(txn); 
+                    let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;               
+                    unsafe {
+                      for i in 1..=vi.columns() {
+                        (*new_global_copy_table).set_unchecked(1,i, (*vi.table).get_unchecked(row.unwrap(),i));
+                      }
+                    }
                   }
                 }
               } else {
