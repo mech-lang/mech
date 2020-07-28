@@ -69,7 +69,9 @@ impl Store {
     self.reference_counts[self.next] = 1;
     let address = self.next;
     self.data[address] = value;
+    // The next address is taken from the free pile because our main memory is full
     if self.data_end + 1 == self.capacity && self.free[0] != 0 {
+      println!("Picking from free");
       self.next = self.free[self.free_next];
       if self.free_next + 1 == self.free.len() {
         self.free_next = 0;
@@ -78,6 +80,7 @@ impl Store {
       }
     // Extend the data if it's full and there is no free space
     } else if self.data_end + 1 == self.capacity && self.free[0] == 0 {
+      println!("EXTENDING DATA");
       self.capacity = self.capacity * 2;
       self.data.resize(self.capacity, Value::from_u64(0));
       self.reference_counts.resize(self.capacity, 0);
@@ -85,9 +88,11 @@ impl Store {
       self.data_end += 1;
       self.next = self.data_end;
     } else {
+      println!("picking from the next");
       self.data_end += 1;
       self.next = self.data_end;
     }
+    println!("address is {:?}", address);
     address
   }
 }
@@ -102,7 +107,7 @@ impl fmt::Debug for Store {
     write!(f, "free-end: {:?}\n", self.free_end)?;
     //write!(f, "free: {:?}\n", self.free)?;
     //write!(f, "rc  : {:?}\n", self.reference_counts)?;
-    //write!(f, "data: {:?}\n", self.data)?;
+    write!(f, "data: {:?}\n", self.data.len())?;
     
     Ok(())
   }

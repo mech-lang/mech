@@ -413,6 +413,8 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  println!("--------------------------------------");
+  println!("HORZCAT");
 
   let mut row = 0;
   let mut column = 0;
@@ -457,6 +459,9 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   } 
   
   for (_, vi) in arguments {
+    unsafe{ 
+      println!("{:?}",(*vi.table));
+    }
     let width = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
@@ -481,7 +486,8 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
         match vi.get(&i.unwrap(),&j) {
           Some(value) => {
             unsafe {
-              (*out.table).set(&Index::Index(k), &Index::Index(column+c), value);
+              println!("{:?}, {:?} -> {:?}, {:?} {:?}", i.unwrap(), j, k, column+c, value);
+              (*out.table).set_unchecked(k, column+c, value);
             }
           }
           _ => (),
@@ -489,8 +495,12 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       }
     }
     column += width;
-    
+    unsafe{println!("out {:?}",(*out.table));}
   }
+  unsafe{println!("FINISHED {:?}",(*out.table));}
+  unsafe{println!("FINISHED {:?}",(*out.table).data);}
+  unsafe{println!("FINISHED {:?}",(*out.table).store);}
+  println!("--------------------------------------");
 }
 
 enum CycleIterator {
@@ -562,10 +572,13 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
     (*out.table).columns = 1;
     (*out.table).data.resize(range+1, 0);
     let mut j = 1;
+    println!("{:?}:{:?}", start, end);
     for i in start..=end {
+      println!("{:?}", i);
       (*out.table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
       j += 1;
     }
+    println!("{:?}", (*out.table));
   }
   
 }

@@ -330,7 +330,7 @@ impl fmt::Debug for Index {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &Index::Index(ref ix) => write!(f, "Ix({:#x})", ix),
+      &Index::Index(ref ix) => write!(f, "Ix({:?})", ix),
       &Index::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
       &Index::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
       &Index::All => write!(f, "IxAll"),
@@ -438,7 +438,9 @@ impl Table {
   }
 
   pub fn set_unchecked(&mut self, row: usize, column: usize, value: Value) {
+    
     let ix = self.index_unchecked(row, column);
+    println!("Setting index {:?}", ix);
     let old_address = self.data[ix];
     let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
     store.dereference(old_address);
@@ -452,7 +454,7 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let cell_width = 7;
-    let rows = if self.rows > 15 {
+    let rows = if self.rows > 150 {
       10
     } else {
       self.rows
@@ -492,6 +494,8 @@ impl fmt::Debug for Table {
     }
     write!(f, "\n")?;
     print_inner_border(self.columns, cell_width + 2, f)?;
+
+    // Print the first 10 rows
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..self.columns {
@@ -533,7 +537,9 @@ impl fmt::Debug for Table {
       }
       write!(f, "\n")?;
     }
-    if self.rows > 10 {
+
+    // Print the rest of the rows
+    if self.rows > 150 {
       write!(f, "│ ")?;
       for j in 0..self.columns {
         print_cell_contents(&"...".to_string(), cell_width, f)?;
