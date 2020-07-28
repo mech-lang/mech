@@ -995,8 +995,12 @@ impl Compiler {
         };
 
         let mut input = self.compile_transformation(&children[1]);
+        
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          Transformation::Select{table_id,..} => {
             Some(table_id)
           }
           _ => None,
