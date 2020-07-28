@@ -32,16 +32,9 @@ Update the block positions on each tick of the timer
 
   let input = String::from(r#"
 block
-  #test = stats/sum(table: #app/main{1}{1:2,2:3})
-
-block
-  #ball = [x: 10 y: 10]
-
-block
-  ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
-  line = [shape: "line" parameters: [x1: 10, 10]]
-  canvas = [contains: [ball; line]]
-  #app/main = [contains: [canvas]]"#);
+  x = 1:40
+  y = 1:40
+  #ball = [x y]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -49,7 +42,7 @@ block
 
   let mut compiler = Compiler::new();
   let mut formatter = Formatter::new();
-  let mut core = Core::new(1_000);
+  let mut core = Core::new(1_000_000);
   core.load_standard_library();
   let programs = compiler.compile_string(input.clone());
 
