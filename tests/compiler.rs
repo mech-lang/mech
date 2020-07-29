@@ -209,6 +209,15 @@ block
 block
   #range = 5 : 14"#, Value::from_i64(95));
 
+test_mech!(range_and_cat,r#"
+block
+  #test = stats/sum(table: #ball)
+
+block
+  x = 1:4000
+  y = 1:4000
+  #ball = [x y]"#, Value::from_i64(16004000));
+
 // ## Subscripts
 
 test_mech!(subscript_scalar_math,"
