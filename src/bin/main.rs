@@ -2,7 +2,7 @@
 
 extern crate mech_core;
 
-use mech_core::{Core, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
+use mech_core::{Core, hash_string, Register, humanize, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
 extern crate ahash;
 use ahash::AHasher;
@@ -10,12 +10,6 @@ use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
 use std::rc::Rc;
-
-fn hash_string(input: &str) -> u64 {
-  let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
-  hasher.write(input.to_string().as_bytes());
-  hasher.finish()
-}
 
 fn main() {
 
@@ -52,6 +46,7 @@ fn main() {
   store.identifiers.insert(vy_id, "vy".to_string());
   store.identifiers.insert(table_range, "table/range".to_string());
   store.identifiers.insert(table_horzcat, "table/horizontal-concatenate".to_string());
+  
   block.register_transformations(("x = 1:4000".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
     Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0), unit: 0},
@@ -67,6 +62,7 @@ fn main() {
     },
     Transformation::NewTable{table_id: TableId::Local(x_id), rows: balls, columns: 1},
   ]));
+  
   block.register_transformations(("y = 1:4000".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
     Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(0), unit: 0},
@@ -82,6 +78,7 @@ fn main() {
     },
     Transformation::NewTable{table_id: TableId::Local(y_id), rows: balls, columns: 1},
   ]));
+  
   block.register_transformations((r#"#ball = [|x   y   vx  vy|
 x   y   20  0]"#.to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x03), rows: 1, columns: 1},
@@ -104,6 +101,8 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 3, column_alias: vx_id},
     Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 4, column_alias: vy_id},
   ]));
+
+  /*
   block.register_transformations(("#gravity = 9".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Global(gravity), rows: 1, columns: 1},
     Transformation::Set{table_id: TableId::Global(gravity), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(9)},
@@ -116,9 +115,10 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Set{table_id: TableId::Global(time_timer), row: Index::Index(1), column: Index::Index(1), value: Value::from_u64(16)},
   ]));
   block.gen_id();
+  */
   core.runtime.register_block(block);
 
-
+/*
   let mut block = Block::new(balls * 10 * 10);
   let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
   store.identifiers.insert(time_timer, "time/timer".to_string());
@@ -132,7 +132,7 @@ x   y   20  0]"#.to_string(), vec![
   store.identifiers.insert(vy_id, "vy".to_string());
   store.identifiers.insert(math_add, "math/add".to_string());
   block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
-    Transformation::Whenever{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)},
+    Transformation::Whenever{table_id: TableId::Global(time_timer), row: Index::All, column: Index::Alias(ticks), registers: vec![Register{table_id: time_timer, row: Index::All, column: Index::Alias(ticks)}.hash()]},
   ]));
   block.register_transformations(("#ball.x := #ball.x + #ball.vx".to_string(), vec![
     Transformation::Function{
@@ -165,8 +165,8 @@ x   y   20  0]"#.to_string(), vec![
     },
   ]));
   block.gen_id();
-
-  core.runtime.register_block(block);
+*/
+  //core.runtime.register_block(block);
 
  
   print!("Running computation...");
