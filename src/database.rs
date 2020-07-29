@@ -70,8 +70,7 @@ impl Store {
     let address = self.next;
     self.data[address] = value;
     // The next address is taken from the free pile because our main memory is full
-    if self.data_end + 1 == self.capacity && self.free[0] != 0 {
-      println!("Picking from free");
+    if self.data_end + 1 == self.capacity && self.free_next != self.free_end {
       self.next = self.free[self.free_next];
       if self.free_next + 1 == self.free.len() {
         self.free_next = 0;
@@ -79,8 +78,7 @@ impl Store {
         self.free_next += 1;
       }
     // Extend the data if it's full and there is no free space
-    } else if self.data_end + 1 == self.capacity && self.free[0] == 0 {
-      println!("EXTENDING DATA");
+    } else if self.data_end + 1 == self.capacity && self.free_next == self.free_end {
       self.capacity = self.capacity * 2;
       self.data.resize(self.capacity, Value::from_u64(0));
       self.reference_counts.resize(self.capacity, 0);
@@ -88,11 +86,9 @@ impl Store {
       self.data_end += 1;
       self.next = self.data_end;
     } else {
-      println!("picking from the next");
       self.data_end += 1;
       self.next = self.data_end;
     }
-    println!("address is {:?}", address);
     address
   }
 }
@@ -105,9 +101,47 @@ impl fmt::Debug for Store {
     write!(f, "end: {:?}\n", self.data_end)?;
     write!(f, "free-next: {:?}\n", self.free_next)?;
     write!(f, "free-end: {:?}\n", self.free_end)?;
-    //write!(f, "free: {:?}\n", self.free)?;
-    //write!(f, "rc  : {:?}\n", self.reference_counts)?;
-    write!(f, "data: {:?}\n", self.data.len())?;
+    write!(f, "free: [")?;
+    let data_len = if self.free.len() > 40 {
+      40
+    } else {
+      self.free.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", self.free[i])?;
+    }
+    write!(f, "]({:?})\n", self.free.len())?;
+    write!(f, "rc  : [")?;
+    let data_len = if self.reference_counts.len() > 40 {
+      40
+    } else {
+      self.reference_counts.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", self.reference_counts[i])?;
+    }
+    write!(f, "]({:?})\n", self.reference_counts.len())?;
+
+    write!(f, "       ")?;
+    let data_len = if self.data.len() > 40 {
+      40
+    } else {
+      self.data.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", i)?;
+    }
+    write!(f, "\n")?;
+    write!(f, "data: [")?;
+    let data_len = if self.data.len() > 40 {
+      40
+    } else {
+      self.data.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", self.data[i])?;
+    }
+    write!(f, "]({:?})\n", self.data.len())?; 
     
     Ok(())
   }
