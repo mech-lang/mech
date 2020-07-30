@@ -673,7 +673,6 @@ macro_rules! binary_infix {
       };
 
       let mut i = 1;
-      
       let out_elements = out.rows() * out.columns();
       unsafe{
         loop {

@@ -691,7 +691,6 @@ impl Register {
   }
 }
 
-#[derive(Debug)]
 pub struct  ValueIterator {
   pub table: *mut Table,
   pub row_index: Index,
@@ -707,7 +706,12 @@ impl ValueIterator {
   }
 
   pub fn columns(&self) -> usize {
-    unsafe{ (*self.table).columns }
+    match self.column_index {
+      Index::All => unsafe{ (*self.table).columns },
+      Index::Alias{..} => 1,
+      _ => unsafe{ (*self.table).columns },
+    }
+    
   }
 
   pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
@@ -741,6 +745,19 @@ impl Iterator for ValueIterator {
     }
   }
 
+}
+
+impl fmt::Debug for ValueIterator {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    unsafe{write!(f, "row index: {:?}\n", (*self.table))?;}
+    write!(f, "row index: {:?}\n", self.row_index)?;
+    write!(f, "col index: {:?}\n", self.column_index)?;
+    write!(f, "row iter: {:?}\n", self.row_iter)?;
+    write!(f, "col iter: {:?}\n", self.column_iter)?;
+    
+    Ok(())
+  }
 }
 
 #[derive(Debug)]
