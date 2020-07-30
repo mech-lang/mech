@@ -98,6 +98,16 @@ test_mech!(math_multiple_variable_graph_new_ordering,"block
   z = 5
   d = 9 * z", Value::from_i64(250));
 
+  test_mech!(math_add_columns_alias,"
+block
+  #test = stats/sum(column: #ball.x + #ball.y)
+
+block
+  x = 1:10
+  y = 1:10
+  #ball = [|x y|
+            x y]", Value::from_i64(110));
+
 test_mech!(math_on_whole_table,"
 block
   #x = 500
