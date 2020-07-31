@@ -708,6 +708,7 @@ impl ValueIterator {
   pub fn columns(&self) -> usize {
     match self.column_index {
       Index::All => unsafe{ (*self.table).columns },
+      Index::Index{..} |
       Index::Alias{..} => 1,
       _ => unsafe{ (*self.table).columns },
     }
