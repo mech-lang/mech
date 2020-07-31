@@ -26,15 +26,19 @@ Define the environment
 Update the block positions on each tick of the timer
   ~ #time/timer.ticks
   #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity"#);*/
+    #ball.y := #ball.y + #ball.vy
+    #ball.vy := #ball.vy + #gravity"#);*/
 
 
   let input = String::from(r#"
 block
-  x = 1:40
-  y = 1:40
-  #ball = [x y]"#);
+  #test = stats/sum(column: #ball{:,1} + #ball{:,2})
+
+block
+  x = 1:10
+  y = 1:10
+  #ball = [|x y|
+            x y]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
