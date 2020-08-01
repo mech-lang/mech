@@ -14,14 +14,16 @@ use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::io::{Write, BufReader, BufWriter};
 use std::sync::Arc;
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
 use mech_core::{Core, Register, Transaction, Change, Error};
 use mech_core::{Value, Index};
 use mech_core::Block;
-use mech_core::{Table, TableIndex, Hasher, TableId};
+use mech_core::{Table, TableId};
+use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, NetworkTable, Machine, MachineRegistrar, MachineDeclaration};
+use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
@@ -103,9 +105,9 @@ pub struct Program {
 
 impl Program {
   pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
-    let mut mech = Core::new(capacity, 10000);
-    let mech_code = Hasher::hash_str("mech/code");
-    let txn = Transaction::from_change(Change::NewTable{id: mech_code, rows: 1, columns: 1});
+    let mut mech = Core::new(capacity);
+    let mech_code = hash_string("mech/code");
+    let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
     mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
@@ -128,8 +130,8 @@ impl Program {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
     self.mech.register_blocks(compiler.blocks);
-    self.errors.append(&mut self.mech.runtime.errors.clone());
-    let mech_code = Hasher::hash_str("mech/code");
+    //self.errors.append(&mut self.mech.runtime.errors.clone());
+    let mech_code = hash_string("mech/code");
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
@@ -139,28 +141,28 @@ impl Program {
     let mut compiler = Compiler::new();
     compiler.compile_string(input.clone());
     for mut block in compiler.blocks {
-      block.id = self.mech.runtime.blocks.len() + 1;
+      block.id = (self.mech.runtime.blocks.len() + 1) as u64;
       self.mech.runtime.ready_blocks.insert(block.id);
       self.mech.register_blocks(vec![block]);
     }
-    self.errors.append(&mut self.mech.runtime.errors.clone());
-    let mech_code = Hasher::hash_str("mech/code");
+    //self.errors.append(&mut self.mech.runtime.errors.clone());
+    let mech_code = hash_string("mech/code");
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
-
+    /*
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
       let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
       let mut response = reqwest::get(registry_url)?.text()?;
       let mut registry_compiler = Compiler::new();
       registry_compiler.compile_string(response);
-      let mut registry_core = Core::new(1,1);
+      let mut registry_core = Core::new(100);
       registry_core.register_blocks(registry_compiler.blocks);
-      registry_core.step(10_000);
+      registry_core.step();
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap().borrow();
@@ -194,7 +196,7 @@ impl Program {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = library.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+            let m = library.get::<extern "C" fn(Vec<(String, Rc<RefCell<Table>>)>, Rc<RefCell<Table>>)>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
@@ -260,7 +262,7 @@ impl Program {
               // Replace slashes with underscores and then add a null terminator
               let mut s = format!("{}\0", fun_name.replace("/","_"));
               let error_msg = format!("Symbol {} not found",s);
-              let m = library.get::<extern "C" fn(Vec<(String, Table)>)->Table>(s.as_bytes()).expect(&error_msg);
+              let m = library.get::<extern "C" fn(Vec<(String, Rc<RefCell<Table>>)>, Rc<RefCell<Table>>)>(s.as_bytes()).expect(&error_msg);
               m.into_raw()
             };
             *fun = Some(*native_rust);
@@ -268,13 +270,13 @@ impl Program {
           _ => (),
         }
       }
-    }
+    }*/
     
     Ok(())
   }
 
   pub fn clear(&mut self) {
-    self.mech.clear();
+    //self.mech.clear();
   }
 
 }
@@ -291,7 +293,7 @@ pub enum ClientMessage {
   Clear,
   Time(usize),
   NewBlocks(usize),
-  Table(Option<Table>),
+  //Table(Option<Table>),
   Transaction(Transaction),
   String(String),
   //Block(Block),
@@ -497,9 +499,9 @@ impl ProgramRunner {
       program.download_dependencies(Some(client_outgoing.clone()));
 
       // Step cores
-      program.mech.step(10_000);
+      program.mech.step();
       for core in program.cores.values_mut() {
-        core.step(10_000);
+        core.step();
       }
       extern crate ws;
       use ws::{connect, Handler, Sender, Handshake, Result, Message, CloseCode};
@@ -700,16 +702,16 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             use std::time::Instant;
-            let pre_changes = program.mech.store.len();
+            //let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
-            let delta_changes = program.mech.store.len() - pre_changes;
+            //let delta_changes = program.mech.store.len() - pre_changes;
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;              
             //program.compile_string(String::from(text.clone()));
             ////println!("{:?}", program.mech);
-            println!("Txn took {:0.4?} ms ({:0.0?} cps)", time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
-            println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
+            //println!("Txn took {:0.4?} ms ({:0.0?} cps)", time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
               let change = &program.mech.store.changes[i-1];
@@ -731,6 +733,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           },
           (Ok(RunLoopMessage::Listening(ref register)), _) => {
             println!("Someone is listening for: {:?}", register);
+            /*
             match program.mech.output.get(register) {
               Some(_) => {
                 // We produce a table for which they're listening, so let's mark that
@@ -741,7 +744,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 client_outgoing.send(ClientMessage::Table(Some(table_ref.unwrap().borrow().clone())));
               }, 
               _ => (),
-            }
+            }*/
             
           },
           (Ok(RunLoopMessage::Stop), _) => { 
@@ -749,11 +752,11 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             break 'runloop;
           },
           (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            let table_msg = match program.mech.store.get_table(table_id) {
+            /*let table_msg = match program.mech.store.get_table(table_id) {
               Some(table) => ClientMessage::Table(Some(table.borrow().clone())),
               None => ClientMessage::Table(None),
             };
-            client_outgoing.send(table_msg);
+            client_outgoing.send(table_msg);*/
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -761,19 +764,19 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           },
           (Ok(RunLoopMessage::Resume), true) => {
             paused = false;
-            program.mech.resume();
+            //program.mech.resume();
             client_outgoing.send(ClientMessage::Resume);
           },
           (Ok(RunLoopMessage::StepBack), _) => {
             if !paused {
               paused = true;
             }
-            program.mech.step_back_one();
-            client_outgoing.send(ClientMessage::Time(program.mech.offset));
+            //program.mech.step_back_one();
+            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           }
           (Ok(RunLoopMessage::StepForward), true) => {
-            program.mech.step_forward_one();
-            client_outgoing.send(ClientMessage::Time(program.mech.offset));
+            //program.mech.step_forward_one();
+            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             let block_count = program.mech.runtime.blocks.len();
@@ -783,39 +786,42 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step(10_000);
-                for (table, column) in &program.mech.runtime.changed_this_round {
+                program.mech.step();
+                /*
+                for register in &program.mech.runtime.changed_this_round {
                   match program.machines.get(&table) {
                     // Invoke the machine!
                     Some(machine) => {
+                      
                       for change in &program.mech.store.changes {
                         match change {
-                          Change::Set{table: change_table, ..} => {
+                          Change::Set{table_id: change_table, ..} => {
                             if table == change_table {
-                              machine.on_change(change);
+                              machine.on_change(&change);
                             }
                           }
                           _ => (),
                         }
                       }
+
                     },
                     _ => (),
                   }
-                }
+                }*/
                 client_outgoing.send(ClientMessage::StepDone);
               },
               (0, MechCode::MiniBlocks(miniblocks)) => {
                 let mut blocks: Vec<Block> = Vec::new();
                 for miniblock in miniblocks {
-                  let mut block = Block::new();
-                  for constraint in miniblock.constraints {
-                    block.add_constraints(constraint);
+                  let mut block = Block::new(100);
+                  for tfms in miniblock.transformations {
+                    block.register_transformations(tfms);
                   }
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step(10_000);
+                program.mech.step();
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
@@ -824,6 +830,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             }
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
+            /*
             // Reset #ans
              match program.mech.get_table("ans".to_string()) {
               Some(table) => {
@@ -837,7 +844,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             compiler.compile_string(code);
             program.mech.register_blocks(compiler.blocks);
             program.download_dependencies(Some(client_outgoing.clone()));
-            program.mech.step(10_000);
+            program.mech.step();
 
             // Get the result
             let echo_table = match program.mech.get_table("ans".to_string()) {
@@ -846,7 +853,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             };
 
             // Send it
-            client_outgoing.send(ClientMessage::Table(echo_table));
+            client_outgoing.send(ClientMessage::Table(echo_table));*/
             client_outgoing.send(ClientMessage::StepDone);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
@@ -867,14 +874,14 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
             let mut blocks: Vec<Block> = Vec::new();
             for miniblock in miniblocks {
-              let mut block = Block::new();
-              for constraint in miniblock.constraints {
-                block.add_constraints(constraint);
+              let mut block = Block::new(100);
+              for tfms in miniblock.transformations {
+                block.register_transformations(tfms);
               }
               blocks.push(block);
             }
             program.mech.register_blocks(blocks);
-            program.mech.step(10_000);
+            program.mech.step();
             client_outgoing.send(ClientMessage::StepDone);
           }
           (Err(_), _) => {
