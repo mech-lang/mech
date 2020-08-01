@@ -31,6 +31,7 @@ pub struct Runtime {
   pub database: Rc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
+  pub errors: Vec<Error>,
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub output_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
@@ -45,6 +46,7 @@ impl Runtime {
       recursion_limit,
       database,
       blocks: HashMap::new(),
+      errors: Vec::new(),
       ready_blocks: HashSet::new(),
       register_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
@@ -123,8 +125,6 @@ impl Runtime {
       recursion_ix += 1;
     }
     
-
-
     Ok(())
   }
 
