@@ -227,12 +227,12 @@ impl fmt::Debug for Database {
 }
 
 // Holds changes to be applied to the database
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
   pub changes: Vec<Change>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 // Updates the database
 pub enum Change {
   Set{table_id: u64, values: Vec<(Index, Index, Value)>},
