@@ -1,7 +1,7 @@
-use block::Error;
+use block::{Block, Error};
 use database::{Database, Transaction};
 use runtime::Runtime;
-use table::{Value, Index};
+use table::{Table, Value, Index};
 use std::rc::Rc;
 use std::cell::RefCell;
 use rust_core::fmt;
@@ -87,6 +87,14 @@ impl Core {
       },
       None => None,
     }
+  }
+
+  pub fn register_blocks(&mut self, blocks: Vec<Block>) {
+    self.runtime.register_blocks(blocks);
+  }
+
+  pub fn step(&mut self) {
+    self.runtime.run_network();
   }
 
 }
