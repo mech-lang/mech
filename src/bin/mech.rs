@@ -23,12 +23,12 @@ use mech::{
   Core, 
   MiniBlock, 
   Block, 
-  Constraint, 
+  Transformation, 
   Compiler, 
   Table, 
   Value, 
   ParserNode, 
-  Hasher, 
+  hash_string, 
   Program, 
   ErrorType, 
   ProgramRunner, 
@@ -38,7 +38,6 @@ use mech::{
   Parser,
   MechCode,
   WebsocketMessage,
-  NetworkTable,
 };
 use mech::QuantityMath;
 
@@ -189,9 +188,9 @@ fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
       MechCode::MiniBlocks(c) => {
         let mut blocks: Vec<Block> = Vec::new();
         for miniblock in c {
-          let mut block = Block::new();
-          for constraint in miniblock.constraints {
-            block.add_constraints(constraint);
+          let mut block = Block::new(100);
+          for tfm in miniblock.transformations {
+            block.register_transformations(tfm);
           }
           blocks.push(block);
         }
@@ -207,7 +206,7 @@ fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.0.5";
+  let version = "0.0.6";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
@@ -278,7 +277,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
     // Spin up a mech core and compiler
-    let mut core = Core::new(1000,1000);
+    let mut core = Core::new(1000);
 
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code.clone());
@@ -286,7 +285,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
     for block in blocks {
       let mut miniblock = MiniBlock::new();
-      miniblock.constraints = block.constraints.clone();
+      miniblock.transformations = block.transformations.clone();
       miniblocks.push(miniblock);
     }
     let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
@@ -317,7 +316,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       use core::hash::Hasher;
       //println!("Connection Info {:?}", req.connection_info());
       //println!("Head {:?}", req.head());
-      let mut hasher = AHasher::new_with_keys(123, 456);
+      let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
       hasher.write(format!("{:?}", req.head()).as_bytes());
       let mut id: u64 = hasher.finish();
       if let Some(uid) = session.get::<u64>("mech-user/id").unwrap() {
@@ -503,7 +502,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             //println!("{} {}", formatted_name, message);
             //print!("{}", ">: ".bright_yellow());
           },
-          (Ok(ClientMessage::Table(table))) => {
+          /*(Ok(ClientMessage::Table(table))) => {
             // Send the table received from the client over the websocket
             match table {
               Some(table) => {
@@ -514,7 +513,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               }
               None => (),
             }
-          },
+          },*/
           (Ok(ClientMessage::Transaction(txn))) => {
             //println!("{} Transaction: {:?}", formatted_name, txn);
           },
@@ -569,13 +568,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let code = read_mech_files(mech_paths).await?;
       let blocks = compile_code(code);
 
-      let mut core = Core::new(1000,1000);
+      let mut core = Core::new(1000);
       core.register_blocks(blocks);
       core.step();
 
+      
       let mut tests_count = 0;
       let mut tests_passed = 0;
       let mut tests_failed = 0;
+      /*
       match core.get_table("mech/test".to_string()) {
         Some(test_results) => {
           let test_results = test_results.borrow();
@@ -592,7 +593,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           }
         },
         _ => (),
-      }
+      }*/
 
 
       if passed_all_tests {
@@ -616,7 +617,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut miniblocks = Vec::new();
     for block in &blocks {
       let mut miniblock = MiniBlock::new();
-      miniblock.constraints = block.constraints.clone();
+      miniblock.transformations = block.transformations.clone();
       miniblocks.push(miniblock);
     }
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
@@ -633,7 +634,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /*(Ok(ClientMessage::Table(table))) => {
           if !repl {
             match table {
               Some(table) => {
@@ -649,7 +650,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           } else {
             break 'receive_loop;
           }
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -657,7 +658,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           // Do nothing
         },
         Ok(ClientMessage::StepDone) => {
-          let output_id: u64 = Hasher::hash_str("mech/output"); 
+          let output_id: u64 = hash_string("mech/output"); 
           mech_client.send(RunLoopMessage::GetTable(output_id));
         },
         (Err(x)) => {
@@ -687,7 +688,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut miniblocks: Vec<MiniBlock> = Vec::new();
     for block in blocks {
       let mut miniblock = MiniBlock::new();
-      miniblock.constraints = block.constraints.clone();
+      miniblock.transformations = block.transformations.clone();
       miniblocks.push(miniblock);
     }
     let result = bincode::serialize(&miniblocks).unwrap();
@@ -767,7 +768,7 @@ clear   - reset the current core
           println!("{} {}", formatted_name, message);
           print!("{}", ">: ".bright_yellow());
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /*(Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
@@ -776,7 +777,7 @@ clear   - reset the current core
             }
             None => println!("{} Table not found", formatted_name),
           }
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -864,59 +865,6 @@ clear   - reset the current core
   Ok(())
 }
 
-pub fn print_table(table: &Table) {
-  // Get the length of each column
-  let mut column_widths = vec![0; table.columns as usize];
-  for column in 0..table.columns as usize {
-    for row in 0..table.rows as usize {
-      let value = match &table.data[column][row] {
-        Value::Number(q) => format!("{}", q.to_float()),
-        q => format!("{:?}", q),
-      };
-      if value.len() > column_widths[column] {
-        column_widths[column] = value.len();
-      }
-    }
-  }
-  // Print the top border
-  print!("┌");
-  for i in 0 .. table.columns as usize - 1 {
-    print_repeated_char("─", column_widths[i]);
-    print!("┬");
-  }
-  print_repeated_char("─", column_widths[column_widths.len() - 1]);
-  print!("┐\n");
-  // Print each row
-  for row in 0..table.rows as usize {
-    print!("│");
-    for column in 0..table.columns as usize {
-      let content_string = match &table.data[column][row] {
-        Value::Number(q) => format!("{}", q.to_float()),
-        q => format!("{:?}", q),
-      };
-      print!("{}", content_string);
-      // print padding
-      print_repeated_char(" ", column_widths[column] - content_string.len());
-      print!("│");
-    }
-    print!("\n");
-  }  
-  // Print the bottom border
-  print!("└");
-  for i in 0 .. table.columns as usize - 1 {
-    print_repeated_char("─", column_widths[i]);
-    print!("┴");
-  }
-  print_repeated_char("─", column_widths[column_widths.len() - 1]);
-  print!("┘\n");
-}
-
-fn print_repeated_char(to_print: &str, n: usize) {
-  for _ in 0..n {
-    print!("{}", to_print);
-  }
-}
-
 pub fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   // Try parsing mech code
   let mut parser = Parser::new();
@@ -987,6 +935,7 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseErro
 }
 
 fn print_errors(program: &Program) {
+  /*
   if program.errors.len() > 0 {
     let plural = if program.errors.len() == 1 {
       ""
@@ -1015,5 +964,5 @@ fn print_errors(program: &Program) {
       }
       println!("\n{}", "------------------------------------------------------\n".bright_yellow());
     }
-  }
+  }*/
 }

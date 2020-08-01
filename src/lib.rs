@@ -9,9 +9,9 @@ extern crate mech_utilities;
 
 mod repl;
 
-pub use mech_core::{Core, Block, Table, Value, Hasher, Constraint, Error, ErrorType};
+pub use mech_core::{Core, Transformation, hash_string, Block, Table, Value, Error, ErrorType};
 pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
 pub use mech_syntax::parser::{Parser, Node as ParserNode};
 pub use mech_program::{Program, ProgramRunner, RunLoop, ClientMessage};
-pub use mech_utilities::{RunLoopMessage, NetworkTable, MiniBlock, MechCode, WebsocketMessage};
+pub use mech_utilities::{RunLoopMessage, MiniBlock, MechCode, WebsocketMessage};
