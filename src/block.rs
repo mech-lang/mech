@@ -674,7 +674,7 @@ pub enum Transformation {
   Select{table_id: TableId, row: Index, column: Index},
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: u64,
   pub row: Index,
