@@ -18,7 +18,7 @@ use hashbrown::hash_set::{HashSet};
 use hashbrown::hash_map::{HashMap, Entry};
 use super::formatter::Formatter;
 use std::rc::Rc;
-
+use std::sync::Arc;
                              
 const TABLE_HORZCAT: u64 = 0x006A44C6BAFC67F1;
 const TABLE_VERTCAT: u64 = 0x00606e0853f32c99;
@@ -353,7 +353,6 @@ impl Compiler {
     self.parse_tree = parser.parse_tree.clone();
     self.build_syntax_tree(parser.parse_tree);
     let ast = self.syntax_tree.clone();
-    println!("{:?}", ast);
     let programs = self.compile(ast);
     self.programs = programs.clone();
     programs
@@ -691,14 +690,14 @@ impl Compiler {
           for tfm in rtfms {
             match tfm {
               Transformation::Whenever{..} => {
-                block.plan.push((vec![], tfm.clone()));
+                block.plan.push(tfm.clone());
               }
               Transformation::Function{name, ref arguments, out} => {
                 let (out_id, row, column) = out;
                 match out_id {
-                  TableId::Local(id) => block.plan.push((vec![], tfm.clone())),
+                  TableId::Local(id) => block.plan.push(tfm.clone()),
                   _ => {
-                    global_out.push((vec![], tfm.clone()));
+                    global_out.push(tfm.clone());
                   },
                 }
               }
@@ -722,7 +721,7 @@ impl Compiler {
         }
         //block.id = block.gen_block_id();
         for (k,v) in self.identifiers.drain() {
-          let store = unsafe{&mut *Rc::get_mut_unchecked(&mut block.store)};
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
           store.identifiers.insert(k,v.to_string());
         }
         for err in self.errors.drain(..) {
