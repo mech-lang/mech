@@ -44,12 +44,14 @@ pub enum RunLoopMessage {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
+  pub plan: Vec<Transformation>,
 }
 
 impl MiniBlock {
   pub fn new() -> MiniBlock { 
     MiniBlock {
       transformations: Vec::with_capacity(1),
+      plan: Vec::with_capacity(1),
     }
   }
 }
