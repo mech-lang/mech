@@ -3,6 +3,7 @@ use database::{Database, Transaction};
 use runtime::Runtime;
 use table::{Table, Value, Index};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
 use operations::{
@@ -38,12 +39,12 @@ use operations::{MechFunction};
 // core then waits for further transactions.
 pub struct Core {
   pub runtime: Runtime,
-  pub database: Rc<RefCell<Database>>,
+  pub database: Arc<RefCell<Database>>,
 }
 
 impl Core {
   pub fn new(capacity: usize) -> Core {
-    let mut database = Rc::new(RefCell::new(Database::new(capacity)));
+    let mut database = Arc::new(RefCell::new(Database::new(capacity)));
     Core {
       runtime: Runtime::new(database.clone(), 1000),
       database,
@@ -95,6 +96,13 @@ impl Core {
 
   pub fn step(&mut self) {
     self.runtime.run_network();
+  }
+
+  pub fn get_table(&self, table_id: u64) -> Option<Table> {
+    match self.runtime.database.borrow().tables.get(&table_id) {
+      Some(table) => Some(table.clone()),
+      None => None,
+    }
   }
 
 }

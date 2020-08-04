@@ -4,6 +4,7 @@ use database::{Database, Transaction, Change, Store};
 use table::{Index, Table, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 use operations::{MechFunction};
@@ -28,7 +29,7 @@ use operations::{MechFunction};
 // compile time and the user can be warned of this and instructed to include some stop condition.
 pub struct Runtime {
   pub recursion_limit: u64,
-  pub database: Rc<RefCell<Database>>,
+  pub database: Arc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
   pub errors: Vec<Error>,
@@ -41,7 +42,7 @@ pub struct Runtime {
 
 impl Runtime {
 
-  pub fn new(database: Rc<RefCell<Database>>, recursion_limit: u64) -> Runtime {
+  pub fn new(database: Arc<RefCell<Database>>, recursion_limit: u64) -> Runtime {
     Runtime {
       recursion_limit,
       database,
@@ -59,7 +60,7 @@ impl Runtime {
   pub fn load_library_function(&mut self, name: &str, fxn: MechFunction) {
     let name_hash = hash_string(name);
     let mut db = self.database.borrow_mut();
-    let mut store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
+    let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.identifiers.insert(name_hash, name.to_string());
     self.functions.insert(name_hash,Some(fxn));
   }
@@ -169,7 +170,7 @@ impl Runtime {
     // Extend block identifiers
     {
       let mut db = self.database.borrow_mut();
-      let store = unsafe{&mut *Rc::get_mut_unchecked(&mut db.store)};
+      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       for (k,v) in block.store.identifiers.iter() {
         store.identifiers.insert(*k,v.clone());
       }

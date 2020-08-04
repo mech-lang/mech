@@ -3,6 +3,7 @@ use block::{Error, Register};
 use ::humanize;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 
@@ -156,7 +157,7 @@ impl fmt::Debug for Store {
 pub struct Database {
   pub tables: HashMap<u64, Table>,
   pub changed_this_round: HashSet<u64>,
-  pub store: Rc<Store>,
+  pub store: Arc<Store>,
   pub transactions: Vec<Transaction>,
 }
 
@@ -166,7 +167,7 @@ impl Database {
     Database {
       tables: HashMap::new(),
       changed_this_round: HashSet::new(),
-      store: Rc::new(Store::new(capacity)),
+      store: Arc::new(Store::new(capacity)),
       transactions: Vec::with_capacity(100_000),
     }
   }
@@ -182,7 +183,7 @@ impl Database {
             *columns, self.store.clone()));
         },
         Change::SetColumnAlias{table_id, column_ix, column_alias} => {
-          let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
           store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
           store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
         }

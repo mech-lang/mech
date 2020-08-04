@@ -6,6 +6,7 @@ use operations::{MechFunction, resolve_subscript};
 use errors::{ErrorType};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::hash::Hasher;
 use ahash::AHasher;
 use rust_core::fmt;
@@ -32,7 +33,7 @@ pub struct Block {
   pub output_dependencies: HashSet<u64>,
   pub output_dependencies_ready: HashSet<u64>,
   pub tables: HashMap<u64, Table>,
-  pub store: Rc<Store>,
+  pub store: Arc<Store>,
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<(Vec<TransformMap>,Transformation)>,
   pub changes: Vec<Change>,
@@ -52,7 +53,7 @@ impl Block {
       output_dependencies_ready: HashSet::new(),
       state: BlockState::New,
       tables: HashMap::new(),
-      store: Rc::new(Store::new(capacity)),
+      store: Arc::new(Store::new(capacity)),
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
@@ -108,7 +109,7 @@ impl Block {
               self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
             }
             TableId::Local(id) => {
-              let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+              let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
               store.column_index_to_alias.insert((*table_id.unwrap(),column_ix),column_alias);
               store.column_alias_to_index.insert((*table_id.unwrap(),column_alias),column_ix);
             }
@@ -191,7 +192,7 @@ impl Block {
   }
 
   // Process changes queued on the block
-  pub fn process_changes(&mut self, database: Rc<RefCell<Database>>) {
+  pub fn process_changes(&mut self, database: Arc<RefCell<Database>>) {
     if !self.changes.is_empty() {
       let txn = Transaction {
         changes: self.changes.clone(),
@@ -202,7 +203,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self, database: Rc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
+  pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
     'step_loop: for (masks, step) in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column, registers} => {
@@ -860,13 +861,13 @@ impl Iterator for TableIterator {
 pub struct AliasIterator {
   alias: u64,
   table_id: TableId,
-  store: Rc<Store>,
+  store: Arc<Store>,
   index: Option<Index>,
 }
 
 impl AliasIterator {
 
-  pub fn new(alias: u64, table_id: TableId, store: Rc<Store>) -> AliasIterator {
+  pub fn new(alias: u64, table_id: TableId, store: Arc<Store>) -> AliasIterator {
     AliasIterator {
       alias,
       table_id,
@@ -883,7 +884,7 @@ impl Iterator for AliasIterator {
   fn next(&mut self) -> Option<Index> {
     match self.index {
       None => {
-        let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
         match store.column_alias_to_index.get(&(*self.table_id.unwrap(), self.alias)) {
           Some(ix) => {
             self.index = Some(Index::Index(*ix));

@@ -11,6 +11,7 @@ use block::{Block, IndexIterator, TableIterator, AliasIterator, ValueIterator, I
 use database::Database;
 use errors::ErrorType;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use hashbrown::HashMap;
 use ::{humanize, hash_string};
@@ -25,7 +26,7 @@ pub fn resolve_subscript(
   row_index: Index, 
   column_index: Index,
   block_tables: &mut HashMap<u64, Table>, 
-  database: &Rc<RefCell<Database>>) -> ValueIterator {
+  database: &Arc<RefCell<Database>>) -> ValueIterator {
 
   let mut db = database.borrow_mut();
 

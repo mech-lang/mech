@@ -12,6 +12,7 @@ use hashbrown::hash_map::{HashMap, Entry};
 use serde::*;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use errors::{Error, ErrorType};
 use ::{humanize, hash_string};
@@ -345,7 +346,7 @@ impl fmt::Debug for Index {
 #[derive(Clone)]
 pub struct Table {
   pub id: u64,
-  pub store: Rc<Store>,
+  pub store: Arc<Store>,
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<usize>, // Each entry is a memory address into the store
@@ -353,7 +354,7 @@ pub struct Table {
 
 impl Table {
 
-  pub fn new(table_id: u64, rows: usize, columns: usize, store: Rc<Store>) -> Table {
+  pub fn new(table_id: u64, rows: usize, columns: usize, store: Arc<Store>) -> Table {
     Table {
       id: table_id,
       store,
@@ -431,7 +432,7 @@ impl Table {
   pub fn set(&mut self, row: &Index, column: &Index, value: Value) {
     let ix = self.index(row, column).unwrap();
     let old_address = self.data[ix];
-    let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
     store.dereference(old_address);
     let new_address = store.intern(value);
     self.data[ix] = new_address;
@@ -441,7 +442,7 @@ impl Table {
     
     let ix = self.index_unchecked(row, column);
     let old_address = self.data[ix];
-    let store = unsafe{&mut *Rc::get_mut_unchecked(&mut self.store)};
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
     store.dereference(old_address);
     let new_address = store.intern(value);
     self.data[ix] = new_address;
