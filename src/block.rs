@@ -35,7 +35,7 @@ pub struct Block {
   pub tables: HashMap<u64, Table>,
   pub store: Arc<Store>,
   pub transformations: Vec<(String, Vec<Transformation>)>,
-  pub plan: Vec<(Vec<TransformMap>,Transformation)>,
+  pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
   pub errors: Vec<ErrorType>,
 }
@@ -204,7 +204,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
-    'step_loop: for (masks, step) in &self.plan {
+    'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column, registers} => {
           match table_id {
@@ -372,7 +372,7 @@ impl fmt::Debug for Block {
       }
     }
     write!(f, "│ plan: \n")?;
-    for (ix, (_,tfm)) in self.plan.iter().enumerate() {
+    for (ix, tfm) in self.plan.iter().enumerate() {
       let tfm_string = format_transformation(&self,tfm);
       write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
     }
@@ -639,15 +639,6 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     x => format!("{:?}", x),
   }
 }
-
-#[derive(Clone)]
-pub enum TransformMap {
-  All,
-  Index(usize),
-  Range((usize,usize,usize)),
-  Mask(Vec<u8>),
-}
-
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BlockState {
