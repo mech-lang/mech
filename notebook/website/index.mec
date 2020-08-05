@@ -1,0 +1,14 @@
+# Mech Website
+
+## Homepage
+
+A one sentence description of the mech language
+  #mech-website/headline = "Mech is a language for developing data-driven, reactive systems like animations, games, and robots. It makes composing, transforming, and distributing data easy, allowing you to focus on the essential complexity of your work."
+  #mech-website/logo = "http://mech-lang.org/img/logo.png"
+
+This is where the drawing is added to the DOM
+  logo = [type: "img" class: "logo" contains: #mech-website/logo]
+  headline = [type: "div" class: "well" contains: #mech-website/headline]
+  container = [type: "div" class: "container" contains: [logo; headline; #robot]]
+  #app/main = [|root        direction contains|
+                "mech-root" "column"  [container]]

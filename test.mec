@@ -1,0 +1,6 @@
+# Doing a test
+
+block
+  x = 1:10
+  y = 10:20
+  #mech/output = x + y

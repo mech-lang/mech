@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <link rel="stylesheet" href="http://mech-lang.org/css/main.css">
+  </head>
+  <body>
+    <div id = "mech-root"></div>
+    <script type="module">
+      import init, {new_core} from './pkg/mech_notebook.js';
+      async function run() {
+        await init();
+        let mech_core = new_core();
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', "./blocks", false);
+        xhr.send();
+        let program = xhr.responseText;
+        let blocks = JSON.parse(program).blocks;
+        mech_core.clear();
+        mech_core.load_blocks(blocks);
+        mech_core.connect_remote_cores();
+        mech_core.add_application();
+        //mech_core.start_websocket("ws://127.0.0.1:3012/ws/");
+        //mech_core.connect_remote_core("ws://127.0.0.1:3012/ws/");
+      }
+      run();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+# Robot Arm Drawing
+
+## Logic       
+
+Set up the parameters
+  #x = [400; 0; 0; 0; 0; 0]
+  #y = [450; 0; 0; 0; 0; 0]
+  #angle = [#slider1{4}{3}; #slider2{4}{3}; #slider3{4}{3}]
+
+Calculate the robot arm link coordiantes 
+  i = 2:6
+  j = math/floor(column: i / 2)
+  link-length = [53; 100; 85]
+  #x{i} := #x{i - 1} + link-length{j} * math/sin(degrees: #angle{j})
+  #y{i} := #y{i - 1} - link-length{j} * math/cos(degrees: #angle{j})
+
+## Layout
+
+Use the linkage coordinates to define image position and rotation
+  #robot-arm = [|shape   parameters|
+                 "image" [x: #x{4} y: #y{4}       rotation: #angle{2} image: "http://mech-lang.org/img/robotarm/link2.png"]
+                 "image" [x: #x{2} y: #y{2}       rotation: #angle{1} image: "http://mech-lang.org/img/robotarm/link1.png"]
+                 "image" [x: #x{1} y: #y{1} + 50  rotation: 0         image: "http://mech-lang.org/img/robotarm/link0.png"]
+                 "image" [x: #x{6} y: #y{6}       rotation: #angle{3} image: "http://mech-lang.org/img/robotarm/gripper.png"]]
+
+Embed arm link images in canvas
+  #drawing = [type: "canvas" class: _ contains: [#robot-arm] parameters: [width: 800 height: 650]]
+
+Animation controls  
+  #slider1 = [type: "slider" class: _ contains: _ parameters: [min: -120 max: 120 value: -45]]
+  #slider2 = [type: "slider" class: _ contains: _ parameters: [min: -120 max: 120 value: 60]]
+  #slider3 = [type: "slider" class: _ contains: _ parameters: [min: -90 max: 200 value: 170]]
+
+Compose animation and controls
+  #robot-controls = [type: "div" class: _ contains: [#slider1; #slider2; #slider3]]
+  #robot-animation = [type: "div" class: _ contains: [#drawing]]
+  
+Package for attachment into webpage
+  #robot = [#robot-controls; #robot-animation]

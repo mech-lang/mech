@@ -17,7 +17,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -33,7 +33,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -49,7 +49,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -65,7 +65,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -81,7 +81,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -97,7 +97,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }
@@ -112,7 +112,7 @@ block
   compiler.compile_string(input);
   b.iter(|| {
     core.register_blocks(compiler.blocks.clone());
-    core.step();
+    core.step(10_000);
     core.clear();
   });
 }

@@ -17,10 +17,10 @@ gitlab = { repository = "mech-lang/mech", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.0.5"
-mech-syntax = "0.0.5"
-mech-program = "0.0.5"
-mech-utilities = "0.0.5"
+mech-core = {path = "../core"}
+mech-syntax = {path = "../syntax"}
+mech-program = {path = "../program"}
+mech-utilities = {path = "../utilities"}
 
 clap = "2.33.0"
 colored = "1.9.3"
@@ -39,3 +39,9 @@ actix-web-actors = "2.0.0"
 tokio = { version = "0.2", features = ["macros"] }
 crossbeam-channel = "0.4"
 ahash = { version = "0.3.2", default-features = false}
+
+[workspace]
+
+members = [
+    "notebook",
+]

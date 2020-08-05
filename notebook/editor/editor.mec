@@ -1,0 +1,16 @@
+# Mech Homepage
+
+Messages
+  #messages = [|name content|
+                "Corey" "One"
+                "Rachel" "Two"
+                "Corey" "Three"
+                "Corey" "Four"]
+block
+  name-tag >- [type: "div" class: _ content: #messages.name]
+  message-tag >- [type: "div" class: _ content: #messages.content]
+  boo >- [name-tag message-tag]
+  #baz = [type: "div" class: _ contains: boo]
+
+block
+  #app/main = [root: "mech-root" class: _ contains: [type: "div" class: _ contains: [#baz]]]
