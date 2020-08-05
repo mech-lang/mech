@@ -106,6 +106,7 @@ pub struct Program {
 impl Program {
   pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
     let mut mech = Core::new(capacity);
+    mech.load_standard_library();
     let mech_code = hash_string("mech/code");
     let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
     mech.process_transaction(&txn);
@@ -293,7 +294,7 @@ pub enum ClientMessage {
   Clear,
   Time(usize),
   NewBlocks(usize),
-  //Table(Option<Table>),
+  Table(Option<Table>),
   Transaction(Transaction),
   String(String),
   //Block(Block),
@@ -752,11 +753,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             break 'runloop;
           },
           (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            /*let table_msg = match program.mech.store.get_table(table_id) {
-              Some(table) => ClientMessage::Table(Some(table.borrow().clone())),
-              None => ClientMessage::Table(None),
-            };
-            client_outgoing.send(table_msg);*/
+            let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
+            client_outgoing.send(table_msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -784,6 +782,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
               (0, MechCode::String(code)) => {
                 let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
+                
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
                 program.mech.step();
@@ -817,6 +816,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   for tfms in miniblock.transformations {
                     block.register_transformations(tfms);
                   }
+                  block.plan = miniblock.plan.clone();
+                  block.gen_id();
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
