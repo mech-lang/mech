@@ -268,6 +268,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .multiple(true)))
     .get_matches();
 
+  // ------------------------------------------------
+  // SERVE
+  // ------------------------------------------------
   let mech_client: Option<RunLoop> = if let Some(matches) = matches.subcommand_matches("serve") {
 
     let port = matches.value_of("port").unwrap_or("8081");
@@ -278,7 +281,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spin up a mech core and compiler
     let mut core = Core::new(1000);
-
+    core.load_standard_library();
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code.clone());
 
@@ -558,7 +561,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::process::exit(0);
 
     None
-  // The testing framework
+  // ------------------------------------------------
+  // TEST
+  // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
       println!("Testing...");
       let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
@@ -604,6 +609,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
       }
       None
+  // ------------------------------------------------
+  // RUN
+  // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("run") {
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
     let repl = matches.is_present("repl_mode");    
@@ -618,6 +626,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for block in &blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
+      miniblock.plan = block.plan.clone();
       miniblocks.push(miniblock);
     }
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
@@ -634,15 +643,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        /*(Ok(ClientMessage::Table(table))) => {
+        (Ok(ClientMessage::Table(table))) => {
           if !repl {
             match table {
               Some(table) => {
-                for i in 0..table.rows as usize {
-                  for j in 0..table.columns as usize {
-                    println!("{:?}", table.data[j][i]);
-                  }
-                }
+                println!("{:?}", table);
               }
               None => (), //println!("{} Table not found", formatted_name),
             }
@@ -650,7 +655,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           } else {
             break 'receive_loop;
           }
-        },*/
+        },
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -672,7 +677,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       io::stdout().flush().unwrap();
     }
     Some(mech_client)
-  // Build a .blx file from .mec and other .blx files
+  // ------------------------------------------------
+  // BUILD a .blx file from .mec and other .blx files
+  // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
     let code = read_mech_files(mech_paths).await?;
@@ -689,6 +696,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for block in blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
+      miniblock.plan = block.plan.clone();
       miniblocks.push(miniblock);
     }
     let result = bincode::serialize(&miniblocks).unwrap();
