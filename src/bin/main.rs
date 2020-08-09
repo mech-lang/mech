@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 fn main() {
 
-  let balls = 20000;
+  let balls = 40000;
 
   print!("Allocating memory...");
   let mut core = Core::new(balls * 4 * 4);
