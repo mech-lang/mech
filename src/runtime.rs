@@ -61,7 +61,7 @@ impl Runtime {
     let name_hash = hash_string(name);
     let mut db = self.database.borrow_mut();
     let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
-    store.identifiers.insert(name_hash, name.to_string());
+    store.strings.insert(name_hash, name.to_string());
     self.functions.insert(name_hash,Some(fxn));
   }
 
@@ -167,12 +167,12 @@ impl Runtime {
       block.state == BlockState::Ready;
     }
 
-    // Extend block identifiers
+    // Extend block strings
     {
       let mut db = self.database.borrow_mut();
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
-      for (k,v) in block.store.identifiers.iter() {
-        store.identifiers.insert(*k,v.clone());
+      for (k,v) in block.store.strings.iter() {
+        store.strings.insert(*k,v.clone());
       }
       
     }

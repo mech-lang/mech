@@ -23,7 +23,7 @@ pub struct Store {
   pub data: Vec<Value>,
   pub column_alias_to_index: HashMap<(u64,u64),usize>,
   pub column_index_to_alias: HashMap<(u64,usize),u64>,
-  pub identifiers: HashMap<u64, String>,
+  pub strings: HashMap<u64, String>,
 }
 
 impl Store {
@@ -41,7 +41,7 @@ impl Store {
       data: vec![Value::from_u64(0); capacity],
       column_alias_to_index: HashMap::new(),
       column_index_to_alias: HashMap::new(),
-      identifiers: HashMap::new(),
+      strings: HashMap::new(),
     }
   }
 

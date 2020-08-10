@@ -388,6 +388,11 @@ impl Table {
     (row - 1) * self.columns + (column - 1)
   }
 
+  // Given a hash, get associated string
+  pub fn get_string(&self, id: &u64) -> Option<&String> {
+    self.store.strings.get(id)
+  }
+
   // Get the memory address into the store at a (row, column)
   pub fn get_address(&self, row: &Index, column: &Index) -> Option<usize> {
     match self.index(row, column) {
@@ -460,7 +465,7 @@ impl fmt::Debug for Table {
       self.rows
     };
     
-    let table_name = match self.store.identifiers.get(&self.id) {
+    let table_name = match self.store.strings.get(&self.id) {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
     };
@@ -486,7 +491,7 @@ impl fmt::Debug for Table {
     write!(f, "│ ", )?;
     for i in 1..=self.columns {
       let column_header = match self.store.column_index_to_alias.get(&(self.id,i)) {
-        Some(alias) => self.store.identifiers.get(alias).unwrap().to_string(),
+        Some(alias) => self.store.strings.get(alias).unwrap().to_string(),
         None => format!("{}", i),
       };
       print_cell_contents(&column_header, cell_width, f)?;
@@ -516,7 +521,7 @@ impl fmt::Debug for Table {
                       match value.as_reference() {
                         Some(value) => format!("@{}", humanize(&value)),
                         None => {
-                          match self.store.identifiers.get(value) {
+                          match self.store.strings.get(value) {
                             Some(q) => format!("{:?}", q),
                             None => format!("None"),
                           }
@@ -566,7 +571,7 @@ impl fmt::Debug for Table {
                         match value.as_reference() {
                           Some(value) => format!("@{}", humanize(&value)),
                           None => {
-                            format!("{:?}", self.store.identifiers.get(value).unwrap())
+                            format!("{:?}", self.store.strings.get(value).unwrap())
                           }
                         }
                       }

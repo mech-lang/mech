@@ -391,14 +391,14 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let mut tfm = format!("+ ");
       match table_id {
         TableId::Global(id) => {
-          let name = match block.store.identifiers.get(id) {
+          let name = match block.store.strings.get(id) {
             Some(name) => name.clone(),
             None => format!("{:}",humanize(id)),
           };
           tfm=format!("{}#{}",tfm,name);
         }
         TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
+          match block.store.strings.get(id) {
             Some(name) =>  tfm=format!("{}{}",tfm,name),
             None => tfm=format!("{}{}",tfm,humanize(id)),
           }
@@ -411,14 +411,14 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let mut arg = format!("~ ");
       match table_id {
         TableId::Global(id) => {
-          let name = match block.store.identifiers.get(id) {
+          let name = match block.store.strings.get(id) {
             Some(name) => name.clone(),
             None => format!("{:}",humanize(id)),
           };
           arg=format!("{}#{}",arg,name)
         },
         TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
+          match block.store.strings.get(id) {
             Some(name) => arg = format!("{}{}",arg,name),
             None => arg = format!("{}{}",arg,humanize(id)),
           }
@@ -430,9 +430,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
         Index::Table(table) => {
           match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
-              match block.store.identifiers.get(id) {
+              match block.store.strings.get(id) {
                 Some(name) => arg = format!("{}{}",arg,name),
                 None => arg = format!("{}{}",arg,humanize(id)),
               }
@@ -440,7 +440,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           };
         }
         Index::Alias(alias) => {
-          let alias_name = block.store.identifiers.get(alias).unwrap();
+          let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{{{},",arg,alias_name);
         },
       }
@@ -450,9 +450,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
         Index::Table(table) => {
           match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
-              match block.store.identifiers.get(id) {
+              match block.store.strings.get(id) {
                 Some(name) => arg = format!("{}{}",arg,name),
                 None => arg = format!("{}{}",arg,humanize(id)),
               }
@@ -460,7 +460,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           };
         }
         Index::Alias(alias) => {
-          let alias_name = block.store.identifiers.get(alias).unwrap();
+          let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{}}}",arg,alias_name);
         },
       }
@@ -476,7 +476,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           } else {
             match value.as_reference() {
               Some(reference) => {tfm = format!("{}@{} -> ",tfm, humanize(value));}
-              None => {tfm = format!("{}{:?} -> ",tfm, block.store.identifiers.get(value).unwrap());}
+              None => {tfm = format!("{}{:?} -> ",tfm, block.store.strings.get(value).unwrap());}
             }
             
           }
@@ -484,9 +484,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       }
       
       match table_id {
-        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
+        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
         TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
+          match block.store.strings.get(id) {
             Some(name) =>  tfm=format!("{}{}",tfm,name),
             None => tfm=format!("{}{}",tfm,humanize(id)),
           }
@@ -497,20 +497,20 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
       let mut tfm = format!("");
       match table_id {
-        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.store.identifiers.get(id).unwrap()),
+        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
         TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
+          match block.store.strings.get(id) {
             Some(name) => tfm = format!("{}{}",tfm,name),
             None => tfm = format!("{}{}",tfm,humanize(id)),
           }
         }
       }
       tfm = format!("{}({:x})",tfm,column_ix);
-      tfm = format!("{} -> {}",tfm,block.store.identifiers.get(column_alias).unwrap());
+      tfm = format!("{} -> {}",tfm,block.store.strings.get(column_alias).unwrap());
       tfm
     }
     Transformation::Function{name, arguments, out} => {
-      let name_string = match block.store.identifiers.get(name) {
+      let name_string = match block.store.strings.get(name) {
         Some(name_string) => name_string.clone(),
         None => format!("{}", humanize(name)),
       };
@@ -518,14 +518,14 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       for (ix,(arg_id, table, row, column)) in arguments.iter().enumerate() {
         match table {
           TableId::Global(id) => {
-            let name = match block.store.identifiers.get(id) {
+            let name = match block.store.strings.get(id) {
               Some(name) => name.clone(),
               None => format!("{:}",humanize(id)),
             };
             arg=format!("{}#{}",arg,name)
           },
           TableId::Local(id) => {
-            match block.store.identifiers.get(id) {
+            match block.store.strings.get(id) {
               Some(name) => arg = format!("{}{}",arg,name),
               None => arg = format!("{}{}",arg,humanize(id)),
             }
@@ -537,9 +537,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
           Index::Table(table) => {
             match table {
-              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
-                match block.store.identifiers.get(id) {
+                match block.store.strings.get(id) {
                   Some(name) => {
                     arg = format!("{}{{{},",arg,name);
                   },
@@ -549,7 +549,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             };
           }
           Index::Alias(alias) => {
-            let alias_name = block.store.identifiers.get(alias).unwrap();
+            let alias_name = block.store.strings.get(alias).unwrap();
             arg=format!("{}{{{},",arg,alias_name);
           },
         }
@@ -559,9 +559,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
           Index::Table(table) => {
             match table {
-              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
-                match block.store.identifiers.get(id) {
+                match block.store.strings.get(id) {
                   Some(name) => arg = format!("{}{}",arg,name),
                   None => arg = format!("{}{}",arg,humanize(id)),
                 }
@@ -569,7 +569,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             };
           }
           Index::Alias(alias) => {
-            let alias_name = block.store.identifiers.get(alias).unwrap();
+            let alias_name = block.store.strings.get(alias).unwrap();
             arg=format!("{}.{}}}",arg,alias_name);
           },
         }
@@ -581,14 +581,14 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       let (out_table, out_row, out_column) = out;
       match out_table {
         TableId::Global(id) => {
-          let name = match block.store.identifiers.get(id) {
+          let name = match block.store.strings.get(id) {
             Some(name) => name.clone(),
             None => format!("{:}",humanize(id)),
           };
           arg=format!("{}#{}",arg,name);
         } 
         TableId::Local(id) => {
-          match block.store.identifiers.get(id) {
+          match block.store.strings.get(id) {
             Some(name) => arg = format!("{}{}",arg,name),
             None => arg = format!("{}{}",arg,humanize(id)),
           }
@@ -600,9 +600,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
         Index::Table(table) => {
           match table {
-            TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.identifiers.get(id).unwrap()),
+            TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
-              match block.store.identifiers.get(id) {
+              match block.store.strings.get(id) {
                 Some(name) => arg = format!("{}{{{},",arg,name),
                 None => arg = format!("{}{{{},",arg,humanize(id)),
               }
@@ -610,7 +610,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           };
         }
         Index::Alias(alias) => {
-          let alias_name = block.store.identifiers.get(alias).unwrap();
+          let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{{{},",arg,alias_name);
         },
       }
@@ -620,9 +620,9 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
         Index::Table(table) => {
           match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.identifiers.get(id).unwrap()),
+            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
-              match block.store.identifiers.get(id) {
+              match block.store.strings.get(id) {
                 Some(name) => arg = format!("{}{}",arg,name),
                 None => arg = format!("{}{}",arg,humanize(id)),
               }
@@ -630,7 +630,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           };
         }
         Index::Alias(alias) => {
-          let alias_name = block.store.identifiers.get(alias).unwrap();
+          let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}.{}}}",arg,alias_name);
         },
       }
