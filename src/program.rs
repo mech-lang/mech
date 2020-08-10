@@ -18,7 +18,7 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
 use mech_core::{Core, Register, Transaction, Change, Error};
-use mech_core::{Value, Index};
+use mech_core::{Value, ValueMethods, Index};
 use mech_core::Block;
 use mech_core::{Table, TableId};
 use mech_core::hash_string;
@@ -154,7 +154,7 @@ impl Program {
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
-    /*
+    
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
       let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
@@ -166,15 +166,16 @@ impl Program {
       registry_core.step();
 
       // Convert the machine listing into a hash map
-      let registry_table = registry_core.get_table("mech/machines".to_string()).unwrap().borrow();
+      let registry_table = registry_core.get_table(hash_string("mech/machines")).unwrap();
       for row in 0..registry_table.rows {
         let row_index = Index::Index(row+1);
-        let name = registry_table.index(&row_index, &Index::Index(1)).unwrap().as_string().unwrap();
-        let version = registry_table.index(&row_index, &Index::Index(2)).unwrap().as_string().unwrap();
-        let url = registry_table.index(&row_index, &Index::Index(3)).unwrap().as_string().unwrap();
+        let name = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(1)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let version = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(2)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let url = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(3)).unwrap().as_string().unwrap()).unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }
+
 
     // Do it for the mech core
     for (fun_name, fun) in self.mech.runtime.functions.iter_mut() {
@@ -197,7 +198,7 @@ impl Program {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = library.get::<extern "C" fn(Vec<(String, Rc<RefCell<Table>>)>, Rc<RefCell<Table>>)>(s.as_bytes()).expect(&error_msg);
+            let m = library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator)>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
@@ -205,7 +206,7 @@ impl Program {
         _ => (),
       }
     }
-    
+    /*
     let mut changes = Vec::new();
     for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
       let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
