@@ -276,7 +276,7 @@ pub struct Compiler {
   table: u64,
   expression: usize,
   pub text: String,
-  pub identifiers: HashMap<u64, String>,
+  pub strings: HashMap<u64, String>,
   pub variable_names: HashSet<u64>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
@@ -311,7 +311,7 @@ impl Compiler {
       current_char: 0,
       current_line: 1,
       current_col: 1,
-      identifiers: HashMap::new(),
+      strings: HashMap::new(),
       unparsed: String::new(),
       text: String::new(),
       variable_names: HashSet::new(),
@@ -335,7 +335,7 @@ impl Compiler {
     self.section = 1;
     self.program = 1;
     self.block = 1;
-    self.identifiers.clear();
+    self.strings.clear();
     self.current_char = 0;
     self.current_line = 1;
     self.current_col = 1;
@@ -720,9 +720,9 @@ impl Compiler {
             
         }
         //block.id = block.gen_block_id();
-        for (k,v) in self.identifiers.drain() {
+        for (k,v) in self.strings.drain() {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-          store.identifiers.insert(k,v.to_string());
+          store.strings.insert(k,v.to_string());
         }
         for err in self.errors.drain(..) {
           block.errors.push(err);
@@ -751,7 +751,7 @@ impl Compiler {
             Node::Binding{children} => {
               match &children[0] {
                 Node::Identifier{name, id} => {
-                  self.identifiers.insert(hash_string(&name.to_string()), name.to_string());
+                  self.strings.insert(hash_string(&name.to_string()), name.to_string());
                   tfms.push(
                     Transformation::ColumnAlias{table_id: TableId::Local(self.table), column_ix: ix, column_alias: hash_string(&name.to_string())});
                   ix += 1;
@@ -969,7 +969,7 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::Identifier{name, id} => {
-        self.identifiers.insert(hash_string(&name.to_string()), name.to_string());
+        self.strings.insert(hash_string(&name.to_string()), name.to_string());
       }
       Node::Transformation{children} => {
         let mut result = self.compile_transformations(children);
@@ -986,7 +986,7 @@ impl Compiler {
             } else {
               self.variable_names.insert(name_hash);
             }
-            self.identifiers.insert(name_hash, name.to_string());
+            self.strings.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
@@ -1130,7 +1130,7 @@ impl Compiler {
         transformations.append(&mut output);
       }
       Node::SelectData{name, id, children} => {
-        self.identifiers.insert(*id.unwrap(), name.to_string());
+        self.strings.insert(*id.unwrap(), name.to_string());
         let mut indices = vec![];
         let mut tfms = vec![];
         for child in children {
@@ -1138,7 +1138,7 @@ impl Compiler {
             Node::DotIndex{children} => {
               match &children[1] {
                 Node::Identifier{name, id} => {
-                  self.identifiers.insert(hash_string(&name.to_string()), name.to_string());
+                  self.strings.insert(hash_string(&name.to_string()), name.to_string());
                   indices.push(Index::All);
                   indices.push(Index::Alias(*id));
                 }
@@ -1152,7 +1152,7 @@ impl Compiler {
                     indices.push(Index::All);
                   }
                   Node::SelectData{name, id, children} => {
-                    self.identifiers.insert(*id.unwrap(), name.to_string());
+                    self.strings.insert(*id.unwrap(), name.to_string());
                     if indices.len() == 2 && indices[0] == Index::All {
                       indices[0] = Index::Table(*id);
                     } else {
@@ -1213,7 +1213,7 @@ impl Compiler {
             } else {
               self.variable_names.insert(name_hash);
             }
-            self.identifiers.insert(name_hash, name.to_string());
+            self.strings.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
@@ -1299,7 +1299,7 @@ impl Compiler {
         transformations.append(&mut input_tfms);
       }
       Node::Table{name, id} => {
-        self.identifiers.insert(*id, name.to_string());
+        self.strings.insert(*id, name.to_string());
         transformations.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
       Node::Expression{children} => {
@@ -1322,7 +1322,7 @@ impl Compiler {
             Node::FunctionBinding{children} => {
               let arg = match &children[0] {
                 Node::Identifier{name, id} => {
-                  self.identifiers.insert(*id, name.to_string());
+                  self.strings.insert(*id, name.to_string());
                   *id
                 },
                 _ => 0,
@@ -1384,7 +1384,7 @@ impl Compiler {
           };
         }
         let name_hash = hash_string(name);
-        self.identifiers.insert(name_hash,name.to_string());
+        self.strings.insert(name_hash,name.to_string());
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         transformations.push(Transformation::Function{
@@ -1398,7 +1398,7 @@ impl Compiler {
         let table = hash_string(&format!("Constant-{:?}", text));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         let value = Value::from_string(text.to_string());
-        self.identifiers.insert(value, text.to_string());
+        self.strings.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::Empty => {
