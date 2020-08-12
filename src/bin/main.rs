@@ -36,17 +36,17 @@ fn main() {
 
   let mut block = Block::new(balls * 10 * 10);
   let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-  store.identifiers.insert(time_timer, "time/timer".to_string());
-  store.identifiers.insert(period, "period".to_string());
-  store.identifiers.insert(ticks, "ticks".to_string());
-  store.identifiers.insert(gravity, "gravity".to_string());
-  store.identifiers.insert(balls_id, "balls".to_string());
-  store.identifiers.insert(x_id, "x".to_string());
-  store.identifiers.insert(y_id, "y".to_string());
-  store.identifiers.insert(vx_id, "vx".to_string());
-  store.identifiers.insert(vy_id, "vy".to_string());
-  store.identifiers.insert(table_range, "table/range".to_string());
-  store.identifiers.insert(table_horzcat, "table/horizontal-concatenate".to_string());
+  store.strings.insert(time_timer, "time/timer".to_string());
+  store.strings.insert(period, "period".to_string());
+  store.strings.insert(ticks, "ticks".to_string());
+  store.strings.insert(gravity, "gravity".to_string());
+  store.strings.insert(balls_id, "balls".to_string());
+  store.strings.insert(x_id, "x".to_string());
+  store.strings.insert(y_id, "y".to_string());
+  store.strings.insert(vx_id, "vx".to_string());
+  store.strings.insert(vy_id, "vy".to_string());
+  store.strings.insert(table_range, "table/range".to_string());
+  store.strings.insert(table_horzcat, "table/horizontal-concatenate".to_string());
   
   let range1 = Transformation::Function{
     name: table_range, 
@@ -142,17 +142,17 @@ x   y   20  0]"#.to_string(), vec![
 
   let mut block = Block::new(balls * 10 * 10);
   let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-  store.identifiers.insert(time_timer, "time/timer".to_string());
-  store.identifiers.insert(ticks, "ticks".to_string());
-  store.identifiers.insert(gravity, "gravity".to_string());
-  store.identifiers.insert(balls_id, "balls".to_string());
-  store.identifiers.insert(x_id, "x".to_string());
-  store.identifiers.insert(y_id, "y".to_string());
-  store.identifiers.insert(vx_id, "vx".to_string());
-  store.identifiers.insert(vy_id, "vy".to_string());
-  store.identifiers.insert(vy_id, "vy".to_string());
-  store.identifiers.insert(math_add, "math/add".to_string());
-  store.identifiers.insert(table_set, "table/set".to_string());
+  store.strings.insert(time_timer, "time/timer".to_string());
+  store.strings.insert(ticks, "ticks".to_string());
+  store.strings.insert(gravity, "gravity".to_string());
+  store.strings.insert(balls_id, "balls".to_string());
+  store.strings.insert(x_id, "x".to_string());
+  store.strings.insert(y_id, "y".to_string());
+  store.strings.insert(vx_id, "vx".to_string());
+  store.strings.insert(vy_id, "vy".to_string());
+  store.strings.insert(vy_id, "vy".to_string());
+  store.strings.insert(math_add, "math/add".to_string());
+  store.strings.insert(table_set, "table/set".to_string());
 
   let whenever = Transformation::Whenever{
     table_id: TableId::Global(time_timer), 
