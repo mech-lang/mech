@@ -57,12 +57,12 @@ impl Runtime {
     }
   }
 
-  pub fn load_library_function(&mut self, name: &str, fxn: MechFunction) {
+  pub fn load_library_function(&mut self, name: &str, fxn: Option<MechFunction>) {
     let name_hash = hash_string(name);
     let mut db = self.database.borrow_mut();
     let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.strings.insert(name_hash, name.to_string());
-    self.functions.insert(name_hash,Some(fxn));
+    self.functions.insert(name_hash, fxn);
   }
 
   pub fn run_network(&mut self) -> Result<(), Error> {    
@@ -173,8 +173,17 @@ impl Runtime {
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       for (k,v) in block.store.strings.iter() {
         store.strings.insert(*k,v.clone());
+      } 
+    }
+
+    // Register functions
+    for tfm in &block.plan {
+      match tfm {
+        Transformation::Function{name, ..} => {
+          self.functions.entry(*name).or_insert(None);
+        }
+        _ => (),
       }
-      
     }
 
     // Mark ready registers
