@@ -52,26 +52,34 @@ impl Core {
   }
 
   pub fn load_standard_library(&mut self) {
-    self.runtime.load_library_function("math/add",math_add);
-    self.runtime.load_library_function("math/subtract",math_subtract);
-    self.runtime.load_library_function("math/multiply",math_multiply);
-    self.runtime.load_library_function("math/divide",math_divide);
-    self.runtime.load_library_function("compare/greater-than-equal",compare_greater_than_equal);
-    self.runtime.load_library_function("compare/greater-than",compare_greater_than);
-    self.runtime.load_library_function("compare/less-than-equal",compare_less_than_equal);
-    self.runtime.load_library_function("compare/less-than",compare_less_than);
-    self.runtime.load_library_function("compare/equal",compare_equal);
-    self.runtime.load_library_function("compare/not-equal",compare_not_equal);
-    self.runtime.load_library_function("logic/and",logic_and);
-    self.runtime.load_library_function("logic/or",logic_or);
-    self.runtime.load_library_function("table/set",table_set);
-    self.runtime.load_library_function("table/add-row",table_add_row);
-    self.runtime.load_library_function("table/range",table_range);
-    self.runtime.load_library_function("table/horizontal-concatenate",table_horizontal_concatenate);
-    self.runtime.load_library_function("table/vertical-concatenate",table_vertical_concatenate);
-    self.runtime.load_library_function("stats/sum",stats_sum);
-    self.runtime.load_library_function("set/any",set_any);
+    self.runtime.load_library_function("math/add",Some(math_add));
+    self.runtime.load_library_function("math/subtract",Some(math_subtract));
+    self.runtime.load_library_function("math/multiply",Some(math_multiply));
+    self.runtime.load_library_function("math/divide",Some(math_divide));
+    self.runtime.load_library_function("compare/greater-than-equal",Some(compare_greater_than_equal));
+    self.runtime.load_library_function("compare/greater-than",Some(compare_greater_than));
+    self.runtime.load_library_function("compare/less-than-equal",Some(compare_less_than_equal));
+    self.runtime.load_library_function("compare/less-than",Some(compare_less_than));
+    self.runtime.load_library_function("compare/equal",Some(compare_equal));
+    self.runtime.load_library_function("compare/not-equal",Some(compare_not_equal));
+    self.runtime.load_library_function("logic/and",Some(logic_and));
+    self.runtime.load_library_function("logic/or",Some(logic_or));
+    self.runtime.load_library_function("table/set",Some(table_set));
+    self.runtime.load_library_function("table/add-row",Some(table_add_row));
+    self.runtime.load_library_function("table/range",Some(table_range));
+    self.runtime.load_library_function("table/horizontal-concatenate",Some(table_horizontal_concatenate));
+    self.runtime.load_library_function("table/vertical-concatenate",Some(table_vertical_concatenate));
+    self.runtime.load_library_function("stats/sum",Some(stats_sum));
+    self.runtime.load_library_function("set/any",Some(set_any));
   }
+
+  pub fn get_string(&self, id: &u64) -> Option<String> {
+    match self.database.borrow().store.strings.get(&id) {
+      Some(string) => Some(string.clone()),
+      None => None,
+    }
+  }
+
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
 
