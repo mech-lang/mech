@@ -5,7 +5,7 @@ extern crate crossbeam_channel;
 extern crate mech_syntax;
 use mech_program::{ProgramRunner, RunLoop, ClientMessage};
 use mech_utilities::{RunLoopMessage, MechCode};
-use mech_core::{Core, Value, Hasher, Index, Table};
+use mech_core::{Core, Value, Index, Table};
 use mech_syntax::compiler::Compiler;
 
 use hashbrown::HashMap;
@@ -18,15 +18,13 @@ use crossbeam_channel::Receiver;
 use std::rc::Rc;
 
 fn main() {
-  let mut runner = ProgramRunner::new("test", 1000);
+  let mut runner = ProgramRunner::new("test", 100000);
   let running = runner.run();
   running.send(RunLoopMessage::Code((0,MechCode::String(r#"
 block
-  #time/timer += [period: 10s]
-block  
-  #x = [1 2] * #time/timer.ticks"#.to_string()))));
+  #test = math/sin(angle: 90)"#.to_string()))));
   running.send(RunLoopMessage::PrintCore(Some(0)));
-  running.send(RunLoopMessage::PrintRuntime);
+  //running.send(RunLoopMessage::PrintRuntime);
   //running.send(RunLoopMessage::Stop);
   loop{
     loop {
@@ -35,9 +33,9 @@ block
         Ok(ClientMessage::StepDone) => {
           break;
         }
-        message => println!("{:?}", message),
+        message => (),
       }
     }
-    running.send(RunLoopMessage::PrintCore(Some(0)));
+    //running.send(RunLoopMessage::PrintCore(Some(0)));
   }
 }

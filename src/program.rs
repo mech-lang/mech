@@ -17,8 +17,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Core, Register, Transaction, Change, Error};
-use mech_core::{Value, ValueMethods, Index};
+use mech_core::{Core, humanize, Register, Transaction, Change, Error};
+use mech_core::{Value, ValueMethods, ValueIterator, Index};
 use mech_core::Block;
 use mech_core::{Table, TableId};
 use mech_core::hash_string;
@@ -162,6 +162,7 @@ impl Program {
       let mut registry_compiler = Compiler::new();
       registry_compiler.compile_string(response);
       let mut registry_core = Core::new(100);
+      registry_core.load_standard_library(); 
       registry_core.register_blocks(registry_compiler.blocks);
       registry_core.step();
 
@@ -176,9 +177,9 @@ impl Program {
       }
     }
 
-
     // Do it for the mech core
-    for (fun_name, fun) in self.mech.runtime.functions.iter_mut() {
+    for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {
+      let fun_name = self.mech.runtime.database.borrow().store.strings.get(&fun_name_id).unwrap().clone();
       let m: Vec<_> = fun_name.split('/').collect();
       #[cfg(unix)]
       let machine_name = format!("libmech_{}.so", m[0]);
@@ -206,6 +207,7 @@ impl Program {
         _ => (),
       }
     }
+
     /*
     let mut changes = Vec::new();
     for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
