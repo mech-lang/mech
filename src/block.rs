@@ -13,6 +13,10 @@ use rust_core::fmt;
 use ::humanize;
 use ::hash_string;
 
+const TABLE_SPLIT: u64 = 0x0015dc77a1771443;
+const GRAMS: u64 = 0x00b779d3bf451717;
+const KILOGRAMS: u64 = 0x00df0fac549c1104;
+
 // ## Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
@@ -118,8 +122,8 @@ impl Block {
         Transformation::Constant{table_id, value, unit} => {
           let (domain, scale) = match unit {
             unit_value => match unit_value {
-              0x00b779d3bf451717 => (1, 0), // g
-              0x00df0fac549c1104 => (1, 3), // kg
+              GRAMS => (1, 0),
+              KILOGRAMS => (1, 3),
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),
@@ -250,8 +254,7 @@ impl Block {
               mech_fn(&vis, &mut out_vi);
             }
             _ => {
-              // table/split
-              if *name == 0x0015dc77a1771443 {
+              if *name == TABLE_SPLIT {
                 for (_, vi) in vis {
                   unsafe{
                     (*out_vi.table).rows = vi.rows();
@@ -292,7 +295,8 @@ impl Block {
                 }
               } else {
                 // TODO Error: Function not found
-                println!("Function not found {:?}", name);
+                println!("Function not found {:?}", humanize(name));
+                break 'step_loop;
               }
             },
           }
