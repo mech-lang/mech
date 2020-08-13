@@ -102,6 +102,27 @@ impl fmt::Debug for Store {
     write!(f, "end: {:?}\n", self.data_end)?;
     write!(f, "free-next: {:?}\n", self.free_next)?;
     write!(f, "free-end: {:?}\n", self.free_end)?;
+    
+    write!(f, "       ")?;
+    let data_len = if self.data.len() > 40 {
+      40
+    } else {
+      self.data.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", i)?;
+    }
+    write!(f, "\n")?;
+    write!(f, "data: [")?;
+    let data_len = if self.data.len() > 40 {
+      40
+    } else {
+      self.data.len()
+    };
+    for i in 0..data_len {
+      write!(f, "{:3?}", self.data[i])?;
+    }
+    write!(f, "]({:?})\n", self.data.len())?; 
     write!(f, "free: [")?;
     let data_len = if self.free.len() > 40 {
       40
@@ -123,26 +144,6 @@ impl fmt::Debug for Store {
     }
     write!(f, "]({:?})\n", self.reference_counts.len())?;
 
-    write!(f, "       ")?;
-    let data_len = if self.data.len() > 40 {
-      40
-    } else {
-      self.data.len()
-    };
-    for i in 0..data_len {
-      write!(f, "{:3?}", i)?;
-    }
-    write!(f, "\n")?;
-    write!(f, "data: [")?;
-    let data_len = if self.data.len() > 40 {
-      40
-    } else {
-      self.data.len()
-    };
-    for i in 0..data_len {
-      write!(f, "{:3?}", self.data[i])?;
-    }
-    write!(f, "]({:?})\n", self.data.len())?; 
     
     Ok(())
   }
