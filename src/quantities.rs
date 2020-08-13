@@ -12,6 +12,7 @@ use errors::{Error, ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
+use num_traits::Float;
 
 const MANTISSA_MASK:u64 = (((1 as u64) << 49) as u64 - 1); // 49 bits at the end
 const META_MASK:u64 = ((1 << 15) as u64 - 1) << 49; // 15 1s at the front
@@ -87,23 +88,23 @@ impl ToQuantity for i64 {
 impl ToQuantity for f64 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-  let me = *self;
-  let (mantissa, exponent, sign) = integer_decode_f64(me);
-  if mantissa == 0 {
-    let result = make_quantity(0,0,0);
-    result
-  } else {
-    let exp_log = 2f64.powf(exponent as f64).log10();
-    let real_exponent = exp_log.floor() as i64 + 1;
-    let real_mantissa = (((mantissa as f64) * 10f64.powf(exp_log.fract()))) as i64;
-    let mut result = real_mantissa.to_quantity();
-    if sign < 0 {
-      result = result.negate();
+    let me = *self;
+    let (mantissa, exponent, sign) = Float::integer_decode(me);
+    if mantissa == 0 {
+      let result = make_quantity(0,0,0);
+      result
+    } else {
+      let exp_log = 2f64.powf(exponent as f64).log10();
+      let real_exponent = exp_log.floor() as i64 + 1;
+      let real_mantissa = ((mantissa as f64) * 10f64.powf(exp_log.fract())) as i64;
+      let mut result = real_mantissa.to_quantity();
+      if sign < 0 {
+        result = result.negate();
+      }
+      let cur = result.range();
+      result.set_range(cur + real_exponent);
+      result
     }
-    let cur = result.range();
-    result.set_range(cur + real_exponent);
-    result
-  }
   }
 }
 
@@ -372,24 +373,4 @@ impl QuantityMath for Quantity {
   fn not_equal(self, other: Quantity) -> Result<bool, ErrorType> {
     Ok(self.to_float() != other.to_float())
   }
-}
-
-fn integer_decode_f64(f: f64) -> (u64, i16, i8) {
-  //println!("BITS {:b}", f as u64);
-  let bits: u64 = unsafe { mem::transmute(f) };
-  //println!("BITS {:b}", bits);
-  let sign: i8 = if bits >> 63 == 0 {
-    1
-  } else {
-    -1
-  };
-  let mut exponent: i16 = ((bits >> 52) & 0x7ff) as i16;
-  let mantissa = if exponent == 0 {
-    (bits & 0xfffffffffffff) << 1
-  } else {
-    (bits & 0xfffffffffffff) | 0x10000000000000
-  };
-  // Exponent bias + mantissa shift
-  exponent -= 1023 + 52;
-  (mantissa, exponent, sign)
 }

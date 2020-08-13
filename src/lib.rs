@@ -6,6 +6,7 @@ extern crate hashbrown;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+extern crate num_traits;
 
 use std::hash::Hasher;
 use ahash::AHasher;
