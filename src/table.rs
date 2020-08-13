@@ -17,7 +17,6 @@ use std::cell::RefCell;
 use errors::{Error, ErrorType};
 use ::{humanize, hash_string};
 
-
 // ## Row and Column
 
 pub type Value = u64;
@@ -509,7 +508,7 @@ impl fmt::Debug for Table {
             let value = &self.store.data[x];
             let text = match value.as_quantity() {
               Some(quantity) => {
-                format!("{:?}", value)
+                format!("{}", value.format())
               },
               None => {
                 match value.as_bool() {
@@ -559,7 +558,7 @@ impl fmt::Debug for Table {
               let value = &self.store.data[x];
               let text = match value.as_quantity() {
                 Some(quantity) => {
-                  format!("{:?}", value)
+                  format!("{}", value.format())
                 },
                 None => {
                   match value.as_bool() {
