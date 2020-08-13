@@ -296,7 +296,7 @@ impl Block {
               } else {
                 // TODO Error: Function not found
                 println!("Function not found {:?}", humanize(name));
-                break 'step_loop;
+                return;
               }
             },
           }
