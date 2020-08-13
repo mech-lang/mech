@@ -71,7 +71,6 @@ impl Runtime {
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
     loop {
-
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
@@ -125,7 +124,12 @@ impl Runtime {
       }
       recursion_ix += 1;
     }
-    
+    for (block_id, block) in self.blocks.iter() {
+      match block.state {
+        BlockState::Ready => {self.ready_blocks.insert(*block_id);}
+        _ => (),
+      }
+    }
     Ok(())
   }
 
