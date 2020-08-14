@@ -45,6 +45,7 @@ pub enum RunLoopMessage {
 pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
+  pub strings: Vec<(u64, String)>,
 }
 
 impl MiniBlock {
@@ -52,6 +53,7 @@ impl MiniBlock {
     MiniBlock {
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
+      strings: Vec::with_capacity(1),
     }
   }
 }
