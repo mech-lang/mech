@@ -295,7 +295,7 @@ impl Block {
                 }
               } else {
                 // TODO Error: Function not found
-                println!("Function not found {:?}", humanize(name));
+                //println!("Function not found {:?}", humanize(name));
                 return;
               }
             },
