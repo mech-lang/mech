@@ -6,6 +6,7 @@ use mech_stats::{stats_average};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 
 
+/*
 #[test]
 fn average_test() {
 
@@ -38,4 +39,4 @@ fn average_test() {
   assert_eq!(result.index(&Index::Index(1), &Index::Index(1)), 
             Some(&Value::from_quantity(((1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) / 6.0).to_quantity())));
 
-}
+}*/
