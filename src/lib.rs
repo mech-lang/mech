@@ -1,44 +1,95 @@
 extern crate mech_core;
 extern crate mech_utilities;
-use mech_core::{Interner, Transaction};
-use mech_core::{Value, Table};
+use mech_core::{Transaction, ValueIterator, ValueMethods};
+use mech_core::{Value, Table, Index};
 use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
 
+const ROW: u64 = 0x001e3f1182ea4d9d;
+const COLUMN: u64 = 0x0071b9e91df03940;
+const TABLE: u64 = 0x0064ae06e4bbf825;
+
 #[no_mangle]
-pub extern "C" fn stats_average(input: Vec<(String, Table)>) -> Table {
-  let (argument, table_ref) = &input[0];
-  let out = if argument == "row" {
-    let mut out = Table::new(0,table_ref.rows,1);
-    for i in 0..table_ref.rows as usize {
-      let mut value = 0.0;
-      for j in 0..table_ref.columns as usize {
-        value = value + &table_ref.data[j][i].as_float().unwrap();
+pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
+
+  // TODO test argument count is 1
+  let (in_arg_name, vi) = &arguments[0];
+
+  let mut rows = vi.rows();
+  let mut cols = vi.columns();
+
+  match in_arg_name {
+    &ROW => {
+      unsafe {
+        (*out.table).rows = vi.rows();
+        (*out.table).columns = 1;
+        (*out.table).data.resize(vi.rows(), 0);
       }
-      out.data[0][i] = Value::from_quantity((value / table_ref.columns as f64).to_quantity());
-    }
-    out
-  } else if argument == "column" {
-    let mut out = Table::new(0,1,table_ref.columns);
-    for i in 0..table_ref.columns as usize {
-      let mut value = 0.0;
-      for j in 0..table_ref.rows as usize {
-        value = value + &table_ref.data[i][j].as_float().unwrap();
+      for i in 1..=rows {
+        let mut sum: Value = Value::from_u64(0);
+        for j in 1..=cols {
+          match vi.get(&Index::Index(i),&Index::Index(j)) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
+          }
+        }
+        unsafe {
+          (*out.table).set_unchecked(i, 1, Value::from_f64(sum.as_float().unwrap() / vi.columns() as f64));
+        }
       }
-      out.data[i][0] = Value::from_quantity((value / table_ref.rows as f64).to_quantity());
     }
-    out
-  } else if argument == "table" {
-    let mut out = Table::new(0,1,1);
-    let mut value = 0.0;
-    for i in 0..table_ref.columns as usize {
-      for j in 0..table_ref.rows as usize {
-        value = value + &table_ref.data[i][j].as_float().unwrap();
+    &COLUMN => {
+      unsafe {
+        (*out.table).rows = 1;
+        (*out.table).columns = cols;
+        (*out.table).data.resize(cols, 0);
       }
-      out.data[0][0] = Value::from_quantity((value / (table_ref.rows * table_ref.columns) as f64).to_quantity());
+      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+        let mut sum: Value = Value::from_u64(0);
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+          match vi.get(&k,&m) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
+          }
+        }
+        unsafe {
+          (*out.table).set_unchecked(1, i, Value::from_f64(sum.as_float().unwrap() / vi.rows() as f64));
+        }
+      }      
     }
-    out
-  } else {
-    Table::new(0,1, 1)
-  };
-  out 
+    &TABLE => {
+      unsafe {
+        (*out.table).rows = 1;
+        (*out.table).columns = 1;
+        (*out.table).data.resize(1, 0);
+      }
+      let mut sum: Value = Value::from_u64(0);
+      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+          match vi.get(&k,&m) {
+            Some(value) => {
+              match sum.add(value) {
+                Ok(result) => sum = result,
+                _ => (), // TODO Alert user that there was an error
+              }
+            }
+            _ => ()
+          }
+        }
+      }  
+      unsafe {
+        (*out.table).set_unchecked(1, 1, Value::from_f64(sum.as_float().unwrap() / (vi.rows() * vi.columns()) as f64   ));
+      }    
+    }
+    _ => (), // TODO alert user that argument is unknown
+  }
 }
