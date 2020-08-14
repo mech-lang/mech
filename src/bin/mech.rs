@@ -192,6 +192,9 @@ fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
           for tfm in miniblock.transformations {
             block.register_transformations(tfm);
           }
+          for tfm in miniblock.plan {
+            block.plan.push(tfm);
+          }
           blocks.push(block);
         }
         compiler.blocks.append(&mut blocks);
