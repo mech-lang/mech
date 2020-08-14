@@ -9,6 +9,7 @@ use libm::{sin, cos, fmod, round, floor};
 static PI: f64 = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 const ANGLE: u64 = 0x00d6b9a8edec09b0;
+const TABLE: u64 = 0x0064ae06e4bbf825;
 
 #[no_mangle]
 pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
@@ -93,7 +94,7 @@ pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
   let mut rows = vi.rows();
   let mut cols = vi.columns();
   match in_arg_name {
-    &ANGLE => {
+    &TABLE => {
       unsafe {
         (*out.table).rows = rows;
         (*out.table).columns = cols;
@@ -124,7 +125,7 @@ pub extern "C" fn math_floor(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
   let mut rows = vi.rows();
   let mut cols = vi.columns();
   match in_arg_name {
-    &ANGLE => {
+    &TABLE => {
       unsafe {
         (*out.table).rows = rows;
         (*out.table).columns = cols;
