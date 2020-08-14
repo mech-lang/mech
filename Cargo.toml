@@ -18,5 +18,5 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = "0.0.5"
-mech-utilities = "0.0.5"
+mech-core = {git = "https://gilab.com/mech-lang/core"}
+mech-utilities = {git = "https://gilab.com/mech-lang/utilities"}
