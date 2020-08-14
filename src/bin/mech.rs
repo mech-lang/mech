@@ -501,6 +501,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
 
+    println!("bBBBLOCKS {:?}", blocks);
+
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech REPL", 1000);
     let mech_client = runner.run();
@@ -510,6 +512,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
       miniblock.plan = block.plan.clone();
+      for (_, string) in block.store.strings.iter() {
+        miniblock.strings.push(string.to_string());
+      }
       miniblocks.push(miniblock);
     }
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
