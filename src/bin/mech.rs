@@ -448,50 +448,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // TEST
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
-      println!("Testing...");
-      let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
-      let mut passed_all_tests = true;
+    println!("Testing...");
+    let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
+    let mut passed_all_tests = true;
 
-      let mut compiler = Compiler::new();
-      let code = read_mech_files(mech_paths).await?;
-      let blocks = compile_code(code);
+    let mut compiler = Compiler::new();
+    let code = read_mech_files(mech_paths).await?;
+    let blocks = compile_code(code);
 
-      let mut core = Core::new(1000);
-      core.register_blocks(blocks);
-      core.step();
+    let mut core = Core::new(1000);
+    core.register_blocks(blocks);
+    core.step();
 
-      
-      let mut tests_count = 0;
-      let mut tests_passed = 0;
-      let mut tests_failed = 0;
-      /*
-      match core.get_table("mech/test".to_string()) {
-        Some(test_results) => {
-          let test_results = test_results.borrow();
-          for i in 0..test_results.rows as usize {
-            for j in 0..test_results.columns as usize {
-              tests_count += 1;
-              if test_results.data[j][i] == Value::Bool(false) {
-                passed_all_tests = false;
-                tests_failed += 1;
-              } else {
-                tests_passed += 1;
-              }
+    
+    let mut tests_count = 0;
+    let mut tests_passed = 0;
+    let mut tests_failed = 0;
+    /*
+    match core.get_table("mech/test".to_string()) {
+      Some(test_results) => {
+        let test_results = test_results.borrow();
+        for i in 0..test_results.rows as usize {
+          for j in 0..test_results.columns as usize {
+            tests_count += 1;
+            if test_results.data[j][i] == Value::Bool(false) {
+              passed_all_tests = false;
+              tests_failed += 1;
+            } else {
+              tests_passed += 1;
             }
           }
-        },
-        _ => (),
-      }*/
+        }
+      },
+      _ => (),
+    }*/
 
 
-      if passed_all_tests {
-        println!("Test result: {} | total {} | passed {} | failed {} | ", "ok".green(), tests_count, tests_passed, tests_failed);
-        std::process::exit(0);
-      } else {
-        println!("Test result: {} | total {} | passed {} | failed {} | ", "failed".red(), tests_count, tests_passed, tests_failed);
-        std::process::exit(1);
-      }
-      None
+    if passed_all_tests {
+      println!("Test result: {} | total {} | passed {} | failed {} | ", "ok".green(), tests_count, tests_passed, tests_failed);
+      std::process::exit(0);
+    } else {
+      println!("Test result: {} | total {} | passed {} | failed {} | ", "failed".red(), tests_count, tests_passed, tests_failed);
+      std::process::exit(1);
+    }
+    None
   // ------------------------------------------------
   // RUN
   // ------------------------------------------------
