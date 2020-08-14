@@ -2,6 +2,7 @@
 
 // ## Prelude
 #![feature(extern_prelude)]
+#![feature(get_mut_unchecked)]
 
 extern crate core;
 extern crate libloading;

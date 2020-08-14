@@ -820,7 +820,13 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                     block.register_transformations(tfms);
                   }
                   block.plan = miniblock.plan.clone();
+                  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+                  for string in miniblock.strings {
+                    println!("INSERTING A STRING {:?}", string);
+                    store.strings.insert(hash_string(&string),string.to_string());
+                  }
                   block.gen_id();
+                  println!("{:?}", block.store);
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
