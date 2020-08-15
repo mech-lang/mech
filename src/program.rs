@@ -157,7 +157,7 @@ impl Program {
     
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
-      let registry_url = "https://gitlab.com/mech-lang/machines/-/raw/master/machines.mec";
+      let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/master/machines.mec";
       let mut response = reqwest::get(registry_url)?.text()?;
       let mut registry_compiler = Compiler::new();
       registry_compiler.compile_string(response);
@@ -207,10 +207,9 @@ impl Program {
         _ => (),
       }
     }
-
-    /*
+    
     let mut changes = Vec::new();
-    for needed_table in self.mech.input.difference(&self.mech.defined_tables) {
+    for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
       let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
       let m: Vec<_> = needed_table_name.split('/').collect();
       #[cfg(unix)]
@@ -241,9 +240,10 @@ impl Program {
         _ => (),
       }
     }
-    let txn = Transaction::from_changeset(changes);
+    let txn = Transaction{changes};
     self.mech.process_transaction(&txn);
 
+    /*
     // Do it for the the other core
     for core in self.cores.values_mut() {
       for (fun_name, fun) in core.runtime.functions.iter_mut() {
