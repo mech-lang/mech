@@ -1,4 +1,4 @@
-use table::{Table, Value, Index, ValueMethods};
+use table::{Table, TableId, Value, Index, ValueMethods};
 use block::{Error, Register};
 use ::humanize;
 use std::cell::RefCell;
@@ -195,7 +195,7 @@ impl Database {
                 // Set the value
                 table.set(row, column, *value);
                 // Mark the table as updated
-                let register_hash = Register{table_id: *table_id, row: Index::All, column: *column};
+                let register_hash = Register{table_id: TableId::Global(*table_id), row: Index::All, column: *column};
                 self.changed_this_round.insert(register_hash.hash());
               }
             },

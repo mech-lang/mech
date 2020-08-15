@@ -31,6 +31,7 @@ pub struct Block {
   pub state: BlockState,
   pub text: String,
   pub name: String,
+  pub register_map: HashMap<u64, Register>,
   pub ready: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
@@ -50,6 +51,7 @@ impl Block {
       id: 0,
       text: String::new(),
       name: String::new(),
+      register_map: HashMap::new(),
       ready: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
@@ -91,9 +93,13 @@ impl Block {
                 }
               );
               for i in 1..=columns {
-                self.output.insert(Register{table_id: id, row: Index::All, column: Index::Index(i)}.hash());
+                let register = Register{table_id, row: Index::All, column: Index::Index(i)};
+                self.output.insert(register.hash());
+                self.register_map.insert(register.hash(), register);
               }
-              self.output.insert(Register{table_id: id, row: Index::All, column: Index::All}.hash());
+              let register = Register{table_id, row: Index::All, column: Index::All};
+              self.output.insert(register.hash());
+              self.register_map.insert(register.hash(), register);
             }
             TableId::Local(id) => {
               self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
@@ -110,7 +116,9 @@ impl Block {
                   column_alias,
                 }
               );
-              self.output.insert(Register{table_id: id, row: Index::All, column: Index::Alias(column_alias)}.hash());
+              let register = Register{table_id: table_id, row: Index::All, column: Index::Alias(column_alias)};
+              self.output.insert(register.hash());
+              self.register_map.insert(register.hash(), register);
             }
             TableId::Local(id) => {
               let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
@@ -154,11 +162,13 @@ impl Block {
           }
         }
         Transformation::Set{table_id, row, column} => {
-          let hash = Register{table_id: *table_id.unwrap(), row: Index::All, column}.hash();
-          let hash2 = Register{table_id: *table_id.unwrap(), row: Index::All, column: Index::All}.hash();
-          self.output.insert(hash);       
-          self.output.insert(hash2);       
-          self.output_dependencies.insert(hash);          
+          let register = Register{table_id: table_id, row: Index::All, column};
+          let register2 = Register{table_id: table_id, row: Index::All, column: Index::All};
+          self.output.insert(register.hash());       
+          self.output.insert(register2.hash());       
+          self.output_dependencies.insert(register.hash());          
+          self.register_map.insert(register.hash(), register);
+          self.register_map.insert(register2.hash(), register2);
         }
         Transformation::Whenever{table_id, row, column, registers} => {
           match table_id {
@@ -173,7 +183,7 @@ impl Block {
         Transformation::Function{name, ref arguments, out} => {
           let (out_id, row, column) = out;
           match out_id {
-            TableId::Global(id) => {self.output.insert(Register{table_id: id, row, column}.hash());},
+            TableId::Global(id) => {self.output.insert(Register{table_id: out_id, row, column}.hash());},
             _ => (),
           }
           for (_, table_id, row, column) in arguments {
@@ -183,8 +193,9 @@ impl Block {
                   Index::Table{..} => Index::All,
                   x => Index::All,
                 };
-                let register_hash = Register{table_id: *id, row: rrow, column: *column}.hash();
-                self.input.insert(register_hash);
+                let register = Register{table_id: *table_id, row: rrow, column: *column};
+                self.input.insert(register.hash());
+                self.register_map.insert(register.hash(), register);
               },
               _ => (),
             }
@@ -341,30 +352,30 @@ impl fmt::Debug for Block {
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ ready: {}\n", self.ready.len())?;
-    for (ix, input) in self.ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, humanize(input))?;
+    for (ix, register) in self.ready.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
     }
     write!(f, "│ input: {} \n", self.input.len())?;
-    for (ix, input) in self.input.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, humanize(input))?;
+    for (ix, register) in self.input.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
     }
     if self.ready.len() < self.input.len() {
       write!(f, "│ missing: \n")?;
-      for (ix, missing) in self.input.difference(&self.ready).enumerate() {
-        write!(f, "│    {}. {}\n", ix+1, humanize(missing))?;
+      for (ix, register) in self.input.difference(&self.ready).enumerate() {
+        write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
       }
     }
     write!(f, "│ output: {}\n", self.output.len())?;
-    for (ix, output) in self.output.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
+    for (ix, register) in self.output.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
     }
     write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
-    for (ix, output) in self.output_dependencies.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
+    for (ix, register) in self.output_dependencies.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
     }
     write!(f, "│ output ready: {}\n", self.output_dependencies_ready.len())?;
-    for (ix, output) in self.output_dependencies_ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, humanize(output))?;
+    for (ix, register) in self.output_dependencies_ready.iter().enumerate() {
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ transformations: \n")?;
@@ -387,6 +398,71 @@ impl fmt::Debug for Block {
     
     Ok(())
   }
+}
+
+fn format_register(block: &Block, register: &Register) -> String {
+  let table_id = register.table_id;
+  let row = register.row;
+  let column = register.column;
+  let mut arg = format!("");
+  match table_id {
+    TableId::Global(id) => {
+      let name = match block.store.strings.get(&id) {
+        Some(name) => name.clone(),
+        None => format!("{:}",humanize(&id)),
+      };
+      arg=format!("{}#{}",arg,name)
+    },
+    TableId::Local(id) => {
+      match block.store.strings.get(&id) {
+        Some(name) => arg = format!("{}{}",arg,name),
+        None => arg = format!("{}{}",arg,humanize(&id)),
+      }
+    }
+  };
+  match row {
+    Index::None => arg=format!("{}{{-,",arg),
+    Index::All => arg=format!("{}{{:,",arg),
+    Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
+    Index::Table(table) => {
+      match table {
+        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+        TableId::Local(id) => {
+          match block.store.strings.get(&id) {
+            Some(name) => arg = format!("{}{}",arg,name),
+            None => arg = format!("{}{}",arg,humanize(&id)),
+          }
+        }
+      };
+    }
+    Index::Alias(alias) => {
+      let alias_name = block.store.strings.get(&alias).unwrap();
+      arg=format!("{}{{{},",arg,alias_name);
+    },
+  }
+  match column {
+    Index::None => arg=format!("{}-}}",arg),
+    Index::All => arg=format!("{}:}}",arg),
+    Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
+    Index::Table(table) => {
+      match table {
+        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+        TableId::Local(id) => {
+          match block.store.strings.get(&id) {
+            Some(name) => arg = format!("{}{}",arg,name),
+            None => arg = format!("{}{}",arg,humanize(&id)),
+          }
+        }
+      };
+    }
+    Index::Alias(alias) => {
+      let alias_name = block.store.strings.get(&alias).unwrap();
+      arg=format!("{}{}}}",arg,alias_name);
+    },
+  }
+
+  arg
+
 }
 
 fn format_transformation(block: &Block, tfm: &Transformation) -> String {
@@ -672,7 +748,7 @@ pub enum Transformation {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
-  pub table_id: u64,
+  pub table_id: TableId,
   pub row: Index,
   pub column: Index,
 }
@@ -680,7 +756,7 @@ pub struct Register {
 impl Register {
   pub fn hash(&self) -> u64 {
     let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
-    hasher.write_u64(self.table_id);
+    hasher.write_u64(*self.table_id.unwrap());
     hasher.write_u64(self.row.unwrap() as u64);
     hasher.write_u64(self.column.unwrap() as u64);
     hasher.finish() & 0x00FFFFFFFFFFFFFF
