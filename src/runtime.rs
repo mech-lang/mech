@@ -36,6 +36,8 @@ pub struct Runtime {
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub output_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
+  pub defined_tables: HashSet<u64>,
+  pub input: HashSet<u64>,
   pub output: HashSet<u64>,
   pub functions: HashMap<u64, Option<MechFunction>>,
 }
@@ -52,6 +54,8 @@ impl Runtime {
       register_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+      defined_tables: HashSet::new(),
+      input: HashSet::new(),
       output: HashSet::new(),
       functions: HashMap::new(),
     }
