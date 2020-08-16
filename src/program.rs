@@ -207,7 +207,7 @@ impl Program {
         _ => (),
       }
     }
-    
+    /*
     let mut changes = Vec::new();
     for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
       let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
@@ -242,7 +242,7 @@ impl Program {
     }
     let txn = Transaction{changes};
     self.mech.process_transaction(&txn);
-
+*/
     /*
     // Do it for the the other core
     for core in self.cores.values_mut() {
