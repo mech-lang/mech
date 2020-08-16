@@ -794,12 +794,13 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
                 program.mech.step();
-                /*
-                for register in &program.mech.runtime.changed_this_round {
-                  match program.machines.get(&table) {
+                
+                for register_hash in &program.mech.runtime.changed_this_round {
+                  let register = program.mech.runtime.register_map.get(&register_hash).unwrap();
+                  match program.machines.get(&register.table_id.unwrap()) {
                     // Invoke the machine!
                     Some(machine) => {
-                      
+                      /*
                       for change in &program.mech.store.changes {
                         match change {
                           Change::Set{table_id: change_table, ..} => {
@@ -809,12 +810,11 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                           }
                           _ => (),
                         }
-                      }
-
+                      }*/
                     },
                     _ => (),
                   }
-                }*/
+                }
                 client_outgoing.send(ClientMessage::StepDone);
               },
               (0, MechCode::MiniBlocks(miniblocks)) => {
