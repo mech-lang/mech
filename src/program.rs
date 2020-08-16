@@ -207,10 +207,14 @@ impl Program {
         _ => (),
       }
     }
-    /*
+    
     let mut changes = Vec::new();
+    println!("{:?}\n{:?}", self.mech.runtime.input, self.mech.runtime.defined_tables);
     for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
-      let needed_table_name = self.mech.store.names.get(needed_table.table.unwrap()).unwrap();
+      let register = self.mech.runtime.register_map.get(&needed_table).unwrap();
+      let needed_table_id = register.table_id.unwrap();
+      let needed_table_name = self.mech.runtime.database.borrow().store.strings.get(&needed_table_id).unwrap().clone();
+
       let m: Vec<_> = needed_table_name.split('/').collect();
       #[cfg(unix)]
       let machine_name = format!("libmech_{}.so", m[0]);
@@ -239,10 +243,11 @@ impl Program {
         },
         _ => (),
       }
+      
     }
     let txn = Transaction{changes};
     self.mech.process_transaction(&txn);
-*/
+
     /*
     // Do it for the the other core
     for core in self.cores.values_mut() {
