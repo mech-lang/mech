@@ -33,6 +33,7 @@ pub struct Runtime {
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
   pub errors: Vec<Error>,
+  pub register_map: HashMap<u64, Register>,
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub output_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
@@ -51,6 +52,7 @@ impl Runtime {
       blocks: HashMap::new(),
       errors: Vec::new(),
       ready_blocks: HashSet::new(),
+      register_map: HashMap::new(),
       register_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
@@ -203,6 +205,22 @@ impl Runtime {
 
     // Add to the list of runtime output registers
     self.output.extend(&block.output);
+    self.input.extend(&block.input);
+    self.input.extend(&block.output_dependencies);
+    for (k,v) in block.register_map.iter() {
+      self.register_map.insert(*k,v.clone());
+    } 
+
+    for (_, tfms) in &block.transformations {
+      for tfm in tfms {
+        match tfm {
+          Transformation::NewTable{table_id, ..} => {
+            self.defined_tables.insert(*table_id.unwrap());
+          }
+          _ => (),
+        }
+      }
+    }
 
     if block.is_ready() {
       block.process_changes(self.database.clone());
