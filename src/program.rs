@@ -209,7 +209,6 @@ impl Program {
     }
     
     let mut changes = Vec::new();
-    println!("{:?}\n{:?}", self.mech.runtime.input, self.mech.runtime.defined_tables);
     for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
       let register = self.mech.runtime.register_map.get(&needed_table).unwrap();
       let needed_table_id = register.table_id.unwrap();
@@ -793,9 +792,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step();
-                
-                for register_hash in &program.mech.runtime.changed_this_round {
+
+                for register_hash in &program.mech.runtime.aggregate_changed_this_round {
                   let register = program.mech.runtime.register_map.get(&register_hash).unwrap();
                   match program.machines.get(&register.table_id.unwrap()) {
                     // Invoke the machine!
