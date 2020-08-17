@@ -800,19 +800,11 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   match program.machines.get(&register.table_id.unwrap()) {
                     // Invoke the machine!
                     Some(machine) => {
-                      /*
-                      for change in &program.mech.store.changes {
-                        match change {
-                          Change::Set{table_id: change_table, ..} => {
-                            if table == change_table {
-                              machine.on_change(&change);
-                            }
-                          }
-                          _ => (),
-                        }
-                      }*/
+                      let database = program.mech.runtime.database.borrow();
+                      let table = database.tables.get(&register.table_id.unwrap()).unwrap();
+                      machine.on_change(&table);
                     },
-                    _ => (),
+                    _ => (), // TODO Warn user that the machine is not loaded!
                   }
                 }
                 client_outgoing.send(ClientMessage::StepDone);
