@@ -48,7 +48,14 @@ pub fn resolve_subscript(
 
   let row_iter = unsafe { match row_index {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
-    Index::All => IndexIterator::Range(1..=(*table).rows),
+    Index::All => {
+      let r = if (*table).rows == 0 {
+        1
+      } else {
+        (*table).rows
+      };
+      IndexIterator::Range(1..=r)
+    },
     Index::Table(table_id) => {
       let mut row_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
@@ -300,7 +307,6 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   } 
 
   for (_, vi) in arguments {
-    println!("{:?}", unsafe{&*vi.table});
     let width = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
@@ -318,12 +324,9 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
       for (k,i) in row_iter {
-        println!("{:?} {:?}", k, i);
         let value = vi.get(&i,&j).unwrap();
-        println!("{:?}", value);
         let n = out_row_iter.next();
         let m = out.column_iter.next();
-        println!("{:?} {:?}", n, m);
         match (n, m) {
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
