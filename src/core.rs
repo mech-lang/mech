@@ -82,10 +82,8 @@ impl Core {
 
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
-
     self.database.borrow_mut().process_transaction(txn)?;
     self.runtime.run_network()?;
-
     Ok(())
   }
 
