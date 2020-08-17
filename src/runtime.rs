@@ -37,6 +37,7 @@ pub struct Runtime {
   pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub output_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
+  pub aggregate_changed_this_round: HashSet<u64>,
   pub defined_tables: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
@@ -55,7 +56,8 @@ impl Runtime {
       register_map: HashMap::new(),
       register_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
-      changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+      changed_this_round: HashSet::new(), 
+      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
       defined_tables: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
@@ -71,12 +73,14 @@ impl Runtime {
     self.functions.insert(name_hash, fxn);
   }
 
-  pub fn run_network(&mut self) -> Result<(), Error> {    
+  pub fn run_network(&mut self) -> Result<(), Error> {   
+    self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
 
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
     loop {
+
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
@@ -91,6 +95,7 @@ impl Runtime {
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
       for register in self.changed_this_round.drain() {
+        self.aggregate_changed_this_round.insert(register);
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
             for block_id in producing_block_ids.iter() {
