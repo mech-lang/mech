@@ -65,7 +65,7 @@ impl Store {
 
   // Intern a value into the store at the next available memory address.
   // If we are out of memory, we have to look at the list of free spaces
-  // and choice one there.
+  // and choose one there.
   pub fn intern(&mut self, value: Value) -> usize {
     self.reference_counts[self.next] = 1;
     let address = self.next;
@@ -178,6 +178,8 @@ impl Database {
     for change in &txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
+          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
+          self.changed_this_round.insert(register.hash());
           self.tables.insert(*table_id, Table::new(
             *table_id, 
             *rows, 
@@ -187,6 +189,8 @@ impl Database {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
           store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
           store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
+          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
+          self.changed_this_round.insert(register.hash());
         }
         Change::Set{table_id, values} => {
           match self.tables.get_mut(&table_id) {
@@ -195,8 +199,8 @@ impl Database {
                 // Set the value
                 table.set(row, column, *value);
                 // Mark the table as updated
-                let register_hash = Register{table_id: TableId::Global(*table_id), row: Index::All, column: *column};
-                self.changed_this_round.insert(register_hash.hash());
+                let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: *column};
+                self.changed_this_round.insert(register.hash());
               }
             },
             None => {
