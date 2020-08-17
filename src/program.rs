@@ -210,9 +210,10 @@ impl Program {
     
     let mut changes = Vec::new();
     for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
-      let register = self.mech.runtime.register_map.get(&needed_table).unwrap();
+      let database = self.mech.runtime.database.borrow();
+      let register = database.register_map.get(&needed_table).unwrap();
       let needed_table_id = register.table_id.unwrap();
-      let needed_table_name = self.mech.runtime.database.borrow().store.strings.get(&needed_table_id).unwrap().clone();
+      let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
 
       let m: Vec<_> = needed_table_name.split('/').collect();
       #[cfg(unix)]
@@ -710,15 +711,12 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             use std::time::Instant;
-            //let pre_changes = program.mech.store.len();
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
-            //let delta_changes = program.mech.store.len() - pre_changes;
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;              
-            //program.compile_string(String::from(text.clone()));
-            ////println!("{:?}", program.mech);
-            //println!("Txn took {:0.4?} ms ({:0.0?} cps)", time / 1_000_000.0, delta_changes as f64 / (time / 1.0e9));
+            //println!("{:?}", program.mech);
+            //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
@@ -789,16 +787,15 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
               (0, MechCode::String(code)) => {
                 let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
-                
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
 
+                let database = program.mech.runtime.database.borrow();
                 for register_hash in &program.mech.runtime.aggregate_changed_this_round {
-                  let register = program.mech.runtime.register_map.get(&register_hash).unwrap();
-                  match program.machines.get(&register.table_id.unwrap()) {
+                  let register = database.register_map.get(&register_hash).unwrap();
+                  match program.machines.get(register_hash) {
                     // Invoke the machine!
                     Some(machine) => {
-                      let database = program.mech.runtime.database.borrow();
                       let table = database.tables.get(&register.table_id.unwrap()).unwrap();
                       machine.on_change(&table);
                     },
