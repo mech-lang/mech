@@ -160,6 +160,7 @@ pub struct Database {
   pub changed_this_round: HashSet<u64>,
   pub store: Arc<Store>,
   pub transactions: Vec<Transaction>,
+  pub register_map: HashMap<u64, Register>,
 }
 
 impl Database {
@@ -170,6 +171,7 @@ impl Database {
       changed_this_round: HashSet::new(),
       store: Arc::new(Store::new(capacity)),
       transactions: Vec::with_capacity(100_000),
+      register_map: HashMap::new(),
     }
   }
 
@@ -180,6 +182,7 @@ impl Database {
         Change::NewTable{table_id, rows, columns} => {
           let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
           self.changed_this_round.insert(register.hash());
+          self.register_map.insert(register.hash(), register);
           self.tables.insert(*table_id, Table::new(
             *table_id, 
             *rows, 
@@ -191,6 +194,7 @@ impl Database {
           store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
           let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
           self.changed_this_round.insert(register.hash());
+          self.register_map.insert(register.hash(), register);
         }
         Change::Set{table_id, values} => {
           match self.tables.get_mut(&table_id) {
