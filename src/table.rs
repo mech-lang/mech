@@ -490,7 +490,12 @@ impl fmt::Debug for Table {
     write!(f, "│ ", )?;
     for i in 1..=self.columns {
       let column_header = match self.store.column_index_to_alias.get(&(self.id,i)) {
-        Some(alias) => self.store.strings.get(alias).unwrap().to_string(),
+        Some(alias) => {
+          match self.store.strings.get(alias) {
+            Some(alias_str) => alias_str.to_string(),
+            None => humanize(alias),
+          }
+        },
         None => format!("{}", i),
       };
       print_cell_contents(&column_header, cell_width, f)?;
