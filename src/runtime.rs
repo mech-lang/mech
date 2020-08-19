@@ -79,9 +79,12 @@ impl Runtime {
     // the recursion limit is reached
     loop {
 
+      println!("READY: {:?}", self.ready_blocks);
+
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
+        println!("RUNNING BLOCK {:?}", block);
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
         self.changed_this_round.extend(&block.output);
@@ -93,6 +96,7 @@ impl Runtime {
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
       for register in self.changed_this_round.drain() {
+        println!("ererererererererere {:?}", self.database.borrow().register_map.get(&register));
         self.aggregate_changed_this_round.insert(register);
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
@@ -101,6 +105,10 @@ impl Runtime {
               if block.state == BlockState::New {
                 block.output_dependencies_ready.insert(register);
                 if block.is_ready() {
+                  // Add to the list of runtime output registers
+                  self.output.extend(&block.output);
+                  self.input.extend(&block.input);
+                  self.input.extend(&block.output_dependencies);
                   self.ready_blocks.insert(block.id);
                 }
               }
@@ -176,7 +184,7 @@ impl Runtime {
     // If the block is new and has no input, it can be marked to run immediately
     if !block.errors.is_empty() {
       block.state == BlockState::Error;
-    } else if block.state == BlockState::New && block.input.len() == 0 {
+    } else if block.state == BlockState::New && block.input.len() == 0 && block.output_dependencies.len() == 0 {
       block.state == BlockState::Ready;
     }
 
@@ -206,14 +214,7 @@ impl Runtime {
     let ready: HashSet<u64> = block.output_dependencies.intersection(&self.output).cloned().collect();
     block.output_dependencies_ready.extend(&ready);
 
-    // Add to the list of runtime output registers
-    self.output.extend(&block.output);
-    self.input.extend(&block.input);
-    self.input.extend(&block.output_dependencies);
-    for (k,v) in block.register_map.iter() {
-      self.database.borrow_mut().register_map.insert(*k,v.clone());
-    } 
-
+    // Get the list of tables defined by the block
     for (_, tfms) in &block.transformations {
       for tfm in tfms {
         match tfm {
@@ -224,6 +225,12 @@ impl Runtime {
         }
       }
     }
+
+    println!("DEFINED TABLES ======== {:?}", self.defined_tables);
+
+    for (k,v) in block.register_map.iter() {
+      self.database.borrow_mut().register_map.insert(*k,v.clone());
+    } 
 
     if block.is_ready() {
       block.process_changes(self.database.clone());

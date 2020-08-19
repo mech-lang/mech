@@ -178,6 +178,7 @@ impl Database {
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(), Error> {
     self.changed_this_round.clear();
     for change in &txn.changes {
+      println!("{:?}", change);
       match change {
         Change::NewTable{table_id, rows, columns} => {
           let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
@@ -215,6 +216,7 @@ impl Database {
         _ => (),
       }
     }
+    println!("{:?}", self.tables);
     Ok(())
   }
 
