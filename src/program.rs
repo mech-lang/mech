@@ -154,7 +154,8 @@ impl Program {
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
-    
+    println!("DOWNLOADING DEPENDENCIES");
+
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
       let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/master/machines.mec";
@@ -165,6 +166,8 @@ impl Program {
       registry_core.load_standard_library(); 
       registry_core.register_blocks(registry_compiler.blocks);
       registry_core.step();
+
+      println!("----------------------------------------------------{:?}", registry_core);
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table(hash_string("mech/machines")).unwrap();
@@ -209,12 +212,21 @@ impl Program {
     }
     
     let mut changes = Vec::new();
-    for needed_table in self.mech.runtime.input.difference(&self.mech.runtime.defined_tables) {
-      let database = self.mech.runtime.database.borrow();
-      let register = database.register_map.get(&needed_table).unwrap();
-      let needed_table_id = register.table_id.unwrap();
-      let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
 
+    // Dedupe needed ids
+    let registers = self.mech.runtime.input.difference(&self.mech.runtime.defined_tables);
+    let mut needed_tables = HashSet::new();
+    for register_hash in registers {
+      let database = self.mech.runtime.database.borrow();
+      let register = database.register_map.get(&register_hash).unwrap();
+      let needed_table_id = register.table_id.unwrap();
+      needed_tables.insert(needed_table_id.clone());
+    }
+    
+    for needed_table_id in needed_tables.iter() {
+      let database = self.mech.runtime.database.borrow();
+      let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
+      println!("NEEDED TABLE NAME {:?}", needed_table_name);
       let m: Vec<_> = needed_table_name.split('/').collect();
       #[cfg(unix)]
       let machine_name = format!("libmech_{}.so", m[0]);
@@ -246,8 +258,11 @@ impl Program {
       
     }
     let txn = Transaction{changes};
+    println!("{:?}", self.mech.runtime.blocks.keys());
+    println!("PROCESS TXN");
+    //println!("{:?}", txn);
     self.mech.process_transaction(&txn);
-
+    println!("DONE");
     /*
     // Do it for the the other core
     for core in self.cores.values_mut() {
@@ -505,7 +520,7 @@ impl ProgramRunner {
 
       let mut program = Program::new("new program", 100, outgoing.clone(), program_incoming);
 
-      program.download_dependencies(Some(client_outgoing.clone()));
+      //program.download_dependencies(Some(client_outgoing.clone()));
 
       // Step cores
       program.mech.step();
@@ -716,7 +731,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;              
             //println!("{:?}", program.mech);
-            //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
+            println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
@@ -785,6 +800,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let block_count = program.mech.runtime.blocks.len();
             match code_tuple {
               (0, MechCode::String(code)) => {
+                println!("Doing code");
                 let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
@@ -821,7 +837,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 }
                 program.mech.register_blocks(blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                program.mech.step();
+
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
