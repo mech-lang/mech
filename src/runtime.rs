@@ -38,6 +38,7 @@ pub struct Runtime {
   pub changed_this_round: HashSet<u64>,
   pub aggregate_changed_this_round: HashSet<u64>,
   pub defined_tables: HashSet<u64>,
+  pub needed_tables: HashSet<u64>,
   pub input: HashSet<u64>,
   pub output: HashSet<u64>,
   pub functions: HashMap<u64, Option<MechFunction>>,
@@ -57,6 +58,7 @@ impl Runtime {
       changed_this_round: HashSet::new(), 
       aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
       defined_tables: HashSet::new(),
+      needed_tables: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
       functions: HashMap::new(),
@@ -79,12 +81,9 @@ impl Runtime {
     // the recursion limit is reached
     loop {
 
-      println!("READY: {:?}", self.ready_blocks);
-
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
-        println!("RUNNING BLOCK {:?}", block);
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
         self.changed_this_round.extend(&block.output);
@@ -96,7 +95,6 @@ impl Runtime {
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
       for register in self.changed_this_round.drain() {
-        println!("ererererererererere {:?}", self.database.borrow().register_map.get(&register));
         self.aggregate_changed_this_round.insert(register);
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
@@ -226,8 +224,10 @@ impl Runtime {
       }
     }
 
-    println!("DEFINED TABLES ======== {:?}", self.defined_tables);
-
+    // Keep track of needed tables
+    self.needed_tables.extend(&block.input);
+    self.needed_tables.extend(&block.output_dependencies);
+    
     for (k,v) in block.register_map.iter() {
       self.database.borrow_mut().register_map.insert(*k,v.clone());
     } 
