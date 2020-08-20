@@ -437,19 +437,24 @@ impl Table {
     let ix = self.index(row, column).unwrap();
     let old_address = self.data[ix];
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-    store.dereference(old_address);
-    let new_address = store.intern(value);
-    self.data[ix] = new_address;
+    if store.data[old_address] != value {
+      store.changed = true;
+      store.dereference(old_address);
+      let new_address = store.intern(value);
+      self.data[ix] = new_address;
+    }
   }
 
   pub fn set_unchecked(&mut self, row: usize, column: usize, value: Value) {
-    
     let ix = self.index_unchecked(row, column);
     let old_address = self.data[ix];
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-    store.dereference(old_address);
-    let new_address = store.intern(value);
-    self.data[ix] = new_address;
+    if store.data[old_address] != value {
+      store.changed = true;
+      store.dereference(old_address);
+      let new_address = store.intern(value);
+      self.data[ix] = new_address;
+    }
   }
 
 }

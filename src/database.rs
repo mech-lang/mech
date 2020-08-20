@@ -13,6 +13,7 @@ use rust_core::fmt;
 // is referenced using a counter. When the counter goes to zero, the memory location is marked as
 // free and is available to be overwritten by a new value.
 pub struct Store {
+  pub changed: bool,
   pub capacity: usize,
   pub next: usize,
   pub free_end: usize,
@@ -31,6 +32,7 @@ impl Store {
     let mut rc = vec![0; capacity];
     rc[0] = 1;
     Store {
+      changed: false,
       capacity,
       next: 1,
       free_end: 0,

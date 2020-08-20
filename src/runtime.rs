@@ -81,6 +81,12 @@ impl Runtime {
     // the recursion limit is reached
     loop {
 
+      {
+        let mut db = self.database.borrow_mut();
+        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+        store.changed = false;
+      }
+
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
@@ -136,6 +142,14 @@ impl Runtime {
         // TODO Emit a warning here
         println!("Recursion limit reached");
         break;
+      }
+      // Check if there were any updates to the store. If not, we are at a set point, and we are done.
+      {
+        let mut db = self.database.borrow_mut();
+        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+        if !store.changed {
+          break;
+        }
       }
       recursion_ix += 1;
     }

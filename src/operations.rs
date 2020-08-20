@@ -351,38 +351,14 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   let mut out_rows = 0;
   let mut out_columns = 0;
 
-  
-
   // Get the size of the output table
   for (_, vi) in arguments {
-    unsafe{println!("VI TABLE {:?}", (*vi.table));}
-    println!("VI ROW ITER {:?}", vi.row_iter);
-    println!("ROWS {:?}", vi.rows());
-    
     let vi_rows = match &vi.row_iter {
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
       IndexIterator::Table(iter) => iter.len(),
     };
-
-    println!("VI ROWS {:?}", vi_rows);
-
-    out_rows = if out_rows == 0 {
-      vi_rows
-    } else if vi_rows > out_rows && out_rows == 1 {
-      vi_rows
-    } else if vi_rows == out_rows {
-      vi_rows
-    } else if vi_rows == 1 {
-      out_rows
-    } else {
-      // TODO Throw a size error here
-      0
-    };
-
-    println!("OUT ROWS {:?}", out_rows);
-
     let vi_columns = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
@@ -390,7 +366,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       IndexIterator::Table(iter) => iter.len(),
     };
     out_columns += vi_columns;
-
+    out_rows = out.rows();
   }
 
   for (_, vi) in arguments {
@@ -405,7 +381,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
       _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
     };
-    println!("ORI {:?}", out_row_iter);
+
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
         (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
@@ -413,11 +389,9 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
       for (k,i) in row_iter {
-        println!("k {:?} i {:?}",k,i);
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
         let m = out.column_iter.next();
-        println!("OUT {:?} {:?}", n, m);
         match (n, m) {
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
@@ -431,7 +405,6 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }
     column += width;
-    
   }
 }
 
