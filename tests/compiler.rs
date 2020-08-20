@@ -346,7 +346,7 @@ test_mech!(set_column_logical,"
 block
   ix = x > 0
   x = #q.x
-  #q.x{ix} := 3
+  #q.x{ix} := -1
 
 block
   #test = #q.x{1} + #q.x{2} + #q.x{3}
@@ -355,7 +355,7 @@ block
   #q = [|x y z|
          1 2 3
          4 5 6
-         7 8 9]", Value::from_i64(9));
+         7 8 9]", Value::from_i64(-3));
 
 test_mech!(set_second_column_logical,"
 block
