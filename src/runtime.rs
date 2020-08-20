@@ -76,11 +76,10 @@ impl Runtime {
   pub fn run_network(&mut self) -> Result<(), Error> {   
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
-
+    
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
     loop {
-
       {
         let mut db = self.database.borrow_mut();
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
@@ -147,7 +146,7 @@ impl Runtime {
       {
         let mut db = self.database.borrow_mut();
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
-        if !store.changed {
+        if !store.changed && self.ready_blocks.is_empty() {
           break;
         }
       }
