@@ -33,8 +33,8 @@ pub struct Runtime {
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
   pub errors: Vec<Error>,
-  pub register_to_block: HashMap<u64,HashSet<u64>>,
   pub output_to_block:  HashMap<u64,HashSet<u64>>,
+  pub input_to_block:  HashMap<u64,HashSet<u64>>,
   pub changed_this_round: HashSet<u64>,
   pub aggregate_changed_this_round: HashSet<u64>,
   pub defined_tables: HashSet<u64>,
@@ -53,8 +53,8 @@ impl Runtime {
       blocks: HashMap::new(),
       errors: Vec::new(),
       ready_blocks: HashSet::new(),
-      register_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
+      input_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), 
       aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
       defined_tables: HashSet::new(),
@@ -114,7 +114,7 @@ impl Runtime {
           }
           _ => () // No producers
         }
-        match self.register_to_block.get(&register) {
+        match self.input_to_block.get(&register) {
           Some(listening_block_ids) => {
             for block_id in listening_block_ids.iter() {
               let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
@@ -167,9 +167,10 @@ impl Runtime {
   }
 
   pub fn register_block(&mut self, mut block: Block) {
+
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
-      let listeners = self.register_to_block.entry(*input_register).or_insert(HashSet::new());
+      let listeners = self.input_to_block.entry(*input_register).or_insert(HashSet::new());
       listeners.insert(block.id);
     }
 
@@ -217,7 +218,9 @@ impl Runtime {
       for tfm in tfms {
         match tfm {
           Transformation::NewTable{table_id, ..} => {
-            self.defined_tables.insert(*table_id.unwrap());
+            let register = Register{table_id: *table_id, row: Index::All, column: Index::All};
+            self.defined_tables.insert(register.hash());
+            self.database.borrow_mut().register_map.insert(register.hash(), register);
           }
           _ => (),
         }
@@ -230,9 +233,20 @@ impl Runtime {
     
     for (k,v) in block.register_map.iter() {
       self.database.borrow_mut().register_map.insert(*k,v.clone());
-    } 
+    }    
+
+    // Figure out if all the requirements are met
+    for register in &block.input {
+      match self.output.get(&register) {
+        Some(r) => {block.ready.insert(*register);},
+        _ => (),
+      }
+    }
 
     if block.is_ready() {
+      self.output.extend(&block.output);
+      self.input.extend(&block.input);
+      self.input.extend(&block.output_dependencies);
       block.process_changes(self.database.clone());
       self.ready_blocks.insert(block.id);
     }

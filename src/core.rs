@@ -46,7 +46,7 @@ impl Core {
   pub fn new(capacity: usize) -> Core {
     let mut database = Arc::new(RefCell::new(Database::new(capacity)));
     Core {
-      runtime: Runtime::new(database.clone(), 1000),
+      runtime: Runtime::new(database.clone(), 5),
       database,
     }
   }

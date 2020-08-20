@@ -367,7 +367,13 @@ impl fmt::Debug for Block {
     }
     write!(f, "│ output: {}\n", self.output.len())?;
     for (ix, register) in self.output.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+      let register_string = match self.register_map.get(register) {
+        Some(register) => {
+          format_register(&self, register)
+        }
+        None => { humanize(register) }
+      };
+      write!(f, "│    {}. {}\n", ix+1, register_string)?;
     }
     write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
     for (ix, register) in self.output_dependencies.iter().enumerate() {
@@ -901,19 +907,25 @@ impl Iterator for TableIterator {
   type Item = Index;
   fn next(&mut self) -> Option<Index> {
     unsafe{
+      println!("{:?}", (*self.table));
+      println!("{:?}", (*self.table).data);
       if self.current < (*self.table).data.len() {
         let address = (*self.table).data[self.current];
+        println!("{:?}", address);
         self.current += 1;
         let value = (*self.table).store.data[address];
+        println!("VALUE {:?}", value);
         match value.as_u64() {
           Some(v) => {
             Some(Index::Index(v as usize))
           },
           None => match value.as_bool() {
             Some(true) => {
+              println!("TRUE");
               Some(Index::Index(self.current))
             },
             Some(false) => {
+              println!("FALSE");
               Some(Index::None)
             },
             x => {
