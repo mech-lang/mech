@@ -513,6 +513,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       for (k,v) in block.store.strings.iter() {
         miniblock.strings.push((k.clone(), v.clone()));
       }
+      for (k,v) in block.register_map.iter() {
+        miniblock.register_map.push((k.clone(), v.clone()));
+      }
       miniblocks.push(miniblock);
     }
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
@@ -557,7 +560,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           std::process::exit(1);
         }
         q => {
-          println!("else: {:?}", q);
+          //println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -683,7 +686,7 @@ clear   - reset the current core
           break 'receive_loop;
         }
         q => {
-          println!("else: {:?}", q);
+          //println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
