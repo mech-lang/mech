@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -46,6 +47,7 @@ pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
+  pub register_map: Vec<(u64, Register)>,
 }
 
 impl MiniBlock {
@@ -54,6 +56,7 @@ impl MiniBlock {
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
+      register_map: Vec::with_capacity(1),
     }
   }
 }
