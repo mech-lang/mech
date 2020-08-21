@@ -363,6 +363,21 @@ impl Table {
     }
   }
 
+  pub fn clear(&mut self) {
+    for i in 1..=self.rows {
+      for j in 1..=self.columns {
+        let ix = self.index_unchecked(i, j);
+        let address = self.data[ix];
+        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+        store.dereference(address);
+      }
+    }
+
+    self.rows = 0;
+    self.columns = 0;
+    self.data.clear();
+  }
+
   // Transform a (row, column) into a linear address into the data. If it's out of range, return None
   pub fn index(&self, row: &Index, column: &Index) -> Option<usize> {
     let rix = match row {

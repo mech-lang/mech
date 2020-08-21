@@ -111,6 +111,13 @@ impl Core {
     }
   }
 
+  pub fn clear_table(&self, table_id: u64) {
+    match self.runtime.database.borrow_mut().tables.get_mut(&table_id) {
+      Some(table) => table.clear(),
+      None => (),
+    };
+  }
+
 }
 
 impl fmt::Debug for Core {

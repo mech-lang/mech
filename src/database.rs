@@ -178,6 +178,7 @@ impl Database {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(), Error> {
+
     self.changed_this_round.clear();
     for change in &txn.changes {
       match change {
