@@ -353,35 +353,29 @@ impl fmt::Debug for Block {
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ ready: {}\n", self.ready.len())?;
     for (ix, register) in self.ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
     }
     write!(f, "│ input: {} \n", self.input.len())?;
     for (ix, register) in self.input.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
     }
     if self.ready.len() < self.input.len() {
       write!(f, "│ missing: \n")?;
       for (ix, register) in self.input.difference(&self.ready).enumerate() {
-        write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+        write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
       }
     }
     write!(f, "│ output: {}\n", self.output.len())?;
     for (ix, register) in self.output.iter().enumerate() {
-      let register_string = match self.register_map.get(register) {
-        Some(register) => {
-          format_register(&self, register)
-        }
-        None => { humanize(register) }
-      };
-      write!(f, "│    {}. {}\n", ix+1, register_string)?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
     }
     write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
     for (ix, register) in self.output_dependencies.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
     }
     write!(f, "│ output ready: {}\n", self.output_dependencies_ready.len())?;
     for (ix, register) in self.output_dependencies_ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, self.register_map.get(register).unwrap()))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ transformations: \n")?;
@@ -406,69 +400,72 @@ impl fmt::Debug for Block {
   }
 }
 
-fn format_register(block: &Block, register: &Register) -> String {
-  let table_id = register.table_id;
-  let row = register.row;
-  let column = register.column;
-  let mut arg = format!("");
-  match table_id {
-    TableId::Global(id) => {
-      let name = match block.store.strings.get(&id) {
-        Some(name) => name.clone(),
-        None => format!("{:}",humanize(&id)),
+fn format_register(block: &Block, register_id: &u64) -> String {
+  match block.register_map.get(register_id) {
+    Some(register) => {
+      let table_id = register.table_id;
+      let row = register.row;
+      let column = register.column;
+      let mut arg = format!("");
+      match table_id {
+        TableId::Global(id) => {
+          let name = match block.store.strings.get(&id) {
+            Some(name) => name.clone(),
+            None => format!("{:}",humanize(&id)),
+          };
+          arg=format!("{}#{}",arg,name)
+        },
+        TableId::Local(id) => {
+          match block.store.strings.get(&id) {
+            Some(name) => arg = format!("{}{}",arg,name),
+            None => arg = format!("{}{}",arg,humanize(&id)),
+          }
+        }
       };
-      arg=format!("{}#{}",arg,name)
-    },
-    TableId::Local(id) => {
-      match block.store.strings.get(&id) {
-        Some(name) => arg = format!("{}{}",arg,name),
-        None => arg = format!("{}{}",arg,humanize(&id)),
+      match row {
+        Index::None => arg=format!("{}{{-,",arg),
+        Index::All => arg=format!("{}{{:,",arg),
+        Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
+        Index::Table(table) => {
+          match table {
+            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+            TableId::Local(id) => {
+              match block.store.strings.get(&id) {
+                Some(name) => arg = format!("{}{}",arg,name),
+                None => arg = format!("{}{}",arg,humanize(&id)),
+              }
+            }
+          };
+        }
+        Index::Alias(alias) => {
+          let alias_name = block.store.strings.get(&alias).unwrap();
+          arg=format!("{}{{{},",arg,alias_name);
+        },
       }
-    }
-  };
-  match row {
-    Index::None => arg=format!("{}{{-,",arg),
-    Index::All => arg=format!("{}{{:,",arg),
-    Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
-    Index::Table(table) => {
-      match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
-        TableId::Local(id) => {
-          match block.store.strings.get(&id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(&id)),
-          }
+      match column {
+        Index::None => arg=format!("{}-}}",arg),
+        Index::All => arg=format!("{}:}}",arg),
+        Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
+        Index::Table(table) => {
+          match table {
+            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+            TableId::Local(id) => {
+              match block.store.strings.get(&id) {
+                Some(name) => arg = format!("{}{}",arg,name),
+                None => arg = format!("{}{}",arg,humanize(&id)),
+              }
+            }
+          };
         }
-      };
+        Index::Alias(alias) => {
+          let alias_name = block.store.strings.get(&alias).unwrap();
+          arg=format!("{}{}}}",arg,alias_name);
+        },
+      }
+      arg
     }
-    Index::Alias(alias) => {
-      let alias_name = block.store.strings.get(&alias).unwrap();
-      arg=format!("{}{{{},",arg,alias_name);
-    },
+    None => { humanize(register_id) }  
   }
-  match column {
-    Index::None => arg=format!("{}-}}",arg),
-    Index::All => arg=format!("{}:}}",arg),
-    Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
-    Index::Table(table) => {
-      match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
-        TableId::Local(id) => {
-          match block.store.strings.get(&id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(&id)),
-          }
-        }
-      };
-    }
-    Index::Alias(alias) => {
-      let alias_name = block.store.strings.get(&alias).unwrap();
-      arg=format!("{}{}}}",arg,alias_name);
-    },
-  }
-
-  arg
-
 }
 
 fn format_transformation(block: &Block, tfm: &Transformation) -> String {
