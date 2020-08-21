@@ -823,12 +823,27 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   for (key, value) in miniblock.strings {
                     store.strings.insert(key, value.to_string());
                   }
+                  for (key, value) in miniblock.register_map {
+                    block.register_map.insert(key, value);
+                  }
                   block.gen_id();
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
 
+                let database = program.mech.runtime.database.borrow();
+                for register_hash in &program.mech.runtime.aggregate_changed_this_round {
+                  let register = database.register_map.get(&register_hash).unwrap();
+                  match program.machines.get(register_hash) {
+                    // Invoke the machine!
+                    Some(machine) => {
+                      let table = database.tables.get(&register.table_id.unwrap()).unwrap();
+                      machine.on_change(&table);
+                    },
+                    _ => (), // TODO Warn user that the machine is not loaded!
+                  }
+                }
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
