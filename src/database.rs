@@ -200,11 +200,16 @@ impl Database {
         },
         Change::SetColumnAlias{table_id, column_ix, column_alias} => {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-          store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
-          store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
-          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
-          self.changed_this_round.insert(register.hash());
-          self.register_map.insert(register.hash(), register);
+          match store.column_alias_to_index.get(&(*table_id,*column_alias)) {
+            None => {
+              store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
+              store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
+              let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
+              self.changed_this_round.insert(register.hash());
+              self.register_map.insert(register.hash(), register);
+            }
+            _ => (),
+          }
         }
         Change::Set{table_id, values} => {
           match self.tables.get_mut(&table_id) {
