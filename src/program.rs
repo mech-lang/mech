@@ -723,7 +723,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;              
             //println!("{:?}", program.mech);
-            println!("Txn took {:0.4?} ms", time / 1_000_000.0);
+            //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
@@ -852,14 +852,9 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             }
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
-            /*
+            
             // Reset #ans
-             match program.mech.get_table("ans".to_string()) {
-              Some(table) => {
-                table.borrow_mut().clear();
-              },
-              None => (),
-            };
+            program.mech.clear_table(hash_string("ans"));
 
             // Compile and run code
             let mut compiler = Compiler::new();
@@ -869,13 +864,10 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             program.mech.step();
 
             // Get the result
-            let echo_table = match program.mech.get_table("ans".to_string()) {
-              Some(table) => Some(table.borrow().clone()),
-              None => None,
-            };
+            let echo_table = program.mech.get_table(hash_string("ans"));
 
             // Send it
-            client_outgoing.send(ClientMessage::Table(echo_table));*/
+            client_outgoing.send(ClientMessage::Table(echo_table));
             client_outgoing.send(ClientMessage::StepDone);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
