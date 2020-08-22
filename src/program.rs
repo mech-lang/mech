@@ -100,6 +100,7 @@ pub struct Program {
   pub outgoing: Sender<RunLoopMessage>,
   pub errors: Vec<Error>,
   programs: u64,
+  loaded_machines: HashSet<u64>,
   pub listeners: HashSet<Register>,
 }
 
@@ -118,6 +119,7 @@ impl Program {
       cores: HashMap::new(),
       libraries: HashMap::new(),
       machines: HashMap::new(),
+      loaded_machines: HashSet::new(),
       input_map: HashMap::new(),
       incoming,
       outgoing,
@@ -154,7 +156,6 @@ impl Program {
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
-
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
       let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/master/machines.mec";
@@ -176,7 +177,6 @@ impl Program {
         self.machine_repository.insert(name, (version, url));
       }
     }
-
     // Do it for the mech core
     for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {
       let fun_name = self.mech.runtime.database.borrow().store.strings.get(&fun_name_id).unwrap().clone();
@@ -207,7 +207,6 @@ impl Program {
         _ => (),
       }
     }
-    
     let mut changes = Vec::new();
 
     // Dedupe needed ids
@@ -224,34 +223,40 @@ impl Program {
       let database = self.mech.runtime.database.borrow();
       let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
       let m: Vec<_> = needed_table_name.split('/').collect();
-      #[cfg(unix)]
-      let machine_name = format!("libmech_{}.so", m[0]);
-      #[cfg(windows)]
-      let machine_name = format!("mech_{}.dll", m[0]);
-      match self.machine_repository.get(m[0]) {
-        Some((ver, path)) => {
-          let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
-            match File::open(format!("machines/{}",machine_name)) {
-              Ok(_) => {
-                Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
-              }
-              _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
-            }
-          });          
-          // Replace slashes with underscores and then add a null terminator
-          let mut s = format!("{}\0", needed_table_name.replace("/","_"));
-          let error_msg = format!("Symbol {} not found",s);
-          let mut registrar = Registrar::new();
-          unsafe{
-            let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
-            let mut init_changes = (declaration.register)(&mut registrar, self.outgoing.clone());
-            changes.append(&mut init_changes);
-          }        
-          self.machines.extend(registrar.machines);
-        },
+      let needed_machine_id = hash_string(&m[0]);
+      match self.loaded_machines.contains(&needed_machine_id) {
+        false => {
+          self.loaded_machines.insert(needed_machine_id);
+          #[cfg(unix)]
+          let machine_name = format!("libmech_{}.so", m[0]);
+          #[cfg(windows)]
+          let machine_name = format!("mech_{}.dll", m[0]);
+          match self.machine_repository.get(m[0]) {
+            Some((ver, path)) => {
+              let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
+                match File::open(format!("machines/{}",machine_name)) {
+                  Ok(_) => {
+                    Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+                  }
+                  _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
+                }
+              });          
+              // Replace slashes with underscores and then add a null terminator
+              let mut s = format!("{}\0", needed_table_name.replace("/","_"));
+              let error_msg = format!("Symbol {} not found",s);
+              let mut registrar = Registrar::new();
+              unsafe{
+                let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
+                let mut init_changes = (declaration.register)(&mut registrar, self.outgoing.clone());
+                changes.append(&mut init_changes);
+              }        
+              self.machines.extend(registrar.machines);
+            },
+            _ => (),
+          }
+        }
         _ => (),
       }
-      
     }
     let txn = Transaction{changes};
     self.mech.process_transaction(&txn);
@@ -796,7 +801,6 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
                 program.download_dependencies(Some(client_outgoing.clone()));
-
                 let database = program.mech.runtime.database.borrow();
                 for register_hash in &program.mech.runtime.aggregate_changed_this_round {
                   let register = database.register_map.get(&register_hash).unwrap();
@@ -861,11 +865,10 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             compiler.compile_string(code);
             program.mech.register_blocks(compiler.blocks);
             program.download_dependencies(Some(client_outgoing.clone()));
-            program.mech.step();
 
             // Get the result
             let echo_table = program.mech.get_table(hash_string("ans"));
-
+            
             // Send it
             client_outgoing.send(ClientMessage::Table(echo_table));
             client_outgoing.send(ClientMessage::StepDone);
@@ -876,9 +879,9 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           },
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
-              None => client_outgoing.send(ClientMessage::String(format!("{:?}",program.cores.len() + 1))),
-              Some(0) => client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech))),
-              Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}",program.cores.get(&core_id)))),
+              None => client_outgoing.send(ClientMessage::String(format!("There are {:?} cores running.", program.cores.len() + 1))),
+              Some(0) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.mech))),
+              Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
             };
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
