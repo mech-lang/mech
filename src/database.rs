@@ -183,13 +183,20 @@ impl Database {
     for change in &txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
-          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
-          self.changed_this_round.insert(register.hash());
-          self.register_map.insert(register.hash(), register);
-          self.tables.insert(*table_id, Table::new(
-            *table_id, 
-            *rows, 
-            *columns, self.store.clone()));
+
+          match self.tables.get_mut(&table_id) {
+            Some(table) => {
+            },
+            None => {
+              let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
+              self.changed_this_round.insert(register.hash());
+              self.register_map.insert(register.hash(), register);
+              self.tables.insert(*table_id, Table::new(
+                *table_id, 
+                *rows, 
+                *columns, self.store.clone()));
+            }
+          }
         },
         Change::SetColumnAlias{table_id, column_ix, column_alias} => {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
