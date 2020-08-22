@@ -488,12 +488,22 @@ impl fmt::Debug for Table {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
     };
-    
-    let table_header = format!("#{} ({} x {})", table_name, self.rows, self.columns);
+    let columns = if self.columns == 0 {
+      1
+    } else {{
+      self.columns
+    }};
+    let rows = if self.rows == 0 {
+      1
+    } else {{
+      self.rows
+    }};
+    let table_header = format!("#{} ({} x {})", table_name, rows, columns);
     let header_width = table_header.len()+2;
-    let aggregate_cell_width = (cell_width+2) * self.columns + self.columns-1;
+
+    let aggregate_cell_width = (cell_width+2) * columns + columns-1;
     let cell_width = if header_width > aggregate_cell_width {
-      header_width / self.columns - 2
+      header_width / columns - 2
     } else {
       cell_width
     };
@@ -502,13 +512,14 @@ impl fmt::Debug for Table {
     } else  {
       aggregate_cell_width
     };
-    print_top_span_border(self.columns, cell_width+2, f)?;
+
+    print_top_span_border(columns, cell_width+2, f)?;
     write!(f,"│ ")?;
     print_cell_contents(&table_header, table_width-2, f)?;
     write!(f," │\n")?;
-    print_inner_span_border(self.columns, cell_width+2, f)?;
+    print_inner_span_border(columns, cell_width+2, f)?;
     write!(f, "│ ", )?;
-    for i in 1..=self.columns {
+    for i in 1..=columns {
       let column_header = match self.store.column_index_to_alias.get(&(self.id,i)) {
         Some(alias) => {
           match self.store.strings.get(alias) {
@@ -522,12 +533,12 @@ impl fmt::Debug for Table {
       write!(f, " │ ", )?;
     }
     write!(f, "\n")?;
-    print_inner_border(self.columns, cell_width + 2, f)?;
+    print_inner_border(columns, cell_width + 2, f)?;
 
     // Print the first 10 rows
     for i in 0..rows {
       write!(f, "│ ", )?;
-      for j in 0..self.columns {
+      for j in 0..columns {
         match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
           Some(x) => {
             let value = &self.store.data[x];
@@ -560,7 +571,9 @@ impl fmt::Debug for Table {
             print_cell_contents(&text, cell_width, f)?;
             write!(f, " │ ")?;
           },
-          _ => (),
+          _ => {
+            write!(f, " Empty │ ")?;
+          },
         }
         
       }
@@ -568,16 +581,16 @@ impl fmt::Debug for Table {
     }
 
     // Print the rest of the rows
-    if self.rows > 150 {
+    if rows > 150 {
       write!(f, "│ ")?;
-      for j in 0..self.columns {
+      for j in 0..columns {
         print_cell_contents(&"...".to_string(), cell_width, f)?;
         write!(f, " │ ")?;
       }
       write!(f, "\n")?;
-      for i in self.rows-3..self.rows {
+      for i in rows-3..rows {
         write!(f, "│ ", )?;
-        for j in 0..self.columns {
+        for j in 0..columns {
           match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
             Some(x) => {
               let value = &self.store.data[x];
@@ -613,7 +626,7 @@ impl fmt::Debug for Table {
         write!(f, "\n")?;
       }
     }
-    print_bottom_border(self.columns, cell_width + 2, f)?;
+    print_bottom_border(columns, cell_width + 2, f)?;
     
     Ok(())
   }
