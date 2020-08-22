@@ -665,16 +665,16 @@ clear   - reset the current core
           println!("{} {}", formatted_name, message);
           print!("{}", ">: ".bright_yellow());
         },
-        /*(Ok(ClientMessage::Table(table))) => {
+        (Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
-              print_table(&table);
+              println!("{:?}", &table);
               print!("{}", ">: ".bright_yellow());
             }
             None => println!("{} Table not found", formatted_name),
           }
-        },*/
+        },
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
