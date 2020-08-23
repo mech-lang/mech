@@ -1,7 +1,7 @@
-use block::{Block, Error};
-use database::{Database, Transaction};
+use block::{Block, Register, Error};
+use database::{Database, Change, Transaction};
 use runtime::Runtime;
-use table::{Table, Value, Index};
+use table::{Table, Value, Index, TableId};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
@@ -82,6 +82,14 @@ impl Core {
 
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
+    for change in &txn.changes {
+      match change {
+        Change::NewTable{table_id, rows, columns} => {
+          self.runtime.output.insert(Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All}.hash());
+        }
+        _ => (),
+      }
+    }
     self.database.borrow_mut().process_transaction(txn)?;
     self.runtime.run_network()?;
     Ok(())
