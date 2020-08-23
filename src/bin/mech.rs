@@ -124,6 +124,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .help("The files and folders to run.")
         .required(true)
         .multiple(true)))
+    .subcommand(SubCommand::with_name("clean")
+      .about("Remove the machines folder"))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
       .arg(Arg::with_name("repl_mode")
@@ -595,6 +597,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     writer.flush().unwrap();
 
     println!("{} Wrote {}", "[Finished]".bright_green(), output_name);
+    std::process::exit(0);
+    None
+  } else if let Some(matches) = matches.subcommand_matches("clean") {
+    std::fs::remove_dir_all("machines");
     std::process::exit(0);
     None
   } else {
