@@ -1,4 +1,5 @@
 // # Mech Program
+#![allow(dead_code)]
 
 // ## Prelude
 #![feature(extern_prelude)]
