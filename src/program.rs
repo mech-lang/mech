@@ -795,13 +795,13 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           } 
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             let block_count = program.mech.runtime.blocks.len();
-            let trigger_machines = |p: &Program| {
+            let trigger_machines = |p: &mut Program| {
               let database = p.mech.runtime.database.borrow();
               for register_hash in &p.mech.runtime.aggregate_changed_this_round {
                 let register = database.register_map.get(&register_hash).unwrap();
-                match p.machines.get(register_hash) {
+                match p.machines.get_mut(register_hash) {
                   // Invoke the machine!
-                  Some(machine) => {
+                  Some(mut machine) => {
                     let table = database.tables.get(&register.table_id.unwrap()).unwrap();
                     machine.on_change(&table);
                   },
@@ -816,9 +816,9 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
-                trigger_machines(&program);
+                trigger_machines(&mut program);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                trigger_machines(&program);
+                trigger_machines(&mut program);
 
                 client_outgoing.send(ClientMessage::StepDone);
               },
@@ -841,9 +841,9 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
-                trigger_machines(&program);
+                trigger_machines(&mut program);
                 program.download_dependencies(Some(client_outgoing.clone()));
-                trigger_machines(&program);
+                trigger_machines(&mut program);
 
                 client_outgoing.send(ClientMessage::StepDone);
               }
