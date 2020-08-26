@@ -23,7 +23,7 @@ mech-program = {git = "https://gitlab.com/mech-lang/program"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 clap = "2.33.0"
-colored = "1.9.3"
+colored = "2.0.0"
 nom = "5.1.1"
 reqwest = "0.10.4"
 bincode = "1.2.1"
@@ -43,5 +43,8 @@ ahash = { version = "0.3.2", default-features = false}
 [workspace]
 
 members = [
-    "notebook",
+  "notebook",
 ]
+
+[profile.release]
+debug = true

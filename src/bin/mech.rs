@@ -394,7 +394,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           },
           (Ok(ClientMessage::String(message))) => {
             //println!("{} {}", formatted_name, message);
-            //print!("{}", ">: ".bright_yellow());
+            //print!("{}", ">: ".truecolor(246,192,78));
           },
           /*(Ok(ClientMessage::Table(table))) => {
             // Send the table received from the client over the websocket
@@ -642,12 +642,12 @@ let text_logo = r#"
   │ │ │ │ │ │ ┌──────┐ │ │      │ └─┐ │ │
   │ │ │ │ │ │ │ ┌────┘ │ │      │ ┌─┘ │ │
   │ │ └─┘ │ │ │ └────┐ │ └────┐ │ │   │ │
-  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.bright_yellow();
+  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
 
   println!("{}", text_logo);
 
   println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
-  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).bright_yellow(), "║".bright_black());
+  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
   println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
   println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
 
@@ -698,14 +698,14 @@ clear   - reset the current core
         },
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
-          print!("{}", ">: ".bright_yellow());
+          print!("{}", ">: ".truecolor(246,192,78));
         },
         (Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
               println!("{:?}", &table);
-              print!("{}", ">: ".bright_yellow());
+              print!("{}", ">: ".truecolor(246,192,78));
             }
             None => println!("{} Table not found", formatted_name),
           }
@@ -733,7 +733,7 @@ clear   - reset the current core
      
     io::stdout().flush().unwrap();
     // Print a prompt
-    print!("{}", ">: ".bright_yellow());
+    print!("{}", ">: ".truecolor(246,192,78));
     io::stdout().flush().unwrap();
     let mut input = String::new();
 
@@ -809,7 +809,7 @@ fn print_errors(program: &Program) {
     println!("\n{}\n", error_notice.bright_red());
     for error in &program.errors {
       let block = &program.mech.runtime.blocks.get(&(error.block as usize)).unwrap();
-      println!("{} {} {} {}\n ", "--".bright_yellow(), "Block".yellow(), block.name, "---------------------------------------".bright_yellow());
+      println!("{} {} {} {}\n ", "--".truecolor(246,192,78), "Block".yellow(), block.name, "---------------------------------------".truecolor(246,192,78));
       match error.error_id {
         ErrorType::DuplicateAlias(alias_id) => {
           let alias = &program.mech.store.names.get(&alias_id).unwrap();
@@ -825,7 +825,7 @@ fn print_errors(program: &Program) {
           println!("   {}", text.bright_black());
         }
       }
-      println!("\n{}", "------------------------------------------------------\n".bright_yellow());
+      println!("\n{}", "------------------------------------------------------\n".truecolor(246,192,78));
     }
   }*/
 }
