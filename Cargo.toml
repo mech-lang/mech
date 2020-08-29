@@ -39,6 +39,8 @@ actix-web-actors = "2.0.0"
 tokio = { version = "0.2", features = ["macros"] }
 crossbeam-channel = "0.4"
 ahash = { version = "0.3.2", default-features = false}
+crossterm = "0.17"
+tui = { version = "0.10", default-features = false, features = ['crossterm'] }
 
 [workspace]
 

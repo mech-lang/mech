@@ -54,7 +54,7 @@ extern crate reqwest;
 use std::collections::HashMap;
 
 extern crate bincode;
-use std::io::{Write, BufReader, BufWriter};
+use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 
 #[macro_use]
@@ -85,7 +85,18 @@ use std::cell::Cell;
 #[macro_use]
 extern crate crossbeam_channel;
 use crossbeam_channel::{Sender, Receiver};
-                       
+
+extern crate tui;
+use tui::backend::CrosstermBackend;
+use tui::Terminal;
+use tui::widgets::{Widget, Block as TuiBlock, Borders};
+use tui::layout::{Layout, Constraint, Direction};
+
+use crossterm::{
+  ExecutableCommand, QueueableCommand,
+  terminal, cursor, style::Print,
+};
+
 const MECH_TEST: u64 = 0xbfa7e6bd3c6fc7;
 const NAME: u64 = 0x4d60aa46a343df;
 const RESULT: u64 = 0xf039b7315b95ce;
@@ -93,6 +104,7 @@ const RESULT: u64 = 0xf039b7315b95ce;
 // ## Mech Entry
 #[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
   let version = "0.0.6";
@@ -704,7 +716,24 @@ clear   - reset the current core
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
-              println!("{:?}", &table);
+
+            
+              let mut stdout = stdout();
+            
+              stdout.execute(terminal::Clear(terminal::ClearType::All));
+              stdout.queue(cursor::MoveTo(200,150)).unwrap().queue(Print(format!("{:?}",table)));
+              /*
+              for y in 0..40 {
+                for x in 0..150 {
+                  if (y == 0 || y == 40 - 1) || (x == 0 || x == 150 - 1) {
+                    // in this loop we are more efficient by not flushing the buffer.
+                    stdout
+                      .queue(cursor::MoveTo(x,y))?
+                      .queue(Print("█".magenta()))?;
+                  }
+                }
+              }*/
+              stdout.flush();
               print!("{}", ">: ".truecolor(246,192,78));
             }
             None => println!("{} Table not found", formatted_name),
@@ -793,7 +822,7 @@ clear   - reset the current core
     }
    
   }
-  
+
   Ok(())
 }
 
