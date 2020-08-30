@@ -676,6 +676,10 @@ resume  - resume core execution
 clear   - reset the current core
 "#;
 
+  let mut stdo = stdout();
+  stdo.execute(terminal::Clear(terminal::ClearType::All));
+  stdo.flush();
+
   // Start a new mech client if we didn't get one from another command
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
@@ -693,6 +697,8 @@ clear   - reset the current core
   
   // Break out receiver into its own thread
   let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
+    let mut q = 0;
+
     // Get all responses from the thread
     'receive_loop: loop {
       match thread_receiver.recv() {
@@ -717,23 +723,28 @@ clear   - reset the current core
             Some(table) => {
               println!("{} ", formatted_name);
 
-            
-              let mut stdout = stdout();
-            
-              stdout.execute(terminal::Clear(terminal::ClearType::All));
-              stdout.queue(cursor::MoveTo(200,150)).unwrap().queue(Print(format!("{:?}",table)));
-              /*
-              for y in 0..40 {
-                for x in 0..150 {
-                  if (y == 0 || y == 40 - 1) || (x == 0 || x == 150 - 1) {
-                    // in this loop we are more efficient by not flushing the buffer.
-                    stdout
-                      .queue(cursor::MoveTo(x,y))?
-                      .queue(Print("█".magenta()))?;
+              fn print_table(x: u16, y: u16, table: Table) {
+                let mut stdout = stdout();
+
+                let formatted_table = format!("{:?}",table);
+                let mut lines = 0;
+
+                stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
+                for s in formatted_table.chars() {
+                  if s == '\n' {
+                    lines += 1;
+                    stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
+                    continue;
                   }
+                  stdout.queue(Print(s));
                 }
-              }*/
-              stdout.flush();
+                stdout.queue(cursor::MoveTo(0,y + lines as u16)).unwrap();
+                stdout.flush();
+              }
+
+              print_table(10,q,table);
+              q += 10;
+
               print!("{}", ">: ".truecolor(246,192,78));
             }
             None => println!("{} Table not found", formatted_name),
