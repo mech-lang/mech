@@ -656,14 +656,12 @@ let text_logo = r#"
   │ │ └─┘ │ │ │ └────┐ │ └────┐ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
 
-  println!("{}", text_logo);
+  //println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
+  //println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
+  //println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
+  //println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
 
-  println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
-  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
-  println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
-  println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
-
-    println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
+  //  println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
     let help_message = r#"
 Available commands are: 
 
@@ -678,7 +676,11 @@ clear   - reset the current core
 
   let mut stdo = stdout();
   stdo.execute(terminal::Clear(terminal::ClearType::All));
+  stdo.execute(cursor::MoveTo(0,0));
+  stdo.execute(Print(text_logo));
+  stdo.execute(cursor::MoveToNextLine(1));
   stdo.flush();
+
 
   // Start a new mech client if we didn't get one from another command
   let mech_client = match mech_client {
@@ -729,16 +731,16 @@ clear   - reset the current core
                 let formatted_table = format!("{:?}",table);
                 let mut lines = 0;
 
-                stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
+                //stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
                 for s in formatted_table.chars() {
                   if s == '\n' {
                     lines += 1;
-                    stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
-                    continue;
+                    //stdout.queue(cursor::MoveTo(x,y + lines as u16)).unwrap();
+                    //continue;
                   }
                   stdout.queue(Print(s));
                 }
-                stdout.queue(cursor::MoveTo(0,y + lines as u16)).unwrap();
+                //stdout.queue(cursor::MoveTo(0,y + lines as u16)).unwrap();
                 stdout.flush();
               }
 
