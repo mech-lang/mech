@@ -865,7 +865,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
 
             // Get the result
             let echo_table = program.mech.get_table(hash_string("ans"));
-            
+            program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: Index::All, column: Index::All }); 
+
             // Send it
             client_outgoing.send(ClientMessage::Table(echo_table));
             client_outgoing.send(ClientMessage::StepDone);
