@@ -28,7 +28,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Block, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -1324,7 +1324,7 @@ impl Core {
                 let parameters_id = &table.data[3][row].as_u64().unwrap();
                 let parameters_table;
                 unsafe {
-                  parameters_table = (*core).store.get_table(*parameters_id).unwrap().borrow();
+                  parameters_table = (*core).database.borrow().tables.get(*parameters_id).unwrap().borrow();
                 }
                 canvas.set_id(&format!("{:?}",element_id));
                 canvas.set_attribute("elements",elements_id_str);
@@ -1345,16 +1345,19 @@ impl Core {
                       // TODO Make this safe
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
-                          table: table_id, 
-                          row: Index::Index(1), 
-                          column: Index::Index(1),
-                          value: Value::from_i64(x as i64),
+                          table_id: table_id, 
+                          values: vec![
+                          (Index::Index(1), 
+                          Index::Index(1),
+                          Value::from_i64(x as i64))]
                         });
                         (*wasm_core).changes.push(Change::Set{
-                          table: table_id, 
-                          row: Index::Index(1), 
-                          column: Index::Index(2),
-                          value: Value::from_i64(y as i64),
+                          table_id: table_id, 
+                          values: vec![
+                            (Index::Index(1), 
+                            Index::Index(2),
+                            Value::from_i64(y as i64))
+                          ]
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
@@ -1385,7 +1388,7 @@ impl Core {
             let referenced_table;
             // TODO Make this safe
             unsafe {
-              referenced_table = (*core).store.get_table(*reference).unwrap().borrow();
+              referenced_table = (*core).database.borrow().tables.get(&reference).unwrap();
             }
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
@@ -1499,9 +1502,9 @@ impl Core {
     let body = document.body().expect("document should have a body");
     let table_list_div = document.create_element("div")?;
     let table_list = document.create_element("ul")?;
-    for (table_id, table) in self.core.store.tables.map.iter() {
+    for (table_id, table) in self.core.database.borrow().tables.iter() {
       let table_list_item = document.create_element("li")?;
-      match self.core.store.names.get(table_id) {
+      match self.core.database.borrow().store.strings.get(table_id) {
         Some(name) => {
           table_list_item.set_inner_html(name);
           table_list.append_child(&table_list_item)?;
