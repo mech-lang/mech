@@ -1323,7 +1323,11 @@ impl Core {
                 let parameters_id = &table.get_unchecked(row,4).as_u64().unwrap();
                 let parameters_table;
                 unsafe {
+<<<<<<< HEAD
                   parameters_table = (*core).get_table(*parameters_id).unwrap();
+=======
+                  parameters_table = (*core).database.borrow().tables.get(*parameters_id).unwrap().borrow();
+>>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
                 }
                 canvas.set_id(&format!("{:?}",element_id));
                 canvas.set_attribute("elements",&format!("{:?}",elements_id));
@@ -1346,6 +1350,7 @@ impl Core {
                       // TODO Make this safe
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
+<<<<<<< HEAD
                           table_id: table_id, values: vec![
                           (Index::Index(1), 
                           Index::Index(1),
@@ -1356,6 +1361,21 @@ impl Core {
                           (Index::Index(1), 
                           Index::Index(2),
                           Value::from_i64(y as i64))],
+=======
+                          table_id: table_id, 
+                          values: vec![
+                          (Index::Index(1), 
+                          Index::Index(1),
+                          Value::from_i64(x as i64))]
+                        });
+                        (*wasm_core).changes.push(Change::Set{
+                          table_id: table_id, 
+                          values: vec![
+                            (Index::Index(1), 
+                            Index::Index(2),
+                            Value::from_i64(y as i64))
+                          ]
+>>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
@@ -1386,7 +1406,11 @@ impl Core {
             let referenced_table;
             // TODO Make this safe
             unsafe {
+<<<<<<< HEAD
               referenced_table = (*core).get_table(reference).unwrap();
+=======
+              referenced_table = (*core).database.borrow().tables.get(&reference).unwrap();
+>>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
             }
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
