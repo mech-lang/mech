@@ -28,7 +28,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Block, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -1223,7 +1223,7 @@ impl Core {
     let changes = &mut self.changes as *mut Vec<Change>;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
-    for row in 0..table.rows as usize {
+    for row in 1..=table.rows as usize {
       'column_loop: for j in 0..table.columns as usize {
         match &table.data[j][row] {
           Value::String(tag) => {
@@ -1277,7 +1277,7 @@ impl Core {
                       .unwrap();
                 let parameters_id_str = &table.data[3][row].as_string().unwrap();
                 let parameters_id = &table.data[3][row].as_u64().unwrap();
-                let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
+                let parameters_table = self.core.get_table(parameters_id).unwrap();
                 let min = &parameters_table.data[0][0].as_string().unwrap();
                 let max = &parameters_table.data[1][0].as_string().unwrap();
                 let value = &parameters_table.data[2][0].as_string().unwrap();
@@ -1295,10 +1295,10 @@ impl Core {
                         let slider_value = slider.value().parse::<i64>().unwrap();
                         let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
                         let change = Change::Set{
-                          table: parameters_id, 
-                          row: Index::Index(1), 
-                          column: Index::Index(3),
-                          value: Value::from_i64(slider_value),
+                          table_id: parameters_id, values: vec![ 
+                          (Index::Index(1), 
+                          Index::Index(3),
+                          Value::from_i64(slider_value)),]
                         };
                         //let txn = Transaction::from_change(change);
                         // TODO Make this safe
@@ -1319,17 +1319,18 @@ impl Core {
               "canvas" => { 
                 let element_id = Hasher::hash_string(format!("canvas-{:?}-{:?}", table.id, row));
                 let canvas = document.create_element("canvas")?;
-                let elements_id_str = &table.data[2][row].as_string().unwrap();
-                let elements_id = &table.data[2][row].as_u64().unwrap();
-                let parameters_id = &table.data[3][row].as_u64().unwrap();
+                let elements_id = &table.get_unchecked(row,3).as_u64().unwrap();
+                let parameters_id = &table.get_unchecked(row,4).as_u64().unwrap();
                 let parameters_table;
                 unsafe {
-                  parameters_table = (*core).store.get_table(*parameters_id).unwrap().borrow();
+                  parameters_table = (*core).get_table(*parameters_id).unwrap();
                 }
                 canvas.set_id(&format!("{:?}",element_id));
-                canvas.set_attribute("elements",elements_id_str);
-                canvas.set_attribute("width", &parameters_table.data[0][0].as_string().unwrap());
-                canvas.set_attribute("height",&parameters_table.data[1][0].as_string().unwrap());
+                canvas.set_attribute("elements",&format!("{:?}",elements_id));
+                let height = &parameters_table.get_string(&parameters_table.get_unchecked(1,1).as_string().unwrap()).unwrap().to_string();
+                let width = &parameters_table.get_string(&parameters_table.get_unchecked(1,1).as_string().unwrap()).unwrap().to_string();
+                canvas.set_attribute("width", height);
+                canvas.set_attribute("height", width);
                 canvas.set_attribute("style", "background-color: rgb(255, 255, 255)");
                 let canvas: web_sys::HtmlCanvasElement = canvas
                       .dyn_into::<web_sys::HtmlCanvasElement>()
@@ -1345,16 +1346,16 @@ impl Core {
                       // TODO Make this safe
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
-                          table: table_id, 
-                          row: Index::Index(1), 
-                          column: Index::Index(1),
-                          value: Value::from_i64(x as i64),
+                          table_id: table_id, values: vec![
+                          (Index::Index(1), 
+                          Index::Index(1),
+                          Value::from_i64(x as i64))],
                         });
                         (*wasm_core).changes.push(Change::Set{
-                          table: table_id, 
-                          row: Index::Index(1), 
-                          column: Index::Index(2),
-                          value: Value::from_i64(y as i64),
+                          table_id: table_id, values: vec![
+                          (Index::Index(1), 
+                          Index::Index(2),
+                          Value::from_i64(y as i64))],
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
@@ -1385,7 +1386,7 @@ impl Core {
             let referenced_table;
             // TODO Make this safe
             unsafe {
-              referenced_table = (*core).store.get_table(*reference).unwrap().borrow();
+              referenced_table = (*core).get_table(reference).unwrap();
             }
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
@@ -1499,9 +1500,9 @@ impl Core {
     let body = document.body().expect("document should have a body");
     let table_list_div = document.create_element("div")?;
     let table_list = document.create_element("ul")?;
-    for (table_id, table) in self.core.store.tables.map.iter() {
+    for (table_id, table) in self.core.database.borrow().tables.iter() {
       let table_list_item = document.create_element("li")?;
-      match self.core.store.names.get(table_id) {
+      match self.core.database.borrow().store.strings.get(table_id) {
         Some(name) => {
           table_list_item.set_inner_html(name);
           table_list.append_child(&table_list_item)?;
