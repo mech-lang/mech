@@ -15,6 +15,8 @@ extern crate mech_utilities;
 extern crate mech_math;
 extern crate serde_json;
 extern crate bincode;
+#[macro_use]
+extern crate lazy_static;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -52,6 +54,11 @@ pub struct Core {
   roots: HashSet<String>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
+}
+
+
+lazy_static! {
+  static DIV: u64 = hash_string("div");
 }
 
 #[wasm_bindgen]
@@ -268,13 +275,13 @@ impl Core {
     let mech_code = Hasher::hash_str("mech/code");
     let changes = vec![
       Change::NewTable{id: mech_code, rows: 1, columns: 1},
-      Change::Set{table: mech_code, row: mech_core::Index::Index(1), column: mech_core::Index::Index(1), value: Value::from_str(&code)},
+      Change::Set{table_id: mech_code, value: vec![(mech_core::Index::Index(1), mech_core::Index::Index(1), Value::from_str(&code))]},
     ];
     let mut compiler = Compiler::new();
     compiler.compile_string(code);
     self.core.register_blocks(compiler.blocks.clone());
     self.core.step();
-    self.core.process_transaction(&Transaction::from_changeset(changes));
+    self.core.process_transaction(&Transaction{changes});
     self.programs = compiler.programs.clone();
     //self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
@@ -323,7 +330,7 @@ impl Core {
     changes.append(&mut new_table("html/event/keydown".to_string(), vec!["key".to_string(),"id".to_string()]));
     changes.append(&mut new_table("html/event/keyup".to_string(), vec!["key".to_string(),"id".to_string()]));
 
-    let txn = Transaction::from_changeset(changes);
+    let txn = Transaction{changes};
     self.core.process_transaction(&txn);
 
     let window = web_sys::window().expect("no global `window` exists");
@@ -340,16 +347,16 @@ impl Core {
         // TODO Make this safe
         unsafe {
           (*wasm_core).changes.push(Change::Set{
-            table: table_id, 
-            row: Index::Index(1), 
-            column: Index::Index(1),
-            value: Value::from_string(key.to_string()),
+            table_id: table_id, 
+            values: vec![(Index::Index(1), 
+            Index::Index(1),
+            Value::from_string(key.to_string()))],
           });    
           (*wasm_core).changes.push(Change::Set{
-            table: table_id, 
-            row: Index::Index(1), 
-            column: Index::Index(2),
-            value: Value::from_f64(event.time_stamp()),
+            table_id: table_id, 
+            values: vec![(Index::Index(1), 
+            Index::Index(2),
+            Value::from_f64(event.time_stamp()))],
           });               
           (*wasm_core).process_transaction();
           (*wasm_core).render();
@@ -370,16 +377,16 @@ impl Core {
         // TODO Make this safe
         unsafe {
           (*wasm_core).changes.push(Change::Set{
-            table: table_id, 
-            row: Index::Index(1), 
-            column: Index::Index(1),
-            value: Value::from_string(key.to_string()),
+            table_id: table_id, 
+            values: vec![(Index::Index(1), 
+            Index::Index(1),
+            Value::from_string(key.to_string()))],
           });    
           (*wasm_core).changes.push(Change::Set{
-            table: table_id, 
-            row: Index::Index(1), 
-            column: Index::Index(2),
-            value: Value::from_f64(event.time_stamp()),
+            table_id: table_id, 
+            values: vec![(Index::Index(1), 
+            Index::Index(2),
+            Value::from_f64(event.time_stamp()))],
           });               
           (*wasm_core).process_transaction();
           (*wasm_core).render();
@@ -768,7 +775,7 @@ impl Core {
         let view = inline_view_elements.item(ix).unwrap();
         let id = view.id().parse::<u64>().unwrap();
         self.inline_views.insert(id);
-        let view_table = self.core.store.get_table(id).unwrap().borrow();
+        let view_table = self.core.get_table(id).unwrap();
         let data = &view_table.data[0][0];
         view.set_inner_html(&data.as_string().unwrap());
       }
@@ -825,6 +832,7 @@ impl Core {
     log!("Core Cleared");
   }
 
+  /*
   pub fn pause(&mut self) {
     self.core.pause();
     log!("Core Paused");
@@ -848,7 +856,7 @@ impl Core {
   pub fn set_time(&mut self, time: usize) {
     self.core.set_time(time);
     log!("Core Time -{}", self.core.offset);
-  }
+  }*/
 
   pub fn display_core(&self) {
     log!("{:?}", self.core);
@@ -858,11 +866,11 @@ impl Core {
     log!("{:?}", self.core.runtime);
   }
 
-  pub fn display_changes(&self) {
+  /*pub fn display_changes(&self) {
     for change in &self.core.store.changes {
       log!("{:?}", change);
     }
-  }
+  }*/
 
   fn render_view(&mut self, view: u64) -> Result<(), JsValue> {
 
@@ -1102,17 +1110,17 @@ impl Core {
 
   pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
     let table_id = Hasher::hash_string(table);
-    let change = Change::Set{table: table_id, 
-                             row: Index::Index(row as u64), 
-                             column: Index::Index(column as u64),
-                             value: Value::from_i64(value as i64),
+    let change = Change::Set{table_id: table_id, 
+                             values: vec![(Index::Index(row as u64), 
+                             Index::Index(column as u64),
+                             Value::from_i64(value as i64))],
                             };
     self.changes.push(change);
   }
 
   pub fn process_transaction(&mut self) {
-    if !self.core.paused {
-      let txn = Transaction::from_changeset(self.changes.clone());
+    //if !self.core.paused {
+      let txn = Transaction{changes: self.changes.clone()};
       let pre_changes = self.core.store.len();
       self.core.process_transaction(&txn);
       for (id, (ws, remote_tables)) in self.remote_tables.iter() {
@@ -1120,8 +1128,8 @@ impl Core {
         for i in pre_changes..self.core.store.len() {
           let change = &self.core.store.changes[i-1];
           match change {
-            Change::Set{table, ..} => {
-              match remote_tables.contains(&table) {
+            Change::Set{table_id, ..} => {
+              match remote_tables.contains(&table_id) {
                 true => changes.push(change.clone()),
                 _ => (),
               }
@@ -1129,11 +1137,11 @@ impl Core {
             _ => ()
           } 
         }
-        let txn = Transaction::from_changeset(changes);
+        let txn = Transaction{changes};
         let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
         ws.send_with_str(&txn_msg);
       }
-    }
+    //}
     self.changes.clear();
   }
 
@@ -1186,11 +1194,10 @@ impl Core {
     let table;
     // TODO Make this safe
     unsafe {
-      table = (*core).store.get_table(table_id);
+      table = (*core).get_table(table_id);
     }
     match table {
       Some(app_table) => {
-        let app_table = app_table.borrow();
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         for row in 0..app_table.rows as usize {
@@ -1203,7 +1210,7 @@ impl Core {
             Some(drawing_area) => {
               // TODO Make this safe
               unsafe {
-                contents_table = (*core).store.get_table(contents_id).unwrap().borrow();       
+                contents_table = (*core).get_table(contents_id).unwrap();       
               }
               self.draw_contents(&contents_table, &mut app);
               drawing_area.append_child(&app)?;
@@ -1224,11 +1231,11 @@ impl Core {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     for row in 1..=table.rows as usize {
-      'column_loop: for j in 0..table.columns as usize {
-        match &table.data[j][row] {
-          Value::String(tag) => {
-            match tag.as_ref() {
-              "div" | "ul" | "li" | "a" => {
+      'column_loop: for j in 1..=table.columns as usize {
+        match &table.get_unchecked(row,j).as_string() {
+          Some(tag) => {
+            match tag {
+              DIV | UL | LI | A => {
                 let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
                 let mut div = document.create_element(tag.as_ref())?;
                 unsafe {
@@ -1237,56 +1244,55 @@ impl Core {
                 }
                 div.set_id(&format!("{:?}",element_id));
                 div.set_attribute("row",&format!("{:?}",row + 1));
-                match &table.data[1][row].as_string() {
+                /*match &table.data[1][row].as_string() {
                   Some(class) => {
                     div.set_attribute("class",class);
                   },
                   _ => (),
-                }
-                match &table.data[2][row] {
+                }*/
+                /*match &table.data[2][row] {
                   Value::String(value) => div.set_inner_html(&value),
                   Value::Number(value) => div.set_inner_html(&format!("{:?}", value.to_float())),
                   Value::Reference(TableId::Local(reference)) => {
                     let referenced_table;
                     // TODO Make this safe
                     unsafe {
-                      referenced_table = (*core).store.get_table(*reference).unwrap().borrow();
+                      referenced_table = (*core).get_table(reference).unwrap();
                     }
                     self.draw_contents(&referenced_table, &mut div);
                   }
                   _ => (),
-                };
+                };*/
                 container.append_child(&div)?;
               },
-              "img" => {
+              IMG => {
                 let element_id = Hasher::hash_string(format!("img-{:?}-{:?}", table.id, row));
-                let class = &table.data[1][row].as_string().unwrap();
-                let value = &table.data[2][row].as_string().unwrap();
+                let class = &table.get_string(&table.get_unchecked(row,2).as_string().unwrap()).unwrap().to_string();
+                let value = &table.get_string(&table.get_unchecked(row,3).as_string().unwrap()).unwrap().to_string();
                 let mut img = web_sys::HtmlImageElement::new().unwrap();
                 img.set_attribute("class", class);
                 img.set_id(&format!("{:?}",element_id));
                 img.set_src(value);
                 container.append_child(&img)?;
               },
-              "slider" => {
+              SLIDER => {
                 let element_id = Hasher::hash_string(format!("slider-{:?}-{:?}", table.id, row));
                 let mut slider = document.create_element("input")?;
                 let mut slider: web_sys::HtmlInputElement = slider
                       .dyn_into::<web_sys::HtmlInputElement>()
                       .map_err(|_| ())
                       .unwrap();
-                let parameters_id_str = &table.data[3][row].as_string().unwrap();
-                let parameters_id = &table.data[3][row].as_u64().unwrap();
-                let parameters_table = self.core.get_table(parameters_id).unwrap();
-                let min = &parameters_table.data[0][0].as_string().unwrap();
-                let max = &parameters_table.data[1][0].as_string().unwrap();
-                let value = &parameters_table.data[2][0].as_string().unwrap();
+                let parameters_id = &table.get_unchecked(row,4).as_reference().unwrap();
+                let parameters_table = self.core.get_table(*parameters_id).unwrap();
+                let min = &parameters_table.get_string(&parameters_table.get_unchecked(1,1).as_string().unwrap()).unwrap().to_string();
+                let max = &parameters_table.get_string(&parameters_table.get_unchecked(1,2).as_string().unwrap()).unwrap().to_string();
+                let value = &parameters_table.get_string(&parameters_table.get_unchecked(1,3).as_string().unwrap()).unwrap().to_string();
                 slider.set_id(&format!("{:?}", element_id));
                 slider.set_type("range");
                 slider.set_min(min);
                 slider.set_max(max);
                 slider.set_value(value);
-                slider.set_attribute("parameters", parameters_id_str);
+                slider.set_attribute("parameters", &format!("{:?}",parameters_id));
                 {
                   let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
                     match event.target() {
@@ -1316,18 +1322,14 @@ impl Core {
                 }
                 container.append_child(&slider)?;
               },
-              "canvas" => { 
+              CANVAS => { 
                 let element_id = Hasher::hash_string(format!("canvas-{:?}-{:?}", table.id, row));
                 let canvas = document.create_element("canvas")?;
                 let elements_id = &table.get_unchecked(row,3).as_u64().unwrap();
                 let parameters_id = &table.get_unchecked(row,4).as_u64().unwrap();
                 let parameters_table;
                 unsafe {
-<<<<<<< HEAD
-                  parameters_table = (*core).get_table(*parameters_id).unwrap();
-=======
-                  parameters_table = (*core).database.borrow().tables.get(*parameters_id).unwrap().borrow();
->>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
+                  parameters_table = (*core).database.borrow().tables.get(parameters_id).unwrap();
                 }
                 canvas.set_id(&format!("{:?}",element_id));
                 canvas.set_attribute("elements",&format!("{:?}",elements_id));
@@ -1350,7 +1352,6 @@ impl Core {
                       // TODO Make this safe
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
-<<<<<<< HEAD
                           table_id: table_id, values: vec![
                           (Index::Index(1), 
                           Index::Index(1),
@@ -1361,21 +1362,6 @@ impl Core {
                           (Index::Index(1), 
                           Index::Index(2),
                           Value::from_i64(y as i64))],
-=======
-                          table_id: table_id, 
-                          values: vec![
-                          (Index::Index(1), 
-                          Index::Index(1),
-                          Value::from_i64(x as i64))]
-                        });
-                        (*wasm_core).changes.push(Change::Set{
-                          table_id: table_id, 
-                          values: vec![
-                            (Index::Index(1), 
-                            Index::Index(2),
-                            Value::from_i64(y as i64))
-                          ]
->>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
@@ -1400,21 +1386,18 @@ impl Core {
             }
             break 'column_loop;
           },
+          /*
           Value::Reference(TableId::Local(reference)) => {
             let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
             let mut div = document.create_element("div")?;
             let referenced_table;
             // TODO Make this safe
             unsafe {
-<<<<<<< HEAD
-              referenced_table = (*core).get_table(reference).unwrap();
-=======
               referenced_table = (*core).database.borrow().tables.get(&reference).unwrap();
->>>>>>> 5842b6c6a3471955ccb052ec0f4c7e3625959728
             }
             self.draw_contents(&referenced_table, &mut div);
             container.append_child(&div)?;
-          }
+          }*/
           _ => (),
         };
       }      
