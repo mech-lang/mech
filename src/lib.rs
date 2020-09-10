@@ -1123,6 +1123,7 @@ impl Core {
       let txn = Transaction{changes: self.changes.clone()};
       let pre_changes = self.core.store.len();
       self.core.process_transaction(&txn);
+      /*
       for (id, (ws, remote_tables)) in self.remote_tables.iter() {
         let mut changes: Vec<Change> = Vec::new();
         for i in pre_changes..self.core.store.len() {
@@ -1140,7 +1141,7 @@ impl Core {
         let txn = Transaction{changes};
         let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
         ws.send_with_str(&txn_msg);
-      }
+      }*/
     //}
     self.changes.clear();
   }
