@@ -30,20 +30,25 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Hasher, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{hash_string, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 
 #[macro_export]
 macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
+  ( $( $t:tt )* ) => {
+    web_sys::console::log_1(&format!( $( $t )* ).into());
+  }
+}
+
+lazy_static! {
+  static ref DIV: u64 = hash_string("div");
+  static ref A: u64 = hash_string("a");
 }
 
 #[wasm_bindgen]
-pub struct Core {
+pub struct WasmCore {
   core: mech_core::Core,
   programs: Vec<Program>,
   changes: Vec<Change>,
@@ -56,20 +61,13 @@ pub struct Core {
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
 }
 
-
-lazy_static! {
-  static DIV: u64 = hash_string("div");
-}
-
 #[wasm_bindgen]
-impl Core {
-  pub fn new(changes: usize, tables: usize) -> Core {
-    let mut mech = mech_core::Core::new(changes,tables);
-    mech.runtime.functions.insert("math/cos".to_string(),Some(math_cos));
-    mech.runtime.functions.insert("math/sin".to_string(),Some(math_sin));
-    mech.runtime.functions.insert("math/floor".to_string(),Some(math_floor));
-    mech.runtime.functions.insert("math/round".to_string(),Some(math_round));
-    Core {
+impl WasmCore {
+
+  pub fn new(capacity: usize) -> WasmCore {
+    let mut mech = mech_core::Core::new(capacity);
+    mech.load_standard_library();
+    WasmCore {
       core: mech,
       programs: Vec::new(),
       changes: Vec::new(),
@@ -82,7 +80,7 @@ impl Core {
       remote_tables: HashMap::new(),
     }
   }
-
+  /*
   pub fn start_websocket(&mut self, address: String) -> Result<(), JsValue> {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
@@ -300,10 +298,10 @@ impl Core {
     log!("Loaded {} blocks.", blocks.len());
     self.core.register_blocks(blocks);
     self.core.step();
-  }
+  }*/
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
-
+    /*
     let new_table = |s: String, a: Vec<String>| {
       let mut changes = Vec::new();
       let table_id = Hasher::hash_string(s.clone());
@@ -632,7 +630,7 @@ impl Core {
                   sel.removeAllRanges();
                   sel.addRange(range);
                   el.focus();*/
-/*
+                  /*
                   let window = web_sys::window().expect("no global `window` exists");
                   let mut selection = window.get_selection().unwrap().unwrap();
                  
@@ -801,10 +799,10 @@ impl Core {
           _ =>()
         }
       }
-    }
+    }*/
     Ok(())
   }
-
+/*
   pub fn clear(&mut self) {
     self.core.clear();
     for root in self.roots.iter() {
@@ -1108,15 +1106,15 @@ impl Core {
     output
   }
 
-  pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
+  /*pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
     let table_id = Hasher::hash_string(table);
     let change = Change::Set{table_id: table_id, 
-                             values: vec![(Index::Index(row as u64), 
-                             Index::Index(column as u64),
+                             values: vec![(Index::Index(row as usize), 
+                             Index::Index(column as usize),
                              Value::from_i64(value as i64))],
                             };
     self.changes.push(change);
-  }
+  }*/
 
   pub fn process_transaction(&mut self) {
     //if !self.core.paused {
@@ -1146,7 +1144,7 @@ impl Core {
     self.changes.clear();
   }
 
-  pub fn get_mantissas(&mut self, table: String, column: u32) -> Vec<i32> {
+  /*pub fn get_mantissas(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);
       let mut output: Vec<i32> = vec![];
       match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
@@ -1158,12 +1156,12 @@ impl Core {
           _ => log!("{} not found", table_id),
       }
       output
-  }
+  }*/
 
-  pub fn get_ranges(&mut self, table: String, column: u32) -> Vec<i32> {
+  /*pub fn get_ranges(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<i32> = vec![];
-      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
+      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as usize)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().range() as i32);
@@ -1172,12 +1170,12 @@ impl Core {
           _ => log!("{} not found", table_id),
       }
       output
-  }
+  }*/
 
-  pub fn get_column(&mut self, table: String, column: u32) -> Vec<f32> {
+  /*pub fn get_column(&mut self, table: String, column: u32) -> Vec<f32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<f32> = vec![];
-      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
+      match self.core.get_column(TableId::Global(table_id), Index::Index(column as usize)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().to_float() as f32);
@@ -1186,7 +1184,7 @@ impl Core {
           _ => log!("{} not found", table_id),
       }
       output
-  }
+  }*/
 
   pub fn add_application(&mut self) -> Result<(), JsValue> {
   
@@ -1236,9 +1234,12 @@ impl Core {
         match &table.get_unchecked(row,j).as_string() {
           Some(tag) => {
             match tag {
-              DIV | UL | LI | A => {
+              DIV | UL | LI | A => {     
+                let tag_string = self.core.database.borrow().store.strings.get(tag).unwrap();
+
+                let tag_string = get_string(tag);
                 let element_id = Hasher::hash_string(format!("div-{:?}-{:?}", table.id, row));
-                let mut div = document.create_element(tag.as_ref())?;
+                let mut div = document.create_element(tag_string)?;
                 unsafe {
                   let nodes = (*wasm_core).nodes.entry(table.id).or_insert(vec![]);
                   nodes.push(element_id);
@@ -1609,7 +1610,9 @@ fn render_paragraph(paragraph_node: &Node) -> Result<web_sys::Element, JsValue> 
     }
     _ => Err(wasm_bindgen::JsValue::from_str("Expected Paragraph")),
   }
+  */
 }
+/*
 
 fn render_code_block(code_block_node: &Node) -> Result<web_sys::Element, JsValue> {
   match code_block_node {
@@ -1660,4 +1663,4 @@ fn render_unordered_list(unordered_list_node: &Node) -> Result<web_sys::Element,
     },
     _ => Err(wasm_bindgen::JsValue::from_str("Expected Unordered List")),
   }
-}
+}*/
