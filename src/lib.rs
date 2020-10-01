@@ -1,5 +1,6 @@
 #![feature(alloc)]
 #![feature(drain_filter)]
+#![feature(get_mut_unchecked)]
 extern crate wasm_bindgen;
 extern crate hashbrown;
 //extern crate web_sys;
@@ -34,6 +35,7 @@ use mech_core::{hash_string, Block, ValueMethods, TableId, ErrorType, Transactio
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
+use std::sync::Arc;
 
 #[macro_export]
 macro_rules! log {
@@ -45,6 +47,7 @@ macro_rules! log {
 lazy_static! {
   static ref DIV: u64 = hash_string("div");
   static ref A: u64 = hash_string("a");
+  static ref APP_MAIN: u64 = hash_string("app/main");
 }
 
 #[wasm_bindgen]
@@ -293,12 +296,17 @@ impl WasmCore {
       for tfms in miniblock.transformations {
         block.register_transformations(tfms);
       }
+      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+      for (key, value) in miniblock.strings {
+        store.strings.insert(key, value.to_string());
+      }
       blocks.push(block);
     }
-    log!("Loaded {} blocks.", blocks.len());
-    //log!("{:?}", blocks);
+    let len = blocks.len();
     self.core.register_blocks(blocks);
     self.core.step();
+    log!("{:?}", self.core);
+    log!("Loaded {} blocks.", len);
   }
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
@@ -1187,6 +1195,17 @@ impl WasmCore {
       output
   }*/
 
+  */
+  pub fn add_application(&mut self) -> Result<(), JsValue> {
+    let core = &mut self.core as *mut mech_core::Core;
+    let table;
+    unsafe {
+      table = (*core).get_table(*APP_MAIN);
+    }
+    log!("{:?}", table);
+    Ok(())
+  }
+  /*
   pub fn add_application(&mut self) -> Result<(), JsValue> {
   
     let table_id = Hasher::hash_str("app/main");
