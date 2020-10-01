@@ -31,7 +31,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{hash_string, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{hash_string, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -48,6 +48,9 @@ lazy_static! {
   static ref DIV: u64 = hash_string("div");
   static ref A: u64 = hash_string("a");
   static ref APP_MAIN: u64 = hash_string("app/main");
+  static ref CONTAINS: u64 = hash_string("contains");
+  static ref ROOT: u64 = hash_string("root");
+  static ref TYPE: u64 = hash_string("type");
 }
 
 #[wasm_bindgen]
@@ -59,7 +62,7 @@ pub struct WasmCore {
   nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
-  roots: HashSet<String>,
+  roots: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
 }
@@ -1202,47 +1205,47 @@ impl WasmCore {
     unsafe {
       table = (*core).get_table(*APP_MAIN);
     }
-    log!("{:?}", table);
-    Ok(())
-  }
-  /*
-  pub fn add_application(&mut self) -> Result<(), JsValue> {
-  
-    let table_id = Hasher::hash_str("app/main");
-    let core = &mut self.core as *mut mech_core::Core;
-    let table;
-    // TODO Make this safe
-    unsafe {
-      table = (*core).get_table(table_id);
-    }
     match table {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-        for row in 0..app_table.rows as usize {
-          let root_id = app_table.data[0][row].as_string().unwrap();
-          self.roots.insert(root_id.clone());
-          let contents_id = app_table.data[2][row].as_u64().unwrap();
-          let contents_table;
-          let mut app = document.create_element("div")?;
-          match document.get_element_by_id(&root_id) {
-            Some(drawing_area) => {
-              // TODO Make this safe
-              unsafe {
-                contents_table = (*core).get_table(contents_id).unwrap();       
+        log!("{:?}", app_table);
+        log!("{:?}", app_table.rows);
+        for row in 1..=app_table.rows as usize {
+
+
+          match (app_table.get(&Index::Index(row), &Index::Alias(*ROOT)), 
+                 app_table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
+            (Some(root_id), Some(contents_id)) => {
+              match contents_id.as_reference() {
+                Some(contents_id) => {
+                  self.roots.insert(root_id.clone());
+                  let contents_table;
+                  unsafe {
+                    contents_table = (*core).get_table(contents_id);       
+                  }
+                  let mut app = document.create_element("div")?;
+                  match document.get_element_by_id(&format!("{:?}",root_id)) {
+                    Some(drawing_area) => {
+                      //self.draw_contents(&contents_table, &mut app);
+                      //drawing_area.append_child(&app)?;
+                    }
+                    _ => (),
+                  }
+                }
+                _ => () // TODO Alert the user the thing here isn't a reference to another table
               }
-              self.draw_contents(&contents_table, &mut app);
-              drawing_area.append_child(&app)?;
             }
-            _ => (),
-          }
+            _ => (), // TODO Alert user there is no root and or contents column in app_table
+          }        
         }
       }
-      _ => (),
+      _ => (), // TODO Alert the user no app was found
     }
     Ok(())
   }
 
+/*
   fn draw_contents(&mut self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
     let core = &mut self.core as *mut mech_core::Core;
     let wasm_core = self as *mut Core;
