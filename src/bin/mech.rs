@@ -192,6 +192,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for block in blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
+      for (k,v) in block.store.strings.iter() {
+        miniblock.strings.push((k.clone(), v.clone()));
+      }
       miniblocks.push(miniblock);
     }
     let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
@@ -655,13 +658,6 @@ let text_logo = r#"
   │ │ │ │ │ │ │ ┌────┘ │ │      │ ┌─┘ │ │
   │ │ └─┘ │ │ │ └────┐ │ └────┐ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
-
-  //println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
-  //println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
-  //println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
-  //println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
-
-  //  println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
     let help_message = r#"
 Available commands are: 
 
@@ -669,8 +665,6 @@ help    - displays this message
 quit    - quits this REPL
 core    - prints info about the current mech core
 runtime - prints info about the runtime attached to the current core
-pause   - pause core execution
-resume  - resume core execution
 clear   - reset the current core
 "#;
 
@@ -679,6 +673,13 @@ clear   - reset the current core
   stdo.execute(cursor::MoveTo(0,0));
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
+  
+  println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
+  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
+  println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
+  println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
+
+  println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
   stdo.flush();
 
 
