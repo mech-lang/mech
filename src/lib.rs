@@ -300,12 +300,12 @@ impl WasmCore {
       for (key, value) in miniblock.strings {
         store.strings.insert(key, value.to_string());
       }
+      block.plan = miniblock.plan.clone();
       blocks.push(block);
     }
     let len = blocks.len();
     self.core.register_blocks(blocks);
     self.core.step();
-    log!("{:?}", self.core);
     log!("Loaded {} blocks.", len);
   }
 
