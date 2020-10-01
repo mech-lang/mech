@@ -192,6 +192,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for block in blocks {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
+      miniblock.plan = block.plan.clone();
       for (k,v) in block.store.strings.iter() {
         miniblock.strings.push((k.clone(), v.clone()));
       }
