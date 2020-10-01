@@ -284,21 +284,22 @@ impl WasmCore {
     //self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
-
+  */
   pub fn load_blocks(&mut self, blocks: Vec<u8>) {
     let miniblocks: Vec<MiniBlock> = bincode::deserialize(&blocks).unwrap();
     let mut blocks: Vec<Block> = Vec::new() ;
     for miniblock in miniblocks {
-      let mut block = Block::new();
-      for constraint in miniblock.constraints {
-        block.add_constraints(constraint);
+      let mut block = Block::new(100);
+      for tfms in miniblock.transformations {
+        block.register_transformations(tfms);
       }
       blocks.push(block);
     }
     log!("Loaded {} blocks.", blocks.len());
+    //log!("{:?}", blocks);
     self.core.register_blocks(blocks);
     self.core.step();
-  }*/
+  }
 
   pub fn render_program(&mut self) -> Result<(), JsValue>  {
     /*
