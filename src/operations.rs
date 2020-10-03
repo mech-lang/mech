@@ -409,7 +409,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  println!("HORZCAT");
   let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -460,12 +460,31 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       IndexIterator::Table(iter) => iter.len(),
     };
     for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+      // Add alias to column if it's there
+      unsafe {
+        let id = (*vi.table).id;
+        match j {
+          Index::Index(ix) => {
+            match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
+              Some(alias) => {
+                let out_id = (*out.table).id;
+                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
+                store.column_index_to_alias.insert((out_id,c), *alias);
+                store.column_alias_to_index.insert((out_id,*alias), ix);
+              }
+              _ => (),
+            }
+          },
+          _ => (),
+        }
+        
+      }
       let mut row_iter = if vi.rows() == 1 {
         CycleIterator::Cycle(vi.row_iter.clone().cycle())
       } else {
         CycleIterator::Index(vi.row_iter.clone())
       };
-      for k in (1..=out_rows) {
+      for k in 1..=out_rows {
         // Fast forward to the next true value
         let mut i = row_iter.next();
         while i == Some(Index::None) {
@@ -476,7 +495,9 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
         }
         match vi.get(&i.unwrap(),&j) {
           Some(value) => {
+            
             unsafe {
+              println!("{:?}", (*out.table));
               (*out.table).set_unchecked(k, column+c, value);
             }
           }
@@ -505,7 +526,7 @@ impl Iterator for CycleIterator {
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  println!("VERTCAT");
   let mut row = 0;
   let mut out_columns = 0;
   let mut out_rows = 0;
