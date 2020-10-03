@@ -476,7 +476,6 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
           },
           _ => (),
         }
-        
       }
       let mut row_iter = if vi.rows() == 1 {
         CycleIterator::Cycle(vi.row_iter.clone().cycle())
@@ -523,7 +522,6 @@ impl Iterator for CycleIterator {
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  println!("VERTCAT");
   let mut row = 0;
   let mut out_columns = 0;
   let mut out_rows = 0;
@@ -546,6 +544,24 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
   }
   for (_, vi) in arguments {
     for (i,k) in (1..=out_columns).zip(vi.column_iter.clone()) {
+      // Add alias to column if it's there
+      unsafe {
+        let id = (*vi.table).id;
+        match k {
+          Index::Index(ix) => {
+            match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
+              Some(alias) => {
+                let out_id = (*out.table).id;
+                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
+                store.column_index_to_alias.insert((out_id,i), *alias);
+                store.column_alias_to_index.insert((out_id,*alias), ix);
+              }
+              _ => (),
+            }
+          },
+          _ => (),
+        }
+      }
       for j in 1..=vi.rows() {
         let value = unsafe{(*vi.table).get(&Index::Index(j),&k).unwrap()};
         unsafe {
