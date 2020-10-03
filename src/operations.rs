@@ -409,7 +409,6 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  println!("HORZCAT");
   let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -495,9 +494,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
         }
         match vi.get(&i.unwrap(),&j) {
           Some(value) => {
-            
             unsafe {
-              println!("{:?}", (*out.table));
               (*out.table).set_unchecked(k, column+c, value);
             }
           }
