@@ -1200,6 +1200,7 @@ impl WasmCore {
 
   */
   pub fn add_application(&mut self) -> Result<(), JsValue> {
+    log!("Adding application");
     let core = &mut self.core as *mut mech_core::Core;
     let table;
     unsafe {
@@ -1209,11 +1210,7 @@ impl WasmCore {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-        log!("{:?}", app_table);
-        log!("{:?}", app_table.rows);
         for row in 1..=app_table.rows as usize {
-
-
           match (app_table.get(&Index::Index(row), &Index::Alias(*ROOT)), 
                  app_table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
             (Some(root_id), Some(contents_id)) => {
@@ -1222,12 +1219,12 @@ impl WasmCore {
                   self.roots.insert(root_id.clone());
                   let contents_table;
                   unsafe {
-                    contents_table = (*core).get_table(contents_id);       
+                    contents_table = (*core).get_table(contents_id).unwrap();       
                   }
-                  let mut app = document.create_element("div")?;
-                  match document.get_element_by_id(&format!("{:?}",root_id)) {
+                  let root_string_id = &self.core.get_string(&root_id).unwrap();
+                  match document.get_element_by_id(&root_string_id) {
                     Some(drawing_area) => {
-                      //self.draw_contents(&contents_table, &mut app);
+                      let app = self.make_element(&contents_table);
                       //drawing_area.append_child(&app)?;
                     }
                     _ => (),
@@ -1244,6 +1241,22 @@ impl WasmCore {
     }
     Ok(())
   }
+
+  fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    let mut container: web_sys::Element = document.create_element("div")?;
+    for row in 1..=table.rows {
+      match table.get(&Index::Index(row), &Index::Alias(*TYPE))  {
+        Some(kind) => {
+          log!("what we got:\n{:064b}\n{:064b}", *DIV, kind.as_string().unwrap());
+        }
+        _ => {} // TODO Alert there is no type
+      }
+    }
+    Ok(container)
+  }
+
 
 /*
   fn draw_contents(&mut self, table: &Table, container: &mut web_sys::Element) -> Result<(), JsValue> {
