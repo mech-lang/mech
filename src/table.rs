@@ -21,6 +21,14 @@ use ::{humanize, hash_string};
 
 pub type Value = u64;
 
+pub enum ValueType {
+  Quantity,
+  Boolean,
+  String,
+  Reference,
+  Empty
+}
+
 pub trait ValueMethods {
   fn empty() -> Value;
   fn from_string(string: String) -> Value;
@@ -31,6 +39,7 @@ pub trait ValueMethods {
   fn from_i64(num: i64) -> Value;
   fn from_f64(num: f64) -> Value;
   fn from_id(id: u64) -> Value;
+  fn value_type(&self) -> ValueType;
   fn as_quantity(&self) -> Option<Quantity>;
   fn as_u64(&self) -> Option<u64>;
   fn as_i64(&self) -> Option<i64>;
@@ -38,6 +47,7 @@ pub trait ValueMethods {
   fn as_string(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
   fn as_reference(&self) -> Option<u64>;
+  fn as_raw(&self) -> u64;
   fn is_empty(&self) -> bool;
   fn is_number(&self) -> bool;
   fn is_reference(&self) -> bool;
@@ -107,6 +117,32 @@ impl ValueMethods for Value {
     } else {
       false
     }
+  }
+
+  fn value_type(&self) -> ValueType {
+    match self.as_quantity() {
+      Some(_) => ValueType::Quantity,
+      None => {
+        match self.as_string() {
+          Some(_) => ValueType::String,
+          None => {
+            match self.as_reference() {
+              Some(_) => ValueType::Reference,
+              None => {
+                match self.as_bool() {
+                  Some(_) => ValueType::Boolean,
+                  None => ValueType::Empty,
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  fn as_raw(&self) -> u64 {
+    self & 0x00FFFFFFFFFFFFFF
   }
 
   fn as_quantity(&self) -> Option<Quantity> {
