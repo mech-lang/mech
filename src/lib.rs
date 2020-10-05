@@ -31,7 +31,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{hash_string, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -45,9 +45,9 @@ macro_rules! log {
 }
 
 lazy_static! {
+  static ref APP_MAIN: u64 = hash_string("app/main");
   static ref DIV: u64 = hash_string("div");
   static ref A: u64 = hash_string("a");
-  static ref APP_MAIN: u64 = hash_string("app/main");
   static ref CONTAINS: u64 = hash_string("contains");
   static ref ROOT: u64 = hash_string("root");
   static ref TYPE: u64 = hash_string("type");
@@ -1224,8 +1224,8 @@ impl WasmCore {
                   let root_string_id = &self.core.get_string(&root_id).unwrap();
                   match document.get_element_by_id(&root_string_id) {
                     Some(drawing_area) => {
-                      let app = self.make_element(&contents_table);
-                      //drawing_area.append_child(&app)?;
+                      let app = self.make_element(&contents_table)?;
+                      drawing_area.append_child(&app)?;
                     }
                     _ => (),
                   }
@@ -1246,10 +1246,41 @@ impl WasmCore {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let mut container: web_sys::Element = document.create_element("div")?;
+    let element_id = hash_string(&format!("div-{:?}", table.id));
+    container.set_id(&format!("{:?}",element_id));
     for row in 1..=table.rows {
       match table.get(&Index::Index(row), &Index::Alias(*TYPE))  {
         Some(kind) => {
-          log!("what we got:\n{:064b}\n{:064b}", *DIV, kind.as_string().unwrap());
+          // DIV
+          let raw_kind = kind.as_raw();
+          if raw_kind == *DIV {
+            // Get contents
+            match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+              Some(contents) => {
+                let mut div = document.create_element("div")?;
+                let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+                div.set_id(&format!("{:?}",element_id));
+                match contents.value_type() {
+                  ValueType::String => {
+                    let str_hash = contents.as_string().unwrap();
+                    let contents_string = self.core.get_string(&str_hash).unwrap();
+                    div.set_inner_html(&contents_string);
+                    container.append_child(&div)?;
+                  },
+                  ValueType::Quantity => {
+                    let quantity = contents.as_float().unwrap();
+                    div.set_inner_html(&format!("{:?}", quantity));
+                    container.append_child(&div)?;
+                  }
+                  _ => (),
+                }
+              }
+              _ => () // TODO Alert there are no contents
+            }
+
+          } else if raw_kind == *A {
+            log!("A");
+          }
         }
         _ => {} // TODO Alert there is no type
       }
