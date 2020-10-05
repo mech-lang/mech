@@ -52,6 +52,13 @@ impl Core {
   }
 
   pub fn load_standard_library(&mut self) {
+    {
+      let name = "table/split";
+      let name_hash = hash_string(&name);
+      let mut db = self.runtime.database.borrow_mut();
+      let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+      store.strings.insert(name_hash, name.to_string());
+    }
     self.runtime.load_library_function("math/add",Some(math_add));
     self.runtime.load_library_function("math/subtract",Some(math_subtract));
     self.runtime.load_library_function("math/multiply",Some(math_multiply));
