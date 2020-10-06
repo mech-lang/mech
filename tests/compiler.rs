@@ -877,3 +877,14 @@ block
   x = [7;8;9]
   y >- x
   #z = y"#, Value::from_u64(24));
+
+test_mech!(table_split_global, r#"
+block
+  #test = #name-tag{1}{2} + #name-tag{2}{2}
+
+Messages
+  #messages = [|name content|
+                1    "One"
+                2    "Two"]
+block
+  #name-tag >- [type: "div" content: #messages.name]"#, Value::from_u64(3));

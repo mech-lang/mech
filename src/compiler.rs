@@ -995,6 +995,18 @@ impl Compiler {
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
+          Node::Table{name, ..} => {
+            let name_hash = hash_string(name);
+            // Check to make sure the name doesn't already exist 
+            if self.variable_names.contains(&name_hash) {
+              self.errors.push(ErrorType::DuplicateAlias(name_hash));
+            } else {
+              self.variable_names.insert(name_hash);
+            }
+            self.strings.insert(name_hash, name.to_string());
+            transformations.push(Transformation::NewTable{table_id: TableId::Global(name_hash), rows: 1, columns: 1});
+            TableId::Global(name_hash)            
+          },
           _ => TableId::Local(0),
         };
 

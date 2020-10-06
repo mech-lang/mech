@@ -702,7 +702,7 @@ fn set_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn split_data(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, table) = identifier(input)?;
+  let (input, table) = alt((identifier, table))(input)?;
   let (input, _) = tuple((space, split_operator, space))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SplitData{children: vec![table, expression]}))
