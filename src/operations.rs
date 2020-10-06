@@ -468,8 +468,8 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
               Some(alias) => {
                 let out_id = (*out.table).id;
                 let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
-                store.column_index_to_alias.insert((out_id,c), *alias);
-                store.column_alias_to_index.insert((out_id,*alias), ix);
+                store.column_index_to_alias.entry((out_id,c)).or_insert(*alias);
+                store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
               }
               _ => (),
             }
@@ -553,8 +553,8 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
               Some(alias) => {
                 let out_id = (*out.table).id;
                 let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
-                store.column_index_to_alias.insert((out_id,i), *alias);
-                store.column_alias_to_index.insert((out_id,*alias), ix);
+                store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
+                store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
               }
               _ => (),
             }

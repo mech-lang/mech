@@ -266,41 +266,52 @@ impl Block {
             }
             _ => {
               if *name == TABLE_SPLIT {
-                for (_, vi) in vis {
-                  unsafe{
-                    (*out_vi.table).rows = vi.rows();
-                    (*out_vi.table).columns = 1;
-                    (*out_vi.table).data.resize(vi.rows(), 0);
+                let (_, vi) = &vis[0];
+                let vi_table = unsafe{&(*vi.table)};
+                                
+                unsafe{
+                  (*out_vi.table).rows = vi.rows();
+                  (*out_vi.table).columns = 1;
+                  (*out_vi.table).data.resize(vi.rows(), 0);
+                }
+                for row in vi.row_iter.clone() {
+                  let old_table_id = unsafe{(*vi.table).id};
+                  let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
+                  let columns = vi.columns().clone();
+                  let mut table = Table::new(new_table_id,1,columns,self.store.clone());
+                  for column in vi.column_iter.clone() {
+                    let value = vi.get(&row,&column).unwrap();
+                    table.set(&Index::Index(1),&column, value);
                   }
-                  for row in vi.row_iter.clone() {
-                    let old_table_id = unsafe{(*vi.table).id};
-                    let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
-                    let columns = vi.columns().clone();
-                    let mut table = Table::new(new_table_id,1,columns,self.store.clone());
-                    for column in vi.column_iter.clone() {
-                      let value = vi.get(&row,&column).unwrap();
-                      table.set(&Index::Index(1),&column, value);
-                    }
-                    self.tables.insert(new_table_id, table);   
-                    unsafe {
-                      (*out_vi.table).set(&row,&Index::Index(1),Value::from_id(new_table_id));
-                    }
-                    let txn = Transaction {
-                      changes: vec![Change::NewTable{
-                        table_id: new_table_id,
-                        rows: 1,
-                        columns: vi.columns(),
-                      }],
-                    };
-                    self.changes.clear();
-                    let mut db = database.borrow_mut();
-                    db.process_transaction(&txn);
-                    db.transactions.push(txn); 
-                    let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;               
-                    unsafe {
-                      for i in 1..=vi.columns() {
-                        (*new_global_copy_table).set_unchecked(1,i, (*vi.table).get_unchecked(row.unwrap(),i));
+                  self.tables.insert(new_table_id, table);   
+                  unsafe {
+                    (*out_vi.table).set(&row,&Index::Index(1),Value::from_id(new_table_id));
+                  }
+                  let txn = Transaction {
+                    changes: vec![Change::NewTable{
+                      table_id: new_table_id,
+                      rows: 1,
+                      columns: vi.columns(),
+                    }],
+                  };
+                  self.changes.clear();
+                  let mut db = database.borrow_mut();
+                  db.process_transaction(&txn);
+                  db.transactions.push(txn); 
+                  let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;               
+                  unsafe {
+                    for i in 1..=vi.columns() {
+                      // Add alias to column if it's there
+                      match vi_table.store.column_index_to_alias.get(&(vi_table.id,i)) {
+                        Some(alias) => {
+                          let out_id = (*new_global_copy_table).id;
+                          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*new_global_copy_table).store)};
+                          store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
+                          store.column_alias_to_index.entry((out_id,*alias)).or_insert(i);
+                        }
+                        _ => (),
                       }
+                      (*new_global_copy_table).set_unchecked(1,i, vi_table.get_unchecked(row.unwrap(),i));
                     }
                   }
                 }
