@@ -451,11 +451,18 @@ impl Table {
     }
   }
 
+  pub fn has_column_alias(&self, alias: u64) -> bool {
+    match self.store.column_alias_to_index.get(&(self.id,alias)) {
+      Some(_) => true,
+      _ => false,
+    }
+  }
+
   // Get the memory address into the store at a (row, column)
   pub fn get_address_unchecked(&self, row: usize, column: usize) -> usize {
     let ix = self.index_unchecked(row, column);
     self.data[ix]
-  }
+  }  
   
   // Get the value in the store at memory address (row, column)
   pub fn get_unchecked(&self, row: usize, column: usize) -> Value {
