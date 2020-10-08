@@ -423,7 +423,10 @@ impl Table {
     let cix = match column {
       &Index::Index(0) => return Some(rix - 1),
       &Index::Index(ix) => ix,
-      &Index::Alias(alias) => *self.store.column_alias_to_index.get(&(self.id,alias)).unwrap(),
+      &Index::Alias(alias) => match self.store.column_alias_to_index.get(&(self.id,alias)) {
+        Some(cix) => *cix,
+        None => return None,
+      },
       _ => 0, // TODO all
     };
     if rix <= self.rows && cix <= self.columns && rix > 0 && cix > 0 {
