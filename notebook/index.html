@@ -8,19 +8,20 @@
     <script type="module">
       import init, {new_core} from './pkg/mech_notebook.js';
       async function run() {
+        console.log("HELLO");
         await init();
-        let mech_core = new_core();
+        let wasm_core = new_core();
         var xhr = new XMLHttpRequest();
         xhr.open('GET', "./blocks", false);
         xhr.send();
         let program = xhr.responseText;
         let blocks = JSON.parse(program).blocks;
-        mech_core.clear();
-        mech_core.load_blocks(blocks);
-        mech_core.connect_remote_cores();
-        mech_core.add_application();
-        //mech_core.start_websocket("ws://127.0.0.1:3012/ws/");
-        //mech_core.connect_remote_core("ws://127.0.0.1:3012/ws/");
+        //wasm_core.clear();
+        wasm_core.load_blocks(blocks);
+        //wasm_core.connect_remote_cores();
+        wasm_core.add_application();
+        //wasm_core.start_websocket("ws://127.0.0.1:3012/ws/");
+        //wasm_core.connect_remote_core("ws://127.0.0.1:3012/ws/");
       }
       run();
     </script>

@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 extern crate mech_wasm;
 extern crate mech_core;
 extern crate mech_syntax;
-use mech_wasm::Core;
+use mech_wasm::WasmCore;
 //use mech_core::Core;
 //use mech_syntax::compiler::Compiler;
 
@@ -12,41 +12,42 @@ use web_sys::XmlHttpRequest;
 
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
+  log!("Here we go!");
 
-    /*let mut mech_core = Core::new(100,100);
+  /*let mut mech_core = Core::new(100,100);
 
-    log!("Here we go!");
+  log!("Here we go!");
 
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
-    let body = document.body().unwrap();
+  let window = web_sys::window().unwrap();
+  let document = window.document().unwrap();
+  let body = document.body().unwrap();
 
-    let val = document.create_element("div")?;
-    val.set_attribute("id","mech-root");
-    body.append_child(&val)?;
+  let val = document.create_element("div")?;
+  val.set_attribute("id","mech-root");
+  body.append_child(&val)?;
 
-    let xhr = XmlHttpRequest::new()?;
-    xhr.open_with_async("GET", "./website/index.mec", false);
-    xhr.send();
-    let program = xhr.response_text();
+  let xhr = XmlHttpRequest::new()?;
+  xhr.open_with_async("GET", "./website/index.mec", false);
+  xhr.send();
+  let program = xhr.response_text();
 
-    match program {
-      Ok(Some(program)) => {
-        mech_core.compile_code(program);
-        mech_core.add_application();
-      }, 
-      _ => (),
-    }*/
+  match program {
+    Ok(Some(program)) => {
+      mech_core.compile_code(program);
+      mech_core.add_application();
+    }, 
+    _ => (),
+  }*/
 
-    
+  
 
-    
+  
 
-    Ok(())
+  Ok(())
 }
 
 #[wasm_bindgen]
-pub fn new_core() -> Core {
+pub fn new_core() -> WasmCore {
   log!("Awesome!");
-  Core::new(100,100)
+  WasmCore::new(1000)
 }
