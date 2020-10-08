@@ -1236,19 +1236,21 @@ impl WasmCore {
   }
 
   fn render_value(&self, value: Value) -> Result<web_sys::Element, JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
     let mut div = document.create_element("div")?;
     match value.value_type() {
       ValueType::String => {
-        let str_hash = contents.as_string().unwrap();
+        let str_hash = value.as_string().unwrap();
         let contents_string = self.core.get_string(&str_hash).unwrap();
         div.set_inner_html(&contents_string);
       },
       ValueType::Quantity => {
-        let quantity = contents.as_float().unwrap();
+        let quantity = value.as_float().unwrap();
         div.set_inner_html(&format!("{:?}", quantity));
       }
       ValueType::Reference => {
-        let reference = contents.as_reference().unwrap();
+        let reference = value.as_reference().unwrap();
         let table = self.core.get_table(reference).unwrap();
         let rendered_ref = self.make_element(&table)?;
       }
@@ -1277,6 +1279,7 @@ impl WasmCore {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
+                  container.append_child(&rendered)?;
                 }
                 _ => () // TODO Alert there are no contents
               }
@@ -1286,6 +1289,7 @@ impl WasmCore {
           }
           None => {} // TODO Alert there is no type
         }
+        
       }
     // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
     } else {
@@ -1301,28 +1305,9 @@ impl WasmCore {
             Some(contents) => {
               let mut cell_div = document.create_element("div")?;
               let element_id = hash_string(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
-              cell_div.set_id(&format!("{:?}",element_id));
-              match contents.value_type() {
-                ValueType::String => {
-                  let str_hash = contents.as_string().unwrap();
-                  let contents_string = self.core.get_string(&str_hash).unwrap();
-                  cell_div.set_inner_html(&contents_string);
-                  row_div.append_child(&cell_div)?;
-                },
-                ValueType::Quantity => {
-                  let quantity = contents.as_float().unwrap();
-                  cell_div.set_inner_html(&format!("{:?}", quantity));
-                  row_div.append_child(&cell_div)?;
-                }
-                ValueType::Reference => {
-                  let reference = contents.as_reference().unwrap();
-                  let table = self.core.get_table(reference).unwrap();
-                  log!("{:?}", table);
-                  let rendered_ref = self.make_element(&table)?;
-                  row_div.append_child(&rendered_ref)?;
-                }
-                _ => (), // TODO Unhandled Boolean and Empty
-              }
+              let rendered = self.render_value(contents)?;
+              rendered.set_id(&format!("{:?}",element_id));
+              row_div.append_child(&rendered)?;
             }
             _ => () // TODO Alert there are no contents
           }          
