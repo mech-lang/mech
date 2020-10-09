@@ -1200,7 +1200,6 @@ impl WasmCore {
 
   */
   pub fn add_application(&mut self) -> Result<(), JsValue> {
-    log!("Adding application");
     let table = self.core.get_table(*APP_MAIN);
     match table {
       Some(app_table) => {
@@ -1209,28 +1208,22 @@ impl WasmCore {
         for row in 1..=app_table.rows as usize {
           match (app_table.get(&Index::Index(row), &Index::Alias(*ROOT)), 
                  app_table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
-            (Some(root_id), Some(contents_id)) => {
-              match contents_id.as_reference() {
-                Some(contents_id) => {
-                  self.roots.insert(root_id.clone());
-                  let contents_table = self.core.get_table(contents_id).unwrap();       
-                  let root_string_id = &self.core.get_string(&root_id).unwrap();
-                  match document.get_element_by_id(&root_string_id) {
-                    Some(drawing_area) => {
-                      let app = self.make_element(&contents_table)?;
-                      drawing_area.append_child(&app)?;
-                    }
-                    _ => (),
-                  }
+            (Some(root_id), Some(contents)) => {
+              let root_string_id = &self.core.get_string(&root_id).unwrap();
+              self.roots.insert(root_id.clone());
+              match document.get_element_by_id(&root_string_id) {
+                Some(drawing_area) => {
+                  let app = self.render_value(contents)?;
+                  drawing_area.append_child(&app)?;
                 }
-                _ => () // TODO Alert the user the thing here isn't a reference to another table
+                _ => {log!("No drawing area found.");},
               }
             }
-            _ => (), // TODO Alert user there is no root and or contents column in app_table
+            _ => {log!("No root or contents column in #app/main");}, // TODO Alert user there is no root and or contents column in app_table
           }        
         }
       }
-      _ => (), // TODO Alert the user no app was found
+      _ => {log!("No #app/main in the core");}, // TODO Alert the user no app was found
     }
     Ok(())
   }
@@ -1253,6 +1246,7 @@ impl WasmCore {
         let reference = value.as_reference().unwrap();
         let table = self.core.get_table(reference).unwrap();
         let rendered_ref = self.make_element(&table)?;
+        div.append_child(&rendered_ref)?;
       }
       _ => (), // TODO Unhandled Boolean and Empty
     }
@@ -1281,15 +1275,14 @@ impl WasmCore {
                   rendered.set_id(&format!("{:?}",element_id));
                   container.append_child(&rendered)?;
                 }
-                _ => () // TODO Alert there are no contents
+                _ => {log!("No contents on type 'div'");}, // TODO Alert there are no contents
               }
             } else if raw_kind == *A {
               log!("A");
             }
           }
-          None => {} // TODO Alert there is no type
+          None => {log!("No type on table");}, // TODO Alert there is no type
         }
-        
       }
     // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
     } else {
@@ -1309,7 +1302,7 @@ impl WasmCore {
               rendered.set_id(&format!("{:?}",element_id));
               row_div.append_child(&rendered)?;
             }
-            _ => () // TODO Alert there are no contents
+            _ => {log!("Cell not found");} // TODO Alert there are no contents
           }          
         }
         container.append_child(&row_div)?;
