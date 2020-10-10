@@ -52,6 +52,7 @@ lazy_static! {
   static ref ROOT: u64 = hash_string("root");
   static ref TYPE: u64 = hash_string("type");
   static ref HREF: u64 = hash_string("href");
+  static ref BUTTON: u64 = hash_string("button");
 }
 
 #[wasm_bindgen]
@@ -1288,18 +1289,38 @@ impl WasmCore {
               match (table.get(&Index::Index(row), &Index::Alias(*HREF)),
                      table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
                 (Some(href), Some(contents)) => {
-                  let element_id = hash_string(&format!("a-{:?}-{:?}", table.id, row));
+                  let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
                   let mut link: web_sys::Element = document.create_element("a")?;
                   let href_string = &self.core.get_string(&href).unwrap();
+                  let element_id = hash_string(&format!("a-{:?}-{:?}", table.id, row));
                   link.set_attribute("href",href_string)?;
+                  link.set_id(&format!("{:?}",element_id));
                   link.append_child(&rendered)?;
                   container.append_child(&link)?;
                 }
                 (None, Some(_)) => {log!("No \"href\" on type 'a'");}, // TODO Alert there are no href
                 (Some(_), None) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
                 _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
+              }
+            // ---------------------
+            // RENDER A BUTTON
+            // ---------------------
+            } else if raw_kind == *BUTTON {
+              // Get contents
+              match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+                Some(contents) => {
+                  let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+                  let rendered = self.render_value(contents)?;
+                  rendered.set_id(&format!("{:?}",element_id));
+                  let mut button: web_sys::Element = document.create_element("button")?;
+                  let element_id = hash_string(&format!("button-{:?}-{:?}", table.id, row));
+                  button.set_id(&format!("{:?}",element_id));
+                  button.append_child(&rendered)?;
+                  container.append_child(&button)?;
+                }
+                _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
               }
             }
           }
