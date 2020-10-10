@@ -51,6 +51,7 @@ lazy_static! {
   static ref CONTAINS: u64 = hash_string("contains");
   static ref ROOT: u64 = hash_string("root");
   static ref TYPE: u64 = hash_string("type");
+  static ref HREF: u64 = hash_string("href");
 }
 
 #[wasm_bindgen]
@@ -1264,7 +1265,9 @@ impl WasmCore {
       for row in 1..=table.rows {
         match table.get(&Index::Index(row), &Index::Alias(*TYPE))  {
           Some(kind) => {
+            // ---------------------
             // RENDER A DIV
+            // ---------------------
             let raw_kind = kind.as_raw();
             if raw_kind == *DIV {
               // Get contents
@@ -1275,10 +1278,29 @@ impl WasmCore {
                   rendered.set_id(&format!("{:?}",element_id));
                   container.append_child(&rendered)?;
                 }
-                _ => {log!("No contents on type 'div'");}, // TODO Alert there are no contents
+                _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
               }
+            // ---------------------
+            // RENDER A LINK
+            // ---------------------
             } else if raw_kind == *A {
-              log!("A");
+              // Get contents
+              match (table.get(&Index::Index(row), &Index::Alias(*HREF)),
+                     table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
+                (Some(href), Some(contents)) => {
+                  let element_id = hash_string(&format!("a-{:?}-{:?}", table.id, row));
+                  let rendered = self.render_value(contents)?;
+                  rendered.set_id(&format!("{:?}",element_id));
+                  let mut link: web_sys::Element = document.create_element("a")?;
+                  let href_string = &self.core.get_string(&href).unwrap();
+                  link.set_attribute("href",href_string)?;
+                  link.append_child(&rendered)?;
+                  container.append_child(&link)?;
+                }
+                (None, Some(_)) => {log!("No \"href\" on type 'a'");}, // TODO Alert there are no href
+                (Some(_), None) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
+                _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
+              }
             }
           }
           None => {log!("No type on table");}, // TODO Alert there is no type
