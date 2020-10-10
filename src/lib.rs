@@ -53,6 +53,10 @@ lazy_static! {
   static ref TYPE: u64 = hash_string("type");
   static ref HREF: u64 = hash_string("href");
   static ref BUTTON: u64 = hash_string("button");
+  static ref SLIDER: u64 = hash_string("slider");
+  static ref MIN: u64 = hash_string("min");
+  static ref MAX: u64 = hash_string("max");
+  static ref VALUE: u64 = hash_string("value");
 }
 
 #[wasm_bindgen]
@@ -1261,6 +1265,7 @@ impl WasmCore {
     let mut container: web_sys::Element = document.create_element("div")?;
     let element_id = hash_string(&format!("div-{:?}", table.id));
     container.set_id(&format!("{:?}",element_id));
+    container.set_attribute("table-id", &format!("{}", table.id))?;
     // First check to see if the table has a "type" column. If it doesn't, just render the table
     if table.has_column_alias(*TYPE) == true {
       for row in 1..=table.rows {
@@ -1322,7 +1327,32 @@ impl WasmCore {
                 }
                 _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
               }
+          // ---------------------
+          // RENDER A SLIDER
+          // ---------------------
+          } else if raw_kind == *SLIDER {
+            // Get contents
+            match (table.get(&Index::Index(row), &Index::Alias(*MIN)),
+                   table.get(&Index::Index(row), &Index::Alias(*MAX)),
+                   table.get(&Index::Index(row), &Index::Alias(*VALUE))) {
+              (Some(min), Some(max), Some(value)) => {
+                match (min.as_float(), max.as_float(), value.as_float()) {
+                  (Some(min_value), Some(max_value), Some(value_value)) => {
+                    let mut slider: web_sys::Element = document.create_element("input")?;
+                    let element_id = hash_string(&format!("slider-{:?}-{:?}", table.id, row));
+                    slider.set_attribute("type","range");
+                    slider.set_attribute("min", &format!("{}", min_value));
+                    slider.set_attribute("max", &format!("{}", max_value));
+                    slider.set_attribute("value", &format!("{}", value_value));
+                    slider.set_id(&format!("{:?}",element_id));
+                    container.append_child(&slider)?;
+                  },
+                  _ => {log!("Slider is missing min max or value");}, // TODO Alert there is a missing field
+                }
+              }
+              _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
             }
+          }
           }
           None => {log!("No type on table");}, // TODO Alert there is no type
         }
