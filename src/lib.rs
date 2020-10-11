@@ -48,6 +48,8 @@ lazy_static! {
   static ref APP_MAIN: u64 = hash_string("app/main");
   static ref DIV: u64 = hash_string("div");
   static ref A: u64 = hash_string("a");
+  static ref IMG: u64 = hash_string("img");
+  static ref SRC: u64 = hash_string("src");
   static ref CONTAINS: u64 = hash_string("contains");
   static ref ROOT: u64 = hash_string("root");
   static ref TYPE: u64 = hash_string("type");
@@ -1310,6 +1312,22 @@ impl WasmCore {
                 _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
               }
             // ---------------------
+            // RENDER AN IMG
+            // ---------------------
+            } else if raw_kind == *IMG {
+              // Get contents
+              match table.get(&Index::Index(row), &Index::Alias(*SRC)) {
+                Some(src) => {
+                  let mut img: web_sys::Element = document.create_element("img")?;
+                  let src_string = &self.core.get_string(&src).unwrap();
+                  let element_id = hash_string(&format!("img-{:?}-{:?}", table.id, row));
+                  img.set_attribute("src",src_string)?;
+                  img.set_id(&format!("{:?}",element_id));
+                  container.append_child(&img)?;
+                }
+                _ => {log!("No \"src\" on type 'img'");}, // TODO Alert there are no contents
+              }
+            // ---------------------
             // RENDER A BUTTON
             // ---------------------
             } else if raw_kind == *BUTTON {
@@ -1325,7 +1343,7 @@ impl WasmCore {
                   button.append_child(&rendered)?;
                   container.append_child(&button)?;
                 }
-                _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
+                _ => {log!("No \"contains\" on type 'button'");}, // TODO Alert there are no contents
               }
           // ---------------------
           // RENDER A SLIDER
@@ -1347,10 +1365,10 @@ impl WasmCore {
                     slider.set_id(&format!("{:?}",element_id));
                     container.append_child(&slider)?;
                   },
-                  _ => {log!("Slider is missing min max or value");}, // TODO Alert there is a missing field
+                  _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
                 }
               }
-              _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
+              _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
             }
           }
           }
