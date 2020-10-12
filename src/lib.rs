@@ -1671,7 +1671,6 @@ impl WasmCore {
   }*/
 
   pub fn render_canvas(&self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-    //let wasm_core = self as *mut Core;
     let context = canvas
         .get_context("2d")
         .unwrap()
@@ -1695,6 +1694,9 @@ impl WasmCore {
           match parameters_table_id.as_reference() {
             Some(parameters_table_id) => {
               let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+              // ---------------------
+              // RENDER A CIRCLE
+              // ---------------------
               if shape == *CIRCLE {
                 match (parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_X)),
                        parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_Y)),
@@ -1727,7 +1729,10 @@ impl WasmCore {
                   _ => {
                     log!("Missing center-x, center-y, or radius");
                   },
-                }            
+                }        
+              // ---------------------
+              // RENDER A LINE
+              // ---------------------    
               } else if shape == *LINE {
                 match (parameters_table.get(&Index::Index(1), &Index::Alias(*X1)),
                        parameters_table.get(&Index::Index(1), &Index::Alias(*X2)),
@@ -1776,39 +1781,6 @@ impl WasmCore {
       match elements_table.data[0][row] {
         Value::String(ref shape) => {
           match shape.as_ref() {
-            "circle" => {
-              let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
-              for i in 0..parameters_table.rows as usize {
-                let x = parameters_table.data[0][i].as_float().unwrap();
-                let y = parameters_table.data[1][i].as_float().unwrap();
-                let radius = parameters_table.data[2][i].as_float().unwrap();
-                let fill = parameters_table.data[3][i].as_string().unwrap();
-                context.save();
-                context.begin_path();
-                context.arc(x, y, radius, 0.0, 2.0 * 3.14);
-                context.set_fill_style(&JsValue::from_str(&fill));
-                context.fill();  
-                context.restore();
-              }
-            },
-            "line" => {
-              let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
-              let x1 = parameters_table.data[0][0].as_float().unwrap();
-              let y1 = parameters_table.data[1][0].as_float().unwrap();
-              let x2 = parameters_table.data[2][0].as_float().unwrap();
-              let y2 = parameters_table.data[3][0].as_float().unwrap();
-              let stroke = parameters_table.data[4][0].as_string().unwrap();
-              context.save();
-              context.begin_path();
-              context.move_to(x1, y1);
-              context.line_to(x2, y2);
-              context.close_path();
-              context.set_stroke_style(&JsValue::from_str(&stroke));
-              context.stroke();
-              context.restore();
-            },
             "image" => {
               let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
               let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
