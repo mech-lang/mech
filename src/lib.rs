@@ -59,6 +59,10 @@ lazy_static! {
   static ref MIN: u64 = hash_string("min");
   static ref MAX: u64 = hash_string("max");
   static ref VALUE: u64 = hash_string("value");
+  static ref CANVAS: u64 = hash_string("canvas");
+  static ref PARAMETERS: u64 = hash_string("parameters");
+  static ref HEIGHT: u64 = hash_string("height");
+  static ref WIDTH: u64 = hash_string("width");
 }
 
 #[wasm_bindgen]
@@ -1345,32 +1349,84 @@ impl WasmCore {
                 }
                 _ => {log!("No \"contains\" on type 'button'");}, // TODO Alert there are no contents
               }
-          // ---------------------
-          // RENDER A SLIDER
-          // ---------------------
-          } else if raw_kind == *SLIDER {
-            // Get contents
-            match (table.get(&Index::Index(row), &Index::Alias(*MIN)),
-                   table.get(&Index::Index(row), &Index::Alias(*MAX)),
-                   table.get(&Index::Index(row), &Index::Alias(*VALUE))) {
-              (Some(min), Some(max), Some(value)) => {
-                match (min.as_float(), max.as_float(), value.as_float()) {
-                  (Some(min_value), Some(max_value), Some(value_value)) => {
-                    let mut slider: web_sys::Element = document.create_element("input")?;
-                    let element_id = hash_string(&format!("slider-{:?}-{:?}", table.id, row));
-                    slider.set_attribute("type","range");
-                    slider.set_attribute("min", &format!("{}", min_value));
-                    slider.set_attribute("max", &format!("{}", max_value));
-                    slider.set_attribute("value", &format!("{}", value_value));
-                    slider.set_id(&format!("{:?}",element_id));
-                    container.append_child(&slider)?;
-                  },
-                  _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
+            // ---------------------
+            // RENDER A CANVAS
+            // ---------------------
+            } else if raw_kind == *CANVAS {
+              // Get contents
+              match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+                Some(contents) => {
+                  let mut canvas: web_sys::Element = document.create_element("canvas")?;
+                  let element_id = hash_string(&format!("canvas-{:?}-{:?}", table.id, row));
+                  canvas.set_id(&format!("{:?}",element_id));
+                  // Is there a parameters field?
+                  match table.get(&Index::Index(row), &Index::Alias(*PARAMETERS)) {
+                    Some(parameters_table_id) => {
+                      match parameters_table_id.as_reference() {
+                        Some(parameters_table_id) => {
+                          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                          match parameters_table.get(&Index::Index(1), &Index::Alias(*HEIGHT)) {
+                            Some(height) => {
+                              canvas.set_attribute("height", &format!("{}",height));
+                            }
+                            _ => (),
+                          }
+                          match parameters_table.get(&Index::Index(1), &Index::Alias(*WIDTH)) {
+                            Some(width) => {
+                              canvas.set_attribute("width", &format!("{}",width));
+                            }
+                            _ => (),
+                          }
+                        }
+                        _ => {log!("Parameter field on canvas must be a table reference");}, // TODO Alert user the parameters field needs to be a table
+                      }
+                      let table = self.core.get_table(*APP_MAIN);
+                    }
+                    _ => (), // Do nothing, the parameters field is optional
+                  }
+                  // Add the contents
+                  match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+                    Some(contains_table_id) => {
+                      match contains_table_id.as_reference() {
+                        Some(contains_table_id) => {
+                          //let contains_table = self.core.get_table(contains_table_id);
+                          canvas.set_attribute("contains", &format!("{}",contains_table_id));
+                        },
+                        _ => {log!("Contains must be a table");},
+                      }
+                    }
+                    _ => (),
+                  }
+                  container.append_child(&canvas)?;
                 }
+                _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
               }
-              _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
+            // ---------------------
+            // RENDER A SLIDER
+            // ---------------------
+            } else if raw_kind == *SLIDER {
+              // Get contents
+              match (table.get(&Index::Index(row), &Index::Alias(*MIN)),
+                    table.get(&Index::Index(row), &Index::Alias(*MAX)),
+                    table.get(&Index::Index(row), &Index::Alias(*VALUE))) {
+                (Some(min), Some(max), Some(value)) => {
+                  match (min.as_float(), max.as_float(), value.as_float()) {
+                    (Some(min_value), Some(max_value), Some(value_value)) => {
+                      let mut slider: web_sys::Element = document.create_element("input")?;
+                      let element_id = hash_string(&format!("slider-{:?}-{:?}", table.id, row));
+                      slider.set_attribute("type","range");
+                      slider.set_attribute("min", &format!("{}", min_value));
+                      slider.set_attribute("max", &format!("{}", max_value));
+                      slider.set_attribute("value", &format!("{}", value_value));
+                      slider.set_id(&format!("{:?}",element_id));
+                      container.append_child(&slider)?;
+                    },
+                    _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
+                  }
+                }
+                _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
+              }
             }
-          }
           }
           None => {log!("No type on table");}, // TODO Alert there is no type
         }
