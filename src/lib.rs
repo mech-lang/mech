@@ -1389,8 +1389,7 @@ impl WasmCore {
                     Some(contains_table_id) => {
                       match contains_table_id.as_reference() {
                         Some(contains_table_id) => {
-                          //let contains_table = self.core.get_table(contains_table_id);
-                          canvas.set_attribute("contains", &format!("{}",contains_table_id));
+                          canvas.set_attribute("elements", &format!("{}",contains_table_id));
                         },
                         _ => {log!("Contains must be a table");},
                       }
@@ -1642,16 +1641,17 @@ impl WasmCore {
       }      
     }
     Ok(())
-  }
+  }*/
 
-  pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-    let wasm_core = self as *mut Core;
+  pub fn render_canvas(&self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
+    //let wasm_core = self as *mut Core;
     let context = canvas
         .get_context("2d")
         .unwrap()
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
+        /*
     // Get the elements table for this canvas
     let elements = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements.parse::<u64>().unwrap();
@@ -1736,10 +1736,10 @@ impl WasmCore {
         },    
         _ => (),    
       }
-    }
+    }*/
     Ok(())
   } 
-
+  /*
   pub fn list_global_tables(&self) -> Result<(), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
