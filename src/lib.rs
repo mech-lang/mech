@@ -63,6 +63,18 @@ lazy_static! {
   static ref PARAMETERS: u64 = hash_string("parameters");
   static ref HEIGHT: u64 = hash_string("height");
   static ref WIDTH: u64 = hash_string("width");
+  static ref SHAPE: u64 = hash_string("shape");
+  static ref CIRCLE: u64 = hash_string("circle");
+  static ref LINE: u64 = hash_string("line");
+  static ref X1: u64 = hash_string("x1");
+  static ref X2: u64 = hash_string("x2");
+  static ref Y1: u64 = hash_string("y1");
+  static ref Y2: u64 = hash_string("y2");
+  static ref RADIUS: u64 = hash_string("radius");
+  static ref STROKE: u64 = hash_string("stroke");
+  static ref FILL: u64 = hash_string("fill");
+  static ref CENTER_X: u64 = hash_string("center-x");
+  static ref CENTER_Y: u64 = hash_string("center-y");
 }
 
 #[wasm_bindgen]
@@ -71,6 +83,7 @@ pub struct WasmCore {
   programs: Vec<Program>,
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
+  canvases: HashSet<u64>,
   nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
@@ -90,6 +103,7 @@ impl WasmCore {
       programs: Vec::new(),
       changes: Vec::new(),
       images: HashMap::new(),
+      canvases: HashSet::new(),
       nodes: HashMap::new(),
       views: HashSet::new(),
       inline_views: HashSet::new(),
@@ -1234,13 +1248,25 @@ impl WasmCore {
             _ => {log!("No root or contents column in #app/main");}, // TODO Alert user there is no root and or contents column in app_table
           }        
         }
+        for canvas_id in &self.canvases {
+          match document.get_element_by_id(&format!("{}",canvas_id)) {
+            Some(canvas) => {
+              let canvas: web_sys::HtmlCanvasElement = canvas
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .map_err(|_| ())
+                .unwrap();
+              self.render_canvas(&canvas);
+            }
+            _ => (),
+          }
+        }
       }
       _ => {log!("No #app/main in the core");}, // TODO Alert the user no app was found
     }
     Ok(())
   }
 
-  fn render_value(&self, value: Value) -> Result<web_sys::Element, JsValue> {
+  fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let mut div = document.create_element("div")?;
@@ -1265,7 +1291,7 @@ impl WasmCore {
     Ok(div)
   }
 
-  fn make_element(&self, table: &Table) -> Result<web_sys::Element, JsValue> {
+  fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let mut container: web_sys::Element = document.create_element("div")?;
@@ -1359,6 +1385,7 @@ impl WasmCore {
                   let mut canvas: web_sys::Element = document.create_element("canvas")?;
                   let element_id = hash_string(&format!("canvas-{:?}-{:?}", table.id, row));
                   canvas.set_id(&format!("{:?}",element_id));
+                  self.canvases.insert(element_id);
                   // Is there a parameters field?
                   match table.get(&Index::Index(row), &Index::Alias(*PARAMETERS)) {
                     Some(parameters_table_id) => {
@@ -1651,14 +1678,101 @@ impl WasmCore {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-        /*
+        
     // Get the elements table for this canvas
-    let elements = canvas.get_attribute("elements").unwrap();
-    let elements_table_id: u64 = elements.parse::<u64>().unwrap();
-    let elements_table = self.core.store.get_table(elements_table_id).unwrap().borrow();
+    let elements_table_id_string = canvas.get_attribute("elements").unwrap();
+    let elements_table_id: u64 = elements_table_id_string.parse::<u64>().unwrap();
+    let elements_table = self.core.get_table(elements_table_id).unwrap();
     let context = Rc::new(context);
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for row in 0..elements_table.rows as usize {
+    log!("{:?}", elements_table);
+    
+    for row in 1..=elements_table.rows as usize {
+      match (elements_table.get(&Index::Index(row), &Index::Alias(*SHAPE)),
+             elements_table.get(&Index::Index(row), &Index::Alias(*PARAMETERS))) {
+        (Some(shape), Some(parameters_table_id)) => {
+          let shape = shape.as_raw();
+          match parameters_table_id.as_reference() {
+            Some(parameters_table_id) => {
+              let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+              if shape == *CIRCLE {
+                match (parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_X)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_Y)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*RADIUS))) {
+                  (Some(cx), Some(cy), Some(radius)) => {
+                    match (cx.as_float(), cy.as_float(), radius.as_float()) {
+                      (Some(cx), Some(cy), Some(radius)) => {
+                        let fill = match parameters_table.get(&Index::Index(1), &Index::Alias(*FILL))  {
+                          Some(fill_string_id) => {
+                            match fill_string_id.as_string() {
+                              Some(fill_string_id) => self.core.get_string(&fill_string_id).unwrap(),
+                              _ => {
+                                log!("fill on circle must be a string. Defaulting to #000000");
+                                "#000000".to_string()
+                              },
+                            }
+                          }
+                          _ => "#000000".to_string(),
+                        };
+                        context.save();
+                        context.begin_path();
+                        context.arc(cx, cy, radius, 0.0, 2.0 * 3.14);
+                        context.set_fill_style(&JsValue::from_str(&fill));
+                        context.fill();  
+                        context.restore();
+                      },
+                      _ => {log!("center-x, center-y, and radius must be quantities");},
+                    }
+                  }
+                  _ => {
+                    log!("Missing center-x, center-y, or radius");
+                  },
+                }            
+              } else if shape == *LINE {
+                match (parameters_table.get(&Index::Index(1), &Index::Alias(*X1)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*X2)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y1)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y2))) {
+                  (Some(x1), Some(x2), Some(y1), Some(y2)) => {
+                    match (x1.as_float(), x2.as_float(), y1.as_float(), y2.as_float()) {
+                      (Some(x1), Some(x2), Some(y1), Some(y2)) => {
+                        let stroke = match parameters_table.get(&Index::Index(1), &Index::Alias(*STROKE))  {
+                          Some(stroke_string_id) => {
+                            match stroke_string_id.as_string() {
+                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
+                              _ => {
+                                log!("stroke on circle must be a string. Defaulting to #000000");
+                                "#000000".to_string()
+                              },
+                            }
+                          }
+                          _ => "#000000".to_string(),
+                        };
+                        context.save();
+                        context.begin_path();
+                        context.move_to(x1, y1);
+                        context.line_to(x2, y2);
+                        context.close_path();
+                        context.set_stroke_style(&JsValue::from_str(&stroke));
+                        context.stroke();
+                        context.restore();
+                      },
+                      _ => {log!("x1, x2, y1, y2 must be quantities");},
+                    }
+                  }
+                  _ => {
+                    log!("Missing x1, x2, y1, or y2");
+                  },
+                }
+              }
+            }
+            _ => {log!("Parameters must be a reference");}
+          }
+        },
+        _ => {log!("Missing shape");}
+      }
+    }
+    /*
       match elements_table.data[0][row] {
         Value::String(ref shape) => {
           match shape.as_ref() {
