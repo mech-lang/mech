@@ -1855,54 +1855,9 @@ impl WasmCore {
         _ => {log!("Missing shape");}
       }
     }
-    /*
-      match elements_table.data[0][row] {
-        Value::String(ref shape) => {
-          match shape.as_ref() {
-            "image" => {
-              let parameters_id = &elements_table.data[1][row].as_u64().unwrap();
-              let parameters_table = self.core.store.get_table(*parameters_id).unwrap().borrow();
-              let image_source = parameters_table.data[3][0].as_string().unwrap();
-              let source_hash = Hasher::hash_string(image_source.clone());
-              match self.images.entry(source_hash) {
-                Entry::Occupied(img_entry) => {
-                  let img = img_entry.get();
-                  let rotation = parameters_table.data[2][0].as_float().unwrap();
-                  let x = parameters_table.data[0][0].as_float().unwrap();
-                  let y = parameters_table.data[1][0].as_float().unwrap();
-                  let ix = img.width() as f64 / 2.0;
-                  let iy = img.height() as f64 / 2.0;
-                  // Draw it
-                  context.save();
-                  context.translate(x, y);
-                  context.rotate(rotation * 3.141592654 / 180.0);
-                  context.draw_image_with_html_image_element(&img, -ix, -iy);
-                  context.restore();
-                },
-                Entry::Vacant(v) => {
-                  let mut img = web_sys::HtmlImageElement::new().unwrap();
-                  img.set_src(&image_source.to_owned());
-                  {
-                    let closure = Closure::wrap(Box::new(move || {
-                      unsafe {
-                        (*wasm_core).render();
-                      }
-                    }) as Box<FnMut()>);
-                    img.set_onload(Some(closure.as_ref().unchecked_ref()));
-                    v.insert(img);
-                    closure.forget();
-                  }
-                },
-              }
-            },
-            _ => (),
-          }
-        },    
-        _ => (),    
-      }
-    }*/
     Ok(())
   } 
+  
   /*
   pub fn list_global_tables(&self) -> Result<(), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
