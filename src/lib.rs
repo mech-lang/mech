@@ -75,6 +75,11 @@ lazy_static! {
   static ref FILL: u64 = hash_string("fill");
   static ref CENTER_X: u64 = hash_string("center-x");
   static ref CENTER_Y: u64 = hash_string("center-y");
+  static ref IMAGE: u64 = hash_string("image");
+  static ref X: u64 = hash_string("x");
+  static ref Y: u64 = hash_string("y");
+  static ref ROTATION: u64 = hash_string("rotation");
+  static ref SOURCE: u64 = hash_string("source");
 }
 
 #[wasm_bindgen]
@@ -1769,6 +1774,11 @@ impl WasmCore {
                     log!("Missing x1, x2, y1, or y2");
                   },
                 }
+              // ---------------------
+              // RENDER A IMAGE
+              // --------------------- 
+              } else if shape == *IMAGE {
+                
               }
             }
             _ => {log!("Parameters must be a reference");}
