@@ -1231,6 +1231,7 @@ impl WasmCore {
 
   */
   pub fn add_application(&mut self) -> Result<(), JsValue> {
+    let wasm_core = self as *mut WasmCore;
     let table = self.core.get_table(*APP_MAIN);
     match table {
       Some(app_table) => {
@@ -1260,13 +1261,39 @@ impl WasmCore {
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .map_err(|_| ())
                 .unwrap();
-              self.render_canvas(&canvas);
+              unsafe {
+                (*wasm_core).render_canvas(&canvas);
+              }
             }
             _ => (),
           }
         }
       }
       _ => {log!("No #app/main in the core");}, // TODO Alert the user no app was found
+    }
+    Ok(())
+  }
+
+  pub fn render(&mut self) -> Result<(), JsValue> {
+    let wasm_core = self as *mut WasmCore;
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    // ---------------------
+    // RENDER ALL CANVASES
+    // ---------------------
+    for canvas_id in &self.canvases {
+      match document.get_element_by_id(&format!("{}",canvas_id)) {
+        Some(canvas) => {
+          let canvas: web_sys::HtmlCanvasElement = canvas
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .map_err(|_| ())
+            .unwrap();
+          unsafe {
+            (*wasm_core).render_canvas(&canvas);
+          }
+        }
+        _ => (),
+      }
     }
     Ok(())
   }
@@ -1675,7 +1702,8 @@ impl WasmCore {
     Ok(())
   }*/
 
-  pub fn render_canvas(&self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
+  pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
+    let wasm_core = self as *mut WasmCore;
     let context = canvas
         .get_context("2d")
         .unwrap()
@@ -1723,7 +1751,7 @@ impl WasmCore {
                         };
                         context.save();
                         context.begin_path();
-                        context.arc(cx, cy, radius, 0.0, 2.0 * 3.14);
+                        context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
                         context.set_fill_style(&JsValue::from_str(&fill));
                         context.fill();  
                         context.restore();
@@ -1778,7 +1806,47 @@ impl WasmCore {
               // RENDER A IMAGE
               // --------------------- 
               } else if shape == *IMAGE {
-                
+                match (parameters_table.get(&Index::Index(1), &Index::Alias(*SOURCE)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*X)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y)),
+                       parameters_table.get(&Index::Index(1), &Index::Alias(*ROTATION))) {
+                  (Some(source), Some(x), Some(y), Some(rotation)) => {
+                    match (source.as_string(), x.as_float(), y.as_float(), rotation.as_float()) {
+                      (Some(source_id), Some(x), Some(y), Some(rotation)) => {
+                        let source_string = &self.core.get_string(&source_id).unwrap();
+                        let source_hash = hash_string(&source_string);
+                        match self.images.entry(source_hash) {
+                          Entry::Occupied(img_entry) => {
+                            let img = img_entry.get();
+                            let ix = img.width() as f64 / 2.0;
+                            let iy = img.height() as f64 / 2.0;
+                            context.save();
+                            context.translate(x, y);
+                            context.rotate(rotation * 3.141592654 / 180.0);
+                            context.draw_image_with_html_image_element(&img, -ix, -iy);
+                            context.restore();
+                          },
+                          Entry::Vacant(v) => {
+                            let mut img = web_sys::HtmlImageElement::new().unwrap();
+                            img.set_src(&source_string.to_owned());
+                            {
+                              let closure = Closure::wrap(Box::new(move || {
+                                unsafe {
+                                  (*wasm_core).render();
+                                }
+                              }) as Box<FnMut()>);
+                              img.set_onload(Some(closure.as_ref().unchecked_ref()));
+                              v.insert(img);
+                              closure.forget();
+                            }
+                          }
+                        }
+                      },
+                      _ => (), 
+                    }
+                  }
+                  _ => {log!("Missing source, x, y, or rotation");},
+                }
               }
             }
             _ => {log!("Parameters must be a reference");}
