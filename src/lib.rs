@@ -335,6 +335,7 @@ impl WasmCore {
         store.strings.insert(key, value.to_string());
       }
       block.plan = miniblock.plan.clone();
+      block.gen_id();
       blocks.push(block);
     }
     let len = blocks.len();
@@ -1158,11 +1159,11 @@ impl WasmCore {
                             };
     self.changes.push(change);
   }*/
-
+  */
   pub fn process_transaction(&mut self) {
     //if !self.core.paused {
       let txn = Transaction{changes: self.changes.clone()};
-      let pre_changes = self.core.store.len();
+      //let pre_changes = self.core.store.len();
       self.core.process_transaction(&txn);
       /*
       for (id, (ws, remote_tables)) in self.remote_tables.iter() {
@@ -1186,7 +1187,7 @@ impl WasmCore {
     //}
     self.changes.clear();
   }
-
+  /*
   /*pub fn get_mantissas(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);
       let mut output: Vec<i32> = vec![];
@@ -1324,6 +1325,7 @@ impl WasmCore {
   }
 
   fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
+    let wasm_core = self as *mut WasmCore;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let mut container: web_sys::Element = document.create_element("div")?;
@@ -1471,12 +1473,50 @@ impl WasmCore {
                   match (min.as_float(), max.as_float(), value.as_float()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
                       let mut slider: web_sys::Element = document.create_element("input")?;
+                      let mut slider: web_sys::HtmlInputElement = slider
+                        .dyn_into::<web_sys::HtmlInputElement>()
+                        .map_err(|_| ())
+                        .unwrap();
                       let element_id = hash_string(&format!("slider-{:?}-{:?}", table.id, row));
                       slider.set_attribute("type","range");
                       slider.set_attribute("min", &format!("{}", min_value));
                       slider.set_attribute("max", &format!("{}", max_value));
                       slider.set_attribute("value", &format!("{}", value_value));
+                      slider.set_attribute("row", &format!("{}", row));
+                      slider.set_attribute("table", &format!("{}", table.id));
                       slider.set_id(&format!("{:?}",element_id));
+                      // Changes to the slider update its own table
+                      {
+                        let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+                          match event.target() {
+                            Some(target) => {
+                              let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
+                              let slider_value = slider.value().parse::<i64>().unwrap();
+                              let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
+
+                              let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
+                              let change = Change::Set{
+                                table_id: table_id, values: vec![ 
+                                  (Index::Index(row),
+                                   Index::Alias(*VALUE),
+                                   Value::from_i64(slider_value)),
+                                ]
+                              };
+                              log!("{:?}", change);
+                              // TODO Make this safe
+                              unsafe {
+                                let table = (*wasm_core).core.get_table(table_id).unwrap();
+                                (*wasm_core).changes.push(change);
+                                (*wasm_core).process_transaction();
+                                (*wasm_core).render();
+                              }
+                            },
+                            _ => (),
+                          }
+                        }) as Box<dyn FnMut(_)>);
+                        slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+                        closure.forget();
+                      }
                       container.append_child(&slider)?;
                     },
                     _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
@@ -1590,33 +1630,7 @@ impl WasmCore {
                 slider.set_max(max);
                 slider.set_value(value);
                 slider.set_attribute("parameters", &format!("{:?}",parameters_id));
-                {
-                  let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-                    match event.target() {
-                      Some(target) => {
-                        let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                        let slider_value = slider.value().parse::<i64>().unwrap();
-                        let parameters_id = slider.get_attribute("parameters").unwrap().parse::<u64>().unwrap();
-                        let change = Change::Set{
-                          table_id: parameters_id, values: vec![ 
-                          (Index::Index(1), 
-                          Index::Index(3),
-                          Value::from_i64(slider_value)),]
-                        };
-                        //let txn = Transaction::from_change(change);
-                        // TODO Make this safe
-                        unsafe {
-                          (*wasm_core).changes.push(change);
-                          (*wasm_core).process_transaction();
-                          (*wasm_core).render();
-                        }
-                      },
-                      _ => (),
-                    }
-                  }) as Box<dyn FnMut(_)>);
-                  slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
-                  closure.forget();
-                }
+
                 container.append_child(&slider)?;
               },
               CANVAS => { 
@@ -1717,8 +1731,6 @@ impl WasmCore {
     let elements_table = self.core.get_table(elements_table_id).unwrap();
     let context = Rc::new(context);
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    log!("{:?}", elements_table);
-    
     for row in 1..=elements_table.rows as usize {
       match (elements_table.get(&Index::Index(row), &Index::Alias(*SHAPE)),
              elements_table.get(&Index::Index(row), &Index::Alias(*PARAMETERS))) {
@@ -1857,7 +1869,7 @@ impl WasmCore {
     }
     Ok(())
   } 
-  
+
   /*
   pub fn list_global_tables(&self) -> Result<(), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
