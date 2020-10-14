@@ -43,6 +43,7 @@ pub struct Block {
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
   pub errors: Vec<ErrorType>,
+  pub triggered: usize,
 }
 
 impl Block {
@@ -64,6 +65,7 @@ impl Block {
       plan: Vec::new(),
       changes: Vec::new(),
       errors: Vec::new(),
+      triggered: 0,
     }
   }
 
@@ -219,6 +221,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
+    self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, row, column, registers} => {
@@ -356,6 +359,7 @@ impl fmt::Debug for Block {
     write!(f, "┌─────────────────────────────────────────────┐\n")?;
     write!(f, "│ id: {}\n", humanize(&self.id))?;
     write!(f, "│ state: {:?}\n", self.state)?;
+    write!(f, "│ triggered: {:?}\n", self.triggered)?;
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ errors: {}\n", self.errors.len())?;
     for (ix, error) in self.errors.iter().enumerate() {
