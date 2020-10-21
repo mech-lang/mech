@@ -744,6 +744,7 @@ impl Compiler {
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
     let mut transformations: Vec<Transformation> = Vec::new();
     match node {
+      // An inline table is like x = [a: 1, b: 2, c :3]
       Node::InlineTable{children} => {
         let table = self.table;
         self.table = hash_string(&format!("{:?}",children));
@@ -751,27 +752,35 @@ impl Compiler {
         let mut tfms = vec![];
         let mut ix = 1;
         let mut args = vec![];
+        // Inline tables have any number of bindings. We need to compile each one
         for child in children {
           match child {
+            // A binding has two children. The first is an identifier, the second is an expression.
             Node::Binding{children} => {
+              // The first child is an identifier
               match &children[0] {
                 Node::Identifier{name, id} => {
                   self.strings.insert(hash_string(&name.to_string()), name.to_string());
+                  // Use the identifier as the column alias
                   tfms.push(
                     Transformation::ColumnAlias{table_id: TableId::Local(self.table), column_ix: ix, column_alias: hash_string(&name.to_string())});
                   ix += 1;
                 }
                 _ => (),
               }
+              // The second child is an expression.
               match &children[1] {
                 Node::Expression{children} => {
                   match &children[0] {
                     Node::InlineTable{..} |
                     Node::AnonymousTableDefine{..} => {
+                      println!("WE ARE HERERERERERERERERERE");
                       let mut result = self.compile_transformation(&children[0]);
+                      // If the result is a new table or a select, we have to make a reference
                       match result[0] {
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
+                          println!("WE ARE HERERERERERERERERER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!E");
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
@@ -782,9 +791,10 @@ impl Compiler {
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
                             out: (TableId::Global(*table_id.unwrap()), Index::All, Index::All),
                           };
-                          transformations.push(fxn);
-                          transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
+                          //transformations.push(fxn);
+                          //transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
                           transformations.append(&mut result);
+                          println!("The transformations are {:?}", transformations);
                           continue;
                         }
                         _ => (),
@@ -807,11 +817,12 @@ impl Compiler {
               }
               tfms.append(&mut result);
             }
-            _ => (),
+            _ => (), // There was no binding
           }
           let mut result = self.compile_transformation(child);
           transformations.append(&mut result);
         }
+        println!("All done with inline {:?}", transformations);
         let fxn = Transformation::Function{
           name: TABLE_HORZCAT,
           arguments: args,
@@ -846,15 +857,21 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
-        transformations.push(new_table);
-        let fxn = Transformation::Function {
-          name: TABLE_VERTCAT,
-          arguments: args,
-          out: (new_table_id, Index::All, Index::All),
-        };
-        transformations.push(fxn);
+        if args.len() > 1 {
+          let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
+          transformations.push(new_table);
+          println!("ARGS @222222{:?}", args);
+          println!("{:?}", transformations);
+          let fxn = Transformation::Function {
+            name: TABLE_VERTCAT,
+            arguments: args,
+            out: (new_table_id, Index::All, Index::All),
+          };
+          transformations.push(fxn);
+        }
         transformations.append(&mut tfms);
+        println!("{:?}", transformations);
+        println!("===================");
         self.row = rows;
         self.table = table;
       }
@@ -912,6 +929,7 @@ impl Compiler {
             }
             _ => (),
           }
+          println!("AAAAAAAAAAAAAAAAAAARGS {:?}", args);
           let horz_cat_id = new_table_id;
           let mut target_table_id = new_table_id;
           let mut i = 1;
@@ -936,12 +954,24 @@ impl Compiler {
           }
           transformations.append(&mut result);       
         }
-        let fxn = Transformation::Function {
-          name: TABLE_HORZCAT,
-          arguments: args,
-          out: (new_table_id, Index::All, Index::All),
-        };   
-        transformations.push(fxn);
+        println!("{:?}", transformations);
+        if args.len() > 1 {
+          let fxn = Transformation::Function {
+            name: TABLE_HORZCAT,
+            arguments: args,
+            out: (new_table_id, Index::All, Index::All),
+          };   
+          transformations.push(fxn);
+        } else {
+          match args[0] {
+            (_, table_id, _, _) => {
+              transformations[0] = Transformation::NewTable{table_id, rows:1 , columns: 1};
+            }
+            _ => (),
+          }
+        }
+        println!("{:?}", transformations);
+        println!("======================");
       }
       Node::TableHeader{children} => {
         let column = self.column;

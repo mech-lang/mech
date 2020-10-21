@@ -8,7 +8,7 @@ use mech_core::{Change, Transaction};
 use mech_core::{Value, Index};
 use mech_core::hash_string;
 use mech_core::Core;
-use mech_core::{make_quantity, Quantity, ToQuantity, QuantityMath};
+use mech_core::{make_quantity, Quantity, ValueMethods, ToQuantity, QuantityMath};
 use std::time::{Duration, SystemTime};
 
 use std::rc::Rc;
@@ -30,15 +30,14 @@ Update the block positions on each tick of the timer
     #ball.vy := #ball.vy + #gravity"#);*/
 
 
-  let input = String::from(r#"
-block
-  #test = stats/sum(column: #ball{:,1} + #ball{:,2})
+  let input = String::from(r#"# Mech Homepage
 
-block
-  x = 1:10
-  y = 1:10
-  #ball = [|x y|
-            x y]"#);
+make a slider
+  #slider = [type: "slider" min: 0 max: 100 value: 50]
+
+Set up clock drawing elements
+  circle = [x: #slider.value]
+  #slider-div = [type: "div" contains: [#slider]]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -51,12 +50,30 @@ block
   let programs = compiler.compile_string(input.clone());
 
   //println!("{:?}", programs);
-  println!("{:?}", compiler.blocks);
-
+  //println!("{:?}", compiler.blocks);
+  println!("{:?}", compiler.syntax_tree);
   core.runtime.register_blocks(compiler.blocks);
+  core.step();
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.unparsed);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.syntax_tree);
+
+  let x: u64 = 37678279552074374;
+  println!("{:064b}", x);
+  println!("{:064b}", hash_string("slider"));
+
+  let change = Change::Set{
+    table_id: 37678279552074374, values: vec![ 
+      (Index::Index(1),
+       Index::Alias(0xcb672312fe42b4),
+       Value::from_i64(75)),
+    ]
+  };
+
+  let txn = Transaction{changes: vec![change]};
+
+  core.process_transaction(&txn);
+
   println!("{:?}", core);
   //core.step(100000);
   
