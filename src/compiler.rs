@@ -706,10 +706,46 @@ impl Compiler {
               _ => (),
             }
           }
-          
           block.register_transformations((step_text, step_transformations));
         }
         block.plan.append(&mut global_out);     
+
+        // Here we try to optimize the plan a little bit. The compiler will generate chains of concatenating
+        // tables sometimes where there is no actual work to be done. If we remove these moot itermediate steps, 
+        // we can save time. We do this by comparing the input and outputs of consecutive steps. If the two steps
+        // can be condensed into one step, we do this.
+        if block.plan.len() > 1 {
+          let mut new_plan = vec![];
+          let mut step_ix = 0;
+          loop {
+            if step_ix >= block.plan.len() - 1 {
+              if step_ix == block.plan.len() - 1 {
+                new_plan.push(block.plan[step_ix].clone());
+              }
+              break;
+            }
+            let this = &block.plan[step_ix];
+            let next = &block.plan[step_ix + 1];
+            match (this, next) {
+              (Transformation::Function{name, arguments, out}, Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
+                if (*name2 == hash_string("table/horizontal-concatenate") || *name2 == hash_string("table/vertical-concatenate")) && arguments2.len() == 1 {
+                  let (_, out_table2, out_row2, out_column2) = arguments2[0];
+                  if *out == (out_table2, out_row2, out_column2) {
+                    let new_step = Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2};
+                    new_plan.push(new_step);
+                    step_ix += 2;
+                    continue;
+                  }
+                }
+                new_plan.push(this.clone());
+              }
+              _ => new_plan.push(this.clone()),
+            }
+            step_ix += 1;
+          }
+          block.plan = new_plan;
+        }
+
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
             block: block.id as u64,
@@ -791,8 +827,8 @@ impl Compiler {
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
                             out: (TableId::Global(*table_id.unwrap()), Index::All, Index::All),
                           };
-                          //transformations.push(fxn);
-                          //transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
+                          transformations.push(fxn);
+                          transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
                           transformations.append(&mut result);
                           println!("The transformations are {:?}", transformations);
                           continue;
@@ -857,7 +893,7 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        if args.len() > 1 {
+        //if args.len() > 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
           transformations.push(new_table);
           println!("ARGS @222222{:?}", args);
@@ -868,7 +904,7 @@ impl Compiler {
             out: (new_table_id, Index::All, Index::All),
           };
           transformations.push(fxn);
-        }
+        //}
         transformations.append(&mut tfms);
         println!("{:?}", transformations);
         println!("===================");
@@ -955,7 +991,14 @@ impl Compiler {
           transformations.append(&mut result);       
         }
         println!("{:?}", transformations);
-        if args.len() > 1 {
+        let fxn = Transformation::Function {
+          name: TABLE_HORZCAT,
+          arguments: args,
+          out: (new_table_id, Index::All, Index::All),
+        };   
+        transformations.push(fxn);
+
+        /*if args.len() > 1 {
           let fxn = Transformation::Function {
             name: TABLE_HORZCAT,
             arguments: args,
@@ -969,7 +1012,7 @@ impl Compiler {
             }
             _ => (),
           }
-        }
+        }*/
         println!("{:?}", transformations);
         println!("======================");
       }
