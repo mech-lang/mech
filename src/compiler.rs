@@ -810,13 +810,11 @@ impl Compiler {
                   match &children[0] {
                     Node::InlineTable{..} |
                     Node::AnonymousTableDefine{..} => {
-                      println!("WE ARE HERERERERERERERERERE");
                       let mut result = self.compile_transformation(&children[0]);
                       // If the result is a new table or a select, we have to make a reference
                       match result[0] {
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
-                          println!("WE ARE HERERERERERERERERER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!E");
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
@@ -830,7 +828,6 @@ impl Compiler {
                           transformations.push(fxn);
                           transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
                           transformations.append(&mut result);
-                          println!("The transformations are {:?}", transformations);
                           continue;
                         }
                         _ => (),
@@ -858,7 +855,6 @@ impl Compiler {
           let mut result = self.compile_transformation(child);
           transformations.append(&mut result);
         }
-        println!("All done with inline {:?}", transformations);
         let fxn = Transformation::Function{
           name: TABLE_HORZCAT,
           arguments: args,
@@ -896,8 +892,6 @@ impl Compiler {
         //if args.len() > 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
           transformations.push(new_table);
-          println!("ARGS @222222{:?}", args);
-          println!("{:?}", transformations);
           let fxn = Transformation::Function {
             name: TABLE_VERTCAT,
             arguments: args,
@@ -906,8 +900,6 @@ impl Compiler {
           transformations.push(fxn);
         //}
         transformations.append(&mut tfms);
-        println!("{:?}", transformations);
-        println!("===================");
         self.row = rows;
         self.table = table;
       }
@@ -965,7 +957,6 @@ impl Compiler {
             }
             _ => (),
           }
-          println!("AAAAAAAAAAAAAAAAAAARGS {:?}", args);
           let horz_cat_id = new_table_id;
           let mut target_table_id = new_table_id;
           let mut i = 1;
@@ -990,7 +981,6 @@ impl Compiler {
           }
           transformations.append(&mut result);       
         }
-        println!("{:?}", transformations);
         let fxn = Transformation::Function {
           name: TABLE_HORZCAT,
           arguments: args,
@@ -1013,8 +1003,6 @@ impl Compiler {
             _ => (),
           }
         }*/
-        println!("{:?}", transformations);
-        println!("======================");
       }
       Node::TableHeader{children} => {
         let column = self.column;
