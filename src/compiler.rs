@@ -1314,6 +1314,7 @@ impl Compiler {
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
+        println!("{:?}", children);
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
@@ -1330,6 +1331,8 @@ impl Compiler {
           _ => TableId::Local(0),
         };
         let mut input = self.compile_transformation(&children[1]);
+
+        println!("======================{:?}", input[0]);
 
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
