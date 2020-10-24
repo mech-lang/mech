@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId, Register};
-use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Quantity, humanize, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 use mech_core::ErrorType;
 //use mech_core::{Error, ErrorType};
@@ -813,13 +813,20 @@ impl Compiler {
                       let mut result = self.compile_transformation(&children[0]);
                       // If the result is a new table or a select, we have to make a reference
                       match result[0] {
+                        Transformation::Select{table_id: TableId::Global(id),..} => {
+                          let ref_table_id = hash_string(&format!("Reference-{:?}", TableId::Global(id)));
+                          transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
+                          transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(id), unit: 0});
+                          args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+                          transformations.append(&mut result);
+                          continue;
+                        }
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
-                          
                           let fxn = Transformation::Function{
                             name: TABLE_HORZCAT,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
@@ -889,7 +896,7 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        //if args.len() > 1 {
+        if args.len() > 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
           transformations.push(new_table);
           let fxn = Transformation::Function {
@@ -898,7 +905,7 @@ impl Compiler {
             out: (new_table_id, Index::All, Index::All),
           };
           transformations.push(fxn);
-        //}
+        }
         transformations.append(&mut tfms);
         self.row = rows;
         self.table = table;
@@ -907,7 +914,9 @@ impl Compiler {
         self.row += 1;
         let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
         let new_table = Transformation::NewTable{table_id: new_table_id, rows: 1, columns: children.len()};
+        
         transformations.push(new_table);
+        
         let mut args = vec![];
         for child in children {
           match &child {
@@ -963,6 +972,8 @@ impl Compiler {
           if result.len() > 1 {
             loop {
               match result[i] { 
+                Transformation::Select{table_id: TableId::Global(id), row: Index::All, column: Index::All} => {
+                }
                 Transformation::Select{table_id, row, column} => {
                   let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
                   let fxn = Transformation::Function{
@@ -981,13 +992,30 @@ impl Compiler {
           }
           transformations.append(&mut result);       
         }
-        let fxn = Transformation::Function {
-          name: TABLE_HORZCAT,
-          arguments: args,
-          out: (new_table_id, Index::All, Index::All),
-        };   
-        transformations.push(fxn);
-
+        
+        if args.len() == 1 {
+          match args[0] {
+            (_, TableId::Global(id), Index::All, Index::All) => {
+              //transformations[0] = Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1};
+              transformations.remove(0);
+            }
+            _ => {
+              let fxn = Transformation::Function {
+                name: TABLE_HORZCAT,
+                arguments: args,
+                out: (new_table_id, Index::All, Index::All),
+              };   
+              transformations.push(fxn);
+            }
+          }
+        } else {
+          let fxn = Transformation::Function {
+            name: TABLE_HORZCAT,
+            arguments: args,
+            out: (new_table_id, Index::All, Index::All),
+          };   
+          transformations.push(fxn);
+        }
         /*if args.len() > 1 {
           let fxn = Transformation::Function {
             name: TABLE_HORZCAT,
