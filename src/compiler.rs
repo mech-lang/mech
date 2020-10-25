@@ -1367,6 +1367,7 @@ impl Compiler {
 
         // Rewrite input rows
         let mut input = self.compile_transformation(&children[1]);
+        println!("!!!!!!!!!!!!!!!!!{:?}", input);
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -1405,6 +1406,14 @@ impl Compiler {
               } else {
                 input_tfms.push(tfm);
               }              
+            }
+            Transformation::Select{table_id, row, column} => {
+              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
+              input_tfms.push(Transformation::Function{
+                name: TABLE_HORZCAT, 
+                arguments: vec![(0, table_id, row, column)], 
+                out: (output_table_id.unwrap(), Index::All, Index::All)
+              });
             }
             _ => input_tfms.push(tfm),
           };
