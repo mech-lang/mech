@@ -882,6 +882,7 @@ impl Compiler {
         let mut ncols = 0;
         for child in children {
           let mut result = self.compile_transformation(child);
+          println!("~~~~{:?}", result);
           match &result[0] {
             Transformation::NewTable{table_id, rows, columns} => {
               ncols = if ncols > *columns {
@@ -892,11 +893,17 @@ impl Compiler {
               nrows += rows;
               args.push((0, table_id.clone(), Index::All, Index::All));
             }
+            Transformation::ColumnAlias{table_id,..} => {
+              let new_table = Transformation::NewTable{table_id: *table_id, rows: 1, columns: 1};
+              transformations.push(new_table);
+            }
             _ => (),
           }
           tfms.append(&mut result);
         }
-        if args.len() > 1 {
+        println!("```{:?}", args);
+        
+        if args.len() >= 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
           transformations.push(new_table);
           let fxn = Transformation::Function {
@@ -907,6 +914,7 @@ impl Compiler {
           transformations.push(fxn);
         }
         transformations.append(&mut tfms);
+        println!("```{:?}", transformations);
         self.row = rows;
         self.table = table;
       }
@@ -973,6 +981,7 @@ impl Compiler {
             loop {
               match result[i] { 
                 Transformation::Select{table_id: TableId::Global(id), row: Index::All, column: Index::All} => {
+                  () // do nothing
                 }
                 Transformation::Select{table_id, row, column} => {
                   let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
@@ -1016,21 +1025,6 @@ impl Compiler {
           };   
           transformations.push(fxn);
         }
-        /*if args.len() > 1 {
-          let fxn = Transformation::Function {
-            name: TABLE_HORZCAT,
-            arguments: args,
-            out: (new_table_id, Index::All, Index::All),
-          };   
-          transformations.push(fxn);
-        } else {
-          match args[0] {
-            (_, table_id, _, _) => {
-              transformations[0] = Transformation::NewTable{table_id, rows:1 , columns: 1};
-            }
-            _ => (),
-          }
-        }*/
       }
       Node::TableHeader{children} => {
         let column = self.column;
@@ -1352,6 +1346,7 @@ impl Compiler {
         transformations.append(&mut input);
       }
       Node::TableDefine{children} => {
+        println!("{:?}", children);
         let mut output = self.compile_transformation(&children[0]);
 
         let mut nt_rows = 1;
@@ -1376,6 +1371,23 @@ impl Compiler {
         };
 
         let mut input_tfms = vec![];
+
+        // like: #test = #x
+        if input.len() == 1 {
+          match input[0] {
+            Transformation::Select{table_id, row, column} => {
+              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
+              input_tfms.push(Transformation::Function{
+                name: TABLE_HORZCAT, 
+                arguments: vec![(0, table_id, row, column)], 
+                out: (output_table_id.unwrap(), Index::All, Index::All)
+              });
+            }
+            _ => (),
+          }
+        }
+
+        // Transform all the inputs
         for tfm in input {
           match tfm {
             Transformation::NewTable{table_id,rows,columns} => {
@@ -1406,14 +1418,6 @@ impl Compiler {
               } else {
                 input_tfms.push(tfm);
               }              
-            }
-            Transformation::Select{table_id, row, column} => {
-              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
-              input_tfms.push(Transformation::Function{
-                name: TABLE_HORZCAT, 
-                arguments: vec![(0, table_id, row, column)], 
-                out: (output_table_id.unwrap(), Index::All, Index::All)
-              });
             }
             _ => input_tfms.push(tfm),
           };
