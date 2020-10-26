@@ -80,6 +80,13 @@ lazy_static! {
   static ref Y: u64 = hash_string("y");
   static ref ROTATION: u64 = hash_string("rotation");
   static ref SOURCE: u64 = hash_string("source");
+  static ref HTML_EVENT_CLICK: u64 = hash_string("html/event/click");
+  static ref HTML_EVENT_POINTERMOVE: u64 = hash_string("html/event/pointermove");
+  static ref HTML_EVENT_POINTERDOWN: u64 = hash_string("html/event/pointerdown");
+  static ref HTML_EVENT_KEYDOWN: u64 = hash_string("html/event/keydown");
+  static ref HTML_EVENT_KEYUP: u64 = hash_string("html/event/keyup");
+  static ref TARGET: u64 = hash_string("target");
+  static ref KEY: u64 = hash_string("key");
 }
 
 #[wasm_bindgen]
@@ -103,6 +110,42 @@ impl WasmCore {
   pub fn new(capacity: usize) -> WasmCore {
     let mut mech = mech_core::Core::new(capacity);
     mech.load_standard_library();
+    mech.insert_string("html/event/click");
+    mech.insert_string("html/event/pointermove");
+    mech.insert_string("html/event/pointerdown");
+    mech.insert_string("html/event/keydown");
+    mech.insert_string("html/event/keyup");
+    mech.insert_string("x");
+    mech.insert_string("y");
+    mech.insert_string("target");
+
+    let new_table = |table_id: u64, a: Vec<u64>| {
+      let mut changes = Vec::new();
+      changes.push(Change::NewTable{
+        table_id: table_id, 
+        rows: 1, 
+        columns: a.len(),
+      });
+      for (ix, alias) in a.iter().enumerate() {
+        changes.push(Change::SetColumnAlias{
+          table_id: table_id,
+          column_ix: (ix + 1) as usize,
+          column_alias: *alias
+        });
+      }
+      changes
+    };
+
+    let mut changes = vec![];
+    changes.append(&mut new_table(*HTML_EVENT_CLICK, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTERMOVE, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTERDOWN, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_KEYDOWN, vec![*KEY]));
+    changes.append(&mut new_table(*HTML_EVENT_KEYUP, vec![*KEY]));
+
+    let txn = Transaction{changes};
+    mech.process_transaction(&txn);
+
     WasmCore {
       core: mech,
       programs: Vec::new(),
@@ -1457,6 +1500,56 @@ impl WasmCore {
                     }
                     _ => (),
                   }
+                  {
+                    let closure = |table_id| { Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                      let window = web_sys::window().expect("no global `window` exists");
+                      let document = window.document().expect("should have a document on window");
+                      let target = event.target().unwrap();
+                      let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
+                      let target_table_id = target_element.id().parse::<u64>().unwrap();
+                      log!("{:?}", target_element.id().parse::<u64>().unwrap());
+
+                      let x = event.offset_x();
+                      let y = event.offset_y();
+                      log!("event: {:?} {:?}", x, y);
+                      // TODO Make this safe
+                      unsafe {
+                        (*wasm_core).changes.push(Change::Set{
+                          table_id: table_id, values: vec![
+                          (Index::Index(1), 
+                          Index::Alias(*X),
+                          Value::from_i64(x as i64))],
+                        });
+                        (*wasm_core).changes.push(Change::Set{
+                          table_id: table_id, values: vec![
+                          (Index::Index(1), 
+                          Index::Alias(*Y),
+                          Value::from_i64(y as i64))],
+                        });              
+                        (*wasm_core).changes.push(Change::Set{
+                          table_id: table_id, values: vec![
+                          (Index::Index(1), 
+                          Index::Alias(*TARGET),
+                          Value::from_id(target_table_id))],
+                        });                  
+                        (*wasm_core).process_transaction();
+                        (*wasm_core).render();
+                        let table = (*wasm_core).core.get_table(table_id);
+                        log!("{:?}", table);
+                      }
+                    }) as Box<dyn FnMut(_)>)
+                    };
+                    let click_callback = closure(*HTML_EVENT_CLICK);
+                    canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
+                    let move_callback = closure(*HTML_EVENT_POINTERMOVE);
+                    canvas.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
+                    let down_callback = closure(*HTML_EVENT_POINTERDOWN);
+                    canvas.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
+                  
+                    click_callback.forget();
+                    move_callback.forget();
+                    down_callback.forget();
+                  }
                   container.append_child(&canvas)?;
                 }
                 _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
@@ -1502,7 +1595,6 @@ impl WasmCore {
                                    Value::from_i64(slider_value)),
                                 ]
                               };
-                              log!("{:?}", change);
                               // TODO Make this safe
                               unsafe {
                                 let table = (*wasm_core).core.get_table(table_id).unwrap();
