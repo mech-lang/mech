@@ -882,7 +882,6 @@ impl Compiler {
         let mut ncols = 0;
         for child in children {
           let mut result = self.compile_transformation(child);
-          println!("~~~~{:?}", result);
           match &result[0] {
             Transformation::NewTable{table_id, rows, columns} => {
               ncols = if ncols > *columns {
@@ -901,7 +900,6 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        println!("```{:?}", args);
         
         if args.len() >= 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
@@ -914,7 +912,6 @@ impl Compiler {
           transformations.push(fxn);
         }
         transformations.append(&mut tfms);
-        println!("```{:?}", transformations);
         self.row = rows;
         self.table = table;
       }
@@ -1308,7 +1305,6 @@ impl Compiler {
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
-        println!("{:?}", children);
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
@@ -1326,10 +1322,11 @@ impl Compiler {
         };
         let mut input = self.compile_transformation(&children[1]);
 
-        println!("======================{:?}", input[0]);
-
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          Transformation::Select{table_id,..} => {
             Some(table_id)
           }
           _ => None,
@@ -1346,7 +1343,6 @@ impl Compiler {
         transformations.append(&mut input);
       }
       Node::TableDefine{children} => {
-        println!("{:?}", children);
         let mut output = self.compile_transformation(&children[0]);
 
         let mut nt_rows = 1;
@@ -1362,7 +1358,6 @@ impl Compiler {
 
         // Rewrite input rows
         let mut input = self.compile_transformation(&children[1]);
-        println!("!!!!!!!!!!!!!!!!!{:?}", input);
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
