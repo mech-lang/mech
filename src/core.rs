@@ -87,6 +87,12 @@ impl Core {
     }
   }
 
+  pub fn insert_string(&self, string: &str) {
+    let hashed_string = hash_string(string);
+    let mut db = self.runtime.database.borrow_mut();
+    let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    store.strings.insert(hashed_string, string.to_string());
+  }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
     for change in &txn.changes {
