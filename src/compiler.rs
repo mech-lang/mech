@@ -1202,12 +1202,15 @@ impl Compiler {
         };
                 
         let mut input = self.compile_transformation(&children[1]);
-        let input_table_id = match input[0] {
-          Transformation::Select{table_id,..} |
-          Transformation::NewTable{table_id,..} => {
-            Some(table_id)
+
+        let (input_table_id, row_select, column_select) = match input[0] {
+          Transformation::Select{table_id, row, column} => {
+            (table_id, row, column)
           }
-          _ => None,
+          Transformation::NewTable{table_id,..} => {
+            (table_id, Index::All, Index::All)
+          }
+          _ => (TableId::Local(0), Index::All, Index::All) // TODO This is an error really
         };
 
         let (output_table_id, output_row, output_col) = match (output_tup, output_tup2) {
@@ -1222,7 +1225,7 @@ impl Compiler {
         let fxn = Transformation::Function{
           name: TABLE_SET,
           arguments: vec![
-            (0, input_table_id.unwrap(), Index::All, Index::All)
+            (0, input_table_id, row_select, column_select)
           ],
           out: (output_table_id, output_row, output_col),
         };

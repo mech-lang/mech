@@ -332,6 +332,26 @@ block
   #test = [|x|
             9]", Value::from_i64(77));
 
+test_mech!(set_column_alias,"
+block
+  #test = #ball.x
+
+block
+  #ball = [x: 0 y: 0]
+
+block
+  ~ #foo.x
+  #ball.x := #foo.x
+
+block
+  #foo = [x: 100 y: 120]
+  #z = 100
+
+block
+  ~ #z
+  #foo.x := 200", Value::from_i64(200));
+
+
 test_mech!(set_single_index,"
 block
   #x = [400; 0; 0]
