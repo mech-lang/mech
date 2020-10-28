@@ -4,6 +4,7 @@
 #![cfg_attr(feature = "no-std", alloc)]
 #![feature(drain_filter)]
 #![feature(get_mut_unchecked)]
+#![allow(dead_code)]
 
 extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
@@ -11,6 +12,8 @@ extern crate mech_core;
 extern crate hashbrown;
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate lazy_static;
 
 pub mod lexer;
 #[macro_use]
