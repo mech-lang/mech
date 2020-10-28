@@ -193,8 +193,6 @@ impl Block {
                   x => Index::All,
                 };
                 let register = Register{table_id: *table_id, row: rrow, column: *column};
-                println!("```{:?}", register);
-                println!("```{:?}", humanize(&register.hash()));
                 self.input.insert(register.hash());
                 self.register_map.insert(register.hash(), register);
               },
