@@ -1148,15 +1148,12 @@ impl Compiler {
         //transformations.append(&mut output);
       }
       Node::Whenever{children} => {
-        println!("{:?}", children);
         let mut result = self.compile_transformations(children);
         match result[0] {
           Transformation::Select{table_id, row, column} => {
             let register = Register{table_id: table_id, row, column};
-            println!("================!!!!!!!!!!!!!!!!!!!!!!!{:?}", register);
-            println!("================!!!!!!!!!!!!!!!!!!!!!!!{:?}", humanize(&register.hash()));
             transformations.push(
-              Transformation::Whenever{table_id, row, column, registers: vec![register.hash()]},
+              Transformation::Whenever{table_id, row, column, registers: vec![register.clone()]},
             );
             self.register_map.insert(register.hash(), register);
           }
@@ -1166,7 +1163,7 @@ impl Compiler {
               match r {
                 Transformation::Select{table_id,row,column} => {
                   let register = Register{table_id: *table_id, row: *row, column: *column};
-                  registers.push(register.hash());
+                  registers.push(register.clone());
                   self.register_map.insert(register.hash(), register);
                 }
                 _ => (),
