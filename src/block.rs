@@ -173,7 +173,7 @@ impl Block {
           match table_id {
             TableId::Global(id) => {
               for register in registers {
-                self.input.insert(register);
+                self.input.insert(register.hash());
               }
             }
             _ => (),
@@ -227,7 +227,7 @@ impl Block {
           match table_id {
             TableId::Global(id) => {
               for register in registers {
-                self.ready.remove(&register);
+                self.ready.remove(&register.hash());
               }             
             }
             TableId::Local(id) => {
@@ -248,7 +248,7 @@ impl Block {
                 break 'step_loop;
               } else { 
                 for register in registers {
-                  self.ready.remove(&register);
+                  self.ready.remove(&register.hash());
                 }
               }
             },
@@ -758,7 +758,7 @@ pub enum Transformation {
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   Set{table_id: TableId, row: Index, column: Index},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
-  Whenever{table_id: TableId, row: Index, column: Index, registers: Vec<u64>},
+  Whenever{table_id: TableId, row: Index, column: Index, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, Index, Index)>, out: (TableId, Index, Index)},
   Select{table_id: TableId, row: Index, column: Index},
 }
