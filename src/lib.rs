@@ -10,6 +10,8 @@ extern crate num_traits;
 
 use std::hash::Hasher;
 use ahash::AHasher;
+#[macro_use]
+extern crate lazy_static;
 
 mod database;
 mod runtime;

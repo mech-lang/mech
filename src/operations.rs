@@ -17,9 +17,11 @@ use hashbrown::HashMap;
 use ::{humanize, hash_string};
 
 
-const ROW: u64 = 0x001e3f1182ea4d9d;
-const COLUMN: u64 = 0x0071b9e91df03940;
-const TABLE: u64 = 0x0064ae06e4bbf825;
+lazy_static! {
+  static ref ROW: u64 = hash_string("row");
+  static ref COLUMN: u64 = hash_string("column");
+  static ref TABLE: u64 = hash_string("table");
+}
 
 pub fn resolve_subscript(
   table_id: TableId, 
@@ -107,69 +109,66 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
     _ => vi.columns(),
   };
 
-  match in_arg_name {
-    &ROW => {
-      unsafe {
-        (*out.table).rows = vi.rows();
-        (*out.table).columns = 1;
-        (*out.table).data.resize(vi.rows(), 0);
-      }
-      for i in 1..=rows {
-        let mut flag: bool = false;
-        for j in 1..=cols {
-          let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
-          match value.as_bool() {
-            Some(true) => flag = true,
-            _ => (), // TODO Alert user that there was an error
-          }
-        }
-        unsafe {
-          (*out.table).set_unchecked(i, 1, Value::from_bool(flag));
-        }
-      }
+  if *in_arg_name == *ROW {
+    unsafe {
+      (*out.table).rows = vi.rows();
+      (*out.table).columns = 1;
+      (*out.table).data.resize(vi.rows(), 0);
     }
-    &COLUMN => {
-      unsafe {
-        (*out.table).rows = 1;
-        (*out.table).columns = cols;
-        (*out.table).data.resize(cols, 0);
-      }
-      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        let mut flag: bool = false;
-        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-          match value.as_bool() {
-            Some(true) => flag = true,
-            _ => (), // TODO Alert user that there was an error
-          }
-        }
-        unsafe {
-          (*out.table).set_unchecked(1, i, Value::from_bool(flag));
-        }
-      }      
-    }
-    &TABLE => {
-      unsafe {
-        (*out.table).rows = 1;
-        (*out.table).columns = 1;
-        (*out.table).data.resize(1, 0);
-      }
+    for i in 1..=rows {
       let mut flag: bool = false;
-      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-          match value.as_bool() {
-            Some(true) => flag = true,
-            _ => (), // TODO Alert user that there was an error
-          }
+      for j in 1..=cols {
+        let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
+        match value.as_bool() {
+          Some(true) => flag = true,
+          _ => (), // TODO Alert user that there was an error
         }
-      }  
+      }
       unsafe {
-        (*out.table).set_unchecked(1, 1, Value::from_bool(flag));
-      }    
+        (*out.table).set_unchecked(i, 1, Value::from_bool(flag));
+      }
     }
-    _ => (), // TODO alert user that argument is unknown
-  }
+  } else if *in_arg_name == *COLUMN {
+    unsafe {
+      (*out.table).rows = 1;
+      (*out.table).columns = cols;
+      (*out.table).data.resize(cols, 0);
+    }
+    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      let mut flag: bool = false;
+      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+        match value.as_bool() {
+          Some(true) => flag = true,
+          _ => (), // TODO Alert user that there was an error
+        }
+      }
+      unsafe {
+        (*out.table).set_unchecked(1, i, Value::from_bool(flag));
+      }
+    }      
+  } else if *in_arg_name == *TABLE {
+    unsafe {
+      (*out.table).rows = 1;
+      (*out.table).columns = 1;
+      (*out.table).data.resize(1, 0);
+    }
+    let mut flag: bool = false;
+    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+        match value.as_bool() {
+          Some(true) => flag = true,
+          _ => (), // TODO Alert user that there was an error
+        }
+      }
+    }  
+    unsafe {
+      (*out.table).set_unchecked(1, 1, Value::from_bool(flag));
+    }    
+  } else { 
+    () // TODO alert user that argument is unknown
+  };
 }
 
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
@@ -184,81 +183,78 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     _ => vi.columns(),
   };
 
-  match in_arg_name {
-    &ROW => {
-      unsafe {
-        (*out.table).rows = vi.rows();
-        (*out.table).columns = 1;
-        (*out.table).data.resize(vi.rows(), 0);
-      }
-      for i in 1..=rows {
-        let mut sum: Value = Value::from_u64(0);
-        for j in 1..=cols {
-          match vi.get(&Index::Index(i),&Index::Index(j)) {
-            Some(value) => {
-              match sum.add(value) {
-                Ok(result) => sum = result,
-                _ => (), // TODO Alert user that there was an error
-              }
-            }
-            _ => ()
-          }
-        }
-        unsafe {
-          (*out.table).set_unchecked(i, 1, sum);
-        }
-      }
+  if *in_arg_name == *ROW {
+    unsafe {
+      (*out.table).rows = vi.rows();
+      (*out.table).columns = 1;
+      (*out.table).data.resize(vi.rows(), 0);
     }
-    &COLUMN => {
-      unsafe {
-        (*out.table).rows = 1;
-        (*out.table).columns = cols;
-        (*out.table).data.resize(cols, 0);
-      }
-      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        let mut sum: Value = Value::from_u64(0);
-        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          match vi.get(&k,&m) {
-            Some(value) => {
-              match sum.add(value) {
-                Ok(result) => sum = result,
-                _ => (), // TODO Alert user that there was an error
-              }
-            }
-            _ => ()
-          }
-        }
-        unsafe {
-          (*out.table).set_unchecked(1, i, sum);
-        }
-      }      
-    }
-    &TABLE => {
-      unsafe {
-        (*out.table).rows = 1;
-        (*out.table).columns = 1;
-        (*out.table).data.resize(1, 0);
-      }
+    for i in 1..=rows {
       let mut sum: Value = Value::from_u64(0);
-      for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-          match vi.get(&k,&m) {
-            Some(value) => {
-              match sum.add(value) {
-                Ok(result) => sum = result,
-                _ => (), // TODO Alert user that there was an error
-              }
+      for j in 1..=cols {
+        match vi.get(&Index::Index(i),&Index::Index(j)) {
+          Some(value) => {
+            match sum.add(value) {
+              Ok(result) => sum = result,
+              _ => (), // TODO Alert user that there was an error
             }
-            _ => ()
           }
+          _ => ()
         }
-      }  
+      }
       unsafe {
-        (*out.table).set_unchecked(1, 1, sum);
-      }    
+        (*out.table).set_unchecked(i, 1, sum);
+      }
     }
-    _ => (), // TODO alert user that argument is unknown
-  }
+  } else if *in_arg_name == *COLUMN {
+    unsafe {
+      (*out.table).rows = 1;
+      (*out.table).columns = cols;
+      (*out.table).data.resize(cols, 0);
+    }
+    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      let mut sum: Value = Value::from_u64(0);
+      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+        match vi.get(&k,&m) {
+          Some(value) => {
+            match sum.add(value) {
+              Ok(result) => sum = result,
+              _ => (), // TODO Alert user that there was an error
+            }
+          }
+          _ => ()
+        }
+      }
+      unsafe {
+        (*out.table).set_unchecked(1, i, sum);
+      }
+    }      
+  } else if *in_arg_name == *TABLE {
+    unsafe {
+      (*out.table).rows = 1;
+      (*out.table).columns = 1;
+      (*out.table).data.resize(1, 0);
+    }
+    let mut sum: Value = Value::from_u64(0);
+    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+        match vi.get(&k,&m) {
+          Some(value) => {
+            match sum.add(value) {
+              Ok(result) => sum = result,
+              _ => (), // TODO Alert user that there was an error
+            }
+          }
+          _ => ()
+        }
+      }
+    }  
+    unsafe {
+      (*out.table).set_unchecked(1, 1, sum);
+    }    
+  } else {
+    () // TODO alert user that argument is unknown
+  } 
 }
     
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {

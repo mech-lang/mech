@@ -13,9 +13,11 @@ use rust_core::fmt;
 use ::humanize;
 use ::hash_string;
 
-const TABLE_SPLIT: u64 = 0x0015dc77a1771443;
-const GRAMS: u64 = 0x00b779d3bf451717;
-const KILOGRAMS: u64 = 0x00df0fac549c1104;
+lazy_static! {
+  static ref TABLE_SPLIT: u64 = hash_string("table/split");
+  static ref GRAMS: u64 = hash_string("g");
+  static ref KILOGRAMS: u64 = hash_string("kg");
+}
 
 // ## Block
 
@@ -130,18 +132,13 @@ impl Block {
           }
         }
         Transformation::Constant{table_id, value, unit} => {
-          let (domain, scale) = match unit {
-            unit_value => match unit_value {
-              GRAMS => (1, 0),
-              KILOGRAMS => (1, 3),
+          let (domain, scale) = if unit == *GRAMS { (1, 0) }
+            else if unit            == *KILOGRAMS { (1, 3) }
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),
 //              "s" => (3, 3),
-              _ => (0, 0),
-            },
-            _ => (0, 0),
-          };
+              else { (0, 0) };
           let q = if value.is_number() {
             Value::from_quantity(make_quantity(value.mantissa(), value.range() + scale, domain))
           } else {
@@ -196,6 +193,8 @@ impl Block {
                   x => Index::All,
                 };
                 let register = Register{table_id: *table_id, row: rrow, column: *column};
+                println!("```{:?}", register);
+                println!("```{:?}", humanize(&register.hash()));
                 self.input.insert(register.hash());
                 self.register_map.insert(register.hash(), register);
               },
@@ -268,7 +267,7 @@ impl Block {
               mech_fn(&vis, &mut out_vi);
             }
             _ => {
-              if *name == TABLE_SPLIT {
+              if *name == *TABLE_SPLIT {
                 let (_, vi) = &vis[0];
                 let vi_table = unsafe{&(*vi.table)};
                                 
