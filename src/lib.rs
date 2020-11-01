@@ -365,18 +365,19 @@ impl WasmCore {
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
   */
-  pub fn load_blocks(&mut self, blocks: Vec<u8>) {
-    let miniblocks: Vec<MiniBlock> = bincode::deserialize(&blocks).unwrap();
+  pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
+    let miniblocks: Vec<MiniBlock> = bincode::deserialize(&serialized_miniblocks).unwrap();
     let mut blocks: Vec<Block> = Vec::new() ;
     for miniblock in miniblocks {
       let mut block = Block::new(100);
-      for tfms in miniblock.transformations {
-        block.register_transformations(tfms);
-      }
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
       for (key, value) in miniblock.strings {
         store.strings.insert(key, value.to_string());
       }
+      for tfms in miniblock.transformations {
+        block.register_transformations(tfms);
+      }
+      
       block.plan = miniblock.plan.clone();
       block.gen_id();
       blocks.push(block);
@@ -1507,11 +1508,11 @@ impl WasmCore {
                       let target = event.target().unwrap();
                       let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
                       let target_table_id = target_element.id().parse::<u64>().unwrap();
-                      log!("{:?}", target_element.id().parse::<u64>().unwrap());
+                      //log!("{:?}", target_element.id().parse::<u64>().unwrap());
 
                       let x = event.offset_x();
                       let y = event.offset_y();
-                      log!("event: {:?} {:?}", x, y);
+                      //log!("event: {:?} {:?}", x, y);
                       // TODO Make this safe
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
@@ -1534,8 +1535,9 @@ impl WasmCore {
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
-                        let table = (*wasm_core).core.get_table(table_id);
-                        log!("{:?}", table);
+                        //log!("{:?}", (*wasm_core).core);
+                        let table = (*wasm_core).core.get_table(hash_string("ball"));
+                        let table = (*wasm_core).core.get_table(hash_string("html/event/pointermove"));
                       }
                     }) as Box<dyn FnMut(_)>)
                     };
