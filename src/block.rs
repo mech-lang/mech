@@ -771,9 +771,23 @@ pub struct Register {
 impl Register {
   pub fn hash(&self) -> u64 {
     let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
+
+    let unwrap_index = |index: &Index| -> u64 {
+      match index {
+        Index::Index(ix) => *ix as u64,
+        Index::Alias(alias) => {
+          alias.clone()
+        },
+        Index::Table(table_id) => *table_id.unwrap(),
+        Index::None |
+        Index::All => 0,
+      }
+    };
+
+
     hasher.write_u64(*self.table_id.unwrap());
-    hasher.write_u64(self.row.unwrap() as u64);
-    hasher.write_u64(self.column.unwrap() as u64);
+    hasher.write_u64(unwrap_index(&self.row));
+    hasher.write_u64(unwrap_index(&self.column));
     hasher.finish() & 0x00FFFFFFFFFFFFFF
   }
 }
