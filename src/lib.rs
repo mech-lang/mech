@@ -1,6 +1,5 @@
 #![feature(get_mut_unchecked)]
 
-extern crate ahash;
 extern crate core as rust_core;
 extern crate hashbrown;
 #[macro_use]
@@ -9,9 +8,9 @@ extern crate serde;
 extern crate num_traits;
 
 use std::hash::Hasher;
-use ahash::AHasher;
 #[macro_use]
 extern crate lazy_static;
+extern crate seahash;
 
 mod database;
 mod runtime;
@@ -31,10 +30,7 @@ pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 pub use self::errors::{Error, ErrorType};
 
 pub fn hash_string(input: &str) -> u64 {
-  let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
-  hasher.write(input.to_string().as_bytes());
-  let mut hash = hasher.finish();
-  hash & 0x00FFFFFFFFFFFFFF
+  seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
 
 pub fn humanize(hash: &u64) -> String {

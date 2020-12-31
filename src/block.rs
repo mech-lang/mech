@@ -8,7 +8,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::hash::Hasher;
-use ahash::AHasher;
 use rust_core::fmt;
 use ::humanize;
 use ::hash_string;
@@ -72,11 +71,11 @@ impl Block {
   }
 
   pub fn gen_id(&mut self) {
-    let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
+    let mut words = "".to_string();
     for tfm in &self.transformations {
-      hasher.write(format!("{:?}", tfm).as_bytes());
+      words = format!("{:?}{:?}", words, tfm);
     }
-    self.id = hasher.finish() & 0x00FFFFFFFFFFFFFF;  
+    self.id = seahash::hash(words.as_bytes()) & 0x00FFFFFFFFFFFFFF;  
   }
 
   pub fn register_transformations(&mut self, tfm_tuple: (String, Vec<Transformation>)) {
@@ -770,11 +769,11 @@ pub struct Register {
 
 impl Register {
   pub fn hash(&self) -> u64 {
-    let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
-    hasher.write_u64(*self.table_id.unwrap());
-    hasher.write_u64(self.row.unwrap() as u64);
-    hasher.write_u64(self.column.unwrap() as u64);
-    hasher.finish() & 0x00FFFFFFFFFFFFFF
+    let id_bytes = (*self.table_id.unwrap()).to_le_bytes();
+    let row_bytes = (self.row.unwrap() as u64).to_le_bytes();
+    let column_bytes = (self.column.unwrap() as u64).to_le_bytes();
+    let array = [id_bytes, row_bytes, column_bytes].concat();
+    seahash::hash(&array) & 0x00FFFFFFFFFFFFFF
   }
 }
 

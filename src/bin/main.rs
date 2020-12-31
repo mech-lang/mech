@@ -4,15 +4,64 @@ extern crate mech_core;
 
 use mech_core::{Core, hash_string, Register, humanize, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
-extern crate ahash;
-use ahash::AHasher;
 use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
 
+extern crate seahash;
+
 fn main() {
 
+  let register = Register{table_id: TableId::Global(0x12345678AABBCCFF), row: Index::All, column: Index::Alias(0x12345678AABBCCFF)};
+  let mut hash = 0;
+
+  let tid_bytes = register.table_id.unwrap().to_be_bytes();
+  println!("{:?}", tid_bytes);
+  let row_bytes = register.row.unwrap().to_be_bytes();
+  println!("{:?}", row_bytes);
+  let column_bytes = register.column.unwrap().to_be_bytes();
+  println!("{:?}", column_bytes);
+  let x = [tid_bytes, row_bytes, column_bytes].concat();
+  println!("{:?}", x);
+  let hash = seahash::hash(&x);
+  println!("{:0x}", hash);
+
+
+
+
+  /*let to_hash = format!("{:?}{:?}", hash, register.table_id.unwrap());
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);
+  
+  let to_hash = format!("{:?}{:?}", hash, register.row.unwrap());
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);
+  
+  let to_hash = format!("{:?}{:?}", hash, register.column.unwrap());
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);
+
+  let to_hash = format!("{:?}{:?}{:?}",register.table_id.unwrap(),register.row.unwrap(),register.column.unwrap());
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);
+
+  let to_hash = "This is a really long string that I would like to hash, it contains a lot of bytes";
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);
+
+  let to_hash = "131176846773215564701311768467732155647";
+  println!("{:?}", &to_hash.clone());
+  hash = seahash::hash(to_hash.as_bytes());
+  println!("{:0x}", hash);*/
+
+
+  /*
   let balls = 40000;
 
   print!("Allocating memory...");
@@ -278,6 +327,6 @@ x   y   20  0]"#.to_string(), vec![
   println!("{:0.4?}s total", time / 1000.0);  
   println!("{:0.4?}ms per iteration", per_iteration_time);
 
-
+*/
 }
 
