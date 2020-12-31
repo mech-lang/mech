@@ -9,8 +9,6 @@ extern crate mech_core;
 
 use mech_core::{Core, hash_string, Register, humanize, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
-extern crate ahash;
-use ahash::AHasher;
 use std::time::{Duration, SystemTime};
 use std::io;
 use std::io::prelude::*;
