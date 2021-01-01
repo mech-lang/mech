@@ -10,6 +10,8 @@
 extern crate core;
 use std::io;
 
+extern crate seahash;
+
 extern crate clap;
 use clap::{Arg, App, ArgMatches, SubCommand};
 
@@ -72,7 +74,6 @@ extern crate actix_web_actors;
 use actix::prelude::*;
 use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder, Error, HttpRequest};
 use actix_session::{CookieSession, Session};
-use ahash::AHasher;
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 //extern crate ws;
@@ -226,9 +227,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       use core::hash::Hasher;
       //println!("Connection Info {:?}", req.connection_info());
       //println!("Head {:?}", req.head());
-      let mut hasher = AHasher::new_with_keys(329458495230, 245372983457);
-      hasher.write(format!("{:?}", req.head()).as_bytes());
-      let mut id: u64 = hasher.finish();
+      let mut id: u64 = seahash::hash(format!("{:?}", req.head()).as_bytes());
       if let Some(uid) = session.get::<u64>("mech-user/id").unwrap() {
         println!("Mech user: {:x}", uid);
         id = uid
