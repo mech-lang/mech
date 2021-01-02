@@ -953,7 +953,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((true_literal, false_literal, anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
