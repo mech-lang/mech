@@ -89,6 +89,8 @@ pub enum Node {
   Or,
   SelectAll,
   Empty,
+  True,
+  False,
   // Markdown
   SectionTitle{ text: String },
   Title{ text: String },
@@ -164,6 +166,8 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Equal => {write!(f,"Equal\n"); None},
     Node::NotEqual => {write!(f,"NotEqual\n"); None},
     Node::Empty => {write!(f,"Empty\n"); None},
+    Node::True => {write!(f,"True\n"); None},
+    Node::False => {write!(f,"False\n"); None},
     Node::Null => {write!(f,"Null\n"); None},
     Node::Add => {write!(f,"Add\n"); None},
     Node::Subtract => {write!(f,"Subtract\n"); None},
@@ -1543,11 +1547,23 @@ impl Compiler {
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});
       } 
-
+      Node::True => {
+        let table = hash_string(&format!("Constant-True"));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: 0x4000000000000001, unit: 0});
+      }
+      Node::False => {
+        let table = hash_string(&format!("Constant-False"));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: 0x4000000000000000, unit: 0});
+      }
       _ => (),
     }
     transformations
   }
+
+  //      0x4000000000000001 => Some(true),
+  // 0x4000000000000000 => Some(false),
 
   pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
@@ -2175,6 +2191,12 @@ impl Compiler {
           Node::String{text: String::new()}
         };
         compiled.push(string);
+      },
+      parser::Node::True => {
+        compiled.push(Node::True);
+      },
+      parser::Node::False => {
+        compiled.push(Node::False);
       },
       parser::Node::ParentheticalExpression{children} => {
         let mut result = self.compile_nodes(children);

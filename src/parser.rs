@@ -153,6 +153,8 @@ pub enum Node {
   Or,
   Empty,
   Null,
+  True,
+  False,
 }
 
 impl fmt::Debug for Node {
@@ -295,6 +297,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Or => {print!("Or\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
+    Node::False => {print!("True\n",); None},
+    Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
   };  
   match children {
@@ -504,6 +508,16 @@ fn carriage_newline(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Null))
 }
 
+fn true_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("true")(input)?;
+  Ok((input, Node::True))
+}
+
+fn false_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("false")(input)?;
+  Ok((input, Node::False))
+}
+
 fn newline(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = alt((new_line_char, carriage_newline))(input)?;
   Ok((input, Node::Null))
@@ -617,7 +631,7 @@ fn function_binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((empty, data, expression, quantity))(input)?;
+  let (input, item) = alt((true_literal, false_literal, empty, data, expression, quantity))(input)?;
   let (input, _) = tuple((opt(comma), opt(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
@@ -939,7 +953,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((true_literal, false_literal, anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 

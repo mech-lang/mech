@@ -908,3 +908,33 @@ Messages
                 2    "Two"]
 block
   #name-tag >- [type: "div" content: #messages.name]"#, Value::from_u64(3));
+
+
+// ## Boolean values
+
+test_mech!(boolean_anonymous_table, r#"
+block
+  #y = [1 2 3]
+
+block
+  #x = [true false true]
+  
+block
+  #z = #y{#x}
+  
+block
+  #test = #z{1} + #z{2}"#, Value::from_u64(4));
+
+  test_mech!(boolean_literal_true, r#"
+block
+  #test = true"#, Value::from_bool(true));
+
+  test_mech!(boolean_literal_false, r#"
+block
+  #test = false"#, Value::from_bool(false));
+
+  test_mech!(boolean_literals_and_operator, r#"
+block
+  x = true
+  y = false
+  #test = x & y"#, Value::from_bool(false));
