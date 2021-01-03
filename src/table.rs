@@ -46,7 +46,7 @@ pub trait ValueMethods {
   fn as_i64(&self) -> Option<i64>;
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
-  fn as_bytestream(&self) -> Option<u64>;
+  fn as_byte_array(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
   fn as_reference(&self) -> Option<u64>;
   fn as_raw(&self) -> u64;
@@ -72,6 +72,12 @@ impl ValueMethods for Value {
 
   fn empty() -> Value {
     0x2000000000000000
+  }
+
+  fn from_byte_vector(vector: Vec<u8>) -> Value {
+    let mut vector_hash = hash_string(forma!("byte vector: {:?}",vector));
+    vector_hash = vector_hash + 0xC000000000000000;
+    vector_hash
   }
 
   fn from_string(string: String) -> Value {
@@ -133,7 +139,7 @@ impl ValueMethods for Value {
               None => {
                 match self.as_bool() {
                   Some(_) => ValueType::Boolean,
-                  None => match self.as_bytestream() {
+                  None => match self.as_byte_array() {
                     Some(_) => ValueType::NumberLiteral,
                     None => ValueType::Empty,
                   },
@@ -154,6 +160,7 @@ impl ValueMethods for Value {
     match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
+      0xC000000000000000 |
       0x4000000000000000 => None,
       _ => Some(*self),
     }
@@ -170,6 +177,7 @@ impl ValueMethods for Value {
     match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
+      0xC000000000000000 |
       0x4000000000000000 => None,
       _ => Some(self.to_u64()),
     }
@@ -179,6 +187,7 @@ impl ValueMethods for Value {
     match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
+      0xC000000000000000 |
       0x4000000000000000 => false,
       _ => true,
     }
@@ -195,6 +204,7 @@ impl ValueMethods for Value {
     match self & 0xFF00000000000000 {
       0x2000000000000000 |
       0x8000000000000000 |
+      0xC000000000000000 |
       0x4000000000000000 => None,
       _ => Some(self.to_float()),
     }
@@ -219,9 +229,9 @@ impl ValueMethods for Value {
     }
   }
 
-  fn as_bytestream(&self) -> Option<u64> {
+  fn as_byte_array(&self) -> Option<u64> {
     match self & 0xFF00000000000000 {
-      0x1000000000000000 => Some(*self),
+      0xC000000000000000 => Some(*self),
       _ => None,
     }
   }
