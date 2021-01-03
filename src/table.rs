@@ -26,6 +26,7 @@ pub enum ValueType {
   Boolean,
   String,
   Reference,
+  NumberLiteral,
   Empty
 }
 
@@ -45,6 +46,7 @@ pub trait ValueMethods {
   fn as_i64(&self) -> Option<i64>;
   fn as_float(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
+  fn as_bytestream(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
   fn as_reference(&self) -> Option<u64>;
   fn as_raw(&self) -> u64;
@@ -131,7 +133,10 @@ impl ValueMethods for Value {
               None => {
                 match self.as_bool() {
                   Some(_) => ValueType::Boolean,
-                  None => ValueType::Empty,
+                  None => match self.as_bytestream() {
+                    Some(_) => ValueType::NumberLiteral,
+                    None => ValueType::Empty,
+                  },
                 }
               }
             }
@@ -210,6 +215,13 @@ impl ValueMethods for Value {
     match self {
       0x4000000000000001 => Some(true),
       0x4000000000000000 => Some(false),
+      _ => None,
+    }
+  }
+
+  fn as_bytestream(&self) -> Option<u64> {
+    match self & 0xFF00000000000000 {
+      0x1000000000000000 => Some(*self),
       _ => None,
     }
   }
