@@ -25,6 +25,7 @@ pub struct Store {
   pub column_alias_to_index: HashMap<(u64,u64),usize>,
   pub column_index_to_alias: HashMap<(u64,usize),u64>,
   pub strings: HashMap<u64, String>,
+  pub byte_arrays: HashMap<u64, Vec<u8>>,
 }
 
 impl Store {
@@ -44,6 +45,7 @@ impl Store {
       column_alias_to_index: HashMap::new(),
       column_index_to_alias: HashMap::new(),
       strings: HashMap::new(),
+      byte_arrays: HashMap::new(),
     }
   }
 
