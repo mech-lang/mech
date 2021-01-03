@@ -138,6 +138,10 @@ pub enum Node {
   Transition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
+  DecimalLiteral{children: Vec<Node>},
+  HexadecimalLiteral{children: Vec<Node>},
+  OctalLiteral{children: Vec<Node>},
+  BinaryLiteral{children: Vec<Node>},
   Token{token: Token, byte: u8},
   Add,
   Subtract,
@@ -281,6 +285,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::NumberLiteral{children} => {print!("NumberLiteral\n"); Some(children)},
+    Node::DecimalLiteral{children} => {print!("DecimalLiteral\n"); Some(children)},
+    Node::HexadecimalLiteral{children} => {print!("HexadecimalLiteral\n"); Some(children)},
+    Node::OctalLiteral{children} => {print!("OctalLiteral\n"); Some(children)},
+    Node::BinaryLiteral{children} => {print!("BinaryLiteral\n"); Some(children)},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::Transitions{children} => {print!("Transitions\n"); Some(children)},
     Node::Transition{children} => {print!("Transition\n"); Some(children)},
@@ -303,6 +311,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
   };  
+
   match children {
     Some(childs) => {
       for child in childs {
@@ -554,6 +563,35 @@ fn quantity(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::Quantity{children: quantity}))
 }
 
+fn number_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal))(input)?;
+  Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
+}
+
+fn decimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("0d")(input)?;
+  let (input, decimal) = number(input)?;
+  Ok((input, Node::DecimalLiteral{children: vec![decimal]}))
+}
+
+fn hexadecimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("0x")(input)?;
+  let (input, hexadecimal) = many1(alt((number,word)))(input)?;
+  Ok((input, Node::HexadecimalLiteral{children: hexadecimal}))
+}
+
+fn octal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("0o")(input)?;
+  let (input, octal) = number(input)?;
+  Ok((input, Node::OctalLiteral{children: vec![octal]}))
+}
+
+fn binary_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("0b")(input)?;
+  let (input, binary) = number(input)?;
+  Ok((input, Node::BinaryLiteral{children: vec![binary]}))
+}
+
 fn constant(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, constant) = alt((string, quantity))(input)?;
   Ok((input, Node::Constant{children: vec![constant]}))
@@ -633,7 +671,7 @@ fn function_binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((true_literal, false_literal, empty, data, expression, quantity))(input)?;
+  let (input, item) = alt((true_literal, false_literal, empty, data, expression, number_literal, quantity))(input)?;
   let (input, _) = tuple((opt(comma), opt(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
@@ -955,7 +993,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, number_literal, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
