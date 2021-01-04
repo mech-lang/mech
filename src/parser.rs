@@ -138,10 +138,10 @@ pub enum Node {
   Transition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
-  DecimalLiteral{children: Vec<Node>},
-  HexadecimalLiteral{children: Vec<Node>},
-  OctalLiteral{children: Vec<Node>},
-  BinaryLiteral{children: Vec<Node>},
+  DecimalLiteral{bytes: Vec<u8>},
+  HexadecimalLiteral{bytes: Vec<u8>},
+  OctalLiteral{bytes: Vec<u8>},
+  BinaryLiteral{bytes: Vec<u8>},
   Token{token: Token, byte: u8},
   Add,
   Subtract,
@@ -285,10 +285,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::NumberLiteral{children} => {print!("NumberLiteral\n"); Some(children)},
-    Node::DecimalLiteral{children} => {print!("DecimalLiteral\n"); Some(children)},
-    Node::HexadecimalLiteral{children} => {print!("HexadecimalLiteral\n"); Some(children)},
-    Node::OctalLiteral{children} => {print!("OctalLiteral\n"); Some(children)},
-    Node::BinaryLiteral{children} => {print!("BinaryLiteral\n"); Some(children)},
+    Node::DecimalLiteral{bytes} => {print!("DecimalLiteral\n"); None},
+    Node::HexadecimalLiteral{bytes} => {print!("HexadecimalLiteral\n"); None},
+    Node::OctalLiteral{bytes} => {print!("OctalLiteral\n"); None},
+    Node::BinaryLiteral{bytes} => {print!("BinaryLiteral\n"); None},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::Transitions{children} => {print!("Transitions\n"); Some(children)},
     Node::Transition{children} => {print!("Transition\n"); Some(children)},
@@ -570,26 +570,30 @@ fn number_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn decimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0d")(input)?;
-  let (input, decimal) = number(input)?;
-  Ok((input, Node::DecimalLiteral{children: vec![decimal]}))
+  let (input, number_string) = digit1(input)?;
+  let bytes = number_string.as_bytes();
+  Ok((input, Node::DecimalLiteral{bytes: bytes.to_vec()}))
 }
 
 fn hexadecimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0x")(input)?;
-  let (input, hexadecimal) = many1(alt((number,word)))(input)?;
-  Ok((input, Node::HexadecimalLiteral{children: hexadecimal}))
+  let (input, number_string) = many1(alt((digit1,alpha1)))(input)?;
+  let bytes = number_string.join("").as_bytes().to_vec();
+  Ok((input, Node::HexadecimalLiteral{bytes: bytes.clone()}))
 }
 
 fn octal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0o")(input)?;
-  let (input, octal) = number(input)?;
-  Ok((input, Node::OctalLiteral{children: vec![octal]}))
+  let (input, number_string) = digit1(input)?;
+  let bytes = number_string.as_bytes();
+  Ok((input, Node::OctalLiteral{bytes: bytes.to_vec()}))
 }
 
 fn binary_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0b")(input)?;
-  let (input, binary) = number(input)?;
-  Ok((input, Node::BinaryLiteral{children: vec![binary]}))
+  let (input, number_string) = digit1(input)?;
+  let bytes = number_string.as_bytes();
+  Ok((input, Node::BinaryLiteral{bytes: bytes.to_vec()}))
 }
 
 fn constant(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
