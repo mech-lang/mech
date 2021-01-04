@@ -570,7 +570,13 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           } else {
             match value.as_reference() {
               Some(reference) => {tfm = format!("{}@{} -> ",tfm, humanize(value));}
-              None => {tfm = format!("{}{:?} -> ",tfm, block.store.strings.get(value).unwrap());}
+              None => {
+                match value.as_bool() {
+                  Some(true) => tfm = format!("{} true -> ",tfm),
+                  Some(false) => tfm = format!("{} false -> ",tfm),
+                  None => {tfm = format!("{}{:?} -> ",tfm, block.store.strings.get(value).unwrap());}
+                }
+              }
             }
             
           }
