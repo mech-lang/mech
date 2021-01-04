@@ -16,7 +16,7 @@ use nom::{
   error::{context, convert_error, ErrorKind, ParseError, VerboseError},
   multi::{many1, many0},
   bytes::complete::{tag},
-  character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
+  character::complete::{alphanumeric1, char, hex_digit1, oct_digit1, alpha1, digit1, space0, space1},
 };
 
 // ## Parser Node
@@ -577,23 +577,23 @@ fn decimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn hexadecimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0x")(input)?;
-  let (input, number_string) = many1(alt((digit1,alpha1)))(input)?;
-  let bytes = number_string.join("").as_bytes().to_vec();
-  Ok((input, Node::HexadecimalLiteral{bytes: bytes.clone()}))
+  let (input, number_string) = hex_digit1(input)?;
+  let bytes = number_string.as_bytes();
+  Ok((input, Node::HexadecimalLiteral{bytes: bytes.to_vec()}))
 }
 
 fn octal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0o")(input)?;
-  let (input, number_string) = digit1(input)?;
+  let (input, number_string) = oct_digit1(input)?;
   let bytes = number_string.as_bytes();
   Ok((input, Node::OctalLiteral{bytes: bytes.to_vec()}))
 }
 
 fn binary_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0b")(input)?;
-  let (input, number_string) = digit1(input)?;
-  let bytes = number_string.as_bytes();
-  Ok((input, Node::BinaryLiteral{bytes: bytes.to_vec()}))
+  let (input, number_string) = many1(alt((char('0'), char('1'))))(input)?;
+  let bytes: Vec<u8> = number_string.iter().map(|c| c.to_string()).collect::<Vec<String>>().join("").as_bytes().to_vec();
+  Ok((input, Node::BinaryLiteral{bytes: bytes}))
 }
 
 fn constant(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
