@@ -24,8 +24,8 @@ pub struct Store {
   pub data: Vec<Value>,
   pub column_alias_to_index: HashMap<(u64,u64),usize>,
   pub column_index_to_alias: HashMap<(u64,usize),u64>,
-  pub strings: HashMap<u64, String>,
-  pub byte_arrays: HashMap<u64, Vec<u8>>,
+  pub strings: HashMap<u64, String>,        // This is where we store string literals and other strings
+  pub byte_arrays: HashMap<u64, Vec<u8>>,   // This is where we store number literals and other numbers
 }
 
 impl Store {
