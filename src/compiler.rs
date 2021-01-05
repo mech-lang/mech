@@ -91,6 +91,7 @@ pub enum Node {
   Empty,
   True,
   False,
+  NumberLiteral{bytes: Vec<u8> },
   // Markdown
   SectionTitle{ text: String },
   Title{ text: String },
@@ -154,6 +155,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Transformation{children, ..} => {write!(f,"Transformation\n"); Some(children)},
     Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {write!(f,"String({:?})\n", text); None},
+    Node::NumberLiteral{bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
     Node::Constant{value, unit} => {write!(f,"Constant({}{:?})\n", value.to_float(), unit); None},
     Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id); None},
@@ -283,6 +285,7 @@ pub struct Compiler {
   expression: usize,
   pub text: String,
   pub strings: HashMap<u64, String>,
+  pub byte_arrays: HashMap<u64, Vec<u8>>,
   pub variable_names: HashSet<u64>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
@@ -319,6 +322,7 @@ impl Compiler {
       current_line: 1,
       current_col: 1,
       strings: HashMap::new(),
+      byte_arrays: HashMap::new(),
       unparsed: String::new(),
       text: String::new(),
       variable_names: HashSet::new(),
@@ -1531,6 +1535,13 @@ impl Compiler {
         self.strings.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
+      Node::NumberLiteral{bytes} => {
+        let table = hash_string(&format!("Constant-{:?}", bytes));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
+        let value = Value::from_byte_vector(bytes);
+        self.byte_arrays.insert(value, bytes.clone());
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
+      }
       Node::Empty => {
         let value = Value::empty();
         let table = hash_string(&format!("Empty-{:?}", value.to_float()));
@@ -2191,6 +2202,13 @@ impl Compiler {
           Node::String{text: String::new()}
         };
         compiled.push(string);
+      },
+      parser::Node::NumberLiteral{children} => {
+        let mut result = self.compile_nodes(children);
+        compiled.push(result[0].clone());
+      },
+      parser::Node::HexadecimalLiteral{bytes} => {
+        compiled.push(Node::NumberLiteral{bytes});
       },
       parser::Node::True => {
         compiled.push(Node::True);
