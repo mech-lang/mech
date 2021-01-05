@@ -40,7 +40,7 @@ pub trait ValueMethods {
   fn from_i64(num: i64) -> Value;
   fn from_f64(num: f64) -> Value;
   fn from_id(id: u64) -> Value;
-  fn from_byte_vector(vector: Vec<u8>) -> Value;
+  fn from_byte_vector(vector: &Vec<u8>) -> Value;
   fn value_type(&self) -> ValueType;
   fn as_quantity(&self) -> Option<Quantity>;
   fn as_u64(&self) -> Option<u64>;
@@ -75,7 +75,7 @@ impl ValueMethods for Value {
     0x2000000000000000
   }
 
-  fn from_byte_vector(vector: Vec<u8>) -> Value {
+  fn from_byte_vector(vector: &Vec<u8>) -> Value {
     let mut vector_hash = hash_string(&format!("byte vector: {:?}",vector));
     vector_hash = vector_hash + 0xC000000000000000;
     vector_hash
