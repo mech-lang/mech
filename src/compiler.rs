@@ -2207,11 +2207,73 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
-      parser::Node::DecimalLiteral{bytes} |
-      parser::Node::BinaryLiteral{bytes} |
-      parser::Node::OctalLiteral{bytes} |
+      parser::Node::DecimalLiteral{bytes} => {         
+        let dec_bytes: Vec<u8> = bytes.map(|b| 
+          map b {
+            48 => 0,
+            49 => 1,
+            50 => 2,
+            51 => 3,
+            52 => 4,
+            53 => 5,
+            54 => 6,
+            55 => 7,
+            56 => 8,
+            57 => 9,
+            _ => 0,        // TODO: ERROR
+          }
+        ).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{bytes: dec_bytes});
+      },
+      parser::Node::BinaryLiteral{bytes} => {
+        let bin_bytes: Vec<u8> = bytes.map(|b| 
+          map b {
+            48 => 0,
+            49 => 1,
+            _ => 0,        // TODO: ERROR
+          }
+        ).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{bytes: bin_bytes});
+      }
+      parser::Node::OctalLiteral{bytes} => {
+        let oct_bytes: Vec<u8> = bytes.map(|b| 
+          map b {
+            48 => 0,
+            49 => 1,
+            50 => 2,
+            51 => 3,
+            52 => 4,
+            53 => 5,
+            54 => 6,
+            55 => 7,
+            _ => 0,        // TODO: ERROR
+          }
+        ).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{bytes: oct_bytes});
+      }
       parser::Node::HexadecimalLiteral{bytes} => {
-        compiled.push(Node::NumberLiteral{bytes});
+        let hex_bytes: Vec<u8> = bytes.map(|b| 
+          map b {
+            48 => 0,
+            49 => 1,
+            50 => 2,
+            51 => 3,
+            52 => 4,
+            53 => 5,
+            54 => 6,
+            55 => 7,
+            56 => 8,
+            57 => 9,
+            65 | 97 => 10, // A
+            66 | 98 => 11, // B
+            67 | 99 => 12, // C
+            68 | 100 => 13 // D
+            69 | 101 => 14,// E
+            70 | 102 => 15,// F
+            _ => 0,        // TODO: ERROR
+          }
+        ).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{bytes: hex_bytes});
       },
       parser::Node::True => {
         compiled.push(Node::True);
