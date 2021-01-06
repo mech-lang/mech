@@ -2207,6 +2207,9 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
+      parser::Node::DecimalLiteral{bytes} |
+      parser::Node::BinaryLiteral{bytes} |
+      parser::Node::OctalLiteral{bytes} |
       parser::Node::HexadecimalLiteral{bytes} => {
         compiled.push(Node::NumberLiteral{bytes});
       },
