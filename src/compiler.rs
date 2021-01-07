@@ -772,6 +772,10 @@ impl Compiler {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
           store.strings.insert(k,v.to_string());
         }
+        for (k,v) in self.byte_arrays.drain() {
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+          store.byte_arrays.insert(k,v.clone());
+        }
         for (k,v) in self.register_map.drain() {
           block.register_map.insert(k,v);
         }
