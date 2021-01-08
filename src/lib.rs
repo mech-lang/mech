@@ -47,6 +47,7 @@ pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
+  pub byte_arrays: Vec<(u64, Vec<u8>)>,
   pub register_map: Vec<(u64, Register)>,
 }
 
@@ -56,6 +57,7 @@ impl MiniBlock {
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
+      byte_arrays: Vec::with_capacity(1),
       register_map: Vec::with_capacity(1),
     }
   }
@@ -75,22 +77,22 @@ pub trait Machine {
 
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
-    pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->Vec<Change>,
+  pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->Vec<Change>,
 }
 
 pub trait MachineRegistrar {
-    fn register_machine(&mut self, machine: Box<dyn Machine>);
+  fn register_machine(&mut self, machine: Box<dyn Machine>);
 }
 
 #[macro_export]
 macro_rules! export_machine {
-    ($name:ident, $register:expr) => {
-        #[doc(hidden)]
-        #[no_mangle]
-        pub static $name: $crate::MachineDeclaration =
-            $crate::MachineDeclaration {
-                register: $register,
-            };
-    };
+  ($name:ident, $register:expr) => {
+    #[doc(hidden)]
+    #[no_mangle]
+    pub static $name: $crate::MachineDeclaration =
+      $crate::MachineDeclaration {
+        register: $register,
+      };
+  };
 }
 
