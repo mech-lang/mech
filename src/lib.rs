@@ -7,7 +7,7 @@ extern crate hashbrown;
 extern crate crossbeam_channel;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Transaction, TableId, Transformation, Register, Change};
+use mech_core::{Table, Value, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
 
 use crossbeam_channel::Sender;
 
@@ -47,7 +47,7 @@ pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
-  pub byte_arrays: Vec<(u64, Vec<u8>)>,
+  pub number_literals: Vec<(u64, NumberLiteral)>,
   pub register_map: Vec<(u64, Register)>,
 }
 
@@ -57,7 +57,7 @@ impl MiniBlock {
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
-      byte_arrays: Vec::with_capacity(1),
+      number_literals: Vec::with_capacity(1),
       register_map: Vec::with_capacity(1),
     }
   }
