@@ -30,6 +30,20 @@ pub enum ValueType {
   Empty
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub enum NumberLiteralKind {
+  Decimal,
+  Hexadecimal,
+  Octal,
+  Binary
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+pub struct NumberLiteral {
+  pub kind: NumberLiteralKind,
+  pub bytes: Vec<u8>,
+}
+
 pub trait ValueMethods {
   fn empty() -> Value;
   fn from_string(string: String) -> Value;

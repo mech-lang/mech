@@ -1,4 +1,4 @@
-use table::{Table, TableId, Value, Index, ValueMethods};
+use table::{Table, TableId, Value, Index, ValueMethods, NumberLiteral};
 use block::{Error, Register};
 use ::humanize;
 use std::cell::RefCell;
@@ -25,7 +25,7 @@ pub struct Store {
   pub column_alias_to_index: HashMap<(u64,u64),usize>,
   pub column_index_to_alias: HashMap<(u64,usize),u64>,
   pub strings: HashMap<u64, String>,        // This is where we store string literals and other strings
-  pub byte_arrays: HashMap<u64, Vec<u8>>,   // This is where we store number literals and other numbers
+  pub number_literals: HashMap<u64, NumberLiteral>,   // This is where we store number literals and other numbers
 }
 
 impl Store {
@@ -45,7 +45,7 @@ impl Store {
       column_alias_to_index: HashMap::new(),
       column_index_to_alias: HashMap::new(),
       strings: HashMap::new(),
-      byte_arrays: HashMap::new(),
+      number_literals: HashMap::new(),
     }
   }
 
