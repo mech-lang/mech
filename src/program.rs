@@ -834,8 +834,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   for (key, value) in miniblock.strings {
                     store.strings.insert(key, value.to_string());
                   }
-                  for (key, value) in miniblock.byte_arrays {
-                    store.byte_arrays.insert(key, value.clone());
+                  for (key, value) in miniblock.number_literals {
+                    store.number_literals.insert(key, value.clone());
                   }
                   for (key, value) in miniblock.register_map {
                     block.register_map.insert(key, value);
