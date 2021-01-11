@@ -35,4 +35,4 @@ crossbeam-channel = "0.4"
 tungstenite = "0.10.1"
 url = "2.1.0"
 ws = "0.9.1"
-hashbrown = {version = "0.7.1", features = ["nightly"]}
+hashbrown = "0.9.1"
