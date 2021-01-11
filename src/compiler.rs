@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId, Register};
+use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId, Register, NumberLiteral, NumberLiteralKind};
 use mech_core::{Quantity, humanize, ToQuantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 use mech_core::ErrorType;
@@ -91,7 +91,7 @@ pub enum Node {
   Empty,
   True,
   False,
-  NumberLiteral{bytes: Vec<u8> },
+  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8> },
   // Markdown
   SectionTitle{ text: String },
   Title{ text: String },
@@ -155,7 +155,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Transformation{children, ..} => {write!(f,"Transformation\n"); Some(children)},
     Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {write!(f,"String({:?})\n", text); None},
-    Node::NumberLiteral{bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
+    Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
     Node::Constant{value, unit} => {write!(f,"Constant({}{:?})\n", value.to_float(), unit); None},
     Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id); None},
@@ -285,7 +285,7 @@ pub struct Compiler {
   expression: usize,
   pub text: String,
   pub strings: HashMap<u64, String>,
-  pub byte_arrays: HashMap<u64, Vec<u8>>,
+  pub number_literals: HashMap<u64, NumberLiteral>,
   pub variable_names: HashSet<u64>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
@@ -322,7 +322,7 @@ impl Compiler {
       current_line: 1,
       current_col: 1,
       strings: HashMap::new(),
-      byte_arrays: HashMap::new(),
+      number_literals: HashMap::new(),
       unparsed: String::new(),
       text: String::new(),
       variable_names: HashSet::new(),
@@ -772,9 +772,9 @@ impl Compiler {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
           store.strings.insert(k,v.to_string());
         }
-        for (k,v) in self.byte_arrays.drain() {
+        for (k,v) in self.number_literals.drain() {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-          store.byte_arrays.insert(k,v.clone());
+          store.number_literals.insert(k,v.clone());
         }
         for (k,v) in self.register_map.drain() {
           block.register_map.insert(k,v);
@@ -1539,11 +1539,11 @@ impl Compiler {
         self.strings.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
-      Node::NumberLiteral{bytes} => {
+      Node::NumberLiteral{kind, bytes} => {
         let table = hash_string(&format!("Constant-{:?}", bytes));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         let value = Value::from_byte_vector(bytes);
-        self.byte_arrays.insert(value, bytes.clone());
+        self.number_literals.insert(value, NumberLiteral{kind: *kind, bytes: bytes.clone()} );
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::Empty => {
@@ -1576,9 +1576,6 @@ impl Compiler {
     }
     transformations
   }
-
-  //      0x4000000000000001 => Some(true),
-  // 0x4000000000000000 => Some(false),
 
   pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
@@ -2227,7 +2224,7 @@ impl Compiler {
             _ => 0,        // TODO: ERROR
           }
         }).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{bytes: dec_bytes});
+        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: dec_bytes});
       },
       parser::Node::BinaryLiteral{bytes} => {
         let bin_bytes: Vec<u8> = bytes.iter().map(|b| {
@@ -2237,7 +2234,7 @@ impl Compiler {
             _ => 0,        // TODO: ERROR
           }
         }).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{bytes: bin_bytes});
+        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Binary, bytes: bin_bytes});
       }
       parser::Node::OctalLiteral{bytes} => {
         let oct_bytes: Vec<u8> = bytes.iter().map(|b| {
@@ -2253,7 +2250,7 @@ impl Compiler {
             _ => 0,        // TODO: ERROR
           }
         }).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{bytes: oct_bytes});
+        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Octal, bytes: oct_bytes});
       }
       parser::Node::HexadecimalLiteral{bytes} => {
         let hex_bytes: Vec<u8> = bytes.iter().map(|b| {
@@ -2277,7 +2274,7 @@ impl Compiler {
             _ => 0,        // TODO: ERROR
           }
         }).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{bytes: hex_bytes});
+        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
       },
       parser::Node::True => {
         compiled.push(Node::True);
