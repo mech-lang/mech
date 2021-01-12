@@ -942,3 +942,8 @@ block
   x = true
   y = false
   #test = x & y"#, Value::from_bool(false));
+
+// ## Number Literals
+
+  test_mech!(number_literal_decimal, r#"
+  #test = 0d1234567890"#, 13902651193305449173);
