@@ -1237,6 +1237,7 @@ fn fragment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 pub fn program(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let mut program = vec![];
+  let (input, _) = opt(whitespace)(input)?;
   let (input, title) = opt(title)(input)?;
   match title {
     Some(title) => program.push(title),
