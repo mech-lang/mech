@@ -30,14 +30,15 @@ Update the block positions on each tick of the timer
     #ball.vy := #ball.vy + #gravity"#);*/
 
 
-  let input = String::from(r#"# Mech Homepage
+  let input = String::from(r#"
+# Sorting
 
-make a slider
-  #slider = [type: "slider" min: 0 max: 100 value: 50]
+## Selection Sort
 
-Set up clock drawing elements
-  circle = [x: #slider.value]
-  #slider-div = [type: "div" contains: [#slider]]"#);
+Here is the entry point for the selection sort algorithm
+
+  #sort/selection-sort = [|unsorted    sorted start end|
+                           [5 3 7 1 4] _      1     5  ]"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -51,6 +52,7 @@ Set up clock drawing elements
 
   //println!("{:?}", programs);
   //println!("{:?}", compiler.blocks);
+  println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
   core.runtime.register_blocks(compiler.blocks);
   core.step();
