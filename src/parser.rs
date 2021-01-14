@@ -564,7 +564,7 @@ fn quantity(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn number_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal))(input)?;
+  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
   Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
 }
 
