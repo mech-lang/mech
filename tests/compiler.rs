@@ -54,6 +54,11 @@ block
 block
   #test = #x.x + #x.y", Value::from_i64(7));
 
+test_mech!(table_anonymous_table_trailing_whitespace, "
+block
+  #test = [|d|
+            5  ]", Value::from_i64(5));
+
 test_mech!(table_define_program, "# A Working Program
 
 ## Section Two
