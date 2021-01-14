@@ -676,7 +676,7 @@ fn function_binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, item) = alt((true_literal, false_literal, empty, data, expression, number_literal, quantity))(input)?;
-  let (input, _) = tuple((opt(comma), opt(alt((space, tab)))))(input)?;
+  let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
 
