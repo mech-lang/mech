@@ -952,3 +952,6 @@ block
 
   test_mech!(number_literal_decimal, r#"
   #test = 0d1234567890"#, 13902651193305449173);
+
+  test_mech!(number_rational_number, r#"
+  #test = 1/2"#, 13902651193305449173);

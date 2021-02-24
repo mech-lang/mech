@@ -141,6 +141,7 @@ pub enum Node {
   HexadecimalLiteral{bytes: Vec<u8>},
   OctalLiteral{bytes: Vec<u8>},
   BinaryLiteral{bytes: Vec<u8>},
+  RationalNumber{children: Vec<Node>},
   Token{token: Token, byte: u8},
   Add,
   Subtract,
@@ -288,6 +289,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::HexadecimalLiteral{bytes} => {print!("HexadecimalLiteral\n"); None},
     Node::OctalLiteral{bytes} => {print!("OctalLiteral\n"); None},
     Node::BinaryLiteral{bytes} => {print!("BinaryLiteral\n"); None},
+    Node::RationalNumber{children} => {print!("RationalNumber\n"); Some(children)},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::StateTransition{children} => {print!("StateTransition\n"); Some(children)},
     Node::Add => {print!("Add\n",); None},
@@ -566,6 +568,13 @@ fn number_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
 }
 
+fn rational_number(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, numerator) = alt((quantity, number_literal))(input)?;
+  let (input, _) = tag("/")(input)?;
+  let (input, denominator) = alt((quantity, number_literal))(input)?;
+  Ok((input, Node::RationalNumber{children: vec![numerator, denominator]}))
+}
+
 fn decimal_literal(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("0d")(input)?;
   let (input, number_string) = digit1(input)?;
@@ -673,7 +682,7 @@ fn function_binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn table_column(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((true_literal, false_literal, empty, data, expression, number_literal, quantity))(input)?;
+  let (input, item) = alt((true_literal, false_literal, empty, data, expression, rational_number, number_literal, quantity))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
@@ -995,7 +1004,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, number_literal, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, rational_number, number_literal, quantity, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 

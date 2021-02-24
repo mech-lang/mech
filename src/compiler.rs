@@ -92,6 +92,7 @@ pub enum Node {
   True,
   False,
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8> },
+  RationalNumber{children: Vec<Node> },
   // Markdown
   SectionTitle{ text: String },
   Title{ text: String },
@@ -155,6 +156,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Transformation{children, ..} => {write!(f,"Transformation\n"); Some(children)},
     Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id); None},
     Node::String{text} => {write!(f,"String({:?})\n", text); None},
+    Node::RationalNumber{children} => {write!(f,"RationalNumber\n"); Some(children)},
     Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
     Node::Constant{value, unit} => {write!(f,"Constant({}{:?})\n", value.to_float(), unit); None},
     Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
@@ -1444,6 +1446,10 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
+      Node::RationalNumber{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
+      }
       Node::MathExpression{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
@@ -2207,6 +2213,10 @@ impl Compiler {
       parser::Node::NumberLiteral{children} => {
         let mut result = self.compile_nodes(children);
         compiled.push(result[0].clone());
+      },
+      parser::Node::RationalNumber{children} => {
+        let mut result = self.compile_nodes(children);
+        compiled.push(Node::RationalNumber{children: result});
       },
       parser::Node::DecimalLiteral{bytes} => {         
         let dec_bytes: Vec<u8> = bytes.iter().map(|b| {
