@@ -134,8 +134,7 @@ pub enum Node {
   Any{children: Vec<Node>},
   Symbol{children: Vec<Node>},
   StateMachine{children: Vec<Node>},
-  Transitions{children: Vec<Node>},
-  Transition{children: Vec<Node>},
+  StateTransition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
   DecimalLiteral{bytes: Vec<u8>},
@@ -290,8 +289,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::OctalLiteral{bytes} => {print!("OctalLiteral\n"); None},
     Node::BinaryLiteral{bytes} => {print!("BinaryLiteral\n"); None},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
-    Node::Transitions{children} => {print!("Transitions\n"); Some(children)},
-    Node::Transition{children} => {print!("Transition\n"); Some(children)},
+    Node::StateTransition{children} => {print!("StateTransition\n"); Some(children)},
     Node::Add => {print!("Add\n",); None},
     Node::Subtract => {print!("Subtract\n",); None},
     Node::Multiply => {print!("Multiply\n",); None},
@@ -1045,13 +1043,24 @@ named!(state_machine<CompleteStr, Node>, do_parse!(
   source: data >> question >> whitespace >> transitions: transitions >> whitespace >>
   (Node::StateMachine { children: vec![source, transitions] })));
 
-named!(transitions<CompleteStr, Node>, do_parse!(
-  transitions: many1!(transition) >>
-  (Node::Transitions { children:transitions })));
+fn next_state_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = tag("->")(input)?;
+  Ok((input, Node::Null))
+}
 
-named!(transition<CompleteStr, Node>, do_parse!(
-  many1!(space) >> state: alt!(string | constant | empty) >> many1!(space) >> tag!("=>") >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
-  (Node::Transition { children: vec![state, next] })));*/
+  #timer? x -> x + 1
+ 
+
+
+
+
+fn state_transition(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = many1(space)(input)?;
+ 
+
+  many1!(space) >> state: alt!(identifier, string | constant | empty) >> many1!(space) >>  >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
+  (Node::StateTransition { children: vec![state, next] })));
+}*/
 
 // #### Logic Expressions
 
