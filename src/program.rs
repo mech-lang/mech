@@ -81,7 +81,7 @@ fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, o
     }
   }
   let machine_file_path = format!("machines/{}",machine_name);
-  let machine = Library::new(machine_file_path).expect("Can't load library");
+  let machine = unsafe{Library::new(machine_file_path).expect("Can't load library")};
   Ok(machine)
 }
 
@@ -190,7 +190,7 @@ impl Program {
           let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
               Ok(_) => {
-                Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+                unsafe{Library::new(format!("machines/{}",machine_name)).expect("Can't load library")}
               }
               _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
             }
@@ -236,7 +236,7 @@ impl Program {
               let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
                 match File::open(format!("machines/{}",machine_name)) {
                   Ok(_) => {
-                    Library::new(format!("machines/{}",machine_name)).expect("Can't load library")
+                    unsafe{Library::new(format!("machines/{}",machine_name)).expect("Can't load library")}
                   }
                   _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
                 }
