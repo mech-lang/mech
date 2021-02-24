@@ -16,9 +16,9 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-wasm = {path = "../../wasm"}
-mech-core = {path = "../../core"}
-mech-syntax = {path = "../../syntax"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-wasm = {git = "https://gitlab.com/mech-lang/wasm"}
 
 hashbrown = "0.9.1"
 wasm-bindgen = "0.2.70"
