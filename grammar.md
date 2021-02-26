@@ -12,44 +12,49 @@ For now, the formal specification of the Mech grammar will be the Rust implement
 
 ### Primitives
 ```ebnf
-space
-period
-exclamation
-question
-comma
-colon
-semicolon
-dash
-apostrophe
-left_parenthesis
-right_parenthesis  
-left_angle
-right_angle
-left_brace
-right_brace
-ampersand
-bar
-at
-slash
-hashtag
-equal
-tilde
-plus
-asterisk
-caret
-underscore
-tab
+space = " ";
+period = ".";
+exclamation = "!";
+question = "?";
+comma = ".";
+colon = ":";
+semicolon = ";";
+dash = "-";
+apostrophe = "'";
+quote = "\"";
+left_parenthesis = "(";
+right_parenthesis = ")";
+left_angle = "<";
+right_angle = ">";
+left_brace = "{";
+right_brace = "}";
+ampersand = "&";
+bar = "|";
+at = "@";
+slash = "/";
+hashtag = "#";
+equal = "=";
+tilde = "~";
+plus = "+";
+asterisk = "*";
+caret = "^";
+underscore = "_";
+tab = "\t"
+left_bracket = "[";
+right_bracket = "]";
+carriage_newline = "\r\n";
+new_line_char = "\n";
+carriage_return = "\r";
+grave = "`";
 ```
 
 ### Values
-
 ```ebnf
 --
 digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
 digit                = "0" | ?digit excluding zero?
 natural number = ?digit excluding zero?, { digit } ;
 ```
-
 
 ##The Basics
 ```ebnf
@@ -62,10 +67,8 @@ text = {word | space | number | punctuation | symbol};
 paragraph_rest = {word | space | number | punctuation | symbol | quote};
 paragraph_starter =  {word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis| right_parenthesis};
 identifier = word , {word | number | dash | slash};
-carriage_newline = "\r\n";
 true_literal = "true";
 false_literal = "false";
-newline = "\n"
 whitespace =  {" "}, newline;
 floating_point ***
 quantity = number , [floating_point] , [identifier];
@@ -77,6 +80,7 @@ octal_literal ***
 binary_literal ***
 constant = string | quantity;
 empty = {"_"};
+newline = new_line_char | carriage_newline;
 ```
 
 ##Blocks
@@ -88,7 +92,7 @@ transformation = space, space, statement, space, ["\n];
 ```ebnf
 select_all = colon;
 subscript = select_all | expression, space, [comma], space;
-subscript_index = "[", {subscripts}, "]";
+subscript_index = left_bracket, {subscripts}, right_bracket;
 dot_index = period, identifier;
 index = dot_index | subscript_index;
 data = table | identifier , {index};
@@ -102,25 +106,49 @@ function_binding = indentifier, colon, space, empty | expression | identifier | 
 table_column = {space | tab} , true_literal | false_literal | empty | data | expression | rational_number | number_literal | quantity, [comma], {space| tab};
 table_row = {space | tab}, {table_column}, [semicolon], [newline];
 attribute = identifier, space, [comma], space;
-table_header
-table_define = table, space , equal, space, expression;
-inline_table = "[", {binding} , "]";
-
+table_header = bar , {attribute}, bar, space, [newline];
+anonymous_table = left_bracket, space, [table_header], {table_row}, right_bracket;
+inline_table = left_bracket, {binding} , right_bracket;
 ```
 
 ###Statements
 ```ebnf
+comment_sigil = "//";
+comment = comment_sigil, text;
+add_row_operator = "+=";
+add_row = table, space, add_row_operator, space, inline_table | anonymous_table;
+set_operator = ":=";
+set_data = data, space, set_operator, space, expression;
+split_data = identifier | table, space, split_operator, space, expression;
+join_data = identifier, space, join_operator, space, expression;
+variable_define =  identifier, space, equal, space, expression;
+table_define = table, space , equal, space, expression;
+split_operator = ">-";
+join_operator = "-<";
+whenever_operator = "~";
+until_operator = "~|";
+wait_operator = "|~";
+whenever_data = whenever_operator, space, variable_define | expression |data;
+wait_data = wait_operator, space, variable_define | expression |data;
+until_data = until_operator, space, variable_define | expression |data;
 statements = table_define | variable_define | split_data | join_data | whenever_data | wait_data | until_data | set_data | add_row |       comment;
-
 ```
 
 ###Expression
 
 ####Math Expressions
 
-####Filer Expressions
+####Filter Expressions
+not_equal = "!=";
+equal_to = "==";
+geater_than = ">"
+less_than = "<";
+greater_than_equal = ">=";
+less_than_equal = "<=";
 
 ####Logic Expressions
+or = "|";
+and = "&";
 
 ####Other Expressions
 ```ebnf
@@ -133,13 +161,21 @@ string_interpolation = "{{" , expression, "}}" ;
 ```ebnf
 title = "#" , {space} , text , {whitespace};
 subtitle = hashtag, hashtag, space, text, {whitespace}; 
-
+section_title = hashtag, hashtag, hashtag, space, text, {whitespace};
+inline_code = grave, text, grave, space;
+paragraph_text = paragraph_starter, [paragraph_rest];
+paragraph = {inline_mech_code | inline_code | paragraph_text}, [newline], {whitespace};
+unordered_list = {list_item}, [newline], {whitespace};
+list_item = dash, space, paragraph, [newline];
+formatted_text = {paragraph_rest | newline};
+code_block = grave, grave, grave, newline, formatted_text, grave, grave, grave, newline, {whitespace};
 ```
 
 ##MechDown
 ```ebnf
+inline_mech_code = left_bracket, left_bracket, expression, right_bracket, right_bracket, [space];
+mech_code_block = grave, grave, grave, "mech", [text], newline, block, grave, grave, grave, newline, {whitespace};
 ```
-
 
 ##Start
 ```ebnf
