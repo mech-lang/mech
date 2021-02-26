@@ -102,7 +102,7 @@ data = table | identifier , {index};
 ```ebnf
 table = hashtag, identifier;
 binding = identifier, ": ", empty | expression | identifier | constant, space, [comma], space;
-function_binding = indentifier, colon, space, empty | expression | identifier | constant, space, [comma], space;
+function_binding = identifier, colon, space, empty | expression | identifier | constant, space, [comma], space;
 table_column = {space | tab} , true_literal | false_literal | empty | data | expression | rational_number | number_literal | quantity, [comma], {space| tab};
 table_row = {space | tab}, {table_column}, [semicolon], [newline];
 attribute = identifier, space, [comma], space;
@@ -137,18 +137,48 @@ statements = table_define | variable_define | split_data | join_data | whenever_
 ###Expression
 
 ####Math Expressions
+```ebnf
+parenthetical_expression = left_parenthesis, l0, right_parenthesis;
+negation = dash, data | constant;
+function = identifier, left_parenthesis, {function_binding}, right_parenthesis;
+matrix_multiply = "**";
+add = "+";
+subtract = "-";
+multiply = "*";
+divide = "/";
+exponent = "^";
+range_op = ":";
+l0 = l1, {l0_infix};
+l0_infix = space, range_op, space, l1;
+l1 = l2, {l1_infix};
+l1_infix = space, add | subtract, space, l2;
+l2 = l3, {l2_infix};
+l2_infix = space, multiply | divide | matrix_multiply, space, l3;
+l3 = l4, {l3_infix};
+l3_infix = space, exponent, space, l4;
+l4 = l5, {l4_infix};
+l4_infix = space, and | or, space, l5;
+l5 = l6, {l5_infix};
+l5_infix = space, not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than, space, l6;
+l6 = empty | true_literal | false_literal | anonymous_table | function | data | string | rational_number | number_literal | quantity |negation | parenthetical_expression;
+math_expression = l0;
+```
 
 ####Filter Expressions
+```ebnf
 not_equal = "!=";
 equal_to = "==";
 geater_than = ">"
 less_than = "<";
 greater_than_equal = ">=";
 less_than_equal = "<=";
+```
 
 ####Logic Expressions
+```ebnf
 or = "|";
 and = "&";
+```
 
 ####Other Expressions
 ```ebnf
