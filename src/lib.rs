@@ -15,7 +15,6 @@ extern crate seahash;
 mod database;
 mod runtime;
 mod table;
-mod indexes;
 mod operations;
 mod quantities;
 mod errors;
