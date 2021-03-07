@@ -110,11 +110,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   };
 
   if *in_arg_name == *ROW {
-    unsafe {
-      (*out.table).rows = vi.rows();
-      (*out.table).columns = 1;
-      (*out.table).data.resize(vi.rows(), 0);
-    }
+    unsafe { (*out.table).resize(vi.rows(), 1); }
     for i in 1..=rows {
       let mut flag: bool = false;
       for j in 1..=cols {
@@ -129,11 +125,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
       }
     }
   } else if *in_arg_name == *COLUMN {
-    unsafe {
-      (*out.table).rows = 1;
-      (*out.table).columns = cols;
-      (*out.table).data.resize(cols, 0);
-    }
+    unsafe { (*out.table).resize(1, cols); }
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = false;
       for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -148,11 +140,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
       }
     }      
   } else if *in_arg_name == *TABLE {
-    unsafe {
-      (*out.table).rows = 1;
-      (*out.table).columns = 1;
-      (*out.table).data.resize(1, 0);
-    }
+    unsafe { (*out.table).resize(1, 1); }
     let mut flag: bool = false;
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -184,11 +172,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   };
 
   if *in_arg_name == *ROW {
-    unsafe {
-      (*out.table).rows = vi.rows();
-      (*out.table).columns = 1;
-      (*out.table).data.resize(vi.rows(), 0);
-    }
+    unsafe { (*out.table).resize(vi.rows(), 1); }
     for i in 1..=rows {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=cols {
@@ -207,11 +191,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }
   } else if *in_arg_name == *COLUMN {
-    unsafe {
-      (*out.table).rows = 1;
-      (*out.table).columns = cols;
-      (*out.table).data.resize(cols, 0);
-    }
+    unsafe { (*out.table).resize(1, cols); }
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut sum: Value = Value::from_u64(0);
       for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -230,11 +210,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }      
   } else if *in_arg_name == *TABLE {
-    unsafe {
-      (*out.table).rows = 1;
-      (*out.table).columns = 1;
-      (*out.table).data.resize(1, 0);
-    }
+    unsafe { (*out.table).resize(1, 1); }
     let mut sum: Value = Value::from_u64(0);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -296,11 +272,8 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   }
 
   let base_rows = out.rows();
-  unsafe {
-    (*out.table).rows = out_rows + out.rows();
-    (*out.table).columns = out_columns;
-    (*out.table).data.resize(out.rows() * out_columns, 0);
-  } 
+  
+  unsafe { (*out.table).resize(out_rows + out.rows(), out_columns); }
 
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
@@ -440,13 +413,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     out_columns += vi_columns;
 
   }
-
-  unsafe {
-    (*out.table).rows = out_rows;
-    (*out.table).columns = out_columns;
-    (*out.table).data.resize(out_rows * out_columns, 0);
-  } 
-  
+  unsafe { (*out.table).resize(out_rows, out_columns); }
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
       IndexIterator::Range(_) => vi.columns(),
@@ -532,12 +499,7 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
     }
     out_rows += vi.rows();
   }
-
-  unsafe {
-    (*out.table).rows = out_rows;
-    (*out.table).columns = out_columns;
-    (*out.table).data.resize(out_rows * out_columns, 0);
-  }
+  unsafe { (*out.table).resize(out_rows, out_columns); }
   for (_, vi) in arguments {
     for (i,k) in (1..=out_columns).zip(vi.column_iter.clone()) {
       // Add alias to column if it's there
@@ -583,9 +545,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
   let range = end - start;
   
   unsafe{
-    (*out.table).rows = range+1;
-    (*out.table).columns = 1;
-    (*out.table).data.resize(range+1, 0);
+    (*out.table).resize(range+1, 1);
     let mut j = 1;
     for i in start..=end {
       (*out.table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
@@ -649,11 +609,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
         )
       } else if equal_dimensions {
-        unsafe {
-          (*out.table).rows = lhs_rows_count;
-          (*out.table).columns = lhs_columns_count;
-          (*out.table).data.resize(lhs_rows_count * lhs_columns_count, 0);
-        }
+        unsafe { (*out.table).resize(lhs_rows_count, lhs_columns_count); }
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_vi.columns()),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -663,11 +619,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
         )
       } else if rhs_scalar {
-        unsafe {
-          (*out.table).rows = lhs_rows_count;
-          (*out.table).columns = lhs_columns_count;
-          (*out.table).data.resize(lhs_rows_count * lhs_columns_count, 0);
-        }
+        unsafe { (*out.table).resize(lhs_rows_count, lhs_columns_count); }
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_columns_count),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -680,11 +632,7 @@ macro_rules! binary_infix {
           },
         )
       } else {
-        unsafe {
-          (*out.table).rows = rhs_rows_count;
-          (*out.table).columns = rhs_columns_count;
-          (*out.table).data.resize(rhs_rows_count * rhs_columns_count, 0);
-        }
+        unsafe { (*out.table).resize(rhs_rows_count, rhs_columns_count); }
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),1),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -721,6 +669,7 @@ macro_rules! binary_infix {
           match (v1, v2)
           {
             (lhs_value, rhs_value) => {
+              println!("{:?} * {:?}", lhs_value, rhs_value);
               match lhs_value.$op(rhs_value) {
                 Ok(result) => {
                   (*out.table).set_unchecked(o1, o2, result);
