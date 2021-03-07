@@ -422,6 +422,7 @@ pub struct Table {
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<usize>, // Each entry is a memory address into the store
+  pub change_mask: Vec<bool>,
 }
 
 impl Table {
@@ -433,6 +434,7 @@ impl Table {
       rows,
       columns,
       data: vec![0; rows*columns], // Initialize with zeros, indicating Value::Empty (always the zeroth element of the store)
+      change_mask: vec![false;rows*columns],
     }
   }
 
@@ -449,6 +451,15 @@ impl Table {
     self.rows = 0;
     self.columns = 0;
     self.data.clear();
+    self.change_mask.clear();
+  }
+
+  // Resize the table
+  pub fn resize(&mut self, rows: usize, columns: usize) {
+    self.rows = rows;
+    self.columns = columns;
+    self.data.resize(rows * columns, 0);
+    self.change_mask.resize(rows * columns, false);
   }
 
   // Transform a (row, column) into a linear address into the data. If it's out of range, return None
@@ -536,6 +547,7 @@ impl Table {
     let old_address = self.data[ix];
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
     if store.data[old_address] != value {
+      self.change_mask[ix] = true;
       store.changed = true;
       store.dereference(old_address);
       let new_address = store.intern(value);
@@ -548,6 +560,7 @@ impl Table {
     let old_address = self.data[ix];
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
     if store.data[old_address] != value {
+      self.change_mask[ix] = true;
       store.changed = true;
       store.dereference(old_address);
       let new_address = store.intern(value);
