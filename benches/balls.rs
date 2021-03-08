@@ -311,20 +311,4 @@ fn balls_100_000(b:&mut Bencher){
 
 }
 
-#[bench]
-fn balls_1_000_000(b:&mut Bencher){
-
-  let mut core = init(1000000);
-  let time_timer = hash_string("time/timer");
-  let ticks = hash_string("ticks");
-  let txn = Transaction{
-  changes: vec![
-    Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Alias(ticks), Value::from_u64(1 as u64))]}
-  ]};
-  b.iter(|| {
-    core.process_transaction(&txn);
-  });
-
-}
-
 
