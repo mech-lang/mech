@@ -268,11 +268,7 @@ impl Block {
                 let (_, vi) = &vis[0];
                 let vi_table = unsafe{&(*vi.table)};
                                 
-                unsafe{
-                  (*out_vi.table).rows = vi.rows();
-                  (*out_vi.table).columns = 1;
-                  (*out_vi.table).data.resize(vi.rows(), 0);
-                }
+                unsafe{ (*out_vi.table).resize(vi.rows(), 1); }
                 for row in vi.row_iter.clone() {
                   let old_table_id = unsafe{(*vi.table).id};
                   let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
