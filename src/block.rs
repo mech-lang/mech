@@ -1,4 +1,5 @@
-use table::{Table, TableId, Index, Value, ValueMethods};
+use table::{Table, TableId, Index};
+use value::{Value, ValueMethods};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
@@ -257,8 +258,8 @@ impl Block {
             let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
             vis.push((arg.clone(),vi));
           }
-          let (out_table,out_row,out_col) = out;
-          let mut out_vi = resolve_subscript(*out_table,*out_row,*out_col,&mut self.tables, &database);
+          let (out_table_id,out_row,out_column) = out;
+          let mut out_vi = resolve_subscript(*out_table_id,*out_row,*out_column,&mut self.tables, &database);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
               mech_fn(&vis, &mut out_vi);

@@ -20,13 +20,15 @@ mod quantities;
 mod errors;
 mod core;
 mod block;
+mod value;
 
 pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, BlockState, Transformation, IndexRepeater, IndexIterator, Register, ValueIterator};
-pub use self::table::{Table, TableId, Index, Value, ValueMethods, ValueType, NumberLiteralKind, NumberLiteral};
+pub use self::table::{Table, TableId, Index};
 pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
 pub use self::errors::{Error, ErrorType};
+pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
 
 pub fn hash_string(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF

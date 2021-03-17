@@ -5,7 +5,8 @@
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
-use table::{Table, Value, ValueMethods, TableId, Index};
+use table::{Table, TableId, Index};
+use value::{Value, ValueMethods};
 use runtime::Runtime;
 use block::{Block, IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
 use database::Database;

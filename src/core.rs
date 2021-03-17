@@ -1,7 +1,8 @@
 use block::{Block, Register, Error};
 use database::{Database, Change, Transaction};
 use runtime::Runtime;
-use table::{Table, Value, Index, TableId};
+use table::{Table, Index, TableId};
+use value::Value;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
