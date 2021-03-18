@@ -7,4 +7,3 @@ test:cargo:
   - rustc --version && cargo --version
   - rustup component add rust-src
   - cargo test --all
-  - cargo bench --all
