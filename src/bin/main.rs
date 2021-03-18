@@ -10,6 +10,7 @@ use mech_core::hash_string;
 use mech_core::Core;
 use mech_core::{make_quantity, Quantity, ValueMethods, ToQuantity, QuantityMath};
 use std::time::{Duration, SystemTime};
+use std::mem;
 
 use std::rc::Rc;
 
@@ -29,16 +30,16 @@ Update the block positions on each tick of the timer
     #ball.y := #ball.y + #ball.vy
     #ball.vy := #ball.vy + #gravity"#);*/
 
-
+// Some primitives
   let input = String::from(r#"
-# Sorting
-
-## Selection Sort
-
-Here is the entry point for the selection sort algorithm
-
-  #sort/selection-sort = [|unsorted    sorted start end|
-                           [5 3 7 1 4] _      1     5  ]"#);
+block
+  #x = [1 2 3; 4 5 6; 7 8 9]
+  
+block
+  #y = #x * 2
+  
+block
+  #x{2,1} := 10"#);
 
   
   //let value = Value::Number(make_quantity(780000,-4,0));
@@ -52,14 +53,17 @@ Here is the entry point for the selection sort algorithm
 
   //println!("{:?}", programs);
   //println!("{:?}", compiler.blocks);
-  println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.syntax_tree);
+  //println!("{:?}", compiler.parse_tree);
+  //println!("{:?}", compiler.syntax_tree);
   core.runtime.register_blocks(compiler.blocks);
   core.step();
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.unparsed);
   //println!("{:?}", compiler.syntax_tree);
 
+  
+
+  /*
   let x: u64 = 37678279552074374;
   println!("{:064b}", x);
   println!("{:064b}", hash_string("slider"));
@@ -75,8 +79,18 @@ Here is the entry point for the selection sort algorithm
   let txn = Transaction{changes: vec![change]};
 
   core.process_transaction(&txn);
+*//*
+  let x = core.get_table(hash_string("x")).unwrap();
+  let y = core.get_table(hash_string("y")).unwrap();
 
-  println!("{:?}", core);
+  println!("{:?}", x);
+  
+  println!("{:?}", x.transaction_boundaries);
+  println!("{:?}", x.history);
+
+  println!("{:?}", y);
+  println!("{:?}", y.transaction_boundaries);
+  println!("{:?}", y.history);*/
   //core.step(100000);
   
   /*
