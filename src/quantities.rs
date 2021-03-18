@@ -14,12 +14,12 @@ use errors::{Error, ErrorType};
 #[cfg(feature = "no-std")] use libm::F64Ext;
 use num_traits::Float;
 
-const MANTISSA_MASK:u64 = (((1 as u64) << 49) as u64 - 1); // 49 bits at the end
+const MANTISSA_MASK:u64 = ((1 as u64) << 49) as u64 - 1; // 49 bits at the end
 const META_MASK:u64 = ((1 << 15) as u64 - 1) << 49; // 15 1s at the front
 const OVERFLOW_MASK:u64 = ((1 << 16) as u64 - 1) << 48; // 15 1s at the front
 const RANGE_MASK:u64 = ((1 << 7) as u64 - 1) << 49;
-const SHIFTED_RANGE_DOMAIN_MASK:u64 = ((1 << 7) as u64 - 1);
-const SHIFTED_FILL:u64 = ((((1 as u64) << 57) as u64 - 1) << 7);
+const SHIFTED_RANGE_DOMAIN_MASK:u64 = (1 << 7) as u64 - 1;
+const SHIFTED_FILL:u64 = (((1 as u64) << 57) as u64 - 1) << 7;
 const SIGN_MASK:u64 = 1 << 48;
 
 pub type Quantity = u64;
