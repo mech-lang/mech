@@ -8,7 +8,8 @@
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
 use runtime::Runtime;
-use block::{Block, IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
+use block::{Block};
+use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
 use database::Database;
 use errors::ErrorType;
 use std::rc::Rc;

@@ -21,9 +21,11 @@ mod errors;
 mod core;
 mod block;
 mod value;
+mod index;
 
 pub use self::database::{Database, Store, Transaction, Change};
-pub use self::block::{Block, BlockState, Transformation, IndexRepeater, IndexIterator, Register, ValueIterator};
+pub use self::block::{Block, BlockState, Transformation, Register, };
+pub use self::index::{IndexRepeater, IndexIterator, ValueIterator};
 pub use self::table::{Table, TableId, Index};
 pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
