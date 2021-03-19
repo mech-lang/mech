@@ -671,7 +671,6 @@ macro_rules! binary_infix {
           match (v1, v2)
           {
             (lhs_value, rhs_value) => {
-              println!("{:?} * {:?}", lhs_value, rhs_value);
               match lhs_value.$op(rhs_value) {
                 Ok(result) => {
                   (*out.table).set_unchecked(o1, o2, result);
