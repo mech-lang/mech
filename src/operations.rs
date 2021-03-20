@@ -38,14 +38,20 @@ pub fn resolve_subscript(
     TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
     TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
   };
+
   unsafe{
-    let (reference, _) = (*table).get_unchecked(1,1);
-    if (*table).rows == 1 && (*table).columns == 1 && reference.is_reference() {
+    if (*table).rows == 1 && (*table).columns == 1 {
       match (row_index, column_index) {
         (Index::All, Index::All) => (),
         _ => {
-          let reference = reference.as_reference().unwrap();
-          table = db.tables.get_mut(&reference).unwrap() as *mut Table;
+          let (reference, _) = (*table).get_unchecked(1,1);
+          match reference.as_reference() {
+            Some(table_reference) => {
+              table = db.tables.get_mut(&table_reference).unwrap() as *mut Table;
+            }
+            _ => (),
+          }
+          
         }
       }
     }
