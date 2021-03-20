@@ -61,7 +61,7 @@ impl Iterator for ValueIterator {
   fn next(&mut self) -> Option<Value> {
     match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
-        let value = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
+        let (value, _) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
         Some(value)
       },     
       _ => None,
@@ -136,7 +136,7 @@ impl TableIterator {
     unsafe{
       let max = (*self.table).data.len();
       for ix in 1..=max {
-        let val = (*self.table).get_unchecked_linear(ix);
+        let (val, _) = (*self.table).get_unchecked_linear(ix);
         if val.as_bool() == Some(true) || val.is_number() {
           len += 1;
         }

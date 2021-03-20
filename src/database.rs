@@ -42,7 +42,7 @@ impl Store {
       free: vec![0; capacity],
       data_end: 1,
       reference_counts: rc,
-      data: vec![Value::from_u64(0); capacity],
+      data: vec![Value::empty(); capacity],
       column_alias_to_index: HashMap::new(),
       column_index_to_alias: HashMap::new(),
       strings: HashMap::new(),

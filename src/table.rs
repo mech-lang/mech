@@ -98,6 +98,7 @@ pub struct Table {
   pub rows: usize,
   pub columns: usize,
   pub data: Vec<usize>, // Each entry is a memory address into the store
+  pub changed: Vec<bool>,
   pub transaction_boundaries: Vec<usize>,
   pub history: Vec<(Index, Index, Value)>,
 }
@@ -110,7 +111,8 @@ impl Table {
       store,
       rows,
       columns,
-      data: vec![0; rows*columns], // Initialize with zeros, indicating Value::Empty (always the zeroth element of the store)
+      data: vec![0; rows*columns], // Initialize with address zero, indicating Value::Empty (always the zeroth element of the store)
+      changed: vec![false; rows*columns],
       transaction_boundaries: Vec::new(),
       history: Vec::new(),
     }
@@ -129,6 +131,7 @@ impl Table {
     self.rows = 0;
     self.columns = 0;
     self.data.clear();
+    self.changed.clear();
   }
 
   // Resize the table
@@ -136,6 +139,13 @@ impl Table {
     self.rows = rows;
     self.columns = columns;
     self.data.resize(rows * columns, 0);
+    self.changed.resize(rows * columns, false);
+  }
+
+  pub fn reset_changed(&mut self) {
+    for ix in 0..self.changed.len() {
+      self.changed[ix] = false;
+    }
   }
 
   // Transform a (row, column) into a linear address into the data. If it's out of range, return None
@@ -191,17 +201,18 @@ impl Table {
     self.data[ix]
   }  
   
-  // Get the value in the store at memory address (row, column)
-  pub fn get_unchecked(&self, row: usize, column: usize) -> Value {
+  // Get the value in the store at memory address (row, column) and whether it has been changed
+  pub fn get_unchecked(&self, row: usize, column: usize) -> (Value, bool) {
     let ix = self.index_unchecked(row, column);
     let address = self.data[ix];
-    self.store.data[address]
+    (self.store.data[address], self.changed[ix])
   }
 
-  // Get the value in the store at memory address (ix)
-  pub fn get_unchecked_linear(&self, ix: usize) -> Value {
+  // Get the value in the store at memory address (ix) and whether it has been changed
+  pub fn get_unchecked_linear(&self, ix: usize) -> (Value, bool) {
     let address = self.data[ix-1];
-    self.store.data[address]
+    (self.store.data[address], self.changed[ix-1])
+    
   }
 
   // Get the value in the store at memory address (row, column)
@@ -227,6 +238,7 @@ impl Table {
       store.dereference(old_address);
       let new_address = store.intern(value);
       self.data[ix] = new_address;
+      self.changed[ix] = true;
       self.history.push((*row,*column,value));
     }
   }
@@ -239,8 +251,9 @@ impl Table {
       store.changed = true;
       store.dereference(old_address);
       let new_address = store.intern(value);
-      self.history.push((Index::Index(row),Index::Index(column),value));
       self.data[ix] = new_address;
+      self.changed[ix] = true;
+      self.history.push((Index::Index(row),Index::Index(column),value));
     }
   }
 
@@ -399,7 +412,7 @@ impl fmt::Debug for Table {
       }
     }
     print_bottom_border(columns, cell_width + 2, f)?;
-    
+    write!(f, "{:?}", self.changed)?;
     Ok(())
   }
 }

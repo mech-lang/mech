@@ -133,6 +133,11 @@ impl Core {
     }
   }
 
+  pub fn get_table_by_name(&self, table_name: &str) -> Option<Table> {
+    let table_id = hash_string(table_name);
+    self.get_table(table_id)
+  }
+
   pub fn clear_table(&self, table_id: u64) {
     match self.runtime.database.borrow_mut().tables.get_mut(&table_id) {
       Some(table) => table.clear(),

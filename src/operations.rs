@@ -39,11 +39,12 @@ pub fn resolve_subscript(
     TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
   };
   unsafe{
-    if (*table).rows == 1 && (*table).columns == 1 && (*table).get_unchecked(1,1).is_reference() {
+    let (reference, _) = (*table).get_unchecked(1,1);
+    if (*table).rows == 1 && (*table).columns == 1 && reference.is_reference() {
       match (row_index, column_index) {
         (Index::All, Index::All) => (),
         _ => {
-          let reference = (*table).get_unchecked(1,1).as_reference().unwrap();
+          let reference = reference.as_reference().unwrap();
           table = db.tables.get_mut(&reference).unwrap() as *mut Table;
         }
       }
@@ -658,19 +659,19 @@ macro_rules! binary_infix {
           let r2 = rcix.next().unwrap().unwrap();
           let o1 = out_rix.next().unwrap().unwrap();
           let o2 = out_cix.next().unwrap().unwrap();
-          let v1 = if l2 == 0 {
+          let (lhs_value, lhs_changed) = if l2 == 0 {
             (*lhs_vi.table).get_unchecked_linear(l1)
           } else {
             (*lhs_vi.table).get_unchecked(l1,l2)
           };
-          let v2 = if r2 == 0 {
+          let (rhs_value, rhs_changed) = if r2 == 0 {
             (*rhs_vi.table).get_unchecked_linear(r1)
           } else {
             (*rhs_vi.table).get_unchecked(r1,r2)
           };
-          match (v1, v2)
+          match (lhs_value, rhs_value, lhs_changed, rhs_changed)
           {
-            (lhs_value, rhs_value) => {
+            (lhs_value, rhs_value, true, true) => {
               match lhs_value.$op(rhs_value) {
                 Ok(result) => {
                   (*out.table).set_unchecked(o1, o2, result);

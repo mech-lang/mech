@@ -234,8 +234,8 @@ impl Block {
               unsafe {
                 for i in 1..=(*table).rows {
                   for j in 1..=(*table).columns {
-                    let value = (*table).get_unchecked(i,j);
-                    match value.as_bool() {
+                    let (val, _) = (*table).get_unchecked(i,j);
+                    match val.as_bool() {
                       Some(true) => flag = true,
                       _ => (),
                     } 
@@ -307,7 +307,8 @@ impl Block {
                         }
                         _ => (),
                       }
-                      (*new_global_copy_table).set_unchecked(1,i, vi_table.get_unchecked(row.unwrap(),i));
+                      let (val, _) = vi_table.get_unchecked(row.unwrap(),i);
+                      (*new_global_copy_table).set_unchecked(1,i, val);
                     }
                   }
                 }
