@@ -174,6 +174,7 @@ impl Block {
             TableId::Global(id) => {
               for register in registers {
                 self.input.insert(register);
+                self.register_map.insert(register.hash(), register);
               }
             }
             _ => (),
@@ -182,7 +183,11 @@ impl Block {
         Transformation::Function{name, ref arguments, out} => {
           let (out_id, row, column) = out;
           match out_id {
-            TableId::Global(id) => {self.output.insert(Register{table_id: out_id, row, column}.hash());},
+            TableId::Global(id) => {
+              let register = Register{table_id: out_id, row, column};
+              self.output.insert(register.hash());
+              self.register_map.insert(register.hash(), register);
+            },
             _ => (),
           }
           for (_, table_id, row, column) in arguments {
