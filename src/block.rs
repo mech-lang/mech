@@ -174,7 +174,6 @@ impl Block {
             TableId::Global(id) => {
               for register in registers {
                 self.input.insert(register);
-                self.register_map.insert(register.hash(), register);
               }
             }
             _ => (),
