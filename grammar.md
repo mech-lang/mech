@@ -54,12 +54,15 @@ grave = "`";
 digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
 digit                = "0" | ?digit excluding zero?
 natural number = ?digit excluding zero?, { digit } ;
+alpha = ?letters of alphabet?;
+hex_digit = {digit | ?letter A-F? };
+oct_digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "0";
 ```
 
 ##The Basics
 ```ebnf
-word ***
-number ***
+word = {alpha};
+number = {digit};
 punctuation = period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis |  left_angle | right_angle | left_brace | right_brace;
 symbol = ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore;
 single_text = word | space | punctuation | symbol;
@@ -70,14 +73,14 @@ identifier = word , {word | number | dash | slash};
 true_literal = "true";
 false_literal = "false";
 whitespace =  {" "}, newline;
-floating_point ***
+floating_point = "." , {digit}; 
 quantity = number , [floating_point] , [identifier];
 rational_number = quantity | number_literal, "/", quantity | number_literal
 number_literal = decimal_literal | hexadecimal_literal | octal_literal | binary_literal;
-decimal_literal ***
-hexadecimal_literal ***
-octal_literal ***
-binary_literal ***
+decimal_literal = "0d" , {digit};
+hexadecimal_literal = "0x" , {hex_digit};
+octal_literal = "0o", {oct_digit};
+binary_literal = "0b", {"1" | "0"};
 constant = string | quantity;
 empty = {"_"};
 newline = new_line_char | carriage_newline;
