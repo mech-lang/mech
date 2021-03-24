@@ -162,10 +162,9 @@ impl fmt::Debug for Store {
 // in the database.
 pub struct Database {
   pub tables: HashMap<u64, Table>,
-  pub changed_this_round: HashSet<u64>,
+  pub changed_this_round: HashSet<Register>,
   pub store: Arc<Store>,
   pub transactions: Vec<Transaction>,
-  pub register_map: HashMap<u64, Register>,
 }
 
 impl Database {
@@ -176,7 +175,6 @@ impl Database {
       changed_this_round: HashSet::new(),
       store: Arc::new(Store::new(capacity)),
       transactions: Vec::with_capacity(100_000),
-      register_map: HashMap::new(),
     }
   }
 
@@ -192,8 +190,7 @@ impl Database {
             },
             None => {
               let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
-              self.changed_this_round.insert(register.hash());
-              self.register_map.insert(register.hash(), register);
+              self.changed_this_round.insert(register);
               self.tables.insert(*table_id, Table::new(
                 *table_id, 
                 *rows, 
@@ -208,8 +205,7 @@ impl Database {
               store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
               store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
               let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
-              self.changed_this_round.insert(register.hash());
-              self.register_map.insert(register.hash(), register);
+              self.changed_this_round.insert(register);
             }
             _ => (),
           }
@@ -222,7 +218,7 @@ impl Database {
                 table.set(row, column, *value);
                 // Mark the table as updated
                 let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: *column};
-                self.changed_this_round.insert(register.hash());
+                self.changed_this_round.insert(register);
               }
             },
             None => {
@@ -243,7 +239,7 @@ impl fmt::Debug for Database {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "changed this round: \n")?;
     for changed in self.changed_this_round.iter() {
-      write!(f, "       {}\n", humanize(changed))?;
+      write!(f, "       {:?}\n", changed)?;
     }
     write!(f,"{:?}", self.store);
     write!(f, "tables: \n")?;

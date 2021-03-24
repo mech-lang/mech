@@ -99,7 +99,8 @@ impl Core {
     for change in &txn.changes {
       match change {
         Change::NewTable{table_id, rows, columns} => {
-          self.runtime.output.insert(Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All}.hash());
+          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
+          self.runtime.output.insert(register);
         }
         _ => (),
       }

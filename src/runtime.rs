@@ -33,14 +33,14 @@ pub struct Runtime {
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
   pub errors: Vec<Error>,
-  pub output_to_block:  HashMap<u64,HashSet<u64>>,
-  pub input_to_block:  HashMap<u64,HashSet<u64>>,
-  pub changed_this_round: HashSet<u64>,
-  pub aggregate_changed_this_round: HashSet<u64>,
-  pub defined_tables: HashSet<u64>,
-  pub needed_tables: HashSet<u64>,
-  pub input: HashSet<u64>,
-  pub output: HashSet<u64>,
+  pub output_to_block:  HashMap<Register,HashSet<u64>>,
+  pub input_to_block:  HashMap<Register,HashSet<u64>>,
+  pub changed_this_round: HashSet<Register>,
+  pub aggregate_changed_this_round: HashSet<Register>,
+  pub defined_registers: HashSet<Register>,
+  pub needed_registers: HashSet<Register>,
+  pub input: HashSet<Register>,
+  pub output: HashSet<Register>,
   pub functions: HashMap<u64, Option<MechFunction>>,
 }
 
@@ -57,8 +57,8 @@ impl Runtime {
       input_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), 
       aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
-      defined_tables: HashSet::new(),
-      needed_tables: HashSet::new(),
+      defined_registers: HashSet::new(),
+      needed_registers: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
       functions: HashMap::new(),
@@ -74,6 +74,7 @@ impl Runtime {
   }
 
   pub fn run_network(&mut self) -> Result<(), Error> {   
+    println!("RUNNING NETWORK----------------------------------");
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
     
@@ -88,6 +89,7 @@ impl Runtime {
 
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
+        println!("Solving: {:?}", humanize(&block_id));
         let mut block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
@@ -220,11 +222,11 @@ impl Runtime {
     }
 
     // Mark ready registers
-    let ready: HashSet<u64> = block.input.intersection(&self.output).cloned().collect();
-    block.ready.extend(&ready);
+    let ready: HashSet<Register> = block.input.intersection(&self.output).cloned().collect();
+    block.ready.extend(ready);
 
-    let ready: HashSet<u64> = block.output_dependencies.intersection(&self.output).cloned().collect();
-    block.output_dependencies_ready.extend(&ready);
+    let ready: HashSet<Register> = block.output_dependencies.intersection(&self.output).cloned().collect();
+    block.output_dependencies_ready.extend(ready);
 
     // Get the list of tables defined by the block
     for (_, tfms) in &block.transformations {
@@ -232,8 +234,7 @@ impl Runtime {
         match tfm {
           Transformation::NewTable{table_id, ..} => {
             let register = Register{table_id: *table_id, row: Index::All, column: Index::All};
-            self.defined_tables.insert(register.hash());
-            self.database.borrow_mut().register_map.insert(register.hash(), register);
+            self.defined_registers.insert(register);
           }
           _ => (),
         }
@@ -241,12 +242,8 @@ impl Runtime {
     }
 
     // Keep track of needed tables
-    self.needed_tables.extend(&block.input);
-    self.needed_tables.extend(&block.output_dependencies);
-    
-    for (k,v) in block.register_map.iter() {
-      self.database.borrow_mut().register_map.insert(*k,v.clone());
-    }    
+    self.needed_registers.extend(&block.input);
+    self.needed_registers.extend(&block.output_dependencies);
 
     // Figure out if all the requirements are met
     for register in &block.input {
