@@ -7,16 +7,13 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
-use runtime::Runtime;
-use block::{Block};
 use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
 use database::Database;
-use errors::ErrorType;
-use std::rc::Rc;
+//use errors::ErrorType;
 use std::sync::Arc;
 use std::cell::RefCell;
 use hashbrown::HashMap;
-use ::{humanize, hash_string};
+use ::{hash_string};
 
 
 lazy_static! {
@@ -94,6 +91,7 @@ pub fn resolve_subscript(
   }};
   
   ValueIterator{
+    scope: table_id,
     table,
     row_index,
     column_index,
@@ -324,7 +322,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
-  let mut row = 0;
+  let row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -387,7 +385,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  let mut row = 0;
+  let row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -439,7 +437,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
             match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
               Some(alias) => {
                 let out_id = (*out.table).id;
-                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
+                let store = &mut *Arc::get_mut_unchecked(&mut (*out.table).store);
                 store.column_index_to_alias.entry((out_id,c)).or_insert(*alias);
                 store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
               }
@@ -519,7 +517,7 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
             match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
               Some(alias) => {
                 let out_id = (*out.table).id;
-                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*out.table).store)};
+                let store = &mut *Arc::get_mut_unchecked(&mut (*out.table).store);
                 store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
                 store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
               }

@@ -1,9 +1,6 @@
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Error, Register};
-use ::humanize;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
@@ -186,7 +183,8 @@ impl Database {
         Change::NewTable{table_id, rows, columns} => {
 
           match self.tables.get_mut(&table_id) {
-            Some(table) => {
+            Some(_table) => {
+              // TODO warn user the table exists already
             },
             None => {
               let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
@@ -226,7 +224,6 @@ impl Database {
             }
           }
         },
-        _ => (),
       }
     }
     Ok(())
@@ -243,7 +240,7 @@ impl fmt::Debug for Database {
     }
     write!(f,"{:?}", self.store);
     write!(f, "tables: \n")?;
-    for (id,table) in self.tables.iter() {
+    for (_id,table) in self.tables.iter() {
       write!(f, "{:?}\n", table)?;   
     }
     Ok(())

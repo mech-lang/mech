@@ -7,7 +7,6 @@ extern crate serde_derive;
 extern crate serde;
 extern crate num_traits;
 
-use std::hash::Hasher;
 #[macro_use]
 extern crate lazy_static;
 extern crate seahash;

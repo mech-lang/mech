@@ -3,7 +3,6 @@ use database::{Database, Change, Transaction};
 use runtime::Runtime;
 use table::{Table, Index, TableId};
 use value::Value;
-use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
@@ -28,7 +27,6 @@ use operations::{
   set_any
 };
 use ::hash_string;
-use operations::{MechFunction};
 
 // ## Core
 
@@ -45,7 +43,7 @@ pub struct Core {
 
 impl Core {
   pub fn new(capacity: usize) -> Core {
-    let mut database = Arc::new(RefCell::new(Database::new(capacity)));
+    let database = Arc::new(RefCell::new(Database::new(capacity)));
     Core {
       runtime: Runtime::new(database.clone(), 5),
       database,
@@ -57,7 +55,7 @@ impl Core {
       let name = "table/split";
       let name_hash = hash_string(&name);
       let mut db = self.runtime.database.borrow_mut();
-      let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       store.strings.insert(name_hash, name.to_string());
     }
     self.runtime.load_library_function("math/add",Some(math_add));

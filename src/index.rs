@@ -1,19 +1,12 @@
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
-use database::{Database, Store, Change, Transaction};
-use hashbrown::{HashMap, HashSet};
-use quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
-use operations::{MechFunction, resolve_subscript};
-use errors::{ErrorType};
-use std::cell::RefCell;
-use std::rc::Rc;
+use database::{Store};
+//use errors::{ErrorType};
 use std::sync::Arc;
-use std::hash::Hasher;
 use rust_core::fmt;
-use ::humanize;
-use ::hash_string;
 
 pub struct  ValueIterator {
+  pub scope: TableId,
   pub table: *mut Table,
   pub row_index: Index,
   pub column_index: Index,

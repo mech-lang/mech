@@ -1,14 +1,13 @@
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
+use index::ValueIterator;
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
-use quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
+use quantities::{QuantityMath, make_quantity};
 use operations::{MechFunction, resolve_subscript};
 use errors::{ErrorType};
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
-use std::hash::Hasher;
 use rust_core::fmt;
 use ::humanize;
 use ::hash_string;
@@ -33,7 +32,6 @@ pub struct Block {
   pub state: BlockState,
   pub text: String,
   pub name: String,
-  pub register_map: HashMap<u64, Register>,
   pub ready: HashSet<Register>,
   pub input: HashSet<Register>,
   pub output: HashSet<Register>,
@@ -54,7 +52,6 @@ impl Block {
       id: 0,
       text: String::new(),
       name: String::new(),
-      register_map: HashMap::new(),
       ready: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
@@ -190,11 +187,17 @@ impl Block {
           for (_, table_id, row, column) in arguments {
             match table_id {
               TableId::Global(id) => {
-                let rrow = match row {
-                  Index::Table{..} => Index::All,
-                  x => Index::All,
+                let row2: &Index = match row {
+                  Index::Table{..} => &Index::All,
+                  Index::None => &Index::All,
+                  x => x,
                 };
-                let register = Register{table_id: *table_id, row: rrow, column: *column};
+                let column2: &Index = match column {
+                  Index::Table{..} => &Index::All,
+                  Index::None => &Index::All,
+                  x => x,
+                };
+                let register = Register{table_id: *table_id, row: *row2, column: *column2};
                 self.input.insert(register);
               },
               _ => (),
@@ -254,16 +257,42 @@ impl Block {
           }
         },
         Transformation::Function{name, arguments, out} => {
-          let mut vis = vec![];
+          let mut vis: Vec<(u64, ValueIterator)> = vec![];
           for (arg, table, row, column) in arguments {
             let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
             vis.push((arg.clone(),vi));
           }
-          let (out_table_id,out_row,out_column) = out;
-          let mut out_vi = resolve_subscript(*out_table_id,*out_row,*out_column,&mut self.tables, &database);
+          let (out_table_id, out_row, out_column) = out;
+          let mut out_vi = resolve_subscript(*out_table_id, *out_row, *out_column, &mut self.tables, &database);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
+              let (before_out_rows, before_out_columns) = (out_vi.rows(),out_vi.columns());
+              // Apply the function
               mech_fn(&vis, &mut out_vi);
+              let (after_out_rows, after_out_columns) = (out_vi.rows(),out_vi.columns());
+
+              // Check to see if the output table has changed dimensions.
+              match (out_vi.scope, after_out_rows-before_out_rows, after_out_columns-before_out_columns)  {
+                // No change in dimensions
+                (TableId::Global(..), 0, 0) => (),
+                // At least one dimension has changed, adjust the output registers.
+                (TableId::Global(..), _, _) => {
+                  for i in before_out_rows..=after_out_rows {
+                    let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
+                    self.output.insert(register);
+                    for j in before_out_columns..=after_out_columns {
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
+                      self.output.insert(register);
+                    }
+                  }
+                  for j in before_out_columns..=after_out_columns {
+                    let register = Register{table_id: out_vi.scope, row: Index::All, column: Index::Index(j) };
+                    self.output.insert(register);
+                  }
+                  self.state = BlockState::Updated;
+                },
+                _ => (),
+              };
             }
             _ => {
               if *name == *TABLE_SPLIT {
@@ -302,7 +331,7 @@ impl Block {
                       match vi_table.store.column_index_to_alias.get(&(vi_table.id,i)) {
                         Some(alias) => {
                           let out_id = (*new_global_copy_table).id;
-                          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut (*new_global_copy_table).store)};
+                          let store = &mut *Arc::get_mut_unchecked(&mut (*new_global_copy_table).store);
                           store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
                           store.column_alias_to_index.entry((out_id,*alias)).or_insert(i);
                         }
@@ -324,7 +353,11 @@ impl Block {
         _ => (),
       }
     }
-    self.state = BlockState::Done;
+    // Set the state to done. If it's updated, that indicated a done as well
+    match self.state {
+      BlockState::Updated => (),
+      _ => self.state = BlockState::Done,
+    }
   }
 
   pub fn is_ready(&mut self) -> bool {
@@ -744,6 +777,7 @@ pub enum BlockState {
   Unsatisfied,  // One or more inputs are not satisfied
   Error,        // One or more errors exist on the block
   Disabled,     // The block is disabled will not execute if it otherwise would
+  Updated,      // One or more registers have been added to the input/output of the block
 }
 
 pub enum Error {

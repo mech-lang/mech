@@ -7,15 +7,8 @@
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use quantities::{Quantity, ToQuantity, QuantityMath};
-use database::{Store, Transaction};
-use hashbrown::hash_map::{HashMap, Entry};
-use serde::*;
-use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
-use std::rc::Rc;
-use std::sync::Arc;
-use std::cell::RefCell;
 use errors::{Error, ErrorType};
-use ::{humanize, hash_string};
+use ::{hash_string};
 
 // ## Value structs and enums
 

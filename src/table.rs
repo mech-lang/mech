@@ -6,17 +6,12 @@
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
-use quantities::{Quantity, ToQuantity, QuantityMath};
-use database::{Store, Transaction};
+use quantities::{QuantityMath};
+use database::{Store};
 use value::{Value, ValueMethods};
-use hashbrown::hash_map::{HashMap, Entry};
-use serde::*;
-use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap, SerializeStruct};
-use std::rc::Rc;
 use std::sync::Arc;
-use std::cell::RefCell;
-use errors::{Error, ErrorType};
-use ::{humanize, hash_string};
+//use errors::{Error, ErrorType};
+use ::{humanize};
 
 // ## Table
 
@@ -262,13 +257,7 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let cell_width = 7;
-    let rows = if self.rows > 150 {
-      10
-    } else {
-      self.rows
-    };
-    
+    let cell_width = 7;   
     let table_name = match self.store.strings.get(&self.id) {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
@@ -368,7 +357,7 @@ impl fmt::Debug for Table {
     // Print the rest of the rows
     if rows > 150 {
       write!(f, "│ ")?;
-      for j in 0..columns {
+      for _j in 0..columns {
         print_cell_contents(&"...".to_string(), cell_width, f)?;
         write!(f, " │ ")?;
       }

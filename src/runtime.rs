@@ -1,9 +1,8 @@
 use block::{Block, BlockState, Register, Error, Transformation};
 use ::{humanize, hash_string};
-use database::{Database, Transaction, Change, Store};
-use table::{Index, Table, TableId};
+use database::{Database};
+use table::{Index};
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
@@ -74,7 +73,6 @@ impl Runtime {
   }
 
   pub fn run_network(&mut self) -> Result<(), Error> {   
-    println!("RUNNING NETWORK----------------------------------");
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
     
@@ -89,10 +87,22 @@ impl Runtime {
 
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
-        println!("Solving: {:?}", humanize(&block_id));
         let mut block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
+        // If the block has been updated, then we need to update your compute graph
+        match block.state {
+          BlockState::Updated => {
+            // Keep track of which blocks produce which tables
+            for output_register in block.output.iter() {
+              let producers = self.output_to_block.entry(*output_register).or_insert(HashSet::new());
+              producers.insert(block.id);
+            }
+            self.output.extend(&block.output);
+            block.state = BlockState::Done;
+          }
+          _ => (),
+        }
         self.changed_this_round.extend(&block.output);
       }
 
@@ -182,7 +192,6 @@ impl Runtime {
   }
 
   pub fn register_block(&mut self, mut block: Block) {
-
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
       let listeners = self.input_to_block.entry(*input_register).or_insert(HashSet::new());
@@ -202,12 +211,16 @@ impl Runtime {
       block.state == BlockState::Ready;
     }
 
-    // Extend block strings
+    // Extend database strings
     {
       let mut db = self.database.borrow_mut();
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       for (k,v) in block.store.strings.iter() {
         store.strings.insert(*k,v.clone());
+      }       
+      let block_store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+      for (k,v) in store.strings.iter() {
+        block_store.strings.insert(*k,v.clone());
       } 
     }
 
@@ -248,7 +261,7 @@ impl Runtime {
     // Figure out if all the requirements are met
     for register in &block.input {
       match self.output.get(&register) {
-        Some(r) => {block.ready.insert(*register);},
+        Some(_r) => {block.ready.insert(*register);},
         _ => (),
       }
     }
@@ -273,7 +286,7 @@ impl fmt::Debug for Runtime {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "blocks: \n")?;
-    for (k,block) in self.blocks.iter() {
+    for (_k,block) in self.blocks.iter() {
       write!(f, "{:?}\n", block)?;
     }
     
