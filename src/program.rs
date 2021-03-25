@@ -210,11 +210,10 @@ impl Program {
     let mut changes = Vec::new();
 
     // Dedupe needed ids
-    let registers = self.mech.runtime.needed_tables.difference(&self.mech.runtime.defined_tables);
+    let registers = self.mech.runtime.needed_registers.difference(&self.mech.runtime.defined_registers);
     let mut needed_tables = HashSet::new();
-    for register_hash in registers {
+    for register in registers {
       let database = self.mech.runtime.database.borrow();
-      let register = database.register_map.get(&register_hash).unwrap();
       let needed_table_id = register.table_id.unwrap();
       needed_tables.insert(needed_table_id.clone());
     }
@@ -797,9 +796,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let block_count = program.mech.runtime.blocks.len();
             let trigger_machines = |p: &mut Program| {
               let database = p.mech.runtime.database.borrow();
-              for register_hash in &p.mech.runtime.aggregate_changed_this_round {
-                let register = database.register_map.get(&register_hash).unwrap();
-                match p.machines.get_mut(register_hash) {
+              for register in &p.mech.runtime.aggregate_changed_this_round {
+                match p.machines.get_mut(&register.hash()) {
                   // Invoke the machine!
                   Some(mut machine) => {
                     let table = database.tables.get(&register.table_id.unwrap()).unwrap();
@@ -836,9 +834,6 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   }
                   for (key, value) in miniblock.number_literals {
                     store.number_literals.insert(key, value.clone());
-                  }
-                  for (key, value) in miniblock.register_map {
-                    block.register_map.insert(key, value);
                   }
                   block.gen_id();
                   blocks.push(block);
