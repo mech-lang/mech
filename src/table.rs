@@ -262,16 +262,8 @@ impl fmt::Debug for Table {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
     };
-    let columns = if self.columns == 0 {
-      1
-    } else {{
-      self.columns
-    }};
-    let rows = if self.rows == 0 {
-      1
-    } else {{
-      self.rows
-    }};
+    let columns = self.columns;
+    let rows = self.rows;
     let table_header = format!("#{} ({} x {})", table_name, rows, columns);
     let header_width = table_header.len()+2;
 

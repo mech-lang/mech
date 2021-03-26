@@ -385,7 +385,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  let row = 0;
+  let mut row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;

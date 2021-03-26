@@ -101,6 +101,10 @@ impl Block {
                 let register = Register{table_id, row: Index::Index(i), column: Index::All};
                 self.output.insert(register);
               }
+              for i in 1..=rows * columns {
+                let register = Register{table_id, row: Index::Index(i), column: Index::None};
+                self.output.insert(register);
+              }
               let register = Register{table_id, row: Index::All, column: Index::All};
               self.output.insert(register);
             }
@@ -159,10 +163,16 @@ impl Block {
           }
         }
         Transformation::Set{table_id, row, column} => {
-          let register = Register{table_id: table_id, row: Index::All, column};
-          let register2 = Register{table_id: table_id, row: Index::All, column: Index::All};
+          let row = match row {
+            Index::Table(_) => Index::All,
+            x => x,
+          };
+          let column = match column {
+            Index::Table(_) => Index::All,
+            x => x,
+          };
+          let register = Register{table_id: table_id, row, column};
           self.output.insert(register);       
-          self.output.insert(register2);       
           self.output_dependencies.insert(register);          
         }
         Transformation::Whenever{table_id, row, column, registers} => {
@@ -270,29 +280,38 @@ impl Block {
               // Apply the function
               mech_fn(&vis, &mut out_vi);
               let (after_out_rows, after_out_columns) = (out_vi.rows(),out_vi.columns());
-
               // Check to see if the output table has changed dimensions.
-              match (out_vi.scope, after_out_rows-before_out_rows, after_out_columns-before_out_columns)  {
-                // No change in dimensions
-                (TableId::Global(..), 0, 0) => (),
-                // At least one dimension has changed, adjust the output registers.
-                (TableId::Global(..), _, _) => {
-                  for i in before_out_rows..=after_out_rows {
-                    let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
-                    self.output.insert(register);
+              if (after_out_rows != 0 && after_out_columns != 0) {
+                match (out_vi.scope, after_out_rows-before_out_rows, after_out_columns-before_out_columns)  {
+                  // No change in dimensions
+                  (TableId::Global(..), 0, 0) => (),
+                  // At least one dimension has changed, adjust the output registers.
+                  (TableId::Global(..), _, _) => {
+                    for i in before_out_rows..=after_out_rows {
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
+                      self.output.insert(register);
+                      for j in 1..=after_out_columns {
+                        let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
+                        self.output.insert(register);
+                      }
+                    }
                     for j in before_out_columns..=after_out_columns {
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
+                      let register = Register{table_id: out_vi.scope, row: Index::All, column: Index::Index(j) };
+                      self.output.insert(register);
+                      for i in 1..=after_out_rows {
+                        let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
+                        self.output.insert(register);
+                      }
+                    }
+                    for i in 1..=(out_vi.rows() * out_vi.columns()) {
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::None };
                       self.output.insert(register);
                     }
-                  }
-                  for j in before_out_columns..=after_out_columns {
-                    let register = Register{table_id: out_vi.scope, row: Index::All, column: Index::Index(j) };
-                    self.output.insert(register);
-                  }
-                  self.state = BlockState::Updated;
-                },
-                _ => (),
-              };
+                    self.state = BlockState::Updated;
+                  },
+                  _ => (),
+                };
+              }
             }
             _ => {
               if *name == *TABLE_SPLIT {
