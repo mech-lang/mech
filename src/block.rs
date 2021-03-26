@@ -101,11 +101,19 @@ impl Block {
                 let register = Register{table_id, row: Index::Index(i), column: Index::All};
                 self.output.insert(register);
               }
+              for i in 1..=rows {
+                for j in 1..=columns {
+                  let register = Register{table_id, row: Index::Index(i), column: Index::Index(j)};
+                  self.output.insert(register);
+                }
+              }
               for i in 1..=rows * columns {
                 let register = Register{table_id, row: Index::Index(i), column: Index::None};
                 self.output.insert(register);
               }
               let register = Register{table_id, row: Index::All, column: Index::All};
+              self.output.insert(register);
+              let register = Register{table_id, row: Index::All, column: Index::None};
               self.output.insert(register);
             }
             TableId::Local(id) => {
@@ -189,6 +197,14 @@ impl Block {
           let (out_id, row, column) = out;
           match out_id {
             TableId::Global(id) => {
+              let row = match row {
+                Index::Table(_) => Index::All,
+                x => x,
+              };
+              let column = match column {
+                Index::Table(_) => Index::All,
+                x => x,
+              };
               let register = Register{table_id: out_id, row, column};
               self.output.insert(register);
             },
@@ -319,6 +335,23 @@ impl Block {
                 let vi_table = unsafe{&(*vi.table)};
                                 
                 unsafe{ (*out_vi.table).resize(vi.rows(), 1); }
+                match out_vi.scope {
+                  TableId::Global(..) => {
+                    for i in 1..=out_vi.rows() {
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
+                      self.output.insert(register);
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(1) };
+                      self.output.insert(register);
+                    }
+                    for i in 1..=out_vi.rows() {
+                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::None };
+                      self.output.insert(register);
+                    }
+                    self.state = BlockState::Updated;
+                  },
+                  _ => (),
+                }
+
                 for row in vi.row_iter.clone() {
                   let old_table_id = unsafe{(*vi.table).id};
                   let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
