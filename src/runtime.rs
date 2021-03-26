@@ -75,6 +75,7 @@ impl Runtime {
   pub fn run_network(&mut self) -> Result<(), Error> {   
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
+    let mut changed_last_round = false;
     
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
@@ -158,8 +159,24 @@ impl Runtime {
       {
         let mut db = self.database.borrow_mut();
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+        // If the store wasn't changed and there are no more ready blocks, we're done.
         if !store.changed && self.ready_blocks.is_empty() {
           break;
+        // If the store wasn't changed for two consecutive rounds but there are still ready blocks, 
+        // this means they aren't doing any work and we're at a set point, so we're done.
+        } else if !store.changed && !changed_last_round {
+          for block_id in self.ready_blocks.iter() {
+            let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+            block.state = BlockState::Done;
+          }
+          break;
+        // If the store was changed, we did work this round
+        } else if store.changed {
+          changed_last_round = true;
+        // If the store didn't change we might be done for good, but we'll need to go one more round
+        // to find out for sure.
+        } else if !store.changed {
+          changed_last_round = false;
         }
       }
       recursion_ix += 1;
