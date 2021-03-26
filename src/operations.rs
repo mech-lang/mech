@@ -673,7 +673,6 @@ macro_rules! binary_infix {
           } else {
             (*rhs_vi.table).get_unchecked(r1,r2)
           };
-          println!("{:?} * {:?}", lhs_value, rhs_value);
           match (lhs_value, rhs_value, lhs_changed, rhs_changed)
           {
             (lhs_value, rhs_value, true, true) => {
