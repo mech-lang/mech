@@ -151,7 +151,7 @@ impl Runtime {
       // Break the loop if we hit the recursion limit
       } else if self.recursion_limit == recursion_ix {
         // TODO Emit a warning here
-        println!("Recursion limit reached");
+        println!("Recursion limit of {:?} reached", self.recursion_limit);
         break;
       }
       // Check if there were any updates to the store. If not, we are at a set point, and we are done.

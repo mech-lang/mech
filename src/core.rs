@@ -42,10 +42,10 @@ pub struct Core {
 }
 
 impl Core {
-  pub fn new(capacity: usize) -> Core {
+  pub fn new(capacity: usize, recursion_limit: u64) -> Core {
     let database = Arc::new(RefCell::new(Database::new(capacity)));
     Core {
-      runtime: Runtime::new(database.clone(), 5),
+      runtime: Runtime::new(database.clone(), recursion_limit),
       database,
     }
   }
