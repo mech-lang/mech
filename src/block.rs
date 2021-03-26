@@ -225,6 +225,13 @@ impl Block {
                 };
                 let register = Register{table_id: *table_id, row: *row2, column: *column2};
                 self.input.insert(register);
+                match (row2, column2) {
+                  (Index::All, Index::All) => {
+                    let register = Register{table_id: *table_id, row: Index::All, column: Index::None};
+                    self.input.insert(register);
+                  }
+                  _ => (),
+                }
               },
               _ => (),
             }
