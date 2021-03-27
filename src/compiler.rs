@@ -190,7 +190,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::InlineMechCode{children} => {write!(f,"InlineMechCode\n"); Some(children)},
     Node::MechCodeBlock{children} => {write!(f,"MechCodeBlock\n"); Some(children)},
     _ => {write!(f,"Unhandled Compiler Node"); None},
-  };  
+  };
   match children {
     Some(childs) => {
       for child in childs {
@@ -198,7 +198,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
       }
     },
     _ => (),
-  }    
+  }
 }
 
 pub fn spacer(width: usize, f: &mut fmt::Formatter) {
@@ -291,7 +291,7 @@ pub struct Compiler {
   pub variable_names: HashSet<u64>,
   pub parse_tree: parser::Node,
   pub syntax_tree: Node,
-  pub node_stack: Vec<Node>, 
+  pub node_stack: Vec<Node>,
   pub section: usize,
   pub program: usize,
   pub block: usize,
@@ -359,7 +359,7 @@ impl Compiler {
     self.errors.clear();
   }
 
-  pub fn compile_string(&mut self, input: String) -> Vec<Program> {   
+  pub fn compile_string(&mut self, input: String) -> Vec<Program> {
     self.text = input.clone();
     let mut parser = Parser::new();
     parser.parse(&input);
@@ -537,7 +537,7 @@ impl Compiler {
     let block = match node.clone() {
       Node::Fragment{children} |
       Node::Block{children} => {
-        
+
         let mut block = Block::new(100);
         let mut formatter = Formatter::new();
         block.text = formatter.format(&node, false);
@@ -553,7 +553,7 @@ impl Compiler {
         // Planner
         // ----------------------------------------------------------------------------------------------------------
         // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
-        
+
         for transformation_node in children {
           let constraint_text = formatter.format(&transformation_node, false);
           let mut compiled_tfm = self.compile_transformation(&transformation_node);
@@ -571,7 +571,7 @@ impl Compiler {
                     produces.insert(*id);
                   },
                   _ => (),
-                };                
+                };
               }
               Transformation::NewTable{table_id, ..} => {
                 match table_id {
@@ -664,7 +664,7 @@ impl Compiler {
             }
           }
 
-          
+
           // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
           let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
             let (text, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
@@ -693,7 +693,7 @@ impl Compiler {
             false => false
           }
         }).collect::<Vec<_>>();
-        
+
         plan.append(&mut now_satisfied);
         // ----------------------------------------------------------------------------------------------------------
         let mut global_out = vec![];
@@ -720,10 +720,10 @@ impl Compiler {
           }
           block.register_transformations((step_text, step_transformations));
         }
-        block.plan.append(&mut global_out);     
+        block.plan.append(&mut global_out);
 
         // Here we try to optimize the plan a little bit. The compiler will generate chains of concatenating
-        // tables sometimes where there is no actual work to be done. If we remove these moot itermediate steps, 
+        // tables sometimes where there is no actual work to be done. If we remove these moot itermediate steps,
         // we can save time. We do this by comparing the input and outputs of consecutive steps. If the two steps
         // can be condensed into one step, we do this.
         if block.plan.len() > 1 {
@@ -766,8 +766,8 @@ impl Compiler {
               unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
             ),
           });*/
-            
-            
+
+
         }
         //block.id = block.gen_block_id();
         for (k,v) in self.strings.drain() {
@@ -779,7 +779,8 @@ impl Compiler {
           store.number_literals.insert(k,v.clone());
         }
         for (k,v) in self.register_map.drain() {
-          block.register_map.insert(k,v);
+          //block.register_map.insert(k,v);
+          self.register_map.insert(k,v);
         }
         for err in self.errors.drain(..) {
           block.errors.push(err);
@@ -916,7 +917,7 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        
+
         if args.len() >= 1 {
           let new_table = Transformation::NewTable{table_id: new_table_id, rows: nrows, columns: ncols};
           transformations.push(new_table);
@@ -935,9 +936,9 @@ impl Compiler {
         self.row += 1;
         let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
         let new_table = Transformation::NewTable{table_id: new_table_id, rows: 1, columns: children.len()};
-        
+
         transformations.push(new_table);
-        
+
         let mut args = vec![];
         for child in children {
           match &child {
@@ -954,7 +955,7 @@ impl Compiler {
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
-                          
+
                           let fxn = Transformation::Function{
                             name: *TABLE_HORZCAT,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
@@ -992,7 +993,7 @@ impl Compiler {
           let mut i = 1;
           if result.len() > 1 {
             loop {
-              match result[i] { 
+              match result[i] {
                 Transformation::Select{table_id: TableId::Global(id), row: Index::All, column: Index::All} => {
                   () // do nothing
                 }
@@ -1002,7 +1003,7 @@ impl Compiler {
                     name: *TABLE_HORZCAT,
                     arguments: vec![(0, target_table_id, row, column)],
                     out: (new_table_id, Index::All, Index::All),
-                  };   
+                  };
                   target_table_id = new_table_id;
                   transformations.insert(0,fxn);
                   transformations.insert(0, Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
@@ -1012,9 +1013,9 @@ impl Compiler {
               }
             }
           }
-          transformations.append(&mut result);       
+          transformations.append(&mut result);
         }
-        
+
         if args.len() == 1 {
           match args[0] {
             (_, TableId::Global(id), Index::All, Index::All) => {
@@ -1026,7 +1027,7 @@ impl Compiler {
                 name: *TABLE_HORZCAT,
                 arguments: args,
                 out: (new_table_id, Index::All, Index::All),
-              };   
+              };
               transformations.push(fxn);
             }
           }
@@ -1035,7 +1036,7 @@ impl Compiler {
             name: *TABLE_HORZCAT,
             arguments: args,
             out: (new_table_id, Index::All, Index::All),
-          };   
+          };
           transformations.push(fxn);
         }
       }
@@ -1081,7 +1082,7 @@ impl Compiler {
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist 
+            // Check to make sure the name doesn't already exist
             if self.variable_names.contains(&name_hash) {
               self.errors.push(ErrorType::DuplicateAlias(name_hash));
             } else {
@@ -1093,7 +1094,7 @@ impl Compiler {
           }
           Node::Table{name, ..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist 
+            // Check to make sure the name doesn't already exist
             if self.variable_names.contains(&name_hash) {
               self.errors.push(ErrorType::DuplicateAlias(name_hash));
             } else {
@@ -1101,13 +1102,13 @@ impl Compiler {
             }
             self.strings.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Global(name_hash), rows: 1, columns: 1});
-            TableId::Global(name_hash)            
+            TableId::Global(name_hash)
           },
           _ => TableId::Local(0),
         };
 
         let mut input = self.compile_transformation(&children[1]);
-        
+
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -1138,7 +1139,7 @@ impl Compiler {
             Some((table_id,Index::All,Index::All))
           }
           _ => None,
-        };                
+        };
 
         let mut input = self.compile_transformation(&children[1]);
         let input_table_id = match input[0] {
@@ -1216,7 +1217,7 @@ impl Compiler {
         } else {
           None
         };
-                
+
         let mut input = self.compile_transformation(&children[1]);
 
         let (input_table_id, row_select, column_select) = match input[0] {
@@ -1236,7 +1237,7 @@ impl Compiler {
           (Some(a),_) => a,
           _ => (TableId::Global(0),Index::All,Index::All),
         };
-        
+
 
         let fxn = Transformation::Function{
           name: *TABLE_SET,
@@ -1327,7 +1328,7 @@ impl Compiler {
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist 
+            // Check to make sure the name doesn't already exist
             if self.variable_names.contains(&name_hash) {
               self.errors.push(ErrorType::DuplicateAlias(name_hash));
             } else {
@@ -1392,8 +1393,8 @@ impl Compiler {
             Transformation::Select{table_id, row, column} => {
               input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
               input_tfms.push(Transformation::Function{
-                name: *TABLE_HORZCAT, 
-                arguments: vec![(0, table_id, row, column)], 
+                name: *TABLE_HORZCAT,
+                arguments: vec![(0, table_id, row, column)],
                 out: (output_table_id.unwrap(), Index::All, Index::All)
               });
             }
@@ -1416,7 +1417,7 @@ impl Compiler {
                 input_tfms.push(Transformation::ColumnAlias{table_id: output_table_id.unwrap(), column_ix, column_alias});
               } else {
                 input_tfms.push(tfm);
-              }              
+              }
             }
             Transformation::Function{name, ref arguments, out} => {
               let (out_table, out_rows, out_columns) = out;
@@ -1424,14 +1425,14 @@ impl Compiler {
                 input_tfms.push(Transformation::Function{name, arguments: arguments.clone(), out: (output_table_id.unwrap(), out_rows, out_columns)});
               } else {
                 input_tfms.push(tfm);
-              }   
+              }
             }
             Transformation::Constant{table_id, value, unit} => {
               if table_id == input_table_id.unwrap() {
                 input_tfms.push(Transformation::Constant{table_id: output_table_id.unwrap(), value, unit});
               } else {
                 input_tfms.push(tfm);
-              }              
+              }
             }
             _ => input_tfms.push(tfm),
           };
@@ -1456,7 +1457,7 @@ impl Compiler {
       }
       Node::FunctionBinding{children} => {
         let mut result = self.compile_transformations(children);
-        transformations.append(&mut result);        
+        transformations.append(&mut result);
       }
       Node::Function{name, children} => {
         let mut args = vec![];
@@ -1560,14 +1561,14 @@ impl Compiler {
       }
       Node::Constant{value, unit} => {
         let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
-        
+
         let unit = match unit {
           Some(unit_string) => hash_string(unit_string),
           None => 0,
         };
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});
-      } 
+      }
       Node::True => {
         let table = hash_string(&format!("Constant-True"));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
@@ -1598,7 +1599,7 @@ impl Compiler {
     match node {
       parser::Node::Root{children} => {
         let result = self.compile_nodes(children);
-        self.syntax_tree = Node::Root{children: result};        
+        self.syntax_tree = Node::Root{children: result};
       },
       parser::Node::Fragment{children} => {
         let result = self.compile_nodes(children);
@@ -1641,7 +1642,7 @@ impl Compiler {
         let mut reversed = result.clone();
         reversed.reverse();
         let mut select_data_children: Vec<Node> = vec![];
-        
+
         for node in reversed {
           match node {
             Node::Table{name, id} => {
@@ -1650,7 +1651,7 @@ impl Compiler {
               }
               select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Global(id), children: select_data_children.clone()});
-            }, 
+            },
             Node::Identifier{name, id} => {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 1];
@@ -1723,7 +1724,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1734,7 +1735,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1759,7 +1760,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1770,7 +1771,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1782,7 +1783,7 @@ impl Compiler {
         for node in result {
           match node {
             // Ignore irrelevant nodes like spaces and operators
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1799,7 +1800,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1810,7 +1811,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1821,7 +1822,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1832,7 +1833,7 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             _ => children.push(node),
           }
         }
@@ -1845,7 +1846,7 @@ impl Compiler {
         for node in result {
           match node {
             // Ignore irrelevant nodes like spaces and operators
-            Node::Token{..} => (), 
+            Node::Token{..} => (),
             Node::Function{..} => {
               new_node = true;
               children.push(node);
@@ -1877,7 +1878,7 @@ impl Compiler {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         for node in result {
-          // If the node is a naked expression, modify the 
+          // If the node is a naked expression, modify the
           // graph to put it into an anonymous table
           match node {
             Node::Token{..} => (),
@@ -1949,7 +1950,7 @@ impl Compiler {
           },
           _ => (),
         };
-      },  
+      },
       // Quantities
       parser::Node::Quantity{children} => {
         let mut result = self.compile_nodes(children);
@@ -2179,7 +2180,7 @@ impl Compiler {
           Node::Or => "logic/or".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
-        };        
+        };
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       parser::Node::Function{children} => {
@@ -2218,7 +2219,7 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
-      parser::Node::DecimalLiteral{bytes} => {         
+      parser::Node::DecimalLiteral{bytes} => {
         let dec_bytes: Vec<u8> = bytes.iter().map(|b| {
           match b {
             48 => 0,
@@ -2374,7 +2375,7 @@ impl Compiler {
       },
       _ => println!("Unhandled Parser Node in Compiler: {:?}", node),
     }
-    
+
     //self.constraints = constraints.clone();
     compiled
   }
@@ -2389,7 +2390,7 @@ impl Compiler {
 
 }
 
-// ## Appendix 
+// ## Appendix
 
 // ### Encodings
 
@@ -2502,7 +2503,7 @@ fn byte_to_char(byte: u8) -> Option<char> {
     118 => Some('v'),
     119 => Some('w'),
     120 => Some('x'),
-    121 => Some('y'),    
+    121 => Some('y'),
     122 => Some('z'),
     123 => Some('{'),
     124 => Some('|'),
