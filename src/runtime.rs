@@ -75,7 +75,7 @@ impl Runtime {
   pub fn run_network(&mut self) -> Result<(), Error> {   
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
-    let mut changed_last_round = false;
+    let mut changed_last_round = true;
     
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
@@ -166,8 +166,8 @@ impl Runtime {
         // this means they aren't doing any work and we're at a set point, so we're done.
         } else if !store.changed && !changed_last_round {
           for block_id in self.ready_blocks.iter() {
-            let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
-            block.state = BlockState::Done;
+            //let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+            //block.state = BlockState::Done;
           }
           break;
         // If the store was changed, we did work this round

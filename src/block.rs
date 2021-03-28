@@ -207,6 +207,8 @@ impl Block {
               };
               let register = Register{table_id: out_id, row, column};
               self.output.insert(register);
+              let register = Register{table_id: out_id, row: Index::All, column: Index::All};
+              self.output.insert(register);
             },
             _ => (),
           }
