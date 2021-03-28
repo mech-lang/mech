@@ -300,7 +300,6 @@ pub struct Compiler {
   pub current_col: usize,
   pub errors: Vec<ErrorType>,
   pub unparsed: String,
-  pub register_map: HashMap<u64, Register>,
 }
 
 impl Compiler {
@@ -331,7 +330,6 @@ impl Compiler {
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
       errors: Vec::new(),
-      register_map: HashMap::new(),
     }
   }
 
@@ -778,9 +776,6 @@ impl Compiler {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
           store.number_literals.insert(k,v.clone());
         }
-        for (k,v) in self.register_map.drain() {
-          block.register_map.insert(k,v);
-        }
         for err in self.errors.drain(..) {
           block.errors.push(err);
         }
@@ -1167,18 +1162,16 @@ impl Compiler {
           Transformation::Select{table_id, row, column} => {
             let register = Register{table_id: table_id, row, column};
             transformations.push(
-              Transformation::Whenever{table_id, row, column, registers: vec![register.hash()]},
+              Transformation::Whenever{table_id, row, column, registers: vec![register]},
             );
-            self.register_map.insert(register.hash(), register);
           }
           Transformation::NewTable{table_id, ..} => {
-            let mut registers = vec![];
+            let mut registers: Vec<Register> = vec![];
             for r in &result {
               match r {
                 Transformation::Select{table_id,row,column} => {
                   let register = Register{table_id: *table_id, row: *row, column: *column};
-                  registers.push(register.hash());
-                  self.register_map.insert(register.hash(), register);
+                  registers.push(register);
                 }
                 _ => (),
               }
