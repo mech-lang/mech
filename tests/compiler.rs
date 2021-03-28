@@ -11,7 +11,7 @@ macro_rules! test_mech {
     #[test]
     fn $func() {
       let mut compiler = Compiler::new();
-      let mut core = Core::new(100);
+      let mut core = Core::new(100, 100);
       core.load_standard_library();
       let input = String::from($input);
       compiler.compile_string(input);
@@ -370,6 +370,21 @@ block
 
 block
   #test = stats/sum(column: #x)", Value::from_i64(407));
+
+
+test_mech!(set_single_index_math,"
+block
+  #test = stats/sum(column: #y)
+
+block
+  #x = [1;2;3]
+
+block
+  #y = #x * 2
+
+block
+  #x{2,1} := 10", Value::from_i64(28));
+
 
 test_mech!(set_column_logical,"
 block
@@ -952,9 +967,3 @@ block
 
   test_mech!(number_literal_decimal, r#"
   #test = 0d1234567890"#, 13902651193305449173);
-
-  test_mech!(number_literal_add_hex, r#"
-  #test = 0xABC + 0xDEF"#, 13902651193305449173);
-
-  test_mech!(number_rational_number, r#"
-  #test = 1/2"#, 13902651193305449173);
