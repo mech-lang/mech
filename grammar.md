@@ -3,14 +3,7 @@
 For now, the formal specification of the Mech grammar will be the Rust implementation. I will try to reflect that grammar in this document in [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form). Then this document can be used to generate Mech parsers in any number of languages.
 
 
-
-##Parser
-```ebnf
-```
-
-
-
-### Primitives
+## Primitives
 ```ebnf
 space = " ";
 period = ".";
@@ -49,8 +42,8 @@ grave = "`";
 ```
 
 ### Values
+
 ```ebnf
---
 digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" 
 digit                = "0" | ?digit excluding zero?
 natural number = ?digit excluding zero?, { digit } ;
@@ -59,7 +52,8 @@ hex_digit = {digit | ?letter A-F? };
 oct_digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "0";
 ```
 
-##The Basics
+## The Basics
+
 ```ebnf
 word = {alpha};
 number = {digit};
@@ -86,12 +80,14 @@ empty = {"_"};
 newline = new_line_char | carriage_newline;
 ```
 
-##Blocks
+## Blocks
+
 ```ebnf
 block = {transformation}, {whitespace};
 transformation = space, space, statement, space, ["\n];
 ```
-###Data
+### Data
+
 ```ebnf
 select_all = colon;
 subscript = select_all | expression, space, [comma], space;
@@ -101,7 +97,8 @@ index = dot_index | subscript_index;
 data = table | identifier , {index};
 ```
 
-###Tables
+### Tables
+
 ```ebnf
 table = hashtag, identifier;
 binding = identifier, ": ", empty | expression | identifier | constant, space, [comma], space;
@@ -114,7 +111,8 @@ anonymous_table = left_bracket, space, [table_header], {table_row}, right_bracke
 inline_table = left_bracket, {binding} , right_bracket;
 ```
 
-###Statements
+### Statements
+
 ```ebnf
 comment_sigil = "//";
 comment = comment_sigil, text;
@@ -137,9 +135,10 @@ until_data = until_operator, space, variable_define | expression |data;
 statements = table_define | variable_define | split_data | join_data | whenever_data | wait_data | until_data | set_data | add_row |       comment;
 ```
 
-###Expression
+### Expression
 
-####Math Expressions
+#### Math Expressions
+
 ```ebnf
 parenthetical_expression = left_parenthesis, l0, right_parenthesis;
 negation = dash, data | constant;
@@ -167,7 +166,8 @@ l6 = empty | true_literal | false_literal | anonymous_table | function | data | 
 math_expression = l0;
 ```
 
-####Filter Expressions
+#### Filter Expressions
+
 ```ebnf
 not_equal = "!=";
 equal_to = "==";
@@ -177,20 +177,23 @@ greater_than_equal = ">=";
 less_than_equal = "<=";
 ```
 
-####Logic Expressions
+#### Logic Expressions
+
 ```ebnf
 or = "|";
 and = "&";
 ```
 
-####Other Expressions
+#### Other Expressions
+
 ```ebnf
 expressions = string | inline_table | math_expressions | anonymous table;
 string = quote , {string_interpolation | text}, quote;
 string_interpolation = "{{" , expression, "}}" ;
 ```
 
-##MarkDown
+## MarkDown
+
 ```ebnf
 title = "#" , {space} , text , {whitespace};
 subtitle = hashtag, hashtag, space, text, {whitespace}; 
@@ -204,13 +207,15 @@ formatted_text = {paragraph_rest | newline};
 code_block = grave, grave, grave, newline, formatted_text, grave, grave, grave, newline, {whitespace};
 ```
 
-##MechDown
+## MechDown
+
 ```ebnf
 inline_mech_code = left_bracket, left_bracket, expression, right_bracket, right_bracket, [space];
 mech_code_block = grave, grave, grave, "mech", [text], newline, block, grave, grave, grave, newline, {whitespace};
 ```
 
-##Start
+## Programs
+
 ```ebnf
 program = [title] , body;
 body = {space} , section; 
