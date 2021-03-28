@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, Index, TableId, Register, NumberLiteral, NumberLiteralKind};
-use mech_core::{Quantity, humanize, ToQuantity, QuantityMath, make_quantity};
+use mech_core::{Quantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
 use mech_core::ErrorType;
 //use mech_core::{Error, ErrorType};
@@ -15,9 +15,8 @@ use lexer::Token;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
-use hashbrown::hash_map::{HashMap, Entry};
+use hashbrown::hash_map::{HashMap};
 use super::formatter::Formatter;
-use std::rc::Rc;
 use std::sync::Arc;
 
 lazy_static! {
