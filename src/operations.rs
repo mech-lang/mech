@@ -658,10 +658,6 @@ macro_rules! binary_infix {
       let out_elements = out.rows() * out.columns();
       unsafe{
 
-        println!("LHS {:?}", (*lhs_vi.table));
-        println!("RHS {:?}", (*rhs_vi.table));
-
-
         loop {
           let l1 = lrix.next().unwrap().unwrap();
           let l2 = lcix.next().unwrap().unwrap();
