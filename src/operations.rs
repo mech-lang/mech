@@ -724,6 +724,7 @@ binary_infix!{math_add, add}
 binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
+binary_infix!{math_exponent, power}
 binary_infix!{compare_greater_than_equal, greater_than_equal}
 binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than_equal, less_than_equal}

@@ -7,9 +7,11 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
 use operations::{
-  math_add, math_subtract, 
+  math_add, 
+  math_subtract, 
   math_multiply, 
   math_divide, 
+  math_exponent,
   compare_greater_than_equal,
   compare_greater_than,
   compare_less_than,
@@ -62,6 +64,7 @@ impl Core {
     self.runtime.load_library_function("math/subtract",Some(math_subtract));
     self.runtime.load_library_function("math/multiply",Some(math_multiply));
     self.runtime.load_library_function("math/divide",Some(math_divide));
+    self.runtime.load_library_function("math/exponent",Some(math_exponent));
     self.runtime.load_library_function("compare/greater-than-equal",Some(compare_greater_than_equal));
     self.runtime.load_library_function("compare/greater-than",Some(compare_greater_than));
     self.runtime.load_library_function("compare/less-than-equal",Some(compare_less_than_equal));

@@ -73,6 +73,7 @@ pub trait ValueMethods {
   fn sub(&self, other: Value) -> Result<Value, ErrorType>;
   fn multiply(&self, other: Value) -> Result<Value, ErrorType>;
   fn divide(&self, other: Value) -> Result<Value, ErrorType>;
+  fn power(&self, other: Value) -> Result<Value, ErrorType>;
   fn and(&self, other: Value) -> Result<Value, ErrorType>;
   fn or(&self, other: Value) -> Result<Value, ErrorType>;
 }
@@ -325,6 +326,13 @@ impl ValueMethods for Value {
   fn divide(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
       (Some(q), Some(r)) => Ok(Value::from_quantity(q.divide(r).unwrap())),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
+  }
+
+  fn power(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_quantity(), other.as_quantity()) {
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.power(r).unwrap())),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
