@@ -795,7 +795,7 @@ impl Compiler {
       Node::InlineTable{children} => {
         let table = self.table;
         self.table = hash_string(&format!("{:?}",children));
-        transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 1, columns: children.len()});
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 0, columns: children.len()});
         let mut tfms = vec![];
         let mut ix = 1;
         let mut args = vec![];
@@ -904,7 +904,17 @@ impl Compiler {
               args.push((0, table_id.clone(), Index::All, Index::All));
             }
             Transformation::ColumnAlias{table_id,..} => {
-              let new_table = Transformation::NewTable{table_id: *table_id, rows: 1, columns: 1};
+              let mut columns = 0;
+              for i in 0..result.len() {
+                match result[i] {
+                  Transformation::ColumnAlias{table_id,..} => {
+                    
+                    columns += 1;
+                  }
+                  _ => break,
+                }
+              }
+              let new_table = Transformation::NewTable{table_id: *table_id, rows: 0, columns};
               transformations.push(new_table);
             }
             _ => (),
@@ -1383,7 +1393,7 @@ impl Compiler {
         if input.len() == 1 {
           match input[0] {
             Transformation::Select{table_id, row, column} => {
-              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
+              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 0, columns: 0});
               input_tfms.push(Transformation::Function{
                 name: *TABLE_HORZCAT, 
                 arguments: vec![(0, table_id, row, column)], 
