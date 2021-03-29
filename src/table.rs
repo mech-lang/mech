@@ -190,6 +190,13 @@ impl Table {
     }
   }
 
+  pub fn get_column_alias(&self, index: usize) -> Option<Index> {
+    match self.store.column_index_to_alias.get(&(self.id,index)) {
+      Some(alias) => Some(Index::Alias(*alias)),
+      _ => None,
+    }
+  }
+
   // Get the memory address into the store at a (row, column)
   pub fn get_address_unchecked(&self, row: usize, column: usize) -> usize {
     let ix = self.index_unchecked(row, column);
