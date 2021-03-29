@@ -587,7 +587,6 @@ macro_rules! binary_infix {
         _ => 1,
       };
 
-
       let equal_dimensions = if lhs_rows_count == rhs_rows_count && lhs_columns_count == rhs_columns_count
       { true } else { false };
       let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1 
@@ -653,9 +652,16 @@ macro_rules! binary_infix {
         )
       };
 
+
+
       let mut i = 1;
       let out_elements = out.rows() * out.columns();
       unsafe{
+
+        println!("LHS {:?}", (*lhs_vi.table));
+        println!("RHS {:?}", (*rhs_vi.table));
+
+
         loop {
           let l1 = lrix.next().unwrap().unwrap();
           let l2 = lcix.next().unwrap().unwrap();
@@ -681,6 +687,19 @@ macro_rules! binary_infix {
                   (*out.table).set_unchecked(o1, o2, result);
                 }
                 Err(_) => (), // TODO Handle error here
+              }
+            }
+            // If either operand is not changed but the output is cell is empty, then we can do the operation
+            (lhs_value, rhs_value, false, _) |
+            (lhs_value, rhs_value, _, false) => {
+              let (out_value, _) = (*out.table).get_unchecked(o1, o2);
+              if out_value.is_empty() {
+                match lhs_value.$op(rhs_value) {
+                  Ok(result) => {
+                    (*out.table).set_unchecked(o1, o2, result);
+                  }
+                  Err(_) => (), // TODO Handle error here
+                }
               }
             }
             _ => (),

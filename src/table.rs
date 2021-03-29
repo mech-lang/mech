@@ -128,7 +128,7 @@ impl Table {
     self.data.clear();
     self.changed.clear();
   }
-
+  
   // Resize the table
   pub fn resize(&mut self, rows: usize, columns: usize) {
     self.rows = rows;

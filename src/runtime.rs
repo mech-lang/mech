@@ -1,7 +1,7 @@
 use block::{Block, BlockState, Register, Error, Transformation};
 use ::{humanize, hash_string};
 use database::{Database};
-use table::{Index};
+use table::{Index, TableId};
 use std::cell::RefCell;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
@@ -36,6 +36,7 @@ pub struct Runtime {
   pub input_to_block:  HashMap<Register,HashSet<u64>>,
   pub changed_this_round: HashSet<Register>,
   pub aggregate_changed_this_round: HashSet<Register>,
+  pub aggregate_tables_changed_this_round: HashSet<TableId>,
   pub defined_registers: HashSet<Register>,
   pub needed_registers: HashSet<Register>,
   pub input: HashSet<Register>,
@@ -55,7 +56,8 @@ impl Runtime {
       output_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), 
-      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all registers changed this round
+      aggregate_tables_changed_this_round: HashSet::new(),
       defined_registers: HashSet::new(),
       needed_registers: HashSet::new(),
       input: HashSet::new(),
@@ -114,6 +116,7 @@ impl Runtime {
       // of ready blocks
       for register in self.changed_this_round.drain() {
         self.aggregate_changed_this_round.insert(register);
+        self.aggregate_tables_changed_this_round.insert(register.table_id);
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
             for block_id in producing_block_ids.iter() {
@@ -166,8 +169,8 @@ impl Runtime {
         // this means they aren't doing any work and we're at a set point, so we're done.
         } else if !store.changed && !changed_last_round {
           for block_id in self.ready_blocks.iter() {
-            //let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
-            //block.state = BlockState::Done;
+            let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+            block.state = BlockState::Done;
           }
           break;
         // If the store was changed, we did work this round
@@ -186,6 +189,11 @@ impl Runtime {
         BlockState::Ready => {self.ready_blocks.insert(*block_id);}
         _ => (),
       }
+    }
+    for table_id in self.aggregate_tables_changed_this_round.drain() {
+      let mut db = self.database.borrow_mut();
+      let mut table = db.tables.get_mut(table_id.unwrap()).unwrap();
+      table.reset_changed();
     }
     Ok(())
   }
