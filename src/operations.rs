@@ -279,6 +279,13 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   }
 
   let base_rows = out.rows();
+
+  // If the table is already bigger than what we need, don't resize
+  out_columns = if out.columns() > out_columns {
+    out.columns()
+  } else {
+    out_columns
+  };
   
   unsafe { (*out.table).resize(out_rows + out.rows(), out_columns); }
 
@@ -302,13 +309,18 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       for (k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
-        let m = out.column_iter.next();
+        let column_alias = unsafe { (*vi.table).get_column_alias(j.unwrap()) };
+        // If the column has an alias, let's use it instead
+        let m = match column_alias {
+          Some(alias) => Some(alias),
+          None => out.column_iter.next(),
+        };
         match (n, m) {
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
             unsafe {
-              (*out.table).set_unchecked(out_row.unwrap() + base_rows, out_col.unwrap(), value);
+              (*out.table).set(&Index::Index(out_row.unwrap() + base_rows), &out_col, value);
             }
           }
           _ => continue,
@@ -651,8 +663,6 @@ macro_rules! binary_infix {
           },
         )
       };
-
-
 
       let mut i = 1;
       let out_elements = out.rows() * out.columns();
