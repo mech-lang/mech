@@ -133,6 +133,8 @@ impl Block {
               );
               let register = Register{table_id: table_id, row: Index::All, column: Index::Alias(column_alias)};
               self.output.insert(register);
+              let register = Register{table_id: table_id, row: Index::All, column: Index::Index(column_ix)};
+              self.output.insert(register);
             }
             TableId::Local(id) => {
               let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
