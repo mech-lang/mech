@@ -1,5 +1,5 @@
 use block::{Block, BlockState, Register, Error, Transformation};
-use ::{humanize, hash_string};
+use ::{hash_string};
 use database::{Database};
 use table::{Index};
 use std::cell::RefCell;
@@ -67,7 +67,7 @@ impl Runtime {
   pub fn load_library_function(&mut self, name: &str, fxn: Option<MechFunction>) {
     let name_hash = hash_string(name);
     let mut db = self.database.borrow_mut();
-    let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.strings.insert(name_hash, name.to_string());
     self.functions.insert(name_hash, fxn);
   }
@@ -116,7 +116,7 @@ impl Runtime {
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
             for block_id in producing_block_ids.iter() {
-              let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+              let block = &mut self.blocks.get_mut(&block_id).unwrap();
               if block.state == BlockState::New {
                 block.output_dependencies_ready.insert(register);
                 if block.is_ready() {
@@ -134,7 +134,7 @@ impl Runtime {
         match self.input_to_block.get(&register) {
           Some(listening_block_ids) => {
             for block_id in listening_block_ids.iter() {
-              let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+              let block = &mut self.blocks.get_mut(&block_id).unwrap();
               block.ready.insert(register);
               if block.is_ready() {
                 self.ready_blocks.insert(block.id);
