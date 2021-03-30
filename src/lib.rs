@@ -10,7 +10,6 @@ extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
 extern crate hashbrown;
-#[macro_use]
 extern crate nom;
 #[macro_use]
 extern crate lazy_static;
