@@ -37,6 +37,7 @@ pub struct Block {
   pub output: HashSet<Register>,
   pub output_dependencies: HashSet<Register>,
   pub output_dependencies_ready: HashSet<Register>,
+  pub register_aliases: HashMap<Register, HashSet<Register>>,
   pub tables: HashMap<u64, Table>,
   pub store: Arc<Store>,
   pub transformations: Vec<(String, Vec<Transformation>)>,
@@ -57,6 +58,7 @@ impl Block {
       output: HashSet::new(),
       output_dependencies: HashSet::new(),
       output_dependencies_ready: HashSet::new(),
+      register_aliases: HashMap::new(),
       state: BlockState::New,
       tables: HashMap::new(),
       store: Arc::new(Store::new(capacity)),
@@ -93,28 +95,13 @@ impl Block {
                   columns,
                 }
               );
-              for i in 1..=columns {
-                let register = Register{table_id, row: Index::All, column: Index::Index(i)};
-                self.output.insert(register);
-              }
-              for i in 1..=rows {
-                let register = Register{table_id, row: Index::Index(i), column: Index::All};
-                self.output.insert(register);
-              }
-              for i in 1..=rows {
-                for j in 1..=columns {
-                  let register = Register{table_id, row: Index::Index(i), column: Index::Index(j)};
-                  self.output.insert(register);
-                }
-              }
-              for i in 1..=rows * columns {
-                let register = Register{table_id, row: Index::Index(i), column: Index::None};
-                self.output.insert(register);
-              }
-              let register = Register{table_id, row: Index::All, column: Index::All};
-              self.output.insert(register);
-              let register = Register{table_id, row: Index::All, column: Index::None};
-              self.output.insert(register);
+              let register_all = Register{table_id, row: Index::All, column: Index::All};
+              let register_linear = Register{table_id, row: Index::All, column: Index::None};
+              let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
+              aliases.insert(register_linear);
+              let aliases = self.register_aliases.entry(register_linear).or_insert(HashSet::new());
+              aliases.insert(register_all);
+              self.output.insert(register_all);
             }
             TableId::Local(id) => {
               self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
@@ -131,10 +118,22 @@ impl Block {
                   column_alias,
                 }
               );
-              let register = Register{table_id: table_id, row: Index::All, column: Index::Alias(column_alias)};
-              self.output.insert(register);
-              let register = Register{table_id: table_id, row: Index::All, column: Index::Index(column_ix)};
-              self.output.insert(register);
+              let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
+              let register_alias = Register{table_id: table_id, row: Index::All, column: Index::Alias(column_alias)};
+              let register_ix = Register{table_id: table_id, row: Index::All, column: Index::Index(column_ix)};
+              // Alias mappings
+              let aliases = self.register_aliases.entry(register_alias).or_insert(HashSet::new());
+              aliases.insert(register_ix);
+              aliases.insert(register_all);
+              // Index mappings
+              let aliases = self.register_aliases.entry(register_ix).or_insert(HashSet::new());
+              aliases.insert(register_alias);
+              aliases.insert(register_all);
+              // All mappings
+              let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
+              aliases.insert(register_ix);
+              aliases.insert(register_alias);
+              self.output.insert(register_alias);              
             }
             TableId::Local(id) => {
               let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
@@ -181,9 +180,12 @@ impl Block {
             Index::Table(_) => Index::All,
             x => x,
           };
-          let register = Register{table_id: table_id, row, column};
-          self.output.insert(register);       
-          self.output_dependencies.insert(register);          
+          let register_ix = Register{table_id: table_id, row, column};
+          let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
+          let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
+          aliases.insert(register_ix);
+          self.output.insert(register_ix);       
+          self.output_dependencies.insert(register_ix);          
         }
         Transformation::Whenever{table_id, row, column, registers} => {
           match table_id {
@@ -227,15 +229,13 @@ impl Block {
                   Index::None => &Index::All,
                   x => x,
                 };
-                let register = Register{table_id: *table_id, row: *row2, column: *column2};
-                self.input.insert(register);
-                match (row2, column2) {
-                  (Index::All, Index::All) => {
-                    let register = Register{table_id: *table_id, row: Index::All, column: Index::None};
-                    self.input.insert(register);
-                  }
-                  _ => (),
-                }
+                let register_ix = Register{table_id: *table_id, row: *row2, column: *column2};
+                let register_all = Register{table_id: *table_id, row: Index::All, column: Index::All};
+                let aliases = self.register_aliases.entry(register_ix).or_insert(HashSet::new());
+                aliases.insert(register_all);
+                let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
+                aliases.insert(register_ix);
+                self.input.insert(register_ix);
               },
               _ => (),
             }
@@ -303,42 +303,7 @@ impl Block {
           let mut out_vi = resolve_subscript(*out_table_id, *out_row, *out_column, &mut self.tables, &database);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              let (before_out_rows, before_out_columns) = (out_vi.rows(),out_vi.columns());
-              // Apply the function
               mech_fn(&vis, &mut out_vi);
-              let (after_out_rows, after_out_columns) = (out_vi.rows(),out_vi.columns());
-              // Check to see if the output table has changed dimensions.
-              if (after_out_rows != 0 && after_out_columns != 0) {
-                match (out_vi.scope, after_out_rows-before_out_rows, after_out_columns-before_out_columns)  {
-                  // No change in dimensions
-                  (TableId::Global(..), 0, 0) => (),
-                  // At least one dimension has changed, adjust the output registers.
-                  (TableId::Global(..), _, _) => {
-                    for i in before_out_rows..=after_out_rows {
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
-                      self.output.insert(register);
-                      for j in 1..=after_out_columns {
-                        let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
-                        self.output.insert(register);
-                      }
-                    }
-                    for j in before_out_columns..=after_out_columns {
-                      let register = Register{table_id: out_vi.scope, row: Index::All, column: Index::Index(j) };
-                      self.output.insert(register);
-                      for i in 1..=after_out_rows {
-                        let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(j) };
-                        self.output.insert(register);
-                      }
-                    }
-                    for i in 1..=(out_vi.rows() * out_vi.columns()) {
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::None };
-                      self.output.insert(register);
-                    }
-                    self.state = BlockState::Updated;
-                  },
-                  _ => (),
-                };
-              }
             }
             _ => {
               if *name == *TABLE_SPLIT {
@@ -346,22 +311,6 @@ impl Block {
                 let vi_table = unsafe{&(*vi.table)};
                                 
                 unsafe{ (*out_vi.table).resize(vi.rows(), 1); }
-                match out_vi.scope {
-                  TableId::Global(..) => {
-                    for i in 1..=out_vi.rows() {
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::All };
-                      self.output.insert(register);
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::Index(1) };
-                      self.output.insert(register);
-                    }
-                    for i in 1..=out_vi.rows() {
-                      let register = Register{table_id: out_vi.scope, row: Index::Index(i), column: Index::None };
-                      self.output.insert(register);
-                    }
-                    self.state = BlockState::Updated;
-                  },
-                  _ => (),
-                }
 
                 for row in vi.row_iter.clone() {
                   let old_table_id = unsafe{(*vi.table).id};
@@ -459,29 +408,29 @@ impl fmt::Debug for Block {
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ ready: {}\n", self.ready.len())?;
     for (ix, register) in self.ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     write!(f, "│ input: {} \n", self.input.len())?;
     for (ix, register) in self.input.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     if self.ready.len() < self.input.len() {
       write!(f, "│ missing: \n")?;
       for (ix, register) in self.input.difference(&self.ready).enumerate() {
-        write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+        write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
       }
     }
     write!(f, "│ output: {}\n", self.output.len())?;
     for (ix, register) in self.output.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
     for (ix, register) in self.output_dependencies.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     write!(f, "│ output ready: {}\n", self.output_dependencies_ready.len())?;
     for (ix, register) in self.output_dependencies_ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self, register))?;
+      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ transformations: \n")?;
@@ -506,7 +455,7 @@ impl fmt::Debug for Block {
   }
 }
 
-fn format_register(block: &Block, register: &Register) -> String {
+pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> String {
 
   let table_id = register.table_id;
   let row = register.row;
@@ -514,14 +463,14 @@ fn format_register(block: &Block, register: &Register) -> String {
   let mut arg = format!("");
   match table_id {
     TableId::Global(id) => {
-      let name = match block.store.strings.get(&id) {
+      let name = match strings.get(&id) {
         Some(name) => name.clone(),
         None => format!("{:}",humanize(&id)),
       };
       arg=format!("{}#{}",arg,name)
     },
     TableId::Local(id) => {
-      match block.store.strings.get(&id) {
+      match strings.get(&id) {
         Some(name) => arg = format!("{}{}",arg,name),
         None => arg = format!("{}{}",arg,humanize(&id)),
       }
@@ -533,9 +482,9 @@ fn format_register(block: &Block, register: &Register) -> String {
     Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
     Index::Table(table) => {
       match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+        TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
         TableId::Local(id) => {
-          match block.store.strings.get(&id) {
+          match strings.get(&id) {
             Some(name) => arg = format!("{}{}",arg,name),
             None => arg = format!("{}{}",arg,humanize(&id)),
           }
@@ -543,7 +492,7 @@ fn format_register(block: &Block, register: &Register) -> String {
       };
     }
     Index::Alias(alias) => {
-      let alias_name = block.store.strings.get(&alias).unwrap();
+      let alias_name = strings.get(&alias).unwrap();
       arg=format!("{}{{{},",arg,alias_name);
     },
   }
@@ -553,9 +502,9 @@ fn format_register(block: &Block, register: &Register) -> String {
     Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
     Index::Table(table) => {
       match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(&id).unwrap()),
+        TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
         TableId::Local(id) => {
-          match block.store.strings.get(&id) {
+          match strings.get(&id) {
             Some(name) => arg = format!("{}{}",arg,name),
             None => arg = format!("{}{}",arg,humanize(&id)),
           }
@@ -563,7 +512,7 @@ fn format_register(block: &Block, register: &Register) -> String {
       };
     }
     Index::Alias(alias) => {
-      let alias_name = block.store.strings.get(&alias).unwrap();
+      let alias_name = strings.get(&alias).unwrap();
       arg=format!("{}{}}}",arg,alias_name);
     },
   }
