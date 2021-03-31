@@ -89,7 +89,7 @@ impl Core {
   pub fn insert_string(&self, string: &str) {
     let hashed_string = hash_string(string);
     let mut db = self.runtime.database.borrow_mut();
-    let mut store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.strings.insert(hashed_string, string.to_string());
   }
 
@@ -122,7 +122,7 @@ impl Core {
   }
 
   pub fn step(&mut self) {
-    self.runtime.run_network();
+    self.runtime.run_network().ok();
   }
 
   pub fn get_table(&self, table_id: u64) -> Option<Table> {

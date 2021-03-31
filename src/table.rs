@@ -317,7 +317,7 @@ impl fmt::Debug for Table {
           Some(x) => {
             let value = &self.store.data[x];
             let text = match value.as_quantity() {
-              Some(quantity) => {
+              Some(_quantity) => {
                 format!("{}", value.format())
               },
               None => {
@@ -369,7 +369,7 @@ impl fmt::Debug for Table {
             Some(x) => {
               let value = &self.store.data[x];
               let text = match value.as_quantity() {
-                Some(quantity) => {
+                Some(_quantity) => {
                   format!("{}", value.format())
                 },
                 None => {
@@ -416,7 +416,7 @@ fn print_top_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Res
   write!(f, "┐\n")?;
   Ok(())
 }
-
+/*
 fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "┌")?;
   for _ in 0 .. n - 1 {
@@ -426,7 +426,7 @@ fn print_top_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   print_repeated_char("─", m, f)?;
   write!(f, "┐\n")?;
   Ok(())
-}
+} */
 
 fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
   write!(f, "└")?;

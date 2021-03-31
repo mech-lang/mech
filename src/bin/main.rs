@@ -3,18 +3,13 @@
 extern crate mech_core;
 
 use mech_core::{Core, hash_string, Register, humanize, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
-use std::hash::Hasher;
-use std::time::{Duration, SystemTime};
-use std::io;
-use std::io::prelude::*;
-use std::sync::Arc;
 
 extern crate seahash;
 
 fn main() {
 
   let register = Register{table_id: TableId::Global(0x12345678AABBCCFF), row: Index::All, column: Index::Alias(0x12345678AABBCCFF)};
-  let mut hash = 0;
+  let _hash = 0;
 
   let tid_bytes = register.table_id.unwrap().to_be_bytes();
   println!("{:?}", tid_bytes);

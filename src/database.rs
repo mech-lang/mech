@@ -238,7 +238,7 @@ impl fmt::Debug for Database {
     for changed in self.changed_this_round.iter() {
       write!(f, "       {:?}\n", changed)?;
     }
-    write!(f,"{:?}", self.store);
+    write!(f,"{:?}", self.store).ok();
     write!(f, "tables: \n")?;
     for (_id,table) in self.tables.iter() {
       write!(f, "{:?}\n", table)?;   

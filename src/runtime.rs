@@ -206,9 +206,9 @@ impl Runtime {
 
     // If the block is new and has no input, it can be marked to run immediately
     if !block.errors.is_empty() {
-      block.state == BlockState::Error;
+      block.state = BlockState::Error;
     } else if block.state == BlockState::New && block.input.len() == 0 && block.output_dependencies.len() == 0 {
-      block.state == BlockState::Ready;
+      block.state = BlockState::Ready;
     }
 
     // Extend database strings
@@ -277,7 +277,7 @@ impl Runtime {
     // Add the block to the list of blocks
     self.blocks.insert(block.id, block);
 
-    self.run_network();
+    self.run_network().ok();
   }
 
 }

@@ -4,7 +4,6 @@
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
-#[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
 use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
@@ -65,7 +64,7 @@ pub fn resolve_subscript(
       IndexIterator::Range(1..=r)
     },
     Index::Table(table_id) => {
-      let mut row_table = match table_id {
+      let row_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
         TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
       };
@@ -79,7 +78,7 @@ pub fn resolve_subscript(
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
     Index::All => IndexIterator::Range(1..=(*table).columns),
     Index::Table(table_id) => {
-      let mut col_table = match table_id {
+      let col_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
         TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
       };
@@ -87,7 +86,7 @@ pub fn resolve_subscript(
     }
     Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
     Index::None => IndexIterator::Constant(Index::Index(0)),
-    _ => IndexIterator::Range(1..=(*table).columns),
+    //_ => IndexIterator::Range(1..=(*table).columns),
   }};
   
   ValueIterator{
@@ -110,8 +109,8 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
-  let mut rows = vi.rows();
-  let mut cols = match vi.column_iter {
+  let rows = vi.rows();
+  let cols = match vi.column_iter {
     IndexIterator::Constant{..} => 1,
     _ => vi.columns(),
   };
@@ -135,7 +134,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
     unsafe { (*out.table).resize(1, cols); }
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = false;
-      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
         let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
         match value.as_bool() {
           Some(true) => flag = true,
@@ -149,8 +148,8 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   } else if *in_arg_name == *TABLE {
     unsafe { (*out.table).resize(1, 1); }
     let mut flag: bool = false;
-    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+    for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
         let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
         match value.as_bool() {
           Some(true) => flag = true,
@@ -171,8 +170,8 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
-  let mut rows = vi.rows();
-  let mut cols = match vi.column_iter {
+  let rows = vi.rows();
+  let cols = match vi.column_iter {
     IndexIterator::Constant{..} |
     IndexIterator::Alias{..} => 1,
     _ => vi.columns(),
@@ -201,7 +200,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     unsafe { (*out.table).resize(1, cols); }
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut sum: Value = Value::from_u64(0);
-      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
           Some(value) => {
             match sum.add(value) {
@@ -219,8 +218,8 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   } else if *in_arg_name == *TABLE {
     unsafe { (*out.table).resize(1, 1); }
     let mut sum: Value = Value::from_u64(0);
-    for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-      for (j,k) in (1..=rows).zip(vi.row_iter.clone()) {
+    for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
+      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
           Some(value) => {
             match sum.add(value) {
@@ -242,7 +241,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
-  let mut row = 0;
+  let row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -293,13 +292,13 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
       _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
     };
-    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+    for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
         (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
       } else {
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
-      for (k,i) in row_iter {
+      for (_k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
         let m = out.column_iter.next();
@@ -329,7 +328,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 
   // Get the size of the output table
   for (_, vi) in arguments {
-    let vi_rows = match &vi.row_iter {
+    let _vi_rows = match &vi.row_iter {
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -358,13 +357,13 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
     };
 
-    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+    for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
         (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
       } else {
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
-      for (k,i) in row_iter {
+      for (_k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
         let m = out.column_iter.next();
