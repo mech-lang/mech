@@ -1,4 +1,4 @@
-use block::{Block, BlockState, Register, Error, Transformation};
+use block::{Block, BlockState, Register, Error, Transformation, format_register};
 use ::{humanize, hash_string};
 use database::{Database};
 use table::{Index, TableId};
@@ -37,6 +37,7 @@ pub struct Runtime {
   pub changed_this_round: HashSet<Register>,
   pub aggregate_changed_this_round: HashSet<Register>,
   pub aggregate_tables_changed_this_round: HashSet<TableId>,
+  pub register_aliases: HashMap<Register, HashSet<Register>>,
   pub defined_registers: HashSet<Register>,
   pub needed_registers: HashSet<Register>,
   pub input: HashSet<Register>,
@@ -58,6 +59,7 @@ impl Runtime {
       changed_this_round: HashSet::new(), 
       aggregate_changed_this_round: HashSet::new(), // A cumulative list of all registers changed this round
       aggregate_tables_changed_this_round: HashSet::new(),
+      register_aliases: HashMap::new(),
       defined_registers: HashSet::new(),
       needed_registers: HashSet::new(),
       input: HashSet::new(),
@@ -231,9 +233,9 @@ impl Runtime {
 
     // If the block is new and has no input, it can be marked to run immediately
     if !block.errors.is_empty() {
-      block.state == BlockState::Error;
+      block.state = BlockState::Error;
     } else if block.state == BlockState::New && block.input.len() == 0 && block.output_dependencies.len() == 0 {
-      block.state == BlockState::Ready;
+      block.state = BlockState::Ready;
     }
 
     // Extend database strings
@@ -279,6 +281,14 @@ impl Runtime {
       }
     }
 
+    // Extend register aliases 
+    for (register, aliases) in block.register_aliases.iter() {
+      match self.register_aliases.get_mut(&register) {
+        Some(aliases2) => aliases2.extend(aliases),
+        None => {self.register_aliases.insert(register.clone(), aliases.clone());},
+      }
+    }
+
     // Keep track of needed tables
     self.needed_registers.extend(&block.input);
     self.needed_registers.extend(&block.output_dependencies);
@@ -299,6 +309,8 @@ impl Runtime {
       self.ready_blocks.insert(block.id);
     }
 
+    println!("{:?}", block);
+
     // Add the block to the list of blocks
     self.blocks.insert(block.id, block);
 
@@ -310,6 +322,15 @@ impl Runtime {
 impl fmt::Debug for Runtime {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "register aliases\n")?;
+    let mut db = self.database.borrow_mut();
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    for (k,v) in self.register_aliases.iter() {
+      write!(f, "{:?}->\n", format_register(&store.strings,k))?;
+      for register in v.iter() {
+        write!(f, "    {:?}\n", format_register(&store.strings,register))?;
+      }
+    }
     write!(f, "blocks: \n")?;
     for (_k,block) in self.blocks.iter() {
       write!(f, "{:?}\n", block)?;
