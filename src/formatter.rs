@@ -1,7 +1,7 @@
-use mech_core::{Block, Transformation, TableId};
-use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity};
+use mech_core::TableId;
+use mech_core::QuantityMath;
 use super::compiler::Node;
-use hashbrown::hash_map::{HashMap, Entry};
+use hashbrown::hash_map::{HashMap};
 
 // # Formatter
 
@@ -137,7 +137,7 @@ impl Formatter {
                 } else {
                   code = format!("{}{}, ",code, binding);
                 }
-                
+
               }
             }
             code = if self.html {
@@ -393,12 +393,12 @@ impl Formatter {
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::Statement{children} |
-      Node::Transformation{children, ..} => { 
+      Node::Transformation{children, ..} => {
         for child in children {
           code = self.write_node(child);
         }
       },
-      Node::Block{children, ..} => { 
+      Node::Block{children, ..} => {
         for child in children {
           let constraint = self.write_node(child);
           code = format!("{}{}\n", code, constraint);

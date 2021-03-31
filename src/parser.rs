@@ -12,10 +12,10 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
-  error::{context, convert_error, ErrorKind, ParseError, VerboseError},
+  error::VerboseError,
   multi::{many1, many0},
   bytes::complete::{tag},
-  character::complete::{alphanumeric1, char, hex_digit1, oct_digit1, alpha1, digit1, space0, space1},
+  character::complete::{char, hex_digit1, oct_digit1, alpha1, digit1, space0, space1},
 };
 
 // ## Parser Node
@@ -309,7 +309,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
-  };  
+  };
 
   match children {
     Some(childs) => {
@@ -318,7 +318,7 @@ pub fn print_recurse(node: &Node, level: usize) {
       }
     },
     _ => (),
-  }    
+  }
 }
 
 pub fn spacer(width: usize) {
@@ -382,7 +382,7 @@ impl Parser {
         self.unparsed = rest.to_string();
         self.parse_tree = tree;
       },
-      _ => (), 
+      _ => (),
     }
   }
 
@@ -394,7 +394,7 @@ impl Parser {
         self.parse_tree = tree;
         Ok(())
       },
-      Err(x) => Err(()), 
+      Err(x) => Err(()),
     }
   }
 }
@@ -402,7 +402,7 @@ impl Parser {
 impl fmt::Debug for Parser {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    
+
     write!(f, "┌───────────────────────────────────────┐\n").unwrap();
     write!(f, "│ Parser\n").unwrap();
     write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
@@ -1057,14 +1057,14 @@ fn next_state_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
   #timer? x -> x + 1
- 
+
 
 
 
 
 fn state_transition(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = many1(space)(input)?;
- 
+
 
   many1!(space) >> state: alt!(identifier, string | constant | empty) >> many1!(space) >>  >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
   (Node::StateTransition { children: vec![state, next] })));
@@ -1113,7 +1113,7 @@ fn transformation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, transformations) = many1(transformation)(input)?; 
+  let (input, transformations) = many1(transformation)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children: transformations }))
 }
@@ -1123,7 +1123,7 @@ fn block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = space1(input)?;
-  let (input, text) = text(input)?; 
+  let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Title { children: vec![text] }))
 }
@@ -1132,7 +1132,7 @@ fn subtitle(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
   let (input, _) = space1(input)?;
-  let (input, text) = text(input)?; 
+  let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Subtitle { children: vec![text] }))
 }
@@ -1142,14 +1142,14 @@ fn section_title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
   let (input, _) = space1(input)?;
-  let (input, text) = text(input)?; 
+  let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::SectionTitle { children: vec![text] }))
 }
 
 fn inline_code(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = grave(input)?;
-  let (input, text) = text(input)?; 
+  let (input, text) = text(input)?;
   let (input, _) = grave(input)?;
   let (input, _) = space0(input)?;
   Ok((input, Node::InlineCode { children: vec![text] }))
@@ -1157,7 +1157,7 @@ fn inline_code(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn paragraph_text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, word) = paragraph_starter(input)?;
-  let (input, text) = opt(paragraph_rest)(input)?; 
+  let (input, text) = opt(paragraph_rest)(input)?;
   let mut paragraph = vec![word];
   match text {
     Some(text) => paragraph.push(text),
