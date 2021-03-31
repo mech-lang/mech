@@ -2008,7 +2008,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let quantity = make_quantity(value as i64,(1 - place as i64),0);
+        let quantity = make_quantity(value as i64, 1 - place as i64, 0);
         compiled.push(Node::Constant{value: quantity, unit: None});
       },
       // String-like nodes
