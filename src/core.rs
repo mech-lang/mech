@@ -7,9 +7,9 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
 use operations::{
-  math_add, math_subtract, 
-  math_multiply, 
-  math_divide, 
+  math_add, math_subtract,
+  math_multiply,
+  math_divide,
   compare_greater_than_equal,
   compare_greater_than,
   compare_less_than,
@@ -18,7 +18,7 @@ use operations::{
   compare_not_equal,
   logic_and,
   logic_or,
-  table_range, 
+  table_range,
   table_set,
   table_add_row,
   table_horizontal_concatenate,
@@ -30,11 +30,11 @@ use ::hash_string;
 
 // ## Core
 
-// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the 
+// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the
 // subparts of Mech, including the database (defines the what) and the runtime (defines the how).
 // The core accepts transactions and applies those to the database. Updated tables in the database
 // trigger computation in the runtime, which can further update the database. Execution terminates
-// when a steady state is reached, or an iteration limit is reached (whichever comes first). The 
+// when a steady state is reached, or an iteration limit is reached (whichever comes first). The
 // core then waits for further transactions.
 pub struct Core {
   pub runtime: Runtime,
@@ -96,7 +96,7 @@ impl Core {
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),Error> {
     for change in &txn.changes {
       match change {
-        Change::NewTable{table_id, rows, columns} => {
+        Change::NewTable{table_id, ..} => {
           let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
           self.runtime.output.insert(register);
         }
@@ -149,7 +149,7 @@ impl Core {
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}\n", self.database.borrow())?;   
+    write!(f, "{:?}\n", self.database.borrow())?;
     write!(f, "{:?}\n", self.runtime)?;
     Ok(())
   }

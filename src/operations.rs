@@ -22,10 +22,10 @@ lazy_static! {
 }
 
 pub fn resolve_subscript(
-  table_id: TableId, 
-  row_index: Index, 
+  table_id: TableId,
+  row_index: Index,
   column_index: Index,
-  block_tables: &mut HashMap<u64, Table>, 
+  block_tables: &mut HashMap<u64, Table>,
   database: &Arc<RefCell<Database>>) -> ValueIterator {
 
   let mut db = database.borrow_mut();
@@ -47,7 +47,7 @@ pub fn resolve_subscript(
             }
             _ => (),
           }
-          
+
         }
       }
     }
@@ -88,7 +88,7 @@ pub fn resolve_subscript(
     Index::None => IndexIterator::Constant(Index::Index(0)),
     //_ => IndexIterator::Range(1..=(*table).columns),
   }};
-  
+
   ValueIterator{
     scope: table_id,
     table,
@@ -104,7 +104,7 @@ pub fn resolve_subscript(
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
 
 
-pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
+pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -144,7 +144,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
       unsafe {
         (*out.table).set_unchecked(1, i, Value::from_bool(flag));
       }
-    }      
+    }
   } else if *in_arg_name == *TABLE {
     unsafe { (*out.table).resize(1, 1); }
     let mut flag: bool = false;
@@ -156,16 +156,16 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
           _ => (), // TODO Alert user that there was an error
         }
       }
-    }  
+    }
     unsafe {
       (*out.table).set_unchecked(1, 1, Value::from_bool(flag));
-    }    
-  } else { 
+    }
+  } else {
     () // TODO alert user that argument is unknown
   };
 }
 
-pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
+pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -214,7 +214,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       unsafe {
         (*out.table).set_unchecked(1, i, sum);
       }
-    }      
+    }
   } else if *in_arg_name == *TABLE {
     unsafe { (*out.table).resize(1, 1); }
     let mut sum: Value = Value::from_u64(0);
@@ -230,18 +230,18 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
           _ => ()
         }
       }
-    }  
+    }
     unsafe {
       (*out.table).set_unchecked(1, 1, sum);
-    }    
+    }
   } else {
     () // TODO alert user that argument is unknown
-  } 
+  }
 }
-    
+
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
-  let row = 0;
+  let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -278,7 +278,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   }
 
   let base_rows = out.rows();
-  
+
   unsafe { (*out.table).resize(out_rows + out.rows(), out_columns); }
 
   for (_, vi) in arguments {
@@ -315,13 +315,13 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       }
     }
     column += width;
-    
+    println!("{:?}", column);
   }
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
-  let row = 0;
+  let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -380,11 +380,12 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }
     column += width;
+    println!("{:?}", column);
   }
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  let row = 0;
+  let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
   let mut out_columns = 0;
@@ -481,13 +482,13 @@ enum CycleIterator {
 
 impl Iterator for CycleIterator {
   type Item = Index;
-  
+
   fn next(&mut self) -> Option<Index> {
     match self {
       CycleIterator::Cycle(itr) => itr.next(),
       CycleIterator::Index(itr) => itr.next(),
     }
-  }  
+  }
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
@@ -549,7 +550,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;
-  
+
   unsafe{
     (*out.table).resize(range+1, 1);
     let mut j = 1;
@@ -589,7 +590,7 @@ macro_rules! binary_infix {
 
       let equal_dimensions = if lhs_rows_count == rhs_rows_count && lhs_columns_count == rhs_columns_count
       { true } else { false };
-      let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1 
+      let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1
       { true } else { false };
       let rhs_scalar = if rhs_rows_count == 1 && rhs_columns_count == 1
       { true } else { false };
