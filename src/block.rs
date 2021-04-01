@@ -177,10 +177,10 @@ impl Block {
           };
           let register_ix = Register{table_id: table_id, row, column};
           let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
-          let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
-          aliases.insert(register_ix);
-          self.output.insert(register_ix);       
-          self.output_dependencies.insert(register_ix);          
+          //let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
+          //aliases.insert(register_ix);
+          self.output.insert(register_all);       
+          self.output_dependencies.insert(register_all);          
         }
         Transformation::Whenever{table_id, row, column, registers} => {
           match table_id {
@@ -360,6 +360,7 @@ impl Block {
         _ => (),
       }
     }
+    self.state = BlockState::Done
   }
 
   pub fn is_ready(&mut self) -> bool {
