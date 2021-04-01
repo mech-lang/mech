@@ -159,7 +159,7 @@ impl Iterator for TableIterator {
             Some(false) => {
               Some(Index::None)
             },
-            x => {
+            _x => {
               Some(Index::None)
             }
           }
@@ -207,7 +207,7 @@ impl Iterator for AliasIterator {
           None => None,
         }
       },
-      Some(index) => self.index
+      Some(_index) => self.index
     }
   }
 }

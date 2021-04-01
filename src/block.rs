@@ -21,10 +21,10 @@ lazy_static! {
 // ## Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
-// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape 
-// them or perform computations on them. Blocks can be thought of as pure functions where the input and 
-// output are tables. Blocks have their own internal table store. Local tables can be defined within a 
-// block, which allows the programmer to break a computation down into steps. The result of the computation 
+// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
+// them or perform computations on them. Blocks can be thought of as pure functions where the input and
+// output are tables. Blocks have their own internal table store. Local tables can be defined within a
+// block, which allows the programmer to break a computation down into steps. The result of the computation
 // is then output to one or more global tables, which triggers the execution of other blocks in the network.
 #[derive(Clone)]
 pub struct Block {
@@ -75,7 +75,7 @@ impl Block {
     for tfm in &self.transformations {
       words = format!("{:?}{:?}", words, tfm);
     }
-    self.id = seahash::hash(words.as_bytes()) & 0x00FFFFFFFFFFFFFF;  
+    self.id = seahash::hash(words.as_bytes()) & 0x00FFFFFFFFFFFFFF;
   }
 
   pub fn register_transformations(&mut self, tfm_tuple: (String, Vec<Transformation>)) {
@@ -130,7 +130,7 @@ impl Block {
               aliases.insert(register_alias);
               self.output.insert(register_alias);              
             }
-            TableId::Local(id) => {
+            TableId::Local(_id) => {
               let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
               store.column_index_to_alias.insert((*table_id.unwrap(),column_ix),column_alias);
               store.column_alias_to_index.insert((*table_id.unwrap(),column_alias),column_ix);
@@ -152,7 +152,7 @@ impl Block {
           };
           match table_id {
             TableId::Local(id) => {
-              let mut table = self.tables.get_mut(&id).unwrap();
+              let table = self.tables.get_mut(&id).unwrap();
               table.set(&Index::Index(1), &Index::Index(1), q);
             }
             TableId::Global(id) => {
@@ -163,7 +163,7 @@ impl Block {
                 }
               );
             }
-            _ => (),
+           // _ => (),
           }
         }
         Transformation::Set{table_id, row, column} => {
@@ -182,9 +182,9 @@ impl Block {
           self.output.insert(register_all);       
           self.output_dependencies.insert(register_all);          
         }
-        Transformation::Whenever{table_id, row, column, registers} => {
+        Transformation::Whenever{table_id, registers, ..} => {
           match table_id {
-            TableId::Global(id) => {
+            TableId::Global(_id) => {
               for register in registers {
                 self.input.insert(register);
               }
@@ -192,7 +192,7 @@ impl Block {
             _ => (),
           }
         }
-        Transformation::Function{name, ref arguments, out} => {
+        Transformation::Function{ref arguments, out, ..} => {
           let (out_id, row, column) = out;
           match out_id {
             TableId::Global(id) => {
@@ -213,7 +213,7 @@ impl Block {
           }
           for (_, table_id, row, column) in arguments {
             match table_id {
-              TableId::Global(id) => {
+              TableId::Global(_id) => {
                 let row2: &Index = match row {
                   Index::Table{..} => &Index::All,
                   Index::None => &Index::All,
@@ -248,8 +248,8 @@ impl Block {
         changes: self.changes.clone(),
       };
       self.changes.clear();
-      database.borrow_mut().process_transaction(&txn);
-      database.borrow_mut().transactions.push(txn);        
+      database.borrow_mut().process_transaction(&txn).ok();
+      database.borrow_mut().transactions.push(txn);
     }
   }
 
@@ -257,12 +257,12 @@ impl Block {
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
-        Transformation::Whenever{table_id, row, column, registers} => {
+        Transformation::Whenever{table_id, registers, ..} => {
           match table_id {
-            TableId::Global(id) => {
+            TableId::Global(_id) => {
               for register in registers {
                 self.ready.remove(&register);
-              }             
+              }
             }
             TableId::Local(id) => {
               let mut flag = false;
@@ -274,13 +274,13 @@ impl Block {
                     match val.as_bool() {
                       Some(true) => flag = true,
                       _ => (),
-                    } 
-                  }                  
+                    }
+                  }
                 }
               }
               if flag == false {
                 break 'step_loop;
-              } else { 
+              } else {
                 for register in registers {
                   self.ready.remove(&register);
                 }
@@ -304,7 +304,7 @@ impl Block {
               if *name == *TABLE_SPLIT {
                 let (_, vi) = &vis[0];
                 let vi_table = unsafe{&(*vi.table)};
-                                
+
                 unsafe{ (*out_vi.table).resize(vi.rows(), 1); }
 
                 for row in vi.row_iter.clone() {
@@ -316,7 +316,7 @@ impl Block {
                     let value = vi.get(&row,&column).unwrap();
                     table.set(&Index::Index(1),&column, value);
                   }
-                  self.tables.insert(new_table_id, table);   
+                  self.tables.insert(new_table_id, table);
                   unsafe {
                     (*out_vi.table).set(&row,&Index::Index(1),Value::from_id(new_table_id));
                   }
@@ -329,9 +329,9 @@ impl Block {
                   };
                   self.changes.clear();
                   let mut db = database.borrow_mut();
-                  db.process_transaction(&txn);
-                  db.transactions.push(txn); 
-                  let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;               
+                  db.process_transaction(&txn).ok();
+                  db.transactions.push(txn);
+                  let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;
                   unsafe {
                     for i in 1..=vi.columns() {
                       // Add alias to column if it's there
@@ -379,7 +379,7 @@ impl Block {
       } else {
         false
       }
-    }    
+    }
   }
 
 }
@@ -441,7 +441,7 @@ impl fmt::Debug for Block {
     for (_, table) in self.tables.iter() {
       write!(f, "{:?}\n", table)?;
     }
-    
+
     Ok(())
   }
 }
@@ -533,7 +533,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       tfm = format!("{} = ({} x {})",tfm,rows,columns);
       tfm
     }
-    Transformation::Whenever{table_id, row, column, registers} => {
+    Transformation::Whenever{table_id, row, column, ..} => {
       let mut arg = format!("~ ");
       match table_id {
         TableId::Global(id) => {
@@ -590,18 +590,18 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           arg=format!("{}{}}}",arg,alias_name);
         },
       }
-      arg      
+      arg
     }
-    Transformation::Constant{table_id, value, unit} => {
+    Transformation::Constant{table_id, value, ..} => {
       let mut tfm = format!("");
       match value.as_quantity() {
-        Some(quantity) => tfm = format!("{}{:?} -> ", tfm, value),
+        Some(_quantity) => tfm = format!("{}{:?} -> ", tfm, value),
         None => {
           if value.is_empty() {
             tfm = format!("{} _ -> ",tfm);
           } else {
             match value.as_reference() {
-              Some(reference) => {tfm = format!("{}@{} -> ",tfm, humanize(value));}
+              Some(_reference) => {tfm = format!("{}@{} -> ",tfm, humanize(value));}
               None => {
                 match value.as_bool() {
                   Some(true) => tfm = format!("{} true -> ",tfm),
@@ -610,11 +610,11 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
                 }
               }
             }
-            
+
           }
         },
       }
-      
+
       match table_id {
         TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
         TableId::Local(id) => {
@@ -647,7 +647,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         None => format!("{}", humanize(name)),
       };
       let mut arg = format!("");
-      for (ix,(arg_id, table, row, column)) in arguments.iter().enumerate() {
+      for (ix,(_arg_id, table, row, column)) in arguments.iter().enumerate() {
         match table {
           TableId::Global(id) => {
             let name = match block.store.strings.get(id) {
@@ -718,7 +718,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             None => format!("{:}",humanize(id)),
           };
           arg=format!("{}#{}",arg,name);
-        } 
+        }
         TableId::Local(id) => {
           match block.store.strings.get(id) {
             Some(name) => arg = format!("{}{}",arg,name),
@@ -766,7 +766,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           arg=format!("{}.{}}}",arg,alias_name);
         },
       }
-      arg      
+      arg
     },
     x => format!("{:?}", x),
   }

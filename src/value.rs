@@ -5,9 +5,8 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use quantities::{Quantity, ToQuantity, QuantityMath};
-use errors::{Error, ErrorType};
+use errors::{ErrorType};
 use ::{hash_string};
 
 // ## Value structs and enums

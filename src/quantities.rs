@@ -7,7 +7,7 @@
 // Also credit to Josh Cole for coming up with the spec
 // Adapted and extended for Mech by Corey Montella
 
-use errors::{Error, ErrorType};
+use errors::{ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
@@ -221,7 +221,7 @@ impl QuantityMath for Quantity {
     let decimal_ix = (mantissa_string.len() as i64 + self.range()) as isize;
     if decimal_ix < 0 {
       let mut as_string = String::from("0.");
-      for i in 0..-1*decimal_ix {
+      for _i in 0..-1*decimal_ix {
         as_string = format!("{}0", as_string);
       }
       as_string = format!("{}{}", as_string, mantissa_string);
