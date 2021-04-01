@@ -326,8 +326,12 @@ impl Runtime {
       match self.input_to_block.get(&block_output_register) {
         Some(other_blocks) => {
           for other_block_id in other_blocks.iter() {
-            let other_block = self.blocks.get_mut(&other_block_id).unwrap();
-            other_block.ready.insert(*block_output_register);
+            match self.blocks.get_mut(&other_block_id) {
+              Some(other_block) => {
+                other_block.ready.insert(*block_output_register);
+              }
+              _ => (),
+            }
           }
         }
         // Does an alias of this register map to a block's input?
@@ -338,9 +342,13 @@ impl Runtime {
                 Some(other_blocks) => {
                   // Mark the registers in each block as ready
                   for other_block_id in other_blocks.iter() {
-                    let other_block = self.blocks.get_mut(&other_block_id).unwrap();
-                    other_block.ready.insert(*register_alias);
-                    new_input_register_mapping.insert(*block_output_register, *other_block_id);
+                    match self.blocks.get_mut(&other_block_id) {
+                      Some(other_block) => {
+                        other_block.ready.insert(*register_alias);
+                        new_input_register_mapping.insert(*block_output_register, *other_block_id);
+                      }
+                      _ => (),
+                    }
                   }
                 }
                 None => (),
