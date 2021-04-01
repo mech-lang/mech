@@ -92,7 +92,7 @@ impl Runtime {
 
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
-        let mut block = self.blocks.get_mut(&block_id).unwrap();
+        let block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
         self.changed_this_round.extend(&block.output);
@@ -183,7 +183,7 @@ impl Runtime {
     }
     for table_id in self.aggregate_tables_changed_this_round.drain() {
       let mut db = self.database.borrow_mut();
-      let mut table = db.tables.get_mut(table_id.unwrap()).unwrap();
+      let table = db.tables.get_mut(table_id.unwrap()).unwrap();
       table.reset_changed();
     }
     Ok(())

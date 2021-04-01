@@ -166,19 +166,8 @@ impl Block {
            // _ => (),
           }
         }
-        Transformation::Set{table_id, row, column} => {
-          let row = match row {
-            Index::Table(_) => Index::All,
-            x => x,
-          };
-          let column = match column {
-            Index::Table(_) => Index::All,
-            x => x,
-          };
-          let register_ix = Register{table_id: table_id, row, column};
+        Transformation::Set{table_id, row: _, column: _} => {
           let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
-          //let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
-          //aliases.insert(register_ix);
           self.output.insert(register_all);       
           self.output_dependencies.insert(register_all);          
         }
@@ -195,7 +184,7 @@ impl Block {
         Transformation::Function{ref arguments, out, ..} => {
           let (out_id, row, column) = out;
           match out_id {
-            TableId::Global(id) => {
+            TableId::Global(_id) => {
               let row = match row {
                 Index::Table(_) => Index::All,
                 x => x,

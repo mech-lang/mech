@@ -708,7 +708,6 @@ macro_rules! binary_infix {
                 }
               }
             }
-            _ => (),
           }
           if i >= out_elements {
             break;
