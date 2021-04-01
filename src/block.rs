@@ -96,11 +96,6 @@ impl Block {
                 }
               );
               let register_all = Register{table_id, row: Index::All, column: Index::All};
-              let register_linear = Register{table_id, row: Index::All, column: Index::None};
-              let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
-              aliases.insert(register_linear);
-              let aliases = self.register_aliases.entry(register_linear).or_insert(HashSet::new());
-              aliases.insert(register_all);
               self.output.insert(register_all);
             }
             TableId::Local(id) => {
@@ -364,11 +359,6 @@ impl Block {
         }
         _ => (),
       }
-    }
-    // Set the state to done. If it's updated, that indicated a done as well
-    match self.state {
-      BlockState::Updated => (),
-      _ => self.state = BlockState::Done,
     }
   }
 
@@ -789,7 +779,6 @@ pub enum BlockState {
   Unsatisfied,  // One or more inputs are not satisfied
   Error,        // One or more errors exist on the block
   Disabled,     // The block is disabled will not execute if it otherwise would
-  Updated,      // One or more registers have been added to the input/output of the block
 }
 
 pub enum Error {
