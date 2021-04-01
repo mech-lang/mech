@@ -279,6 +279,13 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 
   let base_rows = out.rows();
 
+  // If the table is already bigger than what we need, don't resize
+  out_columns = if out.columns() > out_columns {
+    out.columns()
+  } else {
+    out_columns
+  };
+  
   unsafe { (*out.table).resize(out_rows + out.rows(), out_columns); }
 
   for (_, vi) in arguments {
@@ -301,13 +308,18 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       for (_k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
-        let m = out.column_iter.next();
+        let column_alias = unsafe { (*vi.table).get_column_alias(j.unwrap()) };
+        // If the column has an alias, let's use it instead
+        let m = match column_alias {
+          Some(alias) => Some(alias),
+          None => out.column_iter.next(),
+        };
         match (n, m) {
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
             unsafe {
-              (*out.table).set_unchecked(out_row.unwrap() + base_rows, out_col.unwrap(), value);
+              (*out.table).set(&Index::Index(out_row.unwrap() + base_rows), &out_col, value);
             }
           }
           _ => continue,
@@ -587,7 +599,6 @@ macro_rules! binary_infix {
         _ => 1,
       };
 
-
       let equal_dimensions = if lhs_rows_count == rhs_rows_count && lhs_columns_count == rhs_columns_count
       { true } else { false };
       let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1
@@ -656,6 +667,7 @@ macro_rules! binary_infix {
       let mut i = 1;
       let out_elements = out.rows() * out.columns();
       unsafe{
+
         loop {
           let l1 = lrix.next().unwrap().unwrap();
           let l2 = lcix.next().unwrap().unwrap();
@@ -673,7 +685,6 @@ macro_rules! binary_infix {
           } else {
             (*rhs_vi.table).get_unchecked(r1,r2)
           };
-          println!("{:?} * {:?}", lhs_value, rhs_value);
           match (lhs_value, rhs_value, lhs_changed, rhs_changed)
           {
             (lhs_value, rhs_value, true, true) => {
@@ -682,6 +693,19 @@ macro_rules! binary_infix {
                   (*out.table).set_unchecked(o1, o2, result);
                 }
                 Err(_) => (), // TODO Handle error here
+              }
+            }
+            // If either operand is not changed but the output is cell is empty, then we can do the operation
+            (lhs_value, rhs_value, false, _) |
+            (lhs_value, rhs_value, _, false) => {
+              let (out_value, _) = (*out.table).get_unchecked(o1, o2);
+              if out_value.is_empty() {
+                match lhs_value.$op(rhs_value) {
+                  Ok(result) => {
+                    (*out.table).set_unchecked(o1, o2, result);
+                  }
+                  Err(_) => (), // TODO Handle error here
+                }
               }
             }
             _ => (),
@@ -700,6 +724,7 @@ binary_infix!{math_add, add}
 binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
+binary_infix!{math_exponent, power}
 binary_infix!{compare_greater_than_equal, greater_than_equal}
 binary_infix!{compare_greater_than, greater_than}
 binary_infix!{compare_less_than_equal, less_than_equal}

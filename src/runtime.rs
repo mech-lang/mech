@@ -1,7 +1,7 @@
-use block::{Block, BlockState, Register, Error, Transformation};
-use ::{hash_string};
+use block::{Block, BlockState, Register, Error, Transformation, format_register};
+use ::{humanize, hash_string};
 use database::{Database};
-use table::{Index};
+use table::{Index, TableId};
 use std::cell::RefCell;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
@@ -36,6 +36,8 @@ pub struct Runtime {
   pub input_to_block:  HashMap<Register,HashSet<u64>>,
   pub changed_this_round: HashSet<Register>,
   pub aggregate_changed_this_round: HashSet<Register>,
+  pub aggregate_tables_changed_this_round: HashSet<TableId>,
+  pub register_aliases: HashMap<Register, HashSet<Register>>,
   pub defined_registers: HashSet<Register>,
   pub needed_registers: HashSet<Register>,
   pub input: HashSet<Register>,
@@ -55,7 +57,9 @@ impl Runtime {
       output_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
       changed_this_round: HashSet::new(), 
-      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all tables changed this round
+      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all registers changed this round
+      aggregate_tables_changed_this_round: HashSet::new(),
+      register_aliases: HashMap::new(),
       defined_registers: HashSet::new(),
       needed_registers: HashSet::new(),
       input: HashSet::new(),
@@ -75,6 +79,7 @@ impl Runtime {
   pub fn run_network(&mut self) -> Result<(), Error> {   
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
+    let mut changed_last_round = true;
     
     // We are going to execute ready blocks until there aren't any left or until
     // the recursion limit is reached
@@ -90,19 +95,6 @@ impl Runtime {
         let mut block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes(self.database.clone());
         block.solve(self.database.clone(), &self.functions);
-        // If the block has been updated, then we need to update your compute graph
-        match block.state {
-          BlockState::Updated => {
-            // Keep track of which blocks produce which tables
-            for output_register in block.output.iter() {
-              let producers = self.output_to_block.entry(*output_register).or_insert(HashSet::new());
-              producers.insert(block.id);
-            }
-            self.output.extend(&block.output);
-            block.state = BlockState::Done;
-          }
-          _ => (),
-        }
         self.changed_this_round.extend(&block.output);
       }
 
@@ -113,6 +105,8 @@ impl Runtime {
       // of ready blocks
       for register in self.changed_this_round.drain() {
         self.aggregate_changed_this_round.insert(register);
+        self.aggregate_tables_changed_this_round.insert(register.table_id);
+        // Do the output dependencies first
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
             for block_id in producing_block_ids.iter() {
@@ -131,6 +125,7 @@ impl Runtime {
           }
           _ => () // No producers
         }
+        // Now look over all the tables which have this register as an input
         match self.input_to_block.get(&register) {
           Some(listening_block_ids) => {
             for block_id in listening_block_ids.iter() {
@@ -151,15 +146,31 @@ impl Runtime {
       // Break the loop if we hit the recursion limit
       } else if self.recursion_limit == recursion_ix {
         // TODO Emit a warning here
-        println!("Recursion limit reached");
+        println!("Recursion limit of {:?} reached", self.recursion_limit);
         break;
       }
       // Check if there were any updates to the store. If not, we are at a set point, and we are done.
       {
         let mut db = self.database.borrow_mut();
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+        // If the store wasn't changed and there are no more ready blocks, we're done.
         if !store.changed && self.ready_blocks.is_empty() {
           break;
+        // If the store wasn't changed for two consecutive rounds but there are still ready blocks, 
+        // this means they aren't doing any work and we're at a set point, so we're done.
+        } else if !store.changed && !changed_last_round {
+          for block_id in self.ready_blocks.iter() {
+            let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+            block.state = BlockState::Done;
+          }
+          break;
+        // If the store was changed, we did work this round
+        } else if store.changed {
+          changed_last_round = true;
+        // If the store didn't change we might be done for good, but we'll need to go one more round
+        // to find out for sure.
+        } else if !store.changed {
+          changed_last_round = false;
         }
       }
       recursion_ix += 1;
@@ -169,6 +180,11 @@ impl Runtime {
         BlockState::Ready => {self.ready_blocks.insert(*block_id);}
         _ => (),
       }
+    }
+    for table_id in self.aggregate_tables_changed_this_round.drain() {
+      let mut db = self.database.borrow_mut();
+      let mut table = db.tables.get_mut(table_id.unwrap()).unwrap();
+      table.reset_changed();
     }
     Ok(())
   }
@@ -249,8 +265,22 @@ impl Runtime {
             let register = Register{table_id: *table_id, row: Index::All, column: Index::All};
             self.defined_registers.insert(register);
           }
+          Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+            let register = Register{table_id: *table_id, row: Index::All, column: Index::Alias(*column_alias)};
+            self.defined_registers.insert(register);
+            let register = Register{table_id: *table_id, row: Index::All, column: Index::Index(*column_ix)};
+            self.defined_registers.insert(register);
+          }
           _ => (),
         }
+      }
+    }
+
+    // Extend register aliases 
+    for (register, aliases) in block.register_aliases.iter() {
+      match self.register_aliases.get_mut(&register) {
+        Some(aliases2) => aliases2.extend(aliases),
+        None => {self.register_aliases.insert(register.clone(), aliases.clone());},
       }
     }
 
@@ -260,9 +290,24 @@ impl Runtime {
 
     // Figure out if all the requirements are met
     for register in &block.input {
-      match self.output.get(&register) {
-        Some(_r) => {block.ready.insert(*register);},
-        _ => (),
+      match self.output.contains(&register) {
+        true => {block.ready.insert(*register);},
+        false => {
+          // If the runtime doesn't output a needed register, check if there's an alias it does output
+          match self.register_aliases.get(&register) {
+            Some(register_aliases) => {
+              for alias in register_aliases.iter() {
+                match self.output.contains(&alias) {
+                  true => {
+                    block.ready.insert(*register);
+                  }
+                  false => (),
+                }
+              }
+            }
+            _ => (),
+          }
+        },
       }
     }
 
@@ -272,6 +317,53 @@ impl Runtime {
       self.input.extend(&block.output_dependencies);
       block.process_changes(self.database.clone());
       self.ready_blocks.insert(block.id);
+    }
+
+    // Check to see if this new block makes any other blocks ready to execute
+    let mut new_input_register_mapping: HashMap<Register, u64> = HashMap::new();
+    for block_output_register in block.output.iter() {
+      // Does this register map to a block's input?
+      match self.input_to_block.get(&block_output_register) {
+        Some(other_blocks) => {
+          for other_block_id in other_blocks.iter() {
+            match self.blocks.get_mut(&other_block_id) {
+              Some(other_block) => {
+                other_block.ready.insert(*block_output_register);
+              }
+              _ => (),
+            }
+          }
+        }
+        // Does an alias of this register map to a block's input?
+        None => match self.register_aliases.get(&block_output_register) {
+          Some(register_aliases) => {
+            for register_alias in register_aliases.iter() {
+              match self.input_to_block.get(&register_alias) {
+                Some(other_blocks) => {
+                  // Mark the registers in each block as ready
+                  for other_block_id in other_blocks.iter() {
+                    match self.blocks.get_mut(&other_block_id) {
+                      Some(other_block) => {
+                        other_block.ready.insert(*register_alias);
+                        new_input_register_mapping.insert(*block_output_register, *other_block_id);
+                      }
+                      _ => (),
+                    }
+                  }
+                }
+                None => (),
+              }
+            }
+          }
+          _ => (),
+        }
+      }
+    }
+
+    // Add an alias for the input to block
+    for (register, block_id) in new_input_register_mapping.iter() {
+      let listeners = self.input_to_block.entry(*register).or_insert(HashSet::new());
+      listeners.insert(*block_id);
     }
 
     // Add the block to the list of blocks
@@ -285,6 +377,48 @@ impl Runtime {
 impl fmt::Debug for Runtime {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut db = self.database.borrow_mut();
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    write!(f, "input: \n")?;
+    for k in self.input.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+    }
+    write!(f, "output: \n")?;
+    for k in self.output.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+    }
+    write!(f, "input to block: \n")?;
+    for (k,v) in self.input_to_block.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+      for block_id in v.iter() {
+        write!(f, "    {}\n", humanize(block_id))?;
+      }
+    }
+    write!(f, "output to block: \n")?;
+    for (k,v) in self.output_to_block.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+      for block_id in v.iter() {
+        write!(f, "    {}\n", humanize(block_id))?;
+      }
+    }
+    write!(f, "register aliases: \n")?;
+    for (k,v) in self.register_aliases.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+      for register in v.iter() {
+        write!(f, "    {}\n", format_register(&store.strings,register))?;
+      }
+    }
+
+    write!(f, "defined registers: \n")?;
+    for k in self.defined_registers.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+    }
+
+    write!(f, "needed registers: \n")?;
+    for k in self.needed_registers.iter() {
+      write!(f, "  {}\n", format_register(&store.strings,k))?;
+    }
+
     write!(f, "blocks: \n")?;
     for (_k,block) in self.blocks.iter() {
       write!(f, "{:?}\n", block)?;
