@@ -4,14 +4,14 @@ extern crate mech_core;
 
 use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{hash_string, Core, Index, Value, ValueMethods, make_quantity};
+use mech_core::{hash_string, Core, Index, Value, Quantity, QuantityMath, ToQuantity, ValueMethods, make_quantity};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
     #[test]
     fn $func() {
       let mut compiler = Compiler::new();
-      let mut core = Core::new(100);
+      let mut core = Core::new(100, 100);
       core.load_standard_library();
       let input = String::from($input);
       compiler.compile_string(input);
@@ -59,6 +59,14 @@ block
   #test = [|d|
             5  ]", Value::from_i64(5));
 
+test_mech!(table_define_empty_table, "
+block
+  #bots = [|name position|]
+block
+  #bots += [position: 3 name: 4]
+block
+  #test = #bots.position ^ #bots.name", Value::from_quantity(make_quantity(81000000000000,-12,0)));
+
 test_mech!(table_define_program, "# A Working Program
 
 ## Section Two
@@ -90,6 +98,8 @@ test_mech!(math_subtract,"#test = 1 - 1", Value::from_i64(0));
 test_mech!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::from_quantity(make_quantity(20000,-4,0)));
+
+test_mech!(math_exponent,"#test = 3 ^ 4", Value::from_quantity(make_quantity(81000000000000,-12,0)));
 
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
 
@@ -370,6 +380,21 @@ block
 
 block
   #test = stats/sum(column: #x)", Value::from_i64(407));
+
+
+test_mech!(set_single_index_math,"
+block
+  #test = stats/sum(column: #y)
+
+block
+  #x = [1;2;3]
+
+block
+  #y = #x * 2
+
+block
+  #x{2,1} := 10", Value::from_i64(28));
+
 
 test_mech!(set_column_logical,"
 block
@@ -952,9 +977,3 @@ block
 
   test_mech!(number_literal_decimal, r#"
   #test = 0d1234567890"#, 13902651193305449173);
-
-  test_mech!(number_literal_add_hex, r#"
-  #test = 0xABC + 0xDEF"#, 13902651193305449173);
-
-  test_mech!(number_rational_number, r#"
-  #test = 1/2"#, 13902651193305449173);

@@ -299,7 +299,6 @@ pub struct Compiler {
   pub current_col: usize,
   pub errors: Vec<ErrorType>,
   pub unparsed: String,
-  pub register_map: HashMap<u64, Register>,
 }
 
 impl Compiler {
@@ -330,7 +329,6 @@ impl Compiler {
       parse_tree: parser::Node::Root{ children: Vec::new() },
       syntax_tree: Node::Root{ children: Vec::new() },
       errors: Vec::new(),
-      register_map: HashMap::new(),
     }
   }
 
@@ -777,10 +775,6 @@ impl Compiler {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
           store.number_literals.insert(k,v.clone());
         }
-        for (k,v) in self.register_map.drain() {
-          //block.register_map.insert(k,v);
-          self.register_map.insert(k,v);
-        }
         for err in self.errors.drain(..) {
           block.errors.push(err);
         }
@@ -800,7 +794,7 @@ impl Compiler {
       Node::InlineTable{children} => {
         let table = self.table;
         self.table = hash_string(&format!("{:?}",children));
-        transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 1, columns: children.len()});
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 0, columns: children.len()});
         let mut tfms = vec![];
         let mut ix = 1;
         let mut args = vec![];
@@ -909,7 +903,17 @@ impl Compiler {
               args.push((0, table_id.clone(), Index::All, Index::All));
             }
             Transformation::ColumnAlias{table_id,..} => {
-              let new_table = Transformation::NewTable{table_id: *table_id, rows: 1, columns: 1};
+              let mut columns = 0;
+              for i in 0..result.len() {
+                match result[i] {
+                  Transformation::ColumnAlias{table_id,..} => {
+                    
+                    columns += 1;
+                  }
+                  _ => break,
+                }
+              }
+              let new_table = Transformation::NewTable{table_id: *table_id, rows: 0, columns};
               transformations.push(new_table);
             }
             _ => (),
@@ -1167,18 +1171,16 @@ impl Compiler {
           Transformation::Select{table_id, row, column} => {
             let register = Register{table_id: table_id, row, column};
             transformations.push(
-              Transformation::Whenever{table_id, row, column, registers: vec![register.hash()]},
+              Transformation::Whenever{table_id, row, column, registers: vec![register]},
             );
-            self.register_map.insert(register.hash(), register);
           }
           Transformation::NewTable{table_id, ..} => {
-            let mut registers = vec![];
+            let mut registers: Vec<Register> = vec![];
             for r in &result {
               match r {
                 Transformation::Select{table_id,row,column} => {
                   let register = Register{table_id: *table_id, row: *row, column: *column};
-                  registers.push(register.hash());
-                  self.register_map.insert(register.hash(), register);
+                  registers.push(register);
                 }
                 _ => (),
               }
@@ -1390,7 +1392,7 @@ impl Compiler {
         if input.len() == 1 {
           match input[0] {
             Transformation::Select{table_id, row, column} => {
-              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 1, columns: 1});
+              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 0, columns: 0});
               input_tfms.push(Transformation::Function{
                 name: *TABLE_HORZCAT,
                 arguments: vec![(0, table_id, row, column)],
@@ -2008,7 +2010,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let quantity = make_quantity(value as i64, 1 - place as i64, 0);
+        let quantity = make_quantity(value as i64,1 - place as i64,0);
         compiled.push(Node::Constant{value: quantity, unit: None});
       },
       // String-like nodes
