@@ -327,7 +327,6 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       }
     }
     column += width;
-    println!("{:?}", column);
   }
 }
 
@@ -392,7 +391,6 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }
     column += width;
-    println!("{:?}", column);
   }
 }
 
