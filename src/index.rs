@@ -50,12 +50,12 @@ impl ValueIterator {
 }
 
 impl Iterator for ValueIterator {
-  type Item = Value;
-  fn next(&mut self) -> Option<Value> {
+  type Item = (Value, bool);
+  fn next(&mut self) -> Option<(Value, bool)> {
     match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
-        let (value, _) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
-        Some(value)
+        let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
+        Some((value, changed))
       },     
       _ => None,
     }
@@ -214,6 +214,7 @@ impl Iterator for AliasIterator {
 
 #[derive(Debug, Clone)]
 pub enum IndexIterator {
+  None,
   Range(std::ops::RangeInclusive<usize>),
   Constant(Index),
   Alias(AliasIterator),
@@ -225,6 +226,7 @@ impl Iterator for IndexIterator {
   
   fn next(&mut self) -> Option<Index> {
     match self {
+      IndexIterator::None => None,
       IndexIterator::Range(itr) => {
         match itr.next() {
           Some(ix) => Some(Index::Index(ix)),

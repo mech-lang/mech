@@ -56,12 +56,10 @@ pub fn resolve_subscript(
   let row_iter = unsafe { match row_index {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
     Index::All => {
-      let r = if (*table).rows == 0 {
-        1
-      } else {
-        (*table).rows
-      };
-      IndexIterator::Range(1..=r)
+      match (*table).rows {
+        0 => IndexIterator::None,
+        r => IndexIterator::Range(1..=r),
+      }
     },
     Index::Table(table_id) => {
       let row_table = match table_id {
@@ -76,7 +74,12 @@ pub fn resolve_subscript(
 
   let column_iter = unsafe { match column_index {
     Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
-    Index::All => IndexIterator::Range(1..=(*table).columns),
+    Index::All => {
+      match (*table).columns {
+        0 => IndexIterator::None,
+        c => IndexIterator::Range(1..=c),
+      }
+    }
     Index::Table(table_id) => {
       let col_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
@@ -249,6 +252,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   // Get the size of the output table
   for (_, vi) in arguments {
     let vi_rows = match &vi.row_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -268,6 +272,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
     };
 
     let vi_columns = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -290,6 +295,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -331,7 +337,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  println!("SETTING");
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -340,12 +346,14 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   // Get the size of the output table
   for (_, vi) in arguments {
     let _vi_rows = match &vi.row_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
       IndexIterator::Table(iter) => iter.len(),
     };
     let vi_columns = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -356,7 +364,11 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   }
 
   for (_, vi) in arguments {
+
+    //println!("{:?}", unsafe{&(*vi.table)});
+
     let width = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -403,6 +415,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   // Get the size of the output table
   for (_, vi) in arguments {
     let vi_rows = match &vi.row_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.rows(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -422,6 +435,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     };
 
     let vi_columns = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
@@ -433,6 +447,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   unsafe { (*out.table).resize(out_rows, out_columns); }
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
+      IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
       IndexIterator::Constant(_) => 1,
       IndexIterator::Alias(_) => 1,
