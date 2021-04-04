@@ -353,20 +353,20 @@ impl Block {
   }
 
   pub fn is_ready(&mut self) -> bool {
+    // The block will not execute if it's in an error state or disabled
     if self.state == BlockState::Error || self.state == BlockState::Disabled {
       false
+    // The block will not execute if there are any errors listed on it
     } else if self.errors.len() > 0 {
       self.state = BlockState::Error;
       false
     } else {
-      let set_diff: HashSet<Register> = self.input.difference(&self.ready).cloned().collect();
-      let out_diff: HashSet<Register> = self.output_dependencies.difference(&self.output_dependencies_ready).cloned().collect();
-      // The block is ready if all input registers are ready i.e. the length of the set diff is 0
-      if set_diff.len() == 0 && out_diff.len() == 0 {
+      // The block is ready if the ready output and input registers equal the total
+      if self.ready.len() < self.input.len() || self.output_dependencies_ready.len() < self.output_dependencies.len() {
+        false
+      } else {
         self.state = BlockState::Ready;
         true
-      } else {
-        false
       }
     }
   }
