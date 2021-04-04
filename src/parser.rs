@@ -622,7 +622,7 @@ fn select_all(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn subscript(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, subscript) = alt((select_all, expression))(input)?;
+  let (input, subscript) = alt((select_all, expression, tilde))(input)?;
   let (input, _) = tuple((space0, opt(comma), space0))(input)?;
   Ok((input, Node::Subscript{children: vec![subscript]}))
 }
