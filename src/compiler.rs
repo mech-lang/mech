@@ -45,6 +45,7 @@ pub enum Node {
   SelectExpression{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   Whenever{ children: Vec<Node> },
+  WheneverIndex{ children: Vec<Node> },
   Wait{ children: Vec<Node> },
   Until{ children: Vec<Node> },
   SelectData{name: String, id: TableId, children: Vec<Node> },
@@ -141,6 +142,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::SplitData{children} => {write!(f,"SplitData\n"); Some(children)},
     Node::Data{children} => {write!(f,"Data\n"); Some(children)},
     Node::Whenever{children} => {write!(f,"Whenever\n"); Some(children)},
+    Node::WheneverIndex{children} => {write!(f,"WheneverIndex\n"); Some(children)},
     Node::Wait{children} => {write!(f,"Wait\n"); Some(children)},
     Node::Until{children} => {write!(f,"Until\n"); Some(children)},
     Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id); Some(children)},
@@ -559,9 +561,9 @@ impl Compiler {
           let this_one = compiled_tfm.clone();
           for transformation in compiled_tfm {
             match &transformation {
-              /*Constraint::AliasTable{table, alias} => {
-                produces.insert(*alias);
-              },*/
+              Transformation::Whenever{table_id, ..} => {
+                produces.insert(hash_string("~"));
+              }
               Transformation::Constant{table_id, ..} => {
                 match table_id {
                   TableId::Local(id) => {
@@ -607,37 +609,6 @@ impl Compiler {
                   _ => (),
                 }
               }
-              /*
-              Constraint::Append{from_table, to_table} => {
-                match from_table {
-                  TableId::Local(id) => {consumes.insert(*id);},
-                  _ => (),
-                };
-              },*/
-              /*
-              Constraint::Scan{table, indices, output} => {
-                match table {
-                  TableId::Local(id) => {consumes.insert(*id);},
-                  TableId::Global(id) => (), // TODO handle global
-                };
-                match output {
-                  TableId::Local(id) => {produces.insert(*id);},
-                  _ => (),
-                };
-              },*/
-              /*
-              Constraint::Insert{from: (from_table, ..), to: (to_table, to_ixes)} => {
-                // TODO Handle other cases of from and parameters
-                let to_rows = to_ixes[0];
-                match to_rows {
-                  (Some(Parameter::TableId(TableId::Local(id))),_) => {consumes.insert(id);},
-                  _ => (),
-                };
-                match to_table {
-                  TableId::Global(id) => {produces.insert(*id);},
-                  _ => (),
-                };
-              },*/
               _ => (),
             }
             transformations.push(transformation.clone());
@@ -1272,6 +1243,15 @@ impl Compiler {
                 match child {
                   Node::SelectAll => {
                     indices.push(Index::All);
+                  }
+                  Node::WheneverIndex{..} => {
+                    let id = hash_string("~");
+                    self.strings.insert(id, "~".to_string());
+                    if indices.len() == 2 && indices[0] == Index::All {
+                      indices[0] = Index::Table(TableId::Local(id));
+                    } else {
+                      indices.push(Index::Table(TableId::Local(id)));
+                    }
                   }
                   Node::SelectData{name, id, children} => {
                     self.strings.insert(*id.unwrap(), name.to_string());
@@ -1937,7 +1917,14 @@ impl Compiler {
         let mut children: Vec<Node> = Vec::new();
         for node in result {
           match node {
-            Node::Token{..} => (),
+            Node::Token{token, byte} => {
+              match token {
+                Token::Tilde => {
+                  children.push(Node::WheneverIndex{children: vec![Node::Null]});
+                }
+                _ => (),
+              }
+            },
             _ => children.push(node),
           }
         }
