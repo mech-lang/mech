@@ -47,7 +47,6 @@ pub fn resolve_subscript(
             }
             _ => (),
           }
-
         }
       }
     }
@@ -100,12 +99,9 @@ pub fn resolve_subscript(
     row_iter,
     column_iter,
   }
-
 }
 
-
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
-
 
 pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
 
@@ -119,50 +115,44 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   };
 
   if *in_arg_name == *ROW {
-    unsafe { (*out.table).resize(vi.rows(), 1); }
+    out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut flag: bool = false;
       for j in 1..=cols {
-        let value = unsafe{(*vi.table).get(&Index::Index(i),&Index::Index(j)).unwrap()};
+        let value = vi.get(&Index::Index(i),&Index::Index(j)).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
         }
       }
-      unsafe {
-        (*out.table).set_unchecked(i, 1, Value::from_bool(flag));
-      }
+      out.set_unchecked(i, 1, Value::from_bool(flag));
     }
   } else if *in_arg_name == *COLUMN {
-    unsafe { (*out.table).resize(1, cols); }
+    out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = false;
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+        let value = vi.get(&k,&m).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
         }
       }
-      unsafe {
-        (*out.table).set_unchecked(1, i, Value::from_bool(flag));
-      }
+      out.set_unchecked(1, i, Value::from_bool(flag));
     }
   } else if *in_arg_name == *TABLE {
-    unsafe { (*out.table).resize(1, 1); }
+    out.resize(1, 1);
     let mut flag: bool = false;
     for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
+        let value = vi.get(&k,&m).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
         }
       }
     }
-    unsafe {
-      (*out.table).set_unchecked(1, 1, Value::from_bool(flag));
-    }
+    out.set_unchecked(1, 1, Value::from_bool(flag));
   } else {
     () // TODO alert user that argument is unknown
   };
@@ -181,7 +171,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   };
 
   if *in_arg_name == *ROW {
-    unsafe { (*out.table).resize(vi.rows(), 1); }
+    out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=cols {
@@ -195,12 +185,10 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
           _ => ()
         }
       }
-      unsafe {
-        (*out.table).set_unchecked(i, 1, sum);
-      }
+      out.set_unchecked(i, 1, sum);
     }
   } else if *in_arg_name == *COLUMN {
-    unsafe { (*out.table).resize(1, cols); }
+    out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut sum: Value = Value::from_u64(0);
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -214,12 +202,10 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
           _ => ()
         }
       }
-      unsafe {
-        (*out.table).set_unchecked(1, i, sum);
-      }
+      out.set_unchecked(1, i, sum);
     }
   } else if *in_arg_name == *TABLE {
-    unsafe { (*out.table).resize(1, 1); }
+    out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
     for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
@@ -234,9 +220,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
         }
       }
     }
-    unsafe {
-      (*out.table).set_unchecked(1, 1, sum);
-    }
+    out.set_unchecked(1, 1, sum);
   } else {
     () // TODO alert user that argument is unknown
   }
@@ -290,8 +274,8 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   } else {
     out_columns
   };
-  
-  unsafe { (*out.table).resize(out_rows + out.rows(), out_columns); }
+
+  out.resize(out_rows + out.rows(), out_columns);
 
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
@@ -314,7 +298,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       for (_k,i) in row_iter {
         let value = vi.get(&i,&j).unwrap();
         let n = out_row_iter.next();
-        let column_alias = unsafe { (*vi.table).get_column_alias(j.unwrap()) };
+        let column_alias = unsafe{(*vi.table).get_column_alias(j.unwrap())};
         // If the column has an alias, let's use it instead
         let m = match column_alias {
           Some(alias) => Some(alias),
@@ -324,9 +308,7 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
-            unsafe {
-              (*out.table).set(&Index::Index(out_row.unwrap() + base_rows), &out_col, value);
-            }
+            out.set(&Index::Index(out_row.unwrap() + base_rows), &out_col, value);
           }
           _ => continue,
         }
@@ -337,7 +319,6 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  println!("SETTING");
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -364,8 +345,6 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   }
 
   for (_, vi) in arguments {
-
-    //println!("{:?}", unsafe{&(*vi.table)});
 
     let width = match &vi.column_iter {
       IndexIterator::None => 0,
@@ -394,9 +373,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
           (_, Some(Index::None)) |
           (Some(Index::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
-            unsafe {
-              (*out.table).set(&out_row, &out_col, value);
-            }
+            out.set(&out_row, &out_col, value);
           }
           _ => continue,
         }
@@ -444,7 +421,9 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     out_columns += vi_columns;
 
   }
-  unsafe { (*out.table).resize(out_rows, out_columns); }
+
+  out.resize(out_rows, out_columns);
+
   for (_, vi) in arguments {
     let width = match &vi.column_iter {
       IndexIterator::None => 0,
@@ -488,9 +467,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
         }
         match vi.get(&i.unwrap(),&j) {
           Some(value) => {
-            unsafe {
-              (*out.table).set_unchecked(k, column+c, value);
-            }
+            out.set_unchecked(k, column+c, value);
           }
           _ => (),
         }
@@ -531,7 +508,9 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
     }
     out_rows += vi.rows();
   }
-  unsafe { (*out.table).resize(out_rows, out_columns); }
+
+  out.resize(out_rows, out_columns);
+  
   for (_, vi) in arguments {
     for (i,k) in (1..=out_columns).zip(vi.column_iter.clone()) {
       // Add alias to column if it's there
@@ -553,10 +532,8 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
         }
       }
       for j in 1..=vi.rows() {
-        let value = unsafe{(*vi.table).get(&Index::Index(j),&k).unwrap()};
-        unsafe {
-          (*out.table).set(&Index::Index(row + j), &Index::Index(i), value);
-        }
+        let value = vi.get(&Index::Index(j),&k).unwrap();
+        out.set(&Index::Index(row + j), &Index::Index(i), value);
       }
     }
     row += 1;
@@ -570,20 +547,19 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
   let (_, start_vi) = &arguments[0];
   let (_, end_vi) = &arguments[1];
 
-  let start_value = unsafe{(*start_vi.table).get(&Index::Index(1),&Index::Index(1)).unwrap()};
-  let end_value = unsafe{(*end_vi.table).get(&Index::Index(1),&Index::Index(1)).unwrap()};
+  let start_value = start_vi.get(&Index::Index(1),&Index::Index(1)).unwrap();
+  let end_value = end_vi.get(&Index::Index(1),&Index::Index(1)).unwrap();
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;
-
-  unsafe{
-    (*out.table).resize(range+1, 1);
-    let mut j = 1;
-    for i in start..=end {
-      (*out.table).set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
-      j += 1;
-    }
+  
+  out.resize(range+1, 1);
+  let mut j = 1;
+  for i in start..=end {
+    out.set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
+    j += 1;
   }
+  
 }
 
 #[macro_export]
@@ -640,7 +616,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
         )
       } else if equal_dimensions {
-        unsafe { (*out.table).resize(lhs_rows_count, lhs_columns_count); }
+        out.resize(lhs_rows_count, lhs_columns_count);
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_vi.columns()),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -650,7 +626,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
         )
       } else if rhs_scalar {
-        unsafe { (*out.table).resize(lhs_rows_count, lhs_columns_count); }
+        out.resize(lhs_rows_count, lhs_columns_count);
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_columns_count),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -663,7 +639,7 @@ macro_rules! binary_infix {
           },
         )
       } else {
-        unsafe { (*out.table).resize(rhs_rows_count, rhs_columns_count); }
+        out.resize(rhs_rows_count, rhs_columns_count);
         (
           IndexRepeater::new(lhs_vi.row_iter.clone(),1),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
@@ -679,54 +655,52 @@ macro_rules! binary_infix {
 
       let mut i = 1;
       let out_elements = out.rows() * out.columns();
-      unsafe{
 
-        loop {
-          let l1 = lrix.next().unwrap().unwrap();
-          let l2 = lcix.next().unwrap().unwrap();
-          let r1 = rrix.next().unwrap().unwrap();
-          let r2 = rcix.next().unwrap().unwrap();
-          let o1 = out_rix.next().unwrap().unwrap();
-          let o2 = out_cix.next().unwrap().unwrap();
-          let (lhs_value, lhs_changed) = if l2 == 0 {
-            (*lhs_vi.table).get_unchecked_linear(l1)
-          } else {
-            (*lhs_vi.table).get_unchecked(l1,l2)
-          };
-          let (rhs_value, rhs_changed) = if r2 == 0 {
-            (*rhs_vi.table).get_unchecked_linear(r1)
-          } else {
-            (*rhs_vi.table).get_unchecked(r1,r2)
-          };
-          match (lhs_value, rhs_value, lhs_changed, rhs_changed)
-          {
-            (lhs_value, rhs_value, true, true) => {
+      loop {
+        let l1 = lrix.next().unwrap().unwrap();
+        let l2 = lcix.next().unwrap().unwrap();
+        let r1 = rrix.next().unwrap().unwrap();
+        let r2 = rcix.next().unwrap().unwrap();
+        let o1 = out_rix.next().unwrap().unwrap();
+        let o2 = out_cix.next().unwrap().unwrap();
+        let (lhs_value, lhs_changed) = if l2 == 0 {
+          lhs_vi.get_unchecked_linear(l1)
+        } else {
+          lhs_vi.get_unchecked(l1,l2)
+        };
+        let (rhs_value, rhs_changed) = if r2 == 0 {
+          rhs_vi.get_unchecked_linear(r1)
+        } else {
+          rhs_vi.get_unchecked(r1,r2)
+        };
+        match (lhs_value, rhs_value, lhs_changed, rhs_changed)
+        {
+          (lhs_value, rhs_value, true, true) => {
+            match lhs_value.$op(rhs_value) {
+              Ok(result) => {
+                out.set_unchecked(o1, o2, result);
+              }
+              Err(_) => (), // TODO Handle error here
+            }
+          }
+          // If either operand is not changed but the output is cell is empty, then we can do the operation
+          (lhs_value, rhs_value, false, _) |
+          (lhs_value, rhs_value, _, false) => {
+            let (out_value, _) = out.get_unchecked(o1, o2);
+            if out_value.is_empty() {
               match lhs_value.$op(rhs_value) {
                 Ok(result) => {
-                  (*out.table).set_unchecked(o1, o2, result);
+                  out.set_unchecked(o1, o2, result);
                 }
                 Err(_) => (), // TODO Handle error here
               }
             }
-            // If either operand is not changed but the output is cell is empty, then we can do the operation
-            (lhs_value, rhs_value, false, _) |
-            (lhs_value, rhs_value, _, false) => {
-              let (out_value, _) = (*out.table).get_unchecked(o1, o2);
-              if out_value.is_empty() {
-                match lhs_value.$op(rhs_value) {
-                  Ok(result) => {
-                    (*out.table).set_unchecked(o1, o2, result);
-                  }
-                  Err(_) => (), // TODO Handle error here
-                }
-              }
-            }
           }
-          if i >= out_elements {
-            break;
-          }
-          i += 1;
         }
+        if i >= out_elements {
+          break;
+        }
+        i += 1;
       }
     }
   )
