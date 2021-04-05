@@ -658,7 +658,7 @@ block
   #robot += [name: "R2D2"]
 
 block
-~ #robot.name
+  ~ #robot.name
   #robot.position{~} := 10
 
 block
