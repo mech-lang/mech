@@ -172,6 +172,8 @@ impl Block {
           self.output_dependencies.insert(register_all);          
         }
         Transformation::Whenever{table_id, registers, ..} => {
+          let whenever_ix_table_id = hash_string("~");
+          self.tables.insert(whenever_ix_table_id, Table::new(whenever_ix_table_id, 0, 1, self.store.clone()));
           match table_id {
             TableId::Global(_id) => {
               for register in registers {
@@ -247,6 +249,46 @@ impl Block {
     'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
+          let register = registers[0];
+          // Resolve whenever table subscript so we can iterate through the values
+          let mut vi = resolve_subscript(register.table_id,register.row,register.column,&mut self.tables, &database);
+          // Get the whenever table from the local store
+          let whenever_ix_table_id = hash_string("~");
+          let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap();
+          // Check to see if the whenever table needs to be resized
+          let before_rows = whenever_table.rows;
+          if vi.rows() > whenever_table.rows {
+            whenever_table.resize(vi.rows(),1);
+            for (ix, (_, changed)) in vi.enumerate() {
+              // Mark the new rows as changed even if they are stale
+              if ix+1 > before_rows {
+                whenever_table.set_unchecked(ix+1, 1, Value::from_bool(true));
+              // Use the changed value of old rows
+              } else {
+                whenever_table.set_unchecked(ix+1, 1, Value::from_bool(changed));
+              }
+            }
+          // If the table hasn't been resized, use the changed value
+          } else {
+            for (ix, (_, changed)) in vi.enumerate() {
+              whenever_table.set_unchecked(ix+1, 1, Value::from_bool(changed));
+            }
+          }
+
+          // If all of the rows of the whenever table are false, there is nothing for this block to do
+          // because none of the values it is watching have changed
+          let mut flag = false;
+          for ix in 1..=whenever_table.rows {
+            let (val, _) = whenever_table.get_unchecked(ix,1);
+            match val.as_bool() {
+              Some(true) => flag = true,
+              _ => (),
+            }
+          }
+          if flag == false {
+            break 'step_loop;
+          }
+          
           match table_id {
             TableId::Global(_id) => {
               for register in registers {
