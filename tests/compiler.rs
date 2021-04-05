@@ -505,6 +505,16 @@ block
 
 // ## Append
 
+test_mech!(append_row_empty,"
+block
+  #robot = [|name position|]
+  
+block
+  #robot += [name: 10 position: 20]
+  
+block
+  #test = #robot.name + #robot.position", Value::from_u64(30));
+
 test_mech!(append_row_inline,"
 block
   ix = #foo.x > 50
@@ -579,16 +589,16 @@ block
            8 9 10
            11 12 13]", Value::from_i64(16));
 
-// ## Change scan
+// ## Whenever
 
-test_mech!(change_scan_column,"block
+test_mech!(whenever_column,"block
   #time/timer = [tick: 0]
 
 block
   ~ #time/timer.tick
   #test = 3", Value::from_i64(3));
 
-test_mech!(change_scan_simple2,"block
+test_mech!(whenever_simple2,"block
   #i = 2
   #x = [400; 0; 0]
  
@@ -600,7 +610,7 @@ block
   i = #i
   #x{i,:} := #x{i - 1,:} + 1", Value::from_i64(801));
 
-test_mech!(change_scan_simple,"block
+test_mech!(whenever_simple,"block
   #i = 2
   #test = 10
 
@@ -609,14 +619,14 @@ block
   #test := 20", Value::from_i64(20));
 
 
-test_mech!(change_scan_equality,"block
+test_mech!(whenever_equality,"block
   #test = #q * 3
   ~ #q == 10
 
 block
   #q = 10", Value::from_i64(30));
 
-test_mech!(change_scan_inequality,"block
+test_mech!(whenever_inequality,"block
   #test := #q * 3
   ~ #q < 20
 
@@ -624,7 +634,7 @@ block
   #test = 10
   #q = 10", Value::from_i64(30));
 
-test_mech!(change_scan_recursive,r#"
+test_mech!(whenever_recursive,r#"
 block
   ~ #html/event/keydown.key == "ArrowUp"
   #explorer.y := #explorer.y - 1"
@@ -639,6 +649,27 @@ block
 block
   ~ #explorer
   #test = #explorer.y"#, Value::from_i64(9));
+
+test_mech!(whenever_default_values,r#"
+block
+  #robot = [|name position|]
+
+block
+  #robot += [name: "R2D2"]
+
+block
+~ #robot.name
+  #robot.position{~} := 10
+
+block
+  #robot{1,2} := 20
+
+block
+  #robot += [name: "C3PO"]
+
+block
+  #test = stats/sum(column: #robot.position)"#, Value::from_u64(30));
+
 
 // ## Full programs
 
