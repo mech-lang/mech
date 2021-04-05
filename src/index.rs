@@ -34,8 +34,20 @@ impl ValueIterator {
     unsafe{(*self.table).get(row,column)}
   }
 
+  pub fn get_unchecked(&self, row: usize, column: usize) -> (Value, bool) {
+    unsafe{(*self.table).get_unchecked(row,column)}
+  }
+
+  pub fn get_unchecked_linear(&self, index: usize) -> (Value, bool) {
+    unsafe{(*self.table).get_unchecked_linear(index)}
+  }
+
   pub fn set(&self, row: &Index, column: &Index, value: Value) {
     unsafe{(*self.table).set(row, column, value)};
+  }
+
+  pub fn set_unchecked(&self, row: usize, column: usize, value: Value) {
+    unsafe{(*self.table).set_unchecked(row, column, value)};
   }
 
   pub fn next_address(&mut self) -> Option<(usize, usize)> {
@@ -44,6 +56,34 @@ impl ValueIterator {
         Some((rix.unwrap(),cix.unwrap()))
       },     
       _ => None,
+    }
+  }
+
+  pub fn resize(&mut self, rows: usize, columns: usize)  {
+    unsafe {
+
+      (*self.table).resize(rows, columns);
+
+      match self.row_index {
+        Index::All => {
+          match (*self.table).rows {
+            0 => self.row_iter = IndexIterator::None,
+            r => self.row_iter = IndexIterator::Range(1..=r),
+          }
+        }
+        _ => (),
+      }
+
+      match self.column_index {
+        Index::All => {
+          match (*self.table).rows {
+            0 => self.column_iter = IndexIterator::None,
+            c => self.column_iter = IndexIterator::Range(1..=c),
+          }
+        }
+        _ => (),
+      }
+
     }
   }
 
