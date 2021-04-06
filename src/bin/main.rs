@@ -22,7 +22,13 @@ fn main() {
   let running = runner.run();
   running.send(RunLoopMessage::Code((0,MechCode::String(r#"
 block
-  #test = math/sin(angle: 90)"#.to_string()))));
+  #balls = [|x vx|
+             10 10]
+  #time/timer += [period: 1000, ticks: 0]
+
+block
+  ~ #time/timer.ticks
+  #balls.x := #balls.x + #balls.vx"#.to_string()))));
   running.send(RunLoopMessage::PrintCore(Some(0)));
   //running.send(RunLoopMessage::PrintRuntime);
   //running.send(RunLoopMessage::Stop);
