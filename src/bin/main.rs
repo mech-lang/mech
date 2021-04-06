@@ -33,20 +33,33 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #test = #i
+  #robot = [|name position|]
 
 block
-  #i = [x: 2]
+  #robot += [name: "R2D2"]
 
 block
-  #i.x{#i <= 6} := #i.x + 1"#);
+  ~ #robot.name
+  #robot.position{~} := 10
+
+block
+  #robot{1,2} := [x: 0 y: 0]
+
+block
+  #robot += [name: "C3PO"]
+
+block
+  #robot{2,2} := 15)
+  
+block
+  #robot += [name: "Robbie"]"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
 
   let mut compiler = Compiler::new();
   let mut formatter = Formatter::new();
-  let mut core = Core::new(1_000_000, 10);
+  let mut core = Core::new(1_000_000, 20);
   core.load_standard_library();
   let programs = compiler.compile_string(input.clone());
 
@@ -54,12 +67,12 @@ block
   //println!("{:?}", compiler.blocks);
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.syntax_tree);
-  //core.runtime.register_block(compiler.blocks);
-  core.runtime.register_block(compiler.blocks[0].clone());
-  core.runtime.register_block(compiler.blocks[1].clone());
-  core.runtime.register_block(compiler.blocks[2].clone());
+  core.runtime.register_blocks(compiler.blocks);
+  //core.runtime.register_block(compiler.blocks[0].clone());
+  //core.runtime.register_block(compiler.blocks[1].clone());
+  //core.runtime.register_block(compiler.blocks[2].clone());
   //core.runtime.register_block(compiler.blocks[3].clone());
-  //core.step();
+  core.step();
   //let y = core.get_table_by_name("y").unwrap();
   //println!("{:?}",y);
   //core.runtime.register_block(compiler.blocks[4].clone());
