@@ -335,27 +335,31 @@ impl Runtime {
           }
         }
         // Does an alias of this register map to a block's input?
-        None => match self.register_aliases.get(&block_output_register) {
-          Some(register_aliases) => {
-            for register_alias in register_aliases.iter() {
-              match self.input_to_block.get(&register_alias) {
-                Some(other_blocks) => {
-                  // Mark the registers in each block as ready
-                  for other_block_id in other_blocks.iter() {
-                    match self.blocks.get_mut(&other_block_id) {
-                      Some(other_block) => {
-                        other_block.ready.insert(*register_alias);
-                        new_input_register_mapping.insert(*block_output_register, *other_block_id);
+        None => {
+          match self.register_aliases.get(&block_output_register) {
+            Some(register_aliases) => {
+              for register_alias in register_aliases.iter() {
+                match self.input_to_block.get(&register_alias) {
+                  Some(other_blocks) => {
+                    // Mark the registers in each block as ready
+                    for other_block_id in other_blocks.iter() {
+                      match self.blocks.get_mut(&other_block_id) {
+                        Some(other_block) => {
+                          let block_store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+                          println!("INSERTING REGISTER TO READY {:?}", format_register(&block_store.strings,register_alias));
+                          other_block.ready.insert(*register_alias);
+                          new_input_register_mapping.insert(*block_output_register, *other_block_id);
+                        }
+                        _ => (),
                       }
-                      _ => (),
                     }
                   }
+                  None => (),
                 }
-                None => (),
               }
             }
+            None => (),
           }
-          _ => (),
         }
       }
     }
