@@ -22,3 +22,4 @@ mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 libm = "0.1.2"
+lazy_static = "1.4.0"
