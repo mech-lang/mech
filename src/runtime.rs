@@ -319,47 +319,73 @@ impl Runtime {
       self.ready_blocks.insert(block.id);
     }
 
-    // Check to see if this new block makes any other blocks ready to execute
     let mut new_input_register_mapping: HashMap<Register, u64> = HashMap::new();
+
+    // Check to see if this new block makes any other blocks ready to execute
     for block_output_register in block.output.iter() {
-      // Does this register map to a block's input?
-      match self.input_to_block.get(&block_output_register) {
-        Some(other_blocks) => {
-          for other_block_id in other_blocks.iter() {
-            match self.blocks.get_mut(&other_block_id) {
-              Some(other_block) => {
-                other_block.ready.insert(*block_output_register);
-              }
-              _ => (),
+      let mut alternative_registers: HashSet<Register> = HashSet::new();
+      alternative_registers.insert(*block_output_register);
+
+      // Go through the block input mappings
+      for (block_input_register, listening_blocks) in self.input_to_block.iter() {
+
+        // The current block output could be an alias for the required input
+        let table_id = *block_output_register.table_id.unwrap();
+        let column_alias = match block_output_register.column {
+          Index::Index(ix) => {
+            match self.database.borrow().store.column_index_to_alias.get(&(table_id,ix)) {
+              Some(alias) => Index::Alias(*alias),
+              None => Index::Index(ix),
             }
           }
+          Index::Alias(alias) => {
+            match self.database.borrow().store.column_alias_to_index.get(&(table_id,alias)) {
+              Some(ix) => Index::Index(*ix),
+              None => Index::Alias(alias),
+            }
+          }
+          x => x,
+        };
+
+        // We're talking about the same table, so we need to see if the current register is an alias or generalization of the required one.
+        if block_output_register.table_id == block_input_register.table_id {
+          match (block_output_register.row, block_output_register.column, block_input_register.row, block_input_register.column) {
+            // The current block output could be a generalization of the required input
+            // If I produce x{:,:}, a consumer of x{1,2} would be triggered
+            (Index::All, Index::All, in_row, in_col) => {
+              alternative_registers.insert(Register{table_id: block_output_register.table_id, row: in_row, column: in_col});
+            }
+            // The current block could be an alias of the required input
+            // If I produce x{:,.x}, a consumer of x{:,1} would be triggered
+            // If I produce x{:,1}, a consumer of x{:,.x} would be triggered
+            (Index::All, Index::Index(_), in_row, in_col) |
+            (Index::All, Index::Alias(_), in_row, in_col) => {
+              if in_col == column_alias  {
+                alternative_registers.insert(Register{table_id: block_output_register.table_id, row: in_row, column: in_col});
+              }
+            }
+            _ => (),
+          };
         }
-        // Does an alias of this register map to a block's input?
-        None => {
-          match self.register_aliases.get(&block_output_register) {
-            Some(register_aliases) => {
-              for register_alias in register_aliases.iter() {
-                match self.input_to_block.get(&register_alias) {
-                  Some(other_blocks) => {
-                    // Mark the registers in each block as ready
-                    for other_block_id in other_blocks.iter() {
-                      match self.blocks.get_mut(&other_block_id) {
-                        Some(other_block) => {
-                          let block_store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-                          println!("INSERTING REGISTER TO READY {:?}", format_register(&block_store.strings,register_alias));
-                          other_block.ready.insert(*register_alias);
-                          new_input_register_mapping.insert(*block_output_register, *other_block_id);
-                        }
-                        _ => (),
-                      }
-                    }
-                  }
-                  None => (),
+      }
+
+      // Create new mappings based on generalized and aliased registers
+      for alternative_output_register in alternative_registers.iter() {
+        match self.input_to_block.get(&alternative_output_register) {
+          Some(listening_blocks) => {
+            for listening_block_id in listening_blocks.iter() {
+              match self.blocks.get_mut(&listening_block_id) {
+                Some(listening_block) => {
+                  listening_block.ready.insert(*alternative_output_register);
+                  listening_block.ready.insert(*block_output_register);
+                  listening_block.input.insert(*block_output_register);
+                  new_input_register_mapping.insert(*block_output_register, *listening_block_id);
                 }
+                None => (),
               }
             }
-            None => (),
           }
+          None => (),
         }
       }
     }
