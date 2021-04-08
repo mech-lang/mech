@@ -105,8 +105,8 @@ pub struct Program {
 }
 
 impl Program {
-  pub fn new(name:&str, capacity: usize, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
-    let mut mech = Core::new(capacity);
+  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
+    let mut mech = Core::new(capacity, recursion_limit);
     mech.load_standard_library();
     let mech_code = hash_string("mech/code");
     let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
@@ -162,7 +162,7 @@ impl Program {
       let mut response = reqwest::get(registry_url)?.text()?;
       let mut registry_compiler = Compiler::new();
       registry_compiler.compile_string(response);
-      let mut registry_core = Core::new(100);
+      let mut registry_core = Core::new(100,100);
       registry_core.load_standard_library(); 
       registry_core.register_blocks(registry_compiler.blocks);
       registry_core.step();
@@ -514,7 +514,7 @@ impl ProgramRunner {
 
     let thread = thread::Builder::new().name(self.name.to_owned()).spawn(move || {
 
-      let mut program = Program::new("new program", 100, outgoing.clone(), program_incoming);
+      let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
       //program.download_dependencies(Some(client_outgoing.clone()));
 
