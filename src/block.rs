@@ -534,8 +534,11 @@ pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> S
       };
     }
     Index::Alias(alias) => {
-      let alias_name = strings.get(&alias).unwrap();
-      arg=format!("{}{}}}",arg,alias_name);
+      match strings.get(&alias) {
+        Some(alias_name) => arg=format!("{}{}}}",arg,alias_name),
+        None => arg=format!("{}{}}}",arg,&humanize(&alias)),
+      };
+      
     },
   }
   arg
