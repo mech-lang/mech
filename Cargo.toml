@@ -20,3 +20,5 @@ crate-type = ["dylib", "rlib"]
 [dependencies]
 mech-core = {git = "https://gitlab.com/mech-lang/core"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+
+lazy_static = "1.4.0"
