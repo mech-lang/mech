@@ -663,7 +663,12 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
       let mut tfm = format!("");
       match table_id {
-        TableId::Global(id) => tfm = format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
+        TableId::Global(id) => {
+          tfm = match block.store.strings.get(id) {
+            Some(string) => format!("{}#{}",tfm,string),
+            None => humanize(&id),
+          };
+        } 
         TableId::Local(id) => {
           match block.store.strings.get(id) {
             Some(name) => tfm = format!("{}{}",tfm,name),
