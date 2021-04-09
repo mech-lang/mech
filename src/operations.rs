@@ -369,13 +369,13 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
         (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
       };
       for (_k,i) in row_iter {
-        let value = vi.get(&i,&j).unwrap();
+        let value = vi.get(&i,&j);
         let n = out_row_iter.next();
         let m = out.column_iter.next();
-        match (n, m) {
-          (_, Some(Index::None)) |
-          (Some(Index::None), _) => continue,
-          (Some(out_row), Some(out_col)) => {
+        match (n, m, value) {
+          (_, Some(Index::None), Some(value)) |
+          (Some(Index::None), _, Some(value)) => continue,
+          (Some(out_row), Some(out_col), Some(value)) => {
             out.set(&out_row, &out_col, value);
           }
           _ => continue,

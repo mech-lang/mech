@@ -150,7 +150,13 @@ impl Table {
       _ => 0, // TODO aliases and all
     };
     let cix = match column {
-      &Index::Index(0) => return Some(rix - 1),
+      &Index::Index(0) => {
+        if rix <= self.rows {
+          return Some(rix - 1)
+        } else {
+          return None
+        }
+      },
       &Index::Index(ix) => ix,
       &Index::Alias(alias) => match self.store.column_alias_to_index.get(&(self.id,alias)) {
         Some(cix) => *cix,
@@ -219,6 +225,8 @@ impl Table {
 
   // Get the value in the store at memory address (row, column)
   pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
+    println!("{:?}", self);
+    println!("{:?} {:?} ", row, column);
     match self.index(row, column) {
       Some(ix) => {
         let address = self.data[ix];
