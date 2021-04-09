@@ -184,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
     // Spin up a mech core and compiler
-    let mut core = Core::new(1000);
+    let mut core = Core::new(1000, 1000);
     core.load_standard_library();
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code.clone());
@@ -196,6 +196,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       miniblock.plan = block.plan.clone();
       for (k,v) in block.store.strings.iter() {
         miniblock.strings.push((k.clone(), v.clone()));
+      }
+      for (k,v) in block.store.number_literals.iter() {
+        miniblock.number_literals.push((k.clone(), v.clone()));
       }
       miniblocks.push(miniblock);
     }
@@ -479,7 +482,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
 
-    let mut core = Core::new(1000);
+    let mut core = Core::new(1000, 1000);
     core.load_standard_library();
     let txn = Transaction{changes:
       vec![
@@ -559,8 +562,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       for (k,v) in block.store.strings.iter() {
         miniblock.strings.push((k.clone(), v.clone()));
       }
-      for (k,v) in block.register_map.iter() {
-        miniblock.register_map.push((k.clone(), v.clone()));
+      for (k,v) in block.store.number_literals.iter() {
+        miniblock.number_literals.push((k.clone(), v.clone()));
       }
       miniblocks.push(miniblock);
     }
@@ -632,6 +635,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let mut miniblock = MiniBlock::new();
       miniblock.transformations = block.transformations.clone();
       miniblock.plan = block.plan.clone();
+      for (k,v) in block.store.strings.iter() {
+        miniblock.strings.push((k.clone(), v.clone()));
+      }
+      for (k,v) in block.store.number_literals.iter() {
+        miniblock.number_literals.push((k.clone(), v.clone()));
+      }
       miniblocks.push(miniblock);
     }
     let result = bincode::serialize(&miniblocks).unwrap();
