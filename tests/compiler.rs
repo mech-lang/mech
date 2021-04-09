@@ -794,6 +794,13 @@ block
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(50));
 
+test_mech!(nesting_inline_table,r#"
+block
+  #test = #robot.y{1} + #robot.y{2}
+
+block
+  #robot = [x: 20 y: [x: 30 y: 50]]"#, Value::from_u64(80));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"

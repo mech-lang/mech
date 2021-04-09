@@ -663,7 +663,7 @@ impl Compiler {
         }).collect::<Vec<_>>();
 
         plan.append(&mut now_satisfied);
-        // ----------------------------------------------------------------------------------------------------------
+        
         let mut global_out = vec![];
         for step in plan {
           let (step_text, _, _, step_transformations) = step;
@@ -725,6 +725,7 @@ impl Compiler {
           }
           block.plan = new_plan;
         }
+        // End Planner ----------------------------------------------------------------------------------------------------------
 
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
@@ -734,8 +735,6 @@ impl Compiler {
               unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
             ),
           });*/
-
-
         }
         //block.id = block.gen_block_id();
         for (k,v) in self.strings.drain() {
@@ -937,6 +936,40 @@ impl Compiler {
                           };
                           transformations.push(fxn);
                           transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
+                          transformations.append(&mut result);
+                          continue;
+                        }
+                        _ => (),
+                      }
+                      transformations.append(&mut result);
+                    }
+                    Node::InlineTable{..} => {
+                      let mut result = self.compile_transformations(&children);
+                      match result[0] {
+                        Transformation::NewTable{table_id, ..} |
+                        Transformation::Select{table_id,..} => {
+                          let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
+                          transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
+                          transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
+                          args.push((0, TableId::Local(ref_table_id), Index::All, Index::All));
+
+                          let fxn = Transformation::Function{
+                            name: *TABLE_HORZCAT,
+                            arguments: vec![(0, TableId::Local(*table_id.unwrap()), Index::All, Index::All)],
+                            out: (TableId::Global(*table_id.unwrap()), Index::All, Index::All),
+                          };
+                          transformations.push(fxn);
+                          transformations.push(Transformation::NewTable{table_id: TableId::Global(*table_id.unwrap()), rows: 1, columns: 1});
+                          for tfm in &result {
+                            match tfm {
+                              Transformation::ColumnAlias{table_id: column_alias_table_id, column_ix, column_alias} => {
+                                if table_id == *column_alias_table_id {
+                                  transformations.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()), column_ix: *column_ix, column_alias: *column_alias});
+                                }
+                              }
+                              _ => (),
+                            }
+                          }
                           transformations.append(&mut result);
                           continue;
                         }
