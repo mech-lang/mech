@@ -107,8 +107,8 @@ pub struct WasmCore {
 #[wasm_bindgen]
 impl WasmCore {
 
-  pub fn new(capacity: usize) -> WasmCore {
-    let mut mech = mech_core::Core::new(capacity);
+  pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
+    let mut mech = mech_core::Core::new(capacity, recursion_limit);
     mech.load_standard_library();
     mech.insert_string("html/event/click");
     mech.insert_string("html/event/pointermove");
