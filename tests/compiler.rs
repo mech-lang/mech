@@ -801,6 +801,20 @@ block
 block
   #robot = [x: 20 y: [x: 30 y: 50]]"#, Value::from_u64(80));
 
+
+test_mech!(nesting_second_col,r#"
+block
+  #q = [_ _]
+
+block
+  #test = #q{2}{1}
+
+block
+  #q{2} := #app2{2}
+
+block
+  #app2 = [1 [7 8]]"#, Value::from_u64(7));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"
