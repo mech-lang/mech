@@ -43,7 +43,10 @@ pub fn resolve_subscript(
           let (reference, _) = (*table).get_unchecked(1,1);
           match reference.as_reference() {
             Some(table_reference) => {
-              table = db.tables.get_mut(&table_reference).unwrap() as *mut Table;
+              match db.tables.get_mut(&table_reference) {
+                Some(dbtable) => table = dbtable as *mut Table,
+                None => (),
+              }
             }
             _ => (),
           }
