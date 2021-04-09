@@ -49,5 +49,5 @@ pub fn main() -> Result<(), JsValue> {
 #[wasm_bindgen]
 pub fn new_core() -> WasmCore {
   log!("Awesome!");
-  WasmCore::new(1000)
+  WasmCore::new(1000, 1000)
 }
