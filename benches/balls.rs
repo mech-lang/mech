@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 fn init(balls: usize) -> Core {
 
-  let mut core = Core::new(balls * 4 * 4);
+  let mut core = Core::new(balls * 4 * 4, 1000);
   core.load_standard_library();
 
   let period = hash_string("period");
