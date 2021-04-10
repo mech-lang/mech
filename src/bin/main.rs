@@ -5,7 +5,7 @@ use mech_syntax::compiler::{Compiler, Node, Element};
 use mech_syntax::formatter::Formatter;
 use mech_core::Block;
 use mech_core::{Change, Transaction};
-use mech_core::{Value, Index};
+use mech_core::{Value, TableIndex};
 use mech_core::hash_string;
 use mech_core::Core;
 use mech_core::{make_quantity, Quantity, ValueMethods, ToQuantity, QuantityMath};
@@ -33,26 +33,10 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #robot = [|name position|]
+  #app = [x: [a: 1 b: 2]]
 
 block
-  #robot += [name: "R2D2"]
-
-block
-  ~ #robot.name
-  #robot.position{~} := 10
-
-block
-  #robot{1,2} := [x: 0 y: 0]
-
-block
-  #robot += [name: "C3PO"]
-
-block
-  #robot{2,2} := 15)
-  
-block
-  #robot += [name: "Robbie"]"#);
+  #test = #app.x.b"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -66,7 +50,7 @@ block
   //println!("{:?}", programs);
   //println!("{:?}", compiler.blocks);
   //println!("{:?}", compiler.parse_tree);
-  //println!("{:?}", compiler.syntax_tree);
+  println!("{:?}", compiler.syntax_tree);
   core.runtime.register_blocks(compiler.blocks);
   //core.runtime.register_block(compiler.blocks[0].clone());
   //core.runtime.register_block(compiler.blocks[1].clone());
@@ -93,8 +77,8 @@ block
 
   let change = Change::Set{
     table_id: 37678279552074374, values: vec![ 
-      (Index::Index(1),
-       Index::Alias(0xcb672312fe42b4),
+      (TableIndex::Index(1),
+       TableIndex::Alias(0xcb672312fe42b4),
        Value::from_i64(75)),
     ]
   };
@@ -129,8 +113,8 @@ block
 
   let txn = Transaction::from_change(Rc::new(Change::Set{
     table: 0xd2d75008, 
-    column: Index::Alias(0x6972c9df), 
-    values: vec![(Index::Index(1), Rc::new(Value::from_u64(16)))]
+    column: TableIndex::Alias(0x6972c9df), 
+    values: vec![(TableIndex::Index(1), Rc::new(Value::from_u64(16)))]
   }));
 
   core.process_transaction(&txn);
@@ -143,8 +127,8 @@ block
   for i in 0..rounds as u64 {
     let txn = Transaction::from_change(Rc::new(Change::Set{
       table: 0xd2d75008, 
-      column: Index::Alias(0x6b6369e7), 
-      values: vec![(Index::Index(1), Rc::new(Value::from_u64(counter)))],
+      column: TableIndex::Alias(0x6b6369e7), 
+      values: vec![(TableIndex::Index(1), Rc::new(Value::from_u64(counter)))],
     }));
     core.process_transaction(&txn);
     counter = counter + 1;
@@ -282,8 +266,8 @@ block
   
   //let now = SystemTime::now();
   /*let change = Change::Set{table: 0x132537277, 
-                            row: Index::Index(1), 
-                            column: Index::Index(3),
+                            row: TableIndex::Index(1), 
+                            column: TableIndex::Index(3),
                             value: Value::from_u64(42),
                           };
   let txn = Transaction::from_change(change.clone());

@@ -4,7 +4,7 @@ extern crate mech_core;
 
 use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{hash_string, Core, Index, Value, Quantity, QuantityMath, ToQuantity, ValueMethods, make_quantity};
+use mech_core::{hash_string, Core, TableIndex, Value, Quantity, QuantityMath, ToQuantity, ValueMethods, make_quantity};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -17,8 +17,8 @@ macro_rules! test_mech {
       compiler.compile_string(input);
       core.runtime.register_blocks(compiler.blocks);
       let table = hash_string("test");
-      let row = Index::Index(1);
-      let column = Index::Index(1);
+      let row = TableIndex::Index(1);
+      let column = TableIndex::Index(1);
       let test: Value = $test;
       let actual = core.get_cell_in_table(table, &row, &column);
       match actual {
@@ -708,7 +708,7 @@ block
            "column"  [container]
            "row"     [container]]"#, Value::from_u64(314));
 
-test_mech!(deep_nesting,r#"
+test_mech!(nesting_deep,r#"
 block
   #test = stats/sum(row: #app/main{1}{1,2}{1,:})
 
@@ -788,6 +788,13 @@ block
 
 block
   #test = #app2.y.z + #app2.x.b"#, Value::from_u64(10));
+
+test_mech!(nesting_chained_dot_indexing_first_col,r#"
+block
+  #app2 = [x: [a: 1 b: 2]]
+
+block
+  #test = #app2.x.b"#, Value::from_u64(2));
 
 // ## Functions
 
