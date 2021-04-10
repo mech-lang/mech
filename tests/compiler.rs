@@ -815,6 +815,19 @@ block
 block
   #app2 = [1 [7 8]]"#, Value::from_u64(7));
 
+test_mech!(nesting_second_col2,r#"
+block
+  #q = [_ _]
+
+block
+  #test = #q{2}{2}
+
+block
+  #q{2} := #app2{2}
+
+block
+  #app2 = [1 [7 8]]"#, Value::from_u64(8));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"
@@ -1024,8 +1037,3 @@ block
   x = true
   y = false
   #test = x & y"#, Value::from_bool(false));
-
-// ## Number Literals
-
-  test_mech!(number_literal_decimal, r#"
-  #test = 0d1234567890"#, 13902651193305449173);
