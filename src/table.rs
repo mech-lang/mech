@@ -225,8 +225,6 @@ impl Table {
 
   // Get the value in the store at memory address (row, column)
   pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
-    println!("{:?}", self);
-    println!("{:?} {:?} ", row, column);
     match self.index(row, column) {
       Some(ix) => {
         let address = self.data[ix];
