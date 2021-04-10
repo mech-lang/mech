@@ -373,8 +373,10 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
         let n = out_row_iter.next();
         let m = out.column_iter.next();
         match (n, m, value) {
-          (_, Some(Index::None), Some(value)) |
-          (Some(Index::None), _, Some(value)) => continue,
+          (_, Some(Index::None), _) |
+          (Some(Index::None), _, _) => {
+            continue;
+          }
           (Some(out_row), Some(out_col), Some(value)) => {
             out.set(&out_row, &out_col, value);
           }
