@@ -670,52 +670,6 @@ block
 block
   #test = stats/sum(column: #robot.position)"#, Value::from_u64(30));
 
-
-// ## Full programs
-
-/*test_mech!(program_bouncing_balls,"# Bouncing Balls
-
-Define the environment
-  #html/event/click = [|x y|]
-  #ball = [x: 50 y: 9 vx: 40 vy: 9]
-  #time/timer = [period: 15, tick: 0]
-  #gravity = 2
-  #boundary = [x: 60 y: 60]
-
-## Update condition
-
-Now update the block positions
-  ~ #time/timer.tick
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
-
-## Boundary Condition
-
-Keep the balls within the y boundary
-  ~ #ball.y
-  iy = #ball.y > #boundary.y
-  #ball.y{iy} := #boundary.y
-  #ball.vy{iy} := -#ball.vy * 80 / 100
-
-Keep the balls within the x boundary
-  ~ #ball.x
-  ix = #ball.x > #boundary.x
-  ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.x
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 80 / 100
-
-## Create More Balls
-
-Create ball on click
-  ~ #html/event/click.x
-  #ball += [x: 10 y: 10 vx: 40 vy: 0]
-
-test
-  x = #ball.x + #ball.y
-  #test = stats/sum(column: x)", Value::from_quantity(make_quantity(98,0,0)));*/
-
 // ## Strings
 
 test_mech!(string_basic,r#"
