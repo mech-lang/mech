@@ -1,7 +1,7 @@
 use block::{Block, BlockState, Register, Error, Transformation, format_register};
 use ::{humanize, hash_string};
 use database::{Database};
-use table::{Index, TableId};
+use table::{TableIndex, TableId};
 use std::cell::RefCell;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
@@ -189,12 +189,12 @@ impl Runtime {
     Ok(())
   }
 
-  pub fn remap_column(&self, table_id: u64, column: Index) -> Index {
+  pub fn remap_column(&self, table_id: u64, column: TableIndex) -> TableIndex {
     match column {
-      Index::Alias(alias) => {
+      TableIndex::Alias(alias) => {
         match self.database.borrow().store.column_alias_to_index.get(&(table_id,alias)) {
-          Some(ix) => Index::Index(*ix),
-          None => Index::Alias(alias),
+          Some(ix) => TableIndex::Index(*ix),
+          None => TableIndex::Alias(alias),
         }
       },
       x => x,
@@ -262,13 +262,13 @@ impl Runtime {
       for tfm in tfms {
         match tfm {
           Transformation::NewTable{table_id, ..} => {
-            let register = Register{table_id: *table_id, row: Index::All, column: Index::All};
+            let register = Register{table_id: *table_id, row: TableIndex::All, column: TableIndex::All};
             self.defined_registers.insert(register);
           }
           Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-            let register = Register{table_id: *table_id, row: Index::All, column: Index::Alias(*column_alias)};
+            let register = Register{table_id: *table_id, row: TableIndex::All, column: TableIndex::Alias(*column_alias)};
             self.defined_registers.insert(register);
-            let register = Register{table_id: *table_id, row: Index::All, column: Index::Index(*column_ix)};
+            let register = Register{table_id: *table_id, row: TableIndex::All, column: TableIndex::Index(*column_ix)};
             self.defined_registers.insert(register);
           }
           _ => (),
@@ -332,16 +332,16 @@ impl Runtime {
         // The current block output could be an alias for the required input
         let table_id = *block_output_register.table_id.unwrap();
         let column_alias = match block_output_register.column {
-          Index::Index(ix) => {
+          TableIndex::Index(ix) => {
             match self.database.borrow().store.column_index_to_alias.get(&(table_id,ix)) {
-              Some(alias) => Index::Alias(*alias),
-              None => Index::Index(ix),
+              Some(alias) => TableIndex::Alias(*alias),
+              None => TableIndex::Index(ix),
             }
           }
-          Index::Alias(alias) => {
+          TableIndex::Alias(alias) => {
             match self.database.borrow().store.column_alias_to_index.get(&(table_id,alias)) {
-              Some(ix) => Index::Index(*ix),
-              None => Index::Alias(alias),
+              Some(ix) => TableIndex::Index(*ix),
+              None => TableIndex::Alias(alias),
             }
           }
           x => x,
@@ -352,14 +352,14 @@ impl Runtime {
           match (block_output_register.row, block_output_register.column, block_input_register.row, block_input_register.column) {
             // The current block output could be a generalization of the required input
             // If I produce x{:,:}, a consumer of x{1,2} would be triggered
-            (Index::All, Index::All, in_row, in_col) => {
+            (TableIndex::All, TableIndex::All, in_row, in_col) => {
               alternative_registers.insert(Register{table_id: block_output_register.table_id, row: in_row, column: in_col});
             }
             // The current block could be an alias of the required input
             // If I produce x{:,.x}, a consumer of x{:,1} would be triggered
             // If I produce x{:,1}, a consumer of x{:,.x} would be triggered
-            (Index::All, Index::Index(_), in_row, in_col) |
-            (Index::All, Index::Alias(_), in_row, in_col) => {
+            (TableIndex::All, TableIndex::Index(_), in_row, in_col) |
+            (TableIndex::All, TableIndex::Alias(_), in_row, in_col) => {
               if in_col == column_alias  {
                 alternative_registers.insert(Register{table_id: block_output_register.table_id, row: in_row, column: in_col});
               }

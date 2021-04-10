@@ -1,4 +1,4 @@
-use table::{Table, TableId, Index};
+use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use index::ValueIterator;
 use database::{Database, Store, Change, Transaction};
@@ -95,7 +95,7 @@ impl Block {
                   columns,
                 }
               );
-              let register_all = Register{table_id, row: Index::All, column: Index::All};
+              let register_all = Register{table_id, row: TableIndex::All, column: TableIndex::All};
               self.output.insert(register_all);
             }
             TableId::Local(id) => {
@@ -113,9 +113,9 @@ impl Block {
                   column_alias,
                 }
               );
-              let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
-              let register_alias = Register{table_id: table_id, row: Index::All, column: Index::Alias(column_alias)};
-              let register_ix = Register{table_id: table_id, row: Index::All, column: Index::Index(column_ix)};
+              let register_all = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
+              let register_alias = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::Alias(column_alias)};
+              let register_ix = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::Index(column_ix)};
               // Alias mappings
               let aliases = self.register_aliases.entry(register_alias).or_insert(HashSet::new());
               aliases.insert(register_ix);
@@ -153,13 +153,13 @@ impl Block {
           match table_id {
             TableId::Local(id) => {
               let table = self.tables.get_mut(&id).unwrap();
-              table.set(&Index::Index(1), &Index::Index(1), q);
+              table.set(&TableIndex::Index(1), &TableIndex::Index(1), q);
             }
             TableId::Global(id) => {
               self.changes.push(
                 Change::Set{
                   table_id: id,
-                  values: vec![(Index::Index(1), Index::Index(1), q)],
+                  values: vec![(TableIndex::Index(1), TableIndex::Index(1), q)],
                 }
               );
             }
@@ -167,7 +167,7 @@ impl Block {
           }
         }
         Transformation::Set{table_id, row: _, column: _} => {
-          let register_all = Register{table_id: table_id, row: Index::All, column: Index::All};
+          let register_all = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
           self.output.insert(register_all);       
           self.output_dependencies.insert(register_all);          
         }
@@ -188,16 +188,16 @@ impl Block {
           match out_id {
             TableId::Global(_id) => {
               let row = match row {
-                Index::Table(_) => Index::All,
+                TableIndex::Table(_) => TableIndex::All,
                 x => x,
               };
               let column = match column {
-                Index::Table(_) => Index::All,
+                TableIndex::Table(_) => TableIndex::All,
                 x => x,
               };
               let register = Register{table_id: out_id, row, column};
               self.output.insert(register);
-              let register = Register{table_id: out_id, row: Index::All, column: Index::All};
+              let register = Register{table_id: out_id, row: TableIndex::All, column: TableIndex::All};
               self.output.insert(register);
             },
             _ => (),
@@ -205,18 +205,18 @@ impl Block {
           for (_, table_id, row, column) in arguments {
             match table_id {
               TableId::Global(_id) => {
-                let row2: &Index = match row {
-                  Index::Table{..} => &Index::All,
-                  Index::None => &Index::All,
+                let row2: &TableIndex = match row {
+                  TableIndex::Table{..} => &TableIndex::All,
+                  TableIndex::None => &TableIndex::All,
                   x => x,
                 };
-                let column2: &Index = match column {
-                  Index::Table{..} => &Index::All,
-                  Index::None => &Index::All,
+                let column2: &TableIndex = match column {
+                  TableIndex::Table{..} => &TableIndex::All,
+                  TableIndex::None => &TableIndex::All,
                   x => x,
                 };
                 let register_ix = Register{table_id: *table_id, row: *row2, column: *column2};
-                let register_all = Register{table_id: *table_id, row: Index::All, column: Index::All};
+                let register_all = Register{table_id: *table_id, row: TableIndex::All, column: TableIndex::All};
                 let aliases = self.register_aliases.entry(register_ix).or_insert(HashSet::new());
                 aliases.insert(register_all);
                 let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
@@ -345,11 +345,11 @@ impl Block {
                   let mut table = Table::new(new_table_id,1,columns,self.store.clone());
                   for column in vi.column_iter.clone() {
                     let value = vi.get(&row,&column).unwrap();
-                    table.set(&Index::Index(1),&column, value);
+                    table.set(&TableIndex::Index(1),&column, value);
                   }
                   self.tables.insert(new_table_id, table);
                   unsafe {
-                    (*out_vi.table).set(&row,&Index::Index(1),Value::from_id(new_table_id));
+                    (*out_vi.table).set(&row,&TableIndex::Index(1),Value::from_id(new_table_id));
                   }
                   let txn = Transaction {
                     changes: vec![Change::NewTable{
@@ -499,10 +499,10 @@ pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> S
     }
   };
   match row {
-    Index::None => arg=format!("{}{{-,",arg),
-    Index::All => arg=format!("{}{{:,",arg),
-    Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
-    Index::Table(table) => {
+    TableIndex::None => arg=format!("{}{{-,",arg),
+    TableIndex::All => arg=format!("{}{{:,",arg),
+    TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
+    TableIndex::Table(table) => {
       match table {
         TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
         TableId::Local(id) => {
@@ -513,16 +513,16 @@ pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> S
         }
       };
     }
-    Index::Alias(alias) => {
+    TableIndex::Alias(alias) => {
       let alias_name = strings.get(&alias).unwrap();
       arg=format!("{}{{{},",arg,alias_name);
     },
   }
   match column {
-    Index::None => arg=format!("{}-}}",arg),
-    Index::All => arg=format!("{}:}}",arg),
-    Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
-    Index::Table(table) => {
+    TableIndex::None => arg=format!("{}-}}",arg),
+    TableIndex::All => arg=format!("{}:}}",arg),
+    TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
+    TableIndex::Table(table) => {
       match table {
         TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
         TableId::Local(id) => {
@@ -533,7 +533,7 @@ pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> S
         }
       };
     }
-    Index::Alias(alias) => {
+    TableIndex::Alias(alias) => {
       match strings.get(&alias) {
         Some(alias_name) => arg=format!("{}{}}}",arg,alias_name),
         None => arg=format!("{}{}}}",arg,&humanize(&alias)),
@@ -585,10 +585,10 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         }
       };
       match row {
-        Index::None => arg=format!("{}{{-,",arg),
-        Index::All => arg=format!("{}{{:,",arg),
-        Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
-        Index::Table(table) => {
+        TableIndex::None => arg=format!("{}{{-,",arg),
+        TableIndex::All => arg=format!("{}{{:,",arg),
+        TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
+        TableIndex::Table(table) => {
           match table {
             TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
@@ -599,16 +599,16 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             }
           };
         }
-        Index::Alias(alias) => {
+        TableIndex::Alias(alias) => {
           let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{{{},",arg,alias_name);
         },
       }
       match column {
-        Index::None => arg=format!("{}-}}",arg),
-        Index::All => arg=format!("{}:}}",arg),
-        Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
-        Index::Table(table) => {
+        TableIndex::None => arg=format!("{}-}}",arg),
+        TableIndex::All => arg=format!("{}:}}",arg),
+        TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
+        TableIndex::Table(table) => {
           match table {
             TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
@@ -619,7 +619,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             }
           };
         }
-        Index::Alias(alias) => {
+        TableIndex::Alias(alias) => {
           let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{}}}",arg,alias_name);
         },
@@ -703,10 +703,10 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           }
         };
         match row {
-          Index::None => arg=format!("{}{{-,",arg),
-          Index::All => arg=format!("{}{{:,",arg),
-          Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
-          Index::Table(table) => {
+          TableIndex::None => arg=format!("{}{{-,",arg),
+          TableIndex::All => arg=format!("{}{{:,",arg),
+          TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
+          TableIndex::Table(table) => {
             match table {
               TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
@@ -719,16 +719,16 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
               }
             };
           }
-          Index::Alias(alias) => {
+          TableIndex::Alias(alias) => {
             let alias_name = block.store.strings.get(alias).unwrap();
             arg=format!("{}{{{},",arg,alias_name);
           },
         }
         match column {
-          Index::None => arg=format!("{}-}}",arg),
-          Index::All => arg=format!("{}:}}",arg),
-          Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
-          Index::Table(table) => {
+          TableIndex::None => arg=format!("{}-}}",arg),
+          TableIndex::All => arg=format!("{}:}}",arg),
+          TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
+          TableIndex::Table(table) => {
             match table {
               TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
@@ -739,7 +739,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
               }
             };
           }
-          Index::Alias(alias) => {
+          TableIndex::Alias(alias) => {
             let alias_name = block.store.strings.get(alias).unwrap();
             arg=format!("{}.{}}}",arg,alias_name);
           },
@@ -766,10 +766,10 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
         }
       };
       match out_row {
-        Index::None => arg=format!("{}{{-,",arg),
-        Index::All => arg=format!("{}{{:,",arg),
-        Index::Index(ix) => arg=format!("{}{{{},",arg,ix),
-        Index::Table(table) => {
+        TableIndex::None => arg=format!("{}{{-,",arg),
+        TableIndex::All => arg=format!("{}{{:,",arg),
+        TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
+        TableIndex::Table(table) => {
           match table {
             TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
@@ -780,16 +780,16 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             }
           };
         }
-        Index::Alias(alias) => {
+        TableIndex::Alias(alias) => {
           let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}{{{},",arg,alias_name);
         },
       }
       match out_column {
-        Index::None => arg=format!("{}-}}",arg),
-        Index::All => arg=format!("{}:}}",arg),
-        Index::Index(ix) => arg=format!("{}{}}}",arg,ix),
-        Index::Table(table) => {
+        TableIndex::None => arg=format!("{}-}}",arg),
+        TableIndex::All => arg=format!("{}:}}",arg),
+        TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
+        TableIndex::Table(table) => {
           match table {
             TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
             TableId::Local(id) => {
@@ -800,7 +800,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
             }
           };
         }
-        Index::Alias(alias) => {
+        TableIndex::Alias(alias) => {
           let alias_name = block.store.strings.get(alias).unwrap();
           arg=format!("{}.{}}}",arg,alias_name);
         },
@@ -830,33 +830,33 @@ pub enum Transformation {
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
-  Set{table_id: TableId, row: Index, column: Index},
+  Set{table_id: TableId, row: TableIndex, column: TableIndex},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
-  Whenever{table_id: TableId, row: Index, column: Index, registers: Vec<Register>},
-  Function{name: u64, arguments: Vec<(u64, TableId, Index, Index)>, out: (TableId, Index, Index)},
-  Select{table_id: TableId, row: Index, column: Index},
+  Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
+  Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
+  Select{table_id: TableId, row: TableIndex, column: TableIndex},
 }
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: TableId,
-  pub row: Index,
-  pub column: Index,
+  pub row: TableIndex,
+  pub column: TableIndex,
 }
 
 impl Register {
   pub fn hash(&self) -> u64 {
     let id_bytes = (*self.table_id.unwrap()).to_le_bytes();
 
-    let unwrap_index = |index: &Index| -> u64 {
+    let unwrap_index = |index: &TableIndex| -> u64 {
       match index {
-        Index::Index(ix) => *ix as u64,
-        Index::Alias(alias) => {
+        TableIndex::Index(ix) => *ix as u64,
+        TableIndex::Alias(alias) => {
           alias.clone()
         },
-        Index::Table(table_id) => *table_id.unwrap(),
-        Index::None |
-        Index::All => 0,
+        TableIndex::Table(table_id) => *table_id.unwrap(),
+        TableIndex::None |
+        TableIndex::All => 0,
       }
     };
 

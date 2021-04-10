@@ -45,10 +45,10 @@ impl fmt::Debug for TableId {
   }
 }
 
-// ### Row or Column Index
+// ### TableIndex
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Index {
+pub enum TableIndex {
   Index(usize),
   Alias(u64),
   Table(TableId),
@@ -56,29 +56,29 @@ pub enum Index {
   None,
 }
 
-impl Index {
+impl TableIndex {
   pub fn unwrap(&self) -> usize {
     match self {
-      Index::Index(ix) => *ix,
-      Index::Alias(alias) => {
+      TableIndex::Index(ix) => *ix,
+      TableIndex::Alias(alias) => {
         alias.clone() as usize
       },
-      Index::Table(table_id) => *table_id.unwrap() as usize,
-      Index::None |
-      Index::All => 0,
+      TableIndex::Table(table_id) => *table_id.unwrap() as usize,
+      TableIndex::None |
+      TableIndex::All => 0,
     }
   }
 }
 
-impl fmt::Debug for Index {
+impl fmt::Debug for TableIndex {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      &Index::Index(ref ix) => write!(f, "Ix({:?})", ix),
-      &Index::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
-      &Index::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
-      &Index::All => write!(f, "IxAll"),
-      &Index::None => write!(f, "IxNone"),
+      &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
+      &TableIndex::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
+      &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &TableIndex::All => write!(f, "IxAll"),
+      &TableIndex::None => write!(f, "IxNone"),
     }
   }
 }
@@ -95,7 +95,7 @@ pub struct Table {
   pub data: Vec<usize>, // Each entry is a memory address into the store
   pub changed: Vec<bool>,
   pub transaction_boundaries: Vec<usize>,
-  pub history: Vec<(Index, Index, Value)>,
+  pub history: Vec<(TableIndex, TableIndex, Value)>,
 }
 
 impl Table {
@@ -144,21 +144,21 @@ impl Table {
   }
 
   // Transform a (row, column) into a linear address into the data. If it's out of range, return None
-  pub fn index(&self, row: &Index, column: &Index) -> Option<usize> {
+  pub fn index(&self, row: &TableIndex, column: &TableIndex) -> Option<usize> {
     let rix = match row {
-      &Index::Index(ix) => ix,
+      &TableIndex::Index(ix) => ix,
       _ => 0, // TODO aliases and all
     };
     let cix = match column {
-      &Index::Index(0) => {
+      &TableIndex::Index(0) => {
         if rix <= self.rows * self.columns {
           return Some(rix - 1)
         } else {
           return None
         }
       },
-      &Index::Index(ix) => ix,
-      &Index::Alias(alias) => match self.store.column_alias_to_index.get(&(self.id,alias)) {
+      &TableIndex::Index(ix) => ix,
+      &TableIndex::Alias(alias) => match self.store.column_alias_to_index.get(&(self.id,alias)) {
         Some(cix) => *cix,
         None => return None,
       },
@@ -182,7 +182,7 @@ impl Table {
   }
 
   // Get the memory address into the store at a (row, column)
-  pub fn get_address(&self, row: &Index, column: &Index) -> Option<usize> {
+  pub fn get_address(&self, row: &TableIndex, column: &TableIndex) -> Option<usize> {
     match self.index(row, column) {
       Some(ix) => Some(self.data[ix]),
       None => None,
@@ -196,9 +196,9 @@ impl Table {
     }
   }
 
-  pub fn get_column_alias(&self, index: usize) -> Option<Index> {
+  pub fn get_column_alias(&self, index: usize) -> Option<TableIndex> {
     match self.store.column_index_to_alias.get(&(self.id,index)) {
-      Some(alias) => Some(Index::Alias(*alias)),
+      Some(alias) => Some(TableIndex::Alias(*alias)),
       _ => None,
     }
   }
@@ -224,7 +224,7 @@ impl Table {
   }
 
   // Get the value in the store at memory address (row, column)
-  pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
+  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
     match self.index(row, column) {
       Some(ix) => {
         let address = self.data[ix];
@@ -237,7 +237,7 @@ impl Table {
   // Set the value of at a (row, column). This will decrement the reference count of the value
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
-  pub fn set(&mut self, row: &Index, column: &Index, value: Value) {
+  pub fn set(&mut self, row: &TableIndex, column: &TableIndex, value: Value) {
     match self.index(row, column) {
       Some(ix) => {
         let old_address = self.data[ix];
@@ -265,7 +265,7 @@ impl Table {
       let new_address = store.intern(value);
       self.data[ix] = new_address;
       self.changed[ix] = true;
-      self.history.push((Index::Index(row),Index::Index(column),value));
+      self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
     }
   }
 
@@ -322,7 +322,7 @@ impl fmt::Debug for Table {
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..columns {
-        match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
+        match self.get_address(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
           Some(x) => {
             let value = &self.store.data[x];
             let text = match value.as_quantity() {
@@ -374,7 +374,7 @@ impl fmt::Debug for Table {
       for i in rows-3..rows {
         write!(f, "│ ", )?;
         for j in 0..columns {
-          match self.get_address(&Index::Index(i+1),&Index::Index(j+1)) {
+          match self.get_address(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
             Some(x) => {
               let value = &self.store.data[x];
               let text = match value.as_quantity() {

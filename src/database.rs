@@ -1,4 +1,4 @@
-use table::{Table, TableId, Index};
+use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Error, Register};
 use std::sync::Arc;
@@ -187,7 +187,7 @@ impl Database {
               // TODO warn user the table exists already
             },
             None => {
-              let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
+              let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
               self.changed_this_round.insert(register);
               self.tables.insert(*table_id, Table::new(
                 *table_id, 
@@ -202,7 +202,7 @@ impl Database {
             None => {
               store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
               store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
-              let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::Alias(*column_alias)};
+              let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::Alias(*column_alias)};
               self.changed_this_round.insert(register);
             }
             _ => (),
@@ -215,7 +215,7 @@ impl Database {
                 // Set the value
                 table.set(row, column, *value);
                 // Mark the table as updated
-                let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: *column};
+                let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: *column};
                 self.changed_this_round.insert(register);
               }
             },
@@ -256,7 +256,7 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 // Updates the database
 pub enum Change {
-  Set{table_id: u64, values: Vec<(Index, Index, Value)>},
+  Set{table_id: u64, values: Vec<(TableIndex, TableIndex, Value)>},
   SetColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
   NewTable{table_id: u64, rows: usize, columns: usize},
 }

@@ -4,7 +4,7 @@
 
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(feature = "no-std")] use alloc::fmt;
-use table::{Table, TableId, Index};
+use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater, CycleIterator};
 use database::Database;
@@ -23,8 +23,8 @@ lazy_static! {
 
 pub fn resolve_subscript(
   table_id: TableId,
-  row_index: Index,
-  column_index: Index,
+  row_index: TableIndex,
+  column_index: TableIndex,
   block_tables: &mut HashMap<u64, Table>,
   database: &Arc<RefCell<Database>>) -> ValueIterator {
 
@@ -39,7 +39,7 @@ pub fn resolve_subscript(
   unsafe{
     if (*table).rows == 1 && (*table).columns == 1 {
       match (row_index, column_index) {
-        (Index::All, Index::All) => (),
+        (TableIndex::All, TableIndex::All) => (),
         (_, _) => {
           let (reference, _) = (*table).get_unchecked(1,1);
           match reference.as_reference() {
@@ -58,41 +58,41 @@ pub fn resolve_subscript(
   }
 
   let row_iter = unsafe { match row_index {
-    Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
-    Index::All => {
+    TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(ix)),
+    TableIndex::All => {
       match (*table).rows {
         0 => IndexIterator::None,
         r => IndexIterator::Range(1..=r),
       }
     },
-    Index::Table(table_id) => {
+    TableIndex::Table(table_id) => {
       let row_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
         TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
       };
       IndexIterator::Table(TableIterator::new(row_table))
     }
-    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
     _ => IndexIterator::Range(1..=(*table).rows),
   }};
 
   let column_iter = unsafe { match column_index {
-    Index::Index(ix) => IndexIterator::Constant(Index::Index(ix)),
-    Index::All => {
+    TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(ix)),
+    TableIndex::All => {
       match (*table).columns {
         0 => IndexIterator::None,
         c => IndexIterator::Range(1..=c),
       }
     }
-    Index::Table(table_id) => {
+    TableIndex::Table(table_id) => {
       let col_table = match table_id {
         TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
         TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
       };
       IndexIterator::Table(TableIterator::new(col_table))
     }
-    Index::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    Index::None => IndexIterator::Constant(Index::Index(0)),
+    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+    TableIndex::None => IndexIterator::Constant(TableIndex::Index(0)),
     //_ => IndexIterator::Range(1..=(*table).columns),
   }};
 
@@ -124,7 +124,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
     for i in 1..=rows {
       let mut flag: bool = false;
       for j in 1..=cols {
-        let value = vi.get(&Index::Index(i),&Index::Index(j)).unwrap();
+        let value = vi.get(&TableIndex::Index(i),&TableIndex::Index(j)).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
@@ -180,7 +180,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     for i in 1..=rows {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=cols {
-        match vi.get(&Index::Index(i),&Index::Index(j)) {
+        match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
           Some(value) => {
             match sum.add(value) {
               Ok(result) => sum = result,
@@ -310,10 +310,10 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
           None => out.column_iter.next(),
         };
         match (n, m) {
-          (_, Some(Index::None)) |
-          (Some(Index::None), _) => continue,
+          (_, Some(TableIndex::None)) |
+          (Some(TableIndex::None), _) => continue,
           (Some(out_row), Some(out_col)) => {
-            out.set(&Index::Index(out_row.unwrap() + base_rows), &out_col, value);
+            out.set(&TableIndex::Index(out_row.unwrap() + base_rows), &out_col, value);
           }
           _ => continue,
         }
@@ -375,8 +375,8 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
         let n = out_row_iter.next();
         let m = out.column_iter.next();
         match (n, m, value) {
-          (_, Some(Index::None), _) |
-          (Some(Index::None), _, _) => {
+          (_, Some(TableIndex::None), _) |
+          (Some(TableIndex::None), _, _) => {
             continue;
           }
           (Some(out_row), Some(out_col), Some(value)) => {
@@ -391,7 +391,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  println!("HORZCAT");
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -432,7 +432,10 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
 
   out.resize(out_rows, out_columns);
 
+  println!("{:?}", unsafe{&(*out.table)});
+
   for (_, vi) in arguments {
+    println!("{:?}", unsafe{&(*vi.table)});
     let width = match &vi.column_iter {
       IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
@@ -445,7 +448,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       unsafe {
         let id = (*vi.table).id;
         match j {
-          Index::Index(ix) => {
+          TableIndex::Index(ix) => {
             match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
               Some(alias) => {
                 let out_id = (*out.table).id;
@@ -467,7 +470,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       for k in 1..=out_rows {
         // Fast forward to the next true value
         let mut i = row_iter.next();
-        while i == Some(Index::None) {
+        while i == Some(TableIndex::None) {
           i = row_iter.next();
           if i == None {
             break;
@@ -509,7 +512,7 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
       unsafe {
         let id = (*vi.table).id;
         match k {
-          Index::Index(ix) => {
+          TableIndex::Index(ix) => {
             match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
               Some(alias) => {
                 let out_id = (*out.table).id;
@@ -524,8 +527,8 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
         }
       }
       for j in 1..=vi.rows() {
-        let value = vi.get(&Index::Index(j),&k).unwrap();
-        out.set(&Index::Index(row + j), &Index::Index(i), value);
+        let value = vi.get(&TableIndex::Index(j),&k).unwrap();
+        out.set(&TableIndex::Index(row + j), &TableIndex::Index(i), value);
       }
     }
     row += 1;
@@ -539,8 +542,8 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
   let (_, start_vi) = &arguments[0];
   let (_, end_vi) = &arguments[1];
 
-  let start_value = start_vi.get(&Index::Index(1),&Index::Index(1)).unwrap();
-  let end_value = end_vi.get(&Index::Index(1),&Index::Index(1)).unwrap();
+  let start_value = start_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
+  let end_value = end_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;
@@ -548,7 +551,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
   out.resize(range+1, 1);
   let mut j = 1;
   for i in start..=end {
-    out.set(&Index::Index(j), &Index::Index(1), Value::from_u64(i as u64));
+    out.set(&TableIndex::Index(j), &TableIndex::Index(1), Value::from_u64(i as u64));
     j += 1;
   }
   
@@ -564,19 +567,19 @@ macro_rules! binary_infix {
 
       // Figure out dimensions
       let lhs_rows_count = match lhs_vi.row_index {
-        Index::All => lhs_vi.rows(),
+        TableIndex::All => lhs_vi.rows(),
         _ => 1,
       };
       let lhs_columns_count = match lhs_vi.column_index {
-        Index::All => lhs_vi.columns(),
+        TableIndex::All => lhs_vi.columns(),
         _ => 1,
       };
       let rhs_rows_count = match rhs_vi.row_index {
-        Index::All => rhs_vi.rows(),
+        TableIndex::All => rhs_vi.rows(),
         _ => 1,
       };
       let rhs_columns_count = match rhs_vi.column_index {
-        Index::All => rhs_vi.columns(),
+        TableIndex::All => rhs_vi.columns(),
         _ => 1,
       };
 
@@ -604,8 +607,8 @@ macro_rules! binary_infix {
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
           IndexRepeater::new(rhs_vi.row_iter.clone(),1),
           IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
-          IndexRepeater::new(IndexIterator::Constant(Index::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(TableIndex::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(TableIndex::Index(1)),1),
         )
       } else if equal_dimensions {
         out.resize(lhs_rows_count, lhs_columns_count);
@@ -626,7 +629,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(rhs_vi.column_iter.clone(),1),
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out.column_index {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
+            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
             _ => IndexRepeater::new(IndexIterator::Constant(out.column_index),1),
           },
         )
@@ -639,7 +642,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(rhs_vi.column_iter.clone(),1),
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out.column_index {
-            Index::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
+            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
             _ => IndexRepeater::new(IndexIterator::Constant(out.column_index),1),
           },
         )

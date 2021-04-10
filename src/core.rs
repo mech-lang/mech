@@ -1,7 +1,7 @@
 use block::{Block, Register, Error};
 use database::{Database, Change, Transaction};
 use runtime::Runtime;
-use table::{Table, Index, TableId};
+use table::{Table, TableIndex, TableId};
 use value::Value;
 use std::sync::Arc;
 use std::cell::RefCell;
@@ -100,7 +100,7 @@ impl Core {
     for change in &txn.changes {
       match change {
         Change::NewTable{table_id, ..} => {
-          let register = Register{table_id: TableId::Global(*table_id), row: Index::All, column: Index::All};
+          let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
           self.runtime.output.insert(register);
         }
         _ => (),
@@ -111,7 +111,7 @@ impl Core {
     Ok(())
   }
 
-  pub fn get_cell_in_table(&mut self, table: u64, row: &Index, column: &Index) -> Option<Value> {
+  pub fn get_cell_in_table(&mut self, table: u64, row: &TableIndex, column: &TableIndex) -> Option<Value> {
     match self.database.borrow().tables.get(&table) {
       Some(table_ref) => {
         table_ref.get(row, column)

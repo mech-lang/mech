@@ -1,4 +1,4 @@
-use table::{Table, TableId, Index};
+use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use database::{Store};
 //use errors::{ErrorType};
@@ -8,8 +8,8 @@ use rust_core::fmt;
 pub struct  ValueIterator {
   pub scope: TableId,
   pub table: *mut Table,
-  pub row_index: Index,
-  pub column_index: Index,
+  pub row_index: TableIndex,
+  pub column_index: TableIndex,
   pub row_iter: IndexIterator,
   pub column_iter: IndexIterator,
 }
@@ -22,15 +22,15 @@ impl ValueIterator {
 
   pub fn columns(&self) -> usize {
     match self.column_index {
-      Index::All => unsafe{ (*self.table).columns },
-      Index::Index{..} |
-      Index::Alias{..} => 1,
+      TableIndex::All => unsafe{ (*self.table).columns },
+      TableIndex::Index{..} |
+      TableIndex::Alias{..} => 1,
       _ => unsafe{ (*self.table).columns },
     }
     
   }
 
-  pub fn get(&self, row: &Index, column: &Index) -> Option<Value> {
+  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
     unsafe{(*self.table).get(row,column)}
   }
 
@@ -42,7 +42,7 @@ impl ValueIterator {
     unsafe{(*self.table).get_unchecked_linear(index)}
   }
 
-  pub fn set(&self, row: &Index, column: &Index, value: Value) {
+  pub fn set(&self, row: &TableIndex, column: &TableIndex, value: Value) {
     unsafe{(*self.table).set(row, column, value)};
   }
 
@@ -65,7 +65,7 @@ impl ValueIterator {
       (*self.table).resize(rows, columns);
 
       match self.row_index {
-        Index::All => {
+        TableIndex::All => {
           match (*self.table).rows {
             0 => self.row_iter = IndexIterator::None,
             r => self.row_iter = IndexIterator::Range(1..=r),
@@ -75,7 +75,7 @@ impl ValueIterator {
       }
 
       match self.column_index {
-        Index::All => {
+        TableIndex::All => {
           match (*self.table).rows {
             0 => self.column_iter = IndexIterator::None,
             c => self.column_iter = IndexIterator::Range(1..=c),
@@ -120,7 +120,7 @@ impl fmt::Debug for ValueIterator {
 pub struct IndexRepeater {
   iterator: std::iter::Cycle<IndexIterator>,
   width: usize,
-  current: Option<Index>,
+  current: Option<TableIndex>,
   counter: usize,
 }
 
@@ -135,7 +135,7 @@ impl IndexRepeater {
     }
   }
 
-  pub fn next(&mut self) -> Option<Index> {
+  pub fn next(&mut self) -> Option<TableIndex> {
     if self.current == None {
       self.current = self.iterator.next();
     }
@@ -181,8 +181,8 @@ impl TableIterator {
 }
 
 impl Iterator for TableIterator {
-  type Item = Index;
-  fn next(&mut self) -> Option<Index> {
+  type Item = TableIndex;
+  fn next(&mut self) -> Option<TableIndex> {
     unsafe{
       if self.current < (*self.table).data.len() {
         let address = (*self.table).data[self.current];
@@ -190,17 +190,17 @@ impl Iterator for TableIterator {
         let value = (*self.table).store.data[address];
         match value.as_u64() {
           Some(v) => {
-            Some(Index::Index(v as usize))
+            Some(TableIndex::Index(v as usize))
           },
           None => match value.as_bool() {
             Some(true) => {
-              Some(Index::Index(self.current))
+              Some(TableIndex::Index(self.current))
             },
             Some(false) => {
-              Some(Index::None)
+              Some(TableIndex::None)
             },
             _x => {
-              Some(Index::None)
+              Some(TableIndex::None)
             }
           }
         }
@@ -216,7 +216,7 @@ pub struct AliasIterator {
   alias: u64,
   table_id: TableId,
   store: Arc<Store>,
-  index: Option<Index>,
+  index: Option<TableIndex>,
 }
 
 impl AliasIterator {
@@ -233,15 +233,15 @@ impl AliasIterator {
 }
 
 impl Iterator for AliasIterator {
-  type Item = Index;
+  type Item = TableIndex;
   
-  fn next(&mut self) -> Option<Index> {
+  fn next(&mut self) -> Option<TableIndex> {
     match self.index {
       None => {
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
         match store.column_alias_to_index.get(&(*self.table_id.unwrap(), self.alias)) {
           Some(ix) => {
-            self.index = Some(Index::Index(*ix));
+            self.index = Some(TableIndex::Index(*ix));
             self.index
           },
           None => None,
@@ -256,20 +256,20 @@ impl Iterator for AliasIterator {
 pub enum IndexIterator {
   None,
   Range(std::ops::RangeInclusive<usize>),
-  Constant(Index),
+  Constant(TableIndex),
   Alias(AliasIterator),
   Table(TableIterator),
 }
 
 impl Iterator for IndexIterator {
-  type Item = Index;
+  type Item = TableIndex;
   
-  fn next(&mut self) -> Option<Index> {
+  fn next(&mut self) -> Option<TableIndex> {
     match self {
       IndexIterator::None => None,
       IndexIterator::Range(itr) => {
         match itr.next() {
-          Some(ix) => Some(Index::Index(ix)),
+          Some(ix) => Some(TableIndex::Index(ix)),
           None => None,
         }
       }
@@ -286,9 +286,9 @@ pub enum CycleIterator {
 }
 
 impl Iterator for CycleIterator {
-  type Item = Index;
+  type Item = TableIndex;
 
-  fn next(&mut self) -> Option<Index> {
+  fn next(&mut self) -> Option<TableIndex> {
     match self {
       CycleIterator::Cycle(itr) => itr.next(),
       CycleIterator::Index(itr) => itr.next(),

@@ -4,7 +4,7 @@
 
 // ## Prelude
 
-use table::{Index};
+use table::{TableIndex};
 use block::Transformation;
 
 // ## The Error Struct
@@ -19,7 +19,7 @@ pub struct Error {
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub enum ErrorType {
-  MissingAttribute(Index),
+  MissingAttribute(TableIndex),
   IndexOutOfBounds(((u64, u64), (u64, u64))),
   DuplicateAlias(u64),
   DomainMismatch(u64, u64),

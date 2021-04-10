@@ -7,7 +7,7 @@ use test::Bencher;
 
 extern crate mech_core;
 
-use mech_core::{Core, hash_string, Register, humanize, Table, TableId, Index, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
+use mech_core::{Core, hash_string, Register, humanize, Table, TableId, TableIndex, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
 use std::time::{Duration, SystemTime};
 use std::io;
@@ -51,10 +51,10 @@ fn init(balls: usize) -> Core {
   let range1 = Transformation::Function{
     name: table_range, 
     arguments: vec![
-      (0, TableId::Local(0x01), Index::All, Index::All), 
-      (0, TableId::Local(0x02), Index::All, Index::All),
+      (0, TableId::Local(0x01), TableIndex::All, TableIndex::All), 
+      (0, TableId::Local(0x02), TableIndex::All, TableIndex::All),
     ],
-    out: (TableId::Local(x_id), Index::All, Index::All)
+    out: (TableId::Local(x_id), TableIndex::All, TableIndex::All)
   };
   block.register_transformations(("x = 1:4000".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
@@ -68,10 +68,10 @@ fn init(balls: usize) -> Core {
   let range2 = Transformation::Function{
     name: table_range, 
     arguments: vec![
-      (0, TableId::Local(0x01), Index::All, Index::All), 
-      (0, TableId::Local(0x02), Index::All, Index::All),
+      (0, TableId::Local(0x01), TableIndex::All, TableIndex::All), 
+      (0, TableId::Local(0x02), TableIndex::All, TableIndex::All),
     ],
-    out: (TableId::Local(y_id), Index::All, Index::All)
+    out: (TableId::Local(y_id), TableIndex::All, TableIndex::All)
   };
   block.register_transformations(("y = 1:4000".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
@@ -85,12 +85,12 @@ fn init(balls: usize) -> Core {
   let horzcat = Transformation::Function{
     name: table_horzcat, 
     arguments: vec![
-      (0, TableId::Local(x_id), Index::All, Index::All), 
-      (0, TableId::Local(y_id), Index::All, Index::All),
-      (0, TableId::Local(0x03), Index::All, Index::All),
-      (0, TableId::Local(0x04), Index::All, Index::All),
+      (0, TableId::Local(x_id), TableIndex::All, TableIndex::All), 
+      (0, TableId::Local(y_id), TableIndex::All, TableIndex::All),
+      (0, TableId::Local(0x03), TableIndex::All, TableIndex::All),
+      (0, TableId::Local(0x04), TableIndex::All, TableIndex::All),
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::All)
+    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::All)
   };
   block.register_transformations((r#"#ball = [|x   y   vx  vy|
 x   y   20  0]"#.to_string(), vec![
@@ -115,10 +115,10 @@ x   y   20  0]"#.to_string(), vec![
   let horzcat2 = Transformation::Function{
     name: table_horzcat, 
     arguments: vec![
-      (0, TableId::Local(0x07), Index::All, Index::All),
-      (0, TableId::Local(0x08), Index::All, Index::All),
+      (0, TableId::Local(0x07), TableIndex::All, TableIndex::All),
+      (0, TableId::Local(0x08), TableIndex::All, TableIndex::All),
     ],
-    out: (TableId::Global(time_timer), Index::All, Index::All)
+    out: (TableId::Global(time_timer), TableIndex::All, TableIndex::All)
   };
   block.register_transformations(("#time/timer = [period: 16, ticks: 0]".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Global(time_timer), rows: 1, columns: 2},
@@ -156,9 +156,9 @@ x   y   20  0]"#.to_string(), vec![
 
   let whenever = Transformation::Whenever{
     table_id: TableId::Global(time_timer), 
-    row: Index::All, 
-    column: Index::Alias(ticks), 
-    registers: vec![Register{table_id: TableId::Global(time_timer), row: Index::All, column: Index::Alias(ticks)}.hash()]
+    row: TableIndex::All, 
+    column: TableIndex::Alias(ticks), 
+    registers: vec![Register{table_id: TableId::Global(time_timer), row: TableIndex::All, column: TableIndex::Alias(ticks)}.hash()]
   };
 
   block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
@@ -168,17 +168,17 @@ x   y   20  0]"#.to_string(), vec![
   let xmove = Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (0, TableId::Global(balls_id), Index::All, Index::Alias(x_id)), 
-      (0, TableId::Global(balls_id), Index::All, Index::Alias(vx_id))
+      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(x_id)), 
+      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vx_id))
     ],
-    out: (TableId::Local(0x9), Index::All, Index::All)
+    out: (TableId::Local(0x9), TableIndex::All, TableIndex::All)
   };
   let xset = Transformation::Function{
     name: table_set, 
     arguments: vec![
-      (0, TableId::Local(0x9), Index::All, Index::All), 
+      (0, TableId::Local(0x9), TableIndex::All, TableIndex::All), 
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(x_id))
+    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(x_id))
   };
   block.register_transformations(("#ball.x := #ball.x + #ball.vx".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x09), rows: 1, columns: 1},
@@ -190,17 +190,17 @@ x   y   20  0]"#.to_string(), vec![
   let ymove = Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (0, TableId::Global(balls_id), Index::All, Index::Alias(y_id)), 
-      (0, TableId::Global(balls_id), Index::All, Index::Alias(vy_id)),
+      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(y_id)), 
+      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)),
     ],
-    out: (TableId::Local(0x08), Index::All, Index::All)
+    out: (TableId::Local(0x08), TableIndex::All, TableIndex::All)
   };
   let yset = Transformation::Function{
     name: table_set, 
     arguments: vec![
-      (0, TableId::Local(0x8), Index::All, Index::All), 
+      (0, TableId::Local(0x8), TableIndex::All, TableIndex::All), 
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(y_id))
+    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(y_id))
   };
   block.register_transformations(("#ball.y := #ball.y + #ball.vy".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x08), rows: 1, columns: 1},
@@ -212,17 +212,17 @@ x   y   20  0]"#.to_string(), vec![
   let vymove = Transformation::Function{
     name: math_add, 
     arguments: vec![
-      (0, TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
-      (0, TableId::Global(gravity), Index::All, Index::All),
+      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)), 
+      (0, TableId::Global(gravity), TableIndex::All, TableIndex::All),
     ],
-    out: (TableId::Local(0x07), Index::All, Index::All)
+    out: (TableId::Local(0x07), TableIndex::All, TableIndex::All)
   };
   let vyset = Transformation::Function{
     name: table_set, 
     arguments: vec![
-      (0, TableId::Local(0x7), Index::All, Index::All), 
+      (0, TableId::Local(0x7), TableIndex::All, TableIndex::All), 
     ],
-    out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
+    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id))
   };
   block.register_transformations(("#ball.vy := #ball.vy + g".to_string(), vec![
     Transformation::NewTable{table_id: TableId::Local(0x07), rows: 1, columns: 1},
@@ -242,10 +242,10 @@ x   y   20  0]"#.to_string(), vec![
     Transformation::Function{
       name: math_add, 
       arguments: vec![
-        (0, TableId::Global(balls_id), Index::All, Index::Alias(vy_id)), 
-        (0, TableId::Global(gravity), Index::All, Index::All),
+        (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)), 
+        (0, TableId::Global(gravity), TableIndex::All, TableIndex::All),
       ],
-      out: (TableId::Global(balls_id), Index::All, Index::Alias(vy_id))
+      out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id))
     },
   ]));*/
   block.plan.push(whenever);
@@ -270,7 +270,7 @@ fn balls_1_000(b:&mut Bencher){
   let ticks = hash_string("ticks");
   let txn = Transaction{
   changes: vec![
-    Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Alias(ticks), Value::from_u64(1 as u64))]}
+    Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}
   ]};
   b.iter(|| {
     core.process_transaction(&txn);
@@ -286,7 +286,7 @@ fn balls_10_000(b:&mut Bencher){
   let ticks = hash_string("ticks");
   let txn = Transaction{
   changes: vec![
-    Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Alias(ticks), Value::from_u64(1 as u64))]}
+    Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}
   ]};
   b.iter(|| {
     core.process_transaction(&txn);
@@ -303,7 +303,7 @@ fn balls_100_000(b:&mut Bencher){
   let ticks = hash_string("ticks");
   let txn = Transaction{
   changes: vec![
-    Change::Set{table_id: time_timer, values: vec![(Index::Index(1), Index::Alias(ticks), Value::from_u64(1 as u64))]}
+    Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}
   ]};
   b.iter(|| {
     core.process_transaction(&txn);
