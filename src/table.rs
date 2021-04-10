@@ -151,7 +151,7 @@ impl Table {
     };
     let cix = match column {
       &Index::Index(0) => {
-        if rix <= self.rows {
+        if rix <= self.rows * self.columns {
           return Some(rix - 1)
         } else {
           return None
