@@ -505,7 +505,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         for i in 1..=test_results.rows as usize {
           tests_count += 1;
           
-          let test_name = match test_results.get(&Index::Index(i),&Index::Index(1)).unwrap().as_string() {
+          let test_name = match test_results.get(&TableIndex::Index(i),&TableIndex::Index(1)).unwrap().as_string() {
             Some(string_hash) => {
               test_results.get_string(&string_hash).unwrap().clone()
             }
@@ -514,7 +514,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
           print!("\t{}\t\t", test_name);
 
-          match test_results.get(&Index::Index(i),&Index::Index(2)).unwrap().as_bool() {
+          match test_results.get(&TableIndex::Index(i),&TableIndex::Index(2)).unwrap().as_bool() {
             Some(false) => {
               passed_all_tests = false;
               tests_failed += 1;

@@ -9,7 +9,7 @@ extern crate mech_utilities;
 
 mod repl;
 
-pub use mech_core::{Core, Index, ValueMethods, Change, Transaction, Transformation, hash_string, Block, Table, Value, Error, ErrorType};
+pub use mech_core::{Core, TableIndex, ValueMethods, Change, Transaction, Transformation, hash_string, Block, Table, Value, Error, ErrorType};
 pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
 pub use mech_syntax::parser::{Parser, Node as ParserNode};
