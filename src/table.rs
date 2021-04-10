@@ -238,16 +238,20 @@ impl Table {
   // at the old address, and insert the new value into the store while pointing the cell to the
   // new address.
   pub fn set(&mut self, row: &Index, column: &Index, value: Value) {
-    let ix = self.index(row, column).unwrap();
-    let old_address = self.data[ix];
-    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-    if store.data[old_address] != value {
-      store.changed = true;
-      store.dereference(old_address);
-      let new_address = store.intern(value);
-      self.data[ix] = new_address;
-      self.changed[ix] = true;
-      self.history.push((*row,*column,value));
+    match self.index(row, column) {
+      Some(ix) => {
+        let old_address = self.data[ix];
+        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+        if store.data[old_address] != value {
+          store.changed = true;
+          store.dereference(old_address);
+          let new_address = store.intern(value);
+          self.data[ix] = new_address;
+          self.changed[ix] = true;
+          self.history.push((*row,*column,value));
+        }
+      }
+      None => (), // TODO Warn user that set was not successful due to out of bounds index
     }
   }
 
