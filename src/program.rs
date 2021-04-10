@@ -18,7 +18,7 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
 use mech_core::{Core, humanize, Register, Transaction, Change, Error};
-use mech_core::{Value, ValueMethods, ValueIterator, Index};
+use mech_core::{Value, ValueMethods, ValueIterator, TableIndex};
 use mech_core::Block;
 use mech_core::{Table, TableId};
 use mech_core::hash_string;
@@ -136,7 +136,7 @@ impl Program {
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = hash_string("mech/code");
     self.programs += 1;
-    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
@@ -151,7 +151,7 @@ impl Program {
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = hash_string("mech/code");
     self.programs += 1;
-    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: Index::Index(self.programs), column: Index::Index(1), value: Value::from_str(&input.clone())});
+    //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
   }
 
@@ -170,10 +170,10 @@ impl Program {
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table(hash_string("mech/machines")).unwrap();
       for row in 0..registry_table.rows {
-        let row_index = Index::Index(row+1);
-        let name = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(1)).unwrap().as_string().unwrap()).unwrap().to_string();
-        let version = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(2)).unwrap().as_string().unwrap()).unwrap().to_string();
-        let url = registry_table.get_string(&registry_table.get(&row_index, &Index::Index(3)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let row_index = TableIndex::Index(row+1);
+        let name = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(1)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let version = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(2)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let url = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(3)).unwrap().as_string().unwrap()).unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }
@@ -863,7 +863,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
 
             // Get the result
             let echo_table = program.mech.get_table(hash_string("ans"));
-            program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: Index::All, column: Index::All }); 
+            program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: TableIndex::All, column: TableIndex::All }); 
 
             // Send it
             client_outgoing.send(ClientMessage::Table(echo_table));
