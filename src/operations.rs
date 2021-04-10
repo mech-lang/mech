@@ -29,6 +29,7 @@ pub fn resolve_subscript(
   database: &Arc<RefCell<Database>>) -> ValueIterator {
 
   let mut db = database.borrow_mut();
+  let mut table_id = table_id;
 
   let mut table = match table_id {
     TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
@@ -39,7 +40,7 @@ pub fn resolve_subscript(
     if (*table).rows == 1 && (*table).columns == 1 {
       match (row_index, column_index) {
         (Index::All, Index::All) => (),
-        _ => {
+        (_, _) => {
           let (reference, _) = (*table).get_unchecked(1,1);
           match reference.as_reference() {
             Some(table_reference) => {
@@ -53,6 +54,7 @@ pub fn resolve_subscript(
         }
       }
     }
+    table_id = TableId::Global((*table).id);
   }
 
   let row_iter = unsafe { match row_index {
@@ -389,6 +391,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
