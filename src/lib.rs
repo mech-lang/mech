@@ -31,7 +31,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, Index, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -353,7 +353,7 @@ impl WasmCore {
     let mech_code = Hasher::hash_str("mech/code");
     let changes = vec![
       Change::NewTable{id: mech_code, rows: 1, columns: 1},
-      Change::Set{table_id: mech_code, value: vec![(mech_core::Index::Index(1), mech_core::Index::Index(1), Value::from_str(&code))]},
+      Change::Set{table_id: mech_code, value: vec![(mech_core::TableIndex::Index(1), mech_core::TableIndex::Index(1), Value::from_str(&code))]},
     ];
     let mut compiler = Compiler::new();
     compiler.compile_string(code);
@@ -434,14 +434,14 @@ impl WasmCore {
         unsafe {
           (*wasm_core).changes.push(Change::Set{
             table_id: table_id, 
-            values: vec![(Index::Index(1), 
-            Index::Index(1),
+            values: vec![(TableIndex::Index(1), 
+            TableIndex::Index(1),
             Value::from_string(key.to_string()))],
           });    
           (*wasm_core).changes.push(Change::Set{
             table_id: table_id, 
-            values: vec![(Index::Index(1), 
-            Index::Index(2),
+            values: vec![(TableIndex::Index(1), 
+            TableIndex::Index(2),
             Value::from_f64(event.time_stamp()))],
           });               
           (*wasm_core).process_transaction();
@@ -464,14 +464,14 @@ impl WasmCore {
         unsafe {
           (*wasm_core).changes.push(Change::Set{
             table_id: table_id, 
-            values: vec![(Index::Index(1), 
-            Index::Index(1),
+            values: vec![(TableIndex::Index(1), 
+            TableIndex::Index(1),
             Value::from_string(key.to_string()))],
           });    
           (*wasm_core).changes.push(Change::Set{
             table_id: table_id, 
-            values: vec![(Index::Index(1), 
-            Index::Index(2),
+            values: vec![(TableIndex::Index(1), 
+            TableIndex::Index(2),
             Value::from_f64(event.time_stamp()))],
           });               
           (*wasm_core).process_transaction();
@@ -753,9 +753,9 @@ impl WasmCore {
                   view.set_id(&format!("{}",block_id));
                   self.views.insert(*block_id as u64);
                   let mut output = "".to_string();
-                  let view_type = table.get_column(&Index::Alias(Hasher::hash_str("type")));
-                  let x_pts = table.get_column(&Index::Alias(Hasher::hash_str("x")));
-                  let y_pts = table.get_column(&Index::Alias(Hasher::hash_str("y")));
+                  let view_type = table.get_column(&TableIndex::Alias(Hasher::hash_str("type")));
+                  let x_pts = table.get_column(&TableIndex::Alias(Hasher::hash_str("x")));
+                  let y_pts = table.get_column(&TableIndex::Alias(Hasher::hash_str("y")));
                   match (view_type, x_pts, y_pts) {
                     (Some(view_type), Some(x_pt_table), Some(y_pt_table)) => { 
                       match view_type[0].as_string().unwrap().as_ref() {
@@ -969,9 +969,9 @@ impl WasmCore {
     let block = &self.core.runtime.blocks.get(&(view as usize)).unwrap();
     let table = block.get_table(view_id).unwrap().borrow();
 
-    let view_type = table.get_column(&Index::Alias(Hasher::hash_str("type")));
-    let x_pts = table.get_column(&Index::Alias(Hasher::hash_str("x")));
-    let y_pts = table.get_column(&Index::Alias(Hasher::hash_str("y")));
+    let view_type = table.get_column(&TableIndex::Alias(Hasher::hash_str("type")));
+    let x_pts = table.get_column(&TableIndex::Alias(Hasher::hash_str("x")));
+    let y_pts = table.get_column(&TableIndex::Alias(Hasher::hash_str("y")));
 
     match (view_type, x_pts, y_pts) {
       (Some(view_type), Some(x_pt_table), Some(y_pt_table)) => { 
@@ -1046,7 +1046,7 @@ impl WasmCore {
         let elements = canvas.get_attribute("elements").unwrap();
         let elements_table_id: u64 = elements.parse::<u64>().unwrap();
         unsafe {
-          if (*wasm_core).core.runtime.changed_this_round.contains(&(elements_table_id, Index::Index(0))) {
+          if (*wasm_core).core.runtime.changed_this_round.contains(&(elements_table_id, TableIndex::Index(0))) {
             (*wasm_core).render_canvas(&canvas);
           }
         }
@@ -1197,8 +1197,8 @@ impl WasmCore {
   /*pub fn queue_change(&mut self, table: String, row: u32, column: u32, value: i32) {
     let table_id = Hasher::hash_string(table);
     let change = Change::Set{table_id: table_id, 
-                             values: vec![(Index::Index(row as usize), 
-                             Index::Index(column as usize),
+                             values: vec![(TableIndex::Index(row as usize), 
+                             TableIndex::Index(column as usize),
                              Value::from_i64(value as i64))],
                             };
     self.changes.push(change);
@@ -1235,7 +1235,7 @@ impl WasmCore {
   /*pub fn get_mantissas(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);
       let mut output: Vec<i32> = vec![];
-      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as u64)) {
+      match self.core.store.get_column(TableId::Global(table_id), TableIndex::Index(column as u64)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().mantissa() as i32);
@@ -1249,7 +1249,7 @@ impl WasmCore {
   /*pub fn get_ranges(&mut self, table: String, column: u32) -> Vec<i32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<i32> = vec![];
-      match self.core.store.get_column(TableId::Global(table_id), Index::Index(column as usize)) {
+      match self.core.store.get_column(TableId::Global(table_id), TableIndex::Index(column as usize)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().range() as i32);
@@ -1263,7 +1263,7 @@ impl WasmCore {
   /*pub fn get_column(&mut self, table: String, column: u32) -> Vec<f32> {
       let table_id = Hasher::hash_string(table);    
       let mut output: Vec<f32> = vec![];
-      match self.core.get_column(TableId::Global(table_id), Index::Index(column as usize)) {
+      match self.core.get_column(TableId::Global(table_id), TableIndex::Index(column as usize)) {
           Some(column) => {
               for row in column {
                   output.push(row.as_quantity().unwrap().to_float() as f32);
@@ -1283,8 +1283,8 @@ impl WasmCore {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
         for row in 1..=app_table.rows as usize {
-          match (app_table.get(&Index::Index(row), &Index::Alias(*ROOT)), 
-                 app_table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
+          match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
+                 app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
             (Some(root_id), Some(contents)) => {
               let root_string_id = &self.core.get_string(&root_id).unwrap();
               self.roots.insert(root_id.clone());
@@ -1379,7 +1379,7 @@ impl WasmCore {
     // First check to see if the table has a "type" column. If it doesn't, just render the table
     if table.has_column_alias(*TYPE) == true {
       for row in 1..=table.rows {
-        match table.get(&Index::Index(row), &Index::Alias(*TYPE))  {
+        match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
           Some(kind) => {
             // ---------------------
             // RENDER A DIV
@@ -1387,7 +1387,7 @@ impl WasmCore {
             let raw_kind = kind.as_raw();
             if raw_kind == *DIV {
               // Get contents
-              match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some(contents) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
@@ -1401,8 +1401,8 @@ impl WasmCore {
             // ---------------------
             } else if raw_kind == *A {
               // Get contents
-              match (table.get(&Index::Index(row), &Index::Alias(*HREF)),
-                     table.get(&Index::Index(row), &Index::Alias(*CONTAINS))) {
+              match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
+                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
                 (Some(href), Some(contents)) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
@@ -1424,7 +1424,7 @@ impl WasmCore {
             // ---------------------
             } else if raw_kind == *IMG {
               // Get contents
-              match table.get(&Index::Index(row), &Index::Alias(*SRC)) {
+              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
                 Some(src) => {
                   let mut img: web_sys::Element = document.create_element("img")?;
                   let src_string = &self.core.get_string(&src).unwrap();
@@ -1440,7 +1440,7 @@ impl WasmCore {
             // ---------------------
             } else if raw_kind == *BUTTON {
               // Get contents
-              match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some(contents) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
@@ -1458,25 +1458,25 @@ impl WasmCore {
             // ---------------------
             } else if raw_kind == *CANVAS {
               // Get contents
-              match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some(contents) => {
                   let mut canvas: web_sys::Element = document.create_element("canvas")?;
                   let element_id = hash_string(&format!("canvas-{:?}-{:?}", table.id, row));
                   canvas.set_id(&format!("{:?}",element_id));
                   self.canvases.insert(element_id);
                   // Is there a parameters field?
-                  match table.get(&Index::Index(row), &Index::Alias(*PARAMETERS)) {
+                  match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
                     Some(parameters_table_id) => {
                       match parameters_table_id.as_reference() {
                         Some(parameters_table_id) => {
                           let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                          match parameters_table.get(&Index::Index(1), &Index::Alias(*HEIGHT)) {
+                          match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
                             Some(height) => {
                               canvas.set_attribute("height", &format!("{}",height));
                             }
                             _ => (),
                           }
-                          match parameters_table.get(&Index::Index(1), &Index::Alias(*WIDTH)) {
+                          match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
                             Some(width) => {
                               canvas.set_attribute("width", &format!("{}",width));
                             }
@@ -1490,7 +1490,7 @@ impl WasmCore {
                     _ => (), // Do nothing, the parameters field is optional
                   }
                   // Add the contents
-                  match table.get(&Index::Index(row), &Index::Alias(*CONTAINS)) {
+                  match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                     Some(contains_table_id) => {
                       match contains_table_id.as_reference() {
                         Some(contains_table_id) => {
@@ -1517,20 +1517,20 @@ impl WasmCore {
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
-                          (Index::Index(1), 
-                          Index::Alias(*X),
+                          (TableIndex::Index(1), 
+                          TableIndex::Alias(*X),
                           Value::from_i64(x as i64))],
                         });
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
-                          (Index::Index(1), 
-                          Index::Alias(*Y),
+                          (TableIndex::Index(1), 
+                          TableIndex::Alias(*Y),
                           Value::from_i64(y as i64))],
                         });              
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
-                          (Index::Index(1), 
-                          Index::Alias(*TARGET),
+                          (TableIndex::Index(1), 
+                          TableIndex::Alias(*TARGET),
                           Value::from_id(target_table_id))],
                         });                  
                         (*wasm_core).process_transaction();
@@ -1561,9 +1561,9 @@ impl WasmCore {
             // ---------------------
             } else if raw_kind == *SLIDER {
               // Get contents
-              match (table.get(&Index::Index(row), &Index::Alias(*MIN)),
-                    table.get(&Index::Index(row), &Index::Alias(*MAX)),
-                    table.get(&Index::Index(row), &Index::Alias(*VALUE))) {
+              match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
+                    table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+                    table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
                 (Some(min), Some(max), Some(value)) => {
                   match (min.as_float(), max.as_float(), value.as_float()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
@@ -1592,8 +1592,8 @@ impl WasmCore {
                               let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
                               let change = Change::Set{
                                 table_id: table_id, values: vec![ 
-                                  (Index::Index(row),
-                                   Index::Alias(*VALUE),
+                                  (TableIndex::Index(row),
+                                   TableIndex::Alias(*VALUE),
                                    Value::from_i64(slider_value)),
                                 ]
                               };
@@ -1633,7 +1633,7 @@ impl WasmCore {
         // Make an internal div for each cell 
         for column in 1..=table.columns {
           // Get contents
-          match table.get(&Index::Index(row), &Index::Index(column)) {
+          match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
             Some(contents) => {
               let mut cell_div = document.create_element("div")?;
               let element_id = hash_string(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
@@ -1758,14 +1758,14 @@ impl WasmCore {
                       unsafe {
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
-                          (Index::Index(1), 
-                          Index::Index(1),
+                          (TableIndex::Index(1), 
+                          TableIndex::Index(1),
                           Value::from_i64(x as i64))],
                         });
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
-                          (Index::Index(1), 
-                          Index::Index(2),
+                          (TableIndex::Index(1), 
+                          TableIndex::Index(2),
                           Value::from_i64(y as i64))],
                         });                  
                         (*wasm_core).process_transaction();
@@ -1826,8 +1826,8 @@ impl WasmCore {
     let context = Rc::new(context);
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
     for row in 1..=elements_table.rows as usize {
-      match (elements_table.get(&Index::Index(row), &Index::Alias(*SHAPE)),
-             elements_table.get(&Index::Index(row), &Index::Alias(*PARAMETERS))) {
+      match (elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
+             elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
         (Some(shape), Some(parameters_table_id)) => {
           let shape = shape.as_raw();
           match parameters_table_id.as_reference() {
@@ -1837,13 +1837,13 @@ impl WasmCore {
               // RENDER A CIRCLE
               // ---------------------
               if shape == *CIRCLE {
-                match (parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_X)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*CENTER_Y)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*RADIUS))) {
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER_X)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER_Y)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
                   (Some(cx), Some(cy), Some(radius)) => {
                     match (cx.as_float(), cy.as_float(), radius.as_float()) {
                       (Some(cx), Some(cy), Some(radius)) => {
-                        let fill = match parameters_table.get(&Index::Index(1), &Index::Alias(*FILL))  {
+                        let fill = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
                           Some(fill_string_id) => {
                             match fill_string_id.as_string() {
                               Some(fill_string_id) => self.core.get_string(&fill_string_id).unwrap(),
@@ -1873,14 +1873,14 @@ impl WasmCore {
               // RENDER A LINE
               // ---------------------    
               } else if shape == *LINE {
-                match (parameters_table.get(&Index::Index(1), &Index::Alias(*X1)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*X2)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y1)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y2))) {
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X1)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X2)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y1)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y2))) {
                   (Some(x1), Some(x2), Some(y1), Some(y2)) => {
                     match (x1.as_float(), x2.as_float(), y1.as_float(), y2.as_float()) {
                       (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                        let stroke = match parameters_table.get(&Index::Index(1), &Index::Alias(*STROKE))  {
+                        let stroke = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*STROKE))  {
                           Some(stroke_string_id) => {
                             match stroke_string_id.as_string() {
                               Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
@@ -1912,10 +1912,10 @@ impl WasmCore {
               // RENDER A IMAGE
               // --------------------- 
               } else if shape == *IMAGE {
-                match (parameters_table.get(&Index::Index(1), &Index::Alias(*SOURCE)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*X)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*Y)),
-                       parameters_table.get(&Index::Index(1), &Index::Alias(*ROTATION))) {
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
                   (Some(source), Some(x), Some(y), Some(rotation)) => {
                     match (source.as_string(), x.as_float(), y.as_float(), rotation.as_float()) {
                       (Some(source_id), Some(x), Some(y), Some(rotation)) => {
