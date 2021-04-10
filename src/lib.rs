@@ -48,7 +48,6 @@ pub struct MiniBlock {
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
-  pub register_map: Vec<(u64, Register)>,
 }
 
 impl MiniBlock {
@@ -58,7 +57,6 @@ impl MiniBlock {
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
-      register_map: Vec::with_capacity(1),
     }
   }
 }
