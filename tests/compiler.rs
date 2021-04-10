@@ -828,6 +828,13 @@ block
 block
   #app2 = [1 [7 8]]"#, Value::from_u64(8));
 
+test_mech!(nesting_chained_dot_indexing,r#"
+block
+  #app2 = [x: [a: 1 b: 2 c: 3] y: [x: 7 z: 8]]
+
+block
+  #test = #app2.y.z + #app2.x.b"#, Value::from_u64(10));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"

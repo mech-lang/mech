@@ -1000,6 +1000,9 @@ impl Compiler {
           let mut i = 1;
           if result.len() > 1 {
             loop {
+              if i == result.len() {
+                break;
+              }
               match result[i] {
                 Transformation::Select{table_id: TableId::Global(id), row: Index::All, column: Index::All} => {
                   () // do nothing
