@@ -23,7 +23,7 @@ use mech::{
   Core, 
   Change,
   Transaction,
-  Index,
+  TableIndex,
   ValueMethods,
   MiniBlock, 
   Block, 
