@@ -6,7 +6,7 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 use table::{Table, TableId, Index};
 use value::{Value, ValueMethods};
-use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater};
+use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater, CycleIterator};
 use database::Database;
 //use errors::ErrorType;
 use std::sync::Arc;
@@ -479,22 +479,6 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       }
     }
     column += width;
-  }
-}
-
-enum CycleIterator {
-  Cycle(std::iter::Cycle<IndexIterator>),
-  Index(IndexIterator),
-}
-
-impl Iterator for CycleIterator {
-  type Item = Index;
-
-  fn next(&mut self) -> Option<Index> {
-    match self {
-      CycleIterator::Cycle(itr) => itr.next(),
-      CycleIterator::Index(itr) => itr.next(),
-    }
   }
 }
 

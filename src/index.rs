@@ -279,3 +279,19 @@ impl Iterator for IndexIterator {
     }
   }
 }
+
+pub enum CycleIterator {
+  Cycle(std::iter::Cycle<IndexIterator>),
+  Index(IndexIterator),
+}
+
+impl Iterator for CycleIterator {
+  type Item = Index;
+
+  fn next(&mut self) -> Option<Index> {
+    match self {
+      CycleIterator::Cycle(itr) => itr.next(),
+      CycleIterator::Index(itr) => itr.next(),
+    }
+  }
+}
