@@ -390,6 +390,119 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   }
 }
 
+pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  println!("TABLE/INDEX");
+  let _row = 0;
+  let mut column = 0;
+  let mut out_rows = 0;
+  let mut out_columns = 0;
+
+  // Get the size of the output table
+  for (_, vi) in arguments {
+    let vi_rows = match &vi.row_iter {
+      IndexIterator::None => 0,
+      IndexIterator::Range(_) => vi.rows(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_rows = if out_rows == 0 {
+      vi_rows
+    } else if vi_rows > out_rows && out_rows == 1 {
+      vi_rows
+    } else if vi_rows == out_rows {
+      vi_rows
+    } else if vi_rows == 1 {
+      out_rows
+    } else {
+      // TODO Throw a size error here
+      0
+    };
+
+    let vi_columns = match &vi.column_iter {
+      IndexIterator::None => 0,
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    out_columns += vi_columns;
+
+  }
+
+  out.resize(out_rows, out_columns);
+
+  println!("{:?}", unsafe{&(*out.table)});
+
+  for (_, vi) in arguments {
+    println!("{:?}", unsafe{&(*vi.table)});
+    let width = match &vi.column_iter {
+      IndexIterator::None => 0,
+      IndexIterator::Range(_) => vi.columns(),
+      IndexIterator::Constant(_) => 1,
+      IndexIterator::Alias(_) => 1,
+      IndexIterator::Table(iter) => iter.len(),
+    };
+    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
+      // Add alias to column if it's there
+      unsafe {
+        let id = (*vi.table).id;
+        match j {
+          TableIndex::Index(ix) => {
+            match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
+              Some(alias) => {
+                let out_id = (*out.table).id;
+                let store = &mut *Arc::get_mut_unchecked(&mut (*out.table).store);
+                store.column_index_to_alias.entry((out_id,c)).or_insert(*alias);
+                store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
+              }
+              _ => (),
+            }
+          },
+          _ => (),
+        }
+      }
+      let mut row_iter = if vi.rows() == 1 {
+        CycleIterator::Cycle(vi.row_iter.clone().cycle())
+      } else {
+        CycleIterator::Index(vi.row_iter.clone())
+      };
+      for k in 1..=out_rows {
+        // Fast forward to the next true value
+        let mut i = row_iter.next();
+        while i == Some(TableIndex::None) {
+          i = row_iter.next();
+          if i == None {
+            break;
+          }
+        }
+        match vi.get(&i.unwrap(),&j) {
+          Some(value) => {
+            out.set_unchecked(k, column+c, value);
+          }
+          _ => (),
+        }
+      }
+    }
+    column += width;
+  }
+}
+
+pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  let vi = arguments[0];
+  out.resize(vi.rows(), vi.columns());
+  for j in 0..=vi.columns() {
+    for i in 0..=vi.rows() {
+      match vi.get(&i.unwrap(),&j) {
+        Some(value) => {
+          out.set_unchecked(i, j, value);
+        }
+        _ => (),
+      }
+    }
+  }
+}
+
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
   println!("HORZCAT");
   let _row = 0;
