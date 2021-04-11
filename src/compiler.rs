@@ -20,6 +20,8 @@ use super::formatter::Formatter;
 use std::sync::Arc;
 
 lazy_static! {
+  static ref TABLE_INDEX: u64 = hash_string("table/index");
+  static ref TABLE_COPY: u64 = hash_string("table/copy");
   static ref TABLE_HORZCAT: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTCAT: u64 = hash_string("table/vertical-concatenate");
   static ref TABLE_SET: u64 = hash_string("table/set");
@@ -708,7 +710,7 @@ impl Compiler {
             let next = &block.plan[step_ix + 1];
             match (this, next) {
               (Transformation::Function{name, arguments, out}, Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
-                if (*name2 == hash_string("table/horizontal-concatenate") || *name2 == hash_string("table/vertical-concatenate")) && arguments2.len() == 1 {
+                if (*name2 == *TABLE_HORZCAT || *name2 == *TABLE_VERTCAT) && arguments2.len() == 1 {
                   let (_, out_table2, out_row2, out_column2) = arguments2[0];
                   if *out == (out_table2, out_row2, out_column2) {
                     let new_step = Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2};
@@ -808,7 +810,7 @@ impl Compiler {
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
                           let fxn = Transformation::Function{
-                            name: *TABLE_HORZCAT,
+                            name: *TABLE_INDEX,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -930,7 +932,7 @@ impl Compiler {
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
 
                           let fxn = Transformation::Function{
-                            name: *TABLE_HORZCAT,
+                            name: *TABLE_INDEX,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -954,7 +956,7 @@ impl Compiler {
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
 
                           let fxn = Transformation::Function{
-                            name: *TABLE_HORZCAT,
+                            name: *TABLE_INDEX,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -1010,7 +1012,7 @@ impl Compiler {
                 Transformation::Select{table_id, row, column} => {
                   let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
                   let fxn = Transformation::Function{
-                    name: *TABLE_HORZCAT,
+                    name: *TABLE_INDEX,
                     arguments: vec![(0, target_table_id, row, column)],
                     out: (new_table_id, TableIndex::All, TableIndex::All),
                   };
@@ -1034,7 +1036,7 @@ impl Compiler {
             }
             _ => {
               let fxn = Transformation::Function {
-                name: *TABLE_HORZCAT,
+                name: *TABLE_INDEX,
                 arguments: args,
                 out: (new_table_id, TableIndex::All, TableIndex::All),
               };
@@ -1410,7 +1412,7 @@ impl Compiler {
             Transformation::Select{table_id, row, column} => {
               input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 0, columns: 0});
               input_tfms.push(Transformation::Function{
-                name: *TABLE_HORZCAT,
+                name: *TABLE_INDEX,
                 arguments: vec![(0, table_id, row, column)],
                 out: (output_table_id.unwrap(), TableIndex::All, TableIndex::All)
               });
