@@ -489,16 +489,12 @@ pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
 }
 
 pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  let vi = arguments[0];
+  let (_, vi) = &arguments[0];
   out.resize(vi.rows(), vi.columns());
-  for j in 0..=vi.columns() {
-    for i in 0..=vi.rows() {
-      match vi.get(&i.unwrap(),&j) {
-        Some(value) => {
-          out.set_unchecked(i, j, value);
-        }
-        _ => (),
-      }
+  for j in 1..=vi.columns() {
+    for i in 1..=vi.rows() {
+      let (value, _) = vi.get_unchecked(i,j);
+      out.set_unchecked(i, j, value);
     }
   }
 }
