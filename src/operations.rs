@@ -391,7 +391,6 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  println!("TABLE/INDEX");
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -500,7 +499,6 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  println!("HORZCAT");
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
