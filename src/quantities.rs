@@ -314,7 +314,7 @@ impl QuantityMath for Quantity {
   fn multiply(self, other:Quantity) -> Result<Quantity, ErrorType> {
     let result = match self.mantissa().checked_mul(other.mantissa()) {
        Some(result) => { result },
-       None => { panic!("QuantityMultiply overflow") }
+       None => { panic!("QuantityMultiply overflow") } // TODO Make this an error
     };
     let mut quantity = result.to_quantity();
     quantity.set_range(quantity.range() + self.range() + other.range());

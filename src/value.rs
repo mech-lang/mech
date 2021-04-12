@@ -80,16 +80,16 @@ pub trait ValueMethods {
 
 // The first byte of a value indicates its domain. We have a couple built-in domains:
 
-// - Empty - 0x20
+// - Empty - 0x10
 // - Boolean - x40
-// - Number Literal - 0xC0
-// - String - 0x80
 // - Reference - 0x20
+// - String - 0x80
+// - Number Literal - 0xC0
 
 impl ValueMethods for Value {
 
   fn empty() -> Value {
-    0x2000000000000000
+    0x1000000000000000
   }
 
   fn from_byte_vector(vector: &Vec<u8>) -> Value {
@@ -176,10 +176,11 @@ impl ValueMethods for Value {
 
   fn as_quantity(&self) -> Option<Quantity> {
     match self & 0xFF00000000000000 {
+      0x1000000000000000 |
       0x2000000000000000 |
+      0x4000000000000000 |
       0x8000000000000000 |
-      0xC000000000000000 |
-      0x4000000000000000 => None,
+      0xC000000000000000 => None,
       _ => Some(*self),
     }
   }
@@ -193,20 +194,22 @@ impl ValueMethods for Value {
 
   fn as_u64(&self) -> Option<u64> {
     match self & 0xFF00000000000000 {
+      0x1000000000000000 |
       0x2000000000000000 |
+      0x4000000000000000 |
       0x8000000000000000 |
-      0xC000000000000000 |
-      0x4000000000000000 => None,
+      0xC000000000000000 => None,
       _ => Some(self.to_u64()),
     }
   }
 
   fn is_number(&self) -> bool {
     match self & 0xFF00000000000000 {
+      0x1000000000000000 |
       0x2000000000000000 |
+      0x4000000000000000 |
       0x8000000000000000 |
-      0xC000000000000000 |
-      0x4000000000000000 => false,
+      0xC000000000000000 => false,
       _ => true,
     }
   }
@@ -220,10 +223,11 @@ impl ValueMethods for Value {
 
   fn as_float(&self) -> Option<f64> {
     match self & 0xFF00000000000000 {
+      0x1000000000000000 |
       0x2000000000000000 |
+      0x4000000000000000 |
       0x8000000000000000 |
-      0xC000000000000000 |
-      0x4000000000000000 => None,
+      0xC000000000000000 => None,
       _ => Some(self.to_float()),
     }
   }
