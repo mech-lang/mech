@@ -834,7 +834,7 @@ pub enum Transformation {
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
-  Select{table_id: TableId, row: TableIndex, column: TableIndex},
+  Select{table_id: TableId, row: TableIndex, column: TableIndex, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
 }
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
