@@ -477,6 +477,62 @@ impl fmt::Debug for Block {
   }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BlockState {
+  New,          // Has just been created, but has not been tested for satisfaction
+  Ready,        // All inputs are satisfied and the block is ready to execute
+  Done,         // All inputs are satisfied and the block has executed
+  Unsatisfied,  // One or more inputs are not satisfied
+  Error,        // One or more errors exist on the block
+  Disabled,     // The block is disabled will not execute if it otherwise would
+}
+
+pub enum Error {
+  TableNotFound,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Transformation {
+  NewTable{table_id: TableId, rows: usize, columns: usize },
+  Constant{table_id: TableId, value: Value, unit: u64},
+  ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
+  Set{table_id: TableId, row: TableIndex, column: TableIndex},
+  RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
+  Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
+  Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
+  Select{table_id: TableId, row: TableIndex, column: TableIndex, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
+}
+
+#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+pub struct Register {
+  pub table_id: TableId,
+  pub row: TableIndex,
+  pub column: TableIndex,
+}
+
+impl Register {
+  pub fn hash(&self) -> u64 {
+    let id_bytes = (*self.table_id.unwrap()).to_le_bytes();
+
+    let unwrap_index = |index: &TableIndex| -> u64 {
+      match index {
+        TableIndex::Index(ix) => *ix as u64,
+        TableIndex::Alias(alias) => {
+          alias.clone()
+        },
+        TableIndex::Table(table_id) => *table_id.unwrap(),
+        TableIndex::None |
+        TableIndex::All => 0,
+      }
+    };
+
+    let row_bytes = unwrap_index(&self.row).to_le_bytes();
+    let column_bytes = unwrap_index(&self.column).to_le_bytes();
+    let array = [id_bytes, row_bytes, column_bytes].concat();
+    seahash::hash(&array) & 0x00FFFFFFFFFFFFFF
+  }
+}
+
 pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> String {
 
   let table_id = register.table_id;
@@ -872,61 +928,5 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
       arg
     },
     x => format!("{:?}", x),
-  }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum BlockState {
-  New,          // Has just been created, but has not been tested for satisfaction
-  Ready,        // All inputs are satisfied and the block is ready to execute
-  Done,         // All inputs are satisfied and the block has executed
-  Unsatisfied,  // One or more inputs are not satisfied
-  Error,        // One or more errors exist on the block
-  Disabled,     // The block is disabled will not execute if it otherwise would
-}
-
-pub enum Error {
-  TableNotFound,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Transformation {
-  NewTable{table_id: TableId, rows: usize, columns: usize },
-  Constant{table_id: TableId, value: Value, unit: u64},
-  ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
-  Set{table_id: TableId, row: TableIndex, column: TableIndex},
-  RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
-  Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
-  Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
-  Select{table_id: TableId, row: TableIndex, column: TableIndex, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
-}
-
-#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
-pub struct Register {
-  pub table_id: TableId,
-  pub row: TableIndex,
-  pub column: TableIndex,
-}
-
-impl Register {
-  pub fn hash(&self) -> u64 {
-    let id_bytes = (*self.table_id.unwrap()).to_le_bytes();
-
-    let unwrap_index = |index: &TableIndex| -> u64 {
-      match index {
-        TableIndex::Index(ix) => *ix as u64,
-        TableIndex::Alias(alias) => {
-          alias.clone()
-        },
-        TableIndex::Table(table_id) => *table_id.unwrap(),
-        TableIndex::None |
-        TableIndex::All => 0,
-      }
-    };
-
-    let row_bytes = unwrap_index(&self.row).to_le_bytes();
-    let column_bytes = unwrap_index(&self.column).to_le_bytes();
-    let array = [id_bytes, row_bytes, column_bytes].concat();
-    seahash::hash(&array) & 0x00FFFFFFFFFFFFFF
   }
 }
