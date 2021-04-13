@@ -107,6 +107,7 @@ impl fmt::Debug for ValueIterator {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "table:\n {:?}\n", unsafe{&(*self.table)})?;
+    write!(f, "out size: {:?}x{:?}\n", self.rows(), self.columns())?;
     write!(f, "row index: {:?}\n", self.row_index)?;
     write!(f, "col index: {:?}\n", self.column_index)?;
     write!(f, "row iter: {:?}\n", self.row_iter)?;
