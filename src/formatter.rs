@@ -42,7 +42,7 @@ impl Formatter {
     let mut code = String::new();
     let mut node_type = "";
     match node {
-      Node::Constant{value, unit} => {
+      Node::Quantity{value, unit} => {
         node_type = "constant";
         let unit_label = match unit {
           Some(unit_label) => unit_label,

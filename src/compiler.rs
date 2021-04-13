@@ -73,7 +73,7 @@ pub enum Node {
   Transformation{ children: Vec<Node> },
   Identifier{ name: String, id: u64 },
   Table{ name: String, id: u64 },
-  Constant {value: Quantity, unit: Option<String>},
+  Quantity {value: Quantity, unit: Option<String>},
   String{ text: String },
   Token{ token: Token, byte: u8 },
   Add,
@@ -161,7 +161,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::String{text} => {write!(f,"String({:?})\n", text); None},
     Node::RationalNumber{children} => {write!(f,"RationalNumber\n"); Some(children)},
     Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
-    Node::Constant{value, unit} => {write!(f,"Constant({}{:?})\n", value.to_float(), unit); None},
+    Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_float(), unit); None},
     Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
     Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id); None},
     Node::Token{token, byte} => {write!(f,"Token({:?})\n", token); None},
@@ -1732,14 +1732,14 @@ impl Compiler {
         transformations.append(&mut arg_tfms);
       }
       Node::String{text} => {
-        let table = hash_string(&format!("Constant-{:?}", text));
+        let table = hash_string(&format!("String-{:?}", text));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         let value = Value::from_string(text.to_string());
         self.strings.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::NumberLiteral{kind, bytes} => {
-        let table = hash_string(&format!("Constant-{:?}", bytes));
+        let table = hash_string(&format!("NumberLiteral-{:?}{:?}", kind, bytes));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         let value = Value::from_byte_vector(bytes);
         self.number_literals.insert(value, NumberLiteral{kind: *kind, bytes: bytes.clone()} );
@@ -1751,8 +1751,8 @@ impl Compiler {
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: value, unit: 0});
       }
-      Node::Constant{value, unit} => {
-        let table = hash_string(&format!("Constant-{:?}{:?}", value.to_float(), unit));
+      Node::Quantity{value, unit} => {
+        let table = hash_string(&format!("Quantity-{:?}{:?}", value.to_float(), unit));
 
         let unit = match unit {
           Some(unit_string) => hash_string(unit_string),
@@ -1762,12 +1762,12 @@ impl Compiler {
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});
       }
       Node::True => {
-        let table = hash_string(&format!("Constant-True"));
+        let table = hash_string(&format!("True"));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: 0x4000000000000001, unit: 0});
       }
       Node::False => {
-        let table = hash_string(&format!("Constant-False"));
+        let table = hash_string(&format!("False"));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: 0x4000000000000000, unit: 0});
       }
@@ -2043,7 +2043,7 @@ impl Compiler {
               new_node = true;
               children.push(node);
             },
-            Node::Constant{..} => {
+            Node::Quantity{..} => {
               new_node = false;
               children.push(node);
             }
@@ -2157,14 +2157,14 @@ impl Compiler {
         let mut unit = None;
         for node in result {
           match node {
-            Node::Constant{value, unit} => {
+            Node::Quantity{value, unit} => {
               quantity = quantity.add(value).unwrap();
             },
             Node::Identifier{name: word, id} => unit = Some(word),
             _ => (),
           }
         }
-        compiled.push(Node::Constant{value: quantity, unit});
+        compiled.push(Node::Quantity{value: quantity, unit});
       },
       parser::Node::Number{children} => {
         let mut value: u64 = 0;
@@ -2181,7 +2181,7 @@ impl Compiler {
               place += 1;
               value += q;
             },
-            Node::Constant{value, unit} => quantities.push(value),
+            Node::Quantity{value, unit} => quantities.push(value),
             _ => (),
           }
         }
@@ -2189,7 +2189,7 @@ impl Compiler {
         for q in quantities {
           quantity = quantity.add(q).unwrap();
         }
-        compiled.push(Node::Constant{value: quantity, unit: None});
+        compiled.push(Node::Quantity{value: quantity, unit: None});
       },
       parser::Node::FloatingPoint{children} => {
         let mut value: u64 = 0;
@@ -2209,7 +2209,7 @@ impl Compiler {
           }
         }
         let quantity = make_quantity(value as i64,1 - place as i64,0);
-        compiled.push(Node::Constant{value: quantity, unit: None});
+        compiled.push(Node::Quantity{value: quantity, unit: None});
       },
       // String-like nodes
       parser::Node::ParagraphText{children} => {
@@ -2289,7 +2289,7 @@ impl Compiler {
           match node {
             Node::String{text} => text_node.push_str(&text),
             Node::Token{token, byte} => text_node.push_str(&format!("{}",byte_to_char(byte).unwrap())),
-            Node::Constant{value, unit} => text_node.push_str(&format!("{}", value.to_float())),
+            Node::Quantity{value, unit} => text_node.push_str(&format!("{}", value.to_float())),
             _ => (),
           }
         }
@@ -2320,7 +2320,7 @@ impl Compiler {
               word.push(character);
             },
             Node::String{text} => word.push_str(&text),
-            Node::Constant{value, unit} => word.push_str(&format!("{}", value.to_float())),
+            Node::Quantity{value, unit} => word.push_str(&format!("{}", value.to_float())),
             _ => compiled.push(node),
           }
         }
@@ -2397,7 +2397,7 @@ impl Compiler {
       },
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
-        let mut input = vec![Node::Constant{value: 0, unit: None}];
+        let mut input = vec![Node::Quantity{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "math/subtract".to_string(), children: input });
       },
@@ -2550,7 +2550,7 @@ impl Compiler {
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
       parser::Node::WatchOperator{children} |
-      parser::Node::Constant{children} |
+      parser::Node::Quantity{children} |
       parser::Node::SetOperator{children} |
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
