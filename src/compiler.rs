@@ -1158,8 +1158,10 @@ impl Compiler {
       Node::AnonymousTableDefine{children} => {
         let mut args = vec![];
         let mut tfms = vec![];
+        let table = self.table;
         let table_reference_id = TableId::Local(hash_string(&format!("AnonymousTable{:?}", children)));
         let new_table_id = TableId::Local(hash_string(&format!("AnonymousTableVertcatResult{:?}", children)));
+        self.table = *new_table_id.unwrap();
         // Compile each row of the table
         for child in children {
           let mut result = self.compile_transformation(child);
@@ -1186,6 +1188,7 @@ impl Compiler {
         transformations.push(fxn);
         // Push the rest of the transformations
         transformations.append(&mut tfms);
+        self.table = table;
       }
       Node::TableRow{children} => {
         let mut args = vec![];
