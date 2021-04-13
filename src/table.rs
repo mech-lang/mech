@@ -269,6 +269,20 @@ impl Table {
     }
   }
 
+  pub fn set_unchecked_linear(&mut self, index: usize, value: Value) {
+    let ix = index - 1;
+    let old_address = self.data[ix];
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+    if store.data[old_address] != value {
+      store.changed = true;
+      store.dereference(old_address);
+      let new_address = store.intern(value);
+      self.data[ix] = new_address;
+      self.changed[ix] = true;
+      //self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
+    }
+  }
+
 }
 
 impl fmt::Debug for Table {
@@ -410,7 +424,7 @@ impl fmt::Debug for Table {
       }
     }
     print_bottom_border(columns, cell_width + 2, f)?;
-    write!(f, "{:?}", self.changed)?;
+    //write!(f, "{:?}", self.changed)?;
     Ok(())
   }
 }
