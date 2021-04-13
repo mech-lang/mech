@@ -92,12 +92,26 @@ impl ValueIterator {
 impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
-    match (self.row_iter.next(), self.column_iter.next()) {
-      (Some(rix), Some(cix)) => {
-        let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
-        Some((value, changed))
-      },     
-      _ => None,
+    match (&self.row_iter, &self.column_iter) {
+      // This is the single index case e.g. x{1}
+      (row_iter, IndexIterator::None) => {
+        match (self.row_iter.next()) {
+          Some(rix) => {
+            let (value, changed) = unsafe{ (*self.table).get_unchecked_linear(rix.unwrap()) };
+            Some((value, changed))
+          },     
+          _ => None,
+        }
+      } 
+      _ => {
+        match (self.row_iter.next(), self.column_iter.next()) {
+          (Some(rix), Some(cix)) => {
+            let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
+            Some((value, changed))
+          },     
+          _ => None,
+        }
+      }
     }
   }
 
@@ -213,6 +227,37 @@ impl Iterator for TableIterator {
 }
 
 #[derive(Debug, Clone)]
+pub struct ConstantIterator {
+  table_index: TableIndex,
+  done: bool,
+}
+
+impl ConstantIterator {
+
+  pub fn new(table_index: TableIndex) -> ConstantIterator {
+    ConstantIterator {
+      table_index: table_index,
+      done: false,
+    }
+  }
+
+}
+
+impl Iterator for ConstantIterator {
+  type Item = TableIndex;
+  
+  fn next(&mut self) -> Option<TableIndex> {
+    match self.done {
+      true => None,
+      false => {
+        self.done = true;
+        Some(self.table_index)
+      }
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct AliasIterator {
   alias: u64,
   table_id: TableId,
@@ -257,7 +302,7 @@ impl Iterator for AliasIterator {
 pub enum IndexIterator {
   None,
   Range(std::ops::RangeInclusive<usize>),
-  Constant(TableIndex),
+  Constant(ConstantIterator),
   Alias(AliasIterator),
   Table(TableIterator),
 }
@@ -274,7 +319,7 @@ impl Iterator for IndexIterator {
           None => None,
         }
       }
-      IndexIterator::Constant(itr) => Some(*itr),
+      IndexIterator::Constant(itr) => itr.next(),
       IndexIterator::Table(itr) => itr.next(),
       IndexIterator::Alias(itr) => itr.next(),
     }
