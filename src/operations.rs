@@ -431,10 +431,7 @@ pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
 
   out.resize(out_rows, out_columns);
 
-  println!("{:?}", unsafe{&(*out.table)});
-
   for (_, vi) in arguments {
-    println!("{:?}", unsafe{&(*vi.table)});
     let width = match &vi.column_iter {
       IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
@@ -539,10 +536,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
 
   out.resize(out_rows, out_columns);
 
-  println!("{:?}", unsafe{&(*out.table)});
-
   for (_, vi) in arguments {
-    println!("{:?}", unsafe{&(*vi.table)});
     let width = match &vi.column_iter {
       IndexIterator::None => 0,
       IndexIterator::Range(_) => vi.columns(),
