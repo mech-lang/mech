@@ -1119,13 +1119,47 @@ impl Compiler {
         println!("All done with this one {:?}", transformations);
       }*/
       Node::InlineTable{children} => {
-
+        let table = self.table;
+        let column = self.column;
+        self.column = 1;
+        self.table = hash_string(&format!("{:?}",children));
+        let mut args = vec![];
+        let mut tfms = vec![];
+        let table_reference_id = TableId::Local(hash_string(&format!("InlineTable{:?}", children)));
+        let new_table_id = TableId::Local(hash_string(&format!("InlineTableHorzcatResult{:?}", children)));
+        self.table = *new_table_id.unwrap();
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          match result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0, table_id, TableIndex::All, TableIndex::All)); 
+            }
+            _ => (),
+          }
+          tfms.append(&mut result);
+        }
+        // Join all of the columns together using table/horizontal-concatenate.
+        let fxn = Transformation::Function {
+          name: *TABLE_HORZCAT,
+          arguments: args,
+          out: (new_table_id, TableIndex::All, TableIndex::All),
+        };
+        // Push a reference so any upstream nodes know what to do
+        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(*new_table_id.unwrap()), unit: 0});
+        // Push the horzcat function
+        transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+        transformations.push(fxn);
+        // Push the transformations derived from the children
+        transformations.append(&mut tfms);
+        self.table = table;
+        self.column = column;
       }
       Node::AnonymousTableDefine{children} => {
         let mut args = vec![];
         let mut tfms = vec![];
         let table_reference_id = TableId::Local(hash_string(&format!("AnonymousTable{:?}", children)));
-        let new_table_id = TableId::Local(hash_string(&format!("VertcatResult{:?}", children)));
+        let new_table_id = TableId::Local(hash_string(&format!("AnonymousTableVertcatResult{:?}", children)));
         // Compile each row of the table
         for child in children {
           let mut result = self.compile_transformation(child);
@@ -1206,8 +1240,18 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::Binding{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut tfms = vec![];
+        match &children[0] {
+          Node::Identifier{name, id} => {
+            self.strings.insert(hash_string(&name.to_string()), name.to_string());
+            tfms.push(Transformation::ColumnAlias{table_id: TableId::Local(self.table), column_ix: self.column, column_alias: hash_string(&name.to_string())});
+            self.column += 1;
+          }
+          _ => (),
+        }
+        let mut result = self.compile_transformation(&children[1]);
         transformations.append(&mut result);
+        transformations.append(&mut tfms);
       }
       Node::Identifier{name, id} => {
         self.strings.insert(hash_string(&name.to_string()), name.to_string());
@@ -1501,7 +1545,7 @@ impl Compiler {
         };
 
         let fxn = Transformation::Function{
-          name: *TABLE_HORZCAT,
+          name: *TABLE_COPY,
           arguments: vec![
             (0, input_table_id.unwrap(), TableIndex::All, TableIndex::All)
           ],
