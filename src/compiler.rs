@@ -582,6 +582,28 @@ impl Compiler {
                   _ => (),
                 };
               },
+              Transformation::Select{table_id, row, column, indices, out} => {
+                match table_id {
+                  TableId::Local(id) => {consumes.insert(*id);},
+                  _ => (),
+                }
+                for (row, column) in indices {
+                  match row {
+                    TableIndex::Table(TableId::Local(id)) => {consumes.insert(*id);},
+                    _ => (),
+                  }
+                  match column {
+                    TableIndex::Table(TableId::Local(id)) => {consumes.insert(*id);},
+                    _ => (),
+                  }
+                }
+                match out {
+                  TableId::Local(id) => {
+                    produces.insert(*id);
+                  },
+                  _ => (),
+                };
+              },
               Transformation::Function{name, arguments, out} => {
                 for (_, table_id, row, column) in arguments {
                   match row {
@@ -676,6 +698,9 @@ impl Compiler {
               Transformation::Whenever{..} => {
                 block.plan.push(tfm.clone());
               }
+              Transformation::Select{..} => {
+                block.plan.push(tfm.clone());
+              }
               Transformation::Function{name, ref arguments, out} => {
                 let (out_id, row, column) = out;
                 match out_id {
@@ -696,7 +721,7 @@ impl Compiler {
         // tables sometimes where there is no actual work to be done. If we remove these moot itermediate steps,
         // we can save time. We do this by comparing the input and outputs of consecutive steps. If the two steps
         // can be condensed into one step, we do this.
-        if block.plan.len() > 1 {
+        /*if block.plan.len() > 1 {
           let mut new_plan = vec![];
           let mut step_ix = 0;
           loop {
@@ -726,7 +751,7 @@ impl Compiler {
             step_ix += 1;
           }
           block.plan = new_plan;
-        }
+        }*/
         // End Planner ----------------------------------------------------------------------------------------------------------
 
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
@@ -763,7 +788,7 @@ impl Compiler {
     let mut transformations: Vec<Transformation> = Vec::new();
     match node {
       // An inline table is like x = [a: 1, b: 2, c :3]
-      Node::InlineTable{children} => {
+      /*Node::InlineTable{children} => {
         let table = self.table;
         self.table = hash_string(&format!("{:?}",children));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(self.table), rows: 0, columns: children.len()});
@@ -795,6 +820,8 @@ impl Compiler {
                       let mut result = self.compile_transformation(&children[0]);
                       // If the result is a new table or a select, we have to make a reference
                       match result[0] {
+                        // This case is selecting a global table. We create a local table, and put a reference to the global table in it.
+                        // Then we create an argument for this new local table for use later.
                         Transformation::Select{table_id: TableId::Global(id),..} => {
                           let ref_table_id = hash_string(&format!("Reference-{:?}", TableId::Global(id)));
                           transformations.push(Transformation::NewTable{table_id: TableId::Local(ref_table_id), rows: 1, columns: 1});
@@ -803,6 +830,9 @@ impl Compiler {
                           transformations.append(&mut result);
                           continue;
                         }
+                        // This case is when the table is new or selected locally.
+                        // We also create a local table with a reference in it here. But we have to copy the local table we reference
+                        // to the global scope.
                         Transformation::NewTable{table_id, ..} |
                         Transformation::Select{table_id,..} => {
                           let ref_table_id = hash_string(&format!("Reference-{:?}", table_id));
@@ -810,7 +840,7 @@ impl Compiler {
                           transformations.push(Transformation::Constant{table_id: TableId::Local(ref_table_id), value: Value::from_id(*table_id.unwrap()), unit: 0});
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
                           let fxn = Transformation::Function{
-                            name: *TABLE_INDEX,
+                            name: *TABLE_COPY,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -828,12 +858,12 @@ impl Compiler {
                 _ => (),
               }
               let mut result = self.compile_transformation(&children[1]);
-              match result[0] {
+              match &result[0] {
                 Transformation::NewTable{table_id,..} => {
-                  args.push((0, table_id, TableIndex::All, TableIndex::All));
+                  args.push((0, *table_id, TableIndex::All, TableIndex::All));
                 }
-                Transformation::Select{table_id, row, column} => {
-                  args.push((0, table_id, row, column));
+                Transformation::Select{table_id, row, column, indices, out} => {
+                  args.push((0, *table_id, *row, *column));
                 }
                 _ => (),
               }
@@ -844,16 +874,39 @@ impl Compiler {
           let mut result = self.compile_transformation(child);
           transformations.append(&mut result);
         }
-        let fxn = Transformation::Function{
-          name: *TABLE_HORZCAT,
-          arguments: args,
-          out: (TableId::Local(self.table), TableIndex::All, TableIndex::All),
+        // If there's only one arg and it selects all rows and cols, we can do a copy.
+        // Otherwise we have to do a horzcat
+        let fxn = if args.len() == 1 {
+          match args[0] {
+            (_, _, TableIndex::All, TableIndex::All) => {
+              Transformation::Function{
+                name: *TABLE_COPY,
+                arguments: args,
+                out: (TableId::Local(self.table), TableIndex::All, TableIndex::All),
+              }
+            }
+            _ => {
+              Transformation::Function{
+                name: *TABLE_HORZCAT,
+                arguments: args,
+                out: (TableId::Local(self.table), TableIndex::All, TableIndex::All),
+              }
+            }
+          }
+        } else {
+          Transformation::Function{
+            name: *TABLE_HORZCAT,
+            arguments: args,
+            out: (TableId::Local(self.table), TableIndex::All, TableIndex::All),
+          }
         };
+
         transformations.push(fxn);
         transformations.append(&mut tfms);
         self.table=table;
-      }
-      Node::AnonymousTableDefine{children} => {
+      }*/
+
+      /*Node::AnonymousTableDefine{children} => {
         let rows = self.row;
         let new_table_id = TableId::Local(hash_string(&format!("{:?}", children)));
         let table = self.table;
@@ -907,6 +960,7 @@ impl Compiler {
         self.row = rows;
         self.table = table;
       }
+
       Node::TableRow{children} => {
         self.row += 1;
         let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
@@ -915,7 +969,9 @@ impl Compiler {
         transformations.push(new_table);
 
         let mut args = vec![];
+        println!("What are the children??\n{:?}", children);
         for child in children {
+          println!("chchchc child {:?}", child);
           match &child {
             Node::TableColumn{children} => {
               match &children[0] {
@@ -932,7 +988,7 @@ impl Compiler {
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
 
                           let fxn = Transformation::Function{
-                            name: *TABLE_INDEX,
+                            name: *TABLE_COPY,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -956,7 +1012,7 @@ impl Compiler {
                           args.push((0, TableId::Local(ref_table_id), TableIndex::All, TableIndex::All));
 
                           let fxn = Transformation::Function{
-                            name: *TABLE_INDEX,
+                            name: *TABLE_COPY,
                             arguments: vec![(0, TableId::Local(*table_id.unwrap()), TableIndex::All, TableIndex::All)],
                             out: (TableId::Global(*table_id.unwrap()), TableIndex::All, TableIndex::All),
                           };
@@ -987,7 +1043,9 @@ impl Compiler {
             }
             _ => (),
           }
+         
           let mut result = self.compile_transformation(child);
+          println!("{:?}", result);
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
@@ -1000,6 +1058,8 @@ impl Compiler {
           let horz_cat_id = new_table_id;
           let mut target_table_id = new_table_id;
           let mut i = 1;
+          println!("---------------{:?}", result);
+          println!("================{:?}", args);
           if result.len() > 1 {
             loop {
               if i == result.len() {
@@ -1010,12 +1070,14 @@ impl Compiler {
                   () // do nothing
                 }
                 Transformation::Select{table_id, row, column} => {
+                  println!("SELECTING A TABLE!!!!!!!!!!!! {:?}", result[i]);
                   let new_table_id = TableId::Local(hash_string(&format!("Nested-{:?}{:?}{:?}", target_table_id, row, column)));
                   let fxn = Transformation::Function{
                     name: *TABLE_INDEX,
-                    arguments: vec![(0, target_table_id, row, column)],
+                    arguments: vec![(0, table_id, row, column)],
                     out: (new_table_id, TableIndex::All, TableIndex::All),
                   };
+                  println!("     {:?}", &fxn);
                   target_table_id = new_table_id;
                   transformations.insert(0,fxn);
                   transformations.insert(0, Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
@@ -1027,7 +1089,8 @@ impl Compiler {
           }
           transformations.append(&mut result);
         }
-
+         
+        println!("Theses are the args {:?}", args);
         if args.len() == 1 {
           match args[0] {
             (_, TableId::Global(id), TableIndex::All, TableIndex::All) => {
@@ -1035,11 +1098,13 @@ impl Compiler {
               transformations.remove(0);
             }
             _ => {
+              println!("IN HERE NOW!!!!!!!!!!!!!!!!!!!!");
               let fxn = Transformation::Function {
                 name: *TABLE_INDEX,
                 arguments: args,
                 out: (new_table_id, TableIndex::All, TableIndex::All),
               };
+              println!("{:?}", fxn);
               transformations.push(fxn);
             }
           }
@@ -1051,6 +1116,72 @@ impl Compiler {
           };
           transformations.push(fxn);
         }
+        println!("All done with this one {:?}", transformations);
+      }*/
+      Node::InlineTable{children} => {
+
+      }
+      Node::AnonymousTableDefine{children} => {
+        let mut args = vec![];
+        let mut tfms = vec![];
+        let table_reference_id = TableId::Local(hash_string(&format!("AnonymousTable{:?}", children)));
+        let new_table_id = TableId::Local(hash_string(&format!("VertcatResult{:?}", children)));
+        // Compile each row of the table
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          // The first result is the table to which horzcat writes
+          match result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0, table_id, TableIndex::All, TableIndex::All));
+            }
+            _ => (),
+          }
+          tfms.append(&mut result);
+        }
+        // Join all of the rows together using table/vertical-concatenate.        
+        let fxn = Transformation::Function {
+          name: *TABLE_VERTCAT,
+          arguments: args,
+          out: (new_table_id, TableIndex::All, TableIndex::All),
+        };
+        // Push a reference so any upstream nodes know what to do
+        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(*new_table_id.unwrap()), unit: 0});
+        // Push the vertcat function
+        transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+        transformations.push(fxn);
+        // Push the rest of the transformations
+        transformations.append(&mut tfms);
+      }
+      Node::TableRow{children} => {
+        let mut args = vec![];
+        let mut tfms = vec![];
+        self.row += 1;
+        let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
+        // Compile each column of the table
+        for child in children {
+          let mut result = self.compile_transformation(child);
+          match result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0, table_id, TableIndex::All, TableIndex::All));
+            }
+            _ => (),
+          }
+          tfms.append(&mut result);
+        }
+        // Join all of the columns together using table/horizontal-concatenate.
+        let fxn = Transformation::Function {
+          name: *TABLE_HORZCAT,
+          arguments: args,
+          out: (new_table_id, TableIndex::All, TableIndex::All),
+        };
+        transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+        transformations.push(fxn);
+        transformations.append(&mut tfms);
+      }
+      Node::TableColumn{children} => {
+        let mut result = self.compile_transformations(children);
+        transformations.append(&mut result);
       }
       Node::TableHeader{children} => {
         let column = self.column;
@@ -1071,10 +1202,6 @@ impl Compiler {
             _ => (),
           }
         }
-        let mut result = self.compile_transformations(children);
-        transformations.append(&mut result);
-      }
-      Node::TableColumn{children} => {
         let mut result = self.compile_transformations(children);
         transformations.append(&mut result);
       }
@@ -1176,25 +1303,25 @@ impl Compiler {
       }
       Node::Whenever{children} => {
         let mut result = self.compile_transformations(children);
-        match result[0] {
-          Transformation::Select{table_id, row, column} => {
-            let register = Register{table_id: table_id, row, column};
+        match &result[0] {
+          Transformation::Select{table_id, row, column, indices, out} => {
+            let register = Register{table_id: *table_id, row: *row, column: *column};
             transformations.push(
-              Transformation::Whenever{table_id, row, column, registers: vec![register]},
+              Transformation::Whenever{table_id: *table_id, row: *row, column: *column, registers: vec![register]},
             );
           }
           Transformation::NewTable{table_id, ..} => {
             let mut registers: Vec<Register> = vec![];
             for r in &result {
               match r {
-                Transformation::Select{table_id,row,column} => {
+                Transformation::Select{table_id,row,column,indices, out} => {
                   let register = Register{table_id: *table_id, row: *row, column: *column};
                   registers.push(register);
                 }
                 _ => (),
               }
             }
-            transformations.push(Transformation::Whenever{table_id, row: TableIndex::All, column: TableIndex::All, registers});
+            transformations.push(Transformation::Whenever{table_id: *table_id, row: TableIndex::All, column: TableIndex::All, registers});
           }
           _ => (),
         }
@@ -1207,18 +1334,18 @@ impl Compiler {
       Node::SetData{children} => {
         let mut output = self.compile_transformation(&children[0]);
         println!("{:?}", output);
-        let mut output_tup = match output[0] {
-          Transformation::Select{table_id, row, column} => {
-            let tfm = Transformation::Set{table_id, row, column};
+        let mut output_tup = match &output[0] {
+          Transformation::Select{table_id, row, column, indices, out} => {
+            let tfm = Transformation::Set{table_id: *table_id, row: *row, column: *column};
             transformations.push(tfm);
             Some((table_id,row,column))
           }
           _ => None,
         };
         let mut output_tup2 = if output.len() > 1 {
-          match output[1] {
-            Transformation::Select{table_id, row, column} => {
-              let tfm = Transformation::Set{table_id, row, column};
+          match &output[1] {
+            Transformation::Select{table_id, row, column, indices, out} => {
+              let tfm = Transformation::Set{table_id: *table_id, row: *row, column: *column};
               transformations.push(tfm);
               Some((table_id,row,column))
             }
@@ -1230,12 +1357,12 @@ impl Compiler {
 
         let mut input = self.compile_transformation(&children[1]);
 
-        let (input_table_id, row_select, column_select) = match input[0] {
-          Transformation::Select{table_id, row, column} => {
-            (table_id, row, column)
+        let (input_table_id, row_select, column_select) = match &input[0] {
+          Transformation::Select{table_id, row, column, indices, out} => {
+            (*table_id, *row, *column)
           }
           Transformation::NewTable{table_id,..} => {
-            (table_id, TableIndex::All, TableIndex::All)
+            (*table_id, TableIndex::All, TableIndex::All)
           }
           _ => (TableId::Local(0), TableIndex::All, TableIndex::All) // TODO This is an error really
         };
@@ -1245,7 +1372,7 @@ impl Compiler {
             (table,row2,col)
           },
           (Some(a),_) => a,
-          _ => (TableId::Global(0),TableIndex::All,TableIndex::All),
+          _ => (&TableId::Global(0),&TableIndex::All,&TableIndex::All),
         };
 
 
@@ -1254,7 +1381,7 @@ impl Compiler {
           arguments: vec![
             (0, input_table_id, row_select, column_select)
           ],
-          out: (output_table_id, output_row, output_col),
+          out: (*output_table_id, *output_row, *output_col),
         };
         transformations.push(fxn);
         transformations.append(&mut input);
@@ -1263,6 +1390,7 @@ impl Compiler {
       Node::SelectData{name, id, children} => {
         self.strings.insert(*id.unwrap(), name.to_string());
         let mut indices = vec![];
+        let mut all_indices = vec![];
         let mut tfms = vec![];
         for child in children {
           match child {
@@ -1334,13 +1462,14 @@ impl Compiler {
             },
           }
           if indices.len() == 2 {
-            transformations.push(Transformation::Select{table_id: *id, row: indices[0], column: indices[1]});
+            all_indices.push((indices[0],indices[1]));
             indices.clear();
           }
         }
-        if indices.len() == 1 {
-          indices.push(TableIndex::All);
-        }
+        all_indices.reverse();
+        let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
+        transformations.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
+        transformations.push(Transformation::Select{table_id: *id, row: TableIndex::None, column: TableIndex::None, indices: all_indices, out: TableId::Local(out_id)});
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
@@ -1408,12 +1537,12 @@ impl Compiler {
 
         // like: #test = #x
         if input.len() == 1 {
-          match input[0] {
-            Transformation::Select{table_id, row, column} => {
+          match &input[0] {
+            Transformation::Select{table_id, row, column, indices, out} => {
               input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 0, columns: 0});
               input_tfms.push(Transformation::Function{
                 name: *TABLE_INDEX,
-                arguments: vec![(0, table_id, row, column)],
+                arguments: vec![(0, *table_id, *row, *column)],
                 out: (output_table_id.unwrap(), TableIndex::All, TableIndex::All)
               });
             }
@@ -1479,7 +1608,7 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::Function{name, children} => {
-        let mut args = vec![];
+        let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
         let mut arg_tfms = vec![];
         for child in children {
           match child {
@@ -1507,12 +1636,12 @@ impl Compiler {
                 _ => new_child.clone(),
               };
               let mut result = self.compile_transformation(&child);
-              match result[0] {
+              match &result[0] {
                 Transformation::NewTable{table_id,..} => {
-                  args.push((arg, table_id, TableIndex::All, TableIndex::All));
+                  args.push((arg, *table_id, TableIndex::All, TableIndex::All));
                 },
-                Transformation::Select{table_id, row, column} => {
-                  args.push((arg, table_id, row, column));
+                Transformation::Select{table_id, row, column, indices, out} => {
+                  args.push((arg, *table_id, *row, *column));
                 }
                 _ => (),
               }
@@ -1534,12 +1663,12 @@ impl Compiler {
                 _ => child.clone(),
               };
               let mut result = self.compile_transformation(&child);
-              match result[0] {
+              match &result[0] {
                 Transformation::NewTable{table_id,..} => {
-                  args.push((0, table_id, TableIndex::All, TableIndex::All));
+                  args.push((0, *table_id, TableIndex::All, TableIndex::All));
                 },
-                Transformation::Select{table_id, row, column} => {
-                  args.push((0, table_id, row, column));
+                Transformation::Select{table_id, row, column, indices, out} => {
+                  args.push((0, *table_id, *row, *column));
                 }
                 _ => (),
               }
