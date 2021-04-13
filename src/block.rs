@@ -1,6 +1,6 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
-use index::ValueIterator;
+use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath, make_quantity};
@@ -319,6 +319,104 @@ impl Block {
             },
           }
         },
+        Transformation::Select{table_id, row, column, indices, out} => {
+          let mut db = database.borrow_mut();
+          let mut table_id = table_id;
+        
+          let mut table = match table_id {
+            TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+            TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+          };
+
+          let mut out_table = match out {
+            TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+            TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+          };
+        
+          /*unsafe{
+            if (*table).rows == 1 && (*table).columns == 1 {
+              match (row_index, column_index) {
+                (TableIndex::All, TableIndex::All) => (),
+                (_, _) => {
+                  let (reference, _) = (*table).get_unchecked(1,1);
+                  match reference.as_reference() {
+                    Some(table_reference) => {
+                      match db.tables.get_mut(&table_reference) {
+                        Some(dbtable) => table = dbtable as *mut Table,
+                        None => (),
+                      }
+                    }
+                    _ => (),
+                  }
+                }
+              }
+            }
+            table_id = TableId::Global((*table).id);
+          }*/
+          
+          for (ix, (row_index, column_index)) in indices.iter().enumerate() {
+            let row_iter = unsafe { match row_index {
+              TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(*ix)),
+              TableIndex::All => {
+                match (*table).rows {
+                  0 => IndexIterator::None,
+                  r => IndexIterator::Range(1..=r),
+                }
+              },
+              TableIndex::Table(table_id) => {
+                let row_table = match table_id {
+                  TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+                  TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+                };
+                IndexIterator::Table(TableIterator::new(row_table))
+              }
+              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, db.store.clone())),
+              _ => IndexIterator::Range(1..=(*table).rows),
+            }};
+          
+            let column_iter = unsafe { match column_index {
+              TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(*ix)),
+              TableIndex::All => {
+                match (*table).columns {
+                  0 => IndexIterator::None,
+                  c => IndexIterator::Range(1..=c),
+                }
+              }
+              TableIndex::Table(table_id) => {
+                let col_table = match table_id {
+                  TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+                  TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+                };
+                IndexIterator::Table(TableIterator::new(col_table))
+              }
+              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, self.store.clone())),
+              TableIndex::None => IndexIterator::Constant(TableIndex::Index(0)),
+              //_ => IndexIterator::Range(1..=(*table).columns),
+            }};
+            let mut vi = ValueIterator{
+              scope: *table_id,
+              table,
+              row_index: *row_index,
+              column_index: *column_index,
+              row_iter,
+              column_iter,
+            };
+            // If this is the last index, then we can write the data to the output table
+            if ix == indices.len() - 1 {
+              unsafe{(*out_table).resize(vi.rows(), vi.columns())};
+              let mut out_ix = 1;
+              for (value, _) in vi {
+                println!("{:?} {:?}", ix, value);
+                unsafe{(*out_table).set_unchecked_linear(out_ix, value);}
+                out_ix += 1;
+              }
+            }
+          }
+
+
+
+
+        }
         Transformation::Function{name, arguments, out} => {
           let mut vis: Vec<(u64, ValueIterator)> = vec![];
           for (arg, table, row, column) in arguments {
