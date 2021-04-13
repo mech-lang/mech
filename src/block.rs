@@ -390,7 +390,7 @@ impl Block {
                 IndexIterator::Table(TableIterator::new(col_table))
               }
               TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, self.store.clone())),
-              TableIndex::None => IndexIterator::Constant(TableIndex::Index(0)),
+              TableIndex::None => IndexIterator::None,
               //_ => IndexIterator::Range(1..=(*table).columns),
             }};
             let mut vi = ValueIterator{
