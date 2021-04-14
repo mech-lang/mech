@@ -101,8 +101,8 @@ pub fn resolve_subscript(
     table,
     row_index,
     column_index,
-    row_iter,
-    column_iter,
+    row_iter: IndexRepeater(row_iter,1,1),
+    column_iter: IndexRepeater(column_iter,1,1),
   }
 }
 
@@ -291,8 +291,8 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       IndexIterator::Table(iter) => iter.len(),
     };
     let mut out_row_iter = match out.row_iter {
-      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
-      _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
+      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1,1),
+      _ => IndexRepeater::new(out.row_iter.clone(), out_columns,1),
     };
     for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
       let row_iter = if vi.rows() == 1 {
@@ -360,8 +360,8 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     };
 
     let mut out_row_iter = match out.row_iter {
-      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1),
-      _ => IndexRepeater::new(out.row_iter.clone(), out_columns),
+      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1,1),
+      _ => IndexRepeater::new(out.row_iter.clone(), out_columns,1),
     };
 
     for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
@@ -704,34 +704,34 @@ macro_rules! binary_infix {
 
       let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
         (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),1),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1),
-          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1),
+          IndexRepeater::new(lhs_vi.row_iter.clone(),1,1),
+          IndexRepeater::new(lhs_vi.column_iter.clone(),1,1),
+          IndexRepeater::new(rhs_vi.row_iter.clone(),1,1),
+          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
+          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1,1),
+          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1,1),
         )
       } else if equal_dimensions {
         out.resize(lhs_rows_count, lhs_columns_count);
         (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_vi.columns()),
+          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_vi.columns(),1),
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),rhs_vi.columns()),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
-          IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
+          IndexRepeater::new(rhs_vi.row_iter.clone(),rhs_vi.columns(),1),
+          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
+          IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
         )
       } else if rhs_scalar {
         out.resize(lhs_rows_count, lhs_columns_count);
         (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_columns_count),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
+          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_columns_count,1),
+          IndexRepeater::new(lhs_vi.column_iter.clone(),1,1),
+          IndexRepeater::new(rhs_vi.row_iter.clone(),1,1),
+          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
           match out.column_index {
-            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
-            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1),
+            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
+            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1,1),
           },
         )
       } else {
@@ -741,10 +741,10 @@ macro_rules! binary_infix {
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
           IndexRepeater::new(rhs_vi.row_iter.clone(),rhs_columns_count),
           IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
+          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
           match out.column_index {
-            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
-            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1),
+            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
+            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1,1),
           },
         )
       };

@@ -257,10 +257,8 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
-    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
-      println!("{:?}", format_transformation(&self,&step));
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
           let register = registers[0];
@@ -337,6 +335,7 @@ impl Block {
           let mut db = database.borrow_mut();
           let mut table_id: TableId = *table_id;
         
+          // Get the input table
           let mut table = match table_id {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
             TableId::Local(id) => match self.tables.get_mut(&id) {
@@ -344,20 +343,19 @@ impl Block {
               None => {
                 // Does this table have an alias?
                 let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-                println!("{:?}", store.table_alias_to_id);
                 let table_id = store.table_alias_to_id.get(&id).unwrap();
                 self.tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
               }
             }
           };
 
+          // Get the output table
           let mut out_table = match out {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
             TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
           };
                   
           for (ix, (row_index, column_index)) in indices.iter().enumerate() {
-
             unsafe{
               if (*table).rows == 1 && (*table).columns == 1 {
                 match (row_index, column_index) {
@@ -422,7 +420,7 @@ impl Block {
               table,
               row_index: *row_index,
               column_index: *column_index,
-              row_iter,
+              row_iter: row_iter,
               column_iter,
             };
             // If this is the last index, then we can write the data to the output table

@@ -10,8 +10,8 @@ pub struct  ValueIterator {
   pub table: *mut Table,
   pub row_index: TableIndex,
   pub column_index: TableIndex,
-  pub row_iter: IndexIterator,
-  pub column_iter: IndexIterator,
+  pub row_iter: IndexRepeater,
+  pub column_iter: IndexRepeater,
 }
 
 impl ValueIterator {
@@ -137,16 +137,20 @@ pub struct IndexRepeater {
   width: usize,
   current: Option<TableIndex>,
   counter: usize,
+  cycles: u64,
+  current_cycle: u64,
 }
 
 impl IndexRepeater {
 
-  pub fn new(iterator: IndexIterator, width: usize) -> IndexRepeater {
+  pub fn new(iterator: IndexIterator, width: usize, cycles: u64) -> IndexRepeater {
     IndexRepeater {
       iterator: iterator.cycle(),
       width,
       current: None,
       counter: 0,
+      cycles,
+      current_cycle: 0,
     }
   }
 
@@ -156,6 +160,7 @@ impl IndexRepeater {
     }
     if self.counter == self.width {
       self.counter = 0;
+      self.current_cycle += 1;
       self.current = self.iterator.next();
     }
     self.counter += 1;
