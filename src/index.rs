@@ -253,6 +253,10 @@ impl ConstantIterator {
     }
   }
 
+  pub fn len(&self) -> usize {
+    1
+  }
+
 }
 
 impl Iterator for ConstantIterator {
@@ -288,6 +292,10 @@ impl AliasIterator {
     }
   }
 
+  pub fn len(&self) -> usize {
+    1
+  }
+
 }
 
 impl Iterator for AliasIterator {
@@ -317,6 +325,18 @@ pub enum IndexIterator {
   Constant(ConstantIterator),
   Alias(AliasIterator),
   Table(TableIterator),
+}
+
+impl IndexIterator {
+  pub fn len(&self) -> usize {
+    match self {
+      IndexIterator::None => 0,
+      IndexIterator::Range(itr) => {itr.end() - itr.start()},
+      IndexIterator::Constant(itr) => itr.len(),
+      IndexIterator::Table(itr) => itr.len(),
+      IndexIterator::Alias(itr) => itr.len(),
+    }
+  }
 }
 
 impl Iterator for IndexIterator {
