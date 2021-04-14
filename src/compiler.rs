@@ -5,8 +5,7 @@
 use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, TableIndex, TableId, Register, NumberLiteral, NumberLiteralKind};
 use mech_core::{Quantity, QuantityMath, make_quantity};
 use mech_core::hash_string;
-use mech_core::ErrorType;
-//use mech_core::{Error, ErrorType};
+use mech_core::{Error, ErrorType};
 use parser;
 use parser::Parser;
 use lexer::Token;
@@ -301,7 +300,7 @@ pub struct Compiler {
   pub current_char: usize,
   pub current_line: usize,
   pub current_col: usize,
-  pub errors: Vec<ErrorType>,
+  pub errors: Vec<Error>,
   pub unparsed: String,
 }
 
@@ -563,6 +562,9 @@ impl Compiler {
           let this_one = compiled_tfm.clone();
           for transformation in compiled_tfm {
             match &transformation {
+              Transformation::TableAlias{table_id, alias} => {
+                produces.insert(*alias);
+              }
               Transformation::Whenever{table_id, ..} => {
                 produces.insert(hash_string("~"));
               }
@@ -782,13 +784,13 @@ impl Compiler {
         }
 
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
-          /*block.errors.push(Error {
-            block: block.id as u64,
-            constraint: step_constraints,
-            error_id: ErrorType::UnsatisfiedConstraint(
+          block.errors.push(Error {
+            block: block.id,
+            step_text: step_text,
+            error_type: ErrorType::UnsatisfiedConstraint(
               unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
             ),
-          });*/
+          });
         }
         //block.id = block.gen_block_id();
         for (k,v) in self.strings.drain() {
@@ -1295,24 +1297,12 @@ impl Compiler {
         let output_table_id = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist
-            if self.variable_names.contains(&name_hash) {
-              self.errors.push(ErrorType::DuplicateAlias(name_hash));
-            } else {
-              self.variable_names.insert(name_hash);
-            }
             self.strings.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
             TableId::Local(name_hash)
           }
           Node::Table{name, ..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist
-            if self.variable_names.contains(&name_hash) {
-              self.errors.push(ErrorType::DuplicateAlias(name_hash));
-            } else {
-              self.variable_names.insert(name_hash);
-            }
             self.strings.insert(name_hash, name.to_string());
             transformations.push(Transformation::NewTable{table_id: TableId::Global(name_hash), rows: 1, columns: 1});
             TableId::Global(name_hash)
@@ -1550,12 +1540,6 @@ impl Compiler {
         let variable_name = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
-            // Check to make sure the name doesn't already exist
-            if self.variable_names.contains(&name_hash) {
-              self.errors.push(ErrorType::DuplicateAlias(name_hash));
-            } else {
-              self.variable_names.insert(name_hash);
-            }
             self.strings.insert(name_hash, name.to_string());
             name_hash
           }
