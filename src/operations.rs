@@ -6,7 +6,7 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
-use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater, CycleIterator};
+use index::{IndexIterator, TableIterator, AliasIterator, ValueIterator, IndexRepeater, CycleIterator, ConstantIterator};
 use database::Database;
 //use errors::ErrorType;
 use std::sync::Arc;
@@ -58,7 +58,7 @@ pub fn resolve_subscript(
   }
 
   let row_iter = unsafe { match row_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(ix)),
+    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
     TableIndex::All => {
       match (*table).rows {
         0 => IndexIterator::None,
@@ -77,7 +77,7 @@ pub fn resolve_subscript(
   }};
 
   let column_iter = unsafe { match column_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(ix)),
+    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
     TableIndex::All => {
       match (*table).columns {
         0 => IndexIterator::None,
@@ -92,7 +92,7 @@ pub fn resolve_subscript(
       IndexIterator::Table(TableIterator::new(col_table))
     }
     TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    TableIndex::None => IndexIterator::Constant(TableIndex::Index(0)),
+    TableIndex::None => IndexIterator::None,
     //_ => IndexIterator::Range(1..=(*table).columns),
   }};
 
@@ -708,8 +708,8 @@ macro_rules! binary_infix {
           IndexRepeater::new(lhs_vi.column_iter.clone(),1),
           IndexRepeater::new(rhs_vi.row_iter.clone(),1),
           IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Constant(TableIndex::Index(1)),1),
-          IndexRepeater::new(IndexIterator::Constant(TableIndex::Index(1)),1),
+          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1),
+          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1),
         )
       } else if equal_dimensions {
         out.resize(lhs_rows_count, lhs_columns_count);
@@ -731,7 +731,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out.column_index {
             TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
-            _ => IndexRepeater::new(IndexIterator::Constant(out.column_index),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1),
           },
         )
       } else {
@@ -744,7 +744,7 @@ macro_rules! binary_infix {
           IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count),
           match out.column_index {
             TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1),
-            _ => IndexRepeater::new(IndexIterator::Constant(out.column_index),1),
+            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1),
           },
         )
       };
