@@ -689,6 +689,7 @@ impl Compiler {
         plan.append(&mut now_satisfied);
         
         let mut global_out = vec![];
+        let mut block_transformations = vec![];
         for step in plan {
           let (step_text, _, _, step_transformations) = step;
           let mut rtfms = step_transformations.clone();
@@ -713,15 +714,16 @@ impl Compiler {
               _ => (),
             }
           }
-          block.register_transformations((step_text, step_transformations));
+          block_transformations.push((step_text, step_transformations));
         }
         block.plan.append(&mut global_out);
 
         // Here we try to optimize the plan a little bit. The compiler will generate chains of concatenating
-        // tables sometimes where there is no actual work to be done. If we remove these moot itermediate steps,
+        // tables sometimes where there is no actual work to be done. If we remove these moot intermediate steps,
         // we can save time. We do this by comparing the input and outputs of consecutive steps. If the two steps
         // can be condensed into one step, we do this.
-        /*if block.plan.len() > 1 {
+        let mut defunct_tables = vec![];
+        if block.plan.len() > 1 {
           let mut new_plan = vec![];
           let mut step_ix = 0;
           loop {
@@ -736,6 +738,7 @@ impl Compiler {
             match (this, next) {
               (Transformation::Function{name, arguments, out}, Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
                 if (*name2 == *TABLE_HORZCAT || *name2 == *TABLE_VERTCAT) && arguments2.len() == 1 {
+                  defunct_tables.append(&mut arguments2.clone());
                   let (_, out_table2, out_row2, out_column2) = arguments2[0];
                   if *out == (out_table2, out_row2, out_column2) {
                     let new_step = Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2};
@@ -751,8 +754,32 @@ impl Compiler {
             step_ix += 1;
           }
           block.plan = new_plan;
-        }*/
+        }
+        // Remove all defunct tables from the transformation list. These would be tables that were written to by
+        // some function that was removed from the previous optimization pass
+        let defunct_table_ids = defunct_tables.iter().map(|(_, table_id, _, _)| table_id).collect::<HashSet<&TableId>>();
+        let mut new_transformations = vec![];
+        for (tfm_text, steps) in &block_transformations {
+          let mut new_steps = vec![];
+          for step in steps {
+            match step {
+              Transformation::NewTable{table_id, ..} => {
+                match defunct_table_ids.contains(&table_id) {
+                  true => continue,
+                  false => new_steps.push(step.clone()),
+                }
+              }
+              _ => new_steps.push(step.clone()),
+            }
+          }
+          new_transformations.push((tfm_text.clone(), new_steps));
+        }
+        block_transformations = new_transformations;
         // End Planner ----------------------------------------------------------------------------------------------------------
+
+        for transformation in block_transformations {
+          block.register_transformations(transformation);
+        }
 
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
           /*block.errors.push(Error {
@@ -1520,7 +1547,7 @@ impl Compiler {
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
-        let output_table_id = match &children[0] {
+        let variable_name = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
             // Check to make sure the name doesn't already exist
@@ -1530,32 +1557,23 @@ impl Compiler {
               self.variable_names.insert(name_hash);
             }
             self.strings.insert(name_hash, name.to_string());
-            transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
-            TableId::Local(name_hash)
+            name_hash
           }
-          _ => TableId::Local(0),
+          _ => 0, // TODO Error
         };
-        let mut input = self.compile_transformation(&children[1]);
-
-        let input_table_id = match input[0] {
+        // Compile rhs of the variable define
+        let mut rhs = self.compile_transformation(&children[1]);
+        // Remove the first two elements. They should be a reference that we don't need
+        rhs.remove(0);
+        rhs.remove(0);
+        let rhs_table_id = match rhs[0] {
           Transformation::NewTable{table_id,..} => {
-            Some(table_id)
-          }
-          Transformation::Select{table_id,..} => {
             Some(table_id)
           }
           _ => None,
         };
-
-        let fxn = Transformation::Function{
-          name: *TABLE_COPY,
-          arguments: vec![
-            (0, input_table_id.unwrap(), TableIndex::All, TableIndex::All)
-          ],
-          out: (output_table_id, TableIndex::All, TableIndex::All),
-        };
-        transformations.push(fxn);
-        transformations.append(&mut input);
+        transformations.push(Transformation::TableAlias{table_id: rhs_table_id.unwrap(), alias: variable_name});
+        transformations.append(&mut rhs);
       }
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
