@@ -101,15 +101,15 @@ pub fn resolve_subscript(
     table,
     row_index,
     column_index,
-    row_iter: IndexRepeater(row_iter,1,1),
-    column_iter: IndexRepeater(column_iter,1,1),
+    row_iter: IndexRepeater::new(row_iter,1,1),
+    column_iter: IndexRepeater::new(column_iter,1,1),
   }
 }
 
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
 
 pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  /*
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
@@ -160,11 +160,11 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
     out.set_unchecked(1, 1, Value::from_bool(flag));
   } else {
     () // TODO alert user that argument is unknown
-  };
+  };*/
 }
 
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  /*
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
@@ -228,11 +228,11 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     out.set_unchecked(1, 1, sum);
   } else {
     () // TODO alert user that argument is unknown
-  }
+  }*/
 }
 
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
+  /*
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -320,10 +320,11 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
       }
     }
     column += width;
-  }
+  }*/
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  /*
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -387,10 +388,11 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
       }
     }
     column += width;
-  }
+  }*/
 }
 
 pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  /*
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -481,7 +483,7 @@ pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
       }
     }
     column += width;
-  }
+  }*/
 }
 
 pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
@@ -496,6 +498,7 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+  /*
   let _row = 0;
   let mut column = 0;
   let mut out_rows = 0;
@@ -586,11 +589,11 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
       }
     }
     column += width;
-  }
+  }*/
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  let mut row = 0;
+  /*let mut row = 0;
   let mut out_columns = 0;
   let mut out_rows = 0;
   // First pass, make sure the dimensions work out
@@ -633,11 +636,11 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
       }
     }
     row += 1;
-  }
+  }*/
 }
 
 pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  // TODO test argument count is 2 or 3
+  /*// TODO test argument count is 2 or 3
   // 2 -> start, end
   // 3 -> start, increment, end
   let (_, start_vi) = &arguments[0];
@@ -655,13 +658,14 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
     out.set(&TableIndex::Index(j), &TableIndex::Index(1), Value::from_u64(i as u64));
     j += 1;
   }
-  
+  */
 }
 
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+      /*
       // TODO test argument count is 2
       let (_, lhs_vi) = &arguments[0];
       let (_, rhs_vi) = &arguments[1];
@@ -797,7 +801,7 @@ macro_rules! binary_infix {
           break;
         }
         i += 1;
-      }
+      }*/
     }
   )
 }

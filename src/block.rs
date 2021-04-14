@@ -1,6 +1,6 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
-use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator};
+use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator, IndexRepeater};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath, make_quantity};
@@ -420,8 +420,8 @@ impl Block {
               table,
               row_index: *row_index,
               column_index: *column_index,
-              row_iter: row_iter,
-              column_iter,
+              row_iter: IndexRepeater::new(row_iter,1,1),
+              column_iter: IndexRepeater::new(column_iter,1,1),
             };
             // If this is the last index, then we can write the data to the output table
             if ix == indices.len() - 1 {

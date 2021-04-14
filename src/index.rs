@@ -67,8 +67,8 @@ impl ValueIterator {
       match self.row_index {
         TableIndex::All => {
           match (*self.table).rows {
-            0 => self.row_iter = IndexIterator::None,
-            r => self.row_iter = IndexIterator::Range(1..=r),
+            0 => self.row_iter = IndexRepeater::new(IndexIterator::None,1,1),
+            r => self.row_iter = IndexRepeater::new(IndexIterator::Range(1..=r),1,1),
           }
         }
         _ => (),
@@ -77,8 +77,8 @@ impl ValueIterator {
       match self.column_index {
         TableIndex::All => {
           match (*self.table).rows {
-            0 => self.column_iter = IndexIterator::None,
-            c => self.column_iter = IndexIterator::Range(1..=c),
+            0 => self.column_iter = IndexRepeater::new(IndexIterator::None,1,1),
+            c => self.column_iter = IndexRepeater::new(IndexIterator::Range(1..=c),1,1),
           }
         }
         _ => (),
@@ -92,6 +92,7 @@ impl ValueIterator {
 impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
+    /*
     match (&self.row_iter, &self.column_iter) {
       // This is the single index case e.g. x{1}
       (row_iter, IndexIterator::None) => {
@@ -112,9 +113,9 @@ impl Iterator for ValueIterator {
           _ => None,
         }
       }
-    }
+    }*/
+    None
   }
-
 }
 
 impl fmt::Debug for ValueIterator {
@@ -131,7 +132,7 @@ impl fmt::Debug for ValueIterator {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IndexRepeater {
   iterator: std::iter::Cycle<IndexIterator>,
   width: usize,
@@ -153,8 +154,11 @@ impl IndexRepeater {
       current_cycle: 0,
     }
   }
+}
 
-  pub fn next(&mut self) -> Option<TableIndex> {
+impl Iterator for IndexRepeater {
+  type Item = TableIndex;
+  fn next(&mut self) -> Option<TableIndex> {
     if self.current == None {
       self.current = self.iterator.next();
     }
@@ -163,11 +167,14 @@ impl IndexRepeater {
       self.current_cycle += 1;
       self.current = self.iterator.next();
     }
+    if self.current_cycle == self.cycles {
+      return None;
+    }
     self.counter += 1;
     self.current
   }
-
 }
+
 
 #[derive(Debug, Clone)]
 pub struct TableIterator {
