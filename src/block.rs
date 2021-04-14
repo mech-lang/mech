@@ -1,6 +1,6 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
-use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator};
+use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath, make_quantity};
@@ -321,7 +321,7 @@ impl Block {
         },
         Transformation::Select{table_id, row, column, indices, out} => {
           let mut db = database.borrow_mut();
-          let mut table_id = table_id;
+          let mut table_id: TableId = *table_id;
         
           let mut table = match table_id {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
@@ -332,31 +332,32 @@ impl Block {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
             TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
           };
-        
-          /*unsafe{
-            if (*table).rows == 1 && (*table).columns == 1 {
-              match (row_index, column_index) {
-                (TableIndex::All, TableIndex::All) => (),
-                (_, _) => {
-                  let (reference, _) = (*table).get_unchecked(1,1);
-                  match reference.as_reference() {
-                    Some(table_reference) => {
-                      match db.tables.get_mut(&table_reference) {
-                        Some(dbtable) => table = dbtable as *mut Table,
-                        None => (),
+                  
+          for (ix, (row_index, column_index)) in indices.iter().enumerate() {
+
+            unsafe{
+              if (*table).rows == 1 && (*table).columns == 1 {
+                match (row_index, column_index) {
+                  (TableIndex::All, TableIndex::All) => (),
+                  (_, _) => {
+                    let (reference, _) = (*table).get_unchecked(1,1);
+                    match reference.as_reference() {
+                      Some(table_reference) => {
+                        match db.tables.get_mut(&table_reference) {
+                          Some(dbtable) => table = dbtable as *mut Table,
+                          None => (),
+                        }
                       }
+                      _ => (),
                     }
-                    _ => (),
                   }
                 }
               }
+              table_id = TableId::Global((*table).id);
             }
-            table_id = TableId::Global((*table).id);
-          }*/
-          
-          for (ix, (row_index, column_index)) in indices.iter().enumerate() {
+
             let row_iter = unsafe { match row_index {
-              TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(*ix)),
+              TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
               TableIndex::All => {
                 match (*table).rows {
                   0 => IndexIterator::None,
@@ -370,12 +371,12 @@ impl Block {
                 };
                 IndexIterator::Table(TableIterator::new(row_table))
               }
-              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, db.store.clone())),
+              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, db.store.clone())),
               _ => IndexIterator::Range(1..=(*table).rows),
             }};
           
             let column_iter = unsafe { match column_index {
-              TableIndex::Index(ix) => IndexIterator::Constant(TableIndex::Index(*ix)),
+              TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
               TableIndex::All => {
                 match (*table).columns {
                   0 => IndexIterator::None,
@@ -389,12 +390,12 @@ impl Block {
                 };
                 IndexIterator::Table(TableIterator::new(col_table))
               }
-              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, *table_id, self.store.clone())),
+              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, self.store.clone())),
               TableIndex::None => IndexIterator::None,
               //_ => IndexIterator::Range(1..=(*table).columns),
             }};
             let mut vi = ValueIterator{
-              scope: *table_id,
+              scope: table_id,
               table,
               row_index: *row_index,
               column_index: *column_index,
@@ -403,19 +404,18 @@ impl Block {
             };
             // If this is the last index, then we can write the data to the output table
             if ix == indices.len() - 1 {
+              println!("WRITING TO OUTPUT TABLE WITH SELECT");
+              println!("{:?}", vi);
               unsafe{(*out_table).resize(vi.rows(), vi.columns())};
               let mut out_ix = 1;
               for (value, _) in vi {
-                println!("{:?} {:?}", ix, value);
+                println!("WRITING::: {:?} {:?}", ix, value);
                 unsafe{(*out_table).set_unchecked_linear(out_ix, value);}
                 out_ix += 1;
               }
             }
+            
           }
-
-
-
-
         }
         Transformation::Function{name, arguments, out} => {
           let mut vis: Vec<(u64, ValueIterator)> = vec![];
@@ -517,14 +517,16 @@ impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "┌─────────────────────────────────────────────┐\n")?;
-    write!(f, "│ id: {}\n", humanize(&self.id))?;
-    write!(f, "│ state: {:?}\n", self.state)?;
-    write!(f, "│ triggered: {:?}\n", self.triggered)?;
+    write!(f, "│ id: {}                         │\n", humanize(&self.id))?;
+    write!(f, "│ state: {:?}                                 │\n", self.state)?;
+    write!(f, "│ triggered: {:?}                                │\n", self.triggered)?;
     write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ errors: {}\n", self.errors.len())?;
+    write!(f, "│ Errors: {}                                   │\n", self.errors.len())?;
     for (ix, error) in self.errors.iter().enumerate() {
       write!(f, "│    {}. {:?}\n", ix+1, error)?;
     }
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+    write!(f, "│ Registers                                   │\n")?;
     write!(f, "├─────────────────────────────────────────────┤\n")?;
     write!(f, "│ ready: {}\n", self.ready.len())?;
     for (ix, register) in self.ready.iter().enumerate() {
@@ -553,7 +555,8 @@ impl fmt::Debug for Block {
       write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
     }
     write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ transformations: \n")?;
+    write!(f, "│ Transformations                             │\n")?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
     for (ix, (text, tfms)) in self.transformations.iter().enumerate() {
       write!(f, "│  {}. {}\n", ix+1, text)?;
       for tfm in tfms {
@@ -561,12 +564,17 @@ impl fmt::Debug for Block {
         write!(f, "│       > {}\n", tfm_string)?;
       }
     }
-    write!(f, "│ plan: \n")?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+    write!(f, "│ Plan                                        │\n")?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
     for (ix, tfm) in self.plan.iter().enumerate() {
       let tfm_string = format_transformation(&self,tfm);
-      write!(f, "│    {}. {}\n", ix+1, tfm_string)?;
+      write!(f, "│  {}. {}\n", ix+1, tfm_string)?;
     }
-    write!(f, "│ tables: {} \n", self.tables.len())?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+    write!(f, "│ Tables: {}                                  │\n", self.tables.len())?;
+    write!(f, "├─────────────────────────────────────────────┤\n")?;
+
     for (_, table) in self.tables.iter() {
       write!(f, "{:?}\n", table)?;
     }
