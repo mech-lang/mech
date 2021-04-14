@@ -1,4 +1,5 @@
-use block::{Block, BlockState, Register, Error, Transformation, format_register};
+use block::{Block, BlockState, Register, Transformation, format_register};
+use errors::{Error, ErrorType};
 use ::{humanize, hash_string};
 use database::{Database};
 use table::{TableIndex, TableId};

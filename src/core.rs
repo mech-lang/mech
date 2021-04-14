@@ -1,4 +1,5 @@
-use block::{Block, Register, Error};
+use block::{Block, Register};
+use errors::{Error, ErrorType};
 use database::{Database, Change, Transaction};
 use runtime::Runtime;
 use table::{Table, TableIndex, TableId};

@@ -1,6 +1,7 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
-use block::{Error, Register};
+use block::{Register};
+use errors::{Error, ErrorType};
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;

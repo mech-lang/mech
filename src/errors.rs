@@ -12,10 +12,9 @@ use block::Transformation;
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Error { 
   pub block: u64,
-  pub constraint: Vec<Transformation>,
-  pub error_id: ErrorType,
+  pub step_text: String,
+  pub error_type: ErrorType,
 }
-
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub enum ErrorType {

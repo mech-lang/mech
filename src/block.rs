@@ -5,7 +5,7 @@ use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath, make_quantity};
 use operations::{MechFunction, resolve_subscript};
-use errors::{ErrorType};
+use errors::{Error, ErrorType};
 use std::cell::RefCell;
 use std::sync::Arc;
 use rust_core::fmt;
@@ -43,7 +43,7 @@ pub struct Block {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
-  pub errors: Vec<ErrorType>,
+  pub errors: Vec<Error>,
   pub triggered: usize,
 }
 
@@ -87,10 +87,10 @@ impl Block {
       match tfm {
         Transformation::TableAlias{table_id, alias} => {
           match table_id {
-            TableId::Local(id) => {
+            TableId::Global(id) => {
 
             }
-            TableId::Global(id)=> {
+            TableId::Local(id)=> {
               let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
               store.table_id_to_alias.insert(table_id, alias);
               store.table_alias_to_id.insert(alias, table_id);
@@ -257,8 +257,10 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
+    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
+      println!("{:?}", format_transformation(&self,&step));
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
           let register = registers[0];
@@ -337,7 +339,16 @@ impl Block {
         
           let mut table = match table_id {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-            TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+            TableId::Local(id) => match self.tables.get_mut(&id) {
+              Some(table) => table as *mut Table,
+              None => {
+                // Does this table have an alias?
+                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+                println!("{:?}", store.table_alias_to_id);
+                let table_id = store.table_alias_to_id.get(&id).unwrap();
+                self.tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+              }
+            }
           };
 
           let mut out_table = match out {
@@ -603,10 +614,6 @@ pub enum BlockState {
   Unsatisfied,  // One or more inputs are not satisfied
   Error,        // One or more errors exist on the block
   Disabled,     // The block is disabled will not execute if it otherwise would
-}
-
-pub enum Error {
-  TableNotFound,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
