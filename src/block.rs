@@ -85,6 +85,18 @@ impl Block {
 
     for tfm in transformations {
       match tfm {
+        Transformation::TableAlias{table_id, alias} => {
+          match table_id {
+            TableId::Local(id) => {
+
+            }
+            TableId::Global(id)=> {
+              let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+              store.table_id_to_alias.insert(table_id, alias);
+              store.table_alias_to_id.insert(alias, table_id);
+            }
+          }
+        }
         Transformation::NewTable{table_id, rows, columns} => {
           match table_id {
             TableId::Global(id) => {
@@ -599,6 +611,7 @@ pub enum Error {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
+  TableAlias{table_id: TableId, alias: u64},
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
@@ -709,6 +722,30 @@ pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> S
 
 fn format_transformation(block: &Block, tfm: &Transformation) -> String {
   match tfm {
+    Transformation::TableAlias{table_id, alias} => {
+      let mut tfm = format!("table/alias(");
+      match table_id {
+        TableId::Global(id) => {
+          let name = match block.store.strings.get(id) {
+            Some(name) => name.clone(),
+            None => format!("{:}",humanize(id)),
+          };
+          tfm=format!("{}#{}",tfm,name)
+        },
+        TableId::Local(id) => {
+          match block.store.strings.get(id) {
+            Some(name) => tfm = format!("{}{}",tfm,name),
+            None => tfm = format!("{}{}",tfm,humanize(id)),
+          }
+        }
+      };
+      let alias_string = match block.store.strings.get(alias) {
+        Some(name) => name.clone(),
+        None => format!("{:}",humanize(alias)),
+      };
+      let mut tfm = format!("{}) -> {}",tfm, alias_string);
+      tfm
+    }
     Transformation::NewTable{table_id, rows, columns} => {
       let mut tfm = format!("table/new(");
       match table_id {
