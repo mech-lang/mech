@@ -21,6 +21,8 @@ pub struct Store {
   pub reference_counts: Vec<u16>,
   pub data: Vec<Value>,
   pub column_alias_to_index: HashMap<(u64,u64),usize>,
+  pub table_id_to_alias: HashMap<TableId, u64>,
+  pub table_alias_to_id: HashMap<u64, TableId>,
   pub column_index_to_alias: HashMap<(u64,usize),u64>,
   pub strings: HashMap<u64, String>,        // This is where we store string literals and other strings
   pub number_literals: HashMap<u64, NumberLiteral>,   // This is where we store number literals and other numbers
@@ -42,6 +44,8 @@ impl Store {
       data: vec![Value::empty(); capacity],
       column_alias_to_index: HashMap::new(),
       column_index_to_alias: HashMap::new(),
+      table_id_to_alias: HashMap::new(),
+      table_alias_to_id: HashMap::new(),
       strings: HashMap::new(),
       number_literals: HashMap::new(),
     }
