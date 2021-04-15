@@ -58,7 +58,7 @@ impl Formatter {
         node_type = "true";
         code = "true".to_string();
       },
-      Node::True => {
+      Node::False => {
         node_type = "false";
         code = "false".to_string();
       },
