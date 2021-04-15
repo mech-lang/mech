@@ -413,7 +413,6 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-
   // Do all of the arguments have a compatible height?
   if arguments.iter().map(|(_, vi)| vi.rows()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
@@ -423,111 +422,46 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   // Get the size of the output table we will create, and resize the out table
   let (_, vi) = &arguments[0];
   let out_rows = vi.rows();
-  let out_columns: usize = arguments.iter().map(|(_, vi)| vi.columns()).fold(0, |out_columns, columns| out_columns + columns);
-
+  let out_columns: usize = arguments.iter().map(|(_, vi)| vi.columns()).sum();
   out.resize(out_rows, out_columns);
 
-/*
-  out.resize(out_rows, out_columns);
-
+  // Iterate through the input table and insert values into output table
+  let mut column = 0;
   for (_, vi) in arguments {
-    let width = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    for (c,j) in (1..=width).zip(vi.column_iter.clone()) {
-      // Add alias to column if it's there
-      unsafe {
-        let id = (*vi.table).id;
-        match j {
-          TableIndex::Index(ix) => {
-            match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
-              Some(alias) => {
-                let out_id = (*out.table).id;
-                let store = &mut *Arc::get_mut_unchecked(&mut (*out.table).store);
-                store.column_index_to_alias.entry((out_id,c)).or_insert(*alias);
-                store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
-              }
-              _ => (),
-            }
-          },
-          _ => (),
-        }
-      }
-      let mut row_iter = if vi.rows() == 1 {
-        CycleIterator::Cycle(vi.row_iter.clone().cycle())
-      } else {
-        CycleIterator::Index(vi.row_iter.clone())
-      };
-      for k in 1..=out_rows {
-        // Fast forward to the next true value
-        let mut i = row_iter.next();
-        while i == Some(TableIndex::None) {
-          i = row_iter.next();
-          if i == None {
-            break;
-          }
-        }
-        match vi.get(&i.unwrap(),&j) {
-          Some(value) => {
-            out.set_unchecked(k, column+c, value);
-          }
-          _ => (),
-        }
-      }
+    let width = vi.columns();
+    let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
+    let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
+    for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
+      out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
     }
     column += width;
-  }*/
+  }
 }
 
 pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*let mut row = 0;
-  let mut out_columns = 0;
-  let mut out_rows = 0;
-  // First pass, make sure the dimensions work out
-  for (_, vi) in arguments {
-    if out_columns == 0 {
-      out_columns = vi.columns();
-    } else if vi.columns() != 1 && out_columns != vi.columns() {
-      // TODO Throw an error here
-    } else if vi.columns() > out_columns && out_columns == 1 {
-      out_columns = vi.columns()
-    }
-    out_rows += vi.rows();
+  // Do all of the arguments have a compatible height?
+  if arguments.iter().map(|(_, vi)| vi.columns()).collect::<HashSet<usize>>().len() != 1 {
+    // TODO Warn that one or more arguments is the wrong height
+    return;
   }
-
-  out.resize(out_rows, out_columns);
   
+  // Get the size of the output table we will create, and resize the out table
+  let (_, vi) = &arguments[0];
+  let out_columns = vi.columns();
+  let out_rows: usize = arguments.iter().map(|(_, vi)| vi.rows()).sum();
+  out.resize(out_rows, out_columns);
+
+  // Iterate through the input table and insert values into output table
+  let mut row = 0;
   for (_, vi) in arguments {
-    for (i,k) in (1..=out_columns).zip(vi.column_iter.clone()) {
-      // Add alias to column if it's there
-      unsafe {
-        let id = (*vi.table).id;
-        match k {
-          TableIndex::Index(ix) => {
-            match (*vi.table).store.column_index_to_alias.get(&(id,ix)) {
-              Some(alias) => {
-                let out_id = (*out.table).id;
-                let store = &mut *Arc::get_mut_unchecked(&mut (*out.table).store);
-                store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
-                store.column_alias_to_index.entry((out_id,*alias)).or_insert(ix);
-              }
-              _ => (),
-            }
-          },
-          _ => (),
-        }
-      }
-      for j in 1..=vi.rows() {
-        let value = vi.get(&TableIndex::Index(j),&k).unwrap();
-        out.set(&TableIndex::Index(row + j), &TableIndex::Index(i), value);
-      }
+    let height = vi.rows();
+    let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
+    let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
+    for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
+      out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
     }
-    row += 1;
-  }*/
+    row += height;
+  }
 }
 
 pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
