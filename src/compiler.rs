@@ -762,7 +762,7 @@ impl Compiler {
           }
           block.plan = new_plan;
         }
-        // Remove all defunct tables from the transformation list. These would be tables that were written to by
+        /*// Remove all defunct tables from the transformation list. These would be tables that were written to by
         // some function that was removed from the previous optimization pass
         let defunct_table_ids = defunct_tables.iter().map(|(_, table_id, _, _)| table_id).collect::<HashSet<&TableId>>();
         let mut new_transformations = vec![];
@@ -781,7 +781,7 @@ impl Compiler {
           }
           new_transformations.push((tfm_text.clone(), new_steps));
         }
-        block_transformations = new_transformations;
+        block_transformations = new_transformations;*/
         // End Planner ----------------------------------------------------------------------------------------------------------
 
         for transformation in block_transformations {
@@ -1203,10 +1203,14 @@ impl Compiler {
         // Compile each row of the table
         for child in children {
           let mut result = self.compile_transformation(child);
-          // The first result is the table to which horzcat writes
-          match result[0] {
+          // The first result is the table to which vertcat writes
+          match &result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((0, table_id, TableIndex::All, TableIndex::All));
+              args.push((0, *table_id, TableIndex::All, TableIndex::All));
+            }
+            Transformation::Select{table_id, row, column, indices, out} => {
+              let (row_index, column_index) = &indices[0];
+              args.push((0, *table_id, *row_index, *column_index)); 
             }
             _ => (),
           }
