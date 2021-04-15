@@ -8,6 +8,7 @@ use std::sync::Arc;
 use rust_core::fmt;
 use std::cell::RefCell;
 
+#[derive(Clone)]
 pub struct  ValueIterator {
   pub scope: TableId,
   pub table: *mut Table,
@@ -54,7 +55,15 @@ impl ValueIterator {
       TableIndex::Table(table_id) => {
         let row_table = match table_id {
           TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-          TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) =>  match block_tables.get_mut(&id) {
+            Some(table) => table as *mut Table,
+            None => {
+              // Does this table have an alias?
+              let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
+              let table_id = store.table_alias_to_id.get(&id).unwrap();
+              block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+            }
+          }
         };
         IndexIterator::Table(TableIterator::new(row_table))
       }
@@ -73,7 +82,15 @@ impl ValueIterator {
       TableIndex::Table(table_id) => {
         let col_table = match table_id {
           TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-          TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) =>  match block_tables.get_mut(&id) {
+            Some(table) => table as *mut Table,
+            None => {
+              // Does this table have an alias?
+              let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
+              let table_id = store.table_alias_to_id.get(&id).unwrap();
+              block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+            }
+          }
         };
         IndexIterator::Table(TableIterator::new(col_table))
       }
@@ -97,17 +114,11 @@ impl ValueIterator {
   }
 
   pub fn rows(&self) -> usize {
-    unsafe{ (*self.table).rows }
+    self.raw_row_iter.len()
   }
 
   pub fn columns(&self) -> usize {
-    match self.column_index {
-      TableIndex::All => unsafe{ (*self.table).columns },
-      TableIndex::Index{..} |
-      TableIndex::Alias{..} => 1,
-      _ => unsafe{ (*self.table).columns },
-    }
-    
+    self.raw_column_iter.len()
   }
 
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
