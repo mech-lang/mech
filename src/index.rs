@@ -92,29 +92,17 @@ impl ValueIterator {
 impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
-    /*
-    match (&self.row_iter, &self.column_iter) {
-      // This is the single index case e.g. x{1}
-      (row_iter, IndexIterator::None) => {
-        match (self.row_iter.next()) {
-          Some(rix) => {
-            let (value, changed) = unsafe{ (*self.table).get_unchecked_linear(rix.unwrap()) };
-            Some((value, changed))
-          },     
-          _ => None,
-        }
-      } 
-      _ => {
-        match (self.row_iter.next(), self.column_iter.next()) {
-          (Some(rix), Some(cix)) => {
-            let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
-            Some((value, changed))
-          },     
-          _ => None,
-        }
-      }
-    }*/
-    None
+    match (self.row_iter.next(), self.column_iter.next()) {
+      (Some(rix), Some(cix)) => {
+        let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
+        Some((value, changed))
+      },     
+      (Some(rix), None) => {
+        let (value, changed) = unsafe{ (*self.table).get_unchecked_linear(rix.unwrap()) };
+        Some((value, changed))
+      },   
+      _ => None,
+    }
   }
 }
 
@@ -136,8 +124,10 @@ impl fmt::Debug for ValueIterator {
 pub struct IndexRepeater {
   iterator: std::iter::Cycle<IndexIterator>,
   width: usize,
+  len: usize,
   current: Option<TableIndex>,
   counter: usize,
+  cycle_index: usize,
   cycles: u64,
   current_cycle: u64,
 }
@@ -145,11 +135,14 @@ pub struct IndexRepeater {
 impl IndexRepeater {
 
   pub fn new(iterator: IndexIterator, width: usize, cycles: u64) -> IndexRepeater {
+    let len = iterator.len();
     IndexRepeater {
       iterator: iterator.cycle(),
       width,
+      len,
       current: None,
       counter: 0,
+      cycle_index: 0,
       cycles,
       current_cycle: 0,
     }
@@ -164,11 +157,15 @@ impl Iterator for IndexRepeater {
     }
     if self.counter == self.width {
       self.counter = 0;
-      self.current_cycle += 1;
+      self.cycle_index += 1;
       self.current = self.iterator.next();
     }
+    if self.cycle_index == self.len {
+      self.current_cycle += 1;
+      self.cycle_index = 0;      
+    }
     if self.current_cycle == self.cycles {
-      return None;
+      return None
     }
     self.counter += 1;
     self.current
@@ -331,7 +328,7 @@ impl IndexIterator {
   pub fn len(&self) -> usize {
     match self {
       IndexIterator::None => 0,
-      IndexIterator::Range(itr) => {itr.end() - itr.start()},
+      IndexIterator::Range(itr) => {itr.end() - itr.start() + 1},
       IndexIterator::Constant(itr) => itr.len(),
       IndexIterator::Table(itr) => itr.len(),
       IndexIterator::Alias(itr) => itr.len(),
