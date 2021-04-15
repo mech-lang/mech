@@ -2,6 +2,7 @@ use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use database::{Store, Database};
 use block::Block;
+use hashbrown::HashMap;
 //use errors::{ErrorType};
 use std::sync::Arc;
 use rust_core::fmt;
@@ -23,20 +24,21 @@ impl ValueIterator {
   pub fn new(table_id: TableId, 
              row_index: TableIndex, 
              column_index: TableIndex, 
-             database: Arc<RefCell<Database>>, 
-             block: &mut Block ) -> ValueIterator {
+             database: &Arc<RefCell<Database>>, 
+             block_tables: &mut HashMap<u64, Table>,
+             block_store: &mut Arc<Store>) -> ValueIterator {
     let mut db = database.borrow_mut();
 
     // Get the table
     let mut table = match table_id {
       TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-      TableId::Local(id) => match block.tables.get_mut(&id) {
+      TableId::Local(id) => match block_tables.get_mut(&id) {
         Some(table) => table as *mut Table,
         None => {
           // Does this table have an alias?
-          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+          let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
           let table_id = store.table_alias_to_id.get(&id).unwrap();
-          block.tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+          block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
         }
       }
     };
@@ -52,7 +54,7 @@ impl ValueIterator {
       TableIndex::Table(table_id) => {
         let row_table = match table_id {
           TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-          TableId::Local(id) => block.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
         };
         IndexIterator::Table(TableIterator::new(row_table))
       }
@@ -71,11 +73,11 @@ impl ValueIterator {
       TableIndex::Table(table_id) => {
         let col_table = match table_id {
           TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-          TableId::Local(id) => block.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
         };
         IndexIterator::Table(TableIterator::new(col_table))
       }
-      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block.store.clone())),
+      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block_store.clone())),
       TableIndex::None => IndexIterator::None,
     }};
 
