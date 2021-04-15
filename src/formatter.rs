@@ -54,6 +54,14 @@ impl Formatter {
         node_type = "empty";
         code = "_".to_string();
       },
+      Node::True => {
+        node_type = "true";
+        code = "true".to_string();
+      },
+      Node::True => {
+        node_type = "false";
+        code = "false".to_string();
+      },
       Node::Function{name, children} => {
         match name.as_ref() {
           "table/range" => {
