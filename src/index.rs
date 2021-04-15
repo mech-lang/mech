@@ -1,21 +1,99 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
-use database::{Store};
+use database::{Store, Database};
+use block::Block;
 //use errors::{ErrorType};
 use std::sync::Arc;
 use rust_core::fmt;
+use std::cell::RefCell;
 
 pub struct  ValueIterator {
   pub scope: TableId,
   pub table: *mut Table,
   pub row_index: TableIndex,
   pub column_index: TableIndex,
-  pub row_iter: IndexRepeater,
+  raw_row_iter: IndexIterator,     // I need these two fields for the purpose of resizing the iterator...
+  raw_column_iter: IndexIterator,  // if there's a way to extract the iterator from the std::itr::Cycle<> in the IndexRepeater then I wouldn't need these anymore.
+  pub row_iter: IndexRepeater,   
   pub column_iter: IndexRepeater,
 }
 
 impl ValueIterator {
   
+  pub fn new(table_id: TableId, 
+             row_index: TableIndex, 
+             column_index: TableIndex, 
+             database: Arc<RefCell<Database>>, 
+             block: &mut Block ) -> ValueIterator {
+    let mut db = database.borrow_mut();
+
+    // Get the table
+    let mut table = match table_id {
+      TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+      TableId::Local(id) => match block.tables.get_mut(&id) {
+        Some(table) => table as *mut Table,
+        None => {
+          // Does this table have an alias?
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+          let table_id = store.table_alias_to_id.get(&id).unwrap();
+          block.tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+        }
+      }
+    };
+
+    let row_iter = unsafe { match row_index {
+      TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
+      TableIndex::All => {
+        match (*table).rows {
+          0 => IndexIterator::None,
+          r => IndexIterator::Range(1..=r),
+        }
+      },
+      TableIndex::Table(table_id) => {
+        let row_table = match table_id {
+          TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) => block.tables.get_mut(&id).unwrap() as *mut Table,
+        };
+        IndexIterator::Table(TableIterator::new(row_table))
+      }
+      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+      _ => IndexIterator::Range(1..=(*table).rows),
+    }};
+  
+    let column_iter = unsafe { match column_index {
+      TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
+      TableIndex::All => {
+        match (*table).columns {
+          0 => IndexIterator::None,
+          c => IndexIterator::Range(1..=c),
+        }
+      }
+      TableIndex::Table(table_id) => {
+        let col_table = match table_id {
+          TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Local(id) => block.tables.get_mut(&id).unwrap() as *mut Table,
+        };
+        IndexIterator::Table(TableIterator::new(col_table))
+      }
+      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block.store.clone())),
+      TableIndex::None => IndexIterator::None,
+    }};
+
+    let row_len = row_iter.len();
+    let column_len = column_iter.len();
+    ValueIterator{
+      scope: table_id,
+      table,
+      row_index: row_index,
+      column_index: column_index,
+      raw_row_iter: row_iter.clone(),
+      raw_column_iter: column_iter.clone(),
+      row_iter: IndexRepeater::new(row_iter,column_len,1),
+      column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
+    }
+
+  }
+
   pub fn rows(&self) -> usize {
     unsafe{ (*self.table).rows }
   }
@@ -67,22 +145,28 @@ impl ValueIterator {
       match self.row_index {
         TableIndex::All => {
           match (*self.table).rows {
-            0 => self.row_iter = IndexRepeater::new(IndexIterator::None,1,1),
-            r => self.row_iter = IndexRepeater::new(IndexIterator::Range(1..=r),1,1),
+            0 => self.raw_row_iter=IndexIterator::None,
+            r => self.raw_row_iter=IndexIterator::Range(1..=r),
           }
-        }
-        _ => (),
-      }
+        },
+        _ => (),        
+      };
 
       match self.column_index {
         TableIndex::All => {
           match (*self.table).rows {
-            0 => self.column_iter = IndexRepeater::new(IndexIterator::None,1,1),
-            c => self.column_iter = IndexRepeater::new(IndexIterator::Range(1..=c),1,1),
+            0 => self.raw_column_iter = IndexIterator::None,
+            c => self.raw_column_iter = IndexIterator::Range(1..=c),
           }
-        }
-        _ => (),
-      }
+        },  
+        _ => (),      
+      };
+
+      let row_len = self.raw_row_iter.len();
+      let column_len = self.raw_column_iter.len();
+      self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
+      self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
+
 
     }
   }
