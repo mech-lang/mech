@@ -751,6 +751,11 @@ impl Compiler {
                 }
                 new_plan.push(this.clone());
               }
+              (Transformation::Select{table_id, row, column, indices, out}, _) => {
+                if indices.len() == 1 {
+                  defunct_tables.push((0, *table_id, TableIndex::None, TableIndex::None));
+                }
+              }
               _ => new_plan.push(this.clone()),
             }
             step_ix += 1;
@@ -1159,9 +1164,13 @@ impl Compiler {
         self.table = *new_table_id.unwrap();
         for child in children {
           let mut result = self.compile_transformation(child);
-          match result[0] {
+          match &result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((0, table_id, TableIndex::All, TableIndex::All)); 
+              args.push((0, *table_id, TableIndex::All, TableIndex::All)); 
+            }
+            Transformation::Select{table_id, row, column, indices, out} => {
+              let (row_index, column_index) = &indices[0];
+              args.push((0, *table_id, *row_index, *column_index)); 
             }
             _ => (),
           }
@@ -1227,9 +1236,13 @@ impl Compiler {
         // Compile each column of the table
         for child in children {
           let mut result = self.compile_transformation(child);
-          match result[0] {
+          match &result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((0, table_id, TableIndex::All, TableIndex::All));
+              args.push((0, *table_id, TableIndex::All, TableIndex::All));
+            }
+            Transformation::Select{table_id, row, column, indices, out} => {
+              let (row_index, column_index) = &indices[0];
+              args.push((0, *table_id, *row_index, *column_index)); 
             }
             _ => (),
           }
@@ -1532,8 +1545,12 @@ impl Compiler {
         }
         all_indices.reverse();
         let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
-        transformations.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
-        transformations.push(Transformation::Select{table_id: *id, row: TableIndex::None, column: TableIndex::None, indices: all_indices, out: TableId::Local(out_id)});
+        if all_indices.len() > 1 {
+          transformations.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
+          transformations.push(Transformation::Select{table_id: *id, row: TableIndex::None, column: TableIndex::None, indices: all_indices, out: TableId::Local(out_id)});
+        } else {
+          transformations.push(Transformation::Select{table_id: *id, row: TableIndex::None, column: TableIndex::None, indices: all_indices, out: TableId::Local(out_id)});
+        }
         transformations.append(&mut tfms);
       }
       Node::VariableDefine{children} => {
