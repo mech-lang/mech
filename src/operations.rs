@@ -11,7 +11,7 @@ use database::Database;
 //use errors::ErrorType;
 use std::sync::Arc;
 use std::cell::RefCell;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use ::{hash_string};
 
 
@@ -19,91 +19,6 @@ lazy_static! {
   static ref ROW: u64 = hash_string("row");
   static ref COLUMN: u64 = hash_string("column");
   static ref TABLE: u64 = hash_string("table");
-}
-
-pub fn resolve_subscript(
-  table_id: TableId,
-  row_index: TableIndex,
-  column_index: TableIndex,
-  block_tables: &mut HashMap<u64, Table>,
-  database: &Arc<RefCell<Database>>) -> ValueIterator {
-
-  let mut db = database.borrow_mut();
-  let mut table_id = table_id;
-
-  let mut table = match table_id {
-    TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-    TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
-  };
-
-  unsafe{
-    if (*table).rows == 1 && (*table).columns == 1 {
-      match (row_index, column_index) {
-        (TableIndex::All, TableIndex::All) => (),
-        (_, _) => {
-          let (reference, _) = (*table).get_unchecked(1,1);
-          match reference.as_reference() {
-            Some(table_reference) => {
-              match db.tables.get_mut(&table_reference) {
-                Some(dbtable) => table = dbtable as *mut Table,
-                None => (),
-              }
-            }
-            _ => (),
-          }
-        }
-      }
-    }
-    table_id = TableId::Global((*table).id);
-  }
-
-  let row_iter = unsafe { match row_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
-    TableIndex::All => {
-      match (*table).rows {
-        0 => IndexIterator::None,
-        r => IndexIterator::Range(1..=r),
-      }
-    },
-    TableIndex::Table(table_id) => {
-      let row_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-        TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(row_table))
-    }
-    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    _ => IndexIterator::Range(1..=(*table).rows),
-  }};
-
-  let column_iter = unsafe { match column_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
-    TableIndex::All => {
-      match (*table).columns {
-        0 => IndexIterator::None,
-        c => IndexIterator::Range(1..=c),
-      }
-    }
-    TableIndex::Table(table_id) => {
-      let col_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-        TableId::Local(id) => block_tables.get_mut(&id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(col_table))
-    }
-    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
-    TableIndex::None => IndexIterator::None,
-    //_ => IndexIterator::Range(1..=(*table).columns),
-  }};
-
-  ValueIterator{
-    scope: table_id,
-    table,
-    row_index,
-    column_index,
-    row_iter: IndexRepeater::new(row_iter,1,1),
-    column_iter: IndexRepeater::new(column_iter,1,1),
-  }
 }
 
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
@@ -498,45 +413,21 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*
-  let _row = 0;
-  let mut column = 0;
-  let mut out_rows = 0;
-  let mut out_columns = 0;
 
-  // Get the size of the output table
-  for (_, vi) in arguments {
-    let vi_rows = match &vi.row_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.rows(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    out_rows = if out_rows == 0 {
-      vi_rows
-    } else if vi_rows > out_rows && out_rows == 1 {
-      vi_rows
-    } else if vi_rows == out_rows {
-      vi_rows
-    } else if vi_rows == 1 {
-      out_rows
-    } else {
-      // TODO Throw a size error here
-      0
-    };
-
-    let vi_columns = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    out_columns += vi_columns;
-
+  // Do all of the arguments have a compatible height?
+  if arguments.iter().map(|(_, vi)| vi.rows()).collect::<HashSet<usize>>().len() != 1 {
+    // TODO Warn that one or more arguments is the wrong height
+    return;
   }
 
+  // Get the size of the output table we will create, and resize the out table
+  let (_, vi) = &arguments[0];
+  let out_rows = vi.rows();
+  let out_columns: usize = arguments.iter().map(|(_, vi)| vi.columns()).fold(0, |out_columns, columns| out_columns + columns);
+
+  out.resize(out_rows, out_columns);
+
+/*
   out.resize(out_rows, out_columns);
 
   for (_, vi) in arguments {
