@@ -415,13 +415,15 @@ impl Block {
               TableIndex::None => IndexIterator::None,
               //_ => IndexIterator::Range(1..=(*table).columns),
             }};
+            let row_len = row_iter.len();
+            let column_len = column_iter.len();
             let mut vi = ValueIterator{
               scope: table_id,
               table,
               row_index: *row_index,
               column_index: *column_index,
-              row_iter: IndexRepeater::new(row_iter,1,1),
-              column_iter: IndexRepeater::new(column_iter,1,1),
+              row_iter: IndexRepeater::new(row_iter,column_len,1),
+              column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
             };
             // If this is the last index, then we can write the data to the output table
             if ix == indices.len() - 1 {
