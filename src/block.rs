@@ -4,7 +4,7 @@ use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, Constant
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath, make_quantity};
-use operations::{MechFunction, resolve_subscript};
+use operations::{MechFunction};
 use errors::{Error, ErrorType};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -261,9 +261,10 @@ impl Block {
     'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
+          /*
           let register = registers[0];
           // Resolve whenever table subscript so we can iterate through the values
-          let mut vi = resolve_subscript(register.table_id,register.row,register.column,&mut self.tables, &database);
+          let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&database,&mut self.tables, &mut self.store);
           // Get the whenever table from the local store
           let whenever_ix_table_id = hash_string("~");
           let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap();
@@ -329,26 +330,12 @@ impl Block {
                 }
               }
             },
-          }
+          }*/
         },
         Transformation::Select{table_id, row, column, indices, out} => {
-          let mut db = database.borrow_mut();
-          let mut table_id: TableId = *table_id;
+          
+          /*let mut db = database.borrow_mut();
         
-          // Get the input table
-          let mut table = match table_id {
-            TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-            TableId::Local(id) => match self.tables.get_mut(&id) {
-              Some(table) => table as *mut Table,
-              None => {
-                // Does this table have an alias?
-                let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-                let table_id = store.table_alias_to_id.get(&id).unwrap();
-                self.tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
-              }
-            }
-          };
-
           // Get the output table
           let mut out_table = match out {
             TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
@@ -356,75 +343,9 @@ impl Block {
           };
                   
           for (ix, (row_index, column_index)) in indices.iter().enumerate() {
-            unsafe{
-              if (*table).rows == 1 && (*table).columns == 1 {
-                match (row_index, column_index) {
-                  (TableIndex::All, TableIndex::All) => (),
-                  (_, _) => {
-                    let (reference, _) = (*table).get_unchecked(1,1);
-                    match reference.as_reference() {
-                      Some(table_reference) => {
-                        match db.tables.get_mut(&table_reference) {
-                          Some(dbtable) => table = dbtable as *mut Table,
-                          None => (),
-                        }
-                      }
-                      _ => (),
-                    }
-                  }
-                }
-              }
-              table_id = TableId::Global((*table).id);
-            }
 
-            let row_iter = unsafe { match row_index {
-              TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
-              TableIndex::All => {
-                match (*table).rows {
-                  0 => IndexIterator::None,
-                  r => IndexIterator::Range(1..=r),
-                }
-              },
-              TableIndex::Table(table_id) => {
-                let row_table = match table_id {
-                  TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-                  TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
-                };
-                IndexIterator::Table(TableIterator::new(row_table))
-              }
-              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, db.store.clone())),
-              _ => IndexIterator::Range(1..=(*table).rows),
-            }};
-          
-            let column_iter = unsafe { match column_index {
-              TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
-              TableIndex::All => {
-                match (*table).columns {
-                  0 => IndexIterator::None,
-                  c => IndexIterator::Range(1..=c),
-                }
-              }
-              TableIndex::Table(table_id) => {
-                let col_table = match table_id {
-                  TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-                  TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
-                };
-                IndexIterator::Table(TableIterator::new(col_table))
-              }
-              TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, self.store.clone())),
-              TableIndex::None => IndexIterator::None,
-              //_ => IndexIterator::Range(1..=(*table).columns),
-            }};
-            let row_len = row_iter.len();
-            let column_len = column_iter.len();
-            let mut vi = ValueIterator{
-              scope: table_id,
-              table,
-              row_index: *row_index,
-              column_index: *column_index,
-              row_iter: IndexRepeater::new(row_iter,column_len,1),
-              column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
-            };
+            let mut vi = ValueIterator::new(*table_id, *row_index, *column_index, &database, &mut self.tables, &mut self.store);
+
             // If this is the last index, then we can write the data to the output table
             if ix == indices.len() - 1 {
               println!("WRITING TO OUTPUT TABLE WITH SELECT");
@@ -438,16 +359,17 @@ impl Block {
               }
             }
             
-          }
+          }*/
         }
         Transformation::Function{name, arguments, out} => {
+          
           let mut vis: Vec<(u64, ValueIterator)> = vec![];
           for (arg, table, row, column) in arguments {
-            let vi = resolve_subscript(*table,*row,*column,&mut self.tables, &database);
+            let vi = ValueIterator::new(*table,*row,*column,&database,&mut self.tables, &mut self.store);
             vis.push((arg.clone(),vi));
           }
           let (out_table_id, out_row, out_column) = out;
-          let mut out_vi = resolve_subscript(*out_table_id, *out_row, *out_column, &mut self.tables, &database);
+          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &database, &mut self.tables, &mut self.store);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
               mech_fn(&vis, &mut out_vi);
