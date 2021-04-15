@@ -327,7 +327,7 @@ pub enum IndexIterator {
 impl IndexIterator {
   pub fn len(&self) -> usize {
     match self {
-      IndexIterator::None => 0,
+      IndexIterator::None => 1,
       IndexIterator::Range(itr) => {itr.end() - itr.start() + 1},
       IndexIterator::Constant(itr) => itr.len(),
       IndexIterator::Table(itr) => itr.len(),
