@@ -84,6 +84,7 @@ impl Block {
     let (_, transformations) = tfm_tuple;
 
     for tfm in transformations {
+      println!("{:?}", tfm);
       match tfm {
         Transformation::TableAlias{table_id, alias} => {
           match table_id {
@@ -257,6 +258,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
+    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -541,6 +543,7 @@ pub enum BlockState {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transformation {
   TableAlias{table_id: TableId, alias: u64},
+  TableReference{table_id: TableId, reference: Value},
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
