@@ -257,7 +257,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
-    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
