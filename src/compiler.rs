@@ -1596,6 +1596,10 @@ impl Compiler {
 
         // Rewrite input rows
         let mut input = self.compile_transformation(&children[1]);
+
+        // Remove the first two elements. They should be a reference that we don't need
+        input.remove(0);
+        input.remove(0);
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -1604,21 +1608,6 @@ impl Compiler {
         };
 
         let mut input_tfms = vec![];
-
-        // like: #test = #x
-        if input.len() == 1 {
-          match &input[0] {
-            Transformation::Select{table_id, row, column, indices, out} => {
-              input_tfms.push(Transformation::NewTable{table_id: output_table_id.unwrap(), rows: 0, columns: 0});
-              input_tfms.push(Transformation::Function{
-                name: *TABLE_INDEX,
-                arguments: vec![(0, *table_id, *row, *column)],
-                out: (output_table_id.unwrap(), TableIndex::All, TableIndex::All)
-              });
-            }
-            _ => (),
-          }
-        }
 
         // Transform all the inputs
         for tfm in input {
