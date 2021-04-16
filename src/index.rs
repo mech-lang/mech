@@ -304,29 +304,31 @@ impl TableIterator {
 impl Iterator for TableIterator {
   type Item = TableIndex;
   fn next(&mut self) -> Option<TableIndex> {
-    unsafe{
-      if self.current < (*self.table).data.len() {
-        let address = (*self.table).data[self.current];
-        self.current += 1;
-        let value = (*self.table).store.data[address];
-        match value.as_u64() {
-          Some(v) => {
-            Some(TableIndex::Index(v as usize))
-          },
-          None => match value.as_bool() {
-            Some(true) => {
-              Some(TableIndex::Index(self.current))
+    loop {
+      unsafe{
+        if self.current < (*self.table).data.len() {
+          let address = (*self.table).data[self.current];
+          self.current += 1;
+          let value = (*self.table).store.data[address];
+          match value.as_u64() {
+            Some(v) => {
+              return Some(TableIndex::Index(v as usize));
             },
-            Some(false) => {
-              Some(TableIndex::None)
-            },
-            _x => {
-              Some(TableIndex::None)
+            None => match value.as_bool() {
+              Some(true) => {
+                return Some(TableIndex::Index(self.current));
+              },
+              Some(false) => {
+                continue;
+              },
+              _x => {
+                return Some(TableIndex::None); // TODO This should be an error
+              }
             }
           }
+        } else {
+          return None;
         }
-      } else {
-        None
       }
     }
   }
