@@ -19,7 +19,6 @@ use super::formatter::Formatter;
 use std::sync::Arc;
 
 lazy_static! {
-  static ref TABLE_INDEX: u64 = hash_string("table/index");
   static ref TABLE_COPY: u64 = hash_string("table/copy");
   static ref TABLE_HORZCAT: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTCAT: u64 = hash_string("table/vertical-concatenate");
@@ -1356,43 +1355,33 @@ impl Compiler {
         let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
         let mut arg_tfms = vec![];
         for child in children {
-          match child {
+          let arg: u64 = match child {
             Node::FunctionBinding{children} => {
-              let arg = match &children[0] {
+              match &children[0] {
                 Node::Identifier{name, id} => {
                   self.strings.insert(*id, name.to_string());
                   *id
                 },
                 _ => 0,
-              };
-              let mut result = self.compile_transformation(&child);
-              match &result[0] {
-                Transformation::NewTable{table_id,..} => {
-                  args.push((arg, *table_id, TableIndex::All, TableIndex::All));
-                },
-                Transformation::Select{table_id, row, column, indices, out} => {
-                  let (row, column) = indices[0];
-                  args.push((arg, *table_id, row, column));
-                }
-                _ => (),
               }
-              arg_tfms.append(&mut result);
             }
-            _ => {
-              let mut result = self.compile_transformation(&child);
-              match &result[0] {
-                Transformation::NewTable{table_id,..} => {
-                  args.push((0, *table_id, TableIndex::All, TableIndex::All));
-                },
-                Transformation::Select{table_id, row, column, indices, out} => {
-                  let (row, column) = indices[0];
-                  args.push((0, *table_id, row, column));
-                }
-                _ => (),
-              }
-              arg_tfms.append(&mut result);
-            },
+            _ => 0,
           };
+          let mut result = self.compile_transformation(&child);
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((arg, *table_id, TableIndex::All, TableIndex::All));
+            },
+            Transformation::Select{table_id, row, column, indices, out} => {
+              let (row, column) = indices[0];
+              args.push((arg, *table_id, row, column));
+            }
+            Transformation::TableReference{table_id, reference} => {
+              args.push((arg, TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All));
+            }
+            _ => (),
+          }
+          arg_tfms.append(&mut result);
         }
         let name_hash = hash_string(name);
         self.strings.insert(name_hash,name.to_string());
