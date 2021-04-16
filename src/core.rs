@@ -26,7 +26,6 @@ use operations::{
   table_add_row,
   table_horizontal_concatenate,
   table_vertical_concatenate,
-  table_index,
   table_copy,
   stats_sum,
   set_any
@@ -81,7 +80,6 @@ impl Core {
     self.runtime.load_library_function("table/range",Some(table_range));
     self.runtime.load_library_function("table/horizontal-concatenate",Some(table_horizontal_concatenate));
     self.runtime.load_library_function("table/vertical-concatenate",Some(table_vertical_concatenate));
-    self.runtime.load_library_function("table/index",Some(table_index));
     self.runtime.load_library_function("table/copy",Some(table_copy));
     self.runtime.load_library_function("stats/sum",Some(stats_sum));
     self.runtime.load_library_function("set/any",Some(set_any));
