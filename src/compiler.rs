@@ -853,8 +853,7 @@ impl Compiler {
           out: (new_table_id, TableIndex::All, TableIndex::All),
         };
         // Push a reference so any upstream nodes know what to do
-        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
-        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(*new_table_id.unwrap()), unit: 0});
+        transformations.push(Transformation::TableReference{table_id: table_reference_id, reference: Value::from_id(*new_table_id.unwrap())});
         // Push the horzcat function
         transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
         transformations.push(fxn);
@@ -875,6 +874,9 @@ impl Compiler {
           let mut result = self.compile_transformation(child);
           // The first result is the table to which vertcat writes
           match &result[0] {
+            Transformation::TableReference{table_id,..} => {
+              args.push((0, *table_id, TableIndex::All, TableIndex::All));
+            }
             Transformation::NewTable{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
             }
@@ -893,8 +895,7 @@ impl Compiler {
           out: (new_table_id, TableIndex::All, TableIndex::All),
         };
         // Push a reference so any upstream nodes know what to do
-        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
-        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(*new_table_id.unwrap()), unit: 0});
+        transformations.push(Transformation::TableReference{table_id: table_reference_id, reference: Value::from_id(*new_table_id.unwrap())});
         // Push the vertcat function
         transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
         transformations.push(fxn);
@@ -911,6 +912,9 @@ impl Compiler {
         for child in children {
           let mut result = self.compile_transformation(child);
           match &result[0] {
+            Transformation::TableReference{table_id,..} => {
+              args.push((0, *table_id, TableIndex::All, TableIndex::All));
+            }
             Transformation::NewTable{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
             }
@@ -1235,19 +1239,23 @@ impl Compiler {
           }
           _ => 0, // TODO Error
         };
-        // Compile rhs of the variable define
-        let mut rhs = self.compile_transformation(&children[1]);
-        // Remove the first two elements. They should be a reference that we don't need
-        rhs.remove(0);
-        rhs.remove(0);
-        let rhs_table_id = match rhs[0] {
+        // Compile input of the variable define
+        let mut input = self.compile_transformation(&children[1]);
+        // If the first element is a reference, remove it
+        match input[0] {
+          Transformation::TableReference{..} => {
+            input.remove(0);
+          }
+          _ => (),
+        }
+        let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
           }
           _ => None,
         };
-        transformations.push(Transformation::TableAlias{table_id: rhs_table_id.unwrap(), alias: variable_name});
-        transformations.append(&mut rhs);
+        transformations.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
+        transformations.append(&mut input);
       }
       Node::TableDefine{children} => {
         let mut output = self.compile_transformation(&children[0]);
@@ -1266,9 +1274,13 @@ impl Compiler {
         // Rewrite input rows
         let mut input = self.compile_transformation(&children[1]);
 
-        // Remove the first two elements. They should be a reference that we don't need
-        input.remove(0);
-        input.remove(0);
+        // If the first element is a reference, remove it
+        match input[0] {
+          Transformation::TableReference{..} => {
+            input.remove(0);
+          }
+          _ => (),
+        }
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -1321,14 +1333,6 @@ impl Compiler {
       }
       Node::Expression{children} => {
         let mut result = self.compile_transformations(children);
-        let new_table_id = match &result[0] {
-          Transformation::NewTable{table_id,..} => *table_id.unwrap(),
-          _ => 0,
-        };
-        let table_reference_id = TableId::Local(hash_string(&format!("Function{:?}", children)));
-        // Push a reference so any upstream nodes know what to do
-        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
-        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(new_table_id), unit: 0});
         transformations.append(&mut result);
       }
       Node::RationalNumber{children} => {
