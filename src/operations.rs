@@ -494,28 +494,31 @@ macro_rules! binary_infix {
       let (_, lhs) = &arguments[0];
       let (_, rhs) = &arguments[1];
 
-      let equal_dimensions = if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns()
-      { true } else { false };
-      let lhs_scalar = if lhs.rows() == 1 && lhs.columns() == 1
-      { true } else { false };
-      let rhs_scalar = if rhs.rows() == 1 && rhs.columns() == 1
-      { true } else { false };
-      
-      // TODO Error if neither equal dimensions nor lhs/rhs scalar 
-
-      let (out_rows, out_columns) = if equal_dimensions {
-        (lhs.rows(), lhs.columns())
-      } else if lhs_scalar {
-        (rhs.rows(), rhs.columns())
+      let (out_rows, out_columns, lhs_iter, rhs_iter) = 
+      // Equal dimensions
+      if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns() {
+        (lhs.rows(), lhs.columns(), lhs.clone(), rhs.clone())
+      // LHS scalar
+      } else if lhs.rows() == 1 && lhs.columns() == 1 {
+        let mut lhs = lhs.clone();
+        lhs.inf_cycle();
+        (rhs.rows(), rhs.columns(), lhs, rhs.clone())
+      // RHS scalar
+      } else if rhs.rows() == 1 && rhs.columns() == 1 {
+        let mut rhs = rhs.clone();
+        rhs.inf_cycle();
+        (lhs.rows(), lhs.columns(), lhs.clone(), rhs)      
       } else {
-        (lhs.rows(), lhs.columns())
+        // TODO Warn of mismatch of dimensions
+        return;
       };
 
       out.resize(out_rows, out_columns);
 
-      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),out_columns,1);
-      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, out_rows as u64);
-      for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in lhs.clone().zip(rhs.clone()).zip(out_row_iter).zip(out_column_iter) {
+      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
+      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+      for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in 
+              lhs_iter.zip(rhs_iter).zip(out_row_iter).zip(out_column_iter) {
         match (lhs_value, rhs_value, lhs_changed, rhs_changed)
         {
           (lhs_value, rhs_value, true, true) => {
