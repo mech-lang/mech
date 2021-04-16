@@ -1362,7 +1362,7 @@ impl Compiler {
                 },
                 _ => 0,
               };
-              let new_child = &children[1];
+              /*let new_child = &children[1];
               let child = match new_child {
                 Node::SelectData{name, id, children} => {
                   if children.len() > 1 {
@@ -1376,14 +1376,15 @@ impl Compiler {
                   }
                 }
                 _ => new_child.clone(),
-              };
+              };*/
               let mut result = self.compile_transformation(&child);
               match &result[0] {
                 Transformation::NewTable{table_id,..} => {
                   args.push((arg, *table_id, TableIndex::All, TableIndex::All));
                 },
                 Transformation::Select{table_id, row, column, indices, out} => {
-                  args.push((arg, *table_id, *row, *column));
+                  let (row, column) = indices[0];
+                  args.push((arg, *table_id, row, column));
                 }
                 _ => (),
               }
