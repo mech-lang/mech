@@ -84,7 +84,6 @@ impl Block {
     let (_, transformations) = tfm_tuple;
 
     for tfm in transformations {
-      println!("{:?}", tfm);
       match tfm {
         Transformation::TableAlias{table_id, alias} => {
           match table_id {
