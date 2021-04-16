@@ -465,12 +465,14 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
 }
 
 pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*// TODO test argument count is 2 or 3
+  // TODO test argument count is 2 or 3
   // 2 -> start, end
   // 3 -> start, increment, end
   let (_, start_vi) = &arguments[0];
   let (_, end_vi) = &arguments[1];
+  // TODO add increment argument if there are three
 
+  // TODO We have to test to see if all of these things are valid
   let start_value = start_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
   let end_value = end_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
   let start = start_value.as_u64().unwrap() as usize;
@@ -483,7 +485,6 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
     out.set(&TableIndex::Index(j), &TableIndex::Index(1), Value::from_u64(i as u64));
     j += 1;
   }
-  */
 }
 
 #[macro_export]
