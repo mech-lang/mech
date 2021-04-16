@@ -261,7 +261,6 @@ impl Block {
     'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
-          /*
           let register = registers[0];
           // Resolve whenever table subscript so we can iterate through the values
           let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&database,&mut self.tables, &mut self.store);
@@ -330,7 +329,7 @@ impl Block {
                 }
               }
             },
-          }*/
+          }
         },
         Transformation::Select{table_id, row, column, indices, out} => {
           
