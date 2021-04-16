@@ -119,8 +119,8 @@ impl ValueIterator {
 
   }
 
-  pub fn index_iterator(&self) -> std::iter::Zip<IndexRepeater, IndexRepeater> {
-    self.row_iter.clone().zip(self.column_iter.clone())
+  pub fn index_iterator(&self) -> LinearIndexIterator {
+    LinearIndexIterator::new(self.table,self.row_iter.clone(),self.column_iter.clone())
   }
 
   pub fn inf_cycle(&mut self) {
@@ -162,6 +162,10 @@ impl ValueIterator {
 
   pub fn set_unchecked(&self, row: usize, column: usize, value: Value) {
     unsafe{(*self.table).set_unchecked(row, column, value)};
+  }
+
+  pub fn set_unchecked_linear(&self, index: usize, value: Value) {
+    unsafe{(*self.table).set_unchecked_linear(index, value)};
   }
 
   pub fn next_address(&mut self) -> Option<(usize, usize)> {
@@ -237,6 +241,38 @@ impl fmt::Debug for ValueIterator {
     write!(f, "col iter: {:?}\n", self.column_iter)?;
     
     Ok(())
+  }
+}
+
+pub struct LinearIndexIterator {
+  pub table: *mut Table,
+  pub row_iter: IndexRepeater,   
+  pub column_iter: IndexRepeater,  
+}
+
+impl LinearIndexIterator {
+  pub fn new(table: *mut Table, row_iter: IndexRepeater, column_iter: IndexRepeater) -> LinearIndexIterator {
+    LinearIndexIterator {
+      table,
+      row_iter,
+      column_iter,
+    }
+  }
+}
+
+impl Iterator for LinearIndexIterator {
+  type Item = usize;
+  fn next(&mut self) -> Option<usize> {
+    match (self.row_iter.next(), self.column_iter.next()) {
+      (Some(rix), Some(cix)) => {
+        let ix = unsafe{ (*self.table).index_unchecked(rix.unwrap(),cix.unwrap()) };
+        Some(ix)
+      },     
+      (Some(rix), None) => {
+        Some(rix.unwrap())
+      },   
+      _ => None,
+    }
   }
 }
 

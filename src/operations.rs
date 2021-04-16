@@ -236,8 +236,8 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     input.inf_cycle();
   }
 
-  for ((out_row, out_column), (value, _)) in out.index_iterator().zip(input) {
-    out.set(&out_row, &out_column, value);
+  for (out_ix, (value, _)) in out.index_iterator().zip(input) {
+    out.set_unchecked_linear(out_ix, value);
   }
 }
 
