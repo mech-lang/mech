@@ -1061,9 +1061,10 @@ impl Compiler {
         let mut result = self.compile_transformations(children);
         match &result[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
-            let register = Register{table_id: *table_id, row: *row, column: *column};
+            let (row, column) = indices[0];
+            let register = Register{table_id: *table_id, row: row, column: column};
             transformations.push(
-              Transformation::Whenever{table_id: *table_id, row: *row, column: *column, registers: vec![register]},
+              Transformation::Whenever{table_id: *table_id, row: row, column: column, registers: vec![register]},
             );
           }
           Transformation::NewTable{table_id, ..} => {
@@ -1071,7 +1072,8 @@ impl Compiler {
             for r in &result {
               match r {
                 Transformation::Select{table_id,row,column,indices, out} => {
-                  let register = Register{table_id: *table_id, row: *row, column: *column};
+                  let (row, column) = indices[0];
+                  let register = Register{table_id: *table_id, row: row, column: column};
                   registers.push(register);
                 }
                 _ => (),

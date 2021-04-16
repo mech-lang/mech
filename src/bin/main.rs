@@ -33,9 +33,7 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #ball = 1:10
-block
-  #test = #ball + 10"#);
+  #test = stats/sum(row: [1 2 3 4])"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
