@@ -24,15 +24,11 @@ lazy_static! {
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
 
 pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
   let rows = vi.rows();
-  let cols = match vi.column_iter {
-    IndexIterator::Constant{..} => 1,
-    _ => vi.columns(),
-  };
+  let cols = vi.columns();
 
   if *in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
@@ -75,20 +71,15 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
     out.set_unchecked(1, 1, Value::from_bool(flag));
   } else {
     () // TODO alert user that argument is unknown
-  };*/
+  };
 }
 
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
 
   let rows = vi.rows();
-  let cols = match vi.column_iter {
-    IndexIterator::Constant{..} |
-    IndexIterator::Alias{..} => 1,
-    _ => vi.columns(),
-  };
+  let cols = vi.columns();
 
   if *in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
@@ -143,7 +134,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     out.set_unchecked(1, 1, sum);
   } else {
     () // TODO alert user that argument is unknown
-  }*/
+  }
 }
 
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
