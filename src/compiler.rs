@@ -927,13 +927,15 @@ impl Compiler {
           tfms.append(&mut result);
         }
         // Join all of the columns together using table/horizontal-concatenate.
-        let fxn = Transformation::Function {
-          name: *TABLE_HORZCAT,
-          arguments: args,
-          out: (new_table_id, TableIndex::All, TableIndex::All),
-        };
-        transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
-        transformations.push(fxn);
+        if args.len() > 1 {
+          let fxn = Transformation::Function {
+            name: *TABLE_HORZCAT,
+            arguments: args,
+            out: (new_table_id, TableIndex::All, TableIndex::All),
+          };
+          transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+          transformations.push(fxn);
+        }
         transformations.append(&mut tfms);
       }
       Node::TableColumn{children} => {
@@ -1388,7 +1390,7 @@ impl Compiler {
               arg_tfms.append(&mut result);
             }
             _ => {
-              let child = match child {
+              /*let child = match child {
                 Node::SelectData{name, id, children} => {
                   if children.len() > 1 {
                     Node::Expression{
@@ -1401,14 +1403,15 @@ impl Compiler {
                   }
                 }
                 _ => child.clone(),
-              };
+              };*/
               let mut result = self.compile_transformation(&child);
               match &result[0] {
                 Transformation::NewTable{table_id,..} => {
                   args.push((0, *table_id, TableIndex::All, TableIndex::All));
                 },
                 Transformation::Select{table_id, row, column, indices, out} => {
-                  args.push((0, *table_id, *row, *column));
+                  let (row, column) = indices[0];
+                  args.push((0, *table_id, row, column));
                 }
                 _ => (),
               }
