@@ -33,10 +33,7 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #ball = [|x y|
-            8 7
-            9 4
-            5 6]
+  #ball = 1:10
 block
   #test = #ball + 10"#);
 
