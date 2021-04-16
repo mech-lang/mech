@@ -490,120 +490,38 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-      /*
       // TODO test argument count is 2
-      let (_, lhs_vi) = &arguments[0];
-      let (_, rhs_vi) = &arguments[1];
+      let (_, lhs) = &arguments[0];
+      let (_, rhs) = &arguments[1];
 
-      // Figure out dimensions
-      let lhs_rows_count = match lhs_vi.row_index {
-        TableIndex::All => lhs_vi.rows(),
-        _ => 1,
-      };
-      let lhs_columns_count = match lhs_vi.column_index {
-        TableIndex::All => lhs_vi.columns(),
-        _ => 1,
-      };
-      let rhs_rows_count = match rhs_vi.row_index {
-        TableIndex::All => rhs_vi.rows(),
-        _ => 1,
-      };
-      let rhs_columns_count = match rhs_vi.column_index {
-        TableIndex::All => rhs_vi.columns(),
-        _ => 1,
-      };
-
-      let equal_dimensions = if lhs_rows_count == rhs_rows_count && lhs_columns_count == rhs_columns_count
+      let equal_dimensions = if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns()
       { true } else { false };
-      let lhs_scalar = if lhs_rows_count == 1 && lhs_columns_count == 1
+      let lhs_scalar = if lhs.rows() == 1 && lhs.columns() == 1
       { true } else { false };
-      let rhs_scalar = if rhs_rows_count == 1 && rhs_columns_count == 1
+      let rhs_scalar = if rhs.rows() == 1 && rhs.columns() == 1
       { true } else { false };
+      
+      // TODO Error if neither equal dimensions nor lhs/rhs scalar 
 
-      let out_rows_count = if lhs_rows_count > rhs_rows_count {
-        lhs_rows_count
+      let (out_rows, out_columns) = if equal_dimensions {
+        (lhs.rows(), lhs.columns())
+      } else if lhs_scalar {
+        (rhs.rows(), rhs.columns())
       } else {
-        rhs_rows_count
-      };
-      let out_columns_count = if lhs_columns_count > rhs_columns_count {
-        lhs_columns_count
-      } else {
-        rhs_columns_count
-      };
-
-      let (mut lrix, mut lcix, mut rrix, mut rcix, mut out_rix, mut out_cix) = if rhs_scalar && lhs_scalar {
-        (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),1,1),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1,1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),1,1),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
-          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1,1),
-          IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(1))),1,1),
-        )
-      } else if equal_dimensions {
-        out.resize(lhs_rows_count, lhs_columns_count);
-        (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_vi.columns(),1),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),rhs_vi.columns(),1),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
-        )
-      } else if rhs_scalar {
-        out.resize(lhs_rows_count, lhs_columns_count);
-        (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),lhs_columns_count,1),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1,1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),1,1),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1,1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
-          match out.column_index {
-            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
-            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1,1),
-          },
-        )
-      } else {
-        out.resize(rhs_rows_count, rhs_columns_count);
-        (
-          IndexRepeater::new(lhs_vi.row_iter.clone(),1),
-          IndexRepeater::new(lhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(rhs_vi.row_iter.clone(),rhs_columns_count),
-          IndexRepeater::new(rhs_vi.column_iter.clone(),1),
-          IndexRepeater::new(IndexIterator::Range(1..=out_rows_count),out_columns_count,1),
-          match out.column_index {
-            TableIndex::All => IndexRepeater::new(IndexIterator::Range(1..=out_columns_count),1,1),
-            _ => IndexRepeater::new(IndexIterator::Constant(ConstantIterator::new(out.column_index)),1,1),
-          },
-        )
+        (lhs.rows(), lhs.columns())
       };
 
-      let mut i = 1;
-      let out_elements = out.rows() * out.columns();
+      out.resize(out_rows, out_columns);
 
-      loop {
-        let l1 = lrix.next().unwrap().unwrap();
-        let l2 = lcix.next().unwrap().unwrap();
-        let r1 = rrix.next().unwrap().unwrap();
-        let r2 = rcix.next().unwrap().unwrap();
-        let o1 = out_rix.next().unwrap().unwrap();
-        let o2 = out_cix.next().unwrap().unwrap();
-        let (lhs_value, lhs_changed) = if l2 == 0 {
-          lhs_vi.get_unchecked_linear(l1)
-        } else {
-          lhs_vi.get_unchecked(l1,l2)
-        };
-        let (rhs_value, rhs_changed) = if r2 == 0 {
-          rhs_vi.get_unchecked_linear(r1)
-        } else {
-          rhs_vi.get_unchecked(r1,r2)
-        };
+      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),out_columns,1);
+      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, out_rows as u64);
+      for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in lhs.clone().zip(rhs.clone()).zip(out_row_iter).zip(out_column_iter) {
         match (lhs_value, rhs_value, lhs_changed, rhs_changed)
         {
           (lhs_value, rhs_value, true, true) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                out.set_unchecked(o1, o2, result);
+                out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);
               }
               Err(_) => (), // TODO Handle error here
             }
@@ -611,22 +529,18 @@ macro_rules! binary_infix {
           // If either operand is not changed but the output is cell is empty, then we can do the operation
           (lhs_value, rhs_value, false, _) |
           (lhs_value, rhs_value, _, false) => {
-            let (out_value, _) = out.get_unchecked(o1, o2);
+            let (out_value, _) = out.get_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap());
             if out_value.is_empty() {
               match lhs_value.$op(rhs_value) {
                 Ok(result) => {
-                  out.set_unchecked(o1, o2, result);
+                  out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);
                 }
                 Err(_) => (), // TODO Handle error here
               }
             }
           }
-        }
-        if i >= out_elements {
-          break;
-        }
-        i += 1;
-      }*/
+        }        
+      }
     }
   )
 }
