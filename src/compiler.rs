@@ -1092,7 +1092,8 @@ impl Compiler {
         let mut output = self.compile_transformation(&children[0]);
         let mut output_tup = match &output[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
-            let tfm = Transformation::Set{table_id: *table_id, row: *row, column: *column};
+            let (row, column) = indices[0];
+            let tfm = Transformation::Set{table_id: *table_id, row: row, column: column};
             transformations.push(tfm);
             Some((table_id,row,column))
           }
@@ -1101,7 +1102,8 @@ impl Compiler {
         let mut output_tup2 = if output.len() > 1 {
           match &output[1] {
             Transformation::Select{table_id, row, column, indices, out} => {
-              let tfm = Transformation::Set{table_id: *table_id, row: *row, column: *column};
+              let (row, column) = indices[0];
+              let tfm = Transformation::Set{table_id: *table_id, row: row, column: column};
               transformations.push(tfm);
               Some((table_id,row,column))
             }
@@ -1115,7 +1117,8 @@ impl Compiler {
 
         let (input_table_id, row_select, column_select) = match &input[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
-            (*table_id, *row, *column)
+            let (row, column) = indices[0];
+            (*table_id, row, column)
           }
           Transformation::NewTable{table_id,..} => {
             (*table_id, TableIndex::All, TableIndex::All)
@@ -1128,7 +1131,7 @@ impl Compiler {
             (table,row2,col)
           },
           (Some(a),_) => a,
-          _ => (&TableId::Global(0),&TableIndex::All,&TableIndex::All),
+          _ => (&TableId::Global(0),TableIndex::All,TableIndex::All),
         };
 
 
@@ -1137,7 +1140,7 @@ impl Compiler {
           arguments: vec![
             (0, input_table_id, row_select, column_select)
           ],
-          out: (*output_table_id, *output_row, *output_col),
+          out: (*output_table_id, output_row, output_col),
         };
         transformations.push(fxn);
         transformations.append(&mut input);
@@ -1362,21 +1365,6 @@ impl Compiler {
                 },
                 _ => 0,
               };
-              /*let new_child = &children[1];
-              let child = match new_child {
-                Node::SelectData{name, id, children} => {
-                  if children.len() > 1 {
-                    Node::Expression{
-                      children: vec![Node::AnonymousTableDefine{
-                        children: vec![Node::TableRow{
-                          children: vec![Node::TableColumn{
-                            children: vec![new_child.clone()]}]}]}]}
-                  } else {
-                    new_child.clone()
-                  }
-                }
-                _ => new_child.clone(),
-              };*/
               let mut result = self.compile_transformation(&child);
               match &result[0] {
                 Transformation::NewTable{table_id,..} => {
@@ -1391,20 +1379,6 @@ impl Compiler {
               arg_tfms.append(&mut result);
             }
             _ => {
-              /*let child = match child {
-                Node::SelectData{name, id, children} => {
-                  if children.len() > 1 {
-                    Node::Expression{
-                      children: vec![Node::AnonymousTableDefine{
-                        children: vec![Node::TableRow{
-                          children: vec![Node::TableColumn{
-                            children: vec![child.clone()]}]}]}]}
-                  } else {
-                    child.clone()
-                  }
-                }
-                _ => child.clone(),
-              };*/
               let mut result = self.compile_transformation(&child);
               match &result[0] {
                 Transformation::NewTable{table_id,..} => {
