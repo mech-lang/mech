@@ -1568,6 +1568,7 @@ impl Compiler {
         };
         // Compile rhs of the variable define
         let mut rhs = self.compile_transformation(&children[1]);
+        println!("{:?}",rhs);
         // Remove the first two elements. They should be a reference that we don't need
         rhs.remove(0);
         rhs.remove(0);
@@ -1652,6 +1653,14 @@ impl Compiler {
       }
       Node::Expression{children} => {
         let mut result = self.compile_transformations(children);
+        let new_table_id = match &result[0] {
+          Transformation::NewTable{table_id,..} => *table_id.unwrap(),
+          _ => 0,
+        };
+        let table_reference_id = TableId::Local(hash_string(&format!("Function{:?}", children)));
+        // Push a reference so any upstream nodes know what to do
+        transformations.push(Transformation::NewTable{table_id: table_reference_id, rows: 1, columns: 1});
+        transformations.push(Transformation::Constant{table_id: table_reference_id, value: Value::from_id(new_table_id), unit: 0});
         transformations.append(&mut result);
       }
       Node::RationalNumber{children} => {
