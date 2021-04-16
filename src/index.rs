@@ -67,7 +67,10 @@ impl ValueIterator {
         };
         IndexIterator::Table(TableIterator::new(row_table))
       }
-      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+      TableIndex::Alias(alias) => match table_id {
+        TableId::Global(_) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+        TableId::Local(_) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block_store.clone())),
+      }
       _ => IndexIterator::Range(1..=(*table).rows),
     }};
   
@@ -94,7 +97,10 @@ impl ValueIterator {
         };
         IndexIterator::Table(TableIterator::new(col_table))
       }
-      TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block_store.clone())),
+      TableIndex::Alias(alias) => match table_id {
+        TableId::Global(_) => IndexIterator::Alias(AliasIterator::new(alias, table_id, db.store.clone())),
+        TableId::Local(_) => IndexIterator::Alias(AliasIterator::new(alias, table_id, block_store.clone())),
+      }
       TableIndex::None => IndexIterator::None,
     }};
 
