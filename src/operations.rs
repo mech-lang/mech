@@ -230,71 +230,15 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*
-  let _row = 0;
-  let mut column = 0;
-  let mut out_rows = 0;
-  let mut out_columns = 0;
+  let (_ , mut input) = arguments[0].clone();
 
-  // Get the size of the output table
-  for (_, vi) in arguments {
-    let _vi_rows = match &vi.row_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.rows(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    let vi_columns = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    out_columns += vi_columns;
-    out_rows = out.rows();
+  if input.is_scalar() {
+    input.inf_cycle();
   }
 
-  for (_, vi) in arguments {
-
-    let width = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-
-    let mut out_row_iter = match out.row_iter {
-      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1,1),
-      _ => IndexRepeater::new(out.row_iter.clone(), out_columns,1),
-    };
-
-    for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
-      let row_iter = if vi.rows() == 1 {
-        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
-      } else {
-        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
-      };
-      for (_k,i) in row_iter {
-        let value = vi.get(&i,&j);
-        let n = out_row_iter.next();
-        let m = out.column_iter.next();
-        match (n, m, value) {
-          (_, Some(TableIndex::None), _) |
-          (Some(TableIndex::None), _, _) => {
-            continue;
-          }
-          (Some(out_row), Some(out_col), Some(value)) => {
-            out.set(&out_row, &out_col, value);
-          }
-          _ => continue,
-        }
-      }
-    }
-    column += width;
-  }*/
+  for ((out_row, out_column), (value, _)) in out.index_iterator().zip(input) {
+    out.set(&out_row, &out_column, value);
+  }
 }
 
 pub extern "C" fn table_index(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
@@ -491,12 +435,12 @@ macro_rules! binary_infix {
       if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns() {
         (lhs.rows(), lhs.columns(), lhs.clone(), rhs.clone())
       // LHS scalar
-      } else if lhs.rows() == 1 && lhs.columns() == 1 {
+      } else if lhs.is_scalar() {
         let mut lhs = lhs.clone();
         lhs.inf_cycle();
         (rhs.rows(), rhs.columns(), lhs, rhs.clone())
       // RHS scalar
-      } else if rhs.rows() == 1 && rhs.columns() == 1 {
+      } else if rhs.is_scalar() {
         let mut rhs = rhs.clone();
         rhs.inf_cycle();
         (lhs.rows(), lhs.columns(), lhs.clone(), rhs)      

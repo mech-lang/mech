@@ -119,12 +119,29 @@ impl ValueIterator {
 
   }
 
+  pub fn index_iterator(&self) -> std::iter::Zip<IndexRepeater, IndexRepeater> {
+    self.row_iter.clone().zip(self.column_iter.clone())
+  }
+
+  pub fn inf_cycle(&mut self) {
+    self.row_iter.inf_cycle();
+    self.column_iter.inf_cycle();
+  }
+
+  pub fn elements(&self) -> usize {
+    self.raw_row_iter.len() * self.raw_column_iter.len()
+  }
+
   pub fn rows(&self) -> usize {
     self.raw_row_iter.len()
   }
 
   pub fn columns(&self) -> usize {
     self.raw_column_iter.len()
+  }
+
+  pub fn is_scalar(&self) -> bool {
+    self.rows() == 1 && self.columns() == 1
   }
 
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
@@ -250,6 +267,11 @@ impl IndexRepeater {
       current_cycle: 0,
     }
   }
+
+  pub fn inf_cycle(&mut self) {
+    self.cycles = 0;
+  }
+
 }
 
 impl Iterator for IndexRepeater {
@@ -267,7 +289,7 @@ impl Iterator for IndexRepeater {
       self.current_cycle += 1;
       self.cycle_index = 0;      
     }
-    if self.current_cycle == self.cycles {
+    if self.cycles != 0 && self.current_cycle == self.cycles {
       return None
     }
     self.counter += 1;
