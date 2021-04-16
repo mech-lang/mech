@@ -1084,7 +1084,6 @@ impl Compiler {
       }
       Node::SetData{children} => {
         let mut output = self.compile_transformation(&children[0]);
-        println!("{:?}", output);
         let mut output_tup = match &output[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
             let tfm = Transformation::Set{table_id: *table_id, row: *row, column: *column};
@@ -1238,7 +1237,6 @@ impl Compiler {
         };
         // Compile rhs of the variable define
         let mut rhs = self.compile_transformation(&children[1]);
-        println!("{:?}",rhs);
         // Remove the first two elements. They should be a reference that we don't need
         rhs.remove(0);
         rhs.remove(0);
