@@ -119,10 +119,18 @@ impl ValueIterator {
 
   }
 
-  pub fn index_iterator(&self) -> LinearIndexIterator {
+  pub fn linear_index_iterator(&self) -> LinearIndexIterator {
     LinearIndexIterator::new(self.table,self.row_iter.clone(),self.column_iter.clone())
   }
 
+  pub fn index_iterator(&self) -> std::iter::Zip<IndexRepeater, IndexRepeater> {
+    self.row_iter.clone().zip(self.column_iter.clone())
+  }
+
+  pub fn get_column_alias(&self, index: usize) -> Option<TableIndex> {
+    unsafe{(*self.table).get_column_alias(index)}
+  }
+  
   pub fn inf_cycle(&mut self) {
     self.row_iter.inf_cycle();
     self.column_iter.inf_cycle();
