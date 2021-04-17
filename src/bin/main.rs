@@ -33,10 +33,14 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #launch-point = 11
+  #ball = [|y  vy|
+            2  4
+            6  8
+            10 12]
 
 block
-  #launch-point := 42"#);
+  ixx = [true false true]
+  #ball.y{ixx} := #ball.vy * 10"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
