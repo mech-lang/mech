@@ -293,9 +293,10 @@ impl fmt::Debug for Table {
       Some(name) => name.to_string(),
       None => format!("{}", humanize(&self.id)),
     };
-    let columns = self.columns;
     let rows = self.rows;
+    let columns = self.columns;
     let table_header = format!("#{} ({} x {})", table_name, rows, columns);
+    let columns = if self.columns == 0 {1} else { self.columns };
     let header_width = table_header.len()+2;
 
     let aggregate_cell_width = (cell_width+2) * columns + columns-1;
