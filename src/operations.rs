@@ -59,13 +59,10 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   } else if *in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut flag: bool = false;
-    for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        let value = vi.get(&k,&m).unwrap();
-        match value.as_bool() {
-          Some(true) => flag = true,
-          _ => (), // TODO Alert user that there was an error
-        }
+    for (value, _) in vi.clone() {
+      match value.as_bool() {
+        Some(true) => flag = true,
+        _ => (), // TODO Alert user that there was an error
       }
     }
     out.set_unchecked(1, 1, Value::from_bool(flag));
@@ -118,17 +115,10 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   } else if *in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
-    for (_i,m) in (1..=cols).zip(vi.column_iter.clone()) {
-      for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        match vi.get(&k,&m) {
-          Some(value) => {
-            match sum.add(value) {
-              Ok(result) => sum = result,
-              _ => (), // TODO Alert user that there was an error
-            }
-          }
-          _ => ()
-        }
+    for (value, _) in vi.clone() {
+      match sum.add(value) {
+        Ok(result) => sum = result,
+        _ => (), // TODO Alert user that there was an error
       }
     }
     out.set_unchecked(1, 1, sum);
