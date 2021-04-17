@@ -170,15 +170,9 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  // Do all of the arguments have a compatible height?
-  if arguments.iter().map(|(_, vi)| vi.rows()).collect::<HashSet<usize>>().len() != 1 {
-    // TODO Warn that one or more arguments is the wrong height
-    return;
-  }
 
   // Get the size of the output table we will create, and resize the out table
-  let (_, vi) = &arguments[0];
-  let out_rows = vi.rows();
+  let out_rows: usize = arguments.iter().map(|(_, vi)| vi.rows()).max().unwrap();
   let out_columns: usize = arguments.iter().map(|(_, vi)| vi.columns()).sum();
   out.resize(out_rows, out_columns);
 
@@ -188,7 +182,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
     let width = vi.columns();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
     let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
-    for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
+    for (((value, _), out_row_ix), out_column_ix) in vi.clone().cycle().zip(out_row_iter).zip(out_column_iter) {
       out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
     }
     column += width;
