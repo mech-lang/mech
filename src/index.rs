@@ -105,7 +105,7 @@ impl ValueIterator {
     }};
 
     let row_len = row_iter.len();
-    let column_len = column_iter.len();
+    let column_len = if column_iter.len() == 0 {1} else {column_iter.len()};
     ValueIterator{
       scope: table_id,
       table,
@@ -145,7 +145,10 @@ impl ValueIterator {
   }
 
   pub fn columns(&self) -> usize {
-    self.raw_column_iter.len()
+    match self.column_index {
+      TableIndex::None => 1,
+      _ => self.raw_column_iter.len(),
+    }
   }
 
   pub fn is_scalar(&self) -> bool {
@@ -498,8 +501,14 @@ pub enum IndexIterator {
 impl IndexIterator {
   pub fn len(&self) -> usize {
     match self {
-      IndexIterator::None => 1,
-      IndexIterator::Range(itr) => {itr.end() - itr.start() + 1},
+      IndexIterator::None => 0,
+      IndexIterator::Range(itr) => {
+        if *itr.end() == 0 {
+          0
+        } else {
+          itr.end() - itr.start() + 1
+        }
+      },
       IndexIterator::Constant(itr) => itr.len(),
       IndexIterator::Table(itr) => itr.len(),
       IndexIterator::Alias(itr) => itr.len(),
