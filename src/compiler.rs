@@ -2069,7 +2069,6 @@ impl Compiler {
       },
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
-        println!("{:?}", result);
         let mut input = vec![Node::Quantity{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "math/subtract".to_string(), children: input });
@@ -2202,6 +2201,7 @@ impl Compiler {
         }
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Constant{children} |
       parser::Node::StateMachine{children} |
       parser::Node::StateTransition{children} |
       parser::Node::Body{children} |
