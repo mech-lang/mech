@@ -887,17 +887,22 @@ impl Compiler {
           }
           tfms.append(&mut result);
         }
-        // Join all of the rows together using table/vertical-concatenate.        
-        let fxn = Transformation::Function {
-          name: *TABLE_VERTCAT,
-          arguments: args,
-          out: (new_table_id, TableIndex::All, TableIndex::All),
-        };
-        // Push a reference so any upstream nodes know what to do
-        transformations.push(Transformation::TableReference{table_id: table_reference_id, reference: Value::from_id(*new_table_id.unwrap())});
-        // Push the vertcat function
-        transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
-        transformations.push(fxn);
+        // Join all of the rows together using table/vertical-concatenate.
+        if args.len() > 0 {        
+          let fxn = Transformation::Function {
+            name: *TABLE_VERTCAT,
+            arguments: args,
+            out: (new_table_id, TableIndex::All, TableIndex::All),
+          };
+          // Push a reference so any upstream nodes know what to do
+          transformations.push(Transformation::TableReference{table_id: table_reference_id, reference: Value::from_id(*new_table_id.unwrap())});
+          // Push the vertcat function
+          transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 1, columns: 1});
+          transformations.push(fxn);
+        } else {
+          // Push a new table with 0 rows if there are no arguments for the fxn
+          transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 0, columns: 1});
+        }
         // Push the rest of the transformations
         transformations.append(&mut tfms);
         self.table = table;
