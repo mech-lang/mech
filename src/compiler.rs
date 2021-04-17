@@ -865,6 +865,8 @@ impl Compiler {
         let mut args = vec![];
         let mut tfms = vec![];
         let table = self.table;
+        let column = self.column;
+        self.column = 0;
         let table_reference_id = TableId::Local(hash_string(&format!("AnonymousTable{:?}", children)));
         let new_table_id = TableId::Local(hash_string(&format!("AnonymousTableVertcatResult{:?}", children)));
         self.table = *new_table_id.unwrap();
@@ -901,11 +903,12 @@ impl Compiler {
           transformations.push(fxn);
         } else {
           // Push a new table with 0 rows if there are no arguments for the fxn
-          transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 0, columns: 1});
+          transformations.push(Transformation::NewTable{table_id: new_table_id, rows: 0, columns: self.column});
         }
         // Push the rest of the transformations
         transformations.append(&mut tfms);
         self.table = table;
+        self.column = column;
       }
       Node::TableRow{children} => {
         let mut args = vec![];
@@ -947,14 +950,11 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::TableHeader{children} => {
-        let column = self.column;
-        self.column = 1;
         for child in children {
+          self.column += 1;
           let mut result = self.compile_transformation(child);
           transformations.append(&mut result);
-          self.column += 1;
         }
-        self.column = column;
       }
       Node::Attribute{children} => {
         for child in children {
@@ -2069,6 +2069,7 @@ impl Compiler {
       },
       parser::Node::Negation{children} => {
         let mut result = self.compile_nodes(children);
+        println!("{:?}", result);
         let mut input = vec![Node::Quantity{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "math/subtract".to_string(), children: input });
