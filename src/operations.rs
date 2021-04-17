@@ -151,6 +151,24 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 
   if input.is_scalar() {
     input.inf_cycle();
+  } else {
+    // If we're indexing on a table, then match the input iter with the output iter
+    match (out.row_index, input.row_index) {
+      (TableIndex::Table(_), TableIndex::All) => {
+        input.row_index = out.row_index.clone();
+        input.raw_row_iter = out.raw_row_iter.clone();
+        input.row_iter = out.row_iter.clone();
+      }
+      _ => (),
+    }
+    match (out.column_index, input.column_index) {
+      (TableIndex::Table(_), TableIndex::All) => {
+        input.column_index = out.column_index.clone();
+        input.raw_column_iter = out.raw_column_iter.clone();
+        input.column_iter = out.column_iter.clone();
+      }
+      _ => (),
+    }
   }
 
   for (out_ix, (value, _)) in out.linear_index_iterator().zip(input) {

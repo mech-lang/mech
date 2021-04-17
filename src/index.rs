@@ -14,8 +14,8 @@ pub struct  ValueIterator {
   pub table: *mut Table,
   pub row_index: TableIndex,
   pub column_index: TableIndex,
-  raw_row_iter: IndexIterator,     // I need these two fields for the purpose of resizing the iterator...
-  raw_column_iter: IndexIterator,  // if there's a way to extract the iterator from the std::itr::Cycle<> in the IndexRepeater then I wouldn't need these anymore.
+  pub raw_row_iter: IndexIterator,     // I need these two fields for the purpose of resizing the iterator...
+  pub raw_column_iter: IndexIterator,  // if there's a way to extract the iterator from the std::itr::Cycle<> in the IndexRepeater then I wouldn't need these anymore.
   pub row_iter: IndexRepeater,   
   pub column_iter: IndexRepeater,
 }
