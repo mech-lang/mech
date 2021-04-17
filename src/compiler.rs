@@ -1175,13 +1175,66 @@ impl Compiler {
         for child in children {
           match child {
             Node::DotIndex{children} => {
-              match &children[1] {
-                Node::Identifier{name, id} => {
-                  self.strings.insert(hash_string(&name.to_string()), name.to_string());
-                  indices.push(TableIndex::All);
-                  indices.push(TableIndex::Alias(*id));
+              for child in children {
+                match child {
+                  Node::Null => {
+                    indices.push(TableIndex::All);
+                  }
+                  Node::Identifier{name, id} => {
+                    self.strings.insert(hash_string(&name.to_string()), name.to_string());
+                    indices.push(TableIndex::Alias(*id));
+                  }
+                  Node::SubscriptIndex{children} => {
+                    for child in children {
+                      match child {
+                        Node::SelectAll => {
+                          indices.push(TableIndex::All);
+                        }
+                        Node::WheneverIndex{..} => {
+                          let id = hash_string("~");
+                          self.strings.insert(id, "~".to_string());
+                          if indices.len() == 2 && indices[0] == TableIndex::All {
+                            indices[0] = TableIndex::Table(TableId::Local(id));
+                          } else {
+                            indices.push(TableIndex::Table(TableId::Local(id)));
+                          }
+                        }
+                        Node::SelectData{name, id, children} => {
+                          self.strings.insert(*id.unwrap(), name.to_string());
+                          if indices.len() == 2 && indices[0] == TableIndex::All {
+                            indices[0] = TableIndex::Table(*id);
+                          } else {
+                            indices.push(TableIndex::Table(*id));
+                          }
+                        }
+                        Node::Expression{..} => {
+                          let mut result = self.compile_transformation(child);
+                          match &result[1] {
+                            Transformation::Constant{table_id, value, unit} => {
+                              if indices.len() == 2 && indices[0] == TableIndex::All {
+                                indices[0] = TableIndex::Index(value.as_u64().unwrap() as usize);
+                              } else {
+                                indices.push(TableIndex::Index(value.as_u64().unwrap() as usize));
+                              }
+                            }
+                            Transformation::Function{name, arguments, out} => {
+                              let (output_table_id, output_row, output_col) = out;
+                              if indices.len() == 2 && indices[0] == TableIndex::All {
+                                indices[0] = TableIndex::Table(*output_table_id);
+                              } else {
+                                indices.push(TableIndex::Table(*output_table_id));
+                              }
+                            }
+                            _ => (),
+                          }
+                          tfms.append(&mut result);
+                        }
+                        _ => (),
+                      }
+                    }
+                  }
+                  _ => (),
                 }
-                _ => (),
               }
             }
             Node::SubscriptIndex{children} => {
@@ -1805,7 +1858,6 @@ impl Compiler {
       },
       parser::Node::DotIndex{children} => {
         let mut result = self.compile_nodes(children);
-        result.reverse();
         compiled.push(Node::DotIndex{children: result});
       },
       parser::Node::SubscriptIndex{children} => {

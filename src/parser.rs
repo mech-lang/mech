@@ -634,10 +634,21 @@ fn subscript_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   Ok((input, Node::SubscriptIndex{children: subscripts}))
 }
 
+fn single_subscript_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = left_brace(input)?;
+  let (input, subscript) = subscript(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Node::SubscriptIndex{children: vec![subscript]}))
+}
+
 fn dot_index(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = period(input)?;
   let (input, identifier) = identifier(input)?;
-  let mut index = vec![identifier];
+  let (input, subscript) = opt(single_subscript_index)(input)?;
+  let mut index = match subscript {
+    Some(subscript) =>vec![subscript, identifier],
+    None => vec![Node::Null, identifier],
+  };
   Ok((input, Node::DotIndex{children: index}))
 }
 
