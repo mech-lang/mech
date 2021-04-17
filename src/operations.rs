@@ -138,95 +138,22 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
 }
 
 pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
-  /*
-  let _row = 0;
-  let mut column = 0;
-  let mut out_rows = 0;
-  let mut out_columns = 0;
+  //TODO There needs to be some checking of dimensions here
+  let (_, mut vi) = arguments[0].clone();
+  let out_rows = out.rows();
+  let out_columns = out.columns();
+  let in_rows = vi.rows();
+  out.resize(out_rows + in_rows, out_columns);
 
-  // Get the size of the output table
-  for (_, vi) in arguments {
-    let vi_rows = match &vi.row_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.rows(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
+  for (row_index, column_index) in vi.index_iterator() {
+    let value = vi.get(&row_index,&column_index).unwrap();
+    // If the column has an alias, let's use it instead
+    let out_column = match vi.get_column_alias(column_index.unwrap()) {
+      Some(alias) => alias,
+      None => column_index,
     };
-    out_rows = if out_rows == 0 {
-      vi_rows
-    } else if vi_rows > out_rows && out_rows == 1 {
-      vi_rows
-    } else if vi_rows == out_rows {
-      vi_rows
-    } else if vi_rows == 1 {
-      out_rows
-    } else {
-      // TODO Throw a size error here
-      0
-    };
-
-    let vi_columns = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    out_columns += vi_columns;
-
+    out.set(&TableIndex::Index(out_rows + row_index.unwrap()), &out_column, value);
   }
-
-  let base_rows = out.rows();
-
-  // If the table is already bigger than what we need, don't resize
-  out_columns = if out.columns() > out_columns {
-    out.columns()
-  } else {
-    out_columns
-  };
-
-  out.resize(out_rows + out.rows(), out_columns);
-
-  for (_, vi) in arguments {
-    let width = match &vi.column_iter {
-      IndexIterator::None => 0,
-      IndexIterator::Range(_) => vi.columns(),
-      IndexIterator::Constant(_) => 1,
-      IndexIterator::Alias(_) => 1,
-      IndexIterator::Table(iter) => iter.len(),
-    };
-    let mut out_row_iter = match out.row_iter {
-      IndexIterator::Table(_) => IndexRepeater::new(out.row_iter.clone(),1,1),
-      _ => IndexRepeater::new(out.row_iter.clone(), out_columns,1),
-    };
-    for (_c,j) in (1..=width).zip(vi.column_iter.clone()) {
-      let row_iter = if vi.rows() == 1 {
-        (1..=out_rows).zip(CycleIterator::Cycle(vi.row_iter.clone().cycle()))
-      } else {
-        (1..=out_rows).zip(CycleIterator::Index(vi.row_iter.clone()))
-      };
-      for (_k,i) in row_iter {
-        let value = vi.get(&i,&j).unwrap();
-        let n = out_row_iter.next();
-        let column_alias = unsafe{(*vi.table).get_column_alias(j.unwrap())};
-        // If the column has an alias, let's use it instead
-        let m = match column_alias {
-          Some(alias) => Some(alias),
-          None => out.column_iter.next(),
-        };
-        match (n, m) {
-          (_, Some(TableIndex::None)) |
-          (Some(TableIndex::None), _) => continue,
-          (Some(out_row), Some(out_col)) => {
-            out.set(&TableIndex::Index(out_row.unwrap() + base_rows), &out_col, value);
-          }
-          _ => continue,
-        }
-      }
-    }
-    column += width;
-  }*/
 }
 
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
@@ -236,7 +163,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
     input.inf_cycle();
   }
 
-  for (out_ix, (value, _)) in out.index_iterator().zip(input) {
+  for (out_ix, (value, _)) in out.linear_index_iterator().zip(input) {
     out.set_unchecked_linear(out_ix, value);
   }
 }

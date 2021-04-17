@@ -2,27 +2,100 @@
 
 extern crate mech_core;
 
-use mech_core::{Register, TableId, TableIndex};
+use mech_core::{Register, Table, TableId, Database, TableIterator, IndexRepeater, TableIndex, ValueIterator, Value, ValueMethods, Store, IndexIterator, ConstantIterator};
+use std::sync::Arc;
+use std::cell::RefCell;
 
 extern crate seahash;
 
 fn main() {
-
-  let register = Register{table_id: TableId::Global(0x12345678AABBCCFF), row: TableIndex::All, column: TableIndex::Alias(0x12345678AABBCCFF)};
-  let _hash = 0;
-
-  let tid_bytes = register.table_id.unwrap().to_be_bytes();
-  println!("{:?}", tid_bytes);
-  let row_bytes = register.row.unwrap().to_be_bytes();
-  println!("{:?}", row_bytes);
-  let column_bytes = register.column.unwrap().to_be_bytes();
-  println!("{:?}", column_bytes);
-  let x = [tid_bytes, row_bytes, column_bytes].concat();
-  println!("{:?}", x);
-  let hash = seahash::hash(&x);
-  println!("{:0x}", hash);
+  let store = Arc::new(Store::new(10000));
+  let database = Arc::new(RefCell::new(Database::new(10000)));
+  let mut table = Table::new(1234,2,3,store.clone());
+  table.set(&TableIndex::Index(1),&TableIndex::Index(1),Value::from_u64(1));
+  table.set(&TableIndex::Index(1),&TableIndex::Index(2),Value::from_u64(2));
+  table.set(&TableIndex::Index(1),&TableIndex::Index(3),Value::from_u64(3));
+  table.set(&TableIndex::Index(2),&TableIndex::Index(1),Value::from_u64(4));
+  table.set(&TableIndex::Index(2),&TableIndex::Index(2),Value::from_u64(5));
+  table.set(&TableIndex::Index(2),&TableIndex::Index(3),Value::from_u64(6));
 
 
+  let store = Arc::new(Store::new(10000));
+  let mut table2 = Table::new(5678,1,2,store.clone());
+  table2.set(&TableIndex::Index(1),&TableIndex::Index(1),Value::from_u64(1));
+  table2.set(&TableIndex::Index(1),&TableIndex::Index(2),Value::from_u64(3));
+
+
+  let table_id = TableId::Local(0);
+  database.borrow_mut().tables.insert(1234, table);
+  database.borrow_mut().tables.insert(5678, table2);
+  let mut table_ptr = database.borrow_mut().tables.get_mut(&1234).unwrap() as *mut Table;
+  let mut table_ptr2 = database.borrow_mut().tables.get_mut(&5678).unwrap() as *mut Table;
+
+  let row_index = TableIndex::All;
+  let column_index = TableIndex::All;
+  let row_iter = IndexIterator::Range(1..=2);
+  let column_iter = IndexIterator::Table(TableIterator::new(table_ptr2));
+
+
+  /*let row_iter = unsafe { match row_index {
+    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
+    TableIndex::All => {
+      match (*table).rows {
+        0 => IndexIterator::None,
+        r => IndexIterator::Range(1..=r),
+      }
+    },
+    TableIndex::Table(table_id) => {
+      let row_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+        TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(row_table))
+    }
+    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, db.store.clone())),
+    _ => IndexIterator::Range(1..=(*table).rows),
+  }};
+
+  let column_iter = unsafe { match column_index {
+    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
+    TableIndex::All => {
+      match (*table).columns {
+        0 => IndexIterator::None,
+        c => IndexIterator::Range(1..=c),
+      }
+    }
+    TableIndex::Table(table_id) => {
+      let col_table = match table_id {
+        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+        TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
+      };
+      IndexIterator::Table(TableIterator::new(col_table))
+    }
+    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, self.store.clone())),
+    TableIndex::None => IndexIterator::None,
+    //_ => IndexIterator::Range(1..=(*table).columns),
+  }};*/
+  let row_len = row_iter.len();
+  let column_len = column_iter.len();
+  println!("{:?} {:?}", row_len, column_len);
+  let mut vi = ValueIterator{
+    scope: table_id,
+    table: table_ptr,
+    row_index: row_index,
+    column_index: column_index,
+    row_iter: IndexRepeater::new(row_iter,column_len,1),
+    column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
+  };
+
+  println!("{:?}", vi);
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
+  println!("{:?}", vi.next());
 
 
   /*let to_hash = format!("{:?}{:?}", hash, register.table_id.unwrap());
