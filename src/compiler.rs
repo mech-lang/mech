@@ -1041,6 +1041,9 @@ impl Compiler {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
           }
+          Transformation::TableReference{table_id, reference} => {
+            Some(TableId::Local(reference.as_reference().unwrap()))
+          }
           _ => None,
         };
 
@@ -1055,7 +1058,6 @@ impl Compiler {
         };
         transformations.push(fxn);
         transformations.append(&mut input);
-        //transformations.append(&mut output);
       }
       Node::Whenever{children} => {
         let mut result = self.compile_transformations(children);
