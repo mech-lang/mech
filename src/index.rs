@@ -214,7 +214,7 @@ impl ValueIterator {
       };
 
       let row_len = self.raw_row_iter.len();
-      let column_len = self.raw_column_iter.len();
+      let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
       self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
       self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
 
@@ -276,7 +276,7 @@ impl Iterator for LinearIndexIterator {
   fn next(&mut self) -> Option<usize> {
     match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
-        let ix = unsafe{ (*self.table).index_unchecked(rix.unwrap(),cix.unwrap()) };
+        let ix = unsafe{ (*self.table).index_unchecked(rix.unwrap(),cix.unwrap()) } + 1;
         Some(ix)
       },     
       (Some(rix), None) => {
