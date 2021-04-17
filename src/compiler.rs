@@ -1131,6 +1131,9 @@ impl Compiler {
           Transformation::NewTable{table_id,..} => {
             (*table_id, TableIndex::All, TableIndex::All)
           }
+          Transformation::TableReference{table_id, reference} => {
+            (TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All)
+          }
           _ => (TableId::Local(0), TableIndex::All, TableIndex::All) // TODO This is an error really
         };
 
