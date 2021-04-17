@@ -548,11 +548,11 @@ impl Compiler {
         let mut unsatisfied_transformations: Vec<(String, HashSet<u64>, HashSet<u64>, Vec<Transformation>)> = Vec::new();
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
+        let mut aliases: HashSet<u64> = HashSet::new();
         // ----------------------------------------------------------------------------------------------------------
         // Planner
         // ----------------------------------------------------------------------------------------------------------
         // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
-
         for transformation_node in children {
           let constraint_text = formatter.format(&transformation_node, false);
           let mut compiled_tfm = self.compile_transformation(&transformation_node);
@@ -563,6 +563,17 @@ impl Compiler {
             match &transformation {
               Transformation::TableAlias{table_id, alias} => {
                 produces.insert(*alias);
+                match aliases.insert(*alias) {
+                  true => (),
+                  false => {
+                    // This alias has already been marked as produced, so it is a duplicate
+                    block.errors.push(Error {
+                      block: block.id,
+                      step_text: constraint_text.clone(),
+                      error_type: ErrorType::DuplicateAlias(*alias),
+                    });
+                  },
+                }
               }
               Transformation::Whenever{table_id, ..} => {
                 produces.insert(hash_string("~"));
@@ -1144,7 +1155,6 @@ impl Compiler {
           (Some(a),_) => a,
           _ => (&TableId::Global(0),TableIndex::All,TableIndex::All),
         };
-
 
         let fxn = Transformation::Function{
           name: *TABLE_SET,
