@@ -194,7 +194,6 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>) {
 }
 
 pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>) {
-
   let (_, mut out) = arguments[arguments.len()-1].clone();
 
   // Get the size of the output table we will create, and resize the out table
@@ -219,15 +218,14 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
 
   let (_, mut out) = arguments[arguments.len()-1].clone();
 
-  // Do all of the arguments have a compatible height?
+  // Do all of the arguments have a compatible width?
   if arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
   
   // Get the size of the output table we will create, and resize the out table
-  let (_, vi) = &arguments[0];
-  let out_columns = vi.columns();
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).max().unwrap();
   let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.rows()).sum();
   out.resize(out_rows, out_columns);
 
@@ -272,7 +270,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>) {
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>) {
-      // TODO test argument count is 2
+      // TODO test argument count is 3
       let (_, lhs) = &arguments[0];
       let (_, rhs) = &arguments[1];
       let (_, mut out) = arguments[2].clone();
