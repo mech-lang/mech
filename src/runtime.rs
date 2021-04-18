@@ -8,6 +8,7 @@ use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 use operations::{MechFunction};
+use index::{ValueIterator};
 
 
 // ## Runtime
@@ -94,8 +95,8 @@ impl Runtime {
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let block = self.blocks.get_mut(&block_id).unwrap();
-        block.process_changes(self.database.clone());
-        block.solve(self.database.clone(), &self.functions);
+        block.process_changes();
+        block.solve(&self.functions);
         self.changed_this_round.extend(&block.output);
       }
 
@@ -209,6 +210,10 @@ impl Runtime {
   }
 
   pub fn register_block(&mut self, mut block: Block) {
+
+    // Give the block a reference to the global database
+    block.global_database = self.database.clone();
+
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
       let listeners = self.input_to_block.entry(*input_register).or_insert(HashSet::new());
@@ -316,7 +321,7 @@ impl Runtime {
       self.output.extend(&block.output);
       self.input.extend(&block.input);
       self.input.extend(&block.output_dependencies);
-      block.process_changes(self.database.clone());
+      block.process_changes();
       self.ready_blocks.insert(block.id);
     }
 
@@ -380,6 +385,7 @@ impl Runtime {
                   listening_block.ready.insert(*alternative_output_register);
                   listening_block.ready.insert(*block_output_register);
                   listening_block.input.insert(*block_output_register);
+                  listening_block.resolve_iterators();
                   new_input_register_mapping.insert(*block_output_register, *listening_block_id);
                 }
                 None => (),
@@ -396,6 +402,8 @@ impl Runtime {
       let listeners = self.input_to_block.entry(*register).or_insert(HashSet::new());
       listeners.insert(*block_id);
     }
+
+    block.resolve_iterators();
 
     // Add the block to the list of blocks
     self.blocks.insert(block.id, block);

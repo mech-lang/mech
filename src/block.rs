@@ -45,11 +45,16 @@ pub struct Block {
   pub changes: Vec<Change>,
   pub errors: Vec<Error>,
   pub triggered: usize,
-  pub function_arguments: HashMap<Transformation, Vec<(u64,ValueIterator)>>
+  pub function_arguments: HashMap<Transformation, Vec<(u64,ValueIterator)>>,
+  pub global_database: Arc<RefCell<Database>>,
 }
 
 impl Block {
   pub fn new(capacity: usize) -> Block {
+    // We create a dummy database here which will be replaced when the block is registered with
+    // a runtime. I tried using an option but I didn't know how to unwrap it without copying
+    // it.
+    let database = Arc::new(RefCell::new(Database::new(1)));
     Block {
       id: 0,
       text: String::new(),
@@ -69,6 +74,7 @@ impl Block {
       errors: Vec::new(),
       function_arguments: HashMap::new(),
       triggered: 0,
+      global_database: database,
     }
   }
 
@@ -247,25 +253,53 @@ impl Block {
   }
 
   // Process changes queued on the block
-  pub fn process_changes(&mut self, database: Arc<RefCell<Database>>) {
+  pub fn process_changes(&mut self) {
     if !self.changes.is_empty() {
       let txn = Transaction {
         changes: self.changes.clone(),
       };
       self.changes.clear();
-      database.borrow_mut().process_transaction(&txn).ok();
-      database.borrow_mut().transactions.push(txn);
+      self.global_database.borrow_mut().process_transaction(&txn).ok();
+      self.global_database.borrow_mut().transactions.push(txn);
     }
   }
 
-  pub fn solve(&mut self, database: Arc<RefCell<Database>>, functions: &HashMap<u64, Option<MechFunction>>) {
+  pub fn resolve_iterators(&mut self) {
+    if self.state == BlockState::Ready {
+      for step in &self.plan {
+        match step {
+          Transformation::Function{name, arguments, out} => {
+            let mut args: Vec<(u64, ValueIterator)> = vec![];
+            for (arg, table, row, column) in arguments {
+              let vi = ValueIterator::new(*table,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+              args.push((arg.clone(),vi));
+            }
+            let (out_table_id, out_row, out_column) = out;
+            let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
+            args.push((0,out_vi));
+            self.function_arguments.insert(step.clone(),args);
+          }
+          Transformation::Whenever{table_id, registers, ..} => {
+            let mut args: Vec<(u64, ValueIterator)> = vec![];
+            let register = registers[0];
+            let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
+            args.push((0,vi));
+            self.function_arguments.insert(step.clone(),args);
+          }
+          _ => (),
+        }
+      }  
+    }
+  }
+
+  pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) {
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
         Transformation::Whenever{table_id, registers, ..} => {
           let register = registers[0];
           // Resolve whenever table subscript so we can iterate through the values
-          let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&database,&mut self.tables, &mut self.store);
+          let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
           // Get the whenever table from the local store
           let whenever_ix_table_id = hash_string("~");
           let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap();
@@ -365,11 +399,11 @@ impl Block {
         Transformation::Function{name, arguments, out} => {
           let mut vis: Vec<(u64, ValueIterator)> = vec![];
           for (arg, table, row, column) in arguments {
-            let vi = ValueIterator::new(*table,*row,*column,&database,&mut self.tables, &mut self.store);
+            let vi = ValueIterator::new(*table,*row,*column,&self.global_database,&mut self.tables, &mut self.store);
             vis.push((arg.clone(),vi));
           }
           let (out_table_id, out_row, out_column) = out;
-          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &database, &mut self.tables, &mut self.store);
+          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database, &mut self.tables, &mut self.store);
           match functions.get(name) {
             Some(Some(mech_fn)) => {
               mech_fn(&vis, &mut out_vi);
@@ -402,7 +436,7 @@ impl Block {
                     }],
                   };
                   self.changes.clear();
-                  let mut db = database.borrow_mut();
+                  let mut db = self.global_database.borrow_mut();
                   db.process_transaction(&txn).ok();
                   db.transactions.push(txn);
                   let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;
