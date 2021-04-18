@@ -45,6 +45,7 @@ pub struct Block {
   pub changes: Vec<Change>,
   pub errors: Vec<Error>,
   pub triggered: usize,
+  pub function_arguments: HashMap<Transformation, Vec<(u64,ValueIterator)>>
 }
 
 impl Block {
@@ -66,6 +67,7 @@ impl Block {
       plan: Vec::new(),
       changes: Vec::new(),
       errors: Vec::new(),
+      function_arguments: HashMap::new(),
       triggered: 0,
     }
   }
@@ -361,7 +363,6 @@ impl Block {
           }*/
         }
         Transformation::Function{name, arguments, out} => {
-          
           let mut vis: Vec<(u64, ValueIterator)> = vec![];
           for (arg, table, row, column) in arguments {
             let vi = ValueIterator::new(*table,*row,*column,&database,&mut self.tables, &mut self.store);
@@ -537,7 +538,7 @@ pub enum BlockState {
   Disabled,     // The block is disabled will not execute if it otherwise would
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum Transformation {
   TableAlias{table_id: TableId, alias: u64},
   TableReference{table_id: TableId, reference: Value},
