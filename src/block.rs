@@ -105,6 +105,27 @@ impl Block {
             }
           }
         }
+        Transformation::TableReference{table_id, reference} => {
+          match table_id {
+            TableId::Global(id) => {
+              self.changes.push(
+                Change::NewTable{
+                  table_id: id,
+                  rows: 1,
+                  columns: 1,
+                }
+              );
+              let register_all = Register{table_id, row: TableIndex::All, column: TableIndex::All};
+              self.output.insert(register_all);
+            }
+            TableId::Local(id) => {
+              let mut reference_table = Table::new(id, 1, 1, self.store.clone());
+              reference_table.set_unchecked(1,1,reference);
+              self.tables.insert(id, reference_table);
+
+            }
+          }
+        }
         Transformation::NewTable{table_id, rows, columns} => {
           match table_id {
             TableId::Global(id) => {
@@ -397,17 +418,17 @@ impl Block {
           }*/
         }
         Transformation::Function{name, arguments, out} => {
-          let mut vis: Vec<(u64, ValueIterator)> = vec![];
-          for (arg, table, row, column) in arguments {
-            let vi = ValueIterator::new(*table,*row,*column,&self.global_database,&mut self.tables, &mut self.store);
-            vis.push((arg.clone(),vi));
-          }
-          let (out_table_id, out_row, out_column) = out;
-          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database, &mut self.tables, &mut self.store);
-          vis.push((0, out_vi));
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              mech_fn(&vis);
+              let mut args: Vec<(u64, ValueIterator)> = vec![];
+              for (arg, table, row, column) in arguments {
+                let vi = ValueIterator::new(*table,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+                args.push((arg.clone(),vi));
+              }
+              let (out_table_id, out_row, out_column) = out;
+              let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
+              args.push((0,out_vi));
+              mech_fn(&args);
             }
             _ => {
               /*if *name == *TABLE_SPLIT {
