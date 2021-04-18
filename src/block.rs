@@ -404,12 +404,13 @@ impl Block {
           }
           let (out_table_id, out_row, out_column) = out;
           let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database, &mut self.tables, &mut self.store);
+          vis.push((0, out_vi));
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              mech_fn(&vis, &mut out_vi);
+              mech_fn(&vis);
             }
             _ => {
-              if *name == *TABLE_SPLIT {
+              /*if *name == *TABLE_SPLIT {
                 let (_, vi) = &vis[0];
                 let vi_table = unsafe{&(*vi.table)};
 
@@ -461,7 +462,7 @@ impl Block {
                 // TODO Error: Function not found
                 //println!("Function not found {:?}", humanize(name));
                 return;
-              }
+              }*/
             },
           }
         }

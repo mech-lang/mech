@@ -21,11 +21,12 @@ lazy_static! {
   static ref TABLE: u64 = hash_string("table");
 }
 
-pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator);
+pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>);
 
-pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
+  let (_, mut out) = arguments[1].clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
@@ -71,9 +72,10 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>, out: &mut Value
   };
 }
 
-pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
+  let (_, mut out) = arguments[1].clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
@@ -127,9 +129,10 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   }
 }
 
-pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>) {
   //TODO There needs to be some checking of dimensions here
   let (_, mut vi) = arguments[0].clone();
+  let (_, mut out) = arguments[1].clone();
   let out_rows = out.rows();
   let out_columns = out.columns();
   let in_rows = vi.rows();
@@ -146,8 +149,9 @@ pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>, out: &mut
   }
 }
 
-pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
   let (_ , mut input) = arguments[0].clone();
+  let (_, mut out) = arguments[1].clone();
 
   if input.is_scalar() {
     input.inf_cycle();
@@ -176,8 +180,10 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>, out: &mut Val
   }
 }
 
-pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>) {
   let (_, vi) = &arguments[0];
+  let (_, mut out) = arguments[1].clone();
+
   out.resize(vi.rows(), vi.columns());
   for j in 1..=vi.columns() {
     for i in 1..=vi.rows() {
@@ -187,16 +193,18 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
   }
 }
 
-pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>) {
+
+  let (_, mut out) = arguments[arguments.len()-1].clone();
 
   // Get the size of the output table we will create, and resize the out table
-  let out_rows: usize = arguments.iter().map(|(_, vi)| vi.rows()).max().unwrap();
-  let out_columns: usize = arguments.iter().map(|(_, vi)| vi.columns()).sum();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.rows()).max().unwrap();
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).sum();
   out.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
   let mut column = 0;
-  for (_, vi) in arguments {
+  for (_, vi) in arguments.iter().take(arguments.len()-1) {
     let width = vi.columns();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
     let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
@@ -207,9 +215,12 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   }
 }
 
-pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>) {
+
+  let (_, mut out) = arguments[arguments.len()-1].clone();
+
   // Do all of the arguments have a compatible height?
-  if arguments.iter().map(|(_, vi)| vi.columns()).collect::<HashSet<usize>>().len() != 1 {
+  if arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
@@ -217,12 +228,12 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
   // Get the size of the output table we will create, and resize the out table
   let (_, vi) = &arguments[0];
   let out_columns = vi.columns();
-  let out_rows: usize = arguments.iter().map(|(_, vi)| vi.rows()).sum();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.rows()).sum();
   out.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
   let mut row = 0;
-  for (_, vi) in arguments {
+  for (_, vi) in arguments.iter().take(arguments.len()-1) {
     let height = vi.rows();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
     let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
@@ -233,12 +244,13 @@ pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator
   }
 }
 
-pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 2 or 3
   // 2 -> start, end
   // 3 -> start, increment, end
   let (_, start_vi) = &arguments[0];
   let (_, end_vi) = &arguments[1];
+  let (_, mut out) = arguments[arguments.len()-1].clone();
   // TODO add increment argument if there are three
 
   // TODO We have to test to see if all of these things are valid
@@ -259,10 +271,11 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>, out: &mut V
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
-    pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {
+    pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>) {
       // TODO test argument count is 2
       let (_, lhs) = &arguments[0];
       let (_, rhs) = &arguments[1];
+      let (_, mut out) = arguments[2].clone();
 
       let (out_rows, out_columns, lhs_iter, rhs_iter) = 
       // Equal dimensions
