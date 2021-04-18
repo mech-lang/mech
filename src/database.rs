@@ -181,7 +181,6 @@ impl Database {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(), Error> {
-
     self.changed_this_round.clear();
     for change in &txn.changes {
       match change {
@@ -220,7 +219,9 @@ impl Database {
                 // Set the value
                 table.set(row, column, *value);
                 // Mark the table as updated
-                let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: *column};
+                let register = Register{table_id: TableId::Global(*table_id), row: *row, column: *column};
+                self.changed_this_round.insert(register);
+                let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
                 self.changed_this_round.insert(register);
               }
             },

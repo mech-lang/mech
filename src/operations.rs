@@ -285,13 +285,14 @@ macro_rules! binary_infix {
 
       out.resize(out_rows, out_columns);
 
-      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
-      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+      let out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
+      let out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
       for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in 
               lhs_iter.zip(rhs_iter).zip(out_row_iter).zip(out_column_iter) {
         match (lhs_value, rhs_value, lhs_changed, rhs_changed)
         {
-          (lhs_value, rhs_value, true, true) => {
+          (lhs_value, rhs_value, true, _) |
+          (lhs_value, rhs_value, _, true) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
                 out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);

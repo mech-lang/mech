@@ -78,7 +78,7 @@ impl Runtime {
     self.functions.insert(name_hash, fxn);
   }
 
-  pub fn run_network(&mut self) -> Result<(), Error> {   
+  pub fn run_network(&mut self) -> Result<(), Error> {
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;
     let mut changed_last_round = true;
@@ -91,7 +91,6 @@ impl Runtime {
         let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
         store.changed = false;
       }
-
       // Solve all of the ready blocks
       for block_id in self.ready_blocks.drain() {
         let block = self.blocks.get_mut(&block_id).unwrap();
