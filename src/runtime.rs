@@ -384,7 +384,6 @@ impl Runtime {
                   listening_block.ready.insert(*alternative_output_register);
                   listening_block.ready.insert(*block_output_register);
                   listening_block.input.insert(*block_output_register);
-                  listening_block.resolve_iterators();
                   new_input_register_mapping.insert(*block_output_register, *listening_block_id);
                 }
                 None => (),
@@ -401,8 +400,6 @@ impl Runtime {
       let listeners = self.input_to_block.entry(*register).or_insert(HashSet::new());
       listeners.insert(*block_id);
     }
-
-    block.resolve_iterators();
 
     // Add the block to the list of blocks
     self.blocks.insert(block.id, block);

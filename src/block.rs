@@ -107,23 +107,21 @@ impl Block {
         }
         Transformation::TableReference{table_id, reference} => {
           match table_id {
-            TableId::Global(id) => {
-              self.changes.push(
-                Change::NewTable{
-                  table_id: id,
-                  rows: 1,
-                  columns: 1,
-                }
-              );
-              let register_all = Register{table_id, row: TableIndex::All, column: TableIndex::All};
-              self.output.insert(register_all);
-            }
             TableId::Local(id) => {
               let mut reference_table = Table::new(id, 1, 1, self.store.clone());
               reference_table.set_unchecked(1,1,reference);
               self.tables.insert(id, reference_table);
-
+              self.changes.push(
+                Change::NewTable{
+                  table_id: reference.as_reference().unwrap(),
+                  rows: 1,
+                  columns: 1,
+                }
+              );
+              let register_all = Register{table_id: TableId::Global(reference.as_reference().unwrap()), row: TableIndex::All, column: TableIndex::All};
+              self.output.insert(register_all);
             }
+            _ => (),
           }
         }
         Transformation::NewTable{table_id, rows, columns} => {
