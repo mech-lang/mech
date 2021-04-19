@@ -124,6 +124,22 @@ impl Block {
             _ => (),
           }
         }
+        Transformation::Select{table_id, row, column, indices, out} => {
+          match out {
+            TableId::Global(_) => {
+              let register = Register{table_id: out, row: TableIndex::All, column: TableIndex::All};
+              self.output.insert(register);              
+            }
+            _ => (),
+          }
+          match table_id {
+            TableId::Global(_) => {
+              let register = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
+              self.input.insert(register);                
+            }
+            _ => (),
+          }
+        }
         Transformation::NewTable{table_id, rows, columns} => {
           match table_id {
             TableId::Global(id) => {
@@ -387,40 +403,56 @@ impl Block {
           }
         },
         Transformation::Select{table_id, row, column, indices, out} => {
-          
-          /*let mut db = database.borrow_mut();
-        
-          // Get the output table
-          let mut out_table = match out {
-            TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-            TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
-          };
-                  
+          // Get the output Iterator
+          let mut out = ValueIterator::new(*out, TableIndex::All, TableIndex::All, &self.global_database.clone(),&mut self.tables, &mut self.store);
+
+          let mut table_id = *table_id;
           for (ix, (row_index, column_index)) in indices.iter().enumerate() {
 
-            let mut vi = ValueIterator::new(*table_id, *row_index, *column_index, &database, &mut self.tables, &mut self.store);
 
-            // If this is the last index, then we can write the data to the output table
+            let mut vi = ValueIterator::new(table_id, *row_index, *column_index, &self.global_database.clone(),&mut self.tables, &mut self.store);
+
+            // Size the out table if we're on the last index
             if ix == indices.len() - 1 {
-              println!("WRITING TO OUTPUT TABLE WITH SELECT");
-              println!("{:?}", vi);
-              unsafe{(*out_table).resize(vi.rows(), vi.columns())};
-              let mut out_ix = 1;
-              for (value, _) in vi {
-                println!("WRITING::: {:?} {:?}", ix, value);
-                unsafe{(*out_table).set_unchecked_linear(out_ix, value);}
-                out_ix += 1;
+              out.resize(vi.rows(), vi.columns());
+            }
+
+            let elements = vi.elements();
+            let mut out_iterator = out.linear_index_iterator();
+            for (value, _) in vi {
+              match value.as_reference() {
+                Some(reference) => {
+                  // We can only follow a reference is the selected table is scalar
+                  if elements == 1 && ix != indices.len() {
+                                           //^ We only want to follow a reference if we aren't at the
+                                           //  last index in the list.
+                    table_id = TableId::Global(reference);
+                    continue;
+                  // If we are at the last index, we'll store this reference in th out
+                  } else if ix == indices.len() - 1 { 
+                    match out_iterator.next() {
+                      Some(ix) => out.set_unchecked_linear(ix, value),
+                      _ => (),
+                    }
+                  }
+                }
+                None => {
+                  match out_iterator.next() {
+                    Some(ix) => out.set_unchecked_linear(ix, value),
+                    _ => (),
+                  }
+                }
               }
             }
-            
-          }*/
+                        
+          }
         }
         Transformation::Function{name, arguments, out} => {
           match functions.get(name) {
             Some(Some(mech_fn)) => {
               let mut args: Vec<(u64, ValueIterator)> = vec![];
-              for (arg, table, row, column) in arguments {
-                let vi = ValueIterator::new(*table,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+              for (arg, table_id, row, column) in arguments {
+                let vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
                 args.push((arg.clone(),vi));
               }
               let (out_table_id, out_row, out_column) = out;

@@ -137,7 +137,7 @@ impl ValueIterator {
   }
 
   pub fn elements(&self) -> usize {
-    self.raw_row_iter.len() * self.raw_column_iter.len()
+    self.rows() * self.columns()
   }
 
   pub fn rows(&self) -> usize {
