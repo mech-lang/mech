@@ -436,7 +436,11 @@ impl Compiler {
                               Node::Statement{children: vec![
                                 Node::TableDefine{children: vec![
                                   Node::Table{name, id},
-                                  children[0].clone()]}]}]}]};
+                                  Node::Expression{children: vec![
+                                    Node::AnonymousTableDefine{children: vec![
+                                      Node::TableRow{children: vec![
+                                        Node::TableColumn{children: vec![
+                                          children[0].clone()]}]}]}]}]}]}]}]};
               let block = self.compile_block(block_tree);
             }
             _ => (),
@@ -676,7 +680,6 @@ impl Compiler {
             }
           }
 
-
           // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
           let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
             let (text, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
@@ -710,8 +713,10 @@ impl Compiler {
         
         let mut global_out = vec![];
         let mut block_transformations = vec![];
+        let mut to_copy = HashSet::new();
+        let mut new_steps = vec![];
         for step in plan {
-          let (step_text, _, _, step_transformations) = step;
+          let (step_text, _, _, mut step_transformations) = step;
           let mut rtfms = step_transformations.clone();
           rtfms.reverse();
           for tfm in rtfms {
@@ -722,12 +727,16 @@ impl Compiler {
                   arguments: vec![(0,TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All)],
                   out: (TableId::Global(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All),
                 });
+                to_copy.insert(reference.as_reference().unwrap());
               }
               Transformation::Whenever{..} => {
                 block.plan.push(tfm.clone());
               }
               Transformation::Select{..} => {
                 block.plan.push(tfm.clone());
+              }
+              Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+                new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()),column_ix, column_alias});
               }
               Transformation::Function{name, ref arguments, out} => {
                 let (out_id, row, column) = out;
@@ -741,6 +750,7 @@ impl Compiler {
               _ => (),
             }
           }
+          step_transformations.append(&mut new_steps);
           block_transformations.push((step_text, step_transformations));
         }
         block.plan.append(&mut global_out);
@@ -862,6 +872,9 @@ impl Compiler {
         for child in children {
           let mut result = self.compile_transformation(child);
           match &result[0] {
+            Transformation::TableReference{table_id,..} => {
+              args.push((0, *table_id, TableIndex::All, TableIndex::All));
+            }
             Transformation::NewTable{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All)); 
             }
@@ -946,7 +959,6 @@ impl Compiler {
         // Compile each column of the table
         for child in children {
           let mut result = self.compile_transformation(child);
-          println!("{:?}", result);
           match &result[0] {
             Transformation::TableReference{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
