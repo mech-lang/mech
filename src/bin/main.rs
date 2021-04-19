@@ -76,27 +76,6 @@ fn main() {
     TableIndex::None => IndexIterator::None,
     //_ => IndexIterator::Range(1..=(*table).columns),
   }};*/
-  let row_len = row_iter.len();
-  let column_len = column_iter.len();
-  println!("{:?} {:?}", row_len, column_len);
-  let mut vi = ValueIterator{
-    scope: table_id,
-    table: table_ptr,
-    row_index: row_index,
-    column_index: column_index,
-    row_iter: IndexRepeater::new(row_iter,column_len,1),
-    column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
-  };
-
-  println!("{:?}", vi);
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-  println!("{:?}", vi.next());
-
 
   /*let to_hash = format!("{:?}{:?}", hash, register.table_id.unwrap());
   println!("{:?}", &to_hash.clone());
