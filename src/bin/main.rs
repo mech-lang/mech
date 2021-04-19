@@ -1,5 +1,6 @@
 extern crate mech_syntax;
 extern crate mech_core;
+extern crate time;
 
 use mech_syntax::compiler::{Compiler, Node, Element};
 use mech_syntax::formatter::Formatter;
@@ -33,14 +34,10 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #ball = [|y  vy|
-            2  4
-            6  8
-            10 12]
-
+  #test = #app{1,2}{1,2}
+  
 block
-  ixx = [true false true]
-  #ball.y{ixx} := #ball.vy * 10"#);
+  #app = [2 [5 7]]"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -61,13 +58,53 @@ block
   //core.runtime.register_block(compiler.blocks[2].clone());
   //core.runtime.register_block(compiler.blocks[3].clone());
   core.step();
+  println!("{:?}", core);
+
+  
+  
+
+  /*let changes = vec![
+    Change::Set{table_id: hash_string("q"), values: vec![(TableIndex::Index(1), TableIndex::Index(1), Value::from_u64(42))]}
+  ];
+  let txn = Transaction{changes: changes.clone()};
+
+  println!("Process transaction...");
+  let start_ns = time::precise_time_ns();
+  core.process_transaction(&txn);
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64 / 1_000_000.0;   
+  //println!("{:?}", core);
+  println!("{:?}", time);
+
+  let mut x = vec![];
+  let mut z = vec![];
+  let mut q = 1;
+  let iters = 100_000_000;
+  for i in 1..=iters {
+    x.push(i);
+  }
+
+  for j in &x {
+    z.push(j + q);
+  }
+
+  println!("Process transaction...");
+  let start_ns = time::precise_time_ns();
+  q = 42;
+  for i in 1..=iters {
+    z[i-1] = x[i-1] + q;
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f64 / 1_000_000.0;   
+  println!("{:?}", time);*/
+
   //let y = core.get_table_by_name("y").unwrap();
   //println!("{:?}",y);
   //core.runtime.register_block(compiler.blocks[4].clone());
   //let y = core.get_table_by_name("y").unwrap();
   //println!("{:?}",y);
   //core.step();
-  println!("{:?}", core);
+  //println!("{:?}", core);
   //println!("{:?}", compiler.parse_tree);
   //println!("{:?}", compiler.unparsed);
   //println!("{:?}", compiler.syntax_tree);
