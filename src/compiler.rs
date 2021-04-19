@@ -119,78 +119,78 @@ impl fmt::Debug for Node {
 pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
   spacer(level,f);
   let children: Option<&Vec<Node>> = match node {
-    Node::Root{children} => {write!(f,"Root\n"); Some(children)},
-    Node::Fragment{children, ..} => {write!(f,"Fragment\n"); Some(children)},
-    Node::Program{title, children} => {write!(f,"Program({:?})\n", title); Some(children)},
-    Node::Head{children} => {write!(f,"Head\n"); Some(children)},
-    Node::Body{children} => {write!(f,"Body\n"); Some(children)},
-    Node::VariableDefine{children} => {write!(f,"VariableDefine\n"); Some(children)},
-    Node::TableColumn{children} => {write!(f,"TableColumn\n"); Some(children)},
-    Node::Binding{children} => {write!(f,"Binding\n"); Some(children)},
-    Node::FunctionBinding{children} => {write!(f,"FunctionBinding\n"); Some(children)},
-    Node::TableDefine{children} => {write!(f,"TableDefine\n"); Some(children)},
-    Node::AnonymousTableDefine{children} => {write!(f,"AnonymousTableDefine\n"); Some(children)},
-    Node::InlineTable{children} => {write!(f,"InlineTable\n"); Some(children)},
-    Node::TableHeader{children} => {write!(f,"TableHeader\n"); Some(children)},
-    Node::Attribute{children} => {write!(f,"Attribute\n"); Some(children)},
-    Node::TableRow{children} => {write!(f,"TableRow\n"); Some(children)},
-    Node::AddRow{children} => {write!(f,"AddRow\n"); Some(children)},
-    Node::Section{title, children} => {write!(f,"Section({:?})\n", title); Some(children)},
-    Node::Block{children, ..} => {write!(f,"Block\n"); Some(children)},
-    Node::Statement{children} => {write!(f,"Statement\n"); Some(children)},
-    Node::SetData{children} => {write!(f,"SetData\n"); Some(children)},
-    Node::SplitData{children} => {write!(f,"SplitData\n"); Some(children)},
-    Node::Data{children} => {write!(f,"Data\n"); Some(children)},
-    Node::Whenever{children} => {write!(f,"Whenever\n"); Some(children)},
-    Node::WheneverIndex{children} => {write!(f,"WheneverIndex\n"); Some(children)},
-    Node::Wait{children} => {write!(f,"Wait\n"); Some(children)},
-    Node::Until{children} => {write!(f,"Until\n"); Some(children)},
-    Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id); Some(children)},
-    Node::DotIndex{children} => {write!(f,"DotIndex\n"); Some(children)},
-    Node::SubscriptIndex{children} => {write!(f,"SubscriptIndex\n"); Some(children)},
-    Node::Range => {write!(f,"Range\n"); None},
-    Node::Expression{children} => {write!(f,"Expression\n"); Some(children)},
-    Node::Function{name, children} => {write!(f,"Function({:?})\n", name); Some(children)},
-    Node::MathExpression{children} => {write!(f,"MathExpression\n"); Some(children)},
-    Node::Comment{children} => {write!(f,"Comment\n"); Some(children)},
-    Node::SelectExpression{children} => {write!(f,"SelectExpression\n"); Some(children)},
-    Node::Transformation{children, ..} => {write!(f,"Transformation\n"); Some(children)},
-    Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id); None},
-    Node::String{text} => {write!(f,"String({:?})\n", text); None},
-    Node::RationalNumber{children} => {write!(f,"RationalNumber\n"); Some(children)},
-    Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes); None},
-    Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_float(), unit); None},
-    Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id); None},
-    Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id); None},
-    Node::Token{token, byte} => {write!(f,"Token({:?})\n", token); None},
-    Node::SelectAll => {write!(f,"SelectAll\n"); None},
-    Node::LessThan => {write!(f,"LessThan\n"); None},
-    Node::GreaterThan => {write!(f,"GreaterThan\n"); None},
-    Node::GreaterThanEqual => {write!(f,"GreaterThanEqual\n"); None},
-    Node::LessThanEqual => {write!(f,"LessThanEqual\n"); None},
-    Node::Equal => {write!(f,"Equal\n"); None},
-    Node::NotEqual => {write!(f,"NotEqual\n"); None},
-    Node::Empty => {write!(f,"Empty\n"); None},
-    Node::True => {write!(f,"True\n"); None},
-    Node::False => {write!(f,"False\n"); None},
-    Node::Null => {write!(f,"Null\n"); None},
-    Node::Add => {write!(f,"Add\n"); None},
-    Node::Subtract => {write!(f,"Subtract\n"); None},
-    Node::Multiply => {write!(f,"Multiply\n"); None},
-    Node::Divide => {write!(f,"Divide\n"); None},
-    Node::Exponent => {write!(f,"Exponent\n"); None},
+    Node::Root{children} => {write!(f,"Root\n").ok(); Some(children)},
+    Node::Fragment{children, ..} => {write!(f,"Fragment\n").ok(); Some(children)},
+    Node::Program{title, children} => {write!(f,"Program({:?})\n", title).ok(); Some(children)},
+    Node::Head{children} => {write!(f,"Head\n").ok(); Some(children)},
+    Node::Body{children} => {write!(f,"Body\n").ok(); Some(children)},
+    Node::VariableDefine{children} => {write!(f,"VariableDefine\n").ok(); Some(children)},
+    Node::TableColumn{children} => {write!(f,"TableColumn\n").ok(); Some(children)},
+    Node::Binding{children} => {write!(f,"Binding\n").ok(); Some(children)},
+    Node::FunctionBinding{children} => {write!(f,"FunctionBinding\n").ok(); Some(children)},
+    Node::TableDefine{children} => {write!(f,"TableDefine\n").ok(); Some(children)},
+    Node::AnonymousTableDefine{children} => {write!(f,"AnonymousTableDefine\n").ok(); Some(children)},
+    Node::InlineTable{children} => {write!(f,"InlineTable\n").ok(); Some(children)},
+    Node::TableHeader{children} => {write!(f,"TableHeader\n").ok(); Some(children)},
+    Node::Attribute{children} => {write!(f,"Attribute\n").ok(); Some(children)},
+    Node::TableRow{children} => {write!(f,"TableRow\n").ok(); Some(children)},
+    Node::AddRow{children} => {write!(f,"AddRow\n").ok(); Some(children)},
+    Node::Section{title, children} => {write!(f,"Section({:?})\n", title).ok(); Some(children)},
+    Node::Block{children, ..} => {write!(f,"Block\n").ok(); Some(children)},
+    Node::Statement{children} => {write!(f,"Statement\n").ok(); Some(children)},
+    Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
+    Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
+    Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
+    Node::Whenever{children} => {write!(f,"Whenever\n").ok(); Some(children)},
+    Node::WheneverIndex{children} => {write!(f,"WheneverIndex\n").ok(); Some(children)},
+    Node::Wait{children} => {write!(f,"Wait\n").ok(); Some(children)},
+    Node::Until{children} => {write!(f,"Until\n").ok(); Some(children)},
+    Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id).ok(); Some(children)},
+    Node::DotIndex{children} => {write!(f,"DotIndex\n").ok(); Some(children)},
+    Node::SubscriptIndex{children} => {write!(f,"SubscriptIndex\n").ok(); Some(children)},
+    Node::Range => {write!(f,"Range\n").ok(); None},
+    Node::Expression{children} => {write!(f,"Expression\n").ok(); Some(children)},
+    Node::Function{name, children} => {write!(f,"Function({:?})\n", name).ok(); Some(children)},
+    Node::MathExpression{children} => {write!(f,"MathExpression\n").ok(); Some(children)},
+    Node::Comment{children} => {write!(f,"Comment\n").ok(); Some(children)},
+    Node::SelectExpression{children} => {write!(f,"SelectExpression\n").ok(); Some(children)},
+    Node::Transformation{children, ..} => {write!(f,"Transformation\n").ok(); Some(children)},
+    Node::Identifier{name, id} => {write!(f,"Identifier({}({:#x}))\n", name, id).ok(); None},
+    Node::String{text} => {write!(f,"String({:?})\n", text).ok(); None},
+    Node::RationalNumber{children} => {write!(f,"RationalNumber\n").ok(); Some(children)},
+    Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes).ok(); None},
+    Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_float(), unit).ok(); None},
+    Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id).ok(); None},
+    Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id).ok(); None},
+    Node::Token{token, byte} => {write!(f,"Token({:?})\n", token).ok(); None},
+    Node::SelectAll => {write!(f,"SelectAll\n").ok(); None},
+    Node::LessThan => {write!(f,"LessThan\n").ok(); None},
+    Node::GreaterThan => {write!(f,"GreaterThan\n").ok(); None},
+    Node::GreaterThanEqual => {write!(f,"GreaterThanEqual\n").ok(); None},
+    Node::LessThanEqual => {write!(f,"LessThanEqual\n").ok(); None},
+    Node::Equal => {write!(f,"Equal\n").ok(); None},
+    Node::NotEqual => {write!(f,"NotEqual\n").ok(); None},
+    Node::Empty => {write!(f,"Empty\n").ok(); None},
+    Node::True => {write!(f,"True\n").ok(); None},
+    Node::False => {write!(f,"False\n").ok(); None},
+    Node::Null => {write!(f,"Null\n").ok(); None},
+    Node::Add => {write!(f,"Add\n").ok(); None},
+    Node::Subtract => {write!(f,"Subtract\n").ok(); None},
+    Node::Multiply => {write!(f,"Multiply\n").ok(); None},
+    Node::Divide => {write!(f,"Divide\n").ok(); None},
+    Node::Exponent => {write!(f,"Exponent\n").ok(); None},
     // Markdown Nodes
-    Node::Title{text} => {write!(f,"Title({:?})\n", text); None},
-    Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text); None},
-    Node::UnorderedList{children} => {write!(f,"UnorderedList\n"); Some(children)},
-    Node::ListItem{children} => {write!(f,"ListItem\n"); Some(children)},
-    Node::Paragraph{children} => {write!(f,"Paragraph\n"); Some(children)},
-    Node::InlineCode{children} => {write!(f,"InlineCode\n"); Some(children)},
-    Node::CodeBlock{children} => {write!(f,"CodeBlock\n"); Some(children)},
+    Node::Title{text} => {write!(f,"Title({:?})\n", text).ok(); None},
+    Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text).ok(); None},
+    Node::UnorderedList{children} => {write!(f,"UnorderedList\n").ok(); Some(children)},
+    Node::ListItem{children} => {write!(f,"ListItem\n").ok(); Some(children)},
+    Node::Paragraph{children} => {write!(f,"Paragraph\n").ok(); Some(children)},
+    Node::InlineCode{children} => {write!(f,"InlineCode\n").ok(); Some(children)},
+    Node::CodeBlock{children} => {write!(f,"CodeBlock\n").ok(); Some(children)},
     // Extended Mechdown
-    Node::InlineMechCode{children} => {write!(f,"InlineMechCode\n"); Some(children)},
-    Node::MechCodeBlock{children} => {write!(f,"MechCodeBlock\n"); Some(children)},
-    _ => {write!(f,"Unhandled Compiler Node"); None},
+    Node::InlineMechCode{children} => {write!(f,"InlineMechCode\n").ok(); Some(children)},
+    Node::MechCodeBlock{children} => {write!(f,"MechCodeBlock\n").ok(); Some(children)},
+    _ => {write!(f,"Unhandled Compiler Node").ok(); None},
   };
   match children {
     Some(childs) => {
@@ -209,9 +209,9 @@ pub fn spacer(width: usize, f: &mut fmt::Formatter) {
     width
   };
   for _ in 0..limit {
-    write!(f,"│");
+    write!(f,"│").ok();
   }
-  write!(f,"├");
+  write!(f,"├").ok();
 }
 
 // ## Program
@@ -227,9 +227,9 @@ pub struct Program {
 impl fmt::Debug for Program {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "Program: {}\n", self.title.clone().unwrap_or("".to_string()));
+    write!(f, "Program: {}\n", self.title.clone().unwrap_or("".to_string())).ok();
     for section in &self.sections {
-      write!(f, "  {:?}\n", section);
+      write!(f, "  {:?}\n", section).ok();
     }
     Ok(())
   }
@@ -244,9 +244,9 @@ pub struct Section {
 impl fmt::Debug for Section {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "Section: {}\n", self.title.clone().unwrap_or("".to_string()));
+    write!(f, "Section: {}\n", self.title.clone().unwrap_or("".to_string())).ok();
     for element in &self.elements {
-      write!(f, "    {:?}\n", element);
+      write!(f, "    {:?}\n", element).ok();
     }
     Ok(())
   }
@@ -575,6 +575,14 @@ impl Compiler {
                   },
                 }
               }
+              Transformation::TableReference{table_id, reference} => {
+                match table_id {
+                  TableId::Local(id) => {
+                    produces.insert(*id);
+                  },
+                  _ => (),
+                };
+              }
               Transformation::Whenever{table_id, ..} => {
                 produces.insert(hash_string("~"));
               }
@@ -708,6 +716,13 @@ impl Compiler {
           rtfms.reverse();
           for tfm in rtfms {
             match tfm {
+              Transformation::TableReference{table_id, reference} => {
+                block.plan.push(Transformation::Function{
+                  name: *TABLE_COPY,
+                  arguments: vec![(0,TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All)],
+                  out: (TableId::Global(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All),
+                });
+              }
               Transformation::Whenever{..} => {
                 block.plan.push(tfm.clone());
               }
@@ -764,6 +779,8 @@ impl Compiler {
               (Transformation::Select{table_id, row, column, indices, out}, _) => {
                 if indices.len() == 1 {
                   defunct_tables.push((0, *table_id, TableIndex::None, TableIndex::None));
+                } else {
+                  new_plan.push(this.clone());
                 }
               }
               _ => new_plan.push(this.clone()),
@@ -929,6 +946,7 @@ impl Compiler {
         // Compile each column of the table
         for child in children {
           let mut result = self.compile_transformation(child);
+          println!("{:?}", result);
           match &result[0] {
             Transformation::TableReference{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
@@ -1299,7 +1317,7 @@ impl Compiler {
             indices.clear();
           }
         }
-        all_indices.reverse();
+        //all_indices.reverse();
         let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
         if all_indices.len() > 1 {
           transformations.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
@@ -2225,6 +2243,8 @@ impl Compiler {
       },
       parser::Node::True => {
         compiled.push(Node::True);
+      },
+      parser::Node::Null => {
       },
       parser::Node::False => {
         compiled.push(Node::False);
