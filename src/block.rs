@@ -329,7 +329,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) {
-    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -343,7 +342,7 @@ impl Block {
           // Check to see if the whenever table needs to be resized
           let before_rows = whenever_table.rows;
           if vi.rows() > whenever_table.rows {
-            whenever_table.resize(vi.rows(),1);
+            whenever_table.resize(vi.rows() * vi.columns(),1);
             for (ix, (_, changed)) in vi.enumerate() {
               // Mark the new rows as changed even if they are stale
               if ix+1 > before_rows {
