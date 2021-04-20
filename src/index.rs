@@ -127,6 +127,10 @@ impl ValueIterator {
     self.row_iter.clone().zip(self.column_iter.clone())
   }
 
+  pub fn id(&self) -> u64 {
+    *self.scope.unwrap()
+  }
+
   pub fn get_column_alias(&self, index: usize) -> Option<TableIndex> {
     unsafe{(*self.table).get_column_alias(index)}
   }
