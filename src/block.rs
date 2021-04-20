@@ -13,6 +13,7 @@ use ::humanize;
 use ::hash_string;
 
 lazy_static! {
+  static ref TABLE_COPY: u64 = hash_string("table/copy");
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref GRAMS: u64 = hash_string("g");
   static ref KILOGRAMS: u64 = hash_string("kg");
@@ -463,49 +464,24 @@ impl Block {
               if *name == *TABLE_SPLIT {
                 let (_, vi) = &args[0];
                 let (_, mut out) = args.last().unwrap().clone();
-                let vi_table = unsafe{&(*vi.table)};
 
                 out.resize(vi.rows(), 1);
 
-                for row in vi.row_iter.clone() {
-                  let old_table_id = unsafe{(*vi.table).id};
-                  let new_table_id = hash_string(&format!("{:?}{:?}",old_table_id,row));
-                  let columns = vi.columns().clone();
-                  let mut table = Table::new(new_table_id,1,columns,self.store.clone());
-                  for column in vi.column_iter.clone() {
+                let mut db = self.global_database.borrow_mut();
+
+                // Create rows for tables
+                let old_table_id = vi.id();
+                let old_table_columns = vi.columns();
+                for row in vi.raw_row_iter.clone() {
+                  let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
+                  let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
+                  for column in vi.raw_column_iter.clone() {
                     let value = vi.get(&row,&column).unwrap();
-                    table.set(&TableIndex::Index(1),&column, value);
+                    split_table.set(&TableIndex::Index(1),&column, value);
                   }
-                  self.tables.insert(new_table_id, table);
-                  out.set(&row,&TableIndex::Index(1),Value::from_id(new_table_id));
-                  let txn = Transaction {
-                    changes: vec![Change::NewTable{
-                      table_id: new_table_id,
-                      rows: 1,
-                      columns: vi.columns(),
-                    }],
-                  };
-                  self.changes.clear();
-                  let mut db = self.global_database.borrow_mut();
-                  db.process_transaction(&txn).ok();
-                  db.transactions.push(txn);
-                  let new_global_copy_table = db.tables.get_mut(&new_table_id).unwrap() as *mut Table;
-                  unsafe {
-                    for i in 1..=vi.columns() {
-                      // Add alias to column if it's there
-                      match vi_table.store.column_index_to_alias.get(&(vi_table.id,i)) {
-                        Some(alias) => {
-                          let out_id = (*new_global_copy_table).id;
-                          let store = &mut *Arc::get_mut_unchecked(&mut (*new_global_copy_table).store);
-                          store.column_index_to_alias.entry((out_id,i)).or_insert(*alias);
-                          store.column_alias_to_index.entry((out_id,*alias)).or_insert(i);
-                        }
-                        _ => (),
-                      }
-                      let (val, _) = vi_table.get_unchecked(row.unwrap(),i);
-                      (*new_global_copy_table).set_unchecked(1,i, val);
-                    }
-                  }
+                  out.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
+                  self.tables.insert(split_table_id, split_table.clone());
+                  db.tables.insert(split_table_id, split_table);
                 }
               } else {
                 // TODO Error: Function not found
