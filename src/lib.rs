@@ -16,66 +16,54 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
+pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>) { 
   let (in_arg_name, vi) = &arguments[0];
-  let mut rows = vi.rows();
-  let mut cols = vi.columns();
+  let (_, mut out) = arguments.last().unwrap().clone();
   if *in_arg_name == *ANGLE {
-    out.resize(rows*cols,1);
+    out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
-    for (i,k) in (1..=rows).zip(vi.row_iter.clone()) {
-      for (j,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-        match value.as_quantity() {
-          Some(x) => {
-            let result = match fmod(x.as_float().unwrap(), 360.0) {
-              0.0 => 0.0,
-              90.0 => 1.0,
-              180.0 => 0.0,
-              270.0 => -1.0,
-              _ => sin(x.as_float().unwrap() * PI / 180.0),
-            };
-            unsafe {
-              (*out.table).set_unchecked(i, j, Value::from_f64(result));
-            }
-          },
-          _ => (), // TODO Alert user that there was an error
-        }
+    for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
+      match value.as_quantity() {
+        Some(x) => {
+          let result = match fmod(x.as_float().unwrap(), 360.0) {
+            0.0 => 0.0,
+            90.0 => 1.0,
+            180.0 => 0.0,
+            270.0 => -1.0,
+            _ => sin(x.as_float().unwrap() * PI / 180.0),
+          };
+          out.set_unchecked_linear(out_ix, Value::from_f64(result));
+        },
+        _ => (), // TODO Alert user that there was an error
       }
-    }  
+    }
   } else {
     // TODO Warn about unknown argument
   }
 }
 
 #[no_mangle]
-pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
+pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>) { 
   let (in_arg_name, vi) = &arguments[0];
-  let mut rows = vi.rows();
-  let mut cols = vi.columns();
+  let (_, mut out) = arguments.last().unwrap().clone();
   if *in_arg_name == *ANGLE {
-    out.resize(rows*cols,1);
+    out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
-    for (i,k) in (1..=rows).zip(vi.row_iter.clone()) {
-      for (j,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-        match value.as_quantity() {
-          Some(x) => {
-            let result = match fmod(x.as_float().unwrap(), 360.0) {
-              0.0 => 1.0,
-              90.0 => 0.0,
-              180.0 => -1.0,
-              270.0 => 0.0,
-              _ => cos(x.as_float().unwrap() * PI / 180.0),
-            };
-            unsafe {
-              (*out.table).set_unchecked(i, j, Value::from_f64(result));
-            }
-          },
-          _ => (), // TODO Alert user that there was an error
-        }
+    for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
+      match value.as_quantity() {
+        Some(x) => {
+          let result = match fmod(x.as_float().unwrap(), 360.0) {
+            0.0 => 1.0,
+            90.0 => 0.0,
+            180.0 => -1.0,
+            270.0 => 0.0,
+            _ => cos(x.as_float().unwrap() * PI / 180.0),
+          };
+          out.set_unchecked_linear(out_ix, Value::from_f64(result));
+        },
+        _ => (), // TODO Alert user that there was an error
       }
-    }  
+    }
   } else {
     // TODO Warn about unknown argument
   }
@@ -85,24 +73,18 @@ pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>, out: &mut Valu
 #[no_mangle]
 pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
   let (in_arg_name, vi) = &arguments[0];
-  let mut rows = vi.rows();
-  let mut cols = vi.columns();
+  let (_, mut out) = arguments.last().unwrap().clone();
   if *in_arg_name == *TABLE {
-      out.resize(rows*cols,1);
-      let mut flag: bool = false;
-      for (i,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        for (j,m) in (1..=cols).zip(vi.column_iter.clone()) {
-          let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-          match value.as_float() {
-            Some(x) => {
-              unsafe {
-                (*out.table).set_unchecked(i, j, Value::from_f64(round(x)));
-              }
-            },
-            _ => (), // TODO Alert user that there was an error
-          }
-        }
-      }  
+    out.resize(vi.rows(),vi.columns());
+    let mut flag: bool = false;
+    for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
+      match value.as_float() {
+        Some(x) => {
+          out.set_unchecked_linear(out_ix, Value::from_f64(floor(x)));
+        },
+        _ => (), // TODO Alert user that there was an error
+      }
+    }
   } else {
     // TODO Warn about unknown argument
   }
@@ -111,24 +93,18 @@ pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 #[no_mangle]
 pub extern "C" fn math_floor(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
   let (in_arg_name, vi) = &arguments[0];
-  let mut rows = vi.rows();
-  let mut cols = vi.columns();
+  let (_, mut out) = arguments.last().unwrap().clone();
   if *in_arg_name == *TABLE {
-    out.resize(rows*cols,1);
+    out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
-    for (i,k) in (1..=rows).zip(vi.row_iter.clone()) {
-      for (j,m) in (1..=cols).zip(vi.column_iter.clone()) {
-        let value = unsafe{(*vi.table).get(&k,&m).unwrap()};
-        match value.as_float() {
-          Some(x) => {
-            unsafe {
-              (*out.table).set_unchecked(i, j, Value::from_f64(floor(x)));
-            }
-          },
-          _ => (), // TODO Alert user that there was an error
-        }
+    for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
+      match value.as_float() {
+        Some(x) => {
+          out.set_unchecked_linear(out_ix, Value::from_f64(floor(x)));
+        },
+        _ => (), // TODO Alert user that there was an error
       }
-    }  
+    }
   } else {
     // TODO Warn about unknown argument
   }
