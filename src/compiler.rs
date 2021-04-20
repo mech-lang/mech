@@ -736,7 +736,10 @@ impl Compiler {
                 block.plan.push(tfm.clone());
               }
               Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-                new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()),column_ix, column_alias});
+                match to_copy.contains(&table_id.unwrap() ) {
+                  true => new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()),column_ix, column_alias}),
+                  _ => (),
+                }
               }
               Transformation::Function{name, ref arguments, out} => {
                 let (out_id, row, column) = out;
