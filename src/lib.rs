@@ -65,6 +65,7 @@ lazy_static! {
   static ref WIDTH: u64 = hash_string("width");
   static ref SHAPE: u64 = hash_string("shape");
   static ref CIRCLE: u64 = hash_string("circle");
+  static ref SQUARE: u64 = hash_string("square");
   static ref LINE: u64 = hash_string("line");
   static ref X1: u64 = hash_string("x1");
   static ref X2: u64 = hash_string("x2");
@@ -1869,6 +1870,54 @@ impl WasmCore {
                     log!("Missing center-x, center-y, or radius");
                   },
                 }        
+              // ---------------------
+              // RENDER A SQUARE
+              // ---------------------    
+              } else if shape == *SQUARE {
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
+                  (Some(x), Some(y), Some(width), Some(height)) => {
+                    match (x.as_float(), y.as_float(), width.as_float(), height.as_float()) {
+                      (Some(x), Some(y), Some(width), Some(height)) => {
+                        let stroke = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*STROKE))  {
+                          Some(stroke_string_id) => {
+                            match stroke_string_id.as_string() {
+                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
+                              _ => {
+                                log!("stroke on rectangle must be a string. Defaulting to #000000");
+                                "#000000".to_string()
+                              },
+                            }
+                          }
+                          _ => "#000000".to_string(),
+                        };
+                        let fill = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
+                          Some(stroke_string_id) => {
+                            match stroke_string_id.as_string() {
+                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
+                              _ => {
+                                log!("fill on rectangle must be a string. Defaulting to #000000");
+                                "#000000".to_string()
+                              },
+                            }
+                          }
+                          _ => "#000000".to_string(),
+                        };
+                        context.save();
+                        context.fill_rect(x,y,width,height);
+                        context.set_stroke_style(&JsValue::from_str(&stroke));
+                        context.stroke();
+                        context.restore();
+                      },
+                      _ => {log!("x, y, width, height must be quantities");},
+                    }
+                  }
+                  _ => {
+                    log!("Missing x, y, width, height");
+                  },
+                }
               // ---------------------
               // RENDER A LINE
               // ---------------------    
