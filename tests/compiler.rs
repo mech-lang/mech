@@ -710,7 +710,7 @@ block
 
 test_mech!(nesting_deep,r#"
 block
-  #test = stats/sum(row: #app/main{1}{1,2}{1,:})
+  #test = stats/sum(row: #app/main{1}{1}{2}{1,:})
 
 block
   #ball = [x: 10 y: 10]
@@ -718,7 +718,7 @@ block
 block
   ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
   line = [shape: "line" parameters: [x1: #ball.x, x2: #ball.y]]
-  canvas = [contains: [ball; line]]
+  canvas = [contains: [|shape parameters| ball; line]]
   #app/main = [contains: [canvas]]"#, Value::from_u64(579));
 
 test_mech!(nesting_math,r#"

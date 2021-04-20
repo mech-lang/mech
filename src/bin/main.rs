@@ -34,10 +34,16 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #app2 = [x: [a: 1 b: 2 c: 3] y: [x: 7 z: 8]]
+  #test = stats/sum(row: #app/main{1}{1}{2}{1,:})
 
 block
-  #test = #app2.y.z + #app2.x.b"#);
+  #ball = [x: 10 y: 10]
+
+block
+  ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
+  line = [shape: "line" parameters: [x1: #ball.x, x2: #ball.y]]
+  canvas = [contains: [|shape parameters| ball; line]]
+  #app/main = [contains: [canvas]]#"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
