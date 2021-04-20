@@ -423,7 +423,7 @@ impl Block {
               match value.as_reference() {
                 Some(reference) => {
                   // We can only follow a reference is the selected table is scalar
-                  if elements == 1 && ix != indices.len() {
+                  if elements == 1 && ix != indices.len() - 1 {
                                            //^ We only want to follow a reference if we aren't at the
                                            //  last index in the list.
                     table_id = TableId::Global(reference);

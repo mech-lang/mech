@@ -205,7 +205,7 @@ impl ValueIterator {
 
       match self.column_index {
         TableIndex::All => {
-          match (*self.table).rows {
+          match (*self.table).columns {
             0 => self.raw_column_iter = IndexIterator::None,
             c => self.raw_column_iter = IndexIterator::Range(1..=c),
           }
@@ -255,6 +255,7 @@ impl fmt::Debug for ValueIterator {
   }
 }
 
+#[derive(Debug, Clone)]
 pub struct LinearIndexIterator {
   pub table: *mut Table,
   pub row_iter: IndexRepeater,   
