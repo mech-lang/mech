@@ -328,6 +328,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) {
+    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -409,7 +410,6 @@ impl Block {
           let mut table_id = *table_id;
           for (ix, (row_index, column_index)) in indices.iter().enumerate() {
 
-
             let mut vi = ValueIterator::new(table_id, *row_index, *column_index, &self.global_database.clone(),&mut self.tables, &mut self.store);
 
             // Size the out table if we're on the last index
@@ -444,28 +444,28 @@ impl Block {
                 }
               }
             }
-                        
           }
         }
         Transformation::Function{name, arguments, out} => {
+          let mut args: Vec<(u64, ValueIterator)> = vec![];
+          for (arg, table_id, row, column) in arguments {
+            let vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+            args.push((arg.clone(),vi));
+          }
+          let (out_table_id, out_row, out_column) = out;
+          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
+          args.push((0,out_vi));
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              let mut args: Vec<(u64, ValueIterator)> = vec![];
-              for (arg, table_id, row, column) in arguments {
-                let vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
-                args.push((arg.clone(),vi));
-              }
-              let (out_table_id, out_row, out_column) = out;
-              let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-              args.push((0,out_vi));
               mech_fn(&args);
             }
             _ => {
-              /*if *name == *TABLE_SPLIT {
-                let (_, vi) = &vis[0];
+              if *name == *TABLE_SPLIT {
+                let (_, vi) = &args[0];
+                let (_, mut out) = args.last().unwrap().clone();
                 let vi_table = unsafe{&(*vi.table)};
 
-                unsafe{ (*out_vi.table).resize(vi.rows(), 1); }
+                out.resize(vi.rows(), 1);
 
                 for row in vi.row_iter.clone() {
                   let old_table_id = unsafe{(*vi.table).id};
@@ -477,9 +477,7 @@ impl Block {
                     table.set(&TableIndex::Index(1),&column, value);
                   }
                   self.tables.insert(new_table_id, table);
-                  unsafe {
-                    (*out_vi.table).set(&row,&TableIndex::Index(1),Value::from_id(new_table_id));
-                  }
+                  out.set(&row,&TableIndex::Index(1),Value::from_id(new_table_id));
                   let txn = Transaction {
                     changes: vec![Change::NewTable{
                       table_id: new_table_id,
@@ -513,7 +511,7 @@ impl Block {
                 // TODO Error: Function not found
                 //println!("Function not found {:?}", humanize(name));
                 return;
-              }*/
+              }
             },
           }
         }
