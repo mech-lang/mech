@@ -199,7 +199,7 @@ impl Program {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator)>(s.as_bytes()).expect(&error_msg);
+            let m = library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>)>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
           };
           *fun = Some(*native_rust);
