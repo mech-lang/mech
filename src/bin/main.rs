@@ -34,16 +34,19 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #test = stats/sum(row: #app/main{1}{1}{2}{1,:})
+  ~ #html/event/keydown.key == "ArrowUp"
+  #explorer.y := #explorer.y - 1"
 
 block
-  #ball = [x: 10 y: 10]
+  #explorer = [x: 10, y: 10]"
 
 block
-  ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
-  line = [shape: "line" parameters: [x1: #ball.x, x2: #ball.y]]
-  canvas = [contains: [|shape parameters| ball; line]]
-  #app/main = [contains: [canvas]]#"#);
+  ~ #explorer.x
+  #html/event/keydown = [key: "ArrowUp"]
+
+block
+  ~ #explorer
+  #test = #explorer.y"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
