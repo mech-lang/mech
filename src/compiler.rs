@@ -713,7 +713,7 @@ impl Compiler {
         
         let mut global_out = vec![];
         let mut block_transformations = vec![];
-        let mut to_copy = HashSet::new();
+        let mut to_copy: HashMap<TableId, Vec<Transformation>> = HashMap::new();
         let mut new_steps = vec![];
         for step in plan {
           let (step_text, _, _, mut step_transformations) = step;
@@ -722,12 +722,25 @@ impl Compiler {
           for tfm in rtfms {
             match tfm {
               Transformation::TableReference{table_id, reference} => {
+                let referenced_table_id = reference.as_reference().unwrap();
                 block.plan.push(Transformation::Function{
                   name: *TABLE_COPY,
-                  arguments: vec![(0,TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All)],
-                  out: (TableId::Global(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All),
+                  arguments: vec![(0,TableId::Local(referenced_table_id), TableIndex::All, TableIndex::All)],
+                  out: (TableId::Global(referenced_table_id), TableIndex::All, TableIndex::All),
                 });
-                to_copy.insert(reference.as_reference().unwrap());
+                match to_copy.get(&TableId::Local(referenced_table_id)) {
+                  Some(aliases) => {
+                    for alias in aliases {
+                      match alias {
+                        Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+                          new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()), column_ix: *column_ix, column_alias: *column_alias});                          
+                        }
+                        _ => (),
+                      }
+                    }
+                  }
+                  _ => (),
+                }
               }
               Transformation::Whenever{..} => {
                 block.plan.push(tfm.clone());
@@ -736,10 +749,8 @@ impl Compiler {
                 block.plan.push(tfm.clone());
               }
               Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-                match to_copy.contains(&table_id.unwrap() ) {
-                  true => new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()),column_ix, column_alias}),
-                  _ => (),
-                }
+                let aliases = to_copy.entry(table_id).or_insert(Vec::new());
+                aliases.push(tfm.clone());
               }
               Transformation::Function{name, ref arguments, out} => {
                 let (out_id, row, column) = out;
