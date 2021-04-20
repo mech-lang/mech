@@ -34,10 +34,10 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  #test = #app{1,2}{1,2}
-  
+  #app2 = [x: [a: 1 b: 2 c: 3] y: [x: 7 z: 8]]
+
 block
-  #app = [2 [5 7]]"#);
+  #test = #app2.y.z + #app2.x.b"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
