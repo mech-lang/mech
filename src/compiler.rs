@@ -1045,26 +1045,28 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::SplitData{children} => {
-        //let mut output = self.compile_transformation(&children[0]);
-        let output_table_id = match &children[0] {
+        let (output_table_tfm, output_table_id) = match &children[0] {
           Node::Identifier{name,..} => {
             let name_hash = hash_string(name);
             self.strings.insert(name_hash, name.to_string());
-            transformations.push(Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1});
-            TableId::Local(name_hash)
+            (Transformation::NewTable{table_id: TableId::Local(name_hash), rows: 1, columns: 1},
+            TableId::Local(name_hash))
           }
           Node::Table{name, ..} => {
             let name_hash = hash_string(name);
             self.strings.insert(name_hash, name.to_string());
-            transformations.push(Transformation::NewTable{table_id: TableId::Global(name_hash), rows: 1, columns: 1});
-            TableId::Global(name_hash)
+            (Transformation::NewTable{table_id: TableId::Global(name_hash), rows: 1, columns: 1},
+            TableId::Global(name_hash))
           },
-          _ => TableId::Local(0),
+          _ => (Transformation::NewTable{table_id: TableId::Local(0), rows: 1, columns: 1},TableId::Local(0)),
         };
 
         let mut input = self.compile_transformation(&children[1]);
 
         let input_table_id = match input[0] {
+          Transformation::TableReference{table_id,reference} => {
+            Some(TableId::Local(reference.as_reference().unwrap()))
+          }
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
           }
@@ -1081,6 +1083,8 @@ impl Compiler {
           ],
           out: (output_table_id, TableIndex::All, TableIndex::All),
         };
+        // Push a reference so any upstream nodes know what to do
+        transformations.push(output_table_tfm);
         transformations.push(fxn);
         transformations.append(&mut input);
       }
