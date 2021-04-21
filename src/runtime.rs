@@ -238,10 +238,16 @@ impl Runtime {
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       for (k,v) in block.store.strings.iter() {
         store.strings.insert(*k,v.clone());
-      }       
+      }    
+      for (k,v) in block.store.number_literals.iter() {
+        store.number_literals.insert(*k,v.clone());
+      }          
       let block_store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
       for (k,v) in store.strings.iter() {
         block_store.strings.insert(*k,v.clone());
+      } 
+      for (k,v) in store.number_literals.iter() {
+        block_store.number_literals.insert(*k,v.clone());
       } 
     }
 
