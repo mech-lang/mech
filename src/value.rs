@@ -53,9 +53,9 @@ pub trait ValueMethods {
   fn as_quantity(&self) -> Option<Quantity>;
   fn as_u64(&self) -> Option<u64>;
   fn as_i64(&self) -> Option<i64>;
-  fn as_float(&self) -> Option<f64>;
+  fn as_f64(&self) -> Option<f64>;
   fn as_string(&self) -> Option<u64>;
-  fn as_byte_array(&self) -> Option<u64>;
+  fn as_number_literal(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
   fn as_reference(&self) -> Option<u64>;
   fn as_raw(&self) -> u64;
@@ -157,7 +157,7 @@ impl ValueMethods for Value {
               None => {
                 match self.as_bool() {
                   Some(_) => ValueType::Boolean,
-                  None => match self.as_byte_array() {
+                  None => match self.as_number_literal() {
                     Some(_) => ValueType::NumberLiteral,
                     None => ValueType::Empty,
                   },
@@ -221,7 +221,7 @@ impl ValueMethods for Value {
     }
   }    
 
-  fn as_float(&self) -> Option<f64> {
+  fn as_f64(&self) -> Option<f64> {
     match self & 0xFF00000000000000 {
       0x1000000000000000 |
       0x2000000000000000 |
@@ -251,7 +251,7 @@ impl ValueMethods for Value {
     }
   }
 
-  fn as_byte_array(&self) -> Option<u64> {
+  fn as_number_literal(&self) -> Option<u64> {
     match self & 0xFF00000000000000 {
       0xC000000000000000 => Some(*self),
       _ => None,
