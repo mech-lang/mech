@@ -3,7 +3,7 @@ use errors::{Error, ErrorType};
 use database::{Database, Change, Transaction};
 use runtime::Runtime;
 use table::{Table, TableIndex, TableId};
-use value::Value;
+use value::{Value, NumberLiteral};
 use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
@@ -88,6 +88,13 @@ impl Core {
   pub fn get_string(&self, id: &u64) -> Option<String> {
     match self.database.borrow().store.strings.get(&id) {
       Some(string) => Some(string.clone()),
+      None => None,
+    }
+  }
+
+  pub fn get_number_literal(&self, id: &u64) -> Option<NumberLiteral> {
+    match self.database.borrow().store.number_literals.get(&id) {
+      Some(number_literal) => Some(number_literal.clone()),
       None => None,
     }
   }
