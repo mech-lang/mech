@@ -25,12 +25,12 @@ pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>) {
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
       match value.as_quantity() {
         Some(x) => {
-          let result = match fmod(x.as_float().unwrap(), 360.0) {
+          let result = match fmod(x.as_f64().unwrap(), 360.0) {
             0.0 => 0.0,
             90.0 => 1.0,
             180.0 => 0.0,
             270.0 => -1.0,
-            _ => sin(x.as_float().unwrap() * PI / 180.0),
+            _ => sin(x.as_f64().unwrap() * PI / 180.0),
           };
           out.set_unchecked_linear(out_ix, Value::from_f64(result));
         },
@@ -52,12 +52,12 @@ pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>) {
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
       match value.as_quantity() {
         Some(x) => {
-          let result = match fmod(x.as_float().unwrap(), 360.0) {
+          let result = match fmod(x.as_f64().unwrap(), 360.0) {
             0.0 => 1.0,
             90.0 => 0.0,
             180.0 => -1.0,
             270.0 => 0.0,
-            _ => cos(x.as_float().unwrap() * PI / 180.0),
+            _ => cos(x.as_f64().unwrap() * PI / 180.0),
           };
           out.set_unchecked_linear(out_ix, Value::from_f64(result));
         },
@@ -78,7 +78,7 @@ pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
-      match value.as_float() {
+      match value.as_f64() {
         Some(x) => {
           out.set_unchecked_linear(out_ix, Value::from_f64(floor(x)));
         },
@@ -98,7 +98,7 @@ pub extern "C" fn math_floor(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
-      match value.as_float() {
+      match value.as_f64() {
         Some(x) => {
           out.set_unchecked_linear(out_ix, Value::from_f64(floor(x)));
         },
