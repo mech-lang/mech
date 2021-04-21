@@ -8,7 +8,7 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use quantities::{QuantityMath};
 use database::{Store};
-use value::{Value, ValueMethods};
+use value::{Value, ValueMethods, NumberLiteralKind};
 use std::sync::Arc;
 //use errors::{Error, ErrorType};
 use ::{humanize};
@@ -354,11 +354,47 @@ impl fmt::Debug for Table {
                       match value.as_reference() {
                         Some(value) => format!("@{}", humanize(&value)),
                         None => {
-                          match self.store.strings.get(value) {
-                            Some(q) => format!("{:?}", q),
-                            None => format!("None"),
+                          match value.as_string() {
+                            Some(_) => {
+                              match self.store.strings.get(value) {
+                                Some(q) => format!("{:?}", q),
+                                None => {format!("Missing String")},
+                              }
+                            }
+                            None => {
+                              let number_literal = self.store.number_literals.get(value).unwrap();
+                              match number_literal.kind {
+                                NumberLiteralKind::Hexadecimal => {
+                                  let mut tfm = format!("0x");
+                                  for byte in &number_literal.bytes {
+                                    tfm = format!("{}{:x}",tfm, byte);
+                                  }
+                                  tfm
+                                }
+                                NumberLiteralKind::Binary => {
+                                  let mut tfm = format!("0b");
+                                  for byte in &number_literal.bytes {
+                                    tfm = format!("{}{:b}",tfm, byte);
+                                  }
+                                  tfm
+                                }
+                                NumberLiteralKind::Octal => {
+                                  let mut tfm = format!("0o");
+                                  for byte in &number_literal.bytes {
+                                    tfm = format!("{}{:o}",tfm, byte);
+                                  }
+                                  tfm
+                                }
+                                NumberLiteralKind::Decimal => {
+                                  let mut tfm = format!("0d");
+                                  for byte in &number_literal.bytes {
+                                    tfm = format!("{}{:}",tfm, byte);
+                                  }
+                                  tfm
+                                }
+                              }
+                            }
                           }
-                          
                         }
                       }
                     }
