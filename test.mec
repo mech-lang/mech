@@ -1,6 +1,6 @@
 Set up clock drawing elements 
-  square = [shape: "square" parameters: [x: 50 y: 0 width: 50 height: 50]]
-  ball = [shape: "circle" parameters: [center-x: 50 center-y: 50 radius: 10 fill: 0]]
-  line = [shape: "line" parameters: [x1: 0, y1: 0, x2: 10, y2: 10, stroke: 0]]
+  square = [shape: "rectangle" parameters: [x: 50 y: 10 width: 25 height: 25 fill: 0x00FF00 stroke: 0xFF0000 line-width: 10]]
+  ball = [shape: "circle" parameters: [center-x: 50 center-y: 50 radius: 25 fill: 0x00FF00 stroke: 0x000000 line-width: 10]]
+  line = [shape: "line" parameters: [x1: 0, y1: 0, x2: 25, y2: 25, stroke: 0x0000FF line-width: 10]]
   canvas = [type: "canvas" contains: [|shape parameters| ball; line; square] parameters: [width: 100 height: 100]]
   #app/main = [root: "mech-root" contains: [|type contains parameters| canvas]]
