@@ -197,7 +197,7 @@ impl Program {
           });       
           let native_rust = unsafe {
             // Replace slashes with underscores and then add a null terminator
-            let mut s = format!("{}\0", fun_name.replace("/","_"));
+            let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
             let m = library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>)>(s.as_bytes()).expect(&error_msg);
             m.into_raw()
@@ -241,7 +241,7 @@ impl Program {
                 }
               });          
               // Replace slashes with underscores and then add a null terminator
-              let mut s = format!("{}\0", needed_table_name.replace("/","_"));
+              let mut s = format!("{}\0", needed_table_name.replace("-","__").replace("/","_"));
               let error_msg = format!("Symbol {} not found",s);
               let mut registrar = Registrar::new();
               unsafe{
