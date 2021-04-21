@@ -3,7 +3,7 @@ extern crate mech_utilities;
 #[macro_use]
 extern crate lazy_static;
 use mech_core::{Transaction, ValueIterator, ValueMethods};
-use mech_core::{Value, Table, Index};
+use mech_core::{Value, Table, TableIndex};
 use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, make_quantity};
 
 lazy_static! {
@@ -13,10 +13,11 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) {                                        
+pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {                                        
 
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
+  let (_ , mut out) = arguments.last().unwrap().clone();
 
   let mut in_rows = vi.rows();
   let mut in_columns = vi.columns();
@@ -26,7 +27,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut
     for i in 1..=in_rows {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=in_columns {
-        match vi.get(&Index::Index(i),&Index::Index(j)) {
+        match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
           Some(value) => {
             match sum.add(value) {
               Ok(result) => sum = result,
@@ -36,7 +37,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut
           _ => ()
         }
       }
-      out.set_unchecked(i, 1, Value::from_f64(sum.as_float().unwrap() / vi.columns() as f64));
+      out.set_unchecked(i, 1, Value::from_f64(sum.as_f64().unwrap() / vi.columns() as f64));
     }
   } else if *in_arg_name == *COLUMN {
     out.resize(1, in_columns);
@@ -53,7 +54,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut
           _ => ()
         }
       }
-      out.set_unchecked(1, i, Value::from_f64(sum.as_float().unwrap() / vi.rows() as f64));
+      out.set_unchecked(1, i, Value::from_f64(sum.as_f64().unwrap() / vi.rows() as f64));
     }      
   } else if *in_arg_name == *TABLE {
     out.resize(1, 1);
@@ -71,7 +72,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>, out: &mut
         }
       }
     }  
-    out.set_unchecked(1, 1, Value::from_f64(sum.as_float().unwrap() / (vi.rows() * vi.columns()) as f64   ));
+    out.set_unchecked(1, 1, Value::from_f64(sum.as_f64().unwrap() / (vi.rows() * vi.columns()) as f64   ));
   } else {
     // TODO Warn about unknown argument
   }
