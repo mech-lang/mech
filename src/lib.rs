@@ -31,7 +31,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, QuantityMath};
+use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, NumberLiteralKind, QuantityMath};
 use mech_utilities::{WebsocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -65,8 +65,11 @@ lazy_static! {
   static ref WIDTH: u64 = hash_string("width");
   static ref SHAPE: u64 = hash_string("shape");
   static ref CIRCLE: u64 = hash_string("circle");
-  static ref SQUARE: u64 = hash_string("square");
+  static ref RECTANGLE: u64 = hash_string("rectangle");
   static ref LINE: u64 = hash_string("line");
+  static ref LINE_WIDTH: u64 = hash_string("line-width");
+  static ref START_ANGLE: u64 = hash_string("start-angle");
+  static ref END_ANGLE: u64 = hash_string("end-angle");
   static ref X1: u64 = hash_string("x1");
   static ref X2: u64 = hash_string("x2");
   static ref Y1: u64 = hash_string("y1");
@@ -374,6 +377,9 @@ impl WasmCore {
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
       for (key, value) in miniblock.strings {
         store.strings.insert(key, value.to_string());
+      }
+      for (key, value) in miniblock.number_literals {
+        store.number_literals.insert(key, value);
       }
       for tfms in miniblock.transformations {
         block.register_transformations(tfms);
@@ -779,8 +785,8 @@ impl WasmCore {
                           let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap().borrow();
 
                           for i in 0..x_data.rows as usize {
-                            let y = &y_data.data[0][i].as_float().unwrap();
-                            let x = &x_data.data[0][i].as_float().unwrap(); {
+                            let y = &y_data.data[0][i].as_f64().unwrap();
+                            let x = &x_data.data[0][i].as_f64().unwrap(); {
                               context.save();
                               context.begin_path();
                               context.arc(*x, *y, 2.0, 0.0, 1.0 * 3.14);
@@ -997,8 +1003,8 @@ impl WasmCore {
             let y_data = block.get_table(y_pt_table[0].as_u64().unwrap()).unwrap().borrow();
 
             for i in 0..x_data.rows as usize {
-              let y = &y_data.data[0][i].as_float().unwrap();
-              let x = &x_data.data[0][i].as_float().unwrap(); {
+              let y = &y_data.data[0][i].as_f64().unwrap();
+              let x = &x_data.data[0][i].as_f64().unwrap(); {
                 context.save();
                 context.begin_path();
                 context.arc(*x, *y, 2.0, 0.0, 1.0 * 3.14);
@@ -1355,7 +1361,7 @@ impl WasmCore {
         div.set_inner_html(&contents_string);
       },
       ValueType::Quantity => {
-        let quantity = value.as_float().unwrap();
+        let quantity = value.as_f64().unwrap();
         div.set_inner_html(&format!("{:?}", quantity));
       }
       ValueType::Reference => {
@@ -1566,7 +1572,7 @@ impl WasmCore {
                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
                 (Some(min), Some(max), Some(value)) => {
-                  match (min.as_float(), max.as_float(), value.as_float()) {
+                  match (min.as_f64(), max.as_f64(), value.as_f64()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
                       let mut slider: web_sys::Element = document.create_element("input")?;
                       let mut slider: web_sys::HtmlInputElement = slider
@@ -1812,6 +1818,7 @@ impl WasmCore {
   }*/
 
   pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
+
     let wasm_core = self as *mut WasmCore;
     let context = canvas
         .get_context("2d")
@@ -1819,7 +1826,56 @@ impl WasmCore {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-        
+
+    // Define a function to make this a lot easier
+    let get_stroke_string = |parameters_table: &Table, alias: u64| { 
+      match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(alias))  {
+        Some(stroke_id) => {
+          match stroke_id.as_number_literal() {
+            Some(stroke_number_literal_id) => {
+              let number_literal = unsafe{ (*wasm_core).core.get_number_literal(&stroke_number_literal_id).unwrap() };
+              let color_string = match number_literal.kind {
+                NumberLiteralKind::Hexadecimal => {
+                  if number_literal.bytes.len() == 6 {
+                    let mut byte_string: String = "#".to_string();
+                    for byte in number_literal.bytes {
+                      byte_string = format!("{}{:x}", byte_string, byte);
+                    }
+                    byte_string
+                  } else {
+                    log!("Color must be a six digit hexadecimal number literal (You passed in {}). Defaulting to 0x000000", number_literal.bytes.len());
+                    "#000000".to_string()
+                  }
+                }
+                _ => "#000000".to_string(),
+              };
+              color_string
+            },
+            _ => {
+              log!("Color must be a six digit hexadecimal number literal. Defaulting to 0x000000");
+              "#000000".to_string()
+            },
+          }
+        }
+        _ => "#000000".to_string(),
+      }
+    };
+    
+    let get_line_width = |parameters_table: &Table| {
+      match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*LINE_WIDTH))  {
+        Some(line_width) => {
+          match line_width.as_f64() {
+            Some(line_width) => line_width,
+            _ => {
+              log!("Line width must be a quantity. Defaulting to 1");
+              1.0
+            }
+          }
+        }
+        _ => 1.0
+      }
+    };
+
     // Get the elements table for this canvas
     let elements_table_id_string = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements_table_id_string.parse::<u64>().unwrap();
@@ -1842,25 +1898,19 @@ impl WasmCore {
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER_Y)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
                   (Some(cx), Some(cy), Some(radius)) => {
-                    match (cx.as_float(), cy.as_float(), radius.as_float()) {
+                    match (cx.as_f64(), cy.as_f64(), radius.as_f64()) {
                       (Some(cx), Some(cy), Some(radius)) => {
-                        let fill = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
-                          Some(fill_string_id) => {
-                            match fill_string_id.as_string() {
-                              Some(fill_string_id) => self.core.get_string(&fill_string_id).unwrap(),
-                              _ => {
-                                log!("fill on circle must be a string. Defaulting to #000000");
-                                "#000000".to_string()
-                              },
-                            }
-                          }
-                          _ => "#000000".to_string(),
-                        };
+                        let stroke = get_stroke_string(&parameters_table, *STROKE);
+                        let fill = get_stroke_string(&parameters_table, *FILL);
+                        let line_width = get_line_width(&parameters_table);
                         context.save();
                         context.begin_path();
                         context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
                         context.set_fill_style(&JsValue::from_str(&fill));
-                        context.fill();  
+                        context.fill();
+                        context.set_stroke_style(&JsValue::from_str(&stroke));
+                        context.set_line_width(line_width);    
+                        context.stroke();                
                         context.restore();
                       },
                       _ => {log!("center-x, center-y, and radius must be quantities");},
@@ -1873,42 +1923,23 @@ impl WasmCore {
               // ---------------------
               // RENDER A SQUARE
               // ---------------------    
-              } else if shape == *SQUARE {
+              } else if shape == *RECTANGLE {
                 match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
                   (Some(x), Some(y), Some(width), Some(height)) => {
-                    match (x.as_float(), y.as_float(), width.as_float(), height.as_float()) {
+                    match (x.as_f64(), y.as_f64(), width.as_f64(), height.as_f64()) {
                       (Some(x), Some(y), Some(width), Some(height)) => {
-                        let stroke = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*STROKE))  {
-                          Some(stroke_string_id) => {
-                            match stroke_string_id.as_string() {
-                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
-                              _ => {
-                                log!("stroke on rectangle must be a string. Defaulting to #000000");
-                                "#000000".to_string()
-                              },
-                            }
-                          }
-                          _ => "#000000".to_string(),
-                        };
-                        let fill = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
-                          Some(stroke_string_id) => {
-                            match stroke_string_id.as_string() {
-                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
-                              _ => {
-                                log!("fill on rectangle must be a string. Defaulting to #000000");
-                                "#000000".to_string()
-                              },
-                            }
-                          }
-                          _ => "#000000".to_string(),
-                        };
+                        let stroke = get_stroke_string(&parameters_table, *STROKE);
+                        let fill = get_stroke_string(&parameters_table, *FILL);
+                        let line_width = get_line_width(&parameters_table);
                         context.save();
+                        context.set_fill_style(&JsValue::from_str(&fill));
                         context.fill_rect(x,y,width,height);
                         context.set_stroke_style(&JsValue::from_str(&stroke));
-                        context.stroke();
+                        context.set_line_width(line_width);
+                        context.stroke_rect(x,y,width,height);
                         context.restore();
                       },
                       _ => {log!("x, y, width, height must be quantities");},
@@ -1927,26 +1958,17 @@ impl WasmCore {
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y1)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y2))) {
                   (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                    match (x1.as_float(), x2.as_float(), y1.as_float(), y2.as_float()) {
+                    match (x1.as_f64(), x2.as_f64(), y1.as_f64(), y2.as_f64()) {
                       (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                        let stroke = match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*STROKE))  {
-                          Some(stroke_string_id) => {
-                            match stroke_string_id.as_string() {
-                              Some(stroke_string_id) => self.core.get_string(&stroke_string_id).unwrap(),
-                              _ => {
-                                log!("stroke on circle must be a string. Defaulting to #000000");
-                                "#000000".to_string()
-                              },
-                            }
-                          }
-                          _ => "#000000".to_string(),
-                        };
+                        let stroke = get_stroke_string(&parameters_table, *STROKE);
+                        let line_width = get_line_width(&parameters_table);
                         context.save();
                         context.begin_path();
                         context.move_to(x1, y1);
                         context.line_to(x2, y2);
                         context.close_path();
                         context.set_stroke_style(&JsValue::from_str(&stroke));
+                        context.set_line_width(line_width);
                         context.stroke();
                         context.restore();
                       },
@@ -1966,7 +1988,7 @@ impl WasmCore {
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
                   (Some(source), Some(x), Some(y), Some(rotation)) => {
-                    match (source.as_string(), x.as_float(), y.as_float(), rotation.as_float()) {
+                    match (source.as_string(), x.as_f64(), y.as_f64(), rotation.as_f64()) {
                       (Some(source_id), Some(x), Some(y), Some(rotation)) => {
                         let source_string = &self.core.get_string(&source_id).unwrap();
                         let source_hash = hash_string(&source_string);
