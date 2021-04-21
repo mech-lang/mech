@@ -1527,8 +1527,9 @@ impl Compiler {
       Node::NumberLiteral{kind, bytes} => {
         let table = hash_string(&format!("NumberLiteral-{:?}{:?}", kind, bytes));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
-        let value = Value::from_byte_vector(bytes);
-        self.number_literals.insert(value, NumberLiteral{kind: *kind, bytes: bytes.clone()} );
+        let number_literal = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+        let value = Value::from_number_literal(&number_literal);
+        self.number_literals.insert(value, number_literal);
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::Empty => {
