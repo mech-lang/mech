@@ -504,7 +504,7 @@ Compares the expected and actual results of the test table.
           match table {
             Some(test_results) => {
               println!("{} Running {} tests...\n", formatted_name, test_results.rows);
-
+              let mut failed_tests = vec![];
               for i in 1..=test_results.rows as usize {
                 tests_count += 1;
                 
@@ -515,21 +515,22 @@ Compares the expected and actual results of the test table.
                   _ => "".to_string()
                 };
       
-                print!("\t{}\t\t", test_name);
       
-                match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap().as_bool() {
+                let test_result_string = match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap().as_bool() {
                   Some(false) => {
                     passed_all_tests = false;
                     tests_failed += 1;
-                    println!("{}", "failed".red());
+                    failed_tests.push(test_name.clone());
+                    format!("{}", "failed".red())
       
                   },
                   Some(true) => {
                     tests_passed += 1;
-                    println!("{}", "ok".green());
+                    format!("{}", "ok".green())
                   }
-                  _ => (),
-                } 
+                  _ => format!("{}", "failed".red()),
+                };
+                println!("\t{0: <30} {1: <5}", test_name, test_result_string);
               }
 
               if passed_all_tests {
@@ -537,7 +538,12 @@ Compares the expected and actual results of the test table.
                 std::process::exit(0);
               } else {
                 println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "failed".red(), tests_count, tests_passed, tests_failed);
-                std::process::exit(1);
+                println!("\nFailed tests:\n");
+                for failed_test in &failed_tests {
+                  println!("\t{}", failed_test);
+                }
+                print!("\n");
+                std::process::exit(failed_tests.len() as i32);
               }
             }
             None => println!("{} Table not found", formatted_name),
