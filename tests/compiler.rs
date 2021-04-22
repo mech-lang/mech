@@ -845,7 +845,14 @@ block
 test_mech!(function_inline_colum_args,r#"
 block
   #test = stats/sum(column: [1; 2; 3; 4])"#, Value::from_u64(10));
+
+test_mech!(function_inside_anonymous_table,r#"
+block
+  #test = #mech/test{2} == #mech/test{3}
   
+block
+  #mech/test = ["foo", 3, stats/sum(table: 1:2)]"#, Value::from_bool(true));
+
 // ## Errors
 
 test_mech!(error_duplicate_alias, r#"
