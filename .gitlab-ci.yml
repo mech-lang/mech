@@ -9,5 +9,4 @@ test:cargo:
   - rustup show
   - rustc --version && cargo --version
   - rustup component add rust-src
-  - cargo test --all
-  - cargo bench --all
+  - cargo run --bin mech --release -- test test

@@ -1,0 +1,38 @@
+# Math Tests
+
+## Basic Arithmatic
+
+Test the following basic arithmetical operations:
+
+- Addition
+- Subtraction
+- Multiplication
+- Division
+- Exponentiation
+
+The operations need to be tested on all numeric types (quantities, number literals) to show they work, as well as on other types (string, boolean, reference) to show they don't work.
+
+Test addition
+  #mech/test += ["Add quantities", 2, 1 + 1]
+
+Test subtraction
+  #mech/test += ["Subtract quantities", 0, 1 - 1]
+
+Test multiplication
+  #mech/test += ["Multiply quantities", 8, 2 * 4]
+
+Test division
+  #mech/test += ["Divide quantities", 8, 2 * 4]
+
+Test exponentiation
+  #mech/test += ["Exponentiate quantities", 16, 2 ^ 4]
+
+## Trigonometry
+
+These functions come from the standalone math machine.
+
+Test math/sin
+  #mech/test += ["math/sin()", 0, math/sin(angle: 0)]
+
+Test math/cos
+  #mech/test += ["math/cos()", 1, math/cos(angle: 0)]
