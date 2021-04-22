@@ -85,6 +85,9 @@ use std::rc::Rc;
 use std::cell::Cell;
 
 #[macro_use]
+extern crate lazy_static;
+
+#[macro_use]
 extern crate crossbeam_channel;
 use crossbeam_channel::{Sender, Receiver};
 
@@ -99,9 +102,11 @@ use crossterm::{
   terminal, cursor, style::Print,
 };
 
-const MECH_TEST: u64 = 0xbfa7e6bd3c6fc7;
-const NAME: u64 = 0x4d60aa46a343df;
-const RESULT: u64 = 0xf039b7315b95ce;
+lazy_static! {
+  static ref MECH_TEST: u64 = hash_string("mech/test");
+  static ref NAME: u64 = hash_string("name");
+  static ref RESULT: u64 = hash_string("result");
+}
 
 // ## Mech Entry
 #[actix_rt::main]
@@ -466,68 +471,98 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "[Testing]".bright_green());
     let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
     let mut passed_all_tests = true;
-    let mut compiler = Compiler::new();
-    let test_code = "#mech/test = [|test-name result|]".to_string();
-    compiler.compile_string(test_code);
-    let test_blocks = compiler.blocks;
+    let test_code = r#"
+Every test has a name and expected result. The expected result is compared against the evaluated result. The result column holds the result of this evaluation. 
+  #mech/test = [|name expected actual result|]
+
+Compares the expected and actual results of the test table.
+  #mech/test.result := #mech/test.expected == #mech/test.actual"#.to_string();
 
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
+    let miniblocks = minify_blocks(&blocks);
 
-
-    let mut core = Core::new(1000, 1000);
-    core.load_standard_library();
-    core.register_blocks(test_blocks);
-    core.register_blocks(blocks);
+    println!("{}", "[Running]".bright_green());
+    let runner = ProgramRunner::new("Mech REPL", 1000);
+    let mech_client = runner.run();
+    mech_client.send(RunLoopMessage::Code((0, MechCode::String(test_code))));
+    mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
     
-    println!("{:?}", core);
-
     let mut tests_count = 0;
     let mut tests_passed = 0;
     let mut tests_failed = 0;
     
-    match core.get_table(hash_string("mech/test")) {
-      Some(test_results) => {
+    let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+    let thread_receiver = mech_client.incoming.clone();
 
-        println!("Running {} tests...\n", test_results.rows);
+    'receive_loop: loop {
+      match thread_receiver.recv() {
+        (Ok(ClientMessage::String(message))) => {
+          println!("{} {}", formatted_name, message);
+        },
+        (Ok(ClientMessage::Table(table))) => {
+          match table {
+            Some(test_results) => {
+              println!("{} Running {} tests...\n", formatted_name, test_results.rows);
 
-        for i in 1..=test_results.rows as usize {
-          tests_count += 1;
-          
-          let test_name = match test_results.get(&TableIndex::Index(i),&TableIndex::Index(1)).unwrap().as_string() {
-            Some(string_hash) => {
-              test_results.get_string(&string_hash).unwrap().clone()
+              for i in 1..=test_results.rows as usize {
+                tests_count += 1;
+                
+                let test_name = match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*NAME)).unwrap().as_string() {
+                  Some(string_hash) => {
+                    test_results.get_string(&string_hash).unwrap().clone()
+                  }
+                  _ => "".to_string()
+                };
+      
+                print!("\t{}\t\t", test_name);
+      
+                match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap().as_bool() {
+                  Some(false) => {
+                    passed_all_tests = false;
+                    tests_failed += 1;
+                    println!("{}", "failed".red());
+      
+                  },
+                  Some(true) => {
+                    tests_passed += 1;
+                    println!("{}", "ok".green());
+                  }
+                  _ => (),
+                } 
+              }
+
+              if passed_all_tests {
+                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "ok".green(), tests_count, tests_passed, tests_failed);
+                std::process::exit(0);
+              } else {
+                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "failed".red(), tests_count, tests_passed, tests_failed);
+                std::process::exit(1);
+              }
             }
-            _ => "".to_string()
-          };
-
-          print!("\t{}\t\t", test_name);
-
-          match test_results.get(&TableIndex::Index(i),&TableIndex::Index(2)).unwrap().as_bool() {
-            Some(false) => {
-              passed_all_tests = false;
-              tests_failed += 1;
-              println!("{}", "failed".red());
-
-            },
-            Some(true) => {
-              tests_passed += 1;
-              println!("{}", "ok".green());
-            }
-            _ => (),
-          } 
+            None => println!("{} Table not found", formatted_name),
+          }
+          std::process::exit(0);
+        },
+        (Ok(ClientMessage::Transaction(txn))) => {
+          println!("{} Transaction: {:?}", formatted_name, txn);
+        },
+        (Ok(ClientMessage::Done)) => {
+          // Do nothing
+        },
+        Ok(ClientMessage::StepDone) => {
+          mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
+          //std::process::exit(0);
+        },
+        (Err(x)) => {
+          println!("{} {}", "[Error]".bright_red(), x);
+          std::process::exit(1);
         }
-      },
-      _ => (),
-    }
-
-
-    if passed_all_tests {
-      println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "ok".green(), tests_count, tests_passed, tests_failed);
-      std::process::exit(0);
-    } else {
-      println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "failed".red(), tests_count, tests_passed, tests_failed);
-      std::process::exit(1);
+        q => {
+          //println!("else: {:?}", q);
+        },
+      };
+      io::stdout().flush().unwrap();
     }
     None
   // ------------------------------------------------
@@ -562,7 +597,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           if !repl {
             match table {
               Some(table) => {
-                println!("{:?}", table);
+                //println!("{:?}", table);
               }
               None => (), //println!("{} Table not found", formatted_name),
             }
@@ -578,8 +613,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           // Do nothing
         },
         Ok(ClientMessage::StepDone) => {
-          let output_id: u64 = hash_string("mech/output"); 
-          mech_client.send(RunLoopMessage::GetTable(output_id));
+          //let output_id: u64 = hash_string("mech/output"); 
+          //mech_client.send(RunLoopMessage::GetTable(output_id));
+          std::process::exit(0);
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
