@@ -477,20 +477,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "[Testing]".bright_green());
     let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
     let mut passed_all_tests = true;
-
     let mut compiler = Compiler::new();
+    let test_code = "#mech/test = [|test-name result|]".to_string();
+    compiler.compile_string(test_code);
+    let test_blocks = compiler.blocks;
+
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
 
+
     let mut core = Core::new(1000, 1000);
     core.load_standard_library();
-    let txn = Transaction{changes:
-      vec![
-        Change::NewTable{table_id: MECH_TEST, rows: 0, columns: 2},
-        Change::SetColumnAlias{table_id: MECH_TEST, column_ix: 1, column_alias: NAME},
-        Change::SetColumnAlias{table_id: MECH_TEST, column_ix: 2, column_alias: RESULT},
-    ]};
-    core.process_transaction(&txn);
+    core.register_blocks(test_blocks);
     core.register_blocks(blocks);
     
     let mut tests_count = 0;
