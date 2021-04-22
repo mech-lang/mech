@@ -125,3 +125,20 @@ pub fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
   }
   compiler.blocks
 }
+
+pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
+  let mut miniblocks = Vec::new();
+  for block in blocks {
+    let mut miniblock = MiniBlock::new();
+    miniblock.transformations = block.transformations.clone();
+    miniblock.plan = block.plan.clone();
+    for (k,v) in block.store.strings.iter() {
+      miniblock.strings.push((k.clone(), v.clone()));
+    }
+    for (k,v) in block.store.number_literals.iter() {
+      miniblock.number_literals.push((k.clone(), v.clone()));
+    }
+    miniblocks.push(miniblock);
+  }
+  miniblocks
+}

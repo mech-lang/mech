@@ -46,6 +46,7 @@ use mech::{
   read_mech_files,
   ReplCommand,
   parse_repl_command,
+  minify_blocks,
 };
 use mech::QuantityMath;
 
@@ -188,20 +189,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     core.load_standard_library();
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code.clone());
+    let miniblocks = minify_blocks(&blocks);
 
-    let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for block in blocks {
-      let mut miniblock = MiniBlock::new();
-      miniblock.transformations = block.transformations.clone();
-      miniblock.plan = block.plan.clone();
-      for (k,v) in block.store.strings.iter() {
-        miniblock.strings.push((k.clone(), v.clone()));
-      }
-      for (k,v) in block.store.number_literals.iter() {
-        miniblock.number_literals.push((k.clone(), v.clone()));
-      }
-      miniblocks.push(miniblock);
-    }
     let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
 
     let mut runner = ProgramRunner::new("Mech REPL", 1500000);
@@ -491,6 +480,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     core.register_blocks(test_blocks);
     core.register_blocks(blocks);
     
+    println!("{:?}", core);
+
     let mut tests_count = 0;
     let mut tests_passed = 0;
     let mut tests_failed = 0;
@@ -547,24 +538,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repl = matches.is_present("repl_mode");    
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
+    let miniblocks = minify_blocks(&blocks);
 
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech REPL", 1000);
     let mech_client = runner.run();
-  
-    let mut miniblocks = Vec::new();
-    for block in &blocks {
-      let mut miniblock = MiniBlock::new();
-      miniblock.transformations = block.transformations.clone();
-      miniblock.plan = block.plan.clone();
-      for (k,v) in block.store.strings.iter() {
-        miniblock.strings.push((k.clone(), v.clone()));
-      }
-      for (k,v) in block.store.number_literals.iter() {
-        miniblock.number_literals.push((k.clone(), v.clone()));
-      }
-      miniblocks.push(miniblock);
-    }
+    
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
 
     let mut skip_receive = false;
@@ -620,6 +599,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
+    let miniblocks = minify_blocks(&blocks);
 
     let output_name = match matches.value_of("output_name") {
       Some(name) => format!("{}.blx",name),
@@ -628,19 +608,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
-    let mut miniblocks: Vec<MiniBlock> = Vec::new();
-    for block in blocks {
-      let mut miniblock = MiniBlock::new();
-      miniblock.transformations = block.transformations.clone();
-      miniblock.plan = block.plan.clone();
-      for (k,v) in block.store.strings.iter() {
-        miniblock.strings.push((k.clone(), v.clone()));
-      }
-      for (k,v) in block.store.number_literals.iter() {
-        miniblock.number_literals.push((k.clone(), v.clone()));
-      }
-      miniblocks.push(miniblock);
-    }
+    
     let result = bincode::serialize(&miniblocks).unwrap();
     if let Err(e) = writer.write_all(&result) {
       panic!("{} Failed to write core! {:?}", "[Error]".bright_red(), e);
