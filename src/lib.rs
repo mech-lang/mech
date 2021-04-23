@@ -1828,8 +1828,8 @@ impl WasmCore {
         .unwrap();
 
     // Define a function to make this a lot easier
-    let get_stroke_string = |parameters_table: &Table, alias: u64| { 
-      match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(alias))  {
+    let get_stroke_string = |parameters_table: &Table, row: usize, alias: u64| { 
+      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
         Some(stroke_id) => {
           match stroke_id.as_number_literal() {
             Some(stroke_number_literal_id) => {
@@ -1861,8 +1861,8 @@ impl WasmCore {
       }
     };
     
-    let get_line_width = |parameters_table: &Table| {
-      match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*LINE_WIDTH))  {
+    let get_line_width = |parameters_table: &Table, row: usize| {
+      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE_WIDTH))  {
         Some(line_width) => {
           match line_width.as_f64() {
             Some(line_width) => line_width,
@@ -1900,9 +1900,9 @@ impl WasmCore {
                   (Some(cx), Some(cy), Some(radius)) => {
                     match (cx.as_f64(), cy.as_f64(), radius.as_f64()) {
                       (Some(cx), Some(cy), Some(radius)) => {
-                        let stroke = get_stroke_string(&parameters_table, *STROKE);
-                        let fill = get_stroke_string(&parameters_table, *FILL);
-                        let line_width = get_line_width(&parameters_table);
+                        let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                        let fill = get_stroke_string(&parameters_table,1, *FILL);
+                        let line_width = get_line_width(&parameters_table,1);
                         context.save();
                         context.begin_path();
                         context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
@@ -1931,9 +1931,9 @@ impl WasmCore {
                   (Some(x), Some(y), Some(width), Some(height)) => {
                     match (x.as_f64(), y.as_f64(), width.as_f64(), height.as_f64()) {
                       (Some(x), Some(y), Some(width), Some(height)) => {
-                        let stroke = get_stroke_string(&parameters_table, *STROKE);
-                        let fill = get_stroke_string(&parameters_table, *FILL);
-                        let line_width = get_line_width(&parameters_table);
+                        let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                        let fill = get_stroke_string(&parameters_table,1, *FILL);
+                        let line_width = get_line_width(&parameters_table,1);
                         context.save();
                         context.set_fill_style(&JsValue::from_str(&fill));
                         context.fill_rect(x,y,width,height);
@@ -1953,32 +1953,35 @@ impl WasmCore {
               // RENDER A LINE
               // ---------------------    
               } else if shape == *LINE {
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X1)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X2)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y1)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y2))) {
-                  (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                    match (x1.as_f64(), x2.as_f64(), y1.as_f64(), y2.as_f64()) {
-                      (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                        let stroke = get_stroke_string(&parameters_table, *STROKE);
-                        let line_width = get_line_width(&parameters_table);
-                        context.save();
-                        context.begin_path();
-                        context.move_to(x1, y1);
-                        context.line_to(x2, y2);
-                        context.close_path();
-                        context.set_stroke_style(&JsValue::from_str(&stroke));
-                        context.set_line_width(line_width);
-                        context.stroke();
-                        context.restore();
-                      },
-                      _ => {log!("x1, x2, y1, y2 must be quantities");},
+                context.save();
+                context.begin_path();
+                for i in 1..=parameters_table.rows {
+                  match (parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*X1)),
+                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*X2)),
+                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*Y1)),
+                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*Y2))) {
+                    (Some(x1), Some(x2), Some(y1), Some(y2)) => {
+                      match (x1.as_f64(), x2.as_f64(), y1.as_f64(), y2.as_f64()) {
+                        (Some(x1), Some(x2), Some(y1), Some(y2)) => {
+                          let stroke = get_stroke_string(&parameters_table,i, *STROKE);
+                          let line_width = get_line_width(&parameters_table,i);
+                          context.move_to(x1, y1);
+                          context.line_to(x2, y2);
+                          context.close_path();
+                          context.set_stroke_style(&JsValue::from_str(&stroke));
+                          context.set_line_width(line_width);
+                          context.stroke();
+                        },
+                        _ => {log!("x1, x2, y1, y2 must be quantities");},
+                      }
                     }
+                    _ => {
+                      log!("Missing x1, x2, y1, or y2");
+                    },
                   }
-                  _ => {
-                    log!("Missing x1, x2, y1, or y2");
-                  },
                 }
+                context.close_path();
+                context.restore();
               // ---------------------
               // RENDER A IMAGE
               // --------------------- 
