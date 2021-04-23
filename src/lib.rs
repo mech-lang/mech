@@ -40,7 +40,7 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
     let path = Path::new(path_str);
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
-      println!("{} {}", "[Building]".bright_green(), path.display());
+      println!("{} {}", "[Downloading]".bright_green(), path.display());
       let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
       code.push(MechCode::String(program));
     } else {
@@ -52,14 +52,14 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
               (Some(name), Some(extension)) => {
                 match extension.to_str() {
                   Some("blx") => {
-                    println!("{} {}", "[Building]".bright_green(), name);
+                    println!("{} {}", "[Loading]".bright_green(), name);
                     let file = File::open(name)?;
                     let mut reader = BufReader::new(file);
                     let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
                     code.push(MechCode::MiniBlocks(miniblocks));
                   }
                   Some("mec") => {
-                    println!("{} {}", "[Building]".bright_green(), name);
+                    println!("{} {}", "[Loading]".bright_green(), name);
                     let mut f = File::open(name)?;
                     let mut buffer = String::new();
                     f.read_to_string(&mut buffer);
@@ -78,14 +78,14 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
           (Some(name), Some(extension)) => {
             match extension.to_str() {
               Some("blx") => {
-                println!("{} {}", "[Building]".bright_green(), name);
+                println!("{} {}", "[Loading]".bright_green(), name);
                 let file = File::open(name)?;
                 let mut reader = BufReader::new(file);
                 let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
                 code.push(MechCode::MiniBlocks(miniblocks));
               }
               Some("mec") => {
-                println!("{} {}", "[Building]".bright_green(), name);
+                println!("{} {}", "[Loading]".bright_green(), name);
                 let mut f = File::open(name)?;
                 let mut buffer = String::new();
                 f.read_to_string(&mut buffer);
@@ -103,6 +103,7 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
 }
 
 pub fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
+  print!("{}", "[Compiling] ".bright_green());
   let mut compiler = Compiler::new();
   for c in code {
     match c {
@@ -123,6 +124,7 @@ pub fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
       },
     }
   }
+  println!("Compiled {} blocks.", compiler.blocks.len());
   compiler.blocks
 }
 
