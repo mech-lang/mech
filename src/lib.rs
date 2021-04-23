@@ -67,9 +67,14 @@ lazy_static! {
   static ref CIRCLE: u64 = hash_string("circle");
   static ref RECTANGLE: u64 = hash_string("rectangle");
   static ref LINE: u64 = hash_string("line");
-  static ref LINE_WIDTH: u64 = hash_string("line-width");
-  static ref START_ANGLE: u64 = hash_string("start-angle");
-  static ref END_ANGLE: u64 = hash_string("end-angle");
+  static ref PATH: u64 = hash_string("path");
+  static ref START__POINT: u64 = hash_string("start-point");
+  static ref LINE__WIDTH: u64 = hash_string("line-width");
+  static ref START__ANGLE: u64 = hash_string("start-angle");
+  static ref END__ANGLE: u64 = hash_string("end-angle");
+  static ref QUADRATIC: u64 = hash_string("quadratic");
+  static ref CONTROL__POINT: u64 = hash_string("control-point");
+  static ref END__POINT: u64 = hash_string("end-point");
   static ref X1: u64 = hash_string("x1");
   static ref X2: u64 = hash_string("x2");
   static ref Y1: u64 = hash_string("y1");
@@ -77,8 +82,8 @@ lazy_static! {
   static ref RADIUS: u64 = hash_string("radius");
   static ref STROKE: u64 = hash_string("stroke");
   static ref FILL: u64 = hash_string("fill");
-  static ref CENTER_X: u64 = hash_string("center-x");
-  static ref CENTER_Y: u64 = hash_string("center-y");
+  static ref CENTER__X: u64 = hash_string("center-x");
+  static ref CENTER__Y: u64 = hash_string("center-y");
   static ref IMAGE: u64 = hash_string("image");
   static ref X: u64 = hash_string("x");
   static ref Y: u64 = hash_string("y");
@@ -1862,7 +1867,7 @@ impl WasmCore {
     };
     
     let get_line_width = |parameters_table: &Table, row: usize| {
-      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE_WIDTH))  {
+      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
         Some(line_width) => {
           match line_width.as_f64() {
             Some(line_width) => line_width,
@@ -1894,8 +1899,8 @@ impl WasmCore {
               // RENDER A CIRCLE
               // ---------------------
               if shape == *CIRCLE {
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER_X)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER_Y)),
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
+                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
                        parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
                   (Some(cx), Some(cy), Some(radius)) => {
                     match (cx.as_f64(), cy.as_f64(), radius.as_f64()) {
@@ -1950,37 +1955,110 @@ impl WasmCore {
                   },
                 }
               // ---------------------
-              // RENDER A LINE
+              // RENDER A PATH
               // ---------------------    
-              } else if shape == *LINE {
+              } else if shape == *PATH {
                 context.save();
                 context.begin_path();
-                for i in 1..=parameters_table.rows {
-                  match (parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*X1)),
-                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*X2)),
-                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*Y1)),
-                        parameters_table.get(&TableIndex::Index(i), &TableIndex::Alias(*Y2))) {
-                    (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                      match (x1.as_f64(), x2.as_f64(), y1.as_f64(), y2.as_f64()) {
-                        (Some(x1), Some(x2), Some(y1), Some(y2)) => {
-                          let stroke = get_stroke_string(&parameters_table,i, *STROKE);
-                          let line_width = get_line_width(&parameters_table,i);
-                          context.move_to(x1, y1);
-                          context.line_to(x2, y2);
-                          context.close_path();
-                          context.set_stroke_style(&JsValue::from_str(&stroke));
-                          context.set_line_width(line_width);
-                          context.stroke();
-                        },
-                        _ => {log!("x1, x2, y1, y2 must be quantities");},
+                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
+                      parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+                  (Some(start_point_id), Some(contains_table_id)) => {
+                    // Get the starting point
+                    match (start_point_id.as_reference(), contains_table_id.as_reference()) {
+                      (Some(start_point_id), Some(contains_table_id)) => {
+                        // Get the table
+                        let start_point_table = self.core.get_table(start_point_id).unwrap();
+                        match (start_point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                               start_point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                          (Some(x), Some(y)) => {
+                            match (x.as_f64(), y.as_f64()) {
+                              (Some(x), Some(y)) => {
+                                context.move_to(x, y);
+                                // Get the contained shapes
+                                let contains_table = self.core.get_table(contains_table_id).unwrap();
+                                for i in 1..=contains_table.rows {
+                                  match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
+                                         contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
+                                    (Some(shape),Some(parameters_table_id)) => {
+                                      let shape = shape.as_raw();
+                                      if shape == *LINE {
+                                        match parameters_table_id.as_reference() {
+                                          Some(parameters_table_id) => {
+                                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                                            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                                   parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                              (Some(x), Some(y)) => {
+                                                match (x.as_f64(), y.as_f64()) {
+                                                  (Some(x), Some(y)) => {
+                                                    context.line_to(x, y);
+                                                  }
+                                                  _ => (), // TODO Expected Floats
+                                                }
+                                              }
+                                              _ => (), // Expected X and Y fields
+                                            }
+                                          }
+                                          _ => (), // TODO Expected table
+                                        }
+                                      } else if shape == *QUADRATIC {
+                                        match parameters_table_id.as_reference() {
+                                          Some(parameters_table_id) => {
+                                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                                            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
+                                                   parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                                              (Some(control__point_table_id), Some(end__point_table_id)) => {
+                                                match (control__point_table_id.as_reference(), end__point_table_id.as_reference()) {
+                                                  (Some(control__point_table_id), Some(end__point_table_id)) => {
+                                                    let control__point_table = self.core.get_table(control__point_table_id).unwrap();
+                                                    let end__point_table = self.core.get_table(end__point_table_id).unwrap();
+                                                    match (control__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                                           control__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                                           end__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                                           end__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                                      (Some(cx), Some(cy), Some(ex), Some(ey)) => {
+                                                        match (cx.as_f64(), cy.as_f64(), ex.as_f64(), ey.as_f64()) {
+                                                          (Some(cx), Some(cy), Some(ex), Some(ey)) => {
+                                                            context.quadratic_curve_to(cx, cy, ex, ey);
+                                                          }
+                                                          _ => (), // TODO Expected Floats
+                                                        }
+                                                      }
+                                                      _ => (), // Expected X and Y fields
+                                                    }
+                                                  }
+                                                  _ => (), // TODO Expected Floats
+                                                }
+                                              }
+                                              _ => (), // Expected X and Y fields
+                                            }
+                                          }
+                                          _ => (), // TODO Expected table
+                                        }
+                                      }
+                                    }
+                                    _ => log!("Expected shape and parameters"), // TODO Expected Shape and Parameters
+                                  }
+                                }
+                              }
+                              _ => () // TODO x and y must be quantities
+                            }
+                          }
+                          _ => (), // TODO X and Y not found
+                        }
                       }
+                      _ => (), // TODO Must be a table reference
                     }
-                    _ => {
-                      log!("Missing x1, x2, y1, or y2");
-                    },
+                    let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                    let line_width = get_line_width(&parameters_table,1);
+                    context.set_stroke_style(&JsValue::from_str(&stroke));
+                    context.set_line_width(line_width);
+                    context.stroke();
                   }
+                  (Some(_), None) => log!("Missing contains"),
+                  (None, Some(_)) => log!("Missing start-point"),
+                  (None, None) => log!("Missing start-point and contains"),
                 }
-                context.close_path();
+                //context.close_path();
                 context.restore();
               // ---------------------
               // RENDER A IMAGE
