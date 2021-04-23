@@ -1,0 +1,9 @@
+# Math Tests
+
+## Trigonometry
+
+Test math/sin
+  #mech/test += ["math/sin()", 0, math/sin(angle: 0)]
+
+Test math/cos
+  #mech/test += ["math/cos()", 1, math/cos(angle: 0)]
