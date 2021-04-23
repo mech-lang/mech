@@ -308,20 +308,7 @@ impl ValueMethods for Value {
   fn add(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
       (Some(q), Some(r)) => Ok(Value::from_quantity(q.add(r).unwrap())),
-      _ => match(self.as_number_literal(), other.as_number_literal()) {
-        (Some(q), Some(r)) => {
-          match (q.kind, r.kind) => {
-            (NumberLiteralKind::Hexadecimal, NumberLiteralKind::Hexadecimal) => {
-              // Implement number literal add on hex
-            }
-            (NumberLiteralKind::Binary, NumberLiteralKind::Binary) => {
-              // Implement number literal add on binary
-            }
-            _ => // ... do the other kinds
-          }
-        }
-        _ => Err(ErrorType::IncorrectFunctionArgumentType),
-      }
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
