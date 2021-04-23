@@ -9,6 +9,6 @@ test:cargo:
   - rustup show
   - rustc --version && cargo --version
   - rustup component add rust-src
-  - cargo run build --bin mech --release
+  - cargo build --bin mech --release
   - ./target/release/mech test https://gitlab.com/mech-lang/machines/math/-/raw/master/tests/math.mec
   - ./target/release/mech test https://gitlab.com/mech-lang/machines/stats/-/raw/master/tests/stats.mec
