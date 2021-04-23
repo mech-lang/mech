@@ -6,4 +6,4 @@ test:cargo:
   - rustc --version && cargo --version
   - rustup component add rust-src
   - cargo build --release
-  - mech test test
+  - mech test tests
