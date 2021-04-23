@@ -40,7 +40,7 @@ Test math/cos()
 ## Rounding
 
 Test math/round()
-  #mech/test += ["math/round()", 2, math/round(table: 1.5)]
+  #mech/test += ["math/round()", 2, math/round(table: 1.51)]
 
 Test math/cos()
   #mech/test += ["math/floor()", 1, math/floor(table: 1.5)]
