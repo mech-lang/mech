@@ -28,7 +28,8 @@ use operations::{
   table_vertical_concatenate,
   table_copy,
   stats_sum,
-  set_any
+  set_any,
+  set_all,
 };
 use ::hash_string;
 
@@ -83,6 +84,7 @@ impl Core {
     self.runtime.load_library_function("table/copy",Some(table_copy));
     self.runtime.load_library_function("stats/sum",Some(stats_sum));
     self.runtime.load_library_function("set/any",Some(set_any));
+    self.runtime.load_library_function("set/all",Some(set_all));
   }
 
   pub fn get_string(&self, id: &u64) -> Option<String> {
