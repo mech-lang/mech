@@ -80,7 +80,7 @@ pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
       match value.as_f64() {
         Some(x) => {
-          out.set_unchecked_linear(out_ix, Value::from_f64(floor(x)));
+          out.set_unchecked_linear(out_ix, Value::from_f64(round(x)));
         },
         _ => (), // TODO Alert user that there was an error
       }
