@@ -1,0 +1,8 @@
+# Stats Tests
+
+## Basic Statistics
+
+Test summation. stats/sum is defined in mech/core at the moment.
+  #mech/test += ["Sum a table" 10, stats/sum(table: [1 2; 3 4])]
+  #mech/test += ["Sum a row" 10, stats/sum(row: [1 2 3 4])]
+  #mech/test += ["Sum a column" 10, stats/sum(column: [1; 2; 3; 4])]
