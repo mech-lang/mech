@@ -233,6 +233,36 @@ impl Table {
       None => None,
     }
   }
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_f64(&self, row: &TableIndex, column: &TableIndex) -> Option<f64> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match value.as_f64() {
+          None => None,
+          x => x,
+        }
+      },
+      None => None,
+    }
+  }
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_reference(&self, row: &TableIndex, column: &TableIndex) -> Option<u64> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match value.as_reference() {
+          None => None,
+          x => x,
+        }
+      },
+      None => None,
+    }
+  }
   
   // Set the value of at a (row, column). This will decrement the reference count of the value
   // at the old address, and insert the new value into the store while pointing the cell to the
