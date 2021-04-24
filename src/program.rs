@@ -171,9 +171,9 @@ impl Program {
       let registry_table = registry_core.get_table(hash_string("mech/machines")).unwrap();
       for row in 0..registry_table.rows {
         let row_index = TableIndex::Index(row+1);
-        let name = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(1)).unwrap().as_string().unwrap()).unwrap().to_string();
-        let version = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(2)).unwrap().as_string().unwrap()).unwrap().to_string();
-        let url = registry_table.get_string(&registry_table.get(&row_index, &TableIndex::Index(3)).unwrap().as_string().unwrap()).unwrap().to_string();
+        let name = registry_table.get_string(&row_index, &TableIndex::Index(1)).unwrap().to_string();
+        let version = registry_table.get_string(&row_index, &TableIndex::Index(2)).unwrap().to_string();
+        let url = registry_table.get_string(&row_index, &TableIndex::Index(3)).unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }
