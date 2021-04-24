@@ -472,7 +472,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
     let mut passed_all_tests = true;
     let test_code = r#"
-Every test has a name and expected result. The expected result is compared against the evaluated result. The result column holds the result of this evaluation. 
+Every test has a name and expected result. The expected result is compared against the evaluated (actual) result. The result column holds the result of the comparison. 
   #mech/test = [|name expected actual result|]
 
 Compares the expected and actual results of the test table.
@@ -508,9 +508,9 @@ Compares the expected and actual results of the test table.
               for i in 1..=test_results.rows as usize {
                 tests_count += 1;
                 
-                let test_name = match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*NAME)).unwrap().as_string() {
-                  Some(string_hash) => {
-                    test_results.get_string(&string_hash).unwrap().clone()
+                let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
+                  Some(string) => {
+                    string.to_string()
                   }
                   _ => "".to_string()
                 };
