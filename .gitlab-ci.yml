@@ -1,9 +1,14 @@
+stages:
+  - build
+  - publish
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-image: "rust:latest"
-
-test:cargo:
+build:
+  image: "rust:latest"
+  except:
+    - schedules
   script:
   - rustup default nightly-2021-02-22
   - rustup show
@@ -13,6 +18,9 @@ test:cargo:
   - ./target/release/mech test tests
   - ./target/release/mech test https://gitlab.com/mech-lang/machines/math/-/raw/master/tests/math.mec
   - ./target/release/mech test https://gitlab.com/mech-lang/machines/stats/-/raw/master/tests/stats.mec
+  artifacts:
+      paths:
+        - "./target/release/*"
 
 on-schedule:
   stage: build
