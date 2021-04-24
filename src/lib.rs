@@ -1889,191 +1889,170 @@ impl WasmCore {
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
     for row in 1..=elements_table.rows as usize {
       match (elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
-             elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+             elements_table.get_reference(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
         (Some(shape), Some(parameters_table_id)) => {
           let shape = shape.as_raw();
-          match parameters_table_id.as_reference() {
-            Some(parameters_table_id) => {
-              let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-              // ---------------------
-              // RENDER A CIRCLE
-              // ---------------------
-              if shape == *CIRCLE {
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
-                  (Some(cx), Some(cy), Some(radius)) => {
-                    match (cx.as_f64(), cy.as_f64(), radius.as_f64()) {
-                      (Some(cx), Some(cy), Some(radius)) => {
-                        let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                        let fill = get_stroke_string(&parameters_table,1, *FILL);
-                        let line_width = get_line_width(&parameters_table,1);
-                        context.save();
-                        context.begin_path();
-                        context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
-                        context.set_fill_style(&JsValue::from_str(&fill));
-                        context.fill();
-                        context.set_stroke_style(&JsValue::from_str(&stroke));
-                        context.set_line_width(line_width);    
-                        context.stroke();                
-                        context.restore();
-                      },
-                      _ => {log!("center-x, center-y, and radius must be quantities");},
-                    }
-                  }
-                  _ => {
-                    log!("Missing center-x, center-y, or radius");
-                  },
-                }        
-              // ---------------------
-              // RENDER A SQUARE
-              // ---------------------    
-              } else if shape == *RECTANGLE {
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
-                  (Some(x), Some(y), Some(width), Some(height)) => {
-                    match (x.as_f64(), y.as_f64(), width.as_f64(), height.as_f64()) {
-                      (Some(x), Some(y), Some(width), Some(height)) => {
-                        let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                        let fill = get_stroke_string(&parameters_table,1, *FILL);
-                        let line_width = get_line_width(&parameters_table,1);
-                        context.save();
-                        context.set_fill_style(&JsValue::from_str(&fill));
-                        context.fill_rect(x,y,width,height);
-                        context.set_stroke_style(&JsValue::from_str(&stroke));
-                        context.set_line_width(line_width);
-                        context.stroke_rect(x,y,width,height);
-                        context.restore();
-                      },
-                      _ => {log!("x, y, width, height must be quantities");},
-                    }
-                  }
-                  _ => {
-                    log!("Missing x, y, width, height");
-                  },
-                }
-              // ---------------------
-              // RENDER A PATH
-              // ---------------------    
-              } else if shape == *PATH {
+          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+          // ---------------------
+          // RENDER A CIRCLE
+          // ---------------------
+          if shape == *CIRCLE {
+            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
+              (Some(cx), Some(cy), Some(radius)) => {
+                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                let fill = get_stroke_string(&parameters_table,1, *FILL);
+                let line_width = get_line_width(&parameters_table,1);
                 context.save();
                 context.begin_path();
-                match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
-                       parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
-                  (Some(start_point_id), Some(contains_table_id)) => {
-                    let start_point_table = self.core.get_table(start_point_id).unwrap();
-                    match (start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                           start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                      (Some(x), Some(y)) => {
-                        context.move_to(x, y);
-                        // Get the contained shapes
-                        let contains_table = self.core.get_table(contains_table_id).unwrap();
-                        for i in 1..=contains_table.rows {
-                          match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
-                                 contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
-                            (Some(shape),Some(parameters_table_id)) => {
-                              let shape = shape.as_raw();
-                              if shape == *LINE {
-                                let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                                match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                       parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                  (Some(x), Some(y)) => {
-                                    context.line_to(x, y);
+                context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
+                context.set_fill_style(&JsValue::from_str(&fill));
+                context.fill();
+                context.set_stroke_style(&JsValue::from_str(&stroke));
+                context.set_line_width(line_width);    
+                context.stroke();                
+                context.restore();
+              }
+              _ => {
+                log!("Missing center-x, center-y, or radius");
+              },
+            }        
+          // ---------------------
+          // RENDER A SQUARE
+          // ---------------------    
+          } else if shape == *RECTANGLE {
+            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
+              (Some(x), Some(y), Some(width), Some(height)) => {
+                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                let fill = get_stroke_string(&parameters_table,1, *FILL);
+                let line_width = get_line_width(&parameters_table,1);
+                context.save();
+                context.set_fill_style(&JsValue::from_str(&fill));
+                context.fill_rect(x,y,width,height);
+                context.set_stroke_style(&JsValue::from_str(&stroke));
+                context.set_line_width(line_width);
+                context.stroke_rect(x,y,width,height);
+                context.restore();
+              }
+              _ => {
+                log!("Missing x, y, width, height");
+              },
+            }
+          // ---------------------
+          // RENDER A PATH
+          // ---------------------    
+          } else if shape == *PATH {
+            context.save();
+            context.begin_path();
+            match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
+                    parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+              (Some(start_point_id), Some(contains_table_id)) => {
+                let start_point_table = self.core.get_table(start_point_id).unwrap();
+                match (start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                        start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                  (Some(x), Some(y)) => {
+                    context.move_to(x, y);
+                    // Get the contained shapes
+                    let contains_table = self.core.get_table(contains_table_id).unwrap();
+                    for i in 1..=contains_table.rows {
+                      match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
+                              contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
+                        (Some(shape),Some(parameters_table_id)) => {
+                          let shape = shape.as_raw();
+                          if shape == *LINE {
+                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                              (Some(x), Some(y)) => {
+                                context.line_to(x, y);
+                              }
+                              _ => (), // Expected x and y fields
+                            }
+                          } else if shape == *QUADRATIC {
+                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                            match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
+                                    parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                              (Some(control__point_table_id), Some(end__point_table_id)) => {
+                                let control__point_table = self.core.get_table(control__point_table_id).unwrap();
+                                let end__point_table = self.core.get_table(end__point_table_id).unwrap();
+                                match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                        control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                        end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                        end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                  (Some(cx), Some(cy), Some(ex), Some(ey)) => {
+                                    context.quadratic_curve_to(cx, cy, ex, ey);
                                   }
                                   _ => (), // Expected x and y fields
                                 }
-                              } else if shape == *QUADRATIC {
-                                let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                                match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
-                                       parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
-                                  (Some(control__point_table_id), Some(end__point_table_id)) => {
-                                    let control__point_table = self.core.get_table(control__point_table_id).unwrap();
-                                    let end__point_table = self.core.get_table(end__point_table_id).unwrap();
-                                    match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                            control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                                            end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                            end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                      (Some(cx), Some(cy), Some(ex), Some(ey)) => {
-                                        context.quadratic_curve_to(cx, cy, ex, ey);
-                                      }
-                                      _ => (), // Expected x and y fields
-                                    }
-                                  }
-                                  _ => (), // Expected control-point and end-point fields
-                                }
                               }
+                              _ => (), // Expected control-point and end-point fields
                             }
-                            _ => log!("Expected shape and parameters"), // TODO Expected shape and parameters fields
                           }
                         }
+                        _ => log!("Expected shape and parameters"), // TODO Expected shape and parameters fields
                       }
-                      _ => (), // TODO Expected x and y not fields
                     }
-                    let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                    let line_width = get_line_width(&parameters_table,1);
-                    context.set_stroke_style(&JsValue::from_str(&stroke));
-                    context.set_line_width(line_width);
-                    context.stroke();
                   }
-                  (Some(_), None) => log!("Contains is not a reference"),
-                  (None, Some(_)) => log!("Start-point is not a reference"),
-                  (None, None) => log!("Start-point and Contains are not references"),
+                  _ => (), // TODO Expected x and y not fields
                 }
-                //context.close_path();
-                context.restore();
-              // ---------------------
-              // RENDER A IMAGE
-              // --------------------- 
-              } else if shape == *IMAGE {
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                       parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
-                  (Some(source), Some(x), Some(y), Some(rotation)) => {
-                    match (source.as_string(), x.as_f64(), y.as_f64(), rotation.as_f64()) {
-                      (Some(source_id), Some(x), Some(y), Some(rotation)) => {
-                        let source_string = &self.core.get_string(&source_id).unwrap();
-                        let source_hash = hash_string(&source_string);
-                        match self.images.entry(source_hash) {
-                          Entry::Occupied(img_entry) => {
-                            let img = img_entry.get();
-                            let ix = img.width() as f64 / 2.0;
-                            let iy = img.height() as f64 / 2.0;
-                            context.save();
-                            context.translate(x, y);
-                            context.rotate(rotation * 3.141592654 / 180.0);
-                            context.draw_image_with_html_image_element(&img, -ix, -iy);
-                            context.restore();
-                          },
-                          Entry::Vacant(v) => {
-                            let mut img = web_sys::HtmlImageElement::new().unwrap();
-                            img.set_src(&source_string.to_owned());
-                            {
-                              let closure = Closure::wrap(Box::new(move || {
-                                unsafe {
-                                  (*wasm_core).render();
-                                }
-                              }) as Box<FnMut()>);
-                              img.set_onload(Some(closure.as_ref().unchecked_ref()));
-                              v.insert(img);
-                              closure.forget();
-                            }
-                          }
+                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                let line_width = get_line_width(&parameters_table,1);
+                context.set_stroke_style(&JsValue::from_str(&stroke));
+                context.set_line_width(line_width);
+                context.stroke();
+              }
+              (Some(_), None) => log!("Contains is not a reference"),
+              (None, Some(_)) => log!("Start-point is not a reference"),
+              (None, None) => log!("Start-point and Contains are not references"),
+            }
+            //context.close_path();
+            context.restore();
+          // ---------------------
+          // RENDER A IMAGE
+          // --------------------- 
+          } else if shape == *IMAGE {
+            match (parameters_table.get_string(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
+              (Some(source_string), Some(x), Some(y), Some(rotation)) => {
+                let source_hash = hash_string(&source_string);
+                match self.images.entry(source_hash) {
+                  Entry::Occupied(img_entry) => {
+                    let img = img_entry.get();
+                    let ix = img.width() as f64 / 2.0;
+                    let iy = img.height() as f64 / 2.0;
+                    context.save();
+                    context.translate(x, y);
+                    context.rotate(rotation * 3.141592654 / 180.0);
+                    context.draw_image_with_html_image_element(&img, -ix, -iy);
+                    context.restore();
+                  },
+                  Entry::Vacant(v) => {
+                    let mut img = web_sys::HtmlImageElement::new().unwrap();
+                    img.set_src(&source_string.to_owned());
+                    {
+                      let closure = Closure::wrap(Box::new(move || {
+                        unsafe {
+                          (*wasm_core).render();
                         }
-                      },
-                      _ => (), 
+                      }) as Box<FnMut()>);
+                      img.set_onload(Some(closure.as_ref().unchecked_ref()));
+                      v.insert(img);
+                      closure.forget();
                     }
                   }
-                  _ => {log!("Missing source, x, y, or rotation");},
                 }
               }
+              _ => {log!("Missing source, x, y, or rotation");},
             }
-            _ => {log!("Parameters must be a reference");}
           }
         },
-        _ => {log!("Missing shape");}
+        _ => {log!("Missing shape or parameters table");}
       }
     }
     Ok(())
