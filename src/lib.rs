@@ -1960,93 +1960,56 @@ impl WasmCore {
               } else if shape == *PATH {
                 context.save();
                 context.begin_path();
-                match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
-                      parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+                match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
+                       parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
                   (Some(start_point_id), Some(contains_table_id)) => {
-                    // Get the starting point
-                    match (start_point_id.as_reference(), contains_table_id.as_reference()) {
-                      (Some(start_point_id), Some(contains_table_id)) => {
-                        // Get the table
-                        let start_point_table = self.core.get_table(start_point_id).unwrap();
-                        match (start_point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                               start_point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                          (Some(x), Some(y)) => {
-                            match (x.as_f64(), y.as_f64()) {
-                              (Some(x), Some(y)) => {
-                                context.move_to(x, y);
-                                // Get the contained shapes
-                                let contains_table = self.core.get_table(contains_table_id).unwrap();
-                                for i in 1..=contains_table.rows {
-                                  match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
-                                         contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
-                                    (Some(shape),Some(parameters_table_id)) => {
-                                      let shape = shape.as_raw();
-                                      if shape == *LINE {
-                                        match parameters_table_id.as_reference() {
-                                          Some(parameters_table_id) => {
-                                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                                            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                                   parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                              (Some(x), Some(y)) => {
-                                                match (x.as_f64(), y.as_f64()) {
-                                                  (Some(x), Some(y)) => {
-                                                    context.line_to(x, y);
-                                                  }
-                                                  _ => (), // TODO Expected Floats
-                                                }
-                                              }
-                                              _ => (), // Expected X and Y fields
-                                            }
-                                          }
-                                          _ => (), // TODO Expected table
-                                        }
-                                      } else if shape == *QUADRATIC {
-                                        match parameters_table_id.as_reference() {
-                                          Some(parameters_table_id) => {
-                                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                                            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
-                                                   parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
-                                              (Some(control__point_table_id), Some(end__point_table_id)) => {
-                                                match (control__point_table_id.as_reference(), end__point_table_id.as_reference()) {
-                                                  (Some(control__point_table_id), Some(end__point_table_id)) => {
-                                                    let control__point_table = self.core.get_table(control__point_table_id).unwrap();
-                                                    let end__point_table = self.core.get_table(end__point_table_id).unwrap();
-                                                    match (control__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                                           control__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                                                           end__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                                           end__point_table.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                                      (Some(cx), Some(cy), Some(ex), Some(ey)) => {
-                                                        match (cx.as_f64(), cy.as_f64(), ex.as_f64(), ey.as_f64()) {
-                                                          (Some(cx), Some(cy), Some(ex), Some(ey)) => {
-                                                            context.quadratic_curve_to(cx, cy, ex, ey);
-                                                          }
-                                                          _ => (), // TODO Expected Floats
-                                                        }
-                                                      }
-                                                      _ => (), // Expected X and Y fields
-                                                    }
-                                                  }
-                                                  _ => (), // TODO Expected Floats
-                                                }
-                                              }
-                                              _ => (), // Expected X and Y fields
-                                            }
-                                          }
-                                          _ => (), // TODO Expected table
-                                        }
-                                      }
-                                    }
-                                    _ => log!("Expected shape and parameters"), // TODO Expected Shape and Parameters
+                    let start_point_table = self.core.get_table(start_point_id).unwrap();
+                    match (start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                           start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                      (Some(x), Some(y)) => {
+                        context.move_to(x, y);
+                        // Get the contained shapes
+                        let contains_table = self.core.get_table(contains_table_id).unwrap();
+                        for i in 1..=contains_table.rows {
+                          match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
+                                 contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
+                            (Some(shape),Some(parameters_table_id)) => {
+                              let shape = shape.as_raw();
+                              if shape == *LINE {
+                                let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                                match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                       parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                  (Some(x), Some(y)) => {
+                                    context.line_to(x, y);
                                   }
+                                  _ => (), // Expected x and y fields
+                                }
+                              } else if shape == *QUADRATIC {
+                                let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                                match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
+                                       parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                                  (Some(control__point_table_id), Some(end__point_table_id)) => {
+                                    let control__point_table = self.core.get_table(control__point_table_id).unwrap();
+                                    let end__point_table = self.core.get_table(end__point_table_id).unwrap();
+                                    match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                            control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                            end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                            end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                      (Some(cx), Some(cy), Some(ex), Some(ey)) => {
+                                        context.quadratic_curve_to(cx, cy, ex, ey);
+                                      }
+                                      _ => (), // Expected x and y fields
+                                    }
+                                  }
+                                  _ => (), // Expected control-point and end-point fields
                                 }
                               }
-                              _ => () // TODO x and y must be quantities
                             }
+                            _ => log!("Expected shape and parameters"), // TODO Expected shape and parameters fields
                           }
-                          _ => (), // TODO X and Y not found
                         }
                       }
-                      _ => (), // TODO Must be a table reference
+                      _ => (), // TODO Expected x and y not fields
                     }
                     let stroke = get_stroke_string(&parameters_table,1, *STROKE);
                     let line_width = get_line_width(&parameters_table,1);
@@ -2054,9 +2017,9 @@ impl WasmCore {
                     context.set_line_width(line_width);
                     context.stroke();
                   }
-                  (Some(_), None) => log!("Missing contains"),
-                  (None, Some(_)) => log!("Missing start-point"),
-                  (None, None) => log!("Missing start-point and contains"),
+                  (Some(_), None) => log!("Contains is not a reference"),
+                  (None, Some(_)) => log!("Start-point is not a reference"),
+                  (None, None) => log!("Start-point and Contains are not references"),
                 }
                 //context.close_path();
                 context.restore();
