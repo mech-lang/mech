@@ -177,8 +177,8 @@ impl Table {
   }
 
   // Given a hash, get associated string
-  pub fn get_string(&self, id: &u64) -> Option<&String> {
-    self.store.strings.get(id)
+  pub fn get_string_from_hash(&self, hash: u64) -> Option<&String> {
+    self.store.strings.get(&hash)
   }
 
   // Get the memory address into the store at a (row, column)
@@ -241,6 +241,21 @@ impl Table {
         let address = self.data[ix];
         let value = self.store.data[address];
         match value.as_f64() {
+          None => None,
+          x => x,
+        }
+      },
+      None => None,
+    }
+  }
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<&String> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match self.get_string_from_hash(value) {
           None => None,
           x => x,
         }
