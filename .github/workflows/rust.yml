@@ -19,6 +19,6 @@ jobs:
     - name: Setup
       run: rustup default nightly-2021-02-22
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --bun mech --release
     - name: Run tests
-      run: cargo test --verbose
+      run: ./target/release/mech test tests
