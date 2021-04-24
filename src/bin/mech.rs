@@ -469,14 +469,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
     println!("{}", "[Testing]".bright_green());
-    let mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
+    let mut mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
     let mut passed_all_tests = true;
-    let test_code = r#"
-Every test has a name and expected result. The expected result is compared against the evaluated (actual) result. The result column holds the result of the comparison. 
-  #mech/test = [|name expected actual result|]
-
-Compares the expected and actual results of the test table.
-  #mech/test.result := #mech/test.expected == #mech/test.actual"#.to_string();
+    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/master/src/test.mec");
 
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
@@ -485,7 +480,6 @@ Compares the expected and actual results of the test table.
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech REPL", 1000);
     let mech_client = runner.run();
-    mech_client.send(RunLoopMessage::Code((0, MechCode::String(test_code))));
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
     
     let mut tests_count = 0;
