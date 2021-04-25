@@ -537,7 +537,23 @@ block
   #ball = [|x y z|
             1 2 3]", Value::from_i64(100));
 
-// ## Logic
+test_mech!(append_row_expression,"
+block
+  #test = stats/sum(column: #x) 
+block
+  #x = 20
+block
+  #x += 10", Value::from_u64(30));
+
+test_mech!(append_row_math,"
+block
+  #test = stats/sum(column: #x) 
+block
+  #x = 20
+block
+  #x += 5 * 2", Value::from_u64(30));
+
+  // ## Logic
 
 test_mech!(logic_and,"
 block

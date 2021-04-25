@@ -760,7 +760,7 @@ fn add_row_operator(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn add_row(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, table_id) = table(input)?;
   let (input, _) = tuple((space, add_row_operator, space))(input)?;
-  let (input, table) = alt((inline_table, anonymous_table))(input)?;
+  let (input, table) = alt((expression, inline_table, anonymous_table))(input)?;
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
 
