@@ -1101,26 +1101,26 @@ impl Compiler {
         };
 
         let mut input = self.compile_transformation(&children[1]);
-        let input_table_id = match &input[0] {
+        let mut args = vec![];
+        match &input[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
-            Some(*table_id)
+            let (row,column) = indices[0];
+            args.push((0, *table_id, row, column));
           }
           Transformation::NewTable{table_id,..} => {
-            Some(*table_id)
+            args.push((0, *table_id, TableIndex::All, TableIndex::All));
           }
           Transformation::TableReference{table_id, reference} => {
-            Some(TableId::Local(reference.as_reference().unwrap()))
+            args.push((0, TableId::Local(reference.as_reference().unwrap()),TableIndex::All, TableIndex::All));
           }
-          _ => None,
-        };
+          _ => (),
+        }
 
         let (output_table_id, output_row, output_col) = output_tup.unwrap();
 
         let fxn = Transformation::Function{
           name: *TABLE_APPEND__ROW,
-          arguments: vec![
-            (0, input_table_id.unwrap(), TableIndex::All, TableIndex::All)
-          ],
+          arguments: args,
           out: (output_table_id, output_row, output_col),
         };
         transformations.push(fxn);

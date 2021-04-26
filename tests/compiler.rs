@@ -578,6 +578,24 @@ block
   x = 10 + 20
   #x += x", Value::from_u64(30));
 
+test_mech!(append_row_select_linear_range,"
+block
+  #test = stats/sum(table: #x)
+block
+  #x = [10 20; 30 40;]
+block
+  x = [10 20 30]
+  #x += x{1:2}", Value::from_u64(130));  
+
+test_mech!(append_row_select_linear,"
+block
+  #test = stats/sum(table: #x)
+block
+  #x = [10 30]
+block
+  x = [10 20 30]
+  #x += x{2}", Value::from_u64(60)); 
+
 // ## Logic
 
 test_mech!(logic_and,"
