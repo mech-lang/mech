@@ -584,14 +584,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut skip_receive = false;
   
     //ClientHandler::new("Mech REPL", None, None, None, cores);
-    let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+    let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let thread_receiver = mech_client.incoming.clone();
     
+    let mut to_exit = false;
+    let mut exit_code = 0;
+
     // Get all responses from the thread
     'receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::String(message))) => {
-          print!("{} {}", formatted_name, message);
+          println!("{} {}", formatted_name, message);
         },
         (Ok(ClientMessage::Table(table))) => {
           if !repl {
@@ -611,7 +614,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         (Ok(ClientMessage::Done)) => {
           // Do nothing
+          if to_exit {
+            io::stdout().flush().unwrap();
+            std::process::exit(exit_code);
+          }
         },
+        (Ok(ClientMessage::Exit(this_code))) => {
+          to_exit = true;
+          exit_code = this_code;
+        }
         Ok(ClientMessage::StepDone) => {
           //let output_id: u64 = hash_string("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
@@ -619,6 +630,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
+          io::stdout().flush().unwrap();
           std::process::exit(1);
         }
         q => {
