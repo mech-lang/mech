@@ -1,40 +1,15 @@
-stages:
-    - build
-    - publish
-    
-build:
-  stage: build
-  except:
-    - schedules
-  script:
-    # Usually the application is compiled here
-    - echo "Demo" > Demo.txt
-  artifacts:
-    paths:
-      - "./*"
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
 
-on-schedule:
-  stage: build
-  image: 
-    name: alpine/git
-    entrypoint: [""]
-  only:
-    - schedules
+image: "rust:latest"
+
+test:cargo:
   script:
-    - git config user.email "${GITLAB_USER_EMAIL}"
-    - git config user.name "${GITLAB_USER_NAME}"
-    - git remote add demo-tag-origin https://oauth2:${GITLAB_ACCESS_TOKEN}@gitlab.com/${CI_PROJECT_PATH}
-    - git tag -a "nightly-$(date +%Y-%m-%d)" -m "Auto-Release"
-    - git push demo-tag-origin "nightly-$(date +%Y-%m-%d)"
-    
-publish:
-    image: inetprocess/gitlab-release
-    stage: publish
-    only:
-        - tags
-    except:
-        - schedules
-    dependencies: 
-        - build
-    script:
-        - gitlab-release --message 'Automatic release' ./Demo.txt
+  - rustup default nightly-2021-02-22
+  - rustup show
+  - rustc --version && cargo --version
+  - rustup component add rust-src
+  - cargo build --bin mech --release
+  - ./target/release/mech test tests
+  - ./target/release/mech test https://gitlab.com/mech-lang/machines/math/-/raw/master/tests/math.mec
+  - ./target/release/mech test https://gitlab.com/mech-lang/machines/stats/-/raw/master/tests/stats.mec
