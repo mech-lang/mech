@@ -234,7 +234,14 @@ impl ValueMethods for Value {
   }
 
   fn as_i64(&self) -> Option<i64> {
-    None
+    match self & 0xFF00000000000000 {
+      0x1000000000000000 |
+      0x2000000000000000 |
+      0x4000000000000000 |
+      0x8000000000000000 |
+      0xC000000000000000 => None,
+      _ => Some(self.to_float() as i64),
+    }
   }
 
   fn as_string(&self) -> Option<u64> {
