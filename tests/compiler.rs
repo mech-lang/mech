@@ -569,6 +569,15 @@ block
 block
   #x += 5 * 2", Value::from_u64(10));  
 
+test_mech!(append_row_math_empty_whole_table,"
+block
+  #test = #x
+block
+  #x = []
+block
+  x = 10 + 20
+  #x += x", Value::from_u64(30));
+
 // ## Logic
 
 test_mech!(logic_and,"
