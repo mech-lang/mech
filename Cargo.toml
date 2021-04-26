@@ -5,13 +5,13 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Standard input/output streams library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "http://mech-lang.org"
-repository = "https://github.com/mech-lang/time"
+repository = "https://github.com/mech-machines/io-streams"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "mech-lang/machines/io-stream", branch = "master" }
+gitlab = { repository = "mech-lang/machines/io-stream", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
