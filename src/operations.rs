@@ -178,7 +178,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
-pub extern "C" fn table_add_row(arguments: &Vec<(u64, ValueIterator)>) {
+pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   //TODO There needs to be some checking of dimensions here
   let (_, mut vi) = arguments[0].clone();
   let (_, mut out) = arguments[1].clone();
@@ -242,7 +242,7 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
-pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterator)>) {
+pub extern "C" fn table_horizontal__concatenate(arguments: &Vec<(u64, ValueIterator)>) {
   let (_, mut out) = arguments[arguments.len()-1].clone();
 
   // Get the size of the output table we will create, and resize the out table
@@ -263,7 +263,7 @@ pub extern "C" fn table_horizontal_concatenate(arguments: &Vec<(u64, ValueIterat
   }
 }
 
-pub extern "C" fn table_vertical_concatenate(arguments: &Vec<(u64, ValueIterator)>) {
+pub extern "C" fn table_vertical__concatenate(arguments: &Vec<(u64, ValueIterator)>) {
 
   let (_, mut out) = arguments[arguments.len()-1].clone();
 
@@ -384,11 +384,11 @@ binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
 binary_infix!{math_exponent, power}
-binary_infix!{compare_greater_than_equal, greater_than_equal}
-binary_infix!{compare_greater_than, greater_than}
-binary_infix!{compare_less_than_equal, less_than_equal}
-binary_infix!{compare_less_than, less_than}
+binary_infix!{compare_greater__than__equal, greater_than_equal}
+binary_infix!{compare_greater__than, greater_than}
+binary_infix!{compare_less__than__equal, less_than_equal}
+binary_infix!{compare_less__than, less_than}
 binary_infix!{compare_equal, equal}
-binary_infix!{compare_not_equal, not_equal}
+binary_infix!{compare_not__equal, not_equal}
 binary_infix!{logic_and, and}
 binary_infix!{logic_or, or}
