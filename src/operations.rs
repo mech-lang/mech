@@ -185,16 +185,24 @@ pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   let out_rows = out.rows();
   let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
   let in_rows = vi.rows();
-  out.resize(out_rows + in_rows, out_columns);
 
-  for (row_index, column_index) in vi.index_iterator() {
-    let value = vi.get(&row_index,&column_index).unwrap();
-    // If the column has an alias, let's use it instead
-    let out_column = match vi.get_column_alias(column_index.unwrap()) {
-      Some(alias) => alias,
-      None => column_index,
-    };
-    out.set(&TableIndex::Index(out_rows + row_index.unwrap()), &out_column, value);
+  if vi.column_index != TableIndex::None {
+    out.resize(out_rows + in_rows, out_columns);
+    for (row_index, column_index) in vi.index_iterator() {
+      let value = vi.get(&row_index,&column_index).unwrap();
+      // If the column has an alias, let's use it instead
+      let out_column = match vi.get_column_alias(column_index.unwrap()) {
+        Some(alias) => alias,
+        None => column_index,
+      };
+      out.set(&TableIndex::Index(out_rows + row_index.unwrap()), &out_column, value);
+    }
+  } else {
+    out.resize(out_rows + 1, out_columns);
+    for index in vi.linear_index_iterator() {
+      let (value,_)= vi.get_unchecked_linear(index);
+      out.set(&TableIndex::Index(out_rows + 1), &TableIndex::Index(index), value);
+    }    
   }
 }
 
