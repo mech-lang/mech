@@ -553,7 +553,23 @@ block
 block
   #x += 5 * 2", Value::from_u64(30));
 
-  // ## Logic
+test_mech!(append_row_math_empty,"
+block
+  #test = stats/sum(column: #x) 
+block
+  #x = []
+block
+  #x += 5 * 2", Value::from_u64(10));
+
+test_mech!(append_row_math_empty_named,"
+block
+  #test = stats/sum(column: #x) 
+block
+  #x = [|x|]
+block
+  #x += 5 * 2", Value::from_u64(10));  
+
+// ## Logic
 
 test_mech!(logic_and,"
 block
