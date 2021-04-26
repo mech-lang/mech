@@ -159,7 +159,7 @@ impl Program {
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
     if self.machine_repository.len() == 0 {
       // Download machine_repository index
-      let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/master/machines.mec";
+      let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/main/machines.mec";
       let mut response = reqwest::get(registry_url)?.text()?;
       let mut registry_compiler = Compiler::new();
       registry_compiler.compile_string(response);
