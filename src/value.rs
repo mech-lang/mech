@@ -13,6 +13,7 @@ use ::{hash_string};
 
 pub type Value = u64;
 
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueType {
   Quantity,
   Boolean,
