@@ -33,11 +33,10 @@ impl Machine for Out {
   }
 
   fn id(&self) -> u64 {
-    Register{table_id: TableId::Global(*STANDARD__STREAMS_OUT), row: TableIndex::All, column: TableIndex::All}.hash()
+    Register{table_id: TableId::Global(*IO__STREAMS_OUT), row: TableIndex::All, column: TableIndex::All}.hash()
   }
 
   fn on_change(&mut self, table: &Table) -> Result<(), String> {
-    println!("{:?}", table);
     for i in 1..=table.rows {
       for j in 1..=table.columns {
         let (value, _) = table.get_unchecked(i,j);
