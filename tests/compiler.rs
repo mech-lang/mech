@@ -484,6 +484,14 @@ block
 block
   #launch-point := [x: 10 y: 20]", Value::from_i64(30));
 
+test_mech!(set_empty_table,"
+block
+  #test = stats/sum(table: #x)
+block
+  #x = []
+block
+  #x := [10 20; 30 40]", Value::from_i64(100));
+
 // ## Concat
 
 test_mech!(concat_horzcat_data,"
