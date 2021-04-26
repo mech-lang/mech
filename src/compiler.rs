@@ -23,7 +23,7 @@ lazy_static! {
   static ref TABLE_HORZCAT: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTCAT: u64 = hash_string("table/vertical-concatenate");
   static ref TABLE_SET: u64 = hash_string("table/set");
-  static ref TABLE_ADD_ROW: u64 = hash_string("table/add-row");
+  static ref TABLE_APPEND__ROW: u64 = hash_string("table/append-row");
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref SET_ANY: u64 = hash_string("set/any");
 }
@@ -1114,7 +1114,7 @@ impl Compiler {
         let (output_table_id, output_row, output_col) = output_tup.unwrap();
 
         let fxn = Transformation::Function{
-          name: *TABLE_ADD_ROW,
+          name: *TABLE_APPEND__ROW,
           arguments: vec![
             (0, input_table_id.unwrap(), TableIndex::All, TableIndex::All)
           ],
