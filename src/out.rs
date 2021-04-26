@@ -42,13 +42,16 @@ impl Machine for Out {
         let (value, _) = table.get_unchecked(i,j);
         match value.value_type() {
           ValueType::String => {
-            print!("{}",table.get_string_from_hash(value).unwrap());
+            let out_string = format!("{}",table.get_string_from_hash(value).unwrap());
+            self.outgoing.send(RunLoopMessage::String(out_string));
           }
           ValueType::Quantity => {
-            print!("{}",value.as_f64().unwrap());
+            let out_string = format!("{}",value.as_f64().unwrap());
+            self.outgoing.send(RunLoopMessage::String(out_string));
           }
           ValueType::Boolean => {
-            print!("{}",value.as_bool().unwrap());
+            let out_string = format!("{}",value.as_bool().unwrap());
+            self.outgoing.send(RunLoopMessage::String(out_string));
           }
           ValueType::NumberLiteral => {
             // TODO print number literals
@@ -56,7 +59,6 @@ impl Machine for Out {
           _ => (), // No output representation for other value types
         }
       }
-      io::stdout().flush().unwrap();
     }
     Ok(())
   }
