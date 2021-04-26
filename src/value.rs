@@ -60,6 +60,7 @@ pub trait ValueMethods {
   fn as_bool(&self) -> Option<bool>;
   fn as_reference(&self) -> Option<u64>;
   fn as_raw(&self) -> u64;
+  fn get_tag(&self) -> u64;
   fn is_empty(&self) -> bool;
   fn is_number(&self) -> bool;
   fn is_reference(&self) -> bool;
@@ -87,39 +88,46 @@ pub trait ValueMethods {
 // - String - 0x80
 // - Number Literal - 0xC0
 
+const EMPTY: u64 = 0x1000000000000000;
+const TRUE: u64 = 0x4000000000000001;
+const FALSE: u64 = 0x4000000000000000;
+const REFERENCE: u64 = 0x2000000000000000;
+const STRING: u64 = 0x8000000000000000;
+const NUMBER_LITERAL: u64 = 0xC000000000000000;
+
 impl ValueMethods for Value {
 
   fn empty() -> Value {
-    0x1000000000000000
+    EMPTY
   }
 
   fn from_number_literal(number_literal: &NumberLiteral) -> Value {
     let mut vector_hash = hash_string(&format!("byte vector: {:?}",number_literal));
-    vector_hash = vector_hash + 0xC000000000000000;
+    vector_hash = vector_hash + NUMBER_LITERAL;
     vector_hash
   }
 
   fn from_string(string: String) -> Value {
     let mut string_hash = hash_string(&string);
-    string_hash = string_hash + 0x8000000000000000;
+    string_hash = string_hash + STRING;
     string_hash
   }
 
   fn from_str(string: &str) -> Value {
     let mut string_hash = hash_string(string);
-    string_hash = string_hash + 0x8000000000000000;
+    string_hash = string_hash + STRING;
     string_hash
   }
 
   fn from_bool(boolean: bool) -> Value {
     match boolean {
-      true => 0x4000000000000001,
-      false => 0x4000000000000000,
+      true => TRUE,
+      false => FALSE,
     }
   }
 
   fn from_id(id: u64) -> Value {
-    id + 0x2000000000000000
+    id + REFERENCE
   }
 
   fn from_u64(num: u64) -> Value {
@@ -175,93 +183,77 @@ impl ValueMethods for Value {
     self & 0x00FFFFFFFFFFFFFF
   }
 
+  fn get_tag(&self) -> u64 {
+    self & 0xFF00000000000000
+  }
+
   fn as_quantity(&self) -> Option<Quantity> {
-    match self & 0xFF00000000000000 {
-      0x1000000000000000 |
-      0x2000000000000000 |
-      0x4000000000000000 |
-      0x8000000000000000 |
-      0xC000000000000000 => None,
-      _ => Some(*self),
+    match self.is_number() {
+      true => Some(*self),
+      false => None,
     }
   }
 
   fn as_reference(&self) -> Option<u64> {
-    match self & 0xFF00000000000000 {
-      0x2000000000000000 => Some(self & 0x00FFFFFFFFFFFFFF),
+    match self.get_tag() {
+      REFERENCE => Some(self.as_raw()),
       _ => None,
     }
   }
 
   fn as_u64(&self) -> Option<u64> {
-    match self & 0xFF00000000000000 {
-      0x1000000000000000 |
-      0x2000000000000000 |
-      0x4000000000000000 |
-      0x8000000000000000 |
-      0xC000000000000000 => None,
-      _ => Some(self.to_u64()),
+    match self.is_number() {
+      true => Some(self.to_u64()),
+      false => None,
     }
   }
 
   fn is_number(&self) -> bool {
-    match self & 0xFF00000000000000 {
-      0x1000000000000000 |
-      0x2000000000000000 |
-      0x4000000000000000 |
-      0x8000000000000000 |
-      0xC000000000000000 => false,
+    match self.get_tag() {
+      EMPTY | REFERENCE | TRUE | FALSE | STRING | NUMBER_LITERAL => false,
       _ => true,
     }
   }
 
   fn is_reference(&self) -> bool {
-    match self & 0xFF00000000000000 {
-      0x2000000000000000 => true,
+    match self.get_tag() {
+      REFERENCE => true,
       _ => false,
     }
   }    
 
   fn as_f64(&self) -> Option<f64> {
-    match self & 0xFF00000000000000 {
-      0x1000000000000000 |
-      0x2000000000000000 |
-      0x4000000000000000 |
-      0x8000000000000000 |
-      0xC000000000000000 => None,
-      _ => Some(self.to_float()),
+    match self.is_number() {
+      true => Some(self.to_float()),
+      false => None,
     }
   }
 
   fn as_i64(&self) -> Option<i64> {
-    match self & 0xFF00000000000000 {
-      0x1000000000000000 |
-      0x2000000000000000 |
-      0x4000000000000000 |
-      0x8000000000000000 |
-      0xC000000000000000 => None,
-      _ => Some(self.to_float() as i64),
+    match self.is_number() {
+      true => Some(self.to_float() as i64),
+      false => None,
     }
   }
 
   fn as_string(&self) -> Option<u64> {
-    match self & 0xFF00000000000000 {
-      0x8000000000000000 => Some(*self),
+    match self.get_tag() {
+      STRING => Some(*self),
       _ => None,
     }
   }
 
   fn as_bool(&self) -> Option<bool> {
-    match self {
-      0x4000000000000001 => Some(true),
-      0x4000000000000000 => Some(false),
+    match *self {
+      TRUE => Some(true),
+      FALSE => Some(false),
       _ => None,
     }
   }
 
   fn as_number_literal(&self) -> Option<u64> {
-    match self & 0xFF00000000000000 {
-      0xC000000000000000 => Some(*self),
+    match self.get_tag() {
+      NUMBER_LITERAL => Some(*self),
       _ => None,
     }
   }
