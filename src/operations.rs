@@ -183,7 +183,7 @@ pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   let (_, mut vi) = arguments[0].clone();
   let (_, mut out) = arguments[1].clone();
   let out_rows = out.rows();
-  let out_columns = out.columns();
+  let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
   let in_rows = vi.rows();
   out.resize(out_rows + in_rows, out_columns);
 
