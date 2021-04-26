@@ -323,6 +323,7 @@ pub enum ClientMessage {
   Pause,
   Resume,
   Clear,
+  Exit(i32),
   Time(usize),
   NewBlocks(usize),
   Table(Option<Table>),
@@ -804,6 +805,12 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           (Ok(RunLoopMessage::StepForward), true) => {
             //program.mech.step_forward_one();
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
+          } 
+          (Ok(RunLoopMessage::String(string)), _) => {
+            client_outgoing.send(ClientMessage::String(string));
+          } 
+          (Ok(RunLoopMessage::Exit(exit_code)), _) => {
+            client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             let block_count = program.mech.runtime.blocks.len();
