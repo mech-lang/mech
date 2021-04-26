@@ -221,8 +221,6 @@ impl ValueIterator {
       let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
       self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
       self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
-
-
     }
   }
 
