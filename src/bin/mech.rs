@@ -471,7 +471,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "[Testing]".bright_green());
     let mut mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
     let mut passed_all_tests = true;
-    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/master/src/test.mec");
+    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec");
 
     let code = read_mech_files(mech_paths).await?;
     let blocks = compile_code(code);
@@ -591,7 +591,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     'receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::String(message))) => {
-          println!("{} {}", formatted_name, message);
+          print!("{} {}", formatted_name, message);
         },
         (Ok(ClientMessage::Table(table))) => {
           if !repl {
@@ -615,7 +615,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(ClientMessage::StepDone) => {
           //let output_id: u64 = hash_string("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
-          std::process::exit(0);
+          //std::process::exit(0);
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
