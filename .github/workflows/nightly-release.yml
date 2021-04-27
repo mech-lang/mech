@@ -1,0 +1,27 @@
+---
+name: "tagged-release"
+
+on:
+  push:
+    tags:
+      - "nightly*"
+
+jobs:
+  tagged-release:
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup
+      run: rustup default nightly-2021-02-22
+    - name: Build
+      run: cargo build --bin mech --release
+    - name: Run tests
+      run: ./target/release/mech test tests
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        files: |
+          target/release/mech
