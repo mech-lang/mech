@@ -8,10 +8,10 @@ Read about progress on our [blog](http://mech-lang.org/blog/), follow us on Twit
 
 Provided functions:
 
-- math/sin
-- math/cos
-- math/floor
-- math/round
+- `math/sin()`
+- `math/cos()`
+- `math/floor()`
+- `math/round()`
 
 ## License
 
