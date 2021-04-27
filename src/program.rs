@@ -214,7 +214,6 @@ impl Program {
         _ => (),
       }
     }
-    let mut changes = Vec::new();
 
     // Dedupe needed ids
     let registers = self.mech.runtime.needed_registers.difference(&self.mech.runtime.defined_registers);
@@ -225,6 +224,7 @@ impl Program {
       needed_tables.insert(needed_table_id.clone());
     }
     
+    let mut machine_init_code = vec![];
     for needed_table_id in needed_tables.iter() {
       let database = self.mech.runtime.database.borrow();
       let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
@@ -258,8 +258,8 @@ impl Program {
               let mut registrar = Registrar::new();
               unsafe{
                 let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
-                let mut init_changes = (declaration.register)(&mut registrar, self.outgoing.clone());
-                changes.append(&mut init_changes);
+                let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
+                machine_init_code.push(init_code);
               }        
               self.machines.extend(registrar.machines);
             },
@@ -269,8 +269,10 @@ impl Program {
         _ => (),
       }
     }
-    let txn = Transaction{changes};
-    self.mech.process_transaction(&txn);
+    for program in &machine_init_code {
+      self.compile_program(program.to_string());
+    }
+
     /*
     // Do it for the the other core
     for core in self.cores.values_mut() {
@@ -739,7 +741,21 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
             let end_ns = time::precise_time_ns();
-            let time = (end_ns - start_ns) as f64;              
+            let time = (end_ns - start_ns) as f64; 
+            let trigger_machines = |p: &mut Program| {
+              let database = p.mech.runtime.database.borrow();
+              for register in &p.mech.runtime.aggregate_changed_this_round {
+                match p.machines.get_mut(&register.hash()) {
+                  // Invoke the machine!
+                  Some(mut machine) => {
+                    let table = database.tables.get(&register.table_id.unwrap()).unwrap();
+                    machine.on_change(&table);
+                  },
+                  _ => (), // TODO Warn user that the machine is not loaded!
+                }
+              }
+            };         
+            trigger_machines(&mut program);    
             //println!("{:?}", program.mech);
             //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
