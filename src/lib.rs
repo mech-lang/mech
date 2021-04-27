@@ -77,7 +77,7 @@ pub trait Machine {
 
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
-  pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->Vec<Change>,
+  pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
 }
 
 pub trait MachineRegistrar {
