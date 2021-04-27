@@ -8,7 +8,7 @@ Read about progress on our [blog](http://mech-lang.org/blog/), follow us on Twit
 
 Provided functions:
 
-- stats/average
+- `stats/average()`
 
 ## License
 
