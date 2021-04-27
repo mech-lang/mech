@@ -14,11 +14,9 @@ lazy_static! {
 
 export_machine!(io__streams_out, io__streams_out_reg);
 
-extern "C" fn io__streams_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> Vec<Change> {
+extern "C" fn io__streams_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
   registrar.register_machine(Box::new(Out{outgoing}));
-  vec![
-    Change::NewTable{table_id: *IO__STREAMS_OUT, rows: 0, columns: 0},
-  ]
+  "#io-streams/out = []".to_string()
 }
 
 #[derive(Debug)]
