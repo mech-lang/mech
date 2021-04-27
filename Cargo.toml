@@ -12,7 +12,7 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "mech-lang/utilities", branch = "master" }
+gitlab = { repository = "mech-lang/utilities", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
