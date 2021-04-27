@@ -13,7 +13,7 @@ readme = "README.md"
 edition = "2018"
 
 [badges]
-gitlab = { repository = "mech-lang/program", branch = "master" }
+gitlab = { repository = "mech-lang/program", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
