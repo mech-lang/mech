@@ -28,7 +28,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=in_columns {
         match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
-          Some(value) => {
+          Some((value,_)) => {
             match sum.add(value) {
               Ok(result) => sum = result,
               _ => (), // TODO Alert user that there was an error
@@ -45,7 +45,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
       let mut sum: Value = Value::from_u64(0);
       for (j,k) in (1..=in_rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
-          Some(value) => {
+          Some((value,_)) => {
             match sum.add(value) {
               Ok(result) => sum = result,
               _ => (), // TODO Alert user that there was an error
@@ -62,7 +62,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
     for (i,m) in (1..=in_columns).zip(vi.column_iter.clone()) {
       for (j,k) in (1..=in_rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
-          Some(value) => {
+          Some((value,_)) => {
             match sum.add(value) {
               Ok(result) => sum = result,
               _ => (), // TODO Alert user that there was an error
