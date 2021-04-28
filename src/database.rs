@@ -2,6 +2,7 @@ use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Register};
 use errors::{Error, ErrorType};
+use ::hash_string;
 use std::sync::Arc;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
@@ -230,6 +231,10 @@ impl Database {
             }
           }
         },
+        Change::InternString{string} => {
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+          store.strings.insert(hash_string(string), string.to_string());
+        }
       }
     }
     Ok(())
@@ -265,4 +270,5 @@ pub enum Change {
   Set{table_id: u64, values: Vec<(TableIndex, TableIndex, Value)>},
   SetColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
   NewTable{table_id: u64, rows: usize, columns: usize},
+  InternString{string: String},
 }

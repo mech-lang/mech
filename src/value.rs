@@ -41,7 +41,7 @@ pub struct NumberLiteral {
 
 pub trait ValueMethods {
   fn empty() -> Value;
-  fn from_string(string: String) -> Value;
+  fn from_string(string: &String) -> Value;
   fn from_str(string: &str) -> Value;
   fn from_bool(boolean: bool) -> Value;
   fn from_u64(num: u64) -> Value;
@@ -107,8 +107,8 @@ impl ValueMethods for Value {
     vector_hash
   }
 
-  fn from_string(string: String) -> Value {
-    let mut string_hash = hash_string(&string);
+  fn from_string(string: &String) -> Value {
+    let mut string_hash = hash_string(string);
     string_hash = string_hash + STRING;
     string_hash
   }
