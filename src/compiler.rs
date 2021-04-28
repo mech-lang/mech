@@ -1523,7 +1523,7 @@ impl Compiler {
       Node::String{text} => {
         let table = hash_string(&format!("String-{:?}", text));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
-        let value = Value::from_string(text.to_string());
+        let value = Value::from_string(&text.to_string());
         self.strings.insert(value, text.to_string());
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
