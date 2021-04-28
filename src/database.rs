@@ -233,7 +233,7 @@ impl Database {
         },
         Change::InternString{string} => {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-          store.strings.insert(hash_string(string), string.to_string());
+          store.strings.insert(Value::from_string(&string), string.to_string());
         }
       }
     }
