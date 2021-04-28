@@ -308,6 +308,7 @@ impl Program {
     }
     for program in &machine_init_code {
       self.compile_program(program.to_string());
+      self.trigger_machines();
     }
     self.mech.step();
     self.trigger_machines();
@@ -886,7 +887,6 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 program.mech.register_blocks(blocks);
                 program.trigger_machines();
                 program.download_dependencies(Some(client_outgoing.clone()));
-
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
