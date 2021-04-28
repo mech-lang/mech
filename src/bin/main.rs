@@ -34,19 +34,8 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  ~ #html/event/keydown.key == "ArrowUp"
-  #explorer.y := #explorer.y - 1"
-
-block
-  #explorer = [x: 10, y: 10]"
-
-block
-  ~ #explorer.x
-  #html/event/keydown = [key: "ArrowUp"]
-
-block
-  ~ #explorer
-  #test = #explorer.y"#);
+  y = [1 2 3]
+  #z = y{1}"#);
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
