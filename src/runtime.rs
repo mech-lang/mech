@@ -33,7 +33,7 @@ pub struct Runtime {
   pub database: Arc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
   pub ready_blocks: HashSet<u64>,
-  pub errors: Vec<Error>,
+  pub errors: HashSet<Error>,
   pub output_to_block:  HashMap<Register,HashSet<u64>>,
   pub input_to_block:  HashMap<Register,HashSet<u64>>,
   pub changed_this_round: HashSet<Register>,
@@ -54,7 +54,7 @@ impl Runtime {
       recursion_limit,
       database,
       blocks: HashMap::new(),
-      errors: Vec::new(),
+      errors: HashSet::new(),
       ready_blocks: HashSet::new(),
       output_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
@@ -95,8 +95,14 @@ impl Runtime {
       for block_id in self.ready_blocks.drain() {
         let block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes();
-        block.solve(&self.functions);
-        self.changed_this_round.extend(&block.output);
+        match block.solve(&self.functions) {
+          Ok(_) => self.changed_this_round.extend(&block.output),
+          Err(_) => {
+            for error in &block.errors {
+              self.errors.insert(error.clone());
+            }
+          },
+        }
       }
 
       self.changed_this_round.extend(&self.database.borrow().changed_this_round);
@@ -420,6 +426,10 @@ impl fmt::Debug for Runtime {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut db = self.database.borrow_mut();
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
+    write!(f, "errors: \n")?;
+    for k in &self.errors {
+      write!(f, "  {:?}\n", k)?;
+    }
     write!(f, "input: \n")?;
     for k in self.input.iter() {
       write!(f, "  {}\n", format_register(&store.strings,k))?;
