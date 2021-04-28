@@ -44,7 +44,7 @@ pub struct Block {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub changes: Vec<Change>,
-  pub errors: Vec<Error>,
+  pub errors: HashSet<Error>,
   pub triggered: usize,
   pub function_arguments: HashMap<Transformation, Vec<(u64,ValueIterator)>>,
   pub global_database: Arc<RefCell<Database>>,
@@ -72,7 +72,7 @@ impl Block {
       transformations: Vec::new(),
       plan: Vec::new(),
       changes: Vec::new(),
-      errors: Vec::new(),
+      errors: HashSet::new(),
       function_arguments: HashMap::new(),
       triggered: 0,
       global_database: database,
@@ -328,7 +328,7 @@ impl Block {
     }
   }
 
-  pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) {
+  pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -483,9 +483,14 @@ impl Block {
                   db.tables.insert(split_table_id, split_table);
                 }
               } else {
-                // TODO Error: Function not found
-                //println!("Function not found {:?}", humanize(name));
-                return;
+                let error = Error { 
+                  block_id: self.id,
+                  step_text: "".to_string(), // TODO Add better text
+                  error_type: ErrorType::MissingFunction(*name),
+                };
+                self.state = BlockState::Error;
+                self.errors.insert(error.clone());
+                return Err(error);
               }
             },
           }
@@ -493,7 +498,8 @@ impl Block {
         _ => (),
       }
     }
-    self.state = BlockState::Done
+    self.state = BlockState::Done;
+    Ok(())
   }
 
   pub fn is_ready(&mut self) -> bool {
