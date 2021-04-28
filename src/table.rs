@@ -225,7 +225,13 @@ impl Table {
 
   // Get the value in the store at memory address (ix) and whether it has been changed
   pub fn get_linear(&self, index: &TableIndex) -> Option<(Value, bool)> {
-    self.get(index,&TableIndex::None)    
+    let ix = index.unwrap();
+    if ix <= self.data.len() && ix > 0 {
+      let address = self.data[ix-1];
+      Some((self.store.data[address], self.changed[ix-1]))
+    } else {
+      None
+    }
   }
 
   // Get the value in the store at memory address (row, column)
