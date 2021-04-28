@@ -22,7 +22,7 @@ macro_rules! test_mech {
       let test: Value = $test;
       let actual = core.get_cell_in_table(table, &row, &column);
       match actual {
-        Some(value) => {
+        Some((value,_)) => {
           assert_eq!(value, test);
         },
         None => assert_eq!(0,1),
