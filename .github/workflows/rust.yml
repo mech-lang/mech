@@ -21,4 +21,7 @@ jobs:
     - name: Build
       run: cargo build --bin mech --release
     - name: Run tests
-      run: ./target/release/mech test tests
+      run: |
+        ./target/release/mech test tests
+        ./target/release/mech test https://gitlab.com/mech-lang/machines/math/-/raw/main/tests/math.mec
+        ./target/release/mech test https://gitlab.com/mech-lang/machines/stats/-/raw/main/tests/stats.mec
