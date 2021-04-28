@@ -1,6 +1,7 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use database::{Store, Database};
+use ::humanize;
 use block::Block;
 use hashbrown::HashMap;
 //use errors::{ErrorType};
@@ -145,7 +146,11 @@ impl ValueIterator {
   }
 
   pub fn rows(&self) -> usize {
-    self.raw_row_iter.len()
+    if unsafe{(*self.table).rows} == 0 {
+      0
+    } else {
+      self.raw_row_iter.len()
+    }
   }
 
   pub fn columns(&self) -> usize {
@@ -159,7 +164,7 @@ impl ValueIterator {
     self.rows() == 1 && self.columns() == 1
   }
 
-  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
+  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     unsafe{(*self.table).get(row,column)}
   }
 
@@ -169,6 +174,10 @@ impl ValueIterator {
 
   pub fn get_unchecked_linear(&self, index: usize) -> (Value, bool) {
     unsafe{(*self.table).get_unchecked_linear(index)}
+  }
+
+  pub fn get_linear(&self, index: &TableIndex) -> Option<(Value, bool)> {
+    unsafe{(*self.table).get_linear(index)}
   }
 
   pub fn set(&self, row: &TableIndex, column: &TableIndex, value: Value) {
@@ -231,12 +240,10 @@ impl Iterator for ValueIterator {
   fn next(&mut self) -> Option<(Value, bool)> {
     match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
-        let (value, changed) = unsafe{ (*self.table).get_unchecked(rix.unwrap(),cix.unwrap()) };
-        Some((value, changed))
+        self.get(&rix,&cix)
       },     
       (Some(rix), None) => {
-        let (value, changed) = unsafe{ (*self.table).get_unchecked_linear(rix.unwrap()) };
-        Some((value, changed))
+        self.get_linear(&rix)
       },   
       _ => None,
     }
@@ -447,7 +454,7 @@ impl Iterator for ConstantIterator {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AliasIterator {
   alias: u64,
   table_id: TableId,
@@ -489,6 +496,14 @@ impl Iterator for AliasIterator {
       },
       Some(_index) => self.index
     }
+  }
+}
+
+impl fmt::Debug for AliasIterator {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "AliasIterator(table: {:?} alias: {:?})", self.table_id, humanize(&self.alias))?;
+    Ok(())
   }
 }
 

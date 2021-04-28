@@ -36,7 +36,7 @@ pub extern "C" fn set_all(arguments: &Vec<(u64, ValueIterator)>) {
     for i in 1..=rows {
       let mut flag: bool = true;
       for j in 1..=cols {
-        let value = vi.get(&TableIndex::Index(i),&TableIndex::Index(j)).unwrap();
+        let (value,_) = vi.get(&TableIndex::Index(i),&TableIndex::Index(j)).unwrap();
         match value.as_bool() {
           Some(false) => flag = false,
           _ => (), // TODO Alert user that there was an error
@@ -49,7 +49,7 @@ pub extern "C" fn set_all(arguments: &Vec<(u64, ValueIterator)>) {
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = true;
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        let value = vi.get(&k,&m).unwrap();
+        let (value,_) = vi.get(&k,&m).unwrap();
         match value.as_bool() {
           Some(false) => flag = false,
           _ => (), // TODO Alert user that there was an error
@@ -85,7 +85,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>) {
     for i in 1..=rows {
       let mut flag: bool = false;
       for j in 1..=cols {
-        let value = vi.get(&TableIndex::Index(i),&TableIndex::Index(j)).unwrap();
+        let (value,_) = vi.get(&TableIndex::Index(i),&TableIndex::Index(j)).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
@@ -98,7 +98,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>) {
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = false;
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
-        let value = vi.get(&k,&m).unwrap();
+        let (value,_) = vi.get(&k,&m).unwrap();
         match value.as_bool() {
           Some(true) => flag = true,
           _ => (), // TODO Alert user that there was an error
@@ -135,7 +135,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
       let mut sum: Value = Value::from_u64(0);
       for j in 1..=cols {
         match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
-          Some(value) => {
+          Some((value,_)) => {
             match sum.add(value) {
               Ok(result) => sum = result,
               _ => (), // TODO Alert user that there was an error
@@ -152,7 +152,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
       let mut sum: Value = Value::from_u64(0);
       for (_j,k) in (1..=rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
-          Some(value) => {
+          Some((value,_)) => {
             match sum.add(value) {
               Ok(result) => sum = result,
               _ => (), // TODO Alert user that there was an error
@@ -189,7 +189,7 @@ pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   if vi.column_index != TableIndex::None {
     out.resize(out_rows + in_rows, out_columns);
     for (row_index, column_index) in vi.index_iterator() {
-      let value = vi.get(&row_index,&column_index).unwrap();
+      let (value,_) = vi.get(&row_index,&column_index).unwrap();
       // If the column has an alias, let's use it instead
       let out_column = match vi.get_column_alias(column_index.unwrap()) {
         Some(alias) => alias,
@@ -294,12 +294,14 @@ pub extern "C" fn table_vertical__concatenate(arguments: &Vec<(u64, ValueIterato
   let mut row = 0;
   for (_, vi) in arguments.iter().take(arguments.len()-1) {
     let height = vi.rows();
-    let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
-    let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
-    for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
-      out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
+    if height != 0 {
+      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
+      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
+      for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
+        out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
+      }
+      row += height;
     }
-    row += height;
   }
 }
 
@@ -313,8 +315,8 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO add increment argument if there are three
 
   // TODO We have to test to see if all of these things are valid
-  let start_value = start_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
-  let end_value = end_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
+  let (start_value,_) = start_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
+  let (end_value,_) = end_vi.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
   let start = start_value.as_u64().unwrap() as usize;
   let end = end_value.as_u64().unwrap() as usize;
   let range = end - start;

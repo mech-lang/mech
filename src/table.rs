@@ -223,12 +223,17 @@ impl Table {
     
   }
 
+  // Get the value in the store at memory address (ix) and whether it has been changed
+  pub fn get_linear(&self, index: &TableIndex) -> Option<(Value, bool)> {
+    self.get(index,&TableIndex::None)    
+  }
+
   // Get the value in the store at memory address (row, column)
-  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<Value> {
+  pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     match self.index(row, column) {
       Some(ix) => {
         let address = self.data[ix];
-        Some(self.store.data[address])
+        Some((self.store.data[address], self.changed[ix]))
       },
       None => None,
     }

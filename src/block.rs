@@ -475,7 +475,7 @@ impl Block {
                   let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
                   let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
                   for column in vi.raw_column_iter.clone() {
-                    let value = vi.get(&row,&column).unwrap();
+                    let (value,_) = vi.get(&row,&column).unwrap();
                     split_table.set(&TableIndex::Index(1),&column, value);
                   }
                   out.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));

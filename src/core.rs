@@ -123,7 +123,7 @@ impl Core {
     Ok(())
   }
 
-  pub fn get_cell_in_table(&mut self, table: u64, row: &TableIndex, column: &TableIndex) -> Option<Value> {
+  pub fn get_cell_in_table(&mut self, table: u64, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     match self.database.borrow().tables.get(&table) {
       Some(table_ref) => {
         table_ref.get(row, column)
