@@ -571,8 +571,8 @@ impl Compiler {
                   true => (),
                   false => {
                     // This alias has already been marked as produced, so it is a duplicate
-                    block.errors.push(Error {
-                      block: block.id,
+                    block.errors.insert(Error {
+                      block_id: block.id,
                       step_text: constraint_text.clone(),
                       error_type: ErrorType::DuplicateAlias(*alias),
                     });
@@ -840,8 +840,8 @@ impl Compiler {
         }
 
         for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
-          block.errors.push(Error {
-            block: block.id,
+          block.errors.insert(Error {
+            block_id: block.id,
             step_text: step_text,
             error_type: ErrorType::UnsatisfiedConstraint(
               unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
@@ -858,7 +858,7 @@ impl Compiler {
           store.number_literals.insert(k,v.clone());
         }
         for err in self.errors.drain(..) {
-          block.errors.push(err);
+          block.errors.insert(err);
         }
         self.variable_names.clear();
         self.blocks.push(block.clone());
