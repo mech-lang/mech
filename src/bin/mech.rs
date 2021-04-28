@@ -509,8 +509,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   _ => "".to_string()
                 };
       
-      
-                let test_result_string = match test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap().as_bool() {
+                let (test_result,_) = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
+                let test_result_string = match test_result.as_bool() {
                   Some(false) => {
                     passed_all_tests = false;
                     tests_failed += 1;
