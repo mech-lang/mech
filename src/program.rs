@@ -17,9 +17,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Core, humanize, Register, Transaction, Change, Error};
+use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType};
 use mech_core::{Value, ValueMethods, ValueIterator, TableIndex};
-use mech_core::Block;
+use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId};
 use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
@@ -195,24 +195,26 @@ impl Program {
     for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {
       let fun_name = self.mech.runtime.database.borrow().store.strings.get(&fun_name_id).unwrap().clone();
       let m: Vec<_> = fun_name.split('/').collect();
-      let underscore_name = m[0].replace("-","_");
+      let m = m[0];
+      let underscore_name = m.replace("-","_");
       #[cfg(unix)]
       let machine_name = format!("libmech_{}.so", underscore_name);
       #[cfg(windows)]
       let machine_name = format!("mech_{}.dll", underscore_name);
-      match (&fun, self.machine_repository.get(m[0])) {
+
+      match (&fun, self.machine_repository.get(m)) {
         (None, Some((ver, path))) => {
-          let library = self.libraries.entry(m[0].to_string()).or_insert_with(||{
+          let library = self.libraries.entry(m.to_string()).or_insert_with(||{
             match File::open(format!("machines/{}",machine_name)) {
               Ok(_) => {
                 match &outgoing {
-                  Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m[0], ver)));}
+                  Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m, ver)));}
                   None => (),
                 }
                 let message = format!("Can't load library {:?}", machine_name);
                 unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
               }
-              _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
+              _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
             }
           });       
           let native_rust = unsafe {
@@ -223,6 +225,28 @@ impl Program {
             m.into_raw()
           };
           *fun = Some(*native_rust);
+          // Resolve any function needed errors
+          let mut resolved_errors = vec![];
+          for error in &self.mech.runtime.errors {
+            match error.error_type {
+              ErrorType::MissingFunction(missing_function_id) => {
+                if missing_function_id == *fun_name_id {
+                  let block = self.mech.runtime.blocks.get_mut(&error.block_id).unwrap();
+                  block.errors.remove(&error);
+                  block.state = BlockState::New;
+                  if block.is_ready() {
+                    self.mech.runtime.ready_blocks.insert(block.id);
+                  }
+                  resolved_errors.push(error.clone());
+                }
+              }
+              _ => (),
+            }
+          }
+          for error in resolved_errors {
+            self.mech.runtime.errors.remove(&error);
+          }
+          
         },
         _ => (),
       }
@@ -284,8 +308,9 @@ impl Program {
     }
     for program in &machine_init_code {
       self.compile_program(program.to_string());
-      self.trigger_machines();
     }
+    self.mech.step();
+    self.trigger_machines();
 
     /*
     // Do it for the the other core
