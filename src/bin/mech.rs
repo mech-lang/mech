@@ -522,7 +522,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     tests_passed += 1;
                     format!("{}", "ok".green())
                   }
-                  _ => format!("{}", "failed".red()),
+                  x => {
+                    passed_all_tests = false;
+                    tests_failed += 1;
+                    failed_tests.push(test_name.clone());
+                    format!("{}", "failed".red())
+                  },
                 };
                 println!("\t{0: <30} {1: <5}", test_name, test_result_string);
               }
