@@ -73,7 +73,6 @@ fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, o
         None => (),
       }
       let machine_path = format!("{}{}", path_str, machine_name);
-      println!("{:?}", machine_path);
       let path = Path::new(&machine_path);
       let mut dest = File::create(machine_file_path.clone())?;
       let mut f = File::open(path)?;
@@ -127,6 +126,20 @@ impl Program {
       errors: Vec::new(),
       programs: 0,
       listeners: HashSet::new(),
+    }
+  }
+
+  pub fn trigger_machines(&mut self) {
+    let database = self.mech.runtime.database.borrow();
+    for register in &self.mech.runtime.aggregate_changed_this_round {
+      match self.machines.get_mut(&register.hash()) {
+        // Invoke the machine!
+        Some(mut machine) => {
+          let table = database.tables.get(&register.table_id.unwrap()).unwrap();
+          machine.on_change(&table);
+        },
+        _ => (), // TODO Warn user that the machine is not loaded!
+      }
     }
   }
 
@@ -271,6 +284,7 @@ impl Program {
     }
     for program in &machine_init_code {
       self.compile_program(program.to_string());
+      self.trigger_machines();
     }
 
     /*
@@ -537,7 +551,6 @@ impl ProgramRunner {
       program.mech.step();
       for core in program.cores.values_mut() {
         core.step();
-        println!("{:?}", core);
       }
       extern crate ws;
       use ws::{connect, Handler, Sender, Handshake, Result, Message, CloseCode};
@@ -741,21 +754,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
             let end_ns = time::precise_time_ns();
-            let time = (end_ns - start_ns) as f64; 
-            let trigger_machines = |p: &mut Program| {
-              let database = p.mech.runtime.database.borrow();
-              for register in &p.mech.runtime.aggregate_changed_this_round {
-                match p.machines.get_mut(&register.hash()) {
-                  // Invoke the machine!
-                  Some(mut machine) => {
-                    let table = database.tables.get(&register.table_id.unwrap()).unwrap();
-                    machine.on_change(&table);
-                  },
-                  _ => (), // TODO Warn user that the machine is not loaded!
-                }
-              }
-            };         
-            trigger_machines(&mut program);    
+            let time = (end_ns - start_ns) as f64;   
+            program.trigger_machines();    
             //println!("{:?}", program.mech);
             //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
@@ -830,29 +830,13 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           } 
           (Ok(RunLoopMessage::Code(code_tuple)), _) => {
             let block_count = program.mech.runtime.blocks.len();
-            let trigger_machines = |p: &mut Program| {
-              let database = p.mech.runtime.database.borrow();
-              for register in &p.mech.runtime.aggregate_changed_this_round {
-                match p.machines.get_mut(&register.hash()) {
-                  // Invoke the machine!
-                  Some(mut machine) => {
-                    let table = database.tables.get(&register.table_id.unwrap()).unwrap();
-                    machine.on_change(&table);
-                  },
-                  _ => (), // TODO Warn user that the machine is not loaded!
-                }
-              }
-            };
-
-
             match code_tuple {
               (0, MechCode::String(code)) => {
                 let mut compiler = Compiler::new(); 
                 compiler.compile_string(code);
                 program.mech.register_blocks(compiler.blocks);
-                trigger_machines(&mut program);
+                program.trigger_machines();
                 program.download_dependencies(Some(client_outgoing.clone()));
-                trigger_machines(&mut program);
 
                 client_outgoing.send(ClientMessage::StepDone);
               },
@@ -875,9 +859,8 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
-                trigger_machines(&mut program);
+                program.trigger_machines();
                 program.download_dependencies(Some(client_outgoing.clone()));
-                trigger_machines(&mut program);
 
                 client_outgoing.send(ClientMessage::StepDone);
               }
