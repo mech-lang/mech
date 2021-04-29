@@ -23,6 +23,7 @@ lazy_static! {
 
 pub type MechFunction = extern "C" fn(arguments: &Vec<(u64, ValueIterator)>);
 
+#[no_mangle]
 pub extern "C" fn set_all(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -72,6 +73,7 @@ pub extern "C" fn set_all(arguments: &Vec<(u64, ValueIterator)>) {
   };
 }
 
+#[no_mangle]
 pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -121,6 +123,7 @@ pub extern "C" fn set_any(arguments: &Vec<(u64, ValueIterator)>) {
   };
 }
 
+#[no_mangle]
 pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 1
   let (in_arg_name, vi) = &arguments[0];
@@ -178,6 +181,7 @@ pub extern "C" fn stats_sum(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   //TODO There needs to be some checking of dimensions here
   let (_, mut vi) = arguments[0].clone();
@@ -206,6 +210,7 @@ pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
   let (_ , mut input) = arguments[0].clone();
   let (_, mut out) = arguments[1].clone();
@@ -241,6 +246,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>) {
   let (_, vi) = &arguments[0];
   let (_, mut out) = arguments[1].clone();
@@ -254,6 +260,7 @@ pub extern "C" fn table_copy(arguments: &Vec<(u64, ValueIterator)>) {
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_horizontal__concatenate(arguments: &Vec<(u64, ValueIterator)>) {
   let (_, mut out) = arguments[arguments.len()-1].clone();
 
@@ -275,6 +282,7 @@ pub extern "C" fn table_horizontal__concatenate(arguments: &Vec<(u64, ValueItera
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_vertical__concatenate(arguments: &Vec<(u64, ValueIterator)>) {
 
   let (_, mut out) = arguments[arguments.len()-1].clone();
@@ -305,6 +313,7 @@ pub extern "C" fn table_vertical__concatenate(arguments: &Vec<(u64, ValueIterato
   }
 }
 
+#[no_mangle]
 pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>) {
   // TODO test argument count is 2 or 3
   // 2 -> start, end
@@ -332,6 +341,7 @@ pub extern "C" fn table_range(arguments: &Vec<(u64, ValueIterator)>) {
 #[macro_export]
 macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
+    #[no_mangle]
     pub extern "C" fn $func_name(arguments: &Vec<(u64, ValueIterator)>) {
       // TODO test argument count is 3
       let (_, lhs) = &arguments[0];
