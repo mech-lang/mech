@@ -188,6 +188,14 @@ impl ValueIterator {
     unsafe{(*self.table).set(row, column, value)};
   }
 
+  pub fn set_string(&self, row: &TableIndex, column: &TableIndex, value: Value, string: String) {
+    unsafe{
+      (*self.table).set(row, column, value);
+      (*self.table).insert_string(string);
+    };
+
+  }
+
   pub fn set_unchecked(&self, row: usize, column: usize, value: Value) {
     unsafe{(*self.table).set_unchecked(row, column, value)};
   }
