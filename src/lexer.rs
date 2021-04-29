@@ -38,6 +38,7 @@ pub enum Token {
   Tilde,
   Grave,
   Bar,
+  Backslash,
   Quote,
   Ampersand,
   Percent,

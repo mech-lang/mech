@@ -450,6 +450,7 @@ leaf!{dash, "-", Token::Dash}
 leaf!{underscore, "_", Token::Underscore}
 leaf!{asterisk, "*", Token::Asterisk}
 leaf!{slash, "/", Token::Slash}
+leaf!{backslash, "\\", Token::Backslash}
 leaf!{caret, "^", Token::Caret}
 leaf!{space, " ", Token::Space}
 leaf!{tab, "\t", Token::Tab}
@@ -482,8 +483,8 @@ fn punctuation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn symbol(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, punctuation) = alt((ampersand , bar , at , slash , hashtag , equal , tilde , plus , asterisk , caret , underscore))(input)?;
-  Ok((input, Node::Symbol{children: vec![punctuation]}))
+  let (input, symbol) = alt((ampersand , bar , at , slash , backslash , hashtag , equal , tilde , plus , asterisk , caret , underscore))(input)?;
+  Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
 fn single_text(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
