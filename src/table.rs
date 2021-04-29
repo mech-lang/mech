@@ -181,6 +181,12 @@ impl Table {
     self.store.strings.get(&hash)
   }
 
+  // Given a hash, get associated string
+  pub fn insert_string(&mut self, string: String) {
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+    store.strings.insert(Value::from_string(&string),string);
+  }
+
   // Get the memory address into the store at a (row, column)
   pub fn get_address(&self, row: &TableIndex, column: &TableIndex) -> Option<usize> {
     match self.index(row, column) {
