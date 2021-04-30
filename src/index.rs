@@ -164,7 +164,7 @@ impl ValueIterator {
     self.rows() == 1 && self.columns() == 1
   }
 
-  pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<&String> {
+  pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
     unsafe{(*self.table).get_string(row,column)}
   }
 
