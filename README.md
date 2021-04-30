@@ -20,8 +20,8 @@ The language runtime. It's a small dataflow engine that accepts transactions of 
 - **table** - defines a `Table`, the core data structure of Mech. A table is a 2D array of values.
 - **block** - defines a `Block`, which is the ubiquitous unit of code in Mech. A block is comprised of transformations on input tables. These transformations can either modify existing tables or create new tables.
 - **database** - defines a `Database` of tables. Databases accept `Transactions`, which are sets of `Changes` to the database.
-- **runtime** - defines a `Runtime`, which orchestrate the execution of blocks that comprise the compute graph.
-- **operations** - defines the primitive operations that can be performed by nodes in the compute network. These include basic mathematical, comparison, and logic operations that can be performed on values.
+- **runtime** - defines a `Runtime`, which orchestrates the execution of blocks that compose the compute graph.
+- **operations** - defines the primitive operations that can be performed by nodes in the compute network. These include basic mathematical, comparison, and logic operations that take values as inputs.
 - **errors** - defines an `Error`, which holds the information necessary to track and render error messages.
 - **index** - defines various iterators to iterate though tables.
 - **core** - defines a `Core`, which wraps all the other modules into a struct with user-facing interfaces. Also defines a standard library of functions that can be loaded at runtime.
