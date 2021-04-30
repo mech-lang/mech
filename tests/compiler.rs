@@ -492,6 +492,14 @@ block
 block
   #x := [10 20; 30 40]", Value::from_i64(100));
 
+test_mech!(set_empty_table_with_column,"
+block
+  #test = #x
+block
+  #x = [|code|]
+block
+  #x := 10", Value::from_i64(10));
+
 // ## Concat
 
 test_mech!(concat_horzcat_data,"
