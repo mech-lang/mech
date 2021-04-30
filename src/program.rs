@@ -35,6 +35,7 @@ use std::io::copy;
 use time;
 
 lazy_static! {
+  static ref MECH_CODE: u64 = hash_string("mech/code");
   static ref MECH_MACHINES: u64 = hash_string("mech/machines");
   static ref NAME: u64 = hash_string("name");
   static ref VERSION: u64 = hash_string("version");
@@ -123,7 +124,7 @@ impl Program {
     compiler.compile_string(input.clone());
     self.mech.register_blocks(compiler.blocks);
     //self.errors.append(&mut self.mech.runtime.errors.clone());
-    let mech_code = hash_string("mech/code");
+    let mech_code = *MECH_CODE;
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
@@ -138,7 +139,7 @@ impl Program {
       self.mech.register_blocks(vec![block]);
     }
     //self.errors.append(&mut self.mech.runtime.errors.clone());
-    let mech_code = hash_string("mech/code");
+    let mech_code = *MECH_CODE;
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
@@ -756,7 +757,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             program.mech.process_transaction(&txn);
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;   
-            program.trigger_machines();    
+            program.trigger_machines();  
             //println!("{:?}", program.mech);
             //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
@@ -919,7 +920,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           (Err(_), _) => {
             break 'runloop
           },
-          x => println!("{:?}", x),
+          x => println!("qq{:?}", x),
         }
         client_outgoing.send(ClientMessage::Done);
       }
