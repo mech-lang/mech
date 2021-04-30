@@ -59,7 +59,6 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
             };
           }
           Some("mec") => {
-            println!("{:?}", name);
             match File::open(name) {
               Ok(mut file) => {
                 println!("{} {}", "[Loading]".bright_green(), name);
