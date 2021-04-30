@@ -190,6 +190,10 @@ pub extern "C" fn table_append__row(arguments: &Vec<(u64, ValueIterator)>) {
   let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
   let in_rows = vi.rows();
 
+  if in_rows == 0 {
+    return;
+  }
+
   if vi.column_index != TableIndex::None {
     out.resize(out_rows + in_rows, out_columns);
     for (row_index, column_index) in vi.index_iterator() {
