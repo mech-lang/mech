@@ -503,7 +503,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tests_count += 1;
                 
                 let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
-                  Some(string) => {
+                  Some((string,_)) => {
                     string.to_string()
                   }
                   _ => "".to_string()
