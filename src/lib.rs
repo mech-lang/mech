@@ -16,6 +16,8 @@ extern crate serde_json;
 extern crate serde;
 #[macro_use]
 extern crate crossbeam_channel;
+#[macro_use]
+extern crate lazy_static;
 
 extern crate time;
 
@@ -36,10 +38,14 @@ use reqwest::StatusCode;
 // ## Modules
 
 pub mod program;
+pub mod persister;
+pub mod runloop;
 
 // ## Exported Modules
 
-pub use self::program::{Program, ProgramRunner, RunLoop, ClientMessage};
+pub use self::program::{Program};
+pub use self::runloop::{ProgramRunner, RunLoop, ClientMessage};
+pub use self::persister::{Persister};
 
 pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
   create_dir("machines");
