@@ -1,0 +1,17 @@
+# Set Tests
+
+## Set Membership
+
+There are thee associated functions in this group: set/any, set/all, and set/none.
+
+Test set/any
+  #mech/test += ["Test set/any - pos" true [true false false]]
+  #mech/test += ["Test set/any - neg" false [false false false]]
+
+Test set/all
+  #mech/test += ["Test set/all - pos" true [true true true]]
+  #mech/test += ["Test set/all - neg" false [false true true]]
+
+Test set/none
+  #mech/test += ["Test set/none - pos" true [false false false]]
+  #mech/test += ["Test set/none - neg" false [false false true]]

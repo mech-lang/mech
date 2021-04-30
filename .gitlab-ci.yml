@@ -1,0 +1,10 @@
+image: "mechlang/mech:latest"
+
+test:cargo:
+  script:
+  - rustup default nightly-2021-02-22
+  - rustup show
+  - rustc --version && cargo --version
+  - rustup component add rust-src
+  - cargo build --release
+  - mech test tests

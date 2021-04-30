@@ -1,0 +1,24 @@
+[package]
+name = "mech-set"
+version = "0.0.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Set library for the Mech language"
+documentation = "http://docs.mech-lang.org"
+homepage = "http://mech-lang.org"
+repository = "https://github.com/mech-machines/set"
+keywords = ["mech", "language", "programming"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[badges]
+gitlab = { repository = "mech-lang/machines/set", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+mech-core = {path = "../../core"}
+mech-utilities = {path = "../../utilities"}
+
+lazy_static = "1.4.0"
