@@ -323,6 +323,24 @@ block
   ix = #x == #y
   #test = stats/sum(column: #x{ix,:})", Value::from_i64(5)); 
 
+test_mech!(comparator_equal_boolean,"
+block
+  #x = [true; true; true; true]
+  #y = [true; true; true; true]
+  
+block
+  ix = #x == #y
+  #test = set/all(table: ix)", Value::from_bool(true)); 
+
+test_mech!(comparator_not_equal_boolean,"
+block
+  #x = [true; true; true; true]
+  #y = [false; false; false; false]
+  
+block
+  ix = #x != #y
+  #test = set/all(table: ix)", Value::from_bool(true)); 
+
 test_mech!(comparator_equal_string,r#"
 block
   #x = [1; 2; 3; 4]
