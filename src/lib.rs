@@ -59,20 +59,13 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
   } else if *in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
-    for (i,m) in (1..=in_columns).zip(vi.column_iter.clone()) {
-      for (j,k) in (1..=in_rows).zip(vi.row_iter.clone()) {
-        match vi.get(&k,&m) {
-          Some((value,_)) => {
-            match sum.add(value) {
-              Ok(result) => sum = result,
-              _ => (), // TODO Alert user that there was an error
-            }
-          }
-          _ => ()
-        }
+    for (value,_) in vi.clone() {
+      match sum.add(value) {
+        Ok(result) => sum = result,
+        _ => (), // TODO Alert user that there was an error
       }
-    }  
-    out.set_unchecked(1, 1, Value::from_f64(sum.as_f64().unwrap() / (vi.rows() * vi.columns()) as f64   ));
+    }
+    out.set_unchecked(1, 1, Value::from_f64(sum.as_f64().unwrap() / (vi.rows() * vi.columns()) as f64));
   } else {
     // TODO Warn about unknown argument
   }

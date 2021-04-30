@@ -6,7 +6,8 @@ Read about progress on our [blog](http://mech-lang.org/blog/), follow us on Twit
 
 ## Provided Functions
 
-- `stats/average()`
+- `stats/sum(table)`
+- `stats/average(table)`
 
 ## License
 
