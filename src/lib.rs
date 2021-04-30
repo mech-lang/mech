@@ -36,6 +36,50 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
 
   let mut code: Vec<MechCode> = Vec::new();
 
+  let read_file_to_code = |path: &Path| -> Vec<MechCode> {
+    let mut code: Vec<MechCode> = Vec::new();
+    match (path.to_str(), path.extension())  {
+      (Some(name), Some(extension)) => {
+        match extension.to_str() {
+          Some("blx") => {
+            match File::open(name) {
+              Ok(file) => {
+                println!("{} {}", "[Loading]".bright_green(), name);
+                let mut reader = BufReader::new(file);
+                match bincode::deserialize_from(&mut reader) {
+                  Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
+                  Err(err) => {
+                    println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                  },
+                }
+              }
+              Err(err) => {
+                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+              },
+            };
+          }
+          Some("mec") => {
+            println!("{:?}", name);
+            match File::open(name) {
+              Ok(mut file) => {
+                println!("{} {}", "[Loading]".bright_green(), name);
+                let mut buffer = String::new();
+                file.read_to_string(&mut buffer);
+                code.push(MechCode::String(buffer));
+              }
+              Err(err) => {
+                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+              },
+            };
+          }
+          _ => (),
+        }
+      },
+      _ => {println!("{} Failed to load {:?}", "[Error]".bright_red(), path);},
+    }
+    code
+  };
+
   for path_str in mech_paths {
     let path = Path::new(path_str);
     // Compile a .mec file on the web
@@ -48,54 +92,17 @@ pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box
       if path.is_dir() {
         for entry in path.read_dir().expect("read_dir call failed") {
           if let Ok(entry) = entry {
-            match (entry.path().to_str(), entry.path().extension())  {
-              (Some(name), Some(extension)) => {
-                match extension.to_str() {
-                  Some("blx") => {
-                    println!("{} {}", "[Loading]".bright_green(), name);
-                    let file = File::open(name)?;
-                    let mut reader = BufReader::new(file);
-                    let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                    code.push(MechCode::MiniBlocks(miniblocks));
-                  }
-                  Some("mec") => {
-                    println!("{} {}", "[Loading]".bright_green(), name);
-                    let mut f = File::open(name)?;
-                    let mut buffer = String::new();
-                    f.read_to_string(&mut buffer);
-                    code.push(MechCode::String(buffer));
-                  }
-                  _ => (),
-                }
-              },
-              _ => (),
-            }
+            let path = entry.path();
+            let mut new_code = read_file_to_code(&path);
+            code.append(&mut new_code);
           }
         }
       } else if path.is_file() {
         // Compile a single file
-        match (path.to_str(), path.extension())  {
-          (Some(name), Some(extension)) => {
-            match extension.to_str() {
-              Some("blx") => {
-                println!("{} {}", "[Loading]".bright_green(), name);
-                let file = File::open(name)?;
-                let mut reader = BufReader::new(file);
-                let miniblocks: Vec<MiniBlock> = bincode::deserialize_from(&mut reader)?;
-                code.push(MechCode::MiniBlocks(miniblocks));
-              }
-              Some("mec") => {
-                println!("{} {}", "[Loading]".bright_green(), name);
-                let mut f = File::open(name)?;
-                let mut buffer = String::new();
-                f.read_to_string(&mut buffer);
-                code.push(MechCode::String(buffer));
-              }
-              _ => (),
-            }
-          },
-          _ => (),
-        }
+        let mut new_code = read_file_to_code(&path);
+        code.append(&mut new_code);
+      } else {
+        println!("{} Failed to open {:?}", "[Error]".bright_red(), path);
       }
     };
   }
