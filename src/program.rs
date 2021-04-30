@@ -34,6 +34,14 @@ use std::io::copy;
 
 use time;
 
+lazy_static! {
+  static ref MECH_MACHINES: u64 = hash_string("mech/machines");
+  static ref NAME: u64 = hash_string("name");
+  static ref VERSION: u64 = hash_string("version");
+  static ref URL: u64 = hash_string("url");
+}
+
+
 struct Registrar {
   machines: HashMap<u64, Box<dyn Machine>>,
 }
@@ -149,13 +157,13 @@ impl Program {
       registry_core.step();
 
       // Convert the machine listing into a hash map
-      let registry_table = registry_core.get_table(hash_string("mech/machines")).unwrap();
+      let registry_table = registry_core.get_table(*MECH_MACHINES).unwrap();
       for row in 0..registry_table.rows {
         let row_index = TableIndex::Index(row+1);
-        let name = registry_table.get_string(&row_index, &TableIndex::Index(1)).unwrap().to_string();
-        let version = registry_table.get_string(&row_index, &TableIndex::Index(2)).unwrap().to_string();
-        let url = registry_table.get_string(&row_index, &TableIndex::Index(3)).unwrap().to_string();
-        self.machine_repository.insert(name, (version, url));
+        let (name,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*NAME)).unwrap();
+        let (version,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*VERSION)).unwrap();
+        let (url,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*URL)).unwrap();
+        self.machine_repository.insert(name.to_string(), (version.to_string(), url.to_string()));
       }
     }
     // Do it for the mech core
