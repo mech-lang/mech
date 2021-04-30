@@ -4,11 +4,9 @@ Mech is a language for developing **data-driven**, **reactive** systems like ani
 
 Read about progress on our [blog](http://mech-lang.org/blog/), follow us on Twitter [@MechLang](https://twitter.com/MechLang), or join the mailing list: [talk@mech-lang.org](http://mech-lang.org/page/community/).
 
-## Contents
+## Provided Functions
 
-Provided functions:
-
-- stats/average
+- `stats/average()`
 
 ## License
 
