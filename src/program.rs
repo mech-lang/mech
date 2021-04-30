@@ -27,6 +27,8 @@ use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, Machin
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 
+use super::download_machine;
+
 use libloading::Library;
 use std::io::copy;
 
@@ -48,41 +50,6 @@ impl MachineRegistrar for Registrar {
   fn register_machine(&mut self, machine: Box<dyn Machine>) {
     self.machines.insert(machine.id(), machine);
   }
-}
-
-fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
-  create_dir("machines");
-
-  let machine_file_path = format!("machines/{}",machine_name);
-  {
-    let path = Path::new(path_str);
-    // Download from the web
-    if path.to_str().unwrap().starts_with("https") {
-      match outgoing {
-        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Downloading]".bright_cyan(), name, ver)));}
-        None => (),
-      }
-      let machine_url = format!("{}/{}", path_str, machine_name);
-      let mut response = reqwest::get(machine_url.as_str())?;
-      let mut dest = File::create(machine_file_path.clone())?;
-      copy(&mut response, &mut dest)?;
-    // Load from a local directory
-    } else {
-      match outgoing {
-        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), name, ver)));}
-        None => (),
-      }
-      let machine_path = format!("{}{}", path_str, machine_name);
-      let path = Path::new(&machine_path);
-      let mut dest = File::create(machine_file_path.clone())?;
-      let mut f = File::open(path)?;
-      copy(&mut f, &mut dest)?;
-    }
-  }
-  let machine_file_path = format!("machines/{}",machine_name);
-  let message = format!("Can't load library {:?}", machine_file_path);
-  let machine = unsafe{Library::new(machine_file_path).expect(&message)};
-  Ok(machine)
 }
 
 // ## Program
