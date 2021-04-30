@@ -259,22 +259,33 @@ impl ValueMethods for Value {
   }
 
   fn equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.equal(r).unwrap())),
-      _ => {
-        match (self.as_string(), other.as_string()) {
-          (Some(q), Some(r)) => Ok(Value::from_bool(q == r)),
-          _ => Err(ErrorType::IncorrectFunctionArgumentType),
-        }
-      },
-    } 
+    match (self.value_type(), other.value_type()) {
+      (ValueType::Boolean, ValueType::Boolean) => {
+        Ok(Value::from_bool(self.as_bool().unwrap() == other.as_bool().unwrap()))
+      }
+      (ValueType::String, ValueType::String) => {
+        Ok(Value::from_bool(self.as_string().unwrap() == other.as_string().unwrap()))
+      }
+      (ValueType::Quantity, ValueType::Quantity) => {
+        Ok(Value::from_bool(self.as_quantity().unwrap().equal(other.as_quantity().unwrap()).unwrap()))
+      }
+      _ => Err(ErrorType::IncorrectFunctionArgumentType)
+    }
   }
 
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.not_equal(r).unwrap())),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
+    match (self.value_type(), other.value_type()) {
+      (ValueType::Boolean, ValueType::Boolean) => {
+        Ok(Value::from_bool(self.as_bool().unwrap() != other.as_bool().unwrap()))
+      }
+      (ValueType::String, ValueType::String) => {
+        Ok(Value::from_bool(self.as_string().unwrap() != other.as_string().unwrap()))
+      }
+      (ValueType::Quantity, ValueType::Quantity) => {
+        Ok(Value::from_bool(self.as_quantity().unwrap().not_equal(other.as_quantity().unwrap()).unwrap()))
+      }
+      _ => Err(ErrorType::IncorrectFunctionArgumentType)
+    }
   }
 
   fn less_than(&self, other: Value) -> Result<Value, ErrorType> {
