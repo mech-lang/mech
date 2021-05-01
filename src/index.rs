@@ -1,6 +1,7 @@
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods};
 use database::{Store, Database};
+use quantities::Quantity;
 use ::humanize;
 use block::Block;
 use hashbrown::HashMap;
@@ -167,6 +168,14 @@ impl ValueIterator {
   pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
     unsafe{(*self.table).get_string(row,column)}
   }
+
+  pub fn get_quantity(&self, row: &TableIndex, column: &TableIndex) -> Option<(Quantity,bool)> {
+    unsafe{(*self.table).get_quantity(row,column)}
+  } 
+
+  pub fn get_u64(&self, row: &TableIndex, column: &TableIndex) -> Option<(u64,bool)> {
+    unsafe{(*self.table).get_u64(row,column)}
+  } 
 
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     unsafe{(*self.table).get(row,column)}

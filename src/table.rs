@@ -6,7 +6,7 @@
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
-use quantities::{QuantityMath};
+use quantities::{Quantity, QuantityMath};
 use database::{Store};
 use value::{Value, ValueMethods, NumberLiteralKind};
 use std::sync::Arc;
@@ -280,6 +280,36 @@ impl Table {
       None => None,
     }
   }
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_quantity(&self, row: &TableIndex, column: &TableIndex) -> Option<(Quantity,bool)> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match value.as_quantity() {
+          None => None,
+          Some(x) => Some((x,self.changed[ix]))
+        }
+      },
+      None => None,
+    }
+  } 
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_u64(&self, row: &TableIndex, column: &TableIndex) -> Option<(u64,bool)> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match value.as_u64() {
+          None => None,
+          Some(x) => Some((x,self.changed[ix]))
+        }
+      },
+      None => None,
+    }
+  } 
 
   // Get the value as an f64 in the store at memory address (row, column)
   pub fn get_reference(&self, row: &TableIndex, column: &TableIndex) -> Option<u64> {
