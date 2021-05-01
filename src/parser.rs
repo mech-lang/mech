@@ -679,6 +679,7 @@ fn binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((colon, space0))(input)?;
   let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
   let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
   Ok((input, Node::Binding{children: vec![binding_id, bound]}))
 }
 

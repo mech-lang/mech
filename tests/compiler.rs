@@ -54,6 +54,14 @@ block
 block
   #test = #x.x + #x.y", Value::from_i64(7));
 
+test_mech!(table_inline_multirow, r#"
+block
+  #x = [x: 1
+        y: 2
+        z: 3]
+block
+  #test = #x.x + #x.y + #x.z"#, Value::from_i64(6));
+
 test_mech!(table_anonymous_table_trailing_whitespace, "
 block
   #test = [|d|
