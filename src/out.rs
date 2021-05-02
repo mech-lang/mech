@@ -10,13 +10,15 @@ use std::io::prelude::*;
 
 lazy_static! {
   static ref IO__STREAMS_OUT: u64 = hash_string("io-streams/out");
+  static ref TEXT: u64 = hash_string("text");
+  static ref COLOR: u64 = hash_string("color");
 }
 
 export_machine!(io__streams_out, io__streams_out_reg);
 
 extern "C" fn io__streams_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
   registrar.register_machine(Box::new(Out{outgoing}));
-  "#io-streams/out = []".to_string()
+  "#io-streams/out = [|text color|]".to_string()
 }
 
 #[derive(Debug)]
@@ -36,28 +38,33 @@ impl Machine for Out {
 
   fn on_change(&mut self, table: &Table) -> Result<(), String> {
     for i in 1..=table.rows {
-      for j in 1..=table.columns {
-        let (value, _) = table.get_unchecked(i,j);
-        match value.value_type() {
-          ValueType::String => {
-            let out_string = format!("{}",table.get_string_from_hash(value).unwrap());
-            self.outgoing.send(RunLoopMessage::String(out_string));
+      let value = table.get(&TableIndex::Index(i),&TableIndex::Alias(*TEXT));
+      let number_literal = table.get_number_literal(&TableIndex::Index(i),&TableIndex::Alias(*COLOR));
+      match (value,number_literal) {
+        (Some((value,_)),Some((number_literal,_))) => {
+          match (value.value_type(), number_literal.as_u32()) {
+            (ValueType::String, color) => {
+              let out_string = format!("{}",table.get_string_from_hash(value).unwrap());
+              self.outgoing.send(RunLoopMessage::String((out_string,color)));
+            }
+            (ValueType::Quantity, color) => {
+              let out_string = format!("{}",value.as_f64().unwrap());
+              self.outgoing.send(RunLoopMessage::String((out_string,color)));
+            }
+            (ValueType::Boolean, color) => {
+              let out_string = format!("{}",value.as_bool().unwrap());
+              self.outgoing.send(RunLoopMessage::String((out_string,color)));
+            }
+            (ValueType::NumberLiteral, color) => {
+              // TODO print number literals
+            }
+            _ => (), // No output representation for other value types
           }
-          ValueType::Quantity => {
-            let out_string = format!("{}",value.as_f64().unwrap());
-            self.outgoing.send(RunLoopMessage::String(out_string));
-          }
-          ValueType::Boolean => {
-            let out_string = format!("{}",value.as_bool().unwrap());
-            self.outgoing.send(RunLoopMessage::String(out_string));
-          }
-          ValueType::NumberLiteral => {
-            // TODO print number literals
-          }
-          _ => (), // No output representation for other value types
         }
+        _ => (), // TODO Warn error
       }
     }
     Ok(())
   }
 }
+
