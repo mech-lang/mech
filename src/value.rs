@@ -37,6 +37,29 @@ pub struct NumberLiteral {
   pub bytes: Vec<u8>,
 }
 
+impl NumberLiteral {
+
+  pub fn as_u8(&self) -> u8 {
+    self.bytes.last().unwrap().clone()
+  }
+
+  pub fn as_u32(&self) -> u32 {
+    let mut container: u32 = 0;
+    for (i,byte) in self.bytes.iter().rev().take(4).enumerate() {
+      container = container | (*byte as u32) << (8 * i) ;
+    }
+    container
+  }
+
+  pub fn as_u64(&self) -> u64 {    
+    let mut container: u64 = 0;
+    for (i,byte) in self.bytes.iter().rev().take(8).enumerate() {
+      container = container | (*byte as u64) << (8 * i) ;
+    }
+    container
+  }
+}
+
 // ## Value Methods
 
 pub trait ValueMethods {
