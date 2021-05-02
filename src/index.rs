@@ -1,5 +1,5 @@
 use table::{Table, TableId, TableIndex};
-use value::{Value, ValueMethods};
+use value::{Value, ValueMethods, NumberLiteral};
 use database::{Store, Database};
 use quantities::Quantity;
 use ::humanize;
@@ -167,6 +167,10 @@ impl ValueIterator {
 
   pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
     unsafe{(*self.table).get_string(row,column)}
+  }
+
+  pub fn get_number_literal(&self, row: &TableIndex, column: &TableIndex) -> Option<(&NumberLiteral,bool)> {
+    unsafe{(*self.table).get_number_literal(row,column)}
   }
 
   pub fn get_quantity(&self, row: &TableIndex, column: &TableIndex) -> Option<(Quantity,bool)> {

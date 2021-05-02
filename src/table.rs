@@ -8,7 +8,7 @@
 #[cfg(not(feature = "no-std"))] use rust_core::fmt;
 use quantities::{Quantity, QuantityMath};
 use database::{Store};
-use value::{Value, ValueMethods, NumberLiteralKind};
+use value::{Value, ValueMethods, NumberLiteral, NumberLiteralKind};
 use std::sync::Arc;
 //use errors::{Error, ErrorType};
 use ::{humanize};
@@ -182,6 +182,11 @@ impl Table {
   }
 
   // Given a hash, get associated string
+  pub fn get_number_literal_from_hash(&self, hash: u64) -> Option<&NumberLiteral> {
+    self.store.number_literals.get(&hash)
+  }
+
+  // Given a hash, get associated string
   pub fn insert_string(&mut self, string: String) {
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
     store.strings.insert(Value::from_string(&string),string);
@@ -273,6 +278,21 @@ impl Table {
         let address = self.data[ix];
         let value = self.store.data[address];
         match self.get_string_from_hash(value) {
+          None => None,
+          Some(x) => Some((x,self.changed[ix]))
+        }
+      },
+      None => None,
+    }
+  }
+
+  // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_number_literal(&self, row: &TableIndex, column: &TableIndex) -> Option<(&NumberLiteral,bool)> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match self.get_number_literal_from_hash(value) {
           None => None,
           Some(x) => Some((x,self.changed[ix]))
         }
