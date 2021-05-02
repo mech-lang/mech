@@ -1530,7 +1530,26 @@ impl Compiler {
       Node::NumberLiteral{kind, bytes} => {
         let table = hash_string(&format!("NumberLiteral-{:?}{:?}", kind, bytes));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
-        let number_literal = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+        let number_literal = match kind {
+          NumberLiteralKind::Hexadecimal => {
+            let mut new_bytes = vec![];
+            for i in (0..=bytes.len()).step_by(2) {
+              let b1 = if i == bytes.len() {
+                break;
+              } else {
+                bytes[i]
+              };
+              let b2 = if i + 1 == bytes.len() {
+                0
+              } else {
+                bytes[i + 1]
+              };
+              new_bytes.push(b1 << 4 | b2);
+            }
+            NumberLiteral{kind: *kind, bytes: new_bytes}
+          }
+          _ => NumberLiteral{kind: *kind, bytes: bytes.clone()}, // TODO Do the right byte representation for the rest of the number literal kinds
+        };
         let value = Value::from_number_literal(&number_literal);
         self.number_literals.insert(value, number_literal);
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
