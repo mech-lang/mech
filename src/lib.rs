@@ -1297,7 +1297,7 @@ impl WasmCore {
         for row in 1..=app_table.rows as usize {
           match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
                  app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-            (Some(root_id), Some(contents)) => {
+            (Some((root_id,_)), Some((contents,_))) => {
               let root_string_id = &self.core.get_string(&root_id).unwrap();
               self.roots.insert(root_id.clone());
               match document.get_element_by_id(&root_string_id) {
@@ -1392,7 +1392,7 @@ impl WasmCore {
     if table.has_column_alias(*TYPE) == true {
       for row in 1..=table.rows {
         match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
-          Some(kind) => {
+          Some((kind,_)) => {
             // ---------------------
             // RENDER A DIV
             // ---------------------
@@ -1400,7 +1400,7 @@ impl WasmCore {
             if raw_kind == *DIV {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                Some(contents) => {
+                Some((contents,_)) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
@@ -1415,7 +1415,7 @@ impl WasmCore {
               // Get contents
               match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-                (Some(href), Some(contents)) => {
+                (Some((href,_)), Some((contents,_))) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
@@ -1437,7 +1437,7 @@ impl WasmCore {
             } else if raw_kind == *IMG {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
-                Some(src) => {
+                Some((src,_)) => {
                   let mut img: web_sys::Element = document.create_element("img")?;
                   let src_string = &self.core.get_string(&src).unwrap();
                   let element_id = hash_string(&format!("img-{:?}-{:?}", table.id, row));
@@ -1453,7 +1453,7 @@ impl WasmCore {
             } else if raw_kind == *BUTTON {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                Some(contents) => {
+                Some((contents,_)) => {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
@@ -1478,18 +1478,18 @@ impl WasmCore {
                   self.canvases.insert(element_id);
                   // Is there a parameters field?
                   match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
-                    Some(parameters_table_id) => {
+                    Some((parameters_table_id,_)) => {
                       match parameters_table_id.as_reference() {
                         Some(parameters_table_id) => {
                           let parameters_table = self.core.get_table(parameters_table_id).unwrap();
                           match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
-                            Some(height) => {
+                            Some((height,_)) => {
                               canvas.set_attribute("height", &format!("{}",height));
                             }
                             _ => (),
                           }
                           match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
-                            Some(width) => {
+                            Some((width,_)) => {
                               canvas.set_attribute("width", &format!("{}",width));
                             }
                             _ => (),
@@ -1503,7 +1503,7 @@ impl WasmCore {
                   }
                   // Add the contents
                   match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                    Some(contains_table_id) => {
+                    Some((contains_table_id,_)) => {
                       match contains_table_id.as_reference() {
                         Some(contains_table_id) => {
                           canvas.set_attribute("elements", &format!("{}",contains_table_id));
@@ -1576,7 +1576,7 @@ impl WasmCore {
               match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-                (Some(min), Some(max), Some(value)) => {
+                (Some((min,_)), Some((max,_)), Some((value,_))) => {
                   match (min.as_f64(), max.as_f64(), value.as_f64()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
                       let mut slider: web_sys::Element = document.create_element("input")?;
@@ -1646,7 +1646,7 @@ impl WasmCore {
         for column in 1..=table.columns {
           // Get contents
           match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
-            Some(contents) => {
+            Some((contents,_)) => {
               let mut cell_div = document.create_element("div")?;
               let element_id = hash_string(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
               let rendered = self.render_value(contents)?;
@@ -1835,7 +1835,7 @@ impl WasmCore {
     // Define a function to make this a lot easier
     let get_stroke_string = |parameters_table: &Table, row: usize, alias: u64| { 
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
-        Some(stroke_id) => {
+        Some((stroke_id,_)) => {
           match stroke_id.as_number_literal() {
             Some(stroke_number_literal_id) => {
               let number_literal = unsafe{ (*wasm_core).core.get_number_literal(&stroke_number_literal_id).unwrap() };
@@ -1868,7 +1868,7 @@ impl WasmCore {
     
     let get_line_width = |parameters_table: &Table, row: usize| {
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
-        Some(line_width) => {
+        Some((line_width,_)) => {
           match line_width.as_f64() {
             Some(line_width) => line_width,
             _ => {
@@ -1890,7 +1890,7 @@ impl WasmCore {
     for row in 1..=elements_table.rows as usize {
       match (elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
              elements_table.get_reference(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (Some(shape), Some(parameters_table_id)) => {
+        (Some((shape,_)), Some(parameters_table_id)) => {
           let shape = shape.as_raw();
           let parameters_table = self.core.get_table(parameters_table_id).unwrap();
           // ---------------------
@@ -1961,7 +1961,7 @@ impl WasmCore {
                     for i in 1..=contains_table.rows {
                       match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
                               contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
-                        (Some(shape),Some(parameters_table_id)) => {
+                        (Some((shape,_)),Some(parameters_table_id)) => {
                           let shape = shape.as_raw();
                           if shape == *LINE {
                             let parameters_table = self.core.get_table(parameters_table_id).unwrap();
@@ -2019,7 +2019,7 @@ impl WasmCore {
                     parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
                     parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
                     parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
-              (Some(source_string), Some(x), Some(y), Some(rotation)) => {
+              (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
                 let source_hash = hash_string(&source_string);
                 match self.images.entry(source_hash) {
                   Entry::Occupied(img_entry) => {
