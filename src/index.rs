@@ -229,6 +229,12 @@ impl ValueIterator {
   pub fn resize(&mut self, rows: usize, columns: usize)  {
     unsafe {
 
+      let columns = if (*self.table).columns > columns {
+        (*self.table).columns
+      } else {
+        columns
+      };
+
       (*self.table).resize(rows, columns);
 
       match self.row_index {
