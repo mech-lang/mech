@@ -654,6 +654,18 @@ block
   x = [10 20 30]
   #x += x{2}", Value::from_u64(60)); 
 
+test_mech!(append_multiple_rows,"
+block
+  #test = stats/sum(table: #x)
+
+block
+  #x = [|x y|
+         1 2]
+block
+  #x += [|x y|
+          3 4
+          5 6]", Value::from_u64(21)); 
+  
 // ## Logic
 
 test_mech!(logic_and,"
