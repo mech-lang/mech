@@ -1,6 +1,0 @@
-# Mech Server Test
-
-block
-  #time/timer += [period: 10s]
-block  
-  #x = #time/timer{1,2}
