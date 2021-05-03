@@ -67,6 +67,10 @@
 				},
 				{
 					"name": "constant.numeric.integer",
+					"match": "\\b0x([0-9]+)\\b"
+				},
+				{
+					"name": "constant.numeric.integer",
 					"match": "\\b([0-9]+)\\b"
 				},				{
 					"name": "constant.language",
