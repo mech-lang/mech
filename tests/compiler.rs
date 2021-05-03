@@ -377,6 +377,22 @@ block
   #test = [|x|
             9]", Value::from_i64(77));
 
+test_mech!(set_empty_with_index,"
+block
+  #foo = [|x y|]
+
+block
+  #foo.x := [true; false; true]
+
+block
+  ix = #foo.x == true
+  ixx = #foo.x == false
+  #foo.y{ix} := 10
+  #foo.y{ixx} := 20
+
+block
+  #test = stats/sum(column: #foo.y)", Value::from_i64(40));
+
 test_mech!(set_column_alias,"
 block
   #test = #ball.x
