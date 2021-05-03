@@ -2,7 +2,7 @@
     "name": "mech",
     "displayName": "Mech",
     "description": "Support for the Mech programming language.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "Mech",
     "icon": "images/logo.png",
     "engines": {
@@ -12,7 +12,7 @@
         "Programming Languages"
     ],
     "repository": {
-        "url": "https://github.com/mech-lang/syntax.git"
+        "url": "https://github.com/mech-lang/mech.git"
     },
     "contributes": {
         "languages": [
