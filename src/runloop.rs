@@ -9,6 +9,7 @@ use std::thread::{self, JoinHandle};
 use std::sync::Arc;
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
+use colored::*;
 
 use super::program::Program;
 use super::persister::Persister;
@@ -425,8 +426,12 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             //program.mech.step_forward_one();
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
-          (Ok(RunLoopMessage::String(string)), _) => {
-            client_outgoing.send(ClientMessage::String(string));
+          (Ok(RunLoopMessage::String((string,color))), _) => {
+            let r: u8 = (color >> 16) as u8;
+            let g: u8 = (color >> 8) as u8;
+            let b: u8 = color as u8;
+            let colored_string = format!("{}", string.truecolor(r,g,b));
+            client_outgoing.send(ClientMessage::String(colored_string));
           } 
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
