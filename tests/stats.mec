@@ -3,11 +3,11 @@
 ## Basic Statistics
 
 Test summation. stats/sum is defined in mech/core at the moment.
-  #mech/test += ["Sum a table" 10, stats/sum(table: [1 2; 3 4])]
-  #mech/test += ["Sum a row" 10, stats/sum(row: [1 2 3 4])]
-  #mech/test += ["Sum a column" 10, stats/sum(column: [1; 2; 3; 4])]
+  #mech/test += ["Sum a table"  10, stats/sum(table: [1 2; 3 4])
+                 "Sum a row"    10, stats/sum(row: [1 2 3 4])
+                 "Sum a column" 10, stats/sum(column: [1; 2; 3; 4])]
 
 Test averaging. This is defined in the stats machine.
-  #mech/test += ["Average a table", 3, stats/average(table: [1 2; 3 6])]
-  #mech/test += ["Average a row", 3, stats/average(row: [1 2 3 6])]
-  #mech/test += ["Average a column", 3, stats/average(column: [1; 2; 3; 6])]
+  #mech/test += ["Average a table",  3, stats/average(table: [1 2; 3 6])
+                 "Average a row",    3, stats/average(row: [1 2 3 6])
+                 "Average a column", 3, stats/average(column: [1; 2; 3; 6])]
