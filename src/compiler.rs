@@ -1165,7 +1165,7 @@ impl Compiler {
             let (row, column) = indices[0];
             let tfm = Transformation::Set{table_id: *table_id, row: row, column: column};
             transformations.push(tfm);
-            Some((table_id,row,column))
+            Some((table_id.clone(),row.clone(),column.clone()))
           }
           _ => None,
         };
@@ -1175,7 +1175,7 @@ impl Compiler {
               let (row, column) = indices[0];
               let tfm = Transformation::Set{table_id: *table_id, row: row, column: column};
               transformations.push(tfm);
-              Some((table_id,row,column))
+              Some((table_id.clone(),row.clone(),column.clone()))
             }
             _ => None,
           }
@@ -1201,10 +1201,15 @@ impl Compiler {
 
         let (output_table_id, output_row, output_col) = match (output_tup, output_tup2) {
           (Some((table,row,col)), Some((_,row2,col2))) => {
+            output.remove(0);
+            output.remove(0);
             (table,row2,col)
           },
-          (Some(a),_) => a,
-          _ => (&TableId::Global(0),TableIndex::All,TableIndex::All),
+          (Some(a),_) => {
+            output.remove(0);
+            a
+          },
+          _ => (TableId::Global(0),TableIndex::All,TableIndex::All),
         };
 
         let fxn = Transformation::Function{
@@ -1212,7 +1217,7 @@ impl Compiler {
           arguments: vec![
             (0, input_table_id, row_select, column_select)
           ],
-          out: (*output_table_id, output_row, output_col),
+          out: (output_table_id, output_row, output_col),
         };
         transformations.push(fxn);
         transformations.append(&mut input);
