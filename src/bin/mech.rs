@@ -700,8 +700,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
-  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ └─┘   │ │
-  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ ┌───┐ │ │
+  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
+  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
   │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
@@ -728,6 +728,7 @@ clear   - reset the current core
 
   println!("Prepend commands with a colon. Enter :help to see a full list of commands. Enter :quit to quit.\n");
   stdo.flush();
+
 
   // Start a new mech client if we didn't get one from another command
   let mech_client = match mech_client {
