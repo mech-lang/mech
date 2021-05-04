@@ -159,6 +159,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .value_name("REPL")
         .help("Start a REPL")
         .takes_value(false))
+      .arg(Arg::with_name("inargs")
+        .short("i")
+        .long("inargs")
+        .value_name("inargs")
+        .help("Input arguments")
+        .required(false)
+        .multiple(true)
+        .takes_value(true))        
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
@@ -574,9 +582,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // RUN
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("run") {
+
     let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
     let repl = matches.is_present("repl_mode");    
-    let code = read_mech_files(mech_paths).await?;
+    let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
+
+
+  
+
+    let mut code: Vec<MechCode> = read_mech_files(mech_paths).await?;
+    if input_arguments.len() > 0 {
+      let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
+      let inargs_code = format!("block
+  #system/input-arguments += [{}]", arg_string);
+      code.push(MechCode::String(inargs_code));
+    }
     let blocks = compile_code(code);
     let miniblocks = minify_blocks(&blocks);
 
@@ -618,7 +638,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
         (Ok(ClientMessage::Done)) => {
-          // Do nothing
           if to_exit {
             io::stdout().flush().unwrap();
             std::process::exit(exit_code);
