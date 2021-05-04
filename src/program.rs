@@ -272,9 +272,16 @@ impl Program {
               let error_msg = format!("Symbol {} not found",s);
               let mut registrar = Registrar::new();
               unsafe{
-                let declaration = library.get::<*mut MachineDeclaration>(s.as_bytes()).unwrap().read();
-                let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
-                machine_init_code.push(init_code);
+                match library.get::<*mut MachineDeclaration>(s.as_bytes()) {
+                  Ok(good) => {
+                    let declaration = good.read();
+                    let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
+                    machine_init_code.push(init_code);
+                  }
+                  Err(_) => {
+                    println!("Couldn't find the specified machine: {}", needed_table_name);
+                  }
+                }
               }        
               self.machines.extend(registrar.machines);
             },
