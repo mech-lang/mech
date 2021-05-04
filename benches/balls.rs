@@ -158,7 +158,7 @@ x   y   20  0]"#.to_string(), vec![
     table_id: TableId::Global(time_timer), 
     row: TableIndex::All, 
     column: TableIndex::Alias(ticks), 
-    registers: vec![Register{table_id: TableId::Global(time_timer), row: TableIndex::All, column: TableIndex::Alias(ticks)}.hash()]
+    registers: vec![Register{table_id: TableId::Global(time_timer), row: TableIndex::All, column: TableIndex::Alias(ticks)}]
   };
 
   block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
