@@ -5,13 +5,13 @@
 There are thee associated functions in this group: set/any, set/all, and set/none.
 
 Test set/any
-  #mech/test += ["Test set/any - pos" true set/any(table: [true false false])]
-  #mech/test += ["Test set/any - neg" false set/any(table: [false false false])]
+  #mech/test += ["Test set/any - pos" true set/any(table: [true false false])
+                 "Test set/any - neg" false set/any(table: [false false false])]
 
 Test set/all
-  #mech/test += ["Test set/all - pos" true set/all(table: [true true true])]
-  #mech/test += ["Test set/all - neg" false set/all(table: [false true true])]
+  #mech/test += ["Test set/all - pos" true set/all(table: [true true true])
+                 "Test set/all - neg" false set/all(table: [false true true])]
 
 Test set/none
-  #mech/test += ["Test set/none - pos" true set/none(table: [false false false])]
-  #mech/test += ["Test set/none - neg" false set/none(table: [false false true])]
+  #mech/test += ["Test set/none - pos" true set/none(table: [false false false])
+                 "Test set/none - neg" false set/none(table: [false false true])]
