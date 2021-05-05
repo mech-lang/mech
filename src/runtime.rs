@@ -9,6 +9,7 @@ use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 use operations::{MechFunction};
 use index::{ValueIterator};
+use indexmap::IndexSet;
 
 
 // ## Runtime
@@ -36,9 +37,9 @@ pub struct Runtime {
   pub errors: HashSet<Error>,
   pub output_to_block:  HashMap<Register,HashSet<u64>>,
   pub input_to_block:  HashMap<Register,HashSet<u64>>,
-  pub changed_this_round: HashSet<Register>,
-  pub aggregate_changed_this_round: HashSet<Register>,
-  pub aggregate_tables_changed_this_round: HashSet<TableId>,
+  pub changed_this_round: IndexSet<Register>,
+  pub aggregate_changed_this_round: IndexSet<Register>,
+  pub aggregate_tables_changed_this_round: IndexSet<TableId>,
   pub register_aliases: HashMap<Register, HashSet<Register>>,
   pub defined_registers: HashSet<Register>,
   pub needed_registers: HashSet<Register>,
@@ -58,9 +59,9 @@ impl Runtime {
       ready_blocks: HashSet::new(),
       output_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
-      changed_this_round: HashSet::new(), 
-      aggregate_changed_this_round: HashSet::new(), // A cumulative list of all registers changed this round
-      aggregate_tables_changed_this_round: HashSet::new(),
+      changed_this_round: IndexSet::new(), 
+      aggregate_changed_this_round: IndexSet::new(), // A cumulative list of all registers changed this round
+      aggregate_tables_changed_this_round: IndexSet::new(),
       register_aliases: HashMap::new(),
       defined_registers: HashSet::new(),
       needed_registers: HashSet::new(),
@@ -110,7 +111,7 @@ impl Runtime {
 
       // Figure out which blocks are now ready and add them to the list
       // of ready blocks
-      for register in self.changed_this_round.drain() {
+      for register in self.changed_this_round.drain(..) {
         self.aggregate_changed_this_round.insert(register);
         self.aggregate_tables_changed_this_round.insert(register.table_id);
         // Do the output dependencies first
@@ -188,7 +189,7 @@ impl Runtime {
         _ => (),
       }
     }
-    for table_id in self.aggregate_tables_changed_this_round.drain() {
+    for table_id in self.aggregate_tables_changed_this_round.drain(..) {
       let mut db = self.database.borrow_mut();
       let table = db.tables.get_mut(table_id.unwrap()).unwrap();
       table.reset_changed();

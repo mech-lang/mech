@@ -10,6 +10,7 @@ extern crate num_traits;
 #[macro_use]
 extern crate lazy_static;
 extern crate seahash;
+extern crate indexmap;
 
 mod database;
 mod runtime;

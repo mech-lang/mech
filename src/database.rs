@@ -193,7 +193,7 @@ impl Database {
             },
             None => {
               let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
-              self.changed_this_round.insert(register);
+              //self.changed_this_round.insert(register);
               self.tables.insert(*table_id, Table::new(
                 *table_id, 
                 *rows, 
@@ -208,7 +208,7 @@ impl Database {
               store.column_index_to_alias.insert((*table_id,*column_ix),*column_alias);
               store.column_alias_to_index.insert((*table_id,*column_alias),*column_ix);
               let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::Alias(*column_alias)};
-              self.changed_this_round.insert(register);
+              //self.changed_this_round.insert(register);
             }
             _ => (),
           }
