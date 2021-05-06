@@ -437,6 +437,18 @@ block
 block
   #x{2,1} := 10", Value::from_i64(28));
 
+test_mech!(set_logical_false,"
+block
+  #test = stats/sum(column: #ball.x)
+block
+  #x = [100; 200; 300]
+  #clicked = [false; false; false]
+
+block
+  #ball = [x: #x]
+
+block
+  #x{#clicked} := 10", Value::from_i64(600));
 
 test_mech!(set_column_logical,"
 block
