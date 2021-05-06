@@ -116,7 +116,7 @@ pub struct WasmCore {
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
   event_id: u64,
-  timers: HashMap<i32,Closure<dyn FnMut()>>,
+  timers: HashMap<usize,Closure<dyn FnMut()>>,
 }
 
 #[wasm_bindgen]
@@ -139,11 +139,11 @@ impl WasmCore {
     mech.insert_string("target");
     mech.insert_string("event-id");
 
-    let new_table = |table_id: u64, a: Vec<u64>| {
+    let new_table = |table_id: u64, rows: usize, a: Vec<u64>, | {
       let mut changes = Vec::new();
       changes.push(Change::NewTable{
         table_id: table_id, 
-        rows: 1, 
+        rows: rows,
         columns: a.len(),
       });
       for (ix, alias) in a.iter().enumerate() {
@@ -157,12 +157,12 @@ impl WasmCore {
     };
 
     let mut changes = vec![];
-    changes.append(&mut new_table(*TIME_TIMER, vec![*PERIOD, *TICKS]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, vec![*KEY]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, vec![*KEY]));
+    changes.append(&mut new_table(*TIME_TIMER, 0, vec![*PERIOD, *TICKS]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY]));
 
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
@@ -388,6 +388,59 @@ impl WasmCore {
     log!("Compiled {} blocks.", compiler.blocks.len());
   }
   */
+  pub fn add_timers(&mut self) {
+    let window = web_sys::window().expect("no global `window` exists");
+   
+    match self.core.get_table(hash_string("time/timer")) {
+      Some(timers_table) => {
+        for row in 1..=timers_table.rows {
+          match self.timers.entry(row) {
+            Entry::Occupied(timer) => {
+       
+            },
+            Entry::Vacant(v) => {
+              self.changes.push(Change::Set{
+                table_id: *TIME_TIMER, values: vec![
+                (TableIndex::Index(1), 
+                TableIndex::Alias(*TICKS),
+                Value::from_u64(0))],
+              });             
+              self.process_transaction();
+              let (period, _) = timers_table.get_u64(&TableIndex::Index(row), &TableIndex::Alias(*PERIOD)).unwrap();
+
+              let wasm_core = self as *mut WasmCore;
+              let closure = || { 
+                Closure::wrap(Box::new(move || {
+                  unsafe{
+                    let table = (*wasm_core).core.get_table(hash_string("time/timer")).unwrap();
+                    let (ticks, _) = table.get_u64(&TableIndex::Index(1), &TableIndex::Alias(*TICKS)).unwrap();
+                    (*wasm_core).changes.push(Change::Set{
+                      table_id: *TIME_TIMER, values: vec![
+                      (TableIndex::Index(row), 
+                      TableIndex::Alias(*TICKS),
+                      Value::from_u64(ticks+1))],
+                    });           
+                    (*wasm_core).process_transaction();
+                    (*wasm_core).render();
+                    //log!("{:?}", table);
+                  }
+                }) as Box<dyn FnMut()>)
+              };
+              let timer_callback = closure();
+              let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
+                timer_callback.as_ref().unchecked_ref(),
+                period as i32
+              ).unwrap();
+              self.timers.insert(row,timer_callback);
+            }
+          }
+        }
+      }
+      _ => (),
+    }    
+  }
+
+
   pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
     let miniblocks: Vec<MiniBlock> = bincode::deserialize(&serialized_miniblocks).unwrap();
     let mut blocks: Vec<Block> = Vec::new() ;
@@ -411,48 +464,8 @@ impl WasmCore {
     let len = blocks.len();
     self.core.register_blocks(blocks);
     self.core.step();
-    
-    let window = web_sys::window().expect("no global `window` exists");
-    log!("DOING TIMER");
-    
-    self.changes.push(Change::Set{
-      table_id: *TIME_TIMER, values: vec![
-      (TableIndex::Index(1), 
-      TableIndex::Alias(*PERIOD),
-      Value::from_u64(16))],
-    });     
-    self.changes.push(Change::Set{
-      table_id: *TIME_TIMER, values: vec![
-      (TableIndex::Index(1), 
-      TableIndex::Alias(*TICKS),
-      Value::from_u64(0))],
-    });             
-    self.process_transaction();
-
-    let wasm_core = self as *mut WasmCore;
-    let closure = || { 
-      Closure::wrap(Box::new(move || {
-        unsafe{
-          let table = (*wasm_core).core.get_table(hash_string("time/timer")).unwrap();
-          let (ticks, _) = table.get_u64(&TableIndex::Index(1), &TableIndex::Alias(*TICKS)).unwrap();
-          (*wasm_core).changes.push(Change::Set{
-            table_id: *TIME_TIMER, values: vec![
-            (TableIndex::Index(1), 
-            TableIndex::Alias(*TICKS),
-            Value::from_u64(ticks+1))],
-          });           
-          (*wasm_core).process_transaction();
-          log!("{:?}", table);
-        }
-      }) as Box<dyn FnMut()>)
-    };
-    let timer_callback = closure();
-    let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
-      timer_callback.as_ref().unchecked_ref(),
-      16
-    ).unwrap();
-    self.timers.insert(id,timer_callback);
-  
+    self.add_timers();
+      
     log!("Loaded {} blocks.", len);
   }
 
@@ -1277,6 +1290,7 @@ impl WasmCore {
       let txn = Transaction{changes: self.changes.clone()};
       //let pre_changes = self.core.store.len();
       self.core.process_transaction(&txn);
+      //self.render();
       /*
       for (id, (ws, remote_tables)) in self.remote_tables.iter() {
         let mut changes: Vec<Change> = Vec::new();
