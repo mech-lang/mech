@@ -97,6 +97,7 @@ lazy_static! {
   static ref HTML_EVENT_KEY__UP: u64 = hash_string("html/event/key-up");
   static ref TARGET: u64 = hash_string("target");
   static ref KEY: u64 = hash_string("key");
+  static ref EVENT__ID: u64 = hash_string("event-id");
 }
 
 #[wasm_bindgen]
@@ -112,6 +113,7 @@ pub struct WasmCore {
   roots: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
+  event_id: u64,
 }
 
 #[wasm_bindgen]
@@ -148,10 +150,10 @@ impl WasmCore {
     };
 
     let mut changes = vec![];
-    changes.append(&mut new_table(*HTML_EVENT_CLICK, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_CLICK, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, vec![*X, *Y, *TARGET, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, vec![*X, *Y, *TARGET, *EVENT__ID]));
     changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, vec![*KEY]));
     changes.append(&mut new_table(*HTML_EVENT_KEY__UP, vec![*KEY]));
 
@@ -170,6 +172,7 @@ impl WasmCore {
       roots: HashSet::new(),
       websocket: None,
       remote_tables: HashMap::new(),
+      event_id: 0,
     }
   }
   /*
@@ -1530,6 +1533,8 @@ impl WasmCore {
                       //log!("event: {:?} {:?}", x, y);
                       // TODO Make this safe
                       unsafe {
+                        (*wasm_core).event_id += 1;
+                        let eid = (*wasm_core).event_id;
                         (*wasm_core).changes.push(Change::Set{
                           table_id: table_id, values: vec![
                           (TableIndex::Index(1), 
@@ -1547,10 +1552,16 @@ impl WasmCore {
                           (TableIndex::Index(1), 
                           TableIndex::Alias(*TARGET),
                           Value::from_id(target_table_id))],
-                        });                  
+                        });            
+                        (*wasm_core).changes.push(Change::Set{
+                          table_id: table_id, values: vec![
+                          (TableIndex::Index(1), 
+                          TableIndex::Alias(*EVENT__ID),
+                          Value::from_u64(eid))],
+                        });           
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
-s                      }
+                       }
                     }) as Box<dyn FnMut(_)>)
                     };
                     let click_callback = closure(*HTML_EVENT_CLICK);
