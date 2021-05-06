@@ -45,7 +45,7 @@ macro_rules! log {
 }
 
 lazy_static! {
-  static ref APP_MAIN: u64 = hash_string("app/main");
+  static ref HTML_APP: u64 = hash_string("html/app");
   static ref DIV: u64 = hash_string("div");
   static ref A: u64 = hash_string("a");
   static ref IMG: u64 = hash_string("img");
@@ -90,10 +90,11 @@ lazy_static! {
   static ref ROTATION: u64 = hash_string("rotation");
   static ref SOURCE: u64 = hash_string("source");
   static ref HTML_EVENT_CLICK: u64 = hash_string("html/event/click");
-  static ref HTML_EVENT_POINTERMOVE: u64 = hash_string("html/event/pointermove");
-  static ref HTML_EVENT_POINTERDOWN: u64 = hash_string("html/event/pointerdown");
-  static ref HTML_EVENT_KEYDOWN: u64 = hash_string("html/event/keydown");
-  static ref HTML_EVENT_KEYUP: u64 = hash_string("html/event/keyup");
+  static ref HTML_EVENT_POINTER__MOVE: u64 = hash_string("html/event/pointer-move");
+  static ref HTML_EVENT_POINTER__DOWN: u64 = hash_string("html/event/pointer-down");
+  static ref HTML_EVENT_POINTER__UP: u64 = hash_string("html/event/pointer-up");
+  static ref HTML_EVENT_KEY__DOWN: u64 = hash_string("html/event/key-down");
+  static ref HTML_EVENT_KEY__UP: u64 = hash_string("html/event/key-up");
   static ref TARGET: u64 = hash_string("target");
   static ref KEY: u64 = hash_string("key");
 }
@@ -120,10 +121,11 @@ impl WasmCore {
     let mut mech = mech_core::Core::new(capacity, recursion_limit);
     mech.load_standard_library();
     mech.insert_string("html/event/click");
-    mech.insert_string("html/event/pointermove");
-    mech.insert_string("html/event/pointerdown");
-    mech.insert_string("html/event/keydown");
-    mech.insert_string("html/event/keyup");
+    mech.insert_string("html/event/pointer-move");
+    mech.insert_string("html/event/pointer-down");
+    mech.insert_string("html/event/pointer-up");
+    mech.insert_string("html/event/key-down");
+    mech.insert_string("html/event/key-up");
     mech.insert_string("x");
     mech.insert_string("y");
     mech.insert_string("target");
@@ -147,10 +149,11 @@ impl WasmCore {
 
     let mut changes = vec![];
     changes.append(&mut new_table(*HTML_EVENT_CLICK, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTERMOVE, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTERDOWN, vec![*X, *Y, *TARGET]));
-    changes.append(&mut new_table(*HTML_EVENT_KEYDOWN, vec![*KEY]));
-    changes.append(&mut new_table(*HTML_EVENT_KEYUP, vec![*KEY]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, vec![*X, *Y, *TARGET]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, vec![*KEY]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, vec![*KEY]));
 
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
@@ -1289,7 +1292,7 @@ impl WasmCore {
   */
   pub fn add_application(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let table = self.core.get_table(*APP_MAIN);
+    let table = self.core.get_table(*HTML_APP);
     match table {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
@@ -1497,7 +1500,7 @@ impl WasmCore {
                         }
                         _ => {log!("Parameter field on canvas must be a table reference");}, // TODO Alert user the parameters field needs to be a table
                       }
-                      let table = self.core.get_table(*APP_MAIN);
+                      let table = self.core.get_table(*HTML_APP);
                     }
                     _ => (), // Do nothing, the parameters field is optional
                   }
@@ -1547,22 +1550,22 @@ impl WasmCore {
                         });                  
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
-                        //log!("{:?}", (*wasm_core).core);
-                        let table = (*wasm_core).core.get_table(hash_string("ball"));
-                        let table = (*wasm_core).core.get_table(hash_string("html/event/pointermove"));
-                      }
+s                      }
                     }) as Box<dyn FnMut(_)>)
                     };
                     let click_callback = closure(*HTML_EVENT_CLICK);
                     canvas.add_event_listener_with_callback("click", click_callback.as_ref().unchecked_ref())?;
-                    let move_callback = closure(*HTML_EVENT_POINTERMOVE);
+                    let move_callback = closure(*HTML_EVENT_POINTER__MOVE);
                     canvas.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
-                    let down_callback = closure(*HTML_EVENT_POINTERDOWN);
+                    let down_callback = closure(*HTML_EVENT_POINTER__DOWN);
                     canvas.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
+                    let up_callback = closure(*HTML_EVENT_POINTER__UP);
+                    canvas.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
                   
                     click_callback.forget();
                     move_callback.forget();
                     down_callback.forget();
+                    up_callback.forget();
                   }
                   container.append_child(&canvas)?;
                 }
@@ -1841,14 +1844,14 @@ impl WasmCore {
               let number_literal = unsafe{ (*wasm_core).core.get_number_literal(&stroke_number_literal_id).unwrap() };
               let color_string = match number_literal.kind {
                 NumberLiteralKind::Hexadecimal => {
-                  if number_literal.bytes.len() == 6 {
+                  if number_literal.bytes.len() == 3 {
                     let mut byte_string: String = "#".to_string();
                     for byte in number_literal.bytes {
-                      byte_string = format!("{}{:x}", byte_string, byte);
+                      byte_string = format!("{}{:02x}", byte_string, byte);
                     }
                     byte_string
                   } else {
-                    log!("Color must be a six digit hexadecimal number literal (You passed in {}). Defaulting to 0x000000", number_literal.bytes.len());
+                    log!("Color must be a three byte hexadecimal number literal (You passed in {}). Defaulting to 0x000000", number_literal.bytes.len());
                     "#000000".to_string()
                   }
                 }
@@ -1857,7 +1860,7 @@ impl WasmCore {
               color_string
             },
             _ => {
-              log!("Color must be a six digit hexadecimal number literal. Defaulting to 0x000000");
+              log!("Color must be a three byte hexadecimal number literal. Defaulting to 0x000000");
               "#000000".to_string()
             },
           }
