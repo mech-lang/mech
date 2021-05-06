@@ -219,7 +219,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
   let (_ , mut input) = arguments[0].clone();
   let (_, mut out) = arguments[1].clone();
 
-  if out.rows() == 0 || out.columns() == 0 {
+  if out.table_rows() == 0 || out.table_columns() == 0 {
     out.resize(input.rows(), input.columns());
   }
 

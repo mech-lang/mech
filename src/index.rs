@@ -154,6 +154,14 @@ impl ValueIterator {
     }
   }
 
+  pub fn table_rows(&self) -> usize {
+    unsafe{(*self.table).rows}
+  }
+  
+  pub fn table_columns(&self) -> usize {
+    unsafe{(*self.table).columns}
+  }  
+
   pub fn columns(&self) -> usize {
     match self.column_index {
       TableIndex::None => 1,
