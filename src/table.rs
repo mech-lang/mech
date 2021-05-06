@@ -479,7 +479,7 @@ impl fmt::Debug for Table {
                                 NumberLiteralKind::Hexadecimal => {
                                   let mut tfm = format!("0x");
                                   for byte in &number_literal.bytes {
-                                    tfm = format!("{}{:x}",tfm, byte);
+                                    tfm = format!("{}{:02x}",tfm, byte);
                                   }
                                   tfm
                                 }
