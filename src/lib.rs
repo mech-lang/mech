@@ -131,6 +131,7 @@ impl WasmCore {
     mech.insert_string("x");
     mech.insert_string("y");
     mech.insert_string("target");
+    mech.insert_string("event-id");
 
     let new_table = |table_id: u64, a: Vec<u64>| {
       let mut changes = Vec::new();
@@ -1561,6 +1562,8 @@ impl WasmCore {
                         });           
                         (*wasm_core).process_transaction();
                         (*wasm_core).render();
+                        //let table = (*wasm_core).core.get_table(hash_string("clicked"));
+                        //log!("{:?}", table);
                        }
                     }) as Box<dyn FnMut(_)>)
                     };
@@ -1911,27 +1914,29 @@ impl WasmCore {
           // RENDER A CIRCLE
           // ---------------------
           if shape == *CIRCLE {
-            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
-              (Some(cx), Some(cy), Some(radius)) => {
-                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                let fill = get_stroke_string(&parameters_table,1, *FILL);
-                let line_width = get_line_width(&parameters_table,1);
-                context.save();
-                context.begin_path();
-                context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
-                context.set_fill_style(&JsValue::from_str(&fill));
-                context.fill();
-                context.set_stroke_style(&JsValue::from_str(&stroke));
-                context.set_line_width(line_width);    
-                context.stroke();                
-                context.restore();
-              }
-              _ => {
-                log!("Missing center-x, center-y, or radius");
-              },
-            }        
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                (Some(cx), Some(cy), Some(radius)) => {
+                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table,row, *FILL);
+                  let line_width = get_line_width(&parameters_table,row);
+                  context.save();
+                  context.begin_path();
+                  context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.fill();
+                  context.set_stroke_style(&JsValue::from_str(&stroke));
+                  context.set_line_width(line_width);    
+                  context.stroke();                
+                  context.restore();
+                }
+                _ => {
+                  log!("Missing center-x, center-y, or radius");
+                },
+              }        
+            }
           // ---------------------
           // RENDER A SQUARE
           // ---------------------    
