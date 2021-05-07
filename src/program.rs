@@ -76,7 +76,7 @@ pub struct Program {
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
-  pub errors: Vec<Error>,
+  pub errors: HashSet<Error>,
   programs: u64,
   loaded_machines: HashSet<u64>,
   pub listeners: HashSet<Register>,
@@ -101,7 +101,7 @@ impl Program {
       input_map: HashMap::new(),
       incoming,
       outgoing,
-      errors: Vec::new(),
+      errors: HashSet::new(),
       programs: 0,
       listeners: HashSet::new(),
     }
