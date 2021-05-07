@@ -1,4 +1,4 @@
-# io-streams
+# io
 
 ## Description
 
@@ -6,14 +6,15 @@ Read and write data over Unix standard streams.
 
 ## Provided Tables
 
-- `#io-streams/out[|text color|]` - writes data to stdout
-- `#io-streams/in[|text|]` - reads data from stdin
-- `#io-streams/error[|text|]` - writes data to stderr
+- `#io/out[|text color|]` - writes data to stdout
+- `#io/in[|text|]` - reads data from stdin
+- `#io/error[|text|]` - writes data to stderr
 
 ## Info
 
-  #io-streams/machine = [name: "io-streams" 
-                         version: "v0.0.1"
-                         authors: "Corey Montella" 
-                         url: "https://gitlab/com/mech-lang/machines/io-streams"
-                         license: "Apache-2.0"]
+  #io/machine = [
+    name: "io" 
+    version: "v0.0.1"
+    authors: "Corey Montella" 
+    url: "https://gitlab/com/mech-lang/machines/io-streams"
+    license: "Apache-2.0"]
