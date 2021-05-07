@@ -379,8 +379,8 @@ macro_rules! binary_infix {
               lhs_iter.zip(rhs_iter).zip(out_row_iter).zip(out_column_iter) {
         match (lhs_value, rhs_value, lhs_changed, rhs_changed)
         {
-          (lhs_value, rhs_value, true, _) |
-          (lhs_value, rhs_value, _, true) => {
+          (lhs_value, rhs_value, _, _) |
+          (lhs_value, rhs_value, _, _) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
                 out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);
