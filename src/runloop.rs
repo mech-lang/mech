@@ -455,6 +455,10 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   for tfms in miniblock.transformations {
                     block.register_transformations(tfms);
                   }
+                  for error in miniblock.errors {
+                    block.errors.insert(error.clone());
+                    program.errors.insert(error);
+                  }
                   block.plan = miniblock.plan.clone();
                   let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
                   for (key, value) in miniblock.strings {
@@ -463,12 +467,18 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                   for (key, value) in miniblock.number_literals {
                     store.number_literals.insert(key, value.clone());
                   }
-                  block.gen_id();
+                  block.id = miniblock.id;
                   blocks.push(block);
                 }
                 program.mech.register_blocks(blocks);
                 program.trigger_machines();
+                
                 program.download_dependencies(Some(client_outgoing.clone()));
+                if program.errors.len() > 0 {
+                  let error_string = format_errors(&program);
+                  client_outgoing.send(ClientMessage::String(error_string));
+                  client_outgoing.send(ClientMessage::Exit(1));
+                }
                 client_outgoing.send(ClientMessage::StepDone);
               }
               (ix, code) => {
@@ -541,4 +551,33 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
     BrightCyan.paint(format!("[{}]", &self.name))
   }*/
 
+}
+
+
+fn format_errors(program: &Program) -> String {
+  let mut formatted_errors = "".to_string();
+  if program.errors.len() > 0 {
+    let plural = if program.errors.len() == 1 {
+      ""
+    } else {
+      "s"
+    };
+    let error_notice = format!("Found {} Error{}:\n", &program.errors.len(), plural);
+    formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice.bright_red());
+    for error in &program.errors {
+      let block = &program.mech.runtime.blocks.get(&error.block_id).unwrap();
+      formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "--".truecolor(246,192,78), "Block".truecolor(246,192,78), block.name, "--------------------------------------------".truecolor(246,192,78));
+      match error.error_type {
+        ErrorType::DuplicateAlias(alias_id) => {
+          let alias = &program.mech.get_string(&alias_id).unwrap();
+          formatted_errors = format!("{} Local table {:?} defined more than once.\n",formatted_errors, alias);
+        },
+        _ => (),
+      }
+      formatted_errors = format!("{}\n", formatted_errors);
+      formatted_errors = format!("{} {} {}\n",formatted_errors, ">".bright_red(), error.step_text);
+      formatted_errors = format!("{}\n{}",formatted_errors, "------------------------------------------------------\n\n".truecolor(246,192,78));
+    }
+  }
+  formatted_errors
 }
