@@ -12,8 +12,6 @@ use web_sys::XmlHttpRequest;
 
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-  log!("Here we go!");
-
   /*let mut mech_core = Core::new(100,100);
 
   log!("Here we go!");
@@ -48,6 +46,6 @@ pub fn main() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn new_core() -> WasmCore {
-  log!("Awesome!");
+  log!("Creating a new core.");
   WasmCore::new(1000, 1000)
 }
