@@ -1,0 +1,9 @@
+# Timer
+
+Start a timer
+  #time/timer += [period: 16]
+
+Move the circles on each tick of the timer
+  ~ #time/timer
+  #balls.x := #balls.x + #balls.vx
+  #balls.y := #balls.y + #balls.vy

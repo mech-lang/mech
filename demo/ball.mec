@@ -1,0 +1,5 @@
+# Ball
+
+Define the environment
+  #balls = [|x   y   vx vy radius|
+             250 250  0 0  10]

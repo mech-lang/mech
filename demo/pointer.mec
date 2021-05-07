@@ -1,0 +1,23 @@
+# Pointer`
+
+Keep track of which balls are clicked
+  #clicked = [false; false]
+
+Determine if the pointer is within the ball's hitbox
+  ~ #html/event/pointer-move
+  dx = #html/event/pointer-move.x - #balls.x
+  dy = #html/event/pointer-move.y - #balls.y
+  #hover = ((dx ^ 2 + dy ^ 2) ^ 0.5) < #balls.radius
+
+Click the circle
+  ~ #html/event/pointer-down
+  #clicked{#hover} := true
+
+Un-click the circle
+  ~ #html/event/pointer-up
+  #clicked{#hover} := false
+
+Move the circle to the pointer if it's clicked
+  ~ #html/event/pointer-move
+  #balls.x{#clicked} := #html/event/pointer-move.x
+  #balls.y{#clicked} := #html/event/pointer-move.y

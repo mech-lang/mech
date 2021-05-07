@@ -1,0 +1,21 @@
+## Keyboard
+
+Move the ball with the keyboard
+  ~ #html/event/key-down
+  up = #html/event/key-down.key == "ArrowUp"
+  down = #html/event/key-down.key == "ArrowDown"
+  left = #html/event/key-down.key == "ArrowLeft"
+  right = #html/event/key-down.key == "ArrowRight"
+  #balls.vx{left} := -5
+  #balls.vx{right} := 5
+  #balls.vy{up} := -5
+  #balls.vy{down} := 5
+
+Move the ball with the keyboard
+  ~ #html/event/key-up
+  up = #html/event/key-up.key == "ArrowUp"
+  down = #html/event/key-up.key == "ArrowDown"
+  left = #html/event/key-up.key == "ArrowLeft"
+  right = #html/event/key-up.key == "ArrowRight"
+  #balls.vx{left | right} := 0
+  #balls.vy{up | down} := 0

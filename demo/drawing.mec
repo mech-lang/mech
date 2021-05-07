@@ -1,0 +1,24 @@
+# Drawing
+
+Set up drawing elements 
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: #balls.x 
+      center-y: #balls.y 
+      radius: #balls.radius 
+      fill: 0xA00000 
+      line-width: 5
+    ]
+  ]
+
+Draw a circle
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #circle] 
+    parameters: [width: 500 height: 500]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
