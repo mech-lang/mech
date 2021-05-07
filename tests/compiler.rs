@@ -81,6 +81,16 @@ test_mech!(table_define_program, "# A Working Program
 
   #test = 9", Value::from_i64(9));
 
+test_mech!(table_multi_line_inline, "
+block
+  #test = #x.x + #x.y + #x.z
+block
+  #x = [
+    x: 1
+    y: 2
+    z: 3
+  ]", Value::from_i64(6));
+
 // ## Select
 
 test_mech!(select_table,"  

@@ -675,6 +675,7 @@ fn table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn binding(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
   let (input, _) = tuple((colon, space0))(input)?;
   let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
