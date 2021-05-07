@@ -124,6 +124,10 @@ pub fn compile_code(code: Vec<MechCode>) -> Vec<Block> {
           for tfm in miniblock.plan {
             block.plan.push(tfm);
           }
+          for error in miniblock.errors {
+            block.errors.insert(error);
+          }
+          block.id = miniblock.id;
           blocks.push(block);
         }
         compiler.blocks.append(&mut blocks);
@@ -146,6 +150,10 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
     for (k,v) in block.store.number_literals.iter() {
       miniblock.number_literals.push((k.clone(), v.clone()));
     }
+    for error in &block.errors {
+      miniblock.errors.push(error.clone());
+    }
+    miniblock.id = block.id;
     miniblocks.push(miniblock);
   }
   miniblocks
