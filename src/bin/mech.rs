@@ -886,36 +886,3 @@ clear   - reset the current core
 
   Ok(())
 }
-
-fn print_errors(program: &Program) {
-  /*
-  if program.errors.len() > 0 {
-    let plural = if program.errors.len() == 1 {
-      ""
-    } else {
-      "s"
-    };
-    let error_notice = format!("Found {} Error{}:", &program.errors.len(), plural);
-    println!("\n{}\n", error_notice.bright_red());
-    for error in &program.errors {
-      let block = &program.mech.runtime.blocks.get(&(error.block as usize)).unwrap();
-      println!("{} {} {} {}\n ", "--".truecolor(246,192,78), "Block".yellow(), block.name, "---------------------------------------".truecolor(246,192,78));
-      match error.error_id {
-        ErrorType::DuplicateAlias(alias_id) => {
-          let alias = &program.mech.store.names.get(&alias_id).unwrap();
-          println!(" Local table {:?} defined more than once.", alias);
-        },
-        _ => (),
-      }
-      println!("");
-      for (ix,(text, constraints)) in block.constraints.iter().enumerate() {
-        if constraints.contains(&error.constraint) {
-          println!(" {} {}", ">".bright_red(), text);
-        } else {
-          println!("   {}", text.bright_black());
-        }
-      }
-      println!("\n{}", "------------------------------------------------------\n".truecolor(246,192,78));
-    }
-  }*/
-}
