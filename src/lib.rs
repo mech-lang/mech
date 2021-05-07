@@ -161,8 +161,8 @@ impl WasmCore {
     changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
     changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
     changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY, *EVENT__ID]));
 
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
@@ -422,6 +422,7 @@ impl WasmCore {
                     });           
                     (*wasm_core).process_transaction();
                     (*wasm_core).render();
+                    //let table = (*wasm_core).core.get_table(*TIME_TIMER);
                     //log!("{:?}", table);
                   }
                 }) as Box<dyn FnMut()>)
@@ -1364,6 +1365,45 @@ impl WasmCore {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
+
+        {
+          let key_closure = |table_id| { 
+            Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+              let window = web_sys::window().expect("no global `window` exists");
+              let document = window.document().expect("should have a document on window");
+              let key = event.key();
+              // TODO Make this safe
+              unsafe {
+                (*wasm_core).changes.push(Change::Set{
+                  table_id: table_id, 
+                  values: vec![(TableIndex::Index(1), 
+                  TableIndex::Alias(*KEY),
+                  Value::from_string(&key.to_string()))],
+                });    
+                (*wasm_core).event_id += 1;
+                let eid = (*wasm_core).event_id;
+                (*wasm_core).changes.push(Change::Set{
+                  table_id: table_id, values: vec![
+                  (TableIndex::Index(1), 
+                  TableIndex::Alias(*EVENT__ID),
+                  Value::from_u64(eid))],
+                });           
+                (*wasm_core).process_transaction();
+                (*wasm_core).render();
+                //let table = (*wasm_core).core.get_table(hash_string("balls"));
+                //log!("{:?}", table);
+              }
+            }) as Box<dyn FnMut(_)>)
+          };
+          let keydown_callback = key_closure(*HTML_EVENT_KEY__DOWN);
+          document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
+          let keyup_callback = key_closure(*HTML_EVENT_KEY__UP);
+          document.add_event_listener_with_callback("keyup", keyup_callback.as_ref().unchecked_ref())?;
+          keydown_callback.forget();
+          keyup_callback.forget();
+        }
+
+
         for row in 1..=app_table.rows as usize {
           match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
                  app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
@@ -1584,7 +1624,7 @@ impl WasmCore {
                     _ => (),
                   }
                   {
-                    let closure = |table_id| { 
+                    let pointer_closure = |table_id| { 
                       Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                         let window = web_sys::window().expect("no global `window` exists");
                         let document = window.document().expect("should have a document on window");
@@ -1598,8 +1638,7 @@ impl WasmCore {
                         //log!("event: {:?} {:?}", x, y);
                         // TODO Make this safe
                         unsafe {
-                          (*wasm_core).event_id += 1;
-                          let eid = (*wasm_core).event_id;
+
                           (*wasm_core).changes.push(Change::Set{
                             table_id: table_id, values: vec![
                             (TableIndex::Index(1), 
@@ -1618,6 +1657,8 @@ impl WasmCore {
                             TableIndex::Alias(*TARGET),
                             Value::from_id(target_table_id))],
                           });            
+                          (*wasm_core).event_id += 1;
+                          let eid = (*wasm_core).event_id;
                           (*wasm_core).changes.push(Change::Set{
                             table_id: table_id, values: vec![
                             (TableIndex::Index(1), 
@@ -1631,11 +1672,11 @@ impl WasmCore {
                         }
                       }) as Box<dyn FnMut(_)>)
                     };
-                    let move_callback = closure(*HTML_EVENT_POINTER__MOVE);
+                    let move_callback = pointer_closure(*HTML_EVENT_POINTER__MOVE);
                     canvas.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
-                    let down_callback = closure(*HTML_EVENT_POINTER__DOWN);
+                    let down_callback = pointer_closure(*HTML_EVENT_POINTER__DOWN);
                     canvas.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
-                    let up_callback = closure(*HTML_EVENT_POINTER__UP);
+                    let up_callback = pointer_closure(*HTML_EVENT_POINTER__UP);
                     canvas.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
 
                     move_callback.forget();
