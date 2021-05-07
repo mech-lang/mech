@@ -1,0 +1,225 @@
+# io/keyboard
+
+Transcribed from: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
+
+A table which holds all keys and their current state, whether down or up.
+
+  #io/keyboard = [|code|
+    #io/keyboard/modifier-keys
+    #io/keyboard/whitespace-keys
+    #io/keyboard/editing-keys
+    #io/keyboard/navigation-keys
+    #io/keyboard/function-keys
+  ]
+
+## Special Keys
+
+  #io/keyboard/special-keys = [|code|
+    "Unidentified"
+  ]
+
+## Modifier Keys
+
+Modifiers are special keys which are used to generate special characters or cause special actions when used in combination with other keys. Examples include the Shift and Control keys, and lock keys such as Caps Lock and NumLock.
+
+  #io/keyboard/modifier-keys = [|code|
+    "Alt"
+    "AltGraph"
+    "CapsLock"
+    "Control"
+    "Fn"
+    "FnLock"
+    "Hyper"
+    "Meta"
+    "NumLock"
+    "ScrollLock"
+    "Shift"
+    "Super"
+    "Symbol"
+    "SymbolLock"
+  ]
+
+## Whitespace Keys
+
+  #io/keyboard/whitespace-keys = [|code|
+    "Enter"
+    "Tab"
+    " "
+  ]
+
+## Navigation Keys
+
+  #io/keyboard/navigation-keys = [|code|
+    "ArrowDown"
+    "ArrowLeft"
+    "ArrowRight"
+    "ArrowUp"
+    "End"
+    "Home"
+    "PageDown"
+    "PageUp"
+  ]
+
+## Editing Keys
+
+  #io/keyboard/editing-keys = [|code|
+    "Backspace"
+    "Clear"
+    "Copy"
+    "CrSel"
+    "Cut"
+    "Delete"
+    "EraseEof"
+    "ExSel"
+    "Insert"
+    "Paste"
+    "Redo"
+    "Undo"
+  ]
+
+## UI Keys
+
+  #io/keyboard/ui-keys = [|code|
+    "Accept"
+    "Again"
+    "Attn"
+    "Cancel"
+    "ContextMenu"
+    "Esape"
+    "Execute"
+    "Find"
+    "Finish"
+    "Help"
+    "Pause"
+    "Play"
+    "Props"
+    "Select"
+    "ZoomIn"
+    "ZoomOut"
+  ]
+
+## Device Keys
+
+  #io/keyboard/device-keys = [|code|
+    "BrightnessDown"
+    "BrightnessUp"
+    "Eject"
+    "LogOff"
+    "Power"
+    "PowerOff"
+    "PrintScreen"
+    "Hibernate"
+    "Standby"
+    "WakeUp"
+  ]
+
+## IME and Composition Keys
+
+Keys used when using an Input Method Editor (IME) to input text which can't readily be entered by simple keypresses, such as text in languages such as those which have more graphemes than there are character entry keys on the keyboard. Common examples include Chinese, Japanese, Korean, and Hindi.
+
+Some keys are common across multiple languages, while others exist only on keyboards targeting specific languages. In addition, not all keyboards have all of these keys.
+
+### Common IME Keys
+
+  #io/keyboard/common-ime-keys = [|code|
+    "AllCandidates"
+    "Alphanumeric"
+    "CodeInput"
+    "Compose"
+    "Convert"
+    "Dead"
+    "FinalMode"
+    "GroupFirst"
+    "GroupLast"
+    "GroupNext"
+    "GroupPrevious"
+    "ModeChange"
+    "NextCandidate"
+    "NonConvert"
+    "PreviousCandidate"
+    "Process"
+    "SingleCandidate"
+  ]
+
+### Korean Keyboards Only
+
+These keys are only available on Korean keyboards. There are other keys defined by various platforms for Korean keyboards, but these are the most common and are the ones identified by the UI Events specification.
+
+  #io/keyboard/korean = [|code|
+    "HangulMode"
+    "HanjaMode"
+    "JunjaMode"
+  ]
+
+### Japanese Keyboards Only
+
+These keys are only available on Japanese keyboards.
+
+  #io/keyboard/japanese = [|code|
+    "Eisu"
+    "Hankaku"
+    "Hiragana"
+    "HiraganaKatakana"
+    "KanaMode"
+    "KanjiMode"
+    "Katakana"
+    "Romaji"
+    "Zenkaku"
+    "ZenkakuHanaku"
+  ]
+
+## Function Keys
+
+While various platforms support different numbers of the general-purpose function keys, such as F1–F12 (or F1–F10, or F1–F15, etc.), the first few are specifically defined as follows.
+
+If more function keys are available, their names continue the pattern here by continuing to increment the numeric portion of each key's name, so that, for example, "F24" is a valid key value.
+
+  #io/keyboard/function-keys = [|code|
+    "F1"
+    "F2"
+    "F3"
+    "F4"
+    "F5"
+    "F6"
+    "F7"
+    "F8"
+    "F9"
+    "F10"
+    "F11"
+    "F12"
+    "F13"
+    "F14"
+    "F15"
+    "F16"
+    "F17"
+    "F18"
+    "F19"
+    "F20"
+    "Soft1"
+    "Soft2"
+    "Soft3"
+    "Soft4"
+  ]
+
+## Phone Keys
+  
+These keys represent buttons which commonly exist on modern smartphones.
+
+  #io/keyboard/phone-keys = [|code|
+    "AppSwitch"
+    "Call"
+    "Camera"
+    "CameraFocus"
+    "EndCall"
+    "GoBack"
+    "GoHome"
+    "HeadsetHook"
+    "LastNumberRedial"
+    "Notification"
+    "MannerMode"
+    "VoiceDial"
+  ]
+
+## Multimedia Keys
+
+The multimedia keys are extra buttons or keys for controlling media devices, found on some keyboards.
