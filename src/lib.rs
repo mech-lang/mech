@@ -7,7 +7,7 @@ extern crate hashbrown;
 extern crate crossbeam_channel;
 
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
+use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
 
 use crossbeam_channel::Sender;
 
@@ -46,18 +46,22 @@ pub enum RunLoopMessage {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MiniBlock {
+  pub id: u64,
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
+  pub errors: Vec<Error>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
 }
 
 impl MiniBlock {
   pub fn new() -> MiniBlock { 
     MiniBlock {
+      id: 0,
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
+      errors: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
     }
   }
