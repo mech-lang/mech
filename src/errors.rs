@@ -19,10 +19,10 @@ pub struct Error {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum ErrorType {
   MissingAttribute(TableIndex),
-  IndexOutOfBounds(((u64, u64), (u64, u64))),
-  DuplicateAlias(u64),
-  DomainMismatch(u64, u64),
-  UnsatisfiedConstraint(Vec<u64>),
-  MissingFunction(u64),
+  IndexOutOfBounds(((u64, u64), (u64, u64))), // (target) vs (actual) index
+  DuplicateAlias(u64),                        // Alias ID
+  DomainMismatch(u64, u64),                   // domain IDs (target vs actual)
+  UnsatisfiedTransformation(Vec<u64>),        // IDs of missing constraints
+  MissingFunction(u64),                       // ID of missing function
   IncorrectFunctionArgumentType,
 }
