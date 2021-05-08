@@ -696,7 +696,7 @@ impl Compiler {
           plan.append(&mut now_satisfied);
         }
         // Do a final check on unsatisfied constraints that are now satisfied
-         let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
+        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
           let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
           let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
           let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
@@ -839,12 +839,14 @@ impl Compiler {
           block.register_transformations(transformation);
         }
 
-        for (step_text, _, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
+        for (step_text, unsatisfied_produces, unsatisfied_consumes, step_transformations) in unsatisfied_transformations {
+          let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
+          let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
           block.errors.insert(Error {
             block_id: block.id,
             step_text: step_text,
-            error_type: ErrorType::UnsatisfiedConstraint(
-              unsatisfied_consumes.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
+            error_type: ErrorType::UnsatisfiedTransformation(
+              unsatisfied.iter().map(|x| x.clone()).collect::<Vec<u64>>(),
             ),
           });
         }
