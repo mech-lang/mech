@@ -195,36 +195,47 @@ impl Program {
               _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
             }
           });       
-          let native_rust = unsafe {
+          unsafe {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            let m = library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>)>(s.as_bytes()).expect(&error_msg);
-            m.into_raw()
-          };
-          *fun = Some(*native_rust);
-          // Resolve any function needed errors
-          let mut resolved_errors = vec![];
-          for error in &self.mech.runtime.errors {
-            match error.error_type {
-              ErrorType::MissingFunction(missing_function_id) => {
-                if missing_function_id == *fun_name_id {
-                  let block = self.mech.runtime.blocks.get_mut(&error.block_id).unwrap();
-                  block.errors.remove(&error);
-                  block.state = BlockState::New;
-                  if block.is_ready() {
-                    self.mech.runtime.ready_blocks.insert(block.id);
+            match library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>)>(s.as_bytes()) {
+              Ok(m) => {
+                let native_rust = m.into_raw();
+                *fun = Some(*native_rust);
+                // Resolve any function needed errors
+                let mut resolved_errors = vec![];
+                for error in &self.mech.runtime.errors {
+                  match error.error_type {
+                    ErrorType::MissingFunction(missing_function_id) => {
+                      if missing_function_id == *fun_name_id {
+                        let block = self.mech.runtime.blocks.get_mut(&error.block_id).unwrap();
+                        block.errors.remove(&error);
+                        block.state = BlockState::New;
+                        if block.is_ready() {
+                          self.mech.runtime.ready_blocks.insert(block.id);
+                        }
+                        resolved_errors.push(error.clone());
+                      }
+                    }
+                    _ => (),
                   }
-                  resolved_errors.push(error.clone());
                 }
+                for error in resolved_errors {
+                  self.mech.runtime.errors.remove(&error);
+                }
+              },
+              Err(_) => {
+                /*self.errors.insert(
+                  Error { 
+                    block_id: 0,
+                    step_text: "".to_string(), // TODO Add better text
+                    error_type: ErrorType::MissingFunction(*name),
+                  }
+                );*/
               }
-              _ => (),
             }
-          }
-          for error in resolved_errors {
-            self.mech.runtime.errors.remove(&error);
-          }
-          
+          };
         },
         _ => (),
       }

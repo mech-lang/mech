@@ -472,8 +472,10 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
                 }
                 program.mech.register_blocks(blocks);
                 program.trigger_machines();
-                
                 program.download_dependencies(Some(client_outgoing.clone()));
+                for error in &program.mech.runtime.errors {
+                  program.errors.insert(error.clone());
+                }
                 if program.errors.len() > 0 {
                   let error_string = format_errors(&program);
                   client_outgoing.send(ClientMessage::String(error_string));
@@ -572,7 +574,11 @@ fn format_errors(program: &Program) -> String {
           let alias = &program.mech.get_string(&alias_id).unwrap();
           formatted_errors = format!("{} Local table {:?} defined more than once.\n",formatted_errors, alias);
         },
-        _ => (),
+        ErrorType::MissingFunction(function_id) => {
+          let missing_function = &program.mech.get_string(&function_id).unwrap();
+          formatted_errors = format!("{} Missing function: {}()\n",formatted_errors, missing_function);
+        },
+        _ => formatted_errors = format!("{}{:?}\n", formatted_errors, error),
       }
       formatted_errors = format!("{}\n", formatted_errors);
       formatted_errors = format!("{} {} {}\n",formatted_errors, ">".bright_red(), error.step_text);
