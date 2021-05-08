@@ -1,4 +1,4 @@
-# Pointer`
+# Pointer
 
 Keep track of which balls are clicked
   #clicked = [false; false]
