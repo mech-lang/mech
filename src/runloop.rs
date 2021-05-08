@@ -569,7 +569,7 @@ fn format_errors(program: &Program) -> String {
     for error in &program.errors {
       let block = &program.mech.runtime.blocks.get(&error.block_id).unwrap();
       formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "--".truecolor(246,192,78), "Block".truecolor(246,192,78), block.name, "--------------------------------------------".truecolor(246,192,78));
-      match error.error_type {
+      match &error.error_type {
         ErrorType::DuplicateAlias(alias_id) => {
           let alias = &program.mech.get_string(&alias_id).unwrap();
           formatted_errors = format!("{} Local table {:?} defined more than once.\n",formatted_errors, alias);
@@ -577,6 +577,13 @@ fn format_errors(program: &Program) -> String {
         ErrorType::MissingFunction(function_id) => {
           let missing_function = &program.mech.get_string(&function_id).unwrap();
           formatted_errors = format!("{} Missing function: {}()\n",formatted_errors, missing_function);
+        },
+        ErrorType::UnsatisfiedTransformation(missing_ids) => {
+          formatted_errors = format!("{} Missing:",formatted_errors);
+          for id in missing_ids {
+            let missing_string = &program.mech.get_string(&id).unwrap();
+            formatted_errors = format!("{} {}",formatted_errors,missing_string);
+          }
         },
         _ => formatted_errors = format!("{}{:?}\n", formatted_errors, error),
       }
