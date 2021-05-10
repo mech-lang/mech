@@ -1,8 +1,9 @@
 // |DDDDDDDD|RRRRRRR|SMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM|
-// D: Domain [0, 254]
-// R: Range [-64, 63]
-// S: mantissa Sign bit
-// M: Mantissa [-2^48, 2^48 - 1]
+// |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD|S|EEEEEEEE|FFFFFFFFFFFFFFFFFFFFFFF|
+// D: Domain [0, 2^32]
+// S: Sign bit
+// E: Exponent [2^8]
+// F: Fraction [2^23] 
 // Credit: Chris Granger, who implemented this for Eve v0.4
 // Also credit to Josh Cole for coming up with the spec
 // Adapted and extended for Mech by Corey Montella
@@ -12,6 +13,7 @@ use errors::{ErrorType};
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
 use num_traits::Float;
+use std::mem;
 
 const MANTISSA_MASK:u64 = ((1 as u64) << 49) as u64 - 1; // 49 bits at the end
 const META_MASK:u64 = ((1 << 15) as u64 - 1) << 49; // 15 1s at the front
@@ -31,83 +33,41 @@ pub trait FromQuantity<T> {
   fn get_value(self) -> T;
 }
 
+impl ToQuantity for f32 {
+  #[inline(always)]
+  fn to_quantity(&self) -> u64 {
+    let result:u64 = 0;
+    result | unsafe{mem::transmute::<f32, u32>(*self)} as u64
+  }
+}
+
+
 impl ToQuantity for u32 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let result:u64 = (*self).into();
-    result | (1 << 63)
+    let result:u64 = 0;
+    result | (*self as f32) as u64
   }
 }
 
 impl ToQuantity for i32 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let me = *self;
-    if me.is_negative() {
-      me as u64 & MANTISSA_MASK
-    } else {
-      me as u64
-    }
+    let result:u64 = 0;
+    result | (*self as f32) as u64
   }
 }
 
 impl ToQuantity for u64 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let me = *self;
-    if me & META_MASK != 0 {
-      let (mantissa, range) = overflow_handler(me);
-      (mantissa as u64) & MANTISSA_MASK | shifted_range(range)
-    } else {
-      me & MANTISSA_MASK
-    }
-  }
-}
-
-impl ToQuantity for i64 {
-  #[inline(always)]
-  fn to_quantity(&self) -> u64 {
-    let me = *self;
-    if me.is_negative() {
-      if (me as u64) & META_MASK != META_MASK {
-        let (mantissa, range) = overflow_handler(me.abs() as u64);
-        !(mantissa - 1) & MANTISSA_MASK | shifted_range(range)
-      } else {
-        (me as u64) & MANTISSA_MASK
-      }
-    } else if (me as u64) & OVERFLOW_MASK != 0 {
-      let (mantissa, range) = overflow_handler(me as u64);
-      (mantissa as u64) & MANTISSA_MASK | shifted_range(range)
-    } else {
-      (me as u64) & MANTISSA_MASK
-    }
-  }
-}
-
-impl ToQuantity for f64 {
-  #[inline(always)]
-  fn to_quantity(&self) -> u64 {
-    let me = *self;
-    let (mantissa, exponent, sign) = Float::integer_decode(me);
-    if mantissa == 0 {
-      let result = make_quantity(0,0,0);
-      result
-    } else {
-      let exp_log = 2f64.powf(exponent as f64).log10();
-      let real_exponent = exp_log.floor() as i64 + 1;
-      let real_mantissa = ((mantissa as f64) * 10f64.powf(exp_log.fract())) as i64;
-      let mut result = real_mantissa.to_quantity();
-      if sign < 0 {
-        result = result.negate();
-      }
-      let cur = result.range();
-      result.set_range(cur + real_exponent);
-      result
-    }
+    let result:u64 = 0;
+    result | (*self as f32) as u64
   }
 }
 
 
+/*
 #[inline(always)]
 pub fn overflow_handler(me:u64) -> (u64, u64) {
   let hi = 64 - me.leading_zeros() - 48;
@@ -143,73 +103,31 @@ pub fn make_quantity(mantissa:i64, range:i64, domain:u64) -> Quantity {
   let value = mantissa.to_quantity();
   let cur_range = (value.range() + range) as u64;
   value & !RANGE_MASK | ((cur_range << 49) & RANGE_MASK) | (domain << 56)
-}
+}*/
 
 pub trait QuantityMath {
-  fn domain(self) -> u64;
-  fn range(self) -> i64;
-  fn set_range(&mut self, range:i64);
-  fn mantissa(self) -> i64;
-  fn is_negative(self) -> bool;
   fn negate(self) -> Quantity;
-  fn add(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn sub(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn multiply(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn divide(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn power(self, Quantity) -> Result<Quantity, ErrorType>;
-  fn less_than(self, Quantity) -> Result<bool, ErrorType>;
-  fn greater_than(self, Quantity) -> Result<bool, ErrorType>;
-  fn less_than_equal(self, Quantity) -> Result<bool, ErrorType>;
-  fn greater_than_equal(self, Quantity) -> Result<bool, ErrorType>;
-  fn equal(self, Quantity) -> Result<bool, ErrorType>;
-  fn not_equal(self, Quantity) -> Result<bool, ErrorType>;
+  fn add(self, Quantity) -> Quantity;
+  fn sub(self, Quantity) -> Quantity;
+  fn multiply(self, Quantity) -> Quantity;
+  fn divide(self, Quantity) -> Quantity;
+  fn power(self, Quantity) -> Quantity;
+  fn less_than(self, Quantity) -> bool;
+  fn greater_than(self, Quantity) -> bool;
+  fn less_than_equal(self, Quantity) -> bool;
+  fn greater_than_equal(self, Quantity) -> bool;
+  fn equal(self, Quantity) -> bool;
+  fn not_equal(self, Quantity) -> bool;
   fn to_string(self) -> String;
   fn format(self) -> String;
-  fn to_float(self) -> f64;
+  fn to_f32(self) -> f32;
   fn to_u64(self) -> u64;
 }
 
 impl QuantityMath for Quantity {
 
-  #[inline(always)]
-  fn domain(self) -> u64 {
-    self >> 56
-  }
-
-  #[inline(always)]
-  fn range(self) -> i64 {
-    let range = (self >> 49) & SHIFTED_RANGE_DOMAIN_MASK;
-    if range & (1 << 6) == 0 {
-      range as i64
-    } else {
-      (range | SHIFTED_FILL) as i64
-    }
-  }
-  
-  fn set_range(&mut self, range:i64) {
-    let range_fill = ((range << 49) as u64) & RANGE_MASK;
-    *self &= !RANGE_MASK;
-    *self |= range_fill;
-  }
-
-  #[inline(always)]
-  fn mantissa(self) -> i64 {
-    if self & SIGN_MASK == SIGN_MASK {
-      let a = self & MANTISSA_MASK;
-      (a as i64) | (META_MASK as i64)
-    } else {
-      (self & MANTISSA_MASK) as i64
-    }
-  }
-
   fn negate(self) -> Quantity {
-    let value = ((self.mantissa() * -1) as u64 & MANTISSA_MASK) as u64;
-    self & META_MASK | value
-  }
-
-  #[inline(always)]
-  fn is_negative(self) -> bool {
-    (self & SIGN_MASK) == SIGN_MASK
+    self
   }
 
   fn to_string(self) -> String {
@@ -217,167 +135,64 @@ impl QuantityMath for Quantity {
   }
 
   fn format(self) -> String {
-    let mantissa_string = format!("{}", self.mantissa());
-    let decimal_ix = (mantissa_string.len() as i64 + self.range()) as isize;
-    if decimal_ix < 0 {
-      let mut as_string = String::from("0.");
-      for _i in 0..-1*decimal_ix {
-        as_string = format!("{}0", as_string);
-      }
-      as_string = format!("{}{}", as_string, mantissa_string);
-      as_string
-    } else if mantissa_string.len() < decimal_ix as usize {
-      let mut as_string = mantissa_string;
-      while as_string.len() < decimal_ix as usize {
-        as_string = format!("{}0", as_string);
-      }
-      as_string
-    } else {
-      let mut first = &mantissa_string[..decimal_ix as usize];
-      let second = &mantissa_string[decimal_ix as usize ..];
-      let mut decimal = "";
-      if second.len() != 0 {
-        decimal = "."
-      }
-      if first == "" {
-        first = "0";
-      }
-      let as_string = format!("{}{}{}", first, decimal, second);
-      as_string
-    }
+    format!("{:?}",self.to_f32())
   }
 
-  fn to_float(self) -> f64 {
-    (self.mantissa() as f64) * 10f64.powf(self.range() as f64)
+  fn to_f32(self) -> f32 {
+    unsafe{mem::transmute::<u32, f32>(self as u32)}
   }
 
   fn to_u64(self) -> u64 {
-    self.to_float() as u64
+    self as u64
   }
 
   #[inline(always)]
-  fn add(self, other:Quantity) -> Result<Quantity, ErrorType> {
-    // TODO Return self for now... throw an error later
-    if self.domain() != other.domain() {
-      return Err(ErrorType::DomainMismatch(self.domain(), other.domain()));
-    }
-
-    let my_range = self.range();
-    let other_range = other.range();
-    if self.mantissa() == 0 {
-      return Ok(other)
-    } else if other.mantissa() == 0 {
-      return Ok(self)
-    }
-    if my_range == other_range {
-      let add = self.mantissa() + other.mantissa();
-      let mut add_quantity = add.to_quantity();
-      add_quantity.set_range(add_quantity.range() + my_range);
-      Ok(add_quantity)
-    } else {
-      let my_mant = self.mantissa();
-      let other_mant = other.mantissa();
-      let (a_range, b_range, a_mant, b_mant) = if my_range > other_range {
-        (my_range, other_range, my_mant, other_mant)
-      } else {
-        (other_range, my_range, other_mant, my_mant)
-      };
-      // A is so much bigger than b, we just take a
-      if a_range - b_range > 15 {
-        return Ok(make_quantity(a_mant,a_range,0))
-      }
-      let range_delta = (a_range - b_range) as u64;
-      let sign = if a_mant < 0 {
-        -1
-      } else {
-        1
-      };
-      let (new_mantissa, actual_delta) = decrease_range(a_mant * sign, range_delta);
-      if actual_delta == range_delta {
-        let added = sign * new_mantissa + b_mant;
-        let mut added_quantity = added.to_quantity();
-        added_quantity.set_range(b_range + added_quantity.range());
-        Ok(added_quantity)
-      } else {
-        let (b_neue, _) = increase_range(b_mant, actual_delta);
-        let mut added = (new_mantissa + b_neue).to_quantity();
-        added.set_range(a_range - actual_delta as i64);
-        Ok(added)
-      }
-    }
+  fn add(self, other:Quantity) -> Quantity {
+    let result: u64 = 0; 
+    result | (self as f32 + other as f32) as u64
   }
 
-  fn sub(self, other:Quantity) -> Result<Quantity, ErrorType> {
-    self.add(other.negate())
+  fn sub(self, other:Quantity) -> Quantity {
+    let result: u64 = 0; 
+    result | (self as f32 - other as f32) as u64
   }
 
-  fn multiply(self, other:Quantity) -> Result<Quantity, ErrorType> {
-    let result = match self.mantissa().checked_mul(other.mantissa()) {
-       Some(result) => { result },
-       None => { panic!("QuantityMultiply overflow") } // TODO Make this an error
-    };
-    let mut quantity = result.to_quantity();
-    quantity.set_range(quantity.range() + self.range() + other.range());
-    Ok(quantity)
+  fn multiply(self, other:Quantity) -> Quantity {
+    let result: u64 = 0; 
+    result | (self as f32 * other as f32) as u64
   }
 
-  fn divide(self, other:Quantity) -> Result<Quantity, ErrorType> {
-    let result = self.mantissa() * 10000 / other.mantissa();
-    Ok(make_quantity(result, -4 + self.range(), 0))
+  fn divide(self, other:Quantity) -> Quantity {
+    let result: u64 = 0; 
+    result | (self as f32 / other as f32) as u64
   }
 
-  fn power(self, other:Quantity) -> Result<Quantity, ErrorType> {
-    let a = self.to_float();
-    let b = other.to_float();
-    let result = a.powf(b);
-    Ok(result.to_quantity())
+  fn power(self, other:Quantity) -> Quantity {
+    let result: u64 = 0; 
+    result | (self as f32).powf(other as f32) as u64
   }
 
-  fn less_than(self, other: Quantity) -> Result<bool, ErrorType> {
-    if self.is_negative() && !other.is_negative() {
-      Ok(true)
-    } else if !self.is_negative() && other.is_negative() {
-      Ok(false)
-    } else {
-      Ok(self.to_float() < other.to_float())
-    }
+  fn less_than(self, other: Quantity) -> bool {
+    (self as f32) < (other as f32)
   }
 
-  fn less_than_equal(self, other: Quantity) -> Result<bool, ErrorType> {
-    if self.is_negative() && !other.is_negative() {
-      Ok(false)
-    } else if !self.is_negative() && other.is_negative() {
-      Ok(true)
-    } else {
-      Ok(self.to_float() <= other.to_float())
-    }
+  fn less_than_equal(self, other: Quantity) -> bool {
+    self as f32 <= other as f32
   }
 
-  fn greater_than_equal(self, other: Quantity) -> Result<bool, ErrorType> {
-    if self.is_negative() && !other.is_negative() {
-      Ok(false)
-    } else if !self.is_negative() && other.is_negative() {
-      Ok(true)
-    } else {
-      Ok(self.to_float() >= other.to_float())
-    }
+  fn greater_than_equal(self, other: Quantity) -> bool {
+    self as f32 >= other as f32
   }
 
-  fn greater_than(self, other: Quantity) -> Result<bool, ErrorType> {
-    if self.is_negative() && !other.is_negative() {
-      Ok(false)
-    } else if !self.is_negative() && other.is_negative() {
-      Ok(true)
-    } else {
-      Ok(self.to_float() > other.to_float())
-    }
+  fn greater_than(self, other: Quantity) -> bool {
+    self as f32 > other as f32
   }
 
-  fn equal(self, other: Quantity) -> Result<bool, ErrorType> {
-    Ok(self.to_float() == other.to_float())
+  fn equal(self, other: Quantity) -> bool {
+    self as f32 == other as f32
   }
 
-  fn not_equal(self, other: Quantity) -> Result<bool, ErrorType> {
-    Ok(self.to_float() != other.to_float())
+  fn not_equal(self, other: Quantity) -> bool {
+    self as f32 != other as f32
   }
 }
