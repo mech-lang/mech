@@ -9,6 +9,7 @@ Read and write data over Unix standard streams.
 - `#io/out[|text color|]` - writes data to stdout
 - `#io/in[|text|]` - reads data from stdin
 - `#io/error[|text|]` - writes data to stderr
+- `#io/keyboard[|code|]` - a list of keyboard keys
 
 ## Info
 
@@ -16,5 +17,5 @@ Read and write data over Unix standard streams.
     name: "io" 
     version: "v0.0.1"
     authors: "Corey Montella" 
-    url: "https://gitlab/com/mech-lang/machines/io-streams"
+    url: "https://gitlab/com/mech-lang/machines/io"
     license: "Apache-2.0"]

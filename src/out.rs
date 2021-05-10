@@ -9,16 +9,16 @@ use std::io;
 use std::io::prelude::*;
 
 lazy_static! {
-  static ref IO__STREAMS_OUT: u64 = hash_string("io-streams/out");
+  static ref IO_OUT: u64 = hash_string("io/out");
   static ref TEXT: u64 = hash_string("text");
   static ref COLOR: u64 = hash_string("color");
 }
 
-export_machine!(io__streams_out, io__streams_out_reg);
+export_machine!(io_out, io_out_reg);
 
-extern "C" fn io__streams_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
+extern "C" fn io_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
   registrar.register_machine(Box::new(Out{outgoing}));
-  "#io-streams/out = [|text color|]".to_string()
+  "#io/out = [|text color|]".to_string()
 }
 
 #[derive(Debug)]
@@ -29,11 +29,11 @@ pub struct Out {
 impl Machine for Out {
 
   fn name(&self) -> String {
-    "io-streams/out".to_string()
+    "io/out".to_string()
   }
 
   fn id(&self) -> u64 {
-    Register{table_id: TableId::Global(*IO__STREAMS_OUT), row: TableIndex::All, column: TableIndex::All}.hash()
+    Register{table_id: TableId::Global(*IO_OUT), row: TableIndex::All, column: TableIndex::All}.hash()
   }
 
   fn on_change(&mut self, table: &Table) -> Result<(), String> {

@@ -6,7 +6,7 @@ Read about progress on our [blog](http://mech-lang.org/blog/), follow us on Twit
 
 ## Provided Tables
 
-- `#io-streams/out[|text color|]`
+- `#io/out[|text color|]`
 
 ## License
 

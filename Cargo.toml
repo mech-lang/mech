@@ -2,24 +2,24 @@
 name = "mech-io"
 version = "0.0.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
-description = "Standard input/output streams library for the Mech language"
+description = "Input/output library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "http://mech-lang.org"
-repository = "https://github.com/mech-machines/io-streams"
+repository = "https://github.com/mech-machines/io"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "mech-lang/machines/io-streams", branch = "main" }
+gitlab = { repository = "mech-lang/machines/io", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {path = "../../core"}
-mech-utilities = {path = "../../utilities"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 crossbeam-channel = "0.4"
 lazy_static = "1.4.0"
