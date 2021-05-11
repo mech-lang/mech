@@ -969,6 +969,18 @@ block
 block
   #test = #app2.x.b"#, Value::from_u64(2));
 
+// ## Indexing
+
+test_mech!(indexing_global,r#"
+block
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y,:})
+
+block
+  x = [true; false; true; false]
+  y = [false; true; true; false]
+  #y = x xor y"#, Value::from_u32(3));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"
