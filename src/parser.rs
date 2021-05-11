@@ -155,6 +155,8 @@ pub enum Node {
   GreaterThan,
   And,
   Or,
+  Not,
+  Xor,
   Empty,
   Null,
   True,
@@ -304,6 +306,8 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::NotEqual => {print!("NotEqual\n",); None},
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
+    Node::Not => {print!("Not\n",); None},
+    Node::Xor => {print!("Xor\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
     Node::False => {print!("True\n",); None},
@@ -994,7 +998,7 @@ fn l4(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn l4_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((and, or))(input)?;
+  let (input, op) = alt((and, or, xor))(input)?;
   let (input, _) = space(input)?;
   let (input, l5) = l5(input)?;
   Ok((input, Node::L4Infix { children: vec![op, l5] }))
@@ -1017,7 +1021,7 @@ fn l5_infix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn l6(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, rational_number, number_literal, quantity, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, rational_number, number_literal, quantity, negation, not, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -1094,6 +1098,16 @@ fn or(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 fn and(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tag("&")(input)?;
   Ok((input, Node::And))
+}
+
+fn not(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = alt((tag("!"), tag("¬")))(input)?;
+  Ok((input, Node::Not))
+}
+
+fn xor(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
+  Ok((input, Node::Xor))
 }
 
 // #### Other Expressions
