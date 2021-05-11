@@ -422,8 +422,9 @@ impl WasmCore {
                     });           
                     (*wasm_core).process_transaction();
                     (*wasm_core).render();
-                    //let table = (*wasm_core).core.get_table(*TIME_TIMER);
-                    //log!("{:?}", table);
+                    let table = (*wasm_core).core.get_table_by_name("balls").unwrap();
+                    //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(2)).unwrap());
+                    //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(4)).unwrap());
                   }
                 }) as Box<dyn FnMut()>)
               };
@@ -1592,14 +1593,14 @@ impl WasmCore {
                       match parameters_table_id.as_reference() {
                         Some(parameters_table_id) => {
                           let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                          match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
-                            Some((height,_)) => {
+                          match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
+                            Some(height) => {
                               canvas.set_attribute("height", &format!("{}",height));
                             }
                             _ => (),
                           }
-                          match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
-                            Some((width,_)) => {
+                          match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
+                            Some(width) => {
                               canvas.set_attribute("width", &format!("{}",width));
                             }
                             _ => (),
