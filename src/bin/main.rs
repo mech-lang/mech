@@ -9,7 +9,7 @@ use mech_core::{Change, Transaction};
 use mech_core::{Value, TableIndex};
 use mech_core::hash_string;
 use mech_core::Core;
-use mech_core::{make_quantity, Quantity, ValueMethods, ToQuantity, QuantityMath};
+use mech_core::{Quantity, ValueMethods, ToQuantity, QuantityMath};
 use std::time::{Duration, SystemTime};
 use std::mem;
 
@@ -34,8 +34,55 @@ Update the block positions on each tick of the timer
 // Some primitives
   let input = String::from(r#"
 block
-  y = [1 2 3]
-  #z = y{1}"#);
+  ix = x > 0
+  x = #q.x
+  #q.x{ix} := -1
+
+block
+  #test = #q.x{1} + #q.x{2} + #q.x{3}
+
+block
+  #q = [|x y z|
+         1 2 3
+         4 5 6
+         7 8 9]"#);
+
+/*
+# mech/test
+
+Every test has a name and expected result. The expected result is compared against the evaluated (actual) result. The result column holds the result of the comparison. 
+  #mech/test = [|name expected actual result|]
+
+Compares the expected and actual results of the test table.
+  #mech/test.result := #mech/test.expected == #mech/test.actual
+
+## Do some tests
+
+block
+  #mech/test += ["Test 1" 0 1 - 1]
+
+block
+  #mech/test += ["Test 2" 2 1 + 1]
+
+block
+  #mech/test += ["Test 3" 0 1 + 1]
+
+## Print the tests
+
+block
+  #mech/test/output = [|name result color|]
+
+block
+  ix = #mech/test.result == true
+  ixx = #mech/test.result == false
+  #mech/test/output.result{ix} := "ok"
+  #mech/test/output.color{ix} := 0x00FF00
+  #mech/test/output.result{ixx} := "failed"
+  #mech/test/output.color{ixx} := 0xFF0000
+
+block
+  #io-streams/out := #test-results
+*/
 
   //let value = Value::Number(make_quantity(780000,-4,0));
   //compile_test(input.clone(), value);
@@ -50,6 +97,9 @@ block
   //println!("{:?}", compiler.blocks);
   //println!("{:?}", compiler.parse_tree);
   println!("{:?}", compiler.syntax_tree);
+  for block in &compiler.blocks {
+    println!("{:?}", block);
+  }
   core.runtime.register_blocks(compiler.blocks);
   //core.runtime.register_block(compiler.blocks[0].clone());
   //core.runtime.register_block(compiler.blocks[1].clone());
