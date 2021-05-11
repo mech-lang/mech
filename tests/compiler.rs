@@ -758,6 +758,24 @@ block
   z = [1;2;3;4]
   #test = stats/sum(column: z{ix,:})", Value::from_i32(3));
 
+test_mech!(logic_not,"
+block
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y,:})
+
+block
+  x = [true; false; true; false]
+  #y = !x", Value::from_i32(6));
+
+test_mech!(logic_not2,"
+block
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y,:})
+
+block
+  x = [true; false; true; false]
+  #y = ¬x", Value::from_i32(6));
+
 // ## Whenever
 
 test_mech!(whenever_column,"block
