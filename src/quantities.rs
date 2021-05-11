@@ -148,51 +148,46 @@ impl QuantityMath for Quantity {
 
   #[inline(always)]
   fn add(self, other:Quantity) -> Quantity {
-    let result: u64 = 0; 
-    result | (self as f32 + other as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(self.to_f32() + other.to_f32()) as u64}
   }
 
   fn sub(self, other:Quantity) -> Quantity {
-    let result: u64 = 0; 
-    result | (self as f32 - other as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(self.to_f32() - other.to_f32()) as u64}
   }
 
   fn multiply(self, other:Quantity) -> Quantity {
-    let result: u64 = 0; 
-    result | (self as f32 * other as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(self.to_f32() * other.to_f32()) as u64}
   }
 
   fn divide(self, other:Quantity) -> Quantity {
-    let result: u64 = 0; 
-    result | (self as f32 / other as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(self.to_f32() / other.to_f32()) as u64}
   }
 
   fn power(self, other:Quantity) -> Quantity {
-    let result: u64 = 0; 
-    result | (self as f32).powf(other as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(self.to_f32().powf(other.to_f32())) as u64}
   }
 
   fn less_than(self, other: Quantity) -> bool {
-    (self as f32) < (other as f32)
+    self.to_f32() < other.to_f32()
   }
 
   fn less_than_equal(self, other: Quantity) -> bool {
-    self as f32 <= other as f32
+    self.to_f32() <= other.to_f32()
   }
 
   fn greater_than_equal(self, other: Quantity) -> bool {
-    self as f32 >= other as f32
+    self.to_f32() >= other.to_f32()
   }
 
   fn greater_than(self, other: Quantity) -> bool {
-    self as f32 > other as f32
+    self.to_f32() > other.to_f32()
   }
 
   fn equal(self, other: Quantity) -> bool {
-    self as f32 == other as f32
+    self.to_f32() == other.to_f32()
   }
 
   fn not_equal(self, other: Quantity) -> bool {
-    self as f32 != other as f32
+    self.to_f32() != other.to_f32()
   }
 }
