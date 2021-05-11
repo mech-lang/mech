@@ -67,10 +67,7 @@ pub trait ValueMethods {
   fn from_string(string: &String) -> Value;
   fn from_str(string: &str) -> Value;
   fn from_bool(boolean: bool) -> Value;
-  fn from_u64(num: u64) -> Value;
   fn from_quantity(num: Quantity) -> Value;
-  fn from_i64(num: i64) -> Value;
-  fn from_f64(num: f64) -> Value;
   fn from_id(id: u64) -> Value;
   fn from_number_literal(number_literal: &NumberLiteral) -> Value;
   fn value_type(&self) -> ValueType;
@@ -78,6 +75,8 @@ pub trait ValueMethods {
   fn as_u64(&self) -> Option<u64>;
   fn as_i64(&self) -> Option<i64>;
   fn as_f64(&self) -> Option<f64>;
+  fn from_u64(num: u64) -> Quantity;
+  fn from_f32(num: f32) -> Quantity;
   fn as_string(&self) -> Option<u64>;
   fn as_number_literal(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
@@ -153,20 +152,8 @@ impl ValueMethods for Value {
     id + REFERENCE
   }
 
-  fn from_u64(num: u64) -> Value {
-    num.to_quantity()
-  }
-
   fn from_quantity(num: Quantity) -> Value {
     num
-  }
-
-  fn from_i64(num: i64) -> Value {
-    num.to_quantity()
-  }
-
-  fn from_f64(num: f64) -> Value {
-    num.to_quantity()
   }
 
   fn is_empty(&self) -> bool {
@@ -247,14 +234,22 @@ impl ValueMethods for Value {
 
   fn as_f64(&self) -> Option<f64> {
     match self.is_number() {
-      true => Some(self.to_float()),
+      true => Some(self.to_f32() as f64),
       false => None,
     }
   }
 
+  fn from_u64(num: u64) -> Value {
+    num.to_quantity()
+  }
+
+  fn from_f32(num: f32) -> Value {
+    num.to_quantity()
+  }
+
   fn as_i64(&self) -> Option<i64> {
     match self.is_number() {
-      true => Some(self.to_float() as i64),
+      true => Some(self.to_f32() as i64),
       false => None,
     }
   }
@@ -290,7 +285,7 @@ impl ValueMethods for Value {
         Ok(Value::from_bool(self.as_string().unwrap() == other.as_string().unwrap()))
       }
       (ValueType::Quantity, ValueType::Quantity) => {
-        Ok(Value::from_bool(self.as_quantity().unwrap().equal(other.as_quantity().unwrap()).unwrap()))
+        Ok(Value::from_bool(self.as_quantity().unwrap().equal(other.as_quantity().unwrap())))
       }
       _ => Err(ErrorType::IncorrectFunctionArgumentType)
     }
@@ -305,7 +300,7 @@ impl ValueMethods for Value {
         Ok(Value::from_bool(self.as_string().unwrap() != other.as_string().unwrap()))
       }
       (ValueType::Quantity, ValueType::Quantity) => {
-        Ok(Value::from_bool(self.as_quantity().unwrap().not_equal(other.as_quantity().unwrap()).unwrap()))
+        Ok(Value::from_bool(self.as_quantity().unwrap().not_equal(other.as_quantity().unwrap())))
       }
       _ => Err(ErrorType::IncorrectFunctionArgumentType)
     }
@@ -313,63 +308,63 @@ impl ValueMethods for Value {
 
   fn less_than(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than_equal(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than_equal(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn greater_than(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn greater_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than_equal(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than_equal(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn add(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.add(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.add(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn sub(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.sub(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.sub(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn multiply(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.multiply(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.multiply(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn divide(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.divide(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.divide(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
 
   fn power(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.power(r).unwrap())),
+      (Some(q), Some(r)) => Ok(Value::from_quantity(q.power(r))),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }
