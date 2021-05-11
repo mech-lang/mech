@@ -4,7 +4,7 @@ extern crate mech_core;
 
 use mech_syntax::parser::{Parser, Node};
 use mech_syntax::compiler::Compiler;
-use mech_core::{hash_string, Core, TableIndex, Value, Quantity, QuantityMath, ToQuantity, ValueMethods, make_quantity};
+use mech_core::{hash_string, Core, TableIndex, Value, Quantity, QuantityMath, ToQuantity, ValueMethods};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -38,13 +38,13 @@ block
   x = [1 2
        4 _
        _ 7]
-  #test = stats/sum(column: x{:,1})",Value::from_i64(5));
+  #test = stats/sum(column: x{:,1})",Value::from_i32(5));
 
   test_mech!(constant_empty_table, "
 block
   #test = _", Value::empty());
 
-test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i64(123));
+test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i32(123));
 
 // ## Table
 
@@ -52,7 +52,7 @@ test_mech!(table_define_inline_expressions, "
 block
   #x = [x: 1 + 2, y: 2 + 2]
 block
-  #test = #x.x + #x.y", Value::from_i64(7));
+  #test = #x.x + #x.y", Value::from_i32(7));
 
 test_mech!(table_inline_multirow, r#"
 block
@@ -60,12 +60,12 @@ block
         y: 2
         z: 3]
 block
-  #test = #x.x + #x.y + #x.z"#, Value::from_i64(6));
+  #test = #x.x + #x.y + #x.z"#, Value::from_i32(6));
 
 test_mech!(table_anonymous_table_trailing_whitespace, "
 block
   #test = [|d|
-            5  ]", Value::from_i64(5));
+            5  ]", Value::from_i32(5));
 
 test_mech!(table_define_empty_table, "
 block
@@ -73,13 +73,13 @@ block
 block
   #bots += [position: 3 name: 4]
 block
-  #test = #bots.position ^ #bots.name", Value::from_quantity(make_quantity(81000000000000,-12,0)));
+  #test = #bots.position ^ #bots.name", Value::from_i32(81));
 
 test_mech!(table_define_program, "# A Working Program
 
 ## Section Two
 
-  #test = 9", Value::from_i64(9));
+  #test = 9", Value::from_i32(9));
 
 test_mech!(table_multi_line_inline, "
 block
@@ -89,7 +89,7 @@ block
     x: 1
     y: 2
     z: 3
-  ]", Value::from_i64(6));
+  ]", Value::from_i32(6));
 
 // ## Select
 
@@ -97,43 +97,43 @@ test_mech!(select_table,"
 block
   #x = 500
 block
-  #test = #x", Value::from_i64(500));
+  #test = #x", Value::from_i32(500));
 
 test_mech!(select_table_reverse_ordering,"  
 block
   #test = #x
 block
-  #x = 500", Value::from_i64(500));
+  #x = 500", Value::from_i32(500));
 
 // ## Math
 
-test_mech!(math_constant,"#test = 10", Value::from_i64(10));
+test_mech!(math_constant,"#test = 10", Value::from_i32(10));
 
-test_mech!(math_add,"#test = 1 + 1", Value::from_i64(2));
+test_mech!(math_add,"#test = 1 + 1", Value::from_i32(2));
 
-test_mech!(math_subtract,"#test = 1 - 1", Value::from_i64(0));
+test_mech!(math_subtract,"#test = 1 - 1", Value::from_i32(0));
 
-test_mech!(math_multiply,"#test = 2 * 2", Value::from_i64(4));
+test_mech!(math_multiply,"#test = 2 * 2", Value::from_i32(4));
 
-test_mech!(math_divide,"#test = 4 / 2", Value::from_quantity(make_quantity(20000,-4,0)));
+test_mech!(math_divide,"#test = 4 / 2", Value::from_i32(2));
 
-test_mech!(math_exponent,"#test = 3 ^ 4", Value::from_quantity(make_quantity(81000000000000,-12,0)));
+test_mech!(math_exponent,"#test = 3 ^ 4", Value::from_i32(81));
 
-test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i64(19));
+test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::from_i32(19));
 
-test_mech!(math_constant_collision,"#test = 10000 + 1", Value::from_i64(10001));
+test_mech!(math_constant_collision,"#test = 10000 + 1", Value::from_i32(10001));
 
 test_mech!(math_multiple_variable_graph,"block
   a = z * 5
   #test = d * z + a
   d = 9 * z
-  z = 5", Value::from_i64(250));
+  z = 5", Value::from_i32(250));
 
 test_mech!(math_multiple_variable_graph_new_ordering,"block
   #test = d * z + a
   a = z * 5
   z = 5
-  d = 9 * z", Value::from_i64(250));
+  d = 9 * z", Value::from_i32(250));
 
   test_mech!(math_add_columns_alias,"
 block
@@ -143,7 +143,7 @@ block
   x = 1:10
   y = 1:10
   #ball = [|x y|
-            x y]", Value::from_i64(110));
+            x y]", Value::from_i32(110));
 
   test_mech!(math_add_columns_indices,"
 block
@@ -153,37 +153,37 @@ block
   x = 1:10
   y = 1:10
   #ball = [|x y|
-            x y]", Value::from_i64(110));
+            x y]", Value::from_i32(110));
 
 test_mech!(math_on_whole_table,"
 block
   #x = 500
 block
-  #test = #x + 5", Value::from_i64(505));
+  #test = #x + 5", Value::from_i32(505));
 
 test_mech!(select_column_by_id,"  
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
 block
-  #test = #ball.y", Value::from_i64(2));
+  #test = #ball.y", Value::from_i32(2));
 
 test_mech!(math_multiple_rows_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = #ball.x + #ball.y * #ball.vx", Value::from_i64(177));
+  #test = #ball.x + #ball.y * #ball.vx", Value::from_i32(177));
 
 test_mech!(math_const_and_select,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = 9 + #ball.x", Value::from_i64(24));
+  #test = 9 + #ball.x", Value::from_i32(24));
 
 test_mech!(math_select_and_const,"
 block
   #ball = [x: 15 y: 9 vx: 18 vy: 0]
 block
-  #test = #ball.x + 9", Value::from_i64(24));
+  #test = #ball.x + 9", Value::from_i32(24));
 
 test_mech!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
@@ -195,7 +195,7 @@ Now update the block positions
   x = #ball.x + #ball.vx
   y = #ball.y + #ball.vy
   dt = #time/timer.period
-  #test = x + y * dt", Value::from_i64(18033));
+  #test = x + y * dt", Value::from_i32(18033));
 
 test_mech!(math_add_columns,"
 block
@@ -204,7 +204,7 @@ block
             3 4
             5 6]
 block
-  #test = #ball.x + #ball.y", Value::from_i64(3));
+  #test = #ball.x + #ball.y", Value::from_i32(3));
 
 test_mech!(math_add_matrices,"
 block
@@ -213,27 +213,27 @@ block
   y = [10 11
        13 14]
   z = x + y
-  #test = z{1,1} + z{1,2} + z{2,1} + z{2,2}", Value::from_i64(60));
+  #test = z{1,1} + z{1,2} + z{2,1} + z{2,2}", Value::from_i32(60));
 
 test_mech!(math_scalar_plus_vector,"
 block
   x = 3:6
   y = 5 + x
-  #test = y{1,1} + y{2,1} + y{3,1} + y{4,1}", Value::from_i64(38));
+  #test = y{1,1} + y{2,1} + y{3,1} + y{4,1}", Value::from_i32(38));
 
 test_mech!(math_vector_plus_scalar_inline,"
 block
   #x = [1 2 3] + 1
   
 block
-  #test = stats/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i32(9));
 
 test_mech!(math_vector_plus_scalar_inline_reverse,"
 block
   #x = 1 + [1 2 3]
     
 block
-  #test = stats/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i32(9));
 
 test_mech!(math_vector_plus_scalar,"
 block
@@ -241,22 +241,16 @@ block
   #x = x + 1
 
 block
-  #test = stats/sum(row: #x)", Value::from_i64(9));
+  #test = stats/sum(row: #x)", Value::from_i32(9));
 
 test_mech!(math_negation_double_negative,"
 block
   y = -13
-  #test = -y", Value::from_i64(13));
+  #test = -y", Value::from_i32(13));
 
 test_mech!(math_parenthetical_expression_constants,"
 block
-  #test = (1 + 2) * 3", Value::from_i64(9));
-
-// ## Units
-
-test_mech!(units_basic_math,"#test = 35g + 10g", Value::from_i64(45));
-
-test_mech!(units_scaling,"#test = 35g + 10kg", Value::from_i64(10035));
+  #test = (1 + 2) * 3", Value::from_i32(9));
 
 // ## Ranges
 
@@ -264,7 +258,7 @@ test_mech!(range_basic,r#"
 block
   #test = stats/sum(column: #range)
 block
-  #range = 5 : 14"#, Value::from_i64(95));
+  #range = 5 : 14"#, Value::from_i32(95));
 
 test_mech!(range_and_cat,r#"
 block
@@ -273,7 +267,7 @@ block
 block
   x = 1:4000
   y = 1:4000
-  #ball = [x y]"#, Value::from_i64(16004000));
+  #ball = [x y]"#, Value::from_i32(16004000));
 
 // ## Subscripts
 
@@ -281,23 +275,23 @@ test_mech!(subscript_scalar_math,"
 block
   x = 3:6
   y = 10:12
-  #test = x{1,1} + y{3,1}", Value::from_i64(15));
+  #test = x{1,1} + y{3,1}", Value::from_i32(15));
 
 test_mech!(subscript_scan,"
 block
   x = 10:20
   z = 3:5
-  #test = x{z, :}", Value::from_i64(12));
+  #test = x{z, :}", Value::from_i32(12));
 
 test_mech!(subscript_single_horz,"
 block
   x = [1 2 3]
-  #test = x{2}", Value::from_i64(2));
+  #test = x{2}", Value::from_i32(2));
 
 test_mech!(subscript_single_vert,"
 block
   x = [1; 2; 3]
-  #test = x{2}", Value::from_i64(2));
+  #test = x{2}", Value::from_i32(2));
 
 // ## Comparators
 
@@ -305,13 +299,13 @@ test_mech!(comparator_greater,"
 block
   x = 10:20
   z = x > 15
-  #test = x{z, :}", Value::from_i64(16));
+  #test = x{z, :}", Value::from_i32(16));
 
 test_mech!(comparator_less,"
 block
   x = 10:20
   z = x < 15
-  #test = x{z, :}", Value::from_i64(10));
+  #test = x{z, :}", Value::from_i32(10));
 
 test_mech!(comparator_greater_than_equal,"
 block
@@ -320,7 +314,7 @@ block
   
 block
   ix = #x >= #y
-  #test = stats/sum(column: #x{ix,:})", Value::from_i64(5)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i32(5)); 
 
 test_mech!(comparator_less_than_equal,"
 block
@@ -329,7 +323,7 @@ block
   
 block
   ix = #x <= #y
-  #test = stats/sum(column: #x{ix,:})", Value::from_i64(4)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i32(4)); 
 
 
 test_mech!(comparator_equal,"
@@ -339,7 +333,7 @@ block
   
 block
   ix = #x == #y
-  #test = stats/sum(column: #x{ix,:})", Value::from_i64(5)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i32(5)); 
 
 test_mech!(comparator_equal_boolean,"
 block
@@ -366,7 +360,7 @@ block
   
 block
   ix = #y == "a"
-  #test = stats/sum(column: #x{ix,:})"#, Value::from_i64(4)); 
+  #test = stats/sum(column: #x{ix,:})"#, Value::from_i32(4)); 
 
 test_mech!(comparator_not_equal,"
 block
@@ -375,7 +369,7 @@ block
   
 block
   ix = #x != #y
-  #test = stats/sum(column: #x{ix,:})", Value::from_i64(3)); 
+  #test = stats/sum(column: #x{ix,:})", Value::from_i32(3)); 
 
 // ## Set
 
@@ -385,7 +379,7 @@ block
 
 block
   #test = [|x|
-            9]", Value::from_i64(77));
+            9]", Value::from_i32(77));
 
 test_mech!(set_empty_with_index,"
 block
@@ -401,7 +395,7 @@ block
   #foo.y{ixx} := 20
 
 block
-  #test = stats/sum(column: #foo.y)", Value::from_i64(40));
+  #test = stats/sum(column: #foo.y)", Value::from_i32(40));
 
 test_mech!(set_column_alias,"
 block
@@ -420,7 +414,7 @@ block
 
 block
   ~ #z
-  #foo.x := 200", Value::from_i64(200));
+  #foo.x := 200", Value::from_i32(200));
 
 
 test_mech!(set_single_index,"
@@ -431,7 +425,7 @@ block
   #x{3} := 7
 
 block
-  #test = stats/sum(column: #x)", Value::from_i64(407));
+  #test = stats/sum(column: #x)", Value::from_i32(407));
 
 
 test_mech!(set_single_index_math,"
@@ -445,7 +439,7 @@ block
   #y = #x * 2
 
 block
-  #x{2,1} := 10", Value::from_i64(28));
+  #x{2,1} := 10", Value::from_i32(28));
 
 test_mech!(set_logical_false,"
 block
@@ -458,7 +452,7 @@ block
   #ball = [x: #x]
 
 block
-  #x{#clicked} := 10", Value::from_i64(600));
+  #x{#clicked} := 10", Value::from_i32(600));
 
 test_mech!(set_column_logical,"
 block
@@ -473,7 +467,7 @@ block
   #q = [|x y z|
          1 2 3
          4 5 6
-         7 8 9]", Value::from_i64(-3));
+         7 8 9]", Value::from_f32(-3.0));
 
 test_mech!(set_second_column_logical,"
 block
@@ -488,7 +482,7 @@ block
   #ball = [|x y z|
             1 2 3
             4 5 6
-            7 8 9]", Value::from_i64(3));
+            7 8 9]", Value::from_i32(3));
 
 test_mech!(set_second_omit_row_subscript,"
 block
@@ -501,7 +495,7 @@ block
   #ball.y := #ball.vy + #gravity
 
 block
-  #test = #ball.y", Value::from_i64(11));
+  #test = #ball.y", Value::from_i32(11));
 
 test_mech!(set_rhs_math_filters_logic,"
 block
@@ -519,7 +513,7 @@ block
   #ball.y{ixx} := #ball.vy * 9099
 
 block
-  #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
+  #test = #ball{1,2} + #ball{3,2}", Value::from_i32(145584));
 
 test_mech!(set_implicit_logic,"
 block
@@ -536,7 +530,7 @@ block
   #ball.y{ix | iy} := #ball.vy * 9099
 
 block
-  #test = #ball{1,2} + #ball{3,2}", Value::from_i64(145584));
+  #test = #ball{1,2} + #ball{3,2}", Value::from_i32(145584));
 
 test_mech!(set_inline_row,"
 block
@@ -546,7 +540,7 @@ block
   #launch-point = [x: 0 y: 0]
 
 block
-  #launch-point := [x: 10 y: 20]", Value::from_i64(30));
+  #launch-point := [x: 10 y: 20]", Value::from_i32(30));
 
 test_mech!(set_empty_table,"
 block
@@ -554,7 +548,7 @@ block
 block
   #x = []
 block
-  #x := [10 20; 30 40]", Value::from_i64(100));
+  #x := [10 20; 30 40]", Value::from_i32(100));
 
 test_mech!(set_empty_table_with_column,"
 block
@@ -562,7 +556,7 @@ block
 block
   #x = [|code|]
 block
-  #x := 10", Value::from_i64(10));
+  #x := 10", Value::from_i32(10));
 
 // ## Concat
 
@@ -573,7 +567,7 @@ block
   #z = [x y]
   
 block
-  #test = #z{1,1} + #z{1,2} + #z{2,1} + #z{1,1}", Value::from_i64(15));
+  #test = #z{1,1} + #z{1,2} + #z{2,1} + #z{1,1}", Value::from_i32(15));
 
 test_mech!(concat_horzcat_autofill,r#"
 block
@@ -581,7 +575,7 @@ block
 
 block
   x = ["a"; "b"; "c"; "d"]
-  #y = [type: 1 class: "table" result: x]"#, Value::from_i64(4));
+  #y = [type: 1 class: "table" result: x]"#, Value::from_i32(4));
 
 // ## Append
 
@@ -615,7 +609,7 @@ block
 
 block
   #ball = [|x y z|
-            1 2 3]", Value::from_i64(100));
+            1 2 3]", Value::from_i32(100));
 
 test_mech!(append_row_expression,"
 block
@@ -701,7 +695,7 @@ block
   #foo = [|x y z|
            5 6 7
            8 9 10
-           11 12 13]", Value::from_i64(8));
+           11 12 13]", Value::from_i32(8));
 
 test_mech!(logic_and_filter_inline,"
 block
@@ -712,7 +706,7 @@ block
   #foo = [|x y z|
            5 6 7
            8 9 10
-           11 12 13]", Value::from_i64(8));
+           11 12 13]", Value::from_i32(8));
 
 test_mech!(logic_and_composed,"
 block
@@ -724,7 +718,7 @@ block
            5 6 7
            8 9 10
            9 10 11
-           11 12 13]", Value::from_i64(9));
+           11 12 13]", Value::from_i32(9));
 
 test_mech!(logic_or,"
 block
@@ -738,7 +732,7 @@ block
   #foo = [|x y z|
            5 6 7
            8 9 10
-           11 12 13]", Value::from_i64(16));
+           11 12 13]", Value::from_i32(16));
 
 // ## Whenever
 
@@ -747,7 +741,7 @@ test_mech!(whenever_column,"block
 
 block
   ~ #time/timer.tick
-  #test = 3", Value::from_i64(3));
+  #test = 3", Value::from_i32(3));
 
 test_mech!(whenever_simple2,"block
   #i = 2
@@ -759,7 +753,7 @@ block
 block 
   ~ #i
   i = #i
-  #x{i,:} := #x{i - 1,:} + 1", Value::from_i64(801));
+  #x{i,:} := #x{i - 1,:} + 1", Value::from_i32(801));
 
 test_mech!(whenever_simple,"block
   #i = 2
@@ -767,7 +761,7 @@ test_mech!(whenever_simple,"block
 
 block 
   ~ #i
-  #test := 20", Value::from_i64(20));
+  #test := 20", Value::from_i32(20));
 
 
 test_mech!(whenever_equality,"block
@@ -775,7 +769,7 @@ test_mech!(whenever_equality,"block
   ~ #q == 10
 
 block
-  #q = 10", Value::from_i64(30));
+  #q = 10", Value::from_i32(30));
 
 test_mech!(whenever_inequality,"block
   #test := #q * 3
@@ -783,7 +777,7 @@ test_mech!(whenever_inequality,"block
 
 block
   #test = 10
-  #q = 10", Value::from_i64(30));
+  #q = 10", Value::from_i32(30));
 
 test_mech!(whenever_recursive,r#"
 block
@@ -799,7 +793,7 @@ block
 
 block
   ~ #explorer
-  #test = #explorer.y"#, Value::from_i64(9));
+  #test = #explorer.y"#, Value::from_i32(9));
 
 test_mech!(whenever_default_values,r#"
 block
@@ -956,30 +950,30 @@ block
 test_mech!(function_stats_sum,r#"
 block
   x = [1;2;3;4;5]
-  #test = stats/sum(column: x)"#, Value::from_quantity(make_quantity(15,0,0)));
+  #test = stats/sum(column: x)"#, Value::from_i32(15));
 
 test_mech!(function_stats_sum_row,r#"
 block
   x = [1 2 3 4 5]
-  #test = stats/sum(row: x)"#, Value::from_quantity(make_quantity(15,0,0)));
+  #test = stats/sum(row: x)"#, Value::from_i32(15));
 
 test_mech!(function_stats_sum_row_col,r#"
 block
   x = [1;2;3;4;5]
   y = stats/sum(row: x)
-  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::from_quantity(make_quantity(15,0,0)));
+  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::from_i32(15));
 
 test_mech!(function_stats_sum_table,r#"
 block
   x = [1 2 3; 4 5 6]
-  #test = stats/sum(table: x)"#, Value::from_quantity(make_quantity(21,0,0)));
+  #test = stats/sum(table: x)"#, Value::from_i32(21));
 
 test_mech!(function_add_functions,r#"
 block
   x = [1 2
        4 _
        _ 7]
-  #test = stats/sum(column: x{:,1}) + stats/sum(column: x{:,2})"#, Value::from_i64(14));
+  #test = stats/sum(column: x{:,1}) + stats/sum(column: x{:,2})"#, Value::from_i32(14));
 
 test_mech!(function_set_any,r#"
 block
@@ -1017,15 +1011,15 @@ block
 block
   x = 1
   x = 3
-  #test := 7"#, Value::from_i64(5));
+  #test := 7"#, Value::from_i32(5));
 
 // ## Markdown
 
 test_mech!(markdown_program_title, r#"# Title
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_no_program_title, r#"paragraph
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_section_title, r#"# Title
 
@@ -1033,7 +1027,7 @@ Paragraph
 
 ## Section
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_inline_code, r#"# Title
 
@@ -1041,7 +1035,7 @@ Paragraph including `inline code`
 
 ## Section
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_list, r#"# Title
 
@@ -1053,7 +1047,7 @@ Paragraph including `inline code`
 - Item 2
 - Item 3
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_list_inline_code, r#"# Title
 
@@ -1065,7 +1059,7 @@ Paragraph including `inline code`
 - Item `some code`
 - Item `some code`
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(markdown_code_block, r#"# Title
 
@@ -1077,7 +1071,7 @@ Paragraph including `inline code`
 A regular code block
 ```
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 // ## Mechdown (Markdown extensions for Mech)
 
@@ -1087,7 +1081,7 @@ Paragraph including `inline mech code` is [[#test]]
 
 ## Section
 
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 test_mech!(mechdown_block_directives, r#"
 block
@@ -1096,14 +1090,14 @@ block
 ```mech:disabled
   #test := 2
 ```
-"#, Value::from_i64(1));
+"#, Value::from_i32(1));
 
 // ## Comments
 
 test_mech!(comment_line, r#"
 block
   // This is a comment
-  #test = 123"#, Value::from_i64(123));
+  #test = 123"#, Value::from_i32(123));
 
 // ## Recursion
 
