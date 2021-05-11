@@ -272,6 +272,21 @@ impl Table {
   }
 
   // Get the value as an f64 in the store at memory address (row, column)
+  pub fn get_f32(&self, row: &TableIndex, column: &TableIndex) -> Option<f32> {
+    match self.index(row, column) {
+      Some(ix) => {
+        let address = self.data[ix];
+        let value = self.store.data[address];
+        match value.as_f32() {
+          None => None,
+          x => x,
+        }
+      },
+      None => None,
+    }
+  }
+
+  // Get the value as an f64 in the store at memory address (row, column)
   pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
     match self.index(row, column) {
       Some(ix) => {
