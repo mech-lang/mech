@@ -100,6 +100,9 @@ lazy_static! {
   static ref TARGET: u64 = hash_string("target");
   static ref KEY: u64 = hash_string("key");
   static ref EVENT__ID: u64 = hash_string("event-id");
+  static ref ARC: u64 = hash_string("arc");
+  static ref STARTING__ANGLE: u64 = hash_string("starting-angle");
+  static ref ENDING__ANGLE: u64 = hash_string("ending-angle");
 }
 
 #[wasm_bindgen]
@@ -2041,7 +2044,37 @@ impl WasmCore {
               }        
             }
           // ---------------------
-          // RENDER A SQUARE
+          // RENDER A ARC
+          // --------------------- 
+          } else if shape == *ARC {
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                (Some(cx), Some(cy), Some(sa), Some(ea), Some(radius)) => {
+                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table,row, *FILL);
+                  let line_width = get_line_width(&parameters_table,row);
+                  let pi = 3.141592654;
+                  context.save();
+                  context.begin_path();
+                  context.arc(cx, cy, radius, sa * pi / 180.0, ea * pi / 180.0);
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.fill();
+                  context.set_stroke_style(&JsValue::from_str(&stroke));
+                  context.set_line_width(line_width);    
+                  context.stroke();                
+                  context.restore();
+                }
+                _ => {
+                  log!("Missing center-x, center-y, or radius");
+                },
+              }        
+            }
+          // ---------------------
+          // RENDER A RECTANGLE
           // ---------------------    
           } else if shape == *RECTANGLE {
             match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
@@ -2172,6 +2205,8 @@ impl WasmCore {
               }
               _ => {log!("Missing source, x, y, or rotation");},
             }
+          } else {
+            log!("Unknown canvas element");
           }
         },
         _ => {log!("Missing shape or parameters table");}
