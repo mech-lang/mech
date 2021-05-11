@@ -3,7 +3,7 @@
 // ## Preamble
 
 use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, TableIndex, TableId, Register, NumberLiteral, NumberLiteralKind};
-use mech_core::{Quantity, QuantityMath, make_quantity};
+use mech_core::{Quantity, QuantityMath};
 use mech_core::hash_string;
 use mech_core::{Error, ErrorType};
 use parser;
@@ -17,6 +17,7 @@ use hashbrown::hash_set::{HashSet};
 use hashbrown::hash_map::{HashMap};
 use super::formatter::Formatter;
 use std::sync::Arc;
+use std::mem;
 
 lazy_static! {
   static ref TABLE_COPY: u64 = hash_string("table/copy");
@@ -159,7 +160,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::String{text} => {write!(f,"String({:?})\n", text).ok(); None},
     Node::RationalNumber{children} => {write!(f,"RationalNumber\n").ok(); Some(children)},
     Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes).ok(); None},
-    Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_float(), unit).ok(); None},
+    Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_f32(), unit).ok(); None},
     Node::Table{name,id} => {write!(f,"Table(#{}({:#x}))\n", name, id).ok(); None},
     Node::Define{name,id} => {write!(f,"Define #{}({:?})\n", name, id).ok(); None},
     Node::Token{token, byte} => {write!(f,"Token({:?})\n", token).ok(); None},
@@ -1563,12 +1564,12 @@ impl Compiler {
       }
       Node::Empty => {
         let value = Value::empty();
-        let table = hash_string(&format!("Empty-{:?}", value.to_float()));
+        let table = hash_string(&format!("Empty-{:?}", value.to_f32()));
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: value, unit: 0});
       }
       Node::Quantity{value, unit} => {
-        let table = hash_string(&format!("Quantity-{:?}{:?}", value.to_float(), unit));
+        let table = hash_string(&format!("Quantity-{:?}{:?}", value.to_f32(), unit));
 
         let unit = match unit {
           Some(unit_string) => hash_string(unit_string),
@@ -1968,63 +1969,49 @@ impl Compiler {
       // Quantities
       parser::Node::Quantity{children} => {
         let mut result = self.compile_nodes(children);
-        let mut quantity = make_quantity(0,0,0);
         let mut unit = None;
+        let mut str_result = "".to_string();
         for node in result {
           match node {
-            Node::Quantity{value, unit} => {
-              quantity = quantity.add(value).unwrap();
-            },
             Node::Identifier{name: word, id} => unit = Some(word),
+            Node::String{text} => {
+              str_result = format!("{}{}",str_result,text);
+            }
             _ => (),
           }
         }
-        compiled.push(Node::Quantity{value: quantity, unit});
+        let float_value: f32 = str_result.parse::<f32>().unwrap();
+        compiled.push(Node::Quantity{value: Value::from_f32(float_value), unit});
       },
       parser::Node::Number{children} => {
-        let mut value: u64 = 0;
         let mut result = self.compile_nodes(children);
-        result.reverse();
-        let mut place = 1;
-        let mut quantities: Vec<Quantity> = vec![];
+        let mut str_result = "".to_string();
         for node in result {
           match node {
             Node::Token{token: Token::Comma, byte} => (),
             Node::Token{token, byte} => {
               let digit = byte_to_digit(byte).unwrap();
-              let q = digit * magnitude(place);
-              place += 1;
-              value += q;
+              str_result = format!("{}{}",str_result,digit);
             },
-            Node::Quantity{value, unit} => quantities.push(value),
             _ => (),
           }
         }
-        let mut quantity = make_quantity(value as i64,0,0);
-        for q in quantities {
-          quantity = quantity.add(q).unwrap();
-        }
-        compiled.push(Node::Quantity{value: quantity, unit: None});
+        compiled.push(Node::String{text: str_result});
       },
       parser::Node::FloatingPoint{children} => {
-        let mut value: u64 = 0;
         let mut result = self.compile_nodes(children);
-        result.reverse();
-        let mut place = 1;
+        let mut str_result = ".".to_string();
         for node in result {
           match node {
             Node::Token{token: Token::Period, byte} => (),
             Node::Token{token, byte} => {
               let digit = byte_to_digit(byte).unwrap();
-              let q = digit * magnitude(place);
-              place += 1;
-              value += q;
+              str_result = format!("{}{}",str_result,digit);
             },
             _ => (),
           }
         }
-        let quantity = make_quantity(value as i64,1 - place as i64,0);
-        compiled.push(Node::Quantity{value: quantity, unit: None});
+        compiled.push(Node::String{text: str_result});
       },
       // String-like nodes
       parser::Node::ParagraphText{children} => {
@@ -2104,7 +2091,7 @@ impl Compiler {
           match node {
             Node::String{text} => text_node.push_str(&text),
             Node::Token{token, byte} => text_node.push_str(&format!("{}",byte_to_char(byte).unwrap())),
-            Node::Quantity{value, unit} => text_node.push_str(&format!("{}", value.to_float())),
+            Node::Quantity{value, unit} => text_node.push_str(&format!("{}", value.to_f32())),
             _ => (),
           }
         }
@@ -2135,7 +2122,7 @@ impl Compiler {
               word.push(character);
             },
             Node::String{text} => word.push_str(&text),
-            Node::Quantity{value, unit} => word.push_str(&format!("{}", value.to_float())),
+            Node::Quantity{value, unit} => word.push_str(&format!("{}", value.to_f32())),
             _ => compiled.push(node),
           }
         }
