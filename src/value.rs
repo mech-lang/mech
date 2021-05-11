@@ -77,6 +77,7 @@ pub trait ValueMethods {
   fn as_f64(&self) -> Option<f64>;
   fn from_u64(num: u64) -> Quantity;
   fn from_f32(num: f32) -> Quantity;
+  fn from_i32(num: i32) -> Quantity;
   fn as_string(&self) -> Option<u64>;
   fn as_number_literal(&self) -> Option<u64>;
   fn as_bool(&self) -> Option<bool>;
@@ -240,6 +241,10 @@ impl ValueMethods for Value {
   }
 
   fn from_u64(num: u64) -> Value {
+    num.to_quantity()
+  }
+
+  fn from_i32(num: i32) -> Value {
     num.to_quantity()
   }
 

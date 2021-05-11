@@ -36,33 +36,28 @@ pub trait FromQuantity<T> {
 impl ToQuantity for f32 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let result:u64 = 0;
-    result | unsafe{mem::transmute::<f32, u32>(*self)} as u64
+    unsafe{mem::transmute::<f32, u32>(*self) as u64}
   }
 }
-
 
 impl ToQuantity for u32 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let result:u64 = 0;
-    result | (*self as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(*self as f32) as u64}
   }
 }
 
 impl ToQuantity for i32 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let result:u64 = 0;
-    result | (*self as f32) as u64
+    unsafe{mem::transmute::<f32, i32>(*self as f32) as u64}
   }
 }
 
 impl ToQuantity for u64 {
   #[inline(always)]
   fn to_quantity(&self) -> u64 {
-    let result:u64 = 0;
-    result | (*self as f32) as u64
+    unsafe{mem::transmute::<f32, u32>(*self as f32) as u64}
   }
 }
 
@@ -143,7 +138,7 @@ impl QuantityMath for Quantity {
   }
 
   fn to_u64(self) -> u64 {
-    self as u64
+    unsafe{mem::transmute::<u32, f32>(self as u32) as u64}
   }
 
   #[inline(always)]
