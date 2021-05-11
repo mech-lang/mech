@@ -61,45 +61,6 @@ impl ToQuantity for u64 {
   }
 }
 
-
-/*
-#[inline(always)]
-pub fn overflow_handler(me:u64) -> (u64, u64) {
-  let hi = 64 - me.leading_zeros() - 48;
-  let r = (2u64.pow(hi) as f64).log10().ceil() as u32;
-  let result = me / 10u64.pow(r) as u64;
-  (result, r as u64)
-}
-
-pub fn decrease_range(mantissa:i64, range_delta:u64) -> (i64, u64) {
-  let remaining_space = mantissa.leading_zeros();
-  let thing:u64 = (1 as u64) << remaining_space;
-  let remaining_10 = (thing as f64).log10().floor() as u64;
-  if range_delta <= remaining_10 {
-    let new_mantissa = mantissa * 10u64.pow(range_delta as u32) as i64;
-    (new_mantissa, range_delta)
-  } else {
-    let new_mantissa = mantissa * 10u64.pow(remaining_10 as u32) as i64;
-    (new_mantissa, remaining_10)
-  }
-}
-
-pub fn increase_range(mantissa:i64, range_delta:u64) -> (i64, bool) {
-  let range = 10u64.pow(range_delta as u32) as i64;
-  (mantissa / range, mantissa % range != 0)
-}
-
-#[inline(always)]
-pub fn shifted_range(range:u64) -> u64 {
-  range << 49
-}
-
-pub fn make_quantity(mantissa:i64, range:i64, domain:u64) -> Quantity {
-  let value = mantissa.to_quantity();
-  let cur_range = (value.range() + range) as u64;
-  value & !RANGE_MASK | ((cur_range << 49) & RANGE_MASK) | (domain << 56)
-}*/
-
 pub trait QuantityMath {
   fn negate(self) -> Quantity;
   fn add(self, Quantity) -> Quantity;
