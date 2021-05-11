@@ -140,6 +140,22 @@ impl Block {
             }
             _ => (),
           }
+          for (row, column) in indices {
+            match row {
+              TableIndex::Table(TableId::Global(id)) => {
+                let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
+                self.input.insert(register);
+              }
+              _ => (),
+            }
+            match column {
+              TableIndex::Table(TableId::Global(id)) => {
+                let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
+                self.input.insert(register);
+              }
+              _ => (),
+            }
+          }
         }
         Transformation::NewTable{table_id, rows, columns} => {
           match table_id {
@@ -933,7 +949,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           TableIndex::Index(ix) => tfm=format!("{}{{{},",tfm,ix),
           TableIndex::Table(table) => {
             match table {
-              TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
+              TableId::Global(id) => tfm=format!("{}{{#{},",tfm,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
                 match block.store.strings.get(id) {
                   Some(name) => {
@@ -1001,7 +1017,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
           TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
           TableIndex::Table(table) => {
             match table {
-              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
+              TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.strings.get(id).unwrap()),
               TableId::Local(id) => {
                 match block.store.strings.get(id) {
                   Some(name) => {
