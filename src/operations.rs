@@ -420,3 +420,4 @@ binary_infix!{compare_equal, equal}
 binary_infix!{compare_not__equal, not_equal}
 binary_infix!{logic_and, and}
 binary_infix!{logic_or, or}
+binary_infix!{logic_xor, xor}

@@ -21,6 +21,7 @@ use operations::{
   compare_not__equal,
   logic_and,
   logic_or,
+  logic_xor,
   table_range,
   table_set,
   table_append__row,
@@ -76,6 +77,7 @@ impl Core {
     self.runtime.load_library_function("compare/not-equal",Some(compare_not__equal));
     self.runtime.load_library_function("logic/and",Some(logic_and));
     self.runtime.load_library_function("logic/or",Some(logic_or));
+    self.runtime.load_library_function("logic/xor",Some(logic_xor));
     self.runtime.load_library_function("table/set",Some(table_set));
     self.runtime.load_library_function("table/append-row",Some(table_append__row));
     self.runtime.load_library_function("table/range",Some(table_range));

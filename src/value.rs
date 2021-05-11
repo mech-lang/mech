@@ -102,6 +102,7 @@ pub trait ValueMethods {
   fn power(&self, other: Value) -> Result<Value, ErrorType>;
   fn and(&self, other: Value) -> Result<Value, ErrorType>;
   fn or(&self, other: Value) -> Result<Value, ErrorType>;
+  fn xor(&self, other: Value) -> Result<Value, ErrorType>;
 }
 
 
@@ -397,6 +398,13 @@ impl ValueMethods for Value {
   fn and(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.as_bool(), other.as_bool()) {
       (Some(q), Some(r)) => Ok(Value::from_bool(q && r)),
+      _ => Err(ErrorType::IncorrectFunctionArgumentType),
+    } 
+  }
+
+  fn xor(&self, other: Value) -> Result<Value, ErrorType> {
+    match (self.as_bool(), other.as_bool()) {
+      (Some(q), Some(r)) => Ok(Value::from_bool(q ^ r)),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
   }

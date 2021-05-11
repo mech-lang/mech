@@ -1,12 +1,10 @@
-// |DDDDDDDD|RRRRRRR|SMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM|
+//                                              IEEE 754 f32 
+//                                  |----------------------------------|
 // |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD|S|EEEEEEEE|FFFFFFFFFFFFFFFFFFFFFFF|
 // D: Domain [0, 2^32]
 // S: Sign bit
 // E: Exponent [2^8]
 // F: Fraction [2^23] 
-// Credit: Chris Granger, who implemented this for Eve v0.4
-// Also credit to Josh Cole for coming up with the spec
-// Adapted and extended for Mech by Corey Montella
 
 use errors::{ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
