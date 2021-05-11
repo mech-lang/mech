@@ -1,7 +1,8 @@
 # Pointer
 
 Keep track of which balls are clicked
-  #clicked = [false; false]
+  ~ #gravity
+  #clicked = #balls.x != #balls.x
 
 Determine if the pointer is within the ball's hitbox
   ~ #html/event/pointer-move
