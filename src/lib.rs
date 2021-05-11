@@ -115,7 +115,7 @@ pub struct WasmCore {
   roots: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
-  event_id: u64,
+  event_id: u32,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
 }
 
@@ -1386,7 +1386,7 @@ impl WasmCore {
                   table_id: table_id, values: vec![
                   (TableIndex::Index(1), 
                   TableIndex::Alias(*EVENT__ID),
-                  Value::from_u64(eid))],
+                  Value::from_u32(eid))],
                 });           
                 (*wasm_core).process_transaction();
                 (*wasm_core).render();
@@ -1418,7 +1418,7 @@ impl WasmCore {
                 _ => {log!("No drawing area found.");},
               }
             }
-            _ => {log!("No root or contents column in #app/main");}, // TODO Alert user there is no root and or contents column in app_table
+            _ => {log!("No root or contents column in #html/app");}, // TODO Alert user there is no root and or contents column in app_table
           }        
         }
         for canvas_id in &self.canvases {
@@ -1436,7 +1436,7 @@ impl WasmCore {
           }
         }
       }
-      _ => {log!("No #app/main in the core");}, // TODO Alert the user no app was found
+      _ => {log!("No #html/app in the core");}, // TODO Alert the user no app was found
     }
     Ok(())
   }
@@ -1643,13 +1643,13 @@ impl WasmCore {
                             table_id: table_id, values: vec![
                             (TableIndex::Index(1), 
                             TableIndex::Alias(*X),
-                            Value::from_i64(x as i64))],
+                            Value::from_i32(x as i32))],
                           });
                           (*wasm_core).changes.push(Change::Set{
                             table_id: table_id, values: vec![
                             (TableIndex::Index(1), 
                             TableIndex::Alias(*Y),
-                            Value::from_i64(y as i64))],
+                            Value::from_i32(y as i32))],
                           });              
                           (*wasm_core).changes.push(Change::Set{
                             table_id: table_id, values: vec![
@@ -1663,7 +1663,7 @@ impl WasmCore {
                             table_id: table_id, values: vec![
                             (TableIndex::Index(1), 
                             TableIndex::Alias(*EVENT__ID),
-                            Value::from_u64(eid))],
+                            Value::from_u32(eid))],
                           });           
                           (*wasm_core).process_transaction();
                           (*wasm_core).render();
@@ -1717,7 +1717,7 @@ impl WasmCore {
                           match event.target() {
                             Some(target) => {
                               let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                              let slider_value = slider.value().parse::<i64>().unwrap();
+                              let slider_value = slider.value().parse::<i32>().unwrap();
                               let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
 
                               let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
@@ -1725,7 +1725,7 @@ impl WasmCore {
                                 table_id: table_id, values: vec![ 
                                   (TableIndex::Index(row),
                                    TableIndex::Alias(*VALUE),
-                                   Value::from_i64(slider_value)),
+                                   Value::from_i32(slider_value)),
                                 ]
                               };
                               // TODO Make this safe
