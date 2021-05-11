@@ -4,7 +4,7 @@ extern crate mech_utilities;
 extern crate lazy_static;
 use mech_core::{Transaction};
 use mech_core::{Value, ValueMethods, IndexIterator, Table, TableIndex, ValueIterator};
-use mech_core::{Quantity, ToQuantity, QuantityMath, make_quantity, hash_string};
+use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string};
 
 lazy_static! {
   static ref TABLE: u64 = hash_string("table");
