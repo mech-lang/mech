@@ -360,7 +360,7 @@ impl Table {
           let new_address = store.intern(value);
           self.data[ix] = new_address;
           self.changed[ix] = true;
-          self.history.push((*row,*column,value));
+          //self.history.push((*row,*column,value));
         }
       }
       None => (), // TODO Warn user that set was not successful due to out of bounds index
@@ -377,7 +377,7 @@ impl Table {
       let new_address = store.intern(value);
       self.data[ix] = new_address;
       self.changed[ix] = true;
-      self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
+      //self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
     }
   }
 
