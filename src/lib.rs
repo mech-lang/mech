@@ -28,7 +28,7 @@ pub use self::block::{Block, BlockState, Transformation, Register, };
 pub use self::index::{IndexRepeater, IndexIterator, TableIterator, ValueIterator, ConstantIterator};
 pub use self::table::{Table, TableId, TableIndex};
 pub use self::core::Core;
-pub use self::quantities::{Quantity, QuantityMath, ToQuantity, make_quantity};
+pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
 pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
 
