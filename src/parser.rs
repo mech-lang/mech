@@ -127,6 +127,7 @@ pub enum Node {
   L6{ children: Vec<Node> },
   Function{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
+  Not{ children: Vec<Node> },
   ParentheticalExpression{ children: Vec<Node> },
   CommentSigil{ children: Vec<Node> },
   Comment{children: Vec<Node>},
@@ -155,7 +156,6 @@ pub enum Node {
   GreaterThan,
   And,
   Or,
-  Not,
   Xor,
   Empty,
   Null,
@@ -274,6 +274,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L6{children} => {print!("L6\n"); Some(children)},
     Node::Function{children} => {print!("Function\n"); Some(children)},
     Node::Negation{children} => {print!("Negation\n"); Some(children)},
+    Node::Not{children} => {print!("Not\n"); Some(children)},
     Node::ParentheticalExpression{children} => {print!("ParentheticalExpression\n"); Some(children)},
     Node::ProseOrCode{children} => {print!("ProseOrCode\n"); Some(children)},
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
@@ -306,7 +307,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::NotEqual => {print!("NotEqual\n",); None},
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
-    Node::Not => {print!("Not\n",); None},
     Node::Xor => {print!("Xor\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
@@ -1102,7 +1102,8 @@ fn and(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn not(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = alt((tag("!"), tag("¬")))(input)?;
-  Ok((input, Node::Not))
+  let (input, negated) = alt((data, true_literal, false_literal))(input)?;
+  Ok((input, Node::Not { children: vec![negated] }))
 }
 
 fn xor(input: &str) -> IResult<&str, Node, VerboseError<&str>> {

@@ -734,6 +734,30 @@ block
            8 9 10
            11 12 13]", Value::from_i32(16));
 
+test_mech!(logic_xor,"
+block
+  x = [true; false; true; false]
+  y = [false; true; true; false]
+  ix = x xor y
+  z = [1;2;3;4]
+  #test = stats/sum(column: z{ix,:})", Value::from_i32(3));
+
+test_mech!(logic_xor2,"
+block
+  x = [true; false; true; false]
+  y = [false; true; true; false]
+  ix = x ⊕ y
+  z = [1;2;3;4]
+  #test = stats/sum(column: z{ix,:})", Value::from_i32(3));
+
+test_mech!(logic_xor3,"
+block
+  x = [true; false; true; false]
+  y = [false; true; true; false]
+  ix = x ⊻ y
+  z = [1;2;3;4]
+  #test = stats/sum(column: z{ix,:})", Value::from_i32(3));
+
 // ## Whenever
 
 test_mech!(whenever_column,"block
