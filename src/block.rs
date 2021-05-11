@@ -3,7 +3,7 @@ use value::{Value, ValueMethods, NumberLiteralKind};
 use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator, IndexRepeater};
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
-use quantities::{QuantityMath, make_quantity};
+use quantities::{QuantityMath};
 use operations::{MechFunction};
 use errors::{Error, ErrorType};
 use std::cell::RefCell;
@@ -202,7 +202,7 @@ impl Block {
 //              "s" => (3, 3),
               else { (0, 0) };
           let q = if value.is_number() {
-            Value::from_quantity(make_quantity(value.mantissa(), value.range() + scale, domain))
+            value //Value::from_quantity(make_quantity(value.mantissa(), value.range() + scale, domain))
           } else {
             value
           };
