@@ -722,9 +722,11 @@ fn table_header(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn anonymous_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = left_bracket(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = space0(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, mut table_rows) = many0(table_row)(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = right_bracket(input)?;
   let mut table = vec![];
   match table_header {

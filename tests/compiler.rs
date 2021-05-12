@@ -67,6 +67,12 @@ block
   #test = [|d|
             5  ]", Value::from_i32(5));
 
+test_mech!(table_anonymous_table_trailing_newline, "
+block
+  #test = [|d|
+            5  
+          ]", Value::from_i32(5));
+
 test_mech!(table_define_empty_table, "
 block
   #bots = [|name position|]
