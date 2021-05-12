@@ -32,7 +32,7 @@ use std::io::prelude::*;
 
 extern crate nom;
 
-pub async fn read_mech_files(mech_paths: Vec<&str>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
+pub async fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
 
   let mut code: Vec<MechCode> = Vec::new();
 

@@ -194,13 +194,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = matches.value_of("port").unwrap_or("8081");
     let address = matches.value_of("address").unwrap_or("127.0.0.1");
     let full_address = format!("{}:{}",address,port);
-    let mech_paths = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.collect());
+    let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
     // Spin up a mech core and compiler
     let mut core = Core::new(1000, 1000);
     core.load_standard_library();
-    let code = read_mech_files(mech_paths).await?;
+    let code = read_mech_files(&mech_paths).await?;
     let blocks = compile_code(code.clone());
     let miniblocks = minify_blocks(&blocks);
 
@@ -226,7 +226,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       session: Session, 
       req: web::HttpRequest, 
       info: web::Path<(String)>, 
-      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>
+      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>
     ) -> impl Responder {
       println!("Serving");
       use core::hash::Hasher;
@@ -280,9 +280,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       format!("{:x}", id)
     }
 
-    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>) -> impl Responder {
-      let (sender, receiver, miniblocks, _) = data.get_ref();
-      format!("{{\"blocks\": {:?} }}", miniblocks)
+    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>) -> impl Responder {
+      let (sender, receiver, _, mech_paths) = data.get_ref();
+      let code = read_mech_files(&mech_paths).await.unwrap();
+      let blocks = compile_code(code);
+      let miniblocks = minify_blocks(&blocks);
+      let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
+      format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
     }
 
     #[derive(Message)]
@@ -300,9 +304,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     async fn ws_index(
       r: HttpRequest, 
       stream: web::Payload, 
-      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Vec<u8>,Addr<ServerMonitor>)>,
+      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>,
     ) -> Result<HttpResponse, Error> {
-      let (outgoing, _, _, monitor) = data.get_ref();
+      let (outgoing, _, monitor,_) = data.get_ref();
       let (addr, res) = ws::start_with_addr(MyWebSocket {mech_outgoing: outgoing.clone()}, &r, stream).unwrap();
       monitor.do_send(RegisterWSClient { addr: addr });
       Ok(res)
@@ -450,8 +454,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data = web::Data::new((
       mech_client.outgoing.clone(), 
       mech_client.incoming.clone(), 
-      serialized_miniblocks.clone(),
       srvmon.clone(),
+      mech_paths.clone(),
     ));
     HttpServer::new(move || {
         ActixApp::new()
@@ -477,11 +481,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
     println!("{}", "[Testing]".bright_green());
-    let mut mech_paths = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.collect());
+    let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
-    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec");
+    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
 
-    let code = read_mech_files(mech_paths).await?;
+    let code = read_mech_files(&mech_paths).await?;
     let blocks = compile_code(code);
     let miniblocks = minify_blocks(&blocks);
 
@@ -583,14 +587,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("run") {
 
-    let mech_paths = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.collect());
+    let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl = matches.is_present("repl_mode");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
 
 
   
 
-    let mut code: Vec<MechCode> = read_mech_files(mech_paths).await?;
+    let mut code: Vec<MechCode> = read_mech_files(&mech_paths).await?;
     if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
       let inargs_code = format!("block
@@ -668,8 +672,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // BUILD a .blx file from .mec and other .blx files
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
-    let mech_paths = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.collect());
-    let code = read_mech_files(mech_paths).await?;
+    let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let code = read_mech_files(&mech_paths).await?;
     let blocks = compile_code(code);
     let miniblocks = minify_blocks(&blocks);
 
