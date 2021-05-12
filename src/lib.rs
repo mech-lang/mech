@@ -1700,8 +1700,8 @@ impl WasmCore {
             } else if raw_kind == *SLIDER {
               // Get contents
               match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
-                    table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
-                    table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
+                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
                 (Some((min,_)), Some((max,_)), Some((value,_))) => {
                   match (min.as_f64(), max.as_f64(), value.as_f64()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
@@ -2025,8 +2025,8 @@ impl WasmCore {
           if shape == *CIRCLE {
             for row in 1..=parameters_table.rows {
               match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
                 (Some(cx), Some(cy), Some(radius)) => {
                   let stroke = get_stroke_string(&parameters_table,row, *STROKE);
                   let fill = get_stroke_string(&parameters_table,row, *FILL);
@@ -2052,9 +2052,9 @@ impl WasmCore {
           } else if shape == *ELLIPSE {
             for row in 1..=parameters_table.rows {
               match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
                 (Some(cx), Some(cy), Some(maja), Some(mina)) => {
                   let stroke = get_stroke_string(&parameters_table,row, *STROKE);
                   let fill = get_stroke_string(&parameters_table,row, *FILL);
@@ -2081,10 +2081,10 @@ impl WasmCore {
           } else if shape == *ARC {
             for row in 1..=parameters_table.rows {
               match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
+                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
                 (Some(cx), Some(cy), Some(sa), Some(ea), Some(radius)) => {
                   let stroke = get_stroke_string(&parameters_table,row, *STROKE);
                   let fill = get_stroke_string(&parameters_table,row, *FILL);
@@ -2110,9 +2110,9 @@ impl WasmCore {
           // ---------------------    
           } else if shape == *RECTANGLE {
             match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
+                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
+                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
               (Some(x), Some(y), Some(width), Some(height)) => {
                 let stroke = get_stroke_string(&parameters_table,1, *STROKE);
                 let fill = get_stroke_string(&parameters_table,1, *FILL);
@@ -2136,7 +2136,7 @@ impl WasmCore {
             context.save();
             context.begin_path();
             match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
-                    parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+                   parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
               (Some(start_point_id), Some(contains_table_id)) => {
                 let start_point_table = self.core.get_table(start_point_id).unwrap();
                 match (start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
@@ -2150,6 +2150,9 @@ impl WasmCore {
                               contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
                         (Some((shape,_)),Some(parameters_table_id)) => {
                           let shape = shape.as_raw();
+                          // -------------------
+                          // PATH LINE
+                          // -------------------
                           if shape == *LINE {
                             let parameters_table = self.core.get_table(parameters_table_id).unwrap();
                             match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
@@ -2159,6 +2162,9 @@ impl WasmCore {
                               }
                               _ => (), // Expected x and y fields
                             }
+                          // -------------------
+                          // PATH QUADRATIC
+                          // -------------------
                           } else if shape == *QUADRATIC {
                             let parameters_table = self.core.get_table(parameters_table_id).unwrap();
                             match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
@@ -2178,6 +2184,22 @@ impl WasmCore {
                               }
                               _ => (), // Expected control-point and end-point fields
                             }
+                          // -------------------
+                          // PATH ARC
+                          // -------------------
+                          } else if shape == *ARC {
+                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
+                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
+                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*STARTING__ANGLE)),
+                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ENDING__ANGLE)),
+                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
+                              (Some(cx), Some(cy), Some(sa), Some(ea), Some(radius)) => {
+                                let pi = 3.141592654;
+                                context.arc(cx, cy, radius, sa * pi / 180.0, ea * pi / 180.0);
+                              }
+                              _ => (), // Expected control-point and end-point fields
+                            }
                           }
                         }
                         _ => log!("Expected shape and parameters"), // TODO Expected shape and parameters fields
@@ -2188,6 +2210,14 @@ impl WasmCore {
                 }
                 let stroke = get_stroke_string(&parameters_table,1, *STROKE);
                 let line_width = get_line_width(&parameters_table,1);
+                match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
+                  Some(_) => {
+                    let fill = get_stroke_string(&parameters_table,1, *FILL);
+                    context.set_fill_style(&JsValue::from_str(&fill));
+                    context.fill();
+                  }
+                  _ => (),
+                }
                 context.set_stroke_style(&JsValue::from_str(&stroke));
                 context.set_line_width(line_width);
                 context.stroke();
