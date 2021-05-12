@@ -1,7 +1,37 @@
-block
-  ~ #time/timer.ticks{1}
-  x = #time/timer.ticks{1}
-  #io-streams/out := x
+# Pacman
 
-block
-  #time/timer += [period: 10]
+Add a timer
+  #time/timer += [period: 16]
+  #mouth = 45
+
+Add an animation to the pacman's mouth
+  ~ #time/timer.ticks{1}
+  x = #time/timer.ticks{1} * 8
+  #mouth := 45 * ((math/sin(angle: x) + 1) / 2) 
+
+Set up drawing elements 
+  shapes = [|shape   parameters|
+             "arc"   [center-x: 100 center-y: 100 starting-angle: #mouth ending-angle: -#mouth radius: 25]
+             "line"  [x: 100 y: 100]]
+  #pacman = [
+    shape: "path" 
+    parameters: [
+      start-point: [x: 100 y: 100] 
+      contains: [|shape parameters| shapes] 
+      stroke: 0x000000 
+      fill: 0xFFFF00
+      line-width: 5
+    ]
+  ]
+
+
+Draw a Pacman
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #pacman] 
+    parameters: [width: 500 height: 500]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
