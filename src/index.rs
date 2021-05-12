@@ -189,6 +189,10 @@ impl ValueIterator {
     unsafe{(*self.table).get_u64(row,column)}
   } 
 
+  pub fn get_f32(&self, row: &TableIndex, column: &TableIndex) -> Option<f32> {
+    unsafe{(*self.table).get_f32(row,column)}
+  } 
+
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     unsafe{(*self.table).get(row,column)}
   }
