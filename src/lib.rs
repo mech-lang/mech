@@ -87,7 +87,8 @@ lazy_static! {
   static ref IMAGE: u64 = hash_string("image");
   static ref X: u64 = hash_string("x");
   static ref Y: u64 = hash_string("y");
-  static ref ROTATION: u64 = hash_string("rotation");
+  static ref ROTATE: u64 = hash_string("rotate");
+  static ref TRANSLATE: u64 = hash_string("translate");
   static ref SOURCE: u64 = hash_string("source");
   static ref TIME_TIMER: u64 = hash_string("time/timer");
   static ref PERIOD: u64 = hash_string("period");
@@ -2136,6 +2137,23 @@ impl WasmCore {
           // ---------------------    
           } else if shape == *PATH {
             context.save();
+            let rotate = match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE)) {
+              Some(rotate) => rotate,
+              None => 0.0,
+            };
+            let (tx,ty) = match parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*TRANSLATE)) {
+              Some(translate_table_id) => {
+                let translate_table = self.core.get_table(translate_table_id).unwrap();
+                match (translate_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                       translate_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                  (Some(tx),Some(ty)) => (tx,ty),
+                  _ => (0.0,0.0),
+                }
+              },
+              None => (0.0,0.0),
+            };
+            context.translate(tx,ty);
+            context.rotate(rotate * 3.141592654 / 180.0);
             context.begin_path();
             match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
                    parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
@@ -2237,7 +2255,7 @@ impl WasmCore {
             match (parameters_table.get_string(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
                     parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
                     parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATION))) {
+                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE))) {
               (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
                 let source_hash = hash_string(&source_string);
                 match self.images.entry(source_hash) {
