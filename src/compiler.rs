@@ -88,6 +88,7 @@ pub enum Node {
   NotEqual,
   And,
   Or,
+  Xor,
   SelectAll,
   Empty,
   True,
@@ -2179,6 +2180,7 @@ impl Compiler {
           Node::Range => "table/range".to_string(),
           Node::And => "logic/and".to_string(),
           Node::Or => "logic/or".to_string(),
+          Node::Xor => "logic/xor".to_string(),
           Node::Token{token, byte} => byte_to_char(*byte).unwrap().to_string(),
           _ => String::from(""),
         };
@@ -2202,6 +2204,12 @@ impl Compiler {
         let mut input = vec![Node::Quantity{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "math/subtract".to_string(), children: input });
+      },
+      parser::Node::Not{children} => {
+        let mut result = self.compile_nodes(children);
+        let mut input = vec![Node::Quantity{value: Value::from_bool(true), unit: None}];
+        input.push(result[0].clone());
+        compiled.push(Node::Function{ name: "logic/xor".to_string(), children: input });
       },
       parser::Node::String{children} => {
         let mut result = self.compile_nodes(children);
@@ -2314,6 +2322,7 @@ impl Compiler {
       parser::Node::Exponent => compiled.push(Node::Exponent),
       parser::Node::And => compiled.push(Node::And),
       parser::Node::Or => compiled.push(Node::Or),
+      parser::Node::Xor => compiled.push(Node::Xor),
       parser::Node::Comparator{children} => {
         match children[0] {
           parser::Node::LessThan => compiled.push(Node::LessThan),
@@ -2329,6 +2338,7 @@ impl Compiler {
         match children[0] {
           parser::Node::And => compiled.push(Node::And),
           parser::Node::Or => compiled.push(Node::Or),
+          parser::Node::Xor => compiled.push(Node::Xor),
           _ => (),
         }
       },
