@@ -101,6 +101,9 @@ lazy_static! {
   static ref KEY: u64 = hash_string("key");
   static ref EVENT__ID: u64 = hash_string("event-id");
   static ref ARC: u64 = hash_string("arc");
+  static ref ELLIPSE: u64 = hash_string("ellipse");
+  static ref MAJOR__AXIS: u64 = hash_string("major-axis");
+  static ref MINOR__AXIS: u64 = hash_string("minor-axis");
   static ref STARTING__ANGLE: u64 = hash_string("starting-angle");
   static ref ENDING__ANGLE: u64 = hash_string("ending-angle");
 }
@@ -2044,7 +2047,36 @@ impl WasmCore {
               }        
             }
           // ---------------------
-          // RENDER A ARC
+          // RENDER AN ELLIPSE
+          // --------------------- 
+          } else if shape == *ELLIPSE {
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
+                (Some(cx), Some(cy), Some(maja), Some(mina)) => {
+                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table,row, *FILL);
+                  let line_width = get_line_width(&parameters_table,row);
+                  let pi = 3.141592654;
+                  context.save();
+                  context.begin_path();
+                  context.ellipse(cx, cy, maja, mina, 0.0, 0.0, 2.0 * pi);
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.fill();
+                  context.set_stroke_style(&JsValue::from_str(&stroke));
+                  context.set_line_width(line_width);    
+                  context.stroke();                
+                  context.restore();
+                }
+                _ => {
+                  log!("Missing center-x, center-y, or radius");
+                },
+              }   
+            }     
+          // ---------------------
+          // RENDER AN ARC
           // --------------------- 
           } else if shape == *ARC {
             for row in 1..=parameters_table.rows {
