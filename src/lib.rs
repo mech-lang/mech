@@ -131,6 +131,8 @@ impl WasmCore {
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
     let mut mech = mech_core::Core::new(capacity, recursion_limit);
     mech.load_standard_library();
+    mech.runtime.load_library_function("math/sin",Some(math_sin));
+
     mech.insert_string("time/timer");
     mech.insert_string("period");
     mech.insert_string("ticks");
@@ -428,8 +430,8 @@ impl WasmCore {
                     });           
                     (*wasm_core).process_transaction();
                     (*wasm_core).render();
-                    let table = (*wasm_core).core.get_table_by_name("balls").unwrap();
-                    //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(2)).unwrap());
+                    //let table = (*wasm_core).core.get_table_by_name("mouth").unwrap();
+                    //log!("{:?}", table);
                     //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(4)).unwrap());
                   }
                 }) as Box<dyn FnMut()>)
