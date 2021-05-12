@@ -4,7 +4,7 @@ extern crate mech_utilities;
 extern crate lazy_static;
 use mech_core::{Transaction, ValueIterator, ValueMethods};
 use mech_core::{Value, Table, TableIndex};
-use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, make_quantity};
+use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string};
 
 lazy_static! {
   static ref ROW: u64 = hash_string("row");
@@ -25,47 +25,38 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
   if *in_arg_name == *ROW {
     out.resize(in_rows, 1);
     for i in 1..=in_rows {
-      let mut sum: Value = Value::from_u64(0);
+      let mut sum: Value = Value::from_u32(0);
       for j in 1..=in_columns {
         match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
           Some((value,_)) => {
-            match sum.add(value) {
-              Ok(result) => sum = result,
-              _ => (), // TODO Alert user that there was an error
-            }
+            sum = sum.add(value)
           }
           _ => ()
         }
       }
-      out.set_unchecked(i, 1, Value::from_f64(sum.as_f64().unwrap() / vi.columns() as f64));
+      out.set_unchecked(i, 1, Value::from_f32(sum.as_f32().unwrap() / vi.columns() as f32));
     }
   } else if *in_arg_name == *COLUMN {
     out.resize(1, in_columns);
     for (i,m) in (1..=in_columns).zip(vi.column_iter.clone()) {
-      let mut sum: Value = Value::from_u64(0);
+      let mut sum: Value = Value::from_u32(0);
       for (j,k) in (1..=in_rows).zip(vi.row_iter.clone()) {
         match vi.get(&k,&m) {
           Some((value,_)) => {
-            match sum.add(value) {
-              Ok(result) => sum = result,
-              _ => (), // TODO Alert user that there was an error
-            }
+            sum = sum.add(value)
           }
           _ => ()
         }
       }
-      out.set_unchecked(1, i, Value::from_f64(sum.as_f64().unwrap() / vi.rows() as f64));
+      out.set_unchecked(1, i, Value::from_f32(sum.as_f32().unwrap() / vi.rows() as f32));
     }      
   } else if *in_arg_name == *TABLE {
     out.resize(1, 1);
-    let mut sum: Value = Value::from_u64(0);
+    let mut sum: Value = Value::from_u32(0);
     for (value,_) in vi.clone() {
-      match sum.add(value) {
-        Ok(result) => sum = result,
-        _ => (), // TODO Alert user that there was an error
-      }
+      sum = sum.add(value)
     }
-    out.set_unchecked(1, 1, Value::from_f64(sum.as_f64().unwrap() / (vi.rows() * vi.columns()) as f64));
+    out.set_unchecked(1, 1, Value::from_f32(sum.as_f32().unwrap() / (vi.rows() * vi.columns()) as f32));
   } else {
     // TODO Warn about unknown argument
   }
