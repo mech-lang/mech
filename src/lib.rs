@@ -1,3 +1,4 @@
+#![recursion_limit="256"]
 #![feature(alloc)]
 #![feature(drain_filter)]
 #![feature(get_mut_unchecked)]
@@ -112,6 +113,11 @@ lazy_static! {
   static ref SIZE: u64 = hash_string("size");
   static ref FACE: u64 = hash_string("face");
   static ref STYLE: u64 = hash_string("style");
+  static ref WEIGHT: u64 = hash_string("weight");
+  static ref BOLD: u64 = hash_string("bold");
+  static ref NORMAL: u64 = hash_string("normal");
+  static ref ITALIC: u64 = hash_string("italic");
+  static ref FAMILY: u64 = hash_string("family");
   static ref DIRECTION: u64 = hash_string("direction");
   static ref ALIGNMENT: u64 = hash_string("alignment");
   static ref START: u64 = hash_string("start");
@@ -2022,6 +2028,21 @@ impl WasmCore {
       }
     };
 
+    let get_property = |parameters_table: &Table, row: usize, alias: u64| {
+      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
+        Some((property,_)) => {
+          match property.value_type() {
+            ValueType::Quantity => format!("{:?}", property.as_f64().unwrap()),
+            ValueType::String => {
+              parameters_table.get_string_from_hash(property).unwrap().clone()
+            }
+            _ => "".to_string(),
+          }
+        }
+        _ => "".to_string()
+      }
+    };
+
     // Get the elements table for this canvas
     let elements_table_id_string = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements_table_id_string.parse::<u64>().unwrap();
@@ -2148,24 +2169,36 @@ impl WasmCore {
           // RENDER TEXT
           // ---------------------    
           } else if shape == *TEXT {
-            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
-                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
-              (Some(x), Some(y), Some(width), Some(height)) => {
+            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*TEXT)),
+                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+              (Some((text_value,_)), Some(x), Some(y)) => {
                 let stroke = get_stroke_string(&parameters_table,1, *STROKE);
                 let fill = get_stroke_string(&parameters_table,1, *FILL);
                 let line_width = get_line_width(&parameters_table,1);
+                let text = get_property(&parameters_table, 1, *TEXT);
+
                 context.save();
                 context.set_fill_style(&JsValue::from_str(&fill));
-                context.fill_rect(x,y,width,height);
-                context.set_stroke_style(&JsValue::from_str(&stroke));
                 context.set_line_width(line_width);
-                context.stroke_rect(x,y,width,height);
+                match parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*FONT)) {
+                  Some(font_table_id) => {
+                    let font_table = self.core.get_table(font_table_id).unwrap();
+                    let size = get_property(&font_table, 1, *SIZE);
+                    let face = match &*get_property(&font_table, 1, *FACE) {
+                      "" => "sans-serif".to_string(),
+                      x => x.to_string(),
+                    };
+                    let font_string = format!("{}px {}", size, face);
+                    context.set_font(&*font_string);
+                  }
+                  _ => (),
+                }
+                context.fill_text(&text,x,y);
                 context.restore();
               }
               _ => {
-                log!("Missing x, y, width, height");
+                log!("Missing x, y, text");
               },
             }
           // ---------------------
