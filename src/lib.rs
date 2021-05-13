@@ -106,6 +106,18 @@ lazy_static! {
   static ref MINOR__AXIS: u64 = hash_string("minor-axis");
   static ref STARTING__ANGLE: u64 = hash_string("starting-angle");
   static ref ENDING__ANGLE: u64 = hash_string("ending-angle");
+  static ref TEXT: u64 = hash_string("text");
+  static ref FONT: u64 = hash_string("font");
+  static ref SIZE: u64 = hash_string("size");
+  static ref FACE: u64 = hash_string("face");
+  static ref STYLE: u64 = hash_string("style");
+  static ref DIRECTION: u64 = hash_string("direction");
+  static ref ALIGNMENT: u64 = hash_string("alignment");
+  static ref START: u64 = hash_string("start");
+  static ref END: u64 = hash_string("end");
+  static ref LEFT: u64 = hash_string("left");
+  static ref RIGHT: u64 = hash_string("right");
+  static ref CENTER: u64 = hash_string("center");
 }
 
 #[wasm_bindgen]
@@ -2115,6 +2127,30 @@ impl WasmCore {
                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
+              (Some(x), Some(y), Some(width), Some(height)) => {
+                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
+                let fill = get_stroke_string(&parameters_table,1, *FILL);
+                let line_width = get_line_width(&parameters_table,1);
+                context.save();
+                context.set_fill_style(&JsValue::from_str(&fill));
+                context.fill_rect(x,y,width,height);
+                context.set_stroke_style(&JsValue::from_str(&stroke));
+                context.set_line_width(line_width);
+                context.stroke_rect(x,y,width,height);
+                context.restore();
+              }
+              _ => {
+                log!("Missing x, y, width, height");
+              },
+            }
+          // ---------------------
+          // RENDER TEXT
+          // ---------------------    
+          } else if shape == *TEXT {
+            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
+                  parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
               (Some(x), Some(y), Some(width), Some(height)) => {
                 let stroke = get_stroke_string(&parameters_table,1, *STROKE);
                 let fill = get_stroke_string(&parameters_table,1, *FILL);
