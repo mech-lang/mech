@@ -1,34 +1,26 @@
-# Pacman
+## Drawing
 
 Add a timer
-  #time/timer += [period: 16]
-  #mouth = 45
+  #time/timer += [period: 1]
 
-Add an animation to the pacman's mouth
-  ~ #time/timer.ticks{1}
-  x = #time/timer.ticks{1} * 8
-  #mouth := 45 * ((math/sin(angle: x) + 1) / 2) 
+The value to print
+  #value = #time/timer.ticks{1}
 
 Set up drawing elements 
-  shapes = [|shape   parameters|
-             "arc"   [center-x: 100 center-y: 100 starting-angle: #mouth ending-angle: -#mouth radius: 25]
-             "line"  [x: 100 y: 100]]
-  #pacman = [
-    shape: "path" 
+  #text = [
+    shape: "text" 
     parameters: [
-      start-point: [x: 100 y: 100] 
-      contains: [|shape parameters| shapes] 
-      stroke: 0x000000 
-      fill: 0xFFFF00
-      line-width: 5
+      x: 120
+      y: 150
+      text: #value
+      font: [size: 60 face: "Calibri"]
     ]
   ]
-
 
 Draw a Pacman
   canvas = [
     type: "canvas" 
-    contains: [|shape parameters| #pacman] 
+    contains: [|shape parameters| #text] 
     parameters: [width: 500 height: 500]
   ]
   #html/app = [
