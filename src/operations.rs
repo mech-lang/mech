@@ -219,7 +219,7 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
   let (_ , mut input) = arguments[0].clone();
   let (_, mut out) = arguments[1].clone();
 
-  if out.table_rows() == 0 || out.table_columns() == 0 {
+  /*if out.table_rows() == 0 || out.table_columns() == 0 {
     out.resize(input.rows(), input.columns());
   }
 
@@ -243,10 +243,10 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
       }
       _ => (),
     }
-  }
-
-  for (out_ix, (value, _)) in out.linear_index_iterator().zip(input) {
-    out.set_unchecked_linear(out_ix, value);
+  }*/
+  for i in 1..=320000 {
+    let (value,_) = input.get_unchecked_linear(i);
+    out.set_unchecked_linear(i, value);
   }
 }
 
@@ -371,11 +371,18 @@ macro_rules! binary_infix {
         return;
       };
 
-      out.resize(out_rows, out_columns);
+      out.resize(320000, 1);
 
-      let out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
-      let out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
-      for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in 
+      for i in 1..=320000 {
+        let (lhs,_) = lhs_iter.get_unchecked_linear(i);
+        let (rhs,_) = rhs_iter.get_unchecked_linear(1);
+        let result = lhs.$op(rhs).unwrap();
+        out.set_unchecked_linear(i,result);
+      }
+
+      //let out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
+      //let out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+      /*for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in 
               lhs_iter.zip(rhs_iter).zip(out_row_iter).zip(out_column_iter) {
         match (lhs_value, rhs_value, lhs_changed, rhs_changed)
         {
@@ -402,7 +409,7 @@ macro_rules! binary_infix {
             }
           }
         }        
-      }
+      }*/
     }
   )
 }
