@@ -1,9 +1,29 @@
-block
-  #ball = 1:320000
+## Drawing
 
-block
-  #time/timer += [period: 16]
+Add a timer
+  #time/timer += [period: 1]
 
-block
-  ~ #time/timer.ticks{1}
-  #ball := #ball + 1
+The value to print
+  #value = #time/timer.ticks{1}
+
+Set up drawing elements 
+  #text = [
+    shape: "text" 
+    parameters: [
+      x: 120
+      y: 150
+      text: #value
+      font: [size: 60 face: "Calibri"]
+    ]
+  ]
+
+Draw a Pacman
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #text] 
+    parameters: [width: 500 height: 500]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
