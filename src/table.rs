@@ -92,10 +92,8 @@ pub struct Table {
   pub store: Arc<Store>,
   pub rows: usize,
   pub columns: usize,
-  pub data: Vec<usize>, // Each entry is a memory address into the store
+  pub data: Vec<Value>,
   pub changed: Vec<bool>,
-  pub transaction_boundaries: Vec<usize>,
-  pub history: Vec<(TableIndex, TableIndex, Value)>,
 }
 
 impl Table {
@@ -106,23 +104,12 @@ impl Table {
       store,
       rows,
       columns,
-      data: vec![0; rows*columns], // Initialize with address zero, indicating Value::Empty (always the zeroth element of the store)
+      data: vec![Value::empty(); rows*columns], // Initialize with address zero, indicating Value::Empty (always the zeroth element of the store)
       changed: vec![false; rows*columns],
-      transaction_boundaries: Vec::new(),
-      history: Vec::new(),
     }
   }
 
   pub fn clear(&mut self) {
-    for i in 1..=self.rows {
-      for j in 1..=self.columns {
-        let ix = self.index_unchecked(i, j);
-        let address = self.data[ix];
-        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-        store.dereference(address);
-      }
-    }
-
     self.rows = 0;
     self.columns = 0;
     self.data.clear();
@@ -192,14 +179,6 @@ impl Table {
     store.strings.insert(Value::from_string(&string),string);
   }
 
-  // Get the memory address into the store at a (row, column)
-  pub fn get_address(&self, row: &TableIndex, column: &TableIndex) -> Option<usize> {
-    match self.index(row, column) {
-      Some(ix) => Some(self.data[ix]),
-      None => None,
-    }
-  }
-
   pub fn has_column_alias(&self, alias: u64) -> bool {
     match self.store.column_alias_to_index.get(&(self.id,alias)) {
       Some(_) => true,
@@ -213,33 +192,23 @@ impl Table {
       _ => None,
     }
   }
-
-  // Get the memory address into the store at a (row, column)
-  pub fn get_address_unchecked(&self, row: usize, column: usize) -> usize {
-    let ix = self.index_unchecked(row, column);
-    self.data[ix]
-  }  
   
   // Get the value in the store at memory address (row, column) and whether it has been changed
   pub fn get_unchecked(&self, row: usize, column: usize) -> (Value, bool) {
     let ix = self.index_unchecked(row, column);
-    let address = self.data[ix];
-    (self.store.data[address], self.changed[ix])
+    (self.data[ix], self.changed[ix])
   }
 
   // Get the value in the store at memory address (ix) and whether it has been changed
   pub fn get_unchecked_linear(&self, ix: usize) -> (Value, bool) {
-    let address = self.data[ix-1];
-    (self.store.data[address], self.changed[ix-1])
-    
+    (self.data[ix-1], self.changed[ix-1])
   }
 
   // Get the value in the store at memory address (ix) and whether it has been changed
   pub fn get_linear(&self, index: &TableIndex) -> Option<(Value, bool)> {
     let ix = index.unwrap();
     if ix <= self.data.len() && ix > 0 {
-      let address = self.data[ix-1];
-      Some((self.store.data[address], self.changed[ix-1]))
+      Some((self.data[ix-1], self.changed[ix-1]))
     } else {
       None
     }
@@ -249,8 +218,7 @@ impl Table {
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        Some((self.store.data[address], self.changed[ix]))
+        Some((self.data[ix], self.changed[ix]))
       },
       None => None,
     }
@@ -260,8 +228,7 @@ impl Table {
   pub fn get_f64(&self, row: &TableIndex, column: &TableIndex) -> Option<f64> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match value.as_f64() {
           None => None,
           x => x,
@@ -275,8 +242,7 @@ impl Table {
   pub fn get_f32(&self, row: &TableIndex, column: &TableIndex) -> Option<f32> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match value.as_f32() {
           None => None,
           x => x,
@@ -290,8 +256,7 @@ impl Table {
   pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match self.get_string_from_hash(value) {
           None => None,
           Some(x) => Some((x,self.changed[ix]))
@@ -305,8 +270,7 @@ impl Table {
   pub fn get_number_literal(&self, row: &TableIndex, column: &TableIndex) -> Option<(&NumberLiteral,bool)> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match self.get_number_literal_from_hash(value) {
           None => None,
           Some(x) => Some((x,self.changed[ix]))
@@ -320,8 +284,7 @@ impl Table {
   pub fn get_quantity(&self, row: &TableIndex, column: &TableIndex) -> Option<(Quantity,bool)> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match value.as_quantity() {
           None => None,
           Some(x) => Some((x,self.changed[ix]))
@@ -335,8 +298,7 @@ impl Table {
   pub fn get_u64(&self, row: &TableIndex, column: &TableIndex) -> Option<(u64,bool)> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match value.as_u64() {
           None => None,
           Some(x) => Some((x,self.changed[ix]))
@@ -350,8 +312,7 @@ impl Table {
   pub fn get_reference(&self, row: &TableIndex, column: &TableIndex) -> Option<u64> {
     match self.index(row, column) {
       Some(ix) => {
-        let address = self.data[ix];
-        let value = self.store.data[address];
+        let value = self.data[ix];
         match value.as_reference() {
           None => None,
           x => x,
@@ -367,15 +328,11 @@ impl Table {
   pub fn set(&mut self, row: &TableIndex, column: &TableIndex, value: Value) {
     match self.index(row, column) {
       Some(ix) => {
-        let old_address = self.data[ix];
-        let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-        if store.data[old_address] != value {
+        if self.data[ix] != value {
+          let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
           store.changed = true;
-          store.dereference(old_address);
-          let new_address = store.intern(value);
-          self.data[ix] = new_address;
+          self.data[ix] = value;
           self.changed[ix] = true;
-          //self.history.push((*row,*column,value));
         }
       }
       None => (), // TODO Warn user that set was not successful due to out of bounds index
@@ -384,29 +341,21 @@ impl Table {
 
   pub fn set_unchecked(&mut self, row: usize, column: usize, value: Value) {
     let ix = self.index_unchecked(row, column);
-    let old_address = self.data[ix];
-    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-    if store.data[old_address] != value {
+    if self.data[ix] != value {
+      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
       store.changed = true;
-      store.dereference(old_address);
-      let new_address = store.intern(value);
-      self.data[ix] = new_address;
+      self.data[ix] = value;
       self.changed[ix] = true;
-      //self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
     }
   }
 
   pub fn set_unchecked_linear(&mut self, index: usize, value: Value) {
     let ix = index - 1;
-    let old_address = self.data[ix];
-    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-    if store.data[old_address] != value {
+    if self.data[ix] != value {
+      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
       store.changed = true;
-      store.dereference(old_address);
-      let new_address = store.intern(value);
-      self.data[ix] = new_address;
+      self.data[ix] = value;
       self.changed[ix] = true;
-      //self.history.push((TableIndex::Index(row),TableIndex::Index(column),value));
     }
   }
 
@@ -464,9 +413,8 @@ impl fmt::Debug for Table {
     for i in 0..rows {
       write!(f, "│ ", )?;
       for j in 0..columns {
-        match self.get_address(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
-          Some(x) => {
-            let value = &self.store.data[x];
+        match self.get(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
+          Some((value,_)) => {
             let text = match value.as_quantity() {
               Some(_quantity) => {
                 format!("{}", value.format())
@@ -483,13 +431,13 @@ impl fmt::Debug for Table {
                         None => {
                           match value.as_string() {
                             Some(_) => {
-                              match self.store.strings.get(value) {
+                              match self.store.strings.get(&value) {
                                 Some(q) => format!("{:?}", q),
                                 None => {format!("Missing String")},
                               }
                             }
                             None => {
-                              let number_literal = self.store.number_literals.get(value).unwrap();
+                              let number_literal = self.store.number_literals.get(&value).unwrap();
                               match number_literal.kind {
                                 NumberLiteralKind::Hexadecimal => {
                                   let mut tfm = format!("0x");
@@ -552,9 +500,8 @@ impl fmt::Debug for Table {
       for i in rows-3..rows {
         write!(f, "│ ", )?;
         for j in 0..columns {
-          match self.get_address(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
-            Some(x) => {
-              let value = &self.store.data[x];
+          match self.get(&TableIndex::Index(i+1),&TableIndex::Index(j+1)) {
+            Some((value,_)) => {
               let text = match value.as_quantity() {
                 Some(_quantity) => {
                   format!("{}", value.format())
@@ -569,7 +516,7 @@ impl fmt::Debug for Table {
                         match value.as_reference() {
                           Some(value) => format!("@{}", humanize(&value)),
                           None => {
-                            format!("{:?}", self.store.strings.get(value).unwrap())
+                            format!("{:?}", self.store.strings.get(&value).unwrap())
                           }
                         }
                       }

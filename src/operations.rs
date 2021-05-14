@@ -245,8 +245,14 @@ pub extern "C" fn table_set(arguments: &Vec<(u64, ValueIterator)>) {
     }
   }
 
-  for (out_ix, (value, _)) in out.linear_index_iterator().zip(input) {
-    out.set_unchecked_linear(out_ix, value);
+  let mut out_iterator = out.linear_index_iterator();
+  loop {
+    let in_value = input.next();
+    let out_ix = out_iterator.next();
+    match (in_value, out_ix) {
+      (Some((value,_)),Some(out_ix)) => out.set_unchecked_linear(out_ix, value),
+      _ => break,
+    }
   }
 }
 
@@ -352,7 +358,7 @@ macro_rules! binary_infix {
       let (_, rhs) = &arguments[1];
       let (_, mut out) = arguments[2].clone();
 
-      let (out_rows, out_columns, lhs_iter, rhs_iter) = 
+      let (mut out_rows, mut out_columns, mut lhs_iter, mut rhs_iter) = 
       // Equal dimensions
       if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns() {
         (lhs.rows(), lhs.columns(), lhs.clone(), rhs.clone())
@@ -373,34 +379,28 @@ macro_rules! binary_infix {
 
       out.resize(out_rows, out_columns);
 
-      let out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
-      let out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
-      for ((((lhs_value, lhs_changed), (rhs_value, rhs_changed)), out_row_ix), out_column_ix) in 
-              lhs_iter.zip(rhs_iter).zip(out_row_iter).zip(out_column_iter) {
-        match (lhs_value, rhs_value, lhs_changed, rhs_changed)
-        {
-          (lhs_value, rhs_value, _, _) |
-          (lhs_value, rhs_value, _, _) => {
+      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
+      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+
+      loop {
+        let lhs_value = lhs_iter.next();
+        let rhs_value = rhs_iter.next();
+        let out_row_ix = out_row_iter.next();
+        let out_column_ix = out_column_iter.next();
+        match (lhs_value, rhs_value) {
+          (Some((lhs_value,_)), Some((rhs_value,_))) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);
+                out.set_unchecked(out_row_ix.unwrap().unwrap(), out_column_ix.unwrap().unwrap(), result);
               }
               Err(_) => (), // TODO Handle error here
             }
           }
-          // If either operand is not changed but the output is cell is empty, then we can do the operation
-          (lhs_value, rhs_value, false, _) |
-          (lhs_value, rhs_value, _, false) => {
-            let (out_value, _) = out.get_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap());
-            if out_value.is_empty() {
-              match lhs_value.$op(rhs_value) {
-                Ok(result) => {
-                  out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), result);
-                }
-                Err(_) => (), // TODO Handle error here
-              }
-            }
-          }
+          _ => {
+            lhs_iter.reset();
+            rhs_iter.reset();
+            break
+          },
         }        
       }
     }

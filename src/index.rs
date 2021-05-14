@@ -20,6 +20,9 @@ pub struct  ValueIterator {
   pub raw_column_iter: IndexIterator,  // if there's a way to extract the iterator from the std::itr::Cycle<> in the IndexRepeater then I wouldn't need these anymore.
   pub row_iter: IndexRepeater,   
   pub column_iter: IndexRepeater,
+  pub computed_indices: Vec<usize>,
+  ix: usize,
+  inf_cycle: bool,
 }
 
 impl ValueIterator {
@@ -117,9 +120,37 @@ impl ValueIterator {
       raw_column_iter: column_iter.clone(),
       row_iter: IndexRepeater::new(row_iter,column_len,1),
       column_iter: IndexRepeater::new(column_iter,1,row_len as u64),
+      computed_indices: vec![],
+      ix: 0,
+      inf_cycle: false,
     }
 
   }
+
+  pub fn compute_indices(&mut self) {
+    self.computed_indices.resize(self.elements(),0);
+    
+    let mut row_iter = self.row_iter.clone();
+    let mut column_iter = self.column_iter.clone();
+
+    let mut i = 0;
+    loop {
+      match (row_iter.next(), column_iter.next()) {
+        (Some(rix), Some(cix)) => {
+          match self.index(&rix,&cix) {
+            Some(ix) => self.computed_indices[i] = ix,
+            None => break,
+          }
+        },     
+        (Some(rix), None) => {
+          let ix = rix.unwrap();
+          self.computed_indices[i] = ix;
+        },   
+        _ => break,
+      }
+      i += 1;
+    }
+  } 
 
   pub fn linear_index_iterator(&self) -> LinearIndexIterator {
     LinearIndexIterator::new(self.table,self.row_iter.clone(),self.column_iter.clone())
@@ -138,6 +169,7 @@ impl ValueIterator {
   }
   
   pub fn inf_cycle(&mut self) {
+    self.inf_cycle = true;
     self.row_iter.inf_cycle();
     self.column_iter.inf_cycle();
   }
@@ -167,6 +199,10 @@ impl ValueIterator {
       TableIndex::None => 1,
       _ => self.raw_column_iter.len(),
     }
+  }
+
+  pub fn index(&self, row: &TableIndex, column: &TableIndex) -> Option<usize>  {
+    unsafe{(*self.table).index(row,column)}
   }
 
   pub fn is_scalar(&self) -> bool {
@@ -238,6 +274,10 @@ impl ValueIterator {
     }
   }
 
+  pub fn reset(&mut self) {
+    self.ix = 0;
+  }
+
   pub fn resize(&mut self, rows: usize, columns: usize)  {
     unsafe {
 
@@ -281,14 +321,30 @@ impl ValueIterator {
 impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
-    match (self.row_iter.next(), self.column_iter.next()) {
-      (Some(rix), Some(cix)) => {
-        self.get(&rix,&cix)
-      },     
-      (Some(rix), None) => {
-        self.get_linear(&rix)
-      },   
-      _ => None,
+    if self.computed_indices.len() > 0 {
+      if self.ix < self.computed_indices.len() {
+        let computed_index = self.computed_indices[self.ix];
+        self.ix += 1;
+        Some(self.get_unchecked_linear(computed_index + 1))
+      } else if self.inf_cycle {
+        self.ix = 0;
+        let computed_index = self.computed_indices[self.ix];
+        self.ix += 1;
+        Some(self.get_unchecked_linear(computed_index + 1))
+      } else {
+        self.ix = 0;
+        None
+      }
+    } else { 
+      match (self.row_iter.next(), self.column_iter.next()) {
+        (Some(rix), Some(cix)) => {
+          self.get(&rix,&cix)
+        },     
+        (Some(rix), None) => {
+          self.get_linear(&rix)
+        },   
+        _ => None,
+      }
     }
   }
 }
@@ -435,9 +491,8 @@ impl Iterator for TableIterator {
     loop {
       unsafe{
         if self.current < (*self.table).data.len() {
-          let address = (*self.table).data[self.current];
+          let value = (*self.table).data[self.current];
           self.current += 1;
-          let value = (*self.table).store.data[address];
           match value.as_u64() {
             Some(v) => {
               return Some(TableIndex::Index(v as usize));
