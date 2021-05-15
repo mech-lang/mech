@@ -17,7 +17,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType};
+use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType, Argument};
 use mech_core::{Value, ValueMethods, ValueIterator, TableIndex};
 use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId};
@@ -199,7 +199,7 @@ impl Program {
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
-            match library.get::<extern "C" fn(arguments: &Vec<(u64, ValueIterator)>)>(s.as_bytes()) {
+            match library.get::<extern "C" fn(arguments: &mut Vec<Rc<RefCell<Argument>>>)>(s.as_bytes()) {
               Ok(m) => {
                 let native_rust = m.into_raw();
                 *fun = Some(*native_rust);
