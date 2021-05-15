@@ -259,7 +259,10 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
     let out_ix = out_iterator.next();
     match (in_value, out_ix) {
       (Some((value,_)),Some(out_ix)) => out.iterator.set_unchecked_linear(out_ix, value),
-      _ => break,
+      _ => {
+        input.iterator.reset();
+        break
+      },
     }
   }
 }
@@ -276,60 +279,61 @@ pub extern "C" fn table_copy(arguments:  &mut Vec<(u64, ValueIterator)>) {
       out.set_unchecked(i, j, value);
     }
   }
-}
+}*/
 
 #[no_mangle]
-pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<(u64, ValueIterator)>) {
-  let (_, mut out) = arguments[arguments.len()-1].clone();
+pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Get the size of the output table we will create, and resize the out table
-  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.rows()).max().unwrap();
-  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).sum();
-  out.resize(out_rows, out_columns);
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.rows()).max().unwrap();
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).sum();
+  out.iterator.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
   let mut column = 0;
-  for (_, vi) in arguments.iter().take(arguments.len()-1) {
+  for vi_rc in arguments.iter().take(arguments.len()-1) {
+    let vi = vi_rc.borrow().iterator.clone();
     let width = vi.columns();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
     let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
-    for (((value, _), out_row_ix), out_column_ix) in vi.clone().cycle().zip(out_row_iter).zip(out_column_iter) {
-      out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
+    for (((value, _), out_row_ix), out_column_ix) in vi.cycle().zip(out_row_iter).zip(out_column_iter) {
+      out.iterator.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
     }
     column += width;
   }
 }
 
 #[no_mangle]
-pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<(u64, ValueIterator)>) {
-
-  let (_, mut out) = arguments[arguments.len()-1].clone();
+pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Do all of the arguments have a compatible width?
-  if arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).collect::<HashSet<usize>>().len() != 1 {
+  if arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
   
   // Get the size of the output table we will create, and resize the out table
-  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.columns()).max().unwrap();
-  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|(_, vi)| vi.rows()).sum();
-  out.resize(out_rows, out_columns);
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).max().unwrap();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.rows()).sum();
+  out.iterator.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
   let mut row = 0;
-  for (_, vi) in arguments.iter().take(arguments.len()-1) {
+  for vi_rc in arguments.iter().take(arguments.len()-1) {
+    let vi = vi_rc.borrow().iterator.clone();
     let height = vi.rows();
     if height != 0 {
       let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
       let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
-      for (((value, _), out_row_ix), out_column_ix) in vi.clone().zip(out_row_iter).zip(out_column_iter) {
-        out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
+      for (((value, _), out_row_ix), out_column_ix) in vi.zip(out_row_iter).zip(out_column_iter) {
+        out.iterator.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
       }
       row += height;
     }
   }
-}*/
+}
 
 #[no_mangle]
 pub extern "C" fn table_range(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {

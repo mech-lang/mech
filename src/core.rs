@@ -24,9 +24,9 @@ use operations::{
   logic_xor,*/
   table_range,
   table_set,
-  /*table_append__row,
   table_horizontal__concatenate,
   table_vertical__concatenate,
+  /*table_append__row,
   table_copy,
   stats_sum,
   set_any,
@@ -81,9 +81,9 @@ impl Core {
     self.runtime.load_library_function("table/append-row",Some(table_append__row));*/
     self.runtime.load_library_function("table/range",Some(table_range));
     self.runtime.load_library_function("table/set",Some(table_set));
-    /*self.runtime.load_library_function("table/horizontal-concatenate",Some(table_horizontal__concatenate));
+    self.runtime.load_library_function("table/horizontal-concatenate",Some(table_horizontal__concatenate));
     self.runtime.load_library_function("table/vertical-concatenate",Some(table_vertical__concatenate));
-    self.runtime.load_library_function("table/copy",Some(table_copy));
+    /*self.runtime.load_library_function("table/copy",Some(table_copy));
     self.runtime.load_library_function("stats/sum",Some(stats_sum));
     self.runtime.load_library_function("set/any",Some(set_any));
     self.runtime.load_library_function("set/all",Some(set_all));*/
