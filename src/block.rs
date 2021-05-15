@@ -437,10 +437,9 @@ impl Block {
         }
         Transformation::Function{name, arguments, out} => {
 
-          /*let mut args = self.function_arguments.entry(step.clone()).or_insert(vec![]);
+          let mut args = self.function_arguments.entry(step.clone()).or_insert(vec![]);
 
           if args.len() == 0 {
-            println!("INIT VI");
             for (arg, table_id, row, column) in arguments {
               let mut vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
               vi.compute_indices();
@@ -449,16 +448,17 @@ impl Block {
             let (out_table_id, out_row, out_column) = out;
             let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
             args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
-          }*/
+          }
 
-          let mut args = vec![];
+          /*let mut args = vec![];
           for (arg, table_id, row, column) in arguments {
-            let vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+            let mut vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
+            vi.compute_indices();
             args.push(Rc::new(RefCell::new(Argument{name: arg.clone(), iterator: vi})));
           }
           let (out_table_id, out_row, out_column) = out;
           let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-          args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
+          args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));*/
 
           match functions.get(name) {
             Some(Some(mech_fn)) => {
