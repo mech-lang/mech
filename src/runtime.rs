@@ -33,7 +33,7 @@ pub struct Runtime {
   pub recursion_limit: u64,
   pub database: Arc<RefCell<Database>>,
   pub blocks: HashMap<u64, Block>,
-  pub ready_blocks: HashSet<u64>,
+  pub ready_blocks: IndexSet<u64>,
   pub errors: HashSet<Error>,
   pub output_to_block:  HashMap<Register,HashSet<u64>>,
   pub input_to_block:  HashMap<Register,HashSet<u64>>,
@@ -56,7 +56,7 @@ impl Runtime {
       database,
       blocks: HashMap::new(),
       errors: HashSet::new(),
-      ready_blocks: HashSet::new(),
+      ready_blocks: IndexSet::new(),
       output_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
       changed_this_round: IndexSet::new(), 
@@ -93,7 +93,7 @@ impl Runtime {
         store.changed = false;
       }
       // Solve all of the ready blocks
-      for block_id in self.ready_blocks.drain() {
+      for block_id in self.ready_blocks.drain(..) {
         let block = self.blocks.get_mut(&block_id).unwrap();
         block.process_changes();
         match block.solve(&self.functions) {
