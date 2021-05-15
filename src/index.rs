@@ -128,7 +128,6 @@ impl ValueIterator {
   }
 
   pub fn compute_indices(&mut self) {
-    println!("Computing indices");
     self.computed_indices.resize(self.elements(),0);
     
     let mut row_iter = self.row_iter.clone();
