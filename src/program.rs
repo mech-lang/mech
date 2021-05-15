@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet, Bound, BTreeMap};
 use std::collections::hash_map::Entry;
 use std::mem;
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use std::io::{Write, BufReader, BufWriter};
+use std::io::{Write, BufReader, BufWriter, Read};
 use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -38,7 +38,7 @@ use time;
 
 lazy_static! {
   static ref MECH_CODE: u64 = hash_string("mech/code");
-  static ref MECH_MACHINES: u64 = hash_string("mech/machines");
+  static ref MECH_REGISTRY: u64 = hash_string("mech/registry");
   static ref NAME: u64 = hash_string("name");
   static ref VERSION: u64 = hash_string("version");
   static ref URL: u64 = hash_string("url");
@@ -148,23 +148,45 @@ impl Program {
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
+    create_dir("machines");
     if self.machine_repository.len() == 0 {
-      // Download machine_repository index
-      match &outgoing {
-        Some(sender) => {sender.send(ClientMessage::String(format!("Updating machine registry.")));}
-        None => (),
-      }
-      let registry_url = "https://gitlab.com/mech-lang/machines/directory/-/raw/main/machines.mec";
-      let mut response = reqwest::get(registry_url)?.text()?;
+
+      let mut registry_file = match std::fs::File::open("machines/registry.mec") {
+        Ok(mut file) => {
+          // Loading machine_repository index
+          match &outgoing {
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".bright_cyan())));}
+            None => (),
+          }
+          let mut contents = String::new();
+          file.read_to_string(&mut contents).unwrap();
+          contents
+        }
+        Err(_) => {
+          // Download machine_repository index
+          match &outgoing {
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry.", "[Downloading]".bright_cyan())));}
+            None => (),
+          }
+          // Download registry
+          let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/registry.mec";
+          let mut response = reqwest::get(registry_url)?.text()?;
+          // Save registry
+          let mut dest = File::create("machines/registry.mec")?;
+          dest.write_all(response.as_bytes()).expect("write failed");
+          response
+        }
+      };
+
       let mut registry_compiler = Compiler::new();
-      registry_compiler.compile_string(response);
+      registry_compiler.compile_string(registry_file);
       let mut registry_core = Core::new(100,100);
       registry_core.load_standard_library(); 
       registry_core.register_blocks(registry_compiler.blocks);
       registry_core.step();
 
       // Convert the machine listing into a hash map
-      let registry_table = registry_core.get_table(*MECH_MACHINES).unwrap();
+      let registry_table = registry_core.get_table(*MECH_REGISTRY).unwrap();
       for row in 0..registry_table.rows {
         let row_index = TableIndex::Index(row+1);
         let (name,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*NAME)).unwrap();
