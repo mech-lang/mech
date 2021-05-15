@@ -814,6 +814,47 @@ impl Compiler {
             step_ix += 1;
           }
           block.plan = new_plan;
+
+          // Combine steps with set, e.g.:
+          // 1. math/add(#ball{:,:}, moe-veg-cut-six{:,:}) -> yel-ohi-sod-fil{:,:}
+          // 2. table/set(yel-ohi-sod-fil{:,:}) -> #ball{:,:}
+          // Becomes
+          // 1. math/add(#ball{:,:}, moe-veg-cut-six{:,:}) -> #ball{:,:}
+          let mut include = vec![];
+          let mut exclude: HashSet<Transformation> = HashSet::new();
+          'step_loop: for step in &block.plan {
+            match step {
+              Transformation::Function{name, arguments, out} => {
+                for step2 in &block.plan {
+                  match step2 {
+                    Transformation::Function{name: name2, arguments: arguments2, out: out2} => {
+                      if *name2 == *TABLE_SET  && arguments2.len() == 1 {
+                        let (_, table, row, column) = arguments2[0];
+                        if (table,row,column) == *out && row == TableIndex::All && column == TableIndex::All {
+                          include.push(Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2});
+                          exclude.insert(step2.clone());
+                          exclude.insert(step.clone());
+                          continue 'step_loop;
+                        }
+                      }
+                    }
+                    _ => (),
+                  }
+                }
+                match exclude.contains(&step) {
+                  false => include.push(step.clone()),
+                  _ => (),
+                }
+              }
+              _ => {
+                match exclude.contains(&step) {
+                  false => include.push(step.clone()),
+                  _ => (),
+                }
+              },
+            }
+          }
+          block.plan = include;
         }
         /*// Remove all defunct tables from the transformation list. These would be tables that were written to by
         // some function that was removed from the previous optimization pass
