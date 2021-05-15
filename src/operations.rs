@@ -260,9 +260,13 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   }
 
   let mut out_iterator = out.iterator.linear_index_iterator();
+  if out.iterator.computed_indices.len() == 0 {
+    out.iterator.compute_indices();
+  }
+
   loop {
     let in_value = input.iterator.next();
-    let out_ix = out_iterator.next();
+    let out_ix = out.iterator.next_index();
     match (in_value, out_ix) {
       (Some((value,_)),Some(out_ix)) => out.iterator.set_unchecked_linear(out_ix, value),
       _ => {
@@ -394,20 +398,21 @@ macro_rules! binary_infix {
       };
 
       out.iterator.resize(out_rows, out_columns);
-
-      let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
-      let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+      out.iterator.row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
+      out.iterator.column_iter = IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
+      if out.iterator.computed_indices.len() == 0 {
+        out.iterator.compute_indices();
+      }
 
       loop {
         let lhs_value = lhs.iterator.next();
         let rhs_value = rhs.iterator.next();
-        let out_row_ix = out_row_iter.next();
-        let out_column_ix = out_column_iter.next();
+        let out_ix = out.iterator.next_index();
         match (lhs_value, rhs_value) {
           (Some((lhs_value,_)), Some((rhs_value,_))) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                out.iterator.set_unchecked(out_row_ix.unwrap().unwrap(), out_column_ix.unwrap().unwrap(), result);
+                out.iterator.set_unchecked_linear(out_ix.unwrap(), result);
               }
               Err(_) => (), // TODO Handle error here
             }
