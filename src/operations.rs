@@ -375,11 +375,13 @@ macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     #[no_mangle]
     pub extern "C" fn $func_name(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+      println!("Add");
       // TODO test argument count is 3
       let mut lhs = &mut arguments[0].borrow_mut();
       let mut rhs = &mut arguments[1].borrow_mut();
       let mut out = &mut arguments[2].borrow_mut();
 
+      println!("Getting size");
       let (mut out_rows, mut out_columns) = 
       // Equal dimensions
       if lhs.iterator.rows() == rhs.iterator.rows() && lhs.iterator.columns() == rhs.iterator.columns() {
@@ -396,18 +398,22 @@ macro_rules! binary_infix {
         // TODO Warn of mismatch of dimensions
         return;
       };
-
+      
+      println!("Resizing");
       out.iterator.resize(out_rows, out_columns);
       out.iterator.row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
       out.iterator.column_iter = IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
       if out.iterator.computed_indices.len() == 0 {
         out.iterator.compute_indices();
       }
-
+      println!("Doing add");
       loop {
         let lhs_value = lhs.iterator.next();
+        println!("lhs value {:?}", lhs_value);
         let rhs_value = rhs.iterator.next();
+        println!("rhs value {:?}", rhs_value);
         let out_ix = out.iterator.next_index();
+        println!("out_ix value {:?}", out_ix);
         match (lhs_value, rhs_value) {
           (Some((lhs_value,_)), Some((rhs_value,_))) => {
             match lhs_value.$op(rhs_value) {
