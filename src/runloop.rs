@@ -361,7 +361,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
             let time = (end_ns - start_ns) as f64;   
             program.trigger_machines();  
             //println!("{:?}", program.mech);
-            //println!("Txn took {:0.4?} ms", time / 1_000_000.0);
+            println!("{:0.4?}", time / 1_000_000.0);
             //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
             /*let mut changes: Vec<Change> = Vec::new();
             for i in pre_changes..program.mech.store.len() {
@@ -540,6 +540,7 @@ impl actix::io::WriteHandler<WsProtocolError> for ChatClient {}
           },
           x => println!("qq{:?}", x),
         }
+        //println!("{:?}", program.mech);
         client_outgoing.send(ClientMessage::Done);
       }
       /*if let Some(channel) = persistence_channel {
