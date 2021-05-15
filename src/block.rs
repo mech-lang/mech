@@ -4,10 +4,12 @@ use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, Constant
 use database::{Database, Store, Change, Transaction};
 use hashbrown::{HashMap, HashSet};
 use quantities::{QuantityMath};
-use operations::{MechFunction};
+use operations::{MechFunction, Argument};
 use errors::{Error, ErrorType};
 use std::cell::RefCell;
+use std::cell::Cell;
 use std::sync::Arc;
+use std::rc::Rc;
 use rust_core::fmt;
 use ::humanize;
 use ::hash_string;
@@ -46,7 +48,7 @@ pub struct Block {
   pub changes: Vec<Change>,
   pub errors: HashSet<Error>,
   pub triggered: usize,
-  pub function_arguments: HashMap<Transformation, Vec<(u64,ValueIterator)>>,
+  pub function_arguments: HashMap<Transformation, Vec<Rc<RefCell<Argument>>>>,
   pub global_database: Arc<RefCell<Database>>,
 }
 
@@ -315,34 +317,6 @@ impl Block {
     }
   }
 
-  pub fn resolve_iterators(&mut self) {
-    if self.state == BlockState::Ready {
-      for step in &self.plan {
-        match step {
-          Transformation::Function{name, arguments, out} => {
-            let mut args: Vec<(u64, ValueIterator)> = vec![];
-            for (arg, table, row, column) in arguments {
-              let vi = ValueIterator::new(*table,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
-              args.push((arg.clone(),vi));
-            }
-            let (out_table_id, out_row, out_column) = out;
-            let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-            args.push((0,out_vi));
-            self.function_arguments.insert(step.clone(),args);
-          }
-          Transformation::Whenever{table_id, registers, ..} => {
-            let mut args: Vec<(u64, ValueIterator)> = vec![];
-            let register = registers[0];
-            let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
-            args.push((0,vi));
-            self.function_arguments.insert(step.clone(),args);
-          }
-          _ => (),
-        }
-      }  
-    }
-  }
-
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
     self.triggered += 1;
     'step_loop: for step in &self.plan {
@@ -463,53 +437,53 @@ impl Block {
         }
         Transformation::Function{name, arguments, out} => {
 
-          /*let mut args: &mut Vec<(u64, ValueIterator)> = self.function_arguments.entry(step.clone()).or_insert(vec![]);
+          let mut args = self.function_arguments.entry(step.clone()).or_insert(vec![]);
 
           if args.len() == 0 {
             println!("INIT VI");
             for (arg, table_id, row, column) in arguments {
               let mut vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
               vi.compute_indices();
-              args.push((arg.clone(),vi));
+              args.push(Rc::new(RefCell::new(Argument{name: arg.clone(), iterator: vi})));
             }
             let (out_table_id, out_row, out_column) = out;
             let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-            args.push((0,out_vi));
-          }*/
+            args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
+          }
 
-          let mut args = vec![];
+          /*let mut args = vec![];
           for (arg, table_id, row, column) in arguments {
             let vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
             args.push((arg.clone(),vi));
           }
           let (out_table_id, out_row, out_column) = out;
           let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-          args.push((0,out_vi));
+          args.push((0,out_vi));*/
 
           match functions.get(name) {
             Some(Some(mech_fn)) => {
-              mech_fn(&args);
+              mech_fn(&mut args);
             }
             _ => {
               if *name == *TABLE_SPLIT {
-                let (_, vi) = &args[0];
-                let (_, mut out) = args.last().unwrap().clone();
+                let vi = &args[0].borrow();
+                let mut out = args.last().unwrap().borrow_mut();
 
-                out.resize(vi.rows(), 1);
+                out.iterator.resize(vi.iterator.rows(), 1);
 
                 let mut db = self.global_database.borrow_mut();
 
                 // Create rows for tables
-                let old_table_id = vi.id();
-                let old_table_columns = vi.columns();
-                for row in vi.raw_row_iter.clone() {
+                let old_table_id = vi.iterator.id();
+                let old_table_columns = vi.iterator.columns();
+                for row in vi.iterator.raw_row_iter.clone() {
                   let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
                   let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
-                  for column in vi.raw_column_iter.clone() {
-                    let (value,_) = vi.get(&row,&column).unwrap();
+                  for column in vi.iterator.raw_column_iter.clone() {
+                    let (value,_) = vi.iterator.get(&row,&column).unwrap();
                     split_table.set(&TableIndex::Index(1),&column, value);
                   }
-                  out.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
+                  out.iterator.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
                   self.tables.insert(split_table_id, split_table.clone());
                   db.tables.insert(split_table_id, split_table);
                 }
