@@ -278,6 +278,26 @@ impl ValueIterator {
     self.ix = 0;
   }
 
+  pub fn next_index(&mut self) -> Option<usize> {
+    if self.computed_indices.len() > 0 {
+      if self.ix < self.computed_indices.len() {
+        let computed_index = self.computed_indices[self.ix];
+        self.ix += 1;
+        Some(computed_index + 1)
+      } else if self.inf_cycle {
+        self.ix = 0;
+        let computed_index = self.computed_indices[self.ix];
+        self.ix += 1;
+        Some(computed_index + 1)
+      } else {
+        self.ix = 0;
+        None
+      }
+    } else {
+      None
+    }
+  }
+
   pub fn resize(&mut self, rows: usize, columns: usize)  {
     unsafe {
 
