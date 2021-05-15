@@ -371,7 +371,7 @@ impl Parser {
       },
       Err(q) => match q {
         nom::Err::Error(qq) =>  {
-          println!("{}", nom::error::convert_error(text, qq));
+          //println!("{}", nom::error::convert_error(text, qq));
         }
         _ => (),
       }
