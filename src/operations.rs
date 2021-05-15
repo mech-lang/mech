@@ -30,17 +30,19 @@ pub struct Argument {
   pub iterator: ValueIterator,
 }
 
-/*
+
 #[no_mangle]
-pub extern "C" fn set_all(arguments: &mut Vec<(u64, ValueIterator)>) {
+pub extern "C" fn set_all(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments[1].clone();
+  let in_arg = &mut arguments[0].borrow_mut();
+  let in_arg_name = in_arg.name;
+  let vi = in_arg.iterator.clone();
+  let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
 
-  if *in_arg_name == *ROW {
+  if in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut flag: bool = true;
@@ -53,7 +55,7 @@ pub extern "C" fn set_all(arguments: &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(i, 1, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *COLUMN {
+  } else if in_arg_name == *COLUMN {
     out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = true;
@@ -66,7 +68,7 @@ pub extern "C" fn set_all(arguments: &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(1, i, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *TABLE {
+  } else if in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut flag: bool = true;
     for (value, _) in vi.clone() {
@@ -82,15 +84,17 @@ pub extern "C" fn set_all(arguments: &mut Vec<(u64, ValueIterator)>) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_any(arguments:  &mut Vec<(u64, ValueIterator)>) {
+pub extern "C" fn set_any(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments[1].clone();
+  let in_arg = &mut arguments[0].borrow_mut();
+  let in_arg_name = in_arg.name;
+  let vi = in_arg.iterator.clone();
+  let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
 
-  if *in_arg_name == *ROW {
+  if in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut flag: bool = false;
@@ -103,7 +107,7 @@ pub extern "C" fn set_any(arguments:  &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(i, 1, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *COLUMN {
+  } else if in_arg_name == *COLUMN {
     out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = false;
@@ -116,7 +120,7 @@ pub extern "C" fn set_any(arguments:  &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(1, i, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *TABLE {
+  } else if in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut flag: bool = false;
     for (value, _) in vi.clone() {
@@ -132,15 +136,17 @@ pub extern "C" fn set_any(arguments:  &mut Vec<(u64, ValueIterator)>) {
 }
 
 #[no_mangle]
-pub extern "C" fn stats_sum(arguments: &mut Vec<(u64, ValueIterator)>) {
+pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments[1].clone();
+  let in_arg = &mut arguments[0].borrow_mut();
+  let in_arg_name = in_arg.name;
+  let vi = in_arg.iterator.clone();
+  let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
 
-  if *in_arg_name == *ROW {
+  if in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut sum: Value = Value::from_u64(0);
@@ -157,7 +163,7 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(i, 1, sum);
     }
-  } else if *in_arg_name == *COLUMN {
+  } else if in_arg_name == *COLUMN {
     out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut sum: Value = Value::from_u64(0);
@@ -174,7 +180,7 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(1, i, sum);
     }
-  } else if *in_arg_name == *TABLE {
+  } else if in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
     for (value, _) in vi.clone() {
@@ -190,10 +196,10 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<(u64, ValueIterator)>) {
 }
 
 #[no_mangle]
-pub extern "C" fn table_append__row(arguments: &mut Vec<(u64, ValueIterator)>) {
+pub extern "C" fn table_append__row(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   //TODO There needs to be some checking of dimensions here
-  let (_, mut vi) = arguments[0].clone();
-  let (_, mut out) = arguments[1].clone();
+  let mut vi = &mut arguments[0].borrow_mut().iterator.clone();
+  let mut out = &mut arguments[1].borrow_mut().iterator.clone();
   let out_rows = out.rows();
   let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
   let in_rows = vi.rows();
@@ -220,7 +226,7 @@ pub extern "C" fn table_append__row(arguments: &mut Vec<(u64, ValueIterator)>) {
       out.set(&TableIndex::Index(out_rows + 1), &TableIndex::Index(index), value);
     }    
   }
-}*/
+}
 
 #[no_mangle]
 pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
@@ -267,10 +273,10 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   }
 }
 
-/*#[no_mangle]
-pub extern "C" fn table_copy(arguments:  &mut Vec<(u64, ValueIterator)>) {
-  let (_, vi) = &arguments[0];
-  let (_, mut out) = arguments[1].clone();
+#[no_mangle]
+pub extern "C" fn table_copy(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let vi = &mut arguments[0].borrow_mut().iterator.clone();
+  let mut out = &mut arguments[1].borrow_mut().iterator.clone();
 
   out.resize(vi.rows(), vi.columns());
   for j in 1..=vi.columns() {
@@ -279,7 +285,7 @@ pub extern "C" fn table_copy(arguments:  &mut Vec<(u64, ValueIterator)>) {
       out.set_unchecked(i, j, value);
     }
   }
-}*/
+}
 
 #[no_mangle]
 pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
@@ -418,7 +424,7 @@ macro_rules! binary_infix {
 }
 
 binary_infix!{math_add, add}
-/*binary_infix!{math_subtract, sub}
+binary_infix!{math_subtract, sub}
 binary_infix!{math_multiply, multiply}
 binary_infix!{math_divide, divide}
 binary_infix!{math_exponent, power}
@@ -430,4 +436,4 @@ binary_infix!{compare_equal, equal}
 binary_infix!{compare_not__equal, not_equal}
 binary_infix!{logic_and, and}
 binary_infix!{logic_or, or}
-binary_infix!{logic_xor, xor}*/
+binary_infix!{logic_xor, xor}

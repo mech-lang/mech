@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use rust_core::fmt;
 use operations::{
   math_add, 
-  /*math_subtract, 
+  math_subtract, 
   math_multiply, 
   math_divide, 
   math_exponent,
@@ -21,16 +21,16 @@ use operations::{
   compare_not__equal,
   logic_and,
   logic_or,
-  logic_xor,*/
+  logic_xor,
   table_range,
   table_set,
   table_horizontal__concatenate,
   table_vertical__concatenate,
-  /*table_append__row,
+  table_append__row,
   table_copy,
   stats_sum,
   set_any,
-  set_all,*/
+  set_all,
 };
 use ::hash_string;
 
@@ -65,7 +65,7 @@ impl Core {
       store.strings.insert(name_hash, name.to_string());
     }
     self.runtime.load_library_function("math/add",Some(math_add));
-    /*self.runtime.load_library_function("math/subtract",Some(math_subtract));
+    self.runtime.load_library_function("math/subtract",Some(math_subtract));
     self.runtime.load_library_function("math/multiply",Some(math_multiply));
     self.runtime.load_library_function("math/divide",Some(math_divide));
     self.runtime.load_library_function("math/exponent",Some(math_exponent));
@@ -78,15 +78,15 @@ impl Core {
     self.runtime.load_library_function("logic/and",Some(logic_and));
     self.runtime.load_library_function("logic/or",Some(logic_or));
     self.runtime.load_library_function("logic/xor",Some(logic_xor));
-    self.runtime.load_library_function("table/append-row",Some(table_append__row));*/
+    self.runtime.load_library_function("table/append-row",Some(table_append__row));
     self.runtime.load_library_function("table/range",Some(table_range));
     self.runtime.load_library_function("table/set",Some(table_set));
     self.runtime.load_library_function("table/horizontal-concatenate",Some(table_horizontal__concatenate));
     self.runtime.load_library_function("table/vertical-concatenate",Some(table_vertical__concatenate));
-    /*self.runtime.load_library_function("table/copy",Some(table_copy));
+    self.runtime.load_library_function("table/copy",Some(table_copy));
     self.runtime.load_library_function("stats/sum",Some(stats_sum));
     self.runtime.load_library_function("set/any",Some(set_any));
-    self.runtime.load_library_function("set/all",Some(set_all));*/
+    self.runtime.load_library_function("set/all",Some(set_all));
   }
 
   pub fn get_string(&self, id: &u64) -> Option<String> {
