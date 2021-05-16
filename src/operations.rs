@@ -36,7 +36,8 @@ pub extern "C" fn set_all(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
   let in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
-  let vi = in_arg.iterator.clone();
+  let mut vi = in_arg.iterator.clone();
+  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -88,7 +89,8 @@ pub extern "C" fn set_any(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
   let in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
-  let vi = in_arg.iterator.clone();
+  let mut vi = in_arg.iterator.clone();
+  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -138,9 +140,10 @@ pub extern "C" fn set_any(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
 #[no_mangle]
 pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let in_arg = &mut arguments[0].borrow_mut();
+  let mut in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
-  let vi = in_arg.iterator.clone();
+  let mut vi = in_arg.iterator.clone();
+  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -181,9 +184,11 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
       out.set_unchecked(1, i, sum);
     }
   } else if in_arg_name == *TABLE {
+    println!("{:?}", vi);
     out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
     for (value, _) in vi.clone() {
+      println!("{:?}", value);
       match sum.add(value) {
         Ok(result) => sum = result,
         _ => (), // TODO Alert user that there was an error
@@ -199,6 +204,7 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
 pub extern "C" fn table_append__row(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   //TODO There needs to be some checking of dimensions here
   let mut vi = &mut arguments[0].borrow_mut().iterator.clone();
+  vi.init_iterators();
   let mut out = &mut arguments[1].borrow_mut().iterator.clone();
   let out_rows = out.rows();
   let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
@@ -230,30 +236,32 @@ pub extern "C" fn table_append__row(arguments: &mut Vec<Rc<RefCell<Argument>>>) 
 
 #[no_mangle]
 pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
-  let mut input = &mut arguments[0].borrow_mut();
+  let mut input = &mut arguments[0].borrow_mut().iterator;
   let mut out = &mut arguments[1].borrow_mut();
 
   if out.iterator.table_rows() == 0 || out.iterator.table_columns() == 0 {
-    out.iterator.resize(input.iterator.rows(), input.iterator.columns());
+    out.iterator.resize(input.rows(), input.columns());
   }
 
-  if input.iterator.is_scalar() {
-    input.iterator.inf_cycle();
+  if input.is_scalar() {
+    input.inf_cycle();
   } else {
     // If we're indexing on a table, then match the input iter with the output iter
-    match (out.iterator.row_index, input.iterator.row_index) {
+    match (out.iterator.row_index, input.row_index) {
       (TableIndex::Table(_), TableIndex::All) => {
-        input.iterator.row_index = out.iterator.row_index.clone();
-        input.iterator.raw_row_iter = out.iterator.raw_row_iter.clone();
-        input.iterator.row_iter = out.iterator.row_iter.clone();
+        input.row_index = out.iterator.row_index.clone();
+        input.raw_row_iter = out.iterator.raw_row_iter.clone();
+        input.row_iter = out.iterator.row_iter.clone();
+        input.init_iterators();
       }
       _ => (),
     }
-    match (out.iterator.column_index, input.iterator.column_index) {
+    match (out.iterator.column_index, input.column_index) {
       (TableIndex::Table(_), TableIndex::All) => {
-        input.iterator.column_index = out.iterator.column_index.clone();
-        input.iterator.raw_column_iter = out.iterator.raw_column_iter.clone();
-        input.iterator.column_iter = out.iterator.column_iter.clone();
+        input.column_index = out.iterator.column_index.clone();
+        input.raw_column_iter = out.iterator.raw_column_iter.clone();
+        input.column_iter = out.iterator.column_iter.clone();
+        input.init_iterators();
       }
       _ => (),
     }
@@ -265,12 +273,12 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   }
 
   loop {
-    let in_value = input.iterator.next();
+    let in_value = input.next();
     let out_ix = out.iterator.next_index();
     match (in_value, out_ix) {
       (Some((value,_)),Some(out_ix)) => out.iterator.set_unchecked_linear(out_ix, value),
       _ => {
-        input.iterator.reset();
+        input.reset();
         break
       },
     }
@@ -281,6 +289,7 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
 pub extern "C" fn table_copy(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   let vi = &mut arguments[0].borrow_mut().iterator.clone();
   let mut out = &mut arguments[1].borrow_mut().iterator.clone();
+  vi.init_iterators();
 
   out.resize(vi.rows(), vi.columns());
   for j in 1..=vi.columns() {
@@ -303,7 +312,8 @@ pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<
   // Iterate through the input table and insert values into output table
   let mut column = 0;
   for vi_rc in arguments.iter().take(arguments.len()-1) {
-    let vi = vi_rc.borrow().iterator.clone();
+    let mut vi = vi_rc.borrow().iterator.clone();
+    vi.init_iterators();
     let width = vi.columns();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
     let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
@@ -332,7 +342,8 @@ pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Ar
   // Iterate through the input table and insert values into output table
   let mut row = 0;
   for vi_rc in arguments.iter().take(arguments.len()-1) {
-    let vi = vi_rc.borrow().iterator.clone();
+    let mut vi = vi_rc.borrow().iterator.clone();
+    vi.init_iterators();
     let height = vi.rows();
     if height != 0 {
       let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
