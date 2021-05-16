@@ -318,6 +318,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
+    println!("{:?}", humanize(&self.id));
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -449,16 +450,6 @@ impl Block {
             let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
             args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
           }
-
-          /*let mut args = vec![];
-          for (arg, table_id, row, column) in arguments {
-            let mut vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
-            vi.compute_indices();
-            args.push(Rc::new(RefCell::new(Argument{name: arg.clone(), iterator: vi})));
-          }
-          let (out_table_id, out_row, out_column) = out;
-          let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-          args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));*/
 
           match functions.get(name) {
             Some(Some(mech_fn)) => {
