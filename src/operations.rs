@@ -184,11 +184,9 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
       out.set_unchecked(1, i, sum);
     }
   } else if in_arg_name == *TABLE {
-    println!("{:?}", vi);
     out.resize(1, 1);
     let mut sum: Value = Value::from_u64(0);
     for (value, _) in vi.clone() {
-      println!("{:?}", value);
       match sum.add(value) {
         Ok(result) => sum = result,
         _ => (), // TODO Alert user that there was an error
@@ -305,7 +303,11 @@ pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<
   let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Get the size of the output table we will create, and resize the out table
-  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.rows()).max().unwrap();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|arg| {
+    let mut vi = &mut arg.borrow_mut().iterator;
+    vi.init_iterators();
+    vi.rows()
+  }).max().unwrap();
   let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).sum();
   out.iterator.resize(out_rows, out_columns);
 
@@ -313,7 +315,6 @@ pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<
   let mut column = 0;
   for vi_rc in arguments.iter().take(arguments.len()-1) {
     let mut vi = vi_rc.borrow().iterator.clone();
-    vi.init_iterators();
     let width = vi.columns();
     let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows),width,1);
     let mut out_column_iter = IndexRepeater::new(IndexIterator::Range(column+1..=column+width),1,out_rows as u64);
@@ -329,7 +330,11 @@ pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Ar
   let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Do all of the arguments have a compatible width?
-  if arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).collect::<HashSet<usize>>().len() != 1 {
+  if arguments.iter().take(arguments.len()-1).map(|arg| {
+    let mut vi = &mut arg.borrow_mut().iterator;
+    vi.init_iterators();
+    vi.columns()
+  }).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
@@ -343,7 +348,6 @@ pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Ar
   let mut row = 0;
   for vi_rc in arguments.iter().take(arguments.len()-1) {
     let mut vi = vi_rc.borrow().iterator.clone();
-    vi.init_iterators();
     let height = vi.rows();
     if height != 0 {
       let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
