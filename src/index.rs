@@ -127,6 +127,42 @@ impl ValueIterator {
 
   }
 
+  pub fn init_iterators(&mut self) {
+    let before_rows = self.rows();
+    let before_columns = self.columns();
+
+    unsafe {
+      match self.row_index {
+        TableIndex::All => {
+          match (*self.table).rows {
+            0 => self.raw_row_iter = IndexIterator::None,
+            r => self.raw_row_iter = IndexIterator::Range(1..=r),
+          }
+        }
+        _ => (),
+      };
+      match self.column_index {
+        TableIndex::All => {
+          match (*self.table).columns {
+            0 => self.raw_column_iter = IndexIterator::None,
+            r => self.raw_column_iter = IndexIterator::Range(1..=r),
+          }
+        }
+        _ => (),
+      };
+    }
+    let after_rows = self.rows();
+    let after_columns = self.columns();
+
+    if before_rows != after_rows || before_columns != after_columns {
+      let row_len = self.raw_row_iter.len();
+      let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
+      self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
+      self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
+      self.compute_indices();
+    }
+  }
+
   pub fn compute_indices(&mut self) {
     self.computed_indices.resize(self.elements(),0);
     
