@@ -318,7 +318,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
-    println!("{:?}", humanize(&self.id));
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
@@ -450,28 +449,28 @@ impl Block {
             let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
             args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
           }
-
+          
           match functions.get(name) {
             Some(Some(mech_fn)) => {
               mech_fn(&mut args);
             }
             _ => {
               if *name == *TABLE_SPLIT {
-                let vi = &args[0].borrow();
+                let vi = args[0].borrow().iterator.clone();
                 let mut out = args.last().unwrap().borrow_mut();
 
-                out.iterator.resize(vi.iterator.rows(), 1);
+                out.iterator.resize(vi.rows(), 1);
 
                 let mut db = self.global_database.borrow_mut();
 
                 // Create rows for tables
-                let old_table_id = vi.iterator.id();
-                let old_table_columns = vi.iterator.columns();
-                for row in vi.iterator.raw_row_iter.clone() {
+                let old_table_id = vi.id();
+                let old_table_columns = vi.columns();
+                for row in vi.raw_row_iter.clone() {
                   let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
                   let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
-                  for column in vi.iterator.raw_column_iter.clone() {
-                    let (value,_) = vi.iterator.get(&row,&column).unwrap();
+                  for column in vi.raw_column_iter.clone() {
+                    let (value,_) = vi.get(&row,&column).unwrap();
                     split_table.set(&TableIndex::Index(1),&column, value);
                   }
                   out.iterator.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
