@@ -174,7 +174,9 @@ impl ValueIterator {
       match (row_iter.next(), column_iter.next()) {
         (Some(rix), Some(cix)) => {
           match self.index(&rix,&cix) {
-            Some(ix) => self.computed_indices[i] = ix,
+            Some(ix) => {
+              self.computed_indices[i] = ix + 1
+            },
             None => break,
           }
         },     
@@ -319,12 +321,12 @@ impl ValueIterator {
       if self.ix < self.computed_indices.len() {
         let computed_index = self.computed_indices[self.ix];
         self.ix += 1;
-        Some(computed_index + 1)
+        Some(computed_index)
       } else if self.inf_cycle {
         self.ix = 0;
         let computed_index = self.computed_indices[self.ix];
         self.ix += 1;
-        Some(computed_index + 1)
+        Some(computed_index)
       } else {
         self.ix = 0;
         None
@@ -378,15 +380,18 @@ impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
     if self.computed_indices.len() > 0 {
+      println!("{:?}", self.computed_indices);
+      println!("{:?}", self.ix);
       if self.ix < self.computed_indices.len() {
         let computed_index = self.computed_indices[self.ix];
+        println!("{:?}", computed_index);
         self.ix += 1;
-        Some(self.get_unchecked_linear(computed_index + 1))
+        Some(self.get_unchecked_linear(computed_index))
       } else if self.inf_cycle {
         self.ix = 0;
         let computed_index = self.computed_indices[self.ix];
         self.ix += 1;
-        Some(self.get_unchecked_linear(computed_index + 1))
+        Some(self.get_unchecked_linear(computed_index))
       } else {
         self.ix = 0;
         None
