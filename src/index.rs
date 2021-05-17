@@ -129,7 +129,7 @@ impl ValueIterator {
   }
 
   pub fn init_iterators(&mut self) {
-
+    let mut needs_init = false;
     match self.row_index {
       TableIndex::All => {
         match self.table.borrow().rows {
@@ -137,6 +137,7 @@ impl ValueIterator {
           r => self.raw_row_iter = IndexIterator::Range(1..=r),
         }
       }
+      TableIndex::Table(..) => needs_init = true,
       _ => (),
     };
     match self.column_index {
@@ -146,10 +147,11 @@ impl ValueIterator {
           r => self.raw_column_iter = IndexIterator::Range(1..=r),
         }
       }
+      TableIndex::Table(..) => needs_init = true,
       _ => (),
     };
 
-    if self.elements() != self.computed_indices.len() {
+    if self.elements() != self.computed_indices.len() || needs_init {
       let row_len = self.raw_row_iter.len();
       let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
       self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
