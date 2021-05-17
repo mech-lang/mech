@@ -270,6 +270,7 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
       (Some((value,_)),Some(out_ix)) => out.set_unchecked_linear(out_ix, value),
       _ => {
         input.reset();
+        out.reset();
         break
       },
     }
