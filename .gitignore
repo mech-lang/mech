@@ -4,3 +4,4 @@ target
 misms
 *.dll
 *.so
+/machines/
