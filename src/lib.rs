@@ -4,7 +4,9 @@ extern crate mech_utilities;
 extern crate lazy_static;
 use mech_core::{Transaction, ValueIterator, ValueMethods};
 use mech_core::{Value, Table, TableIndex};
-use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string};
+use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, Argument};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 lazy_static! {
   static ref ROW: u64 = hash_string("row");
@@ -13,16 +15,17 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {                                        
-
+pub extern "C" fn stats_average(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let (in_arg_name, vi) = &arguments[0];
-  let (_ , mut out) = arguments.last().unwrap().clone();
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
 
   let mut in_rows = vi.rows();
   let mut in_columns = vi.columns();
 
-  if *in_arg_name == *ROW {
+  if in_arg_name == *ROW {
     out.resize(in_rows, 1);
     for i in 1..=in_rows {
       let mut sum: Value = Value::from_u32(0);
@@ -36,7 +39,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(i, 1, Value::from_f32(sum.as_f32().unwrap() / vi.columns() as f32));
     }
-  } else if *in_arg_name == *COLUMN {
+  } else if in_arg_name == *COLUMN {
     out.resize(1, in_columns);
     for (i,m) in (1..=in_columns).zip(vi.column_iter.clone()) {
       let mut sum: Value = Value::from_u32(0);
@@ -50,7 +53,7 @@ pub extern "C" fn stats_average(arguments: &Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(1, i, Value::from_f32(sum.as_f32().unwrap() / vi.rows() as f32));
     }      
-  } else if *in_arg_name == *TABLE {
+  } else if in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut sum: Value = Value::from_u32(0);
     for (value,_) in vi.clone() {
