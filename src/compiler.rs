@@ -854,7 +854,7 @@ impl Compiler {
               },
             }
           }
-          block.plan = include;
+          //block.plan = include;
         }
         /*// Remove all defunct tables from the transformation list. These would be tables that were written to by
         // some function that was removed from the previous optimization pass
