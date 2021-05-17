@@ -24,7 +24,7 @@ fn load_module_with_program() {
     match running.receive() {
       (Ok(ClientMessage::Table(table))) => {
           let (value,_) = table.unwrap().get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap();
-          assert_eq!(value, Value::from_f64(0.0));
+          assert_eq!(value, Value::from_f32(0.0));
           break;
       },
       message => (),

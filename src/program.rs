@@ -113,7 +113,7 @@ impl Program {
       match self.machines.get_mut(&register.hash()) {
         // Invoke the machine!
         Some(mut machine) => {
-          let table = database.tables.get(&register.table_id.unwrap()).unwrap();
+          let table = database.tables.get(&register.table_id.unwrap()).unwrap().borrow();
           machine.on_change(&table);
         },
         _ => (), // TODO Warn user that the machine is not loaded!
