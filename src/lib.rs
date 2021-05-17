@@ -5,8 +5,10 @@ extern crate libm;
 extern crate lazy_static;
 use mech_core::{Transaction};
 use mech_core::{Value, ValueMethods, IndexIterator, Table, ValueIterator};
-use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string};
+use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, Argument};
 use libm::{sinf, cosf, fmodf, roundf, floorf};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 static PI: f32 = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
@@ -16,10 +18,12 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>) {
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments.last().unwrap().clone();
-  if *in_arg_name == *ANGLE {
+pub extern "C" fn math_sin(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
+  if in_arg_name == *ANGLE {
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
@@ -43,10 +47,12 @@ pub extern "C" fn math_sin(arguments: &Vec<(u64, ValueIterator)>) {
 }
 
 #[no_mangle]
-pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>) { 
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments.last().unwrap().clone();
-  if *in_arg_name == *ANGLE {
+pub extern "C" fn math_cos(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
+  if in_arg_name == *ANGLE {
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
@@ -71,10 +77,12 @@ pub extern "C" fn math_cos(arguments: &Vec<(u64, ValueIterator)>) {
 
 
 #[no_mangle]
-pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments.last().unwrap().clone();
-  if *in_arg_name == *TABLE {
+pub extern "C" fn math_round(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
+  if in_arg_name == *TABLE {
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
@@ -91,10 +99,12 @@ pub extern "C" fn math_round(arguments: &Vec<(u64, ValueIterator)>, out: &mut Va
 }
 
 #[no_mangle]
-pub extern "C" fn math_floor(arguments: &Vec<(u64, ValueIterator)>, out: &mut ValueIterator) { 
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments.last().unwrap().clone();
-  if *in_arg_name == *TABLE {
+pub extern "C" fn math_floor(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
+  if in_arg_name == *TABLE {
     out.resize(vi.rows(),vi.columns());
     let mut flag: bool = false;
     for ((value, changed), out_ix) in vi.clone().zip(out.linear_index_iterator()) {
