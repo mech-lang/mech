@@ -266,7 +266,6 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   loop {
     let in_value = input.next();
     let out_ix = out.next_index();
-    println!("{:?} {:?}", in_value, out_ix);
     match (in_value, out_ix) {
       (Some((value,_)),Some(out_ix)) => out.set_unchecked_linear(out_ix, value),
       _ => {
@@ -316,19 +315,19 @@ pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<
 
 #[no_mangle]
 pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
-  let mut out = &mut arguments.last().unwrap().borrow_mut();
+  let mut out = &mut arguments.last().unwrap().borrow_mut().iterator;
 
   // Do all of the arguments have a compatible width?
   if arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.columns()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
-  
+
   // Get the size of the output table we will create, and resize the out table
   let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.columns()).max().unwrap();
   let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.rows()).sum();
-  out.iterator.resize(out_rows, out_columns);
-
+  out.resize(out_rows, out_columns);
+  out.init_iterators();
   // Iterate through the input table and insert values into output table
   let mut row = 0;
   for vi_rc in arguments.iter().take(arguments.len()-1) {
@@ -338,7 +337,7 @@ pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Ar
       let mut out_row_iter = IndexRepeater::new(IndexIterator::Range(row+1..=row+height),out_columns,1);
       let mut out_column_iter= IndexRepeater::new(IndexIterator::Range(1..=out_columns),1, height as u64);
       for (((value, _), out_row_ix), out_column_ix) in vi.zip(out_row_iter).zip(out_column_iter) {
-        out.iterator.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
+        out.set_unchecked(out_row_ix.unwrap(), out_column_ix.unwrap(), value);
       }
       row += height;
     }
@@ -375,7 +374,6 @@ macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     #[no_mangle]
     pub extern "C" fn $func_name(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
-      println!("XOR");
       // TODO test argument count is 3
       let mut lhs = &mut arguments[0].borrow_mut().iterator;
       let mut rhs = &mut arguments[1].borrow_mut().iterator;

@@ -9,7 +9,7 @@ use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 use operations::{MechFunction};
 use index::{ValueIterator};
-use indexmap::IndexSet;
+use indexmap::{IndexSet, IndexMap};
 
 
 // ## Runtime
@@ -32,11 +32,11 @@ use indexmap::IndexSet;
 pub struct Runtime {
   pub recursion_limit: u64,
   pub database: Arc<RefCell<Database>>,
-  pub blocks: HashMap<u64, Block>,
+  pub blocks: IndexMap<u64, Block>,
   pub ready_blocks: IndexSet<u64>,
   pub errors: HashSet<Error>,
-  pub output_to_block:  HashMap<Register,HashSet<u64>>,
-  pub input_to_block:  HashMap<Register,HashSet<u64>>,
+  pub output_to_block:  HashMap<Register,IndexSet<u64>>,
+  pub input_to_block:  HashMap<Register,IndexSet<u64>>,
   pub changed_this_round: IndexSet<Register>,
   pub aggregate_changed_this_round: IndexSet<Register>,
   pub aggregate_tables_changed_this_round: IndexSet<TableId>,
@@ -54,7 +54,7 @@ impl Runtime {
     Runtime {
       recursion_limit,
       database,
-      blocks: HashMap::new(),
+      blocks: IndexMap::new(),
       errors: HashSet::new(),
       ready_blocks: IndexSet::new(),
       output_to_block: HashMap::new(),
@@ -118,7 +118,7 @@ impl Runtime {
         match self.output_to_block.get(&register) {
           Some(producing_block_ids) => {
             for block_id in producing_block_ids.iter() {
-              let block = &mut self.blocks.get_mut(&block_id).unwrap();
+              let block = &mut self.blocks.get_mut(block_id).unwrap();
               if block.state == BlockState::New {
                 block.output_dependencies_ready.insert(register);
                 if block.is_ready() {
@@ -137,7 +137,7 @@ impl Runtime {
         match self.input_to_block.get(&register) {
           Some(listening_block_ids) => {
             for block_id in listening_block_ids.iter() {
-              let block = &mut self.blocks.get_mut(&block_id).unwrap();
+              let block = &mut self.blocks.get_mut(block_id).unwrap();
               block.ready.insert(register);
               if block.is_ready() {
                 self.ready_blocks.insert(block.id);
@@ -168,7 +168,7 @@ impl Runtime {
         // this means they aren't doing any work and we're at a set point, so we're done.
         } else if !store.changed && !changed_last_round {
           for block_id in self.ready_blocks.iter() {
-            let mut block = &mut self.blocks.get_mut(&block_id).unwrap();
+            let mut block = &mut self.blocks.get_mut(block_id).unwrap();
             block.state = BlockState::Done;
           }
           break;
@@ -191,7 +191,7 @@ impl Runtime {
     }
     for table_id in self.aggregate_tables_changed_this_round.drain(..) {
       let mut db = self.database.borrow_mut();
-      let table = db.tables.get_mut(table_id.unwrap()).unwrap();
+      let mut table = db.tables.get_mut(table_id.unwrap()).unwrap().borrow_mut();
       table.reset_changed();
     }
     Ok(())
@@ -222,13 +222,13 @@ impl Runtime {
 
     // Add the block id as a listener for a particular register
     for input_register in block.input.iter() {
-      let listeners = self.input_to_block.entry(*input_register).or_insert(HashSet::new());
+      let listeners = self.input_to_block.entry(*input_register).or_insert(IndexSet::new());
       listeners.insert(block.id);
     }
 
     // Keep track of which blocks produce which tables
     for output_register in block.output.iter() {
-      let producers = self.output_to_block.entry(*output_register).or_insert(HashSet::new());
+      let producers = self.output_to_block.entry(*output_register).or_insert(IndexSet::new());
       producers.insert(block.id);
     }
 
@@ -392,7 +392,7 @@ impl Runtime {
         match self.input_to_block.get(&alternative_output_register) {
           Some(listening_blocks) => {
             for listening_block_id in listening_blocks.iter() {
-              match self.blocks.get_mut(&listening_block_id) {
+              match self.blocks.get_mut(listening_block_id) {
                 Some(listening_block) => {
                   listening_block.ready.insert(*alternative_output_register);
                   listening_block.ready.insert(*block_output_register);
@@ -410,7 +410,7 @@ impl Runtime {
 
     // Add an alias for the input to block
     for (register, block_id) in new_input_register_mapping.iter() {
-      let listeners = self.input_to_block.entry(*register).or_insert(HashSet::new());
+      let listeners = self.input_to_block.entry(*register).or_insert(IndexSet::new());
       listeners.insert(*block_id);
     }
 

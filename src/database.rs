@@ -4,6 +4,7 @@ use block::{Register};
 use errors::{Error, ErrorType};
 use ::hash_string;
 use std::sync::Arc;
+use std::cell::RefCell;
 use hashbrown::{HashSet, HashMap};
 use rust_core::fmt;
 
@@ -44,7 +45,7 @@ impl Store {
 // The database processes transactions, which are arrays of changes that ar applies to the tables
 // in the database.
 pub struct Database {
-  pub tables: HashMap<u64, Table>,
+  pub tables: HashMap<u64, Arc<RefCell<Table>>>,
   pub changed_this_round: HashSet<Register>,
   pub store: Arc<Store>,
 }
@@ -72,10 +73,10 @@ impl Database {
             None => {
               let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
               //self.changed_this_round.insert(register);
-              self.tables.insert(*table_id, Table::new(
+              self.tables.insert(*table_id, Arc::new(RefCell::new(Table::new(
                 *table_id, 
                 *rows, 
-                *columns, self.store.clone()));
+                *columns, self.store.clone()))));
             }
           }
         },
@@ -96,7 +97,7 @@ impl Database {
             Some(table) => {
               for (row, column, value) in values {
                 // Set the value
-                table.set(row, column, *value);
+                table.borrow_mut().set(row, column, *value);
                 // Mark the table as updated
                 let register = Register{table_id: TableId::Global(*table_id), row: *row, column: *column};
                 self.changed_this_round.insert(register);
@@ -130,7 +131,7 @@ impl fmt::Debug for Database {
     write!(f,"{:?}", self.store).ok();
     write!(f, "tables: \n")?;
     for (_id,table) in self.tables.iter() {
-      write!(f, "{:?}\n", table)?;   
+      write!(f, "{:?}\n", table.borrow())?;   
     }
     Ok(())
   }

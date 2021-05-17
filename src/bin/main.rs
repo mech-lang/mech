@@ -9,33 +9,6 @@ use std::cell::RefCell;
 extern crate seahash;
 
 fn main() {
-  let store = Arc::new(Store::new(10000));
-  let database = Arc::new(RefCell::new(Database::new(10000)));
-  let mut table = Table::new(1234,2,3,store.clone());
-  table.set(&TableIndex::Index(1),&TableIndex::Index(1),Value::from_u64(1));
-  table.set(&TableIndex::Index(1),&TableIndex::Index(2),Value::from_u64(2));
-  table.set(&TableIndex::Index(1),&TableIndex::Index(3),Value::from_u64(3));
-  table.set(&TableIndex::Index(2),&TableIndex::Index(1),Value::from_u64(4));
-  table.set(&TableIndex::Index(2),&TableIndex::Index(2),Value::from_u64(5));
-  table.set(&TableIndex::Index(2),&TableIndex::Index(3),Value::from_u64(6));
-
-
-  let store = Arc::new(Store::new(10000));
-  let mut table2 = Table::new(5678,1,2,store.clone());
-  table2.set(&TableIndex::Index(1),&TableIndex::Index(1),Value::from_u64(1));
-  table2.set(&TableIndex::Index(1),&TableIndex::Index(2),Value::from_u64(3));
-
-
-  let table_id = TableId::Local(0);
-  database.borrow_mut().tables.insert(1234, table);
-  database.borrow_mut().tables.insert(5678, table2);
-  let mut table_ptr = database.borrow_mut().tables.get_mut(&1234).unwrap() as *mut Table;
-  let mut table_ptr2 = database.borrow_mut().tables.get_mut(&5678).unwrap() as *mut Table;
-
-  let row_index = TableIndex::All;
-  let column_index = TableIndex::All;
-  let row_iter = IndexIterator::Range(1..=2);
-  let column_iter = IndexIterator::Table(TableIterator::new(table_ptr2));
 
 
   /*let row_iter = unsafe { match row_index {

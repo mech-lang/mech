@@ -13,7 +13,7 @@ use std::cell::RefCell;
 #[derive(Clone)]
 pub struct  ValueIterator {
   pub scope: TableId,
-  pub table: *mut Table,
+  pub table: Arc<RefCell<Table>>,
   pub row_index: TableIndex,
   pub column_index: TableIndex,
   pub raw_row_iter: IndexIterator,     // I need these two fields for the purpose of resizing the iterator...
@@ -31,42 +31,43 @@ impl ValueIterator {
              row_index: TableIndex, 
              column_index: TableIndex, 
              database: &Arc<RefCell<Database>>, 
-             block_tables: &mut HashMap<u64, Table>,
+             block_tables: &mut HashMap<u64, Arc<RefCell<Table>>>,
              block_store: &mut Arc<Store>) -> ValueIterator {
     let mut db = database.borrow_mut();
 
     // Get the table
-    let mut table = match table_id {
-      TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+    let mut table_rc = match table_id {
+      TableId::Global(id) => db.tables.get_mut(&id).unwrap().clone(),
       TableId::Local(id) => match block_tables.get_mut(&id) {
-        Some(table) => table as *mut Table,
+        Some(table) => table.clone(),
         None => {
           // Does this table have an alias?
           let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
           let table_id = store.table_alias_to_id.get(&id).unwrap();
-          block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+          block_tables.get_mut(table_id.unwrap()).unwrap().clone()
         }
       }
     };
 
+    let table = table_rc.borrow();
     let row_iter = unsafe { match row_index {
       TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(ix))),
       TableIndex::All => {
-        match (*table).rows {
+        match table.rows {
           0 => IndexIterator::None,
           r => IndexIterator::Range(1..=r),
         }
       },
       TableIndex::Table(table_id) => {
         let row_table = match table_id {
-          TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Global(id) => db.tables.get_mut(&id).unwrap().clone(),
           TableId::Local(id) =>  match block_tables.get_mut(&id) {
-            Some(table) => table as *mut Table,
+            Some(table) => table.clone(),
             None => {
               // Does this table have an alias?
               let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
               let table_id = store.table_alias_to_id.get(&id).unwrap();
-              block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+              block_tables.get_mut(table_id.unwrap()).unwrap().clone()
             }
           }
         };
@@ -89,14 +90,14 @@ impl ValueIterator {
       }
       TableIndex::Table(table_id) => {
         let col_table = match table_id {
-          TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
+          TableId::Global(id) => db.tables.get_mut(&id).unwrap().clone(),
           TableId::Local(id) =>  match block_tables.get_mut(&id) {
-            Some(table) => table as *mut Table,
+            Some(table) => table.clone(),
             None => {
               // Does this table have an alias?
               let store = unsafe{&mut *Arc::get_mut_unchecked(block_store)};
               let table_id = store.table_alias_to_id.get(&id).unwrap();
-              block_tables.get_mut(table_id.unwrap()).unwrap() as *mut Table
+              block_tables.get_mut(table_id.unwrap()).unwrap().clone()
             }
           }
         };
@@ -113,7 +114,7 @@ impl ValueIterator {
     let column_len = if column_iter.len() == 0 {1} else {column_iter.len()};
     ValueIterator{
       scope: table_id,
-      table,
+      table: table_rc.clone(),
       row_index: row_index,
       column_index: column_index,
       raw_row_iter: row_iter.clone(),
@@ -129,26 +130,24 @@ impl ValueIterator {
 
   pub fn init_iterators(&mut self) {
 
-    unsafe {
-      match self.row_index {
-        TableIndex::All => {
-          match (*self.table).rows {
-            0 => self.raw_row_iter = IndexIterator::None,
-            r => self.raw_row_iter = IndexIterator::Range(1..=r),
-          }
+    match self.row_index {
+      TableIndex::All => {
+        match self.table.borrow().rows {
+          0 => self.raw_row_iter = IndexIterator::None,
+          r => self.raw_row_iter = IndexIterator::Range(1..=r),
         }
-        _ => (),
-      };
-      match self.column_index {
-        TableIndex::All => {
-          match (*self.table).columns {
-            0 => self.raw_column_iter = IndexIterator::None,
-            r => self.raw_column_iter = IndexIterator::Range(1..=r),
-          }
+      }
+      _ => (),
+    };
+    match self.column_index {
+      TableIndex::All => {
+        match self.table.borrow().columns {
+          0 => self.raw_column_iter = IndexIterator::None,
+          r => self.raw_column_iter = IndexIterator::Range(1..=r),
         }
-        _ => (),
-      };
-    }
+      }
+      _ => (),
+    };
 
     if self.elements() != self.computed_indices.len() {
       let row_len = self.raw_row_iter.len();
@@ -187,7 +186,7 @@ impl ValueIterator {
   } 
 
   pub fn linear_index_iterator(&self) -> LinearIndexIterator {
-    LinearIndexIterator::new(self.table,self.row_iter.clone(),self.column_iter.clone())
+    LinearIndexIterator::new(self.table.clone(),self.row_iter.clone(),self.column_iter.clone())
   }
 
   pub fn index_iterator(&self) -> std::iter::Zip<IndexRepeater, IndexRepeater> {
@@ -199,7 +198,7 @@ impl ValueIterator {
   }
 
   pub fn get_column_alias(&self, index: usize) -> Option<TableIndex> {
-    unsafe{(*self.table).get_column_alias(index)}
+    self.table.borrow().get_column_alias(index)
   }
   
   pub fn inf_cycle(&mut self) {
@@ -213,7 +212,7 @@ impl ValueIterator {
   }
 
   pub fn rows(&self) -> usize {
-    if unsafe{(*self.table).rows} == 0 {
+    if self.table.borrow().rows == 0 {
       0
     } else {
       self.raw_row_iter.len()
@@ -221,11 +220,11 @@ impl ValueIterator {
   }
 
   pub fn table_rows(&self) -> usize {
-    unsafe{(*self.table).rows}
+    self.table.borrow().rows
   }
   
   pub fn table_columns(&self) -> usize {
-    unsafe{(*self.table).columns}
+    self.table.borrow().columns
   }  
 
   pub fn columns(&self) -> usize {
@@ -236,67 +235,57 @@ impl ValueIterator {
   }
 
   pub fn index(&self, row: &TableIndex, column: &TableIndex) -> Option<usize>  {
-    unsafe{(*self.table).index(row,column)}
+    self.table.borrow().index(row,column)
   }
 
   pub fn is_scalar(&self) -> bool {
     self.rows() == 1 && self.columns() == 1
   }
 
-  pub fn get_string(&self, row: &TableIndex, column: &TableIndex) -> Option<(&String,bool)> {
-    unsafe{(*self.table).get_string(row,column)}
-  }
-
-  pub fn get_number_literal(&self, row: &TableIndex, column: &TableIndex) -> Option<(&NumberLiteral,bool)> {
-    unsafe{(*self.table).get_number_literal(row,column)}
-  }
-
   pub fn get_quantity(&self, row: &TableIndex, column: &TableIndex) -> Option<(Quantity,bool)> {
-    unsafe{(*self.table).get_quantity(row,column)}
+    self.table.borrow().get_quantity(row,column).clone()
   } 
 
   pub fn get_u64(&self, row: &TableIndex, column: &TableIndex) -> Option<(u64,bool)> {
-    unsafe{(*self.table).get_u64(row,column)}
+    self.table.borrow().get_u64(row,column).clone()
   } 
 
   pub fn get_f32(&self, row: &TableIndex, column: &TableIndex) -> Option<f32> {
-    unsafe{(*self.table).get_f32(row,column)}
+    self.table.borrow().get_f32(row,column).clone()
   } 
 
   pub fn get(&self, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
-    unsafe{(*self.table).get(row,column)}
+    self.table.borrow().get(row,column).clone()
   }
 
   pub fn get_unchecked(&self, row: usize, column: usize) -> (Value, bool) {
-    unsafe{(*self.table).get_unchecked(row,column)}
+    self.table.borrow().get_unchecked(row,column).clone()
   }
 
   pub fn get_unchecked_linear(&self, index: usize) -> (Value, bool) {
-    unsafe{(*self.table).get_unchecked_linear(index)}
+    self.table.borrow().get_unchecked_linear(index).clone()
   }
 
   pub fn get_linear(&self, index: &TableIndex) -> Option<(Value, bool)> {
-    unsafe{(*self.table).get_linear(index)}
+    self.table.borrow().get_linear(index).clone()
   }
 
   pub fn set(&self, row: &TableIndex, column: &TableIndex, value: Value) {
-    unsafe{(*self.table).set(row, column, value)};
+    self.table.borrow_mut().set(row, column, value);
   }
 
   pub fn set_string(&self, row: &TableIndex, column: &TableIndex, value: Value, string: String) {
-    unsafe{
-      (*self.table).set(row, column, value);
-      (*self.table).insert_string(string);
-    };
-
+    let mut table = self.table.borrow_mut();
+    table.set(row, column, value);
+    table.insert_string(string);
   }
 
   pub fn set_unchecked(&self, row: usize, column: usize, value: Value) {
-    unsafe{(*self.table).set_unchecked(row, column, value)};
+    self.table.borrow_mut().set_unchecked(row, column, value);
   }
 
   pub fn set_unchecked_linear(&self, index: usize, value: Value) {
-    unsafe{(*self.table).set_unchecked_linear(index, value)};
+    self.table.borrow_mut().set_unchecked_linear(index, value);
   }
 
   pub fn next_address(&mut self) -> Option<(usize, usize)> {
@@ -333,41 +322,41 @@ impl ValueIterator {
   }
 
   pub fn resize(&mut self, rows: usize, columns: usize)  {
-    unsafe {
 
-      let columns = if (*self.table).columns > columns {
-        (*self.table).columns
-      } else {
-        columns
-      };
+    let mut table = self.table.borrow_mut();
 
-      (*self.table).resize(rows, columns);
+    let columns = if table.columns > columns {
+      table.columns
+    } else {
+      columns
+    };
 
-      match self.row_index {
-        TableIndex::All => {
-          match (*self.table).rows {
-            0 => self.raw_row_iter=IndexIterator::None,
-            r => self.raw_row_iter=IndexIterator::Range(1..=r),
-          }
-        },
-        _ => (),        
-      };
+    table.resize(rows, columns);
 
-      match self.column_index {
-        TableIndex::All => {
-          match (*self.table).columns {
-            0 => self.raw_column_iter = IndexIterator::None,
-            c => self.raw_column_iter = IndexIterator::Range(1..=c),
-          }
-        },  
-        _ => (),      
-      };
+    match self.row_index {
+      TableIndex::All => {
+        match table.rows {
+          0 => self.raw_row_iter=IndexIterator::None,
+          r => self.raw_row_iter=IndexIterator::Range(1..=r),
+        }
+      },
+      _ => (),        
+    };
 
-      let row_len = self.raw_row_iter.len();
-      let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
-      self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
-      self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
-    }
+    match self.column_index {
+      TableIndex::All => {
+        match table.columns {
+          0 => self.raw_column_iter = IndexIterator::None,
+          c => self.raw_column_iter = IndexIterator::Range(1..=c),
+        }
+      },  
+      _ => (),      
+    };
+
+    let row_len = self.raw_row_iter.len();
+    let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
+    self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
+    self.column_iter = IndexRepeater::new(self.raw_column_iter.clone(),1,row_len as u64);
   }
 
 }
@@ -406,7 +395,7 @@ impl Iterator for ValueIterator {
 impl fmt::Debug for ValueIterator {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "table:\n {:?}\n", unsafe{&(*self.table)})?;
+    write!(f, "table:\n {:?}\n", self.table.borrow())?;
     write!(f, "out size: {:?}x{:?}\n", self.rows(), self.columns())?;
     write!(f, "row index: {:?}\n", self.row_index)?;
     write!(f, "col index: {:?}\n", self.column_index)?;
@@ -419,13 +408,13 @@ impl fmt::Debug for ValueIterator {
 
 #[derive(Debug, Clone)]
 pub struct LinearIndexIterator {
-  pub table: *mut Table,
+  pub table: Arc<RefCell<Table>>,
   pub row_iter: IndexRepeater,   
   pub column_iter: IndexRepeater,  
 }
 
 impl LinearIndexIterator {
-  pub fn new(table: *mut Table, row_iter: IndexRepeater, column_iter: IndexRepeater) -> LinearIndexIterator {
+  pub fn new(table: Arc<RefCell<Table>>, row_iter: IndexRepeater, column_iter: IndexRepeater) -> LinearIndexIterator {
     LinearIndexIterator {
       table,
       row_iter,
@@ -439,7 +428,7 @@ impl Iterator for LinearIndexIterator {
   fn next(&mut self) -> Option<usize> {
     match (self.row_iter.next(), self.column_iter.next()) {
       (Some(rix), Some(cix)) => {
-        let ix = unsafe{ (*self.table).index_unchecked(rix.unwrap(),cix.unwrap()) } + 1;
+        let ix = self.table.borrow().index_unchecked(rix.unwrap(),cix.unwrap()) + 1;
         Some(ix)
       },     
       (Some(rix), None) => {
@@ -510,13 +499,13 @@ impl Iterator for IndexRepeater {
 
 #[derive(Debug, Clone)]
 pub struct TableIterator {
-  table: *mut Table,
+  table: Arc<RefCell<Table>>,
   current: usize,
 }
 
 impl TableIterator {
 
-  pub fn new(table: *mut Table) -> TableIterator {
+  pub fn new(table: Arc<RefCell<Table>>) -> TableIterator {
     TableIterator {
       table,
       current: 0,
@@ -525,13 +514,12 @@ impl TableIterator {
 
   pub fn len(&self) -> usize {
     let mut len = 0;
-    unsafe{
-      let max = (*self.table).data.len();
-      for ix in 1..=max {
-        let (val, _) = (*self.table).get_unchecked_linear(ix);
-        if val.as_bool() == Some(true) || val.is_number() {
-          len += 1;
-        }
+    let table = self.table.borrow();
+    let max = table.data.len();
+    for ix in 1..=max {
+      let (val, _) = table.get_unchecked_linear(ix);
+      if val.as_bool() == Some(true) || val.is_number() {
+        len += 1;
       }
     }
     len
@@ -543,29 +531,28 @@ impl Iterator for TableIterator {
   type Item = TableIndex;
   fn next(&mut self) -> Option<TableIndex> {
     loop {
-      unsafe{
-        if self.current < (*self.table).data.len() {
-          let value = (*self.table).data[self.current];
-          self.current += 1;
-          match value.as_u64() {
-            Some(v) => {
-              return Some(TableIndex::Index(v as usize));
+      let table = self.table.borrow();
+      if self.current < table.data.len() {
+        let value = table.data[self.current];
+        self.current += 1;
+        match value.as_u64() {
+          Some(v) => {
+            return Some(TableIndex::Index(v as usize));
+          },
+          None => match value.as_bool() {
+            Some(true) => {
+              return Some(TableIndex::Index(self.current));
             },
-            None => match value.as_bool() {
-              Some(true) => {
-                return Some(TableIndex::Index(self.current));
-              },
-              Some(false) => {
-                continue;
-              },
-              _x => {
-                return Some(TableIndex::None); // TODO This should be an error
-              }
+            Some(false) => {
+              continue;
+            },
+            _x => {
+              return Some(TableIndex::None); // TODO This should be an error
             }
           }
-        } else {
-          return None;
         }
+      } else {
+        return None;
       }
     }
   }

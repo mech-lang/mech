@@ -41,7 +41,7 @@ pub struct Block {
   pub output_dependencies: HashSet<Register>,
   pub output_dependencies_ready: HashSet<Register>,
   pub register_aliases: HashMap<Register, HashSet<Register>>,
-  pub tables: HashMap<u64, Table>,
+  pub tables: HashMap<u64, Arc<RefCell<Table>>>,
   pub store: Arc<Store>,
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
@@ -113,7 +113,7 @@ impl Block {
             TableId::Local(id) => {
               let mut reference_table = Table::new(id, 1, 1, self.store.clone());
               reference_table.set_unchecked(1,1,reference);
-              self.tables.insert(id, reference_table);
+              self.tables.insert(id, Arc::new(RefCell::new(reference_table)));
               self.changes.push(
                 Change::NewTable{
                   table_id: reference.as_reference().unwrap(),
@@ -173,7 +173,7 @@ impl Block {
               self.output.insert(register_all);
             }
             TableId::Local(id) => {
-              self.tables.insert(id, Table::new(id, rows, columns, self.store.clone()));
+              self.tables.insert(id, Arc::new(RefCell::new(Table::new(id, rows, columns, self.store.clone()))));
             }
           }
         }
@@ -226,7 +226,7 @@ impl Block {
           };
           match table_id {
             TableId::Local(id) => {
-              let table = self.tables.get_mut(&id).unwrap();
+              let mut table = self.tables.get_mut(&id).unwrap().borrow_mut();
               table.set(&TableIndex::Index(1), &TableIndex::Index(1), q);
             }
             TableId::Global(id) => {
@@ -247,7 +247,7 @@ impl Block {
         }
         Transformation::Whenever{table_id, registers, ..} => {
           let whenever_ix_table_id = hash_string("~");
-          self.tables.insert(whenever_ix_table_id, Table::new(whenever_ix_table_id, 0, 1, self.store.clone()));
+          self.tables.insert(whenever_ix_table_id, Arc::new(RefCell::new(Table::new(whenever_ix_table_id, 0, 1, self.store.clone()))));
           match table_id {
             TableId::Global(_id) => {
               for register in registers {
@@ -326,8 +326,9 @@ impl Block {
           // Resolve whenever table subscript so we can iterate through the values
           let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
           // Get the whenever table from the local store
+        {
           let whenever_ix_table_id = hash_string("~");
-          let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap();
+          let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap().borrow_mut();
           // Check to see if the whenever table needs to be resized
           let before_rows = whenever_table.rows;
           if vi.rows() > whenever_table.rows {
@@ -361,6 +362,7 @@ impl Block {
           if flag == false {
             break 'step_loop;
           }
+        }
           
           match table_id {
             TableId::Global(_id) => {
@@ -370,7 +372,7 @@ impl Block {
             }
             TableId::Local(id) => {
               let mut flag = false;
-              let table = self.tables.get_mut(&id).unwrap() as *mut Table;
+              let table = self.tables.get_mut(&id).unwrap().borrow();
               unsafe {
                 for i in 1..=(*table).rows {
                   for j in 1..=(*table).columns {
@@ -476,8 +478,8 @@ impl Block {
                     split_table.set(&TableIndex::Index(1),&column, value);
                   }
                   out.iterator.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
-                  self.tables.insert(split_table_id, split_table.clone());
-                  db.tables.insert(split_table_id, split_table);
+                  self.tables.insert(split_table_id, Arc::new(RefCell::new(split_table.clone())));
+                  db.tables.insert(split_table_id, Arc::new(RefCell::new(split_table)));
                 }
               } else {
                 let error = Error { 
@@ -583,7 +585,7 @@ impl fmt::Debug for Block {
     write!(f, "├─────────────────────────────────────────────┤\n")?;
 
     for (_, table) in self.tables.iter() {
-      write!(f, "{:?}\n", table)?;
+      write!(f, "{:?}\n", table.borrow())?;
     }
 
     Ok(())

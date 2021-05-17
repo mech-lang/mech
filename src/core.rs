@@ -128,7 +128,7 @@ impl Core {
   pub fn get_cell_in_table(&mut self, table: u64, row: &TableIndex, column: &TableIndex) -> Option<(Value,bool)> {
     match self.database.borrow().tables.get(&table) {
       Some(table_ref) => {
-        table_ref.get(row, column)
+        table_ref.borrow().get(row, column)
       },
       None => None,
     }
@@ -144,7 +144,7 @@ impl Core {
 
   pub fn get_table(&self, table_id: u64) -> Option<Table> {
     match self.runtime.database.borrow().tables.get(&table_id) {
-      Some(table) => Some(table.clone()),
+      Some(table) => Some(table.borrow().clone()),
       None => None,
     }
   }
@@ -156,7 +156,7 @@ impl Core {
 
   pub fn clear_table(&self, table_id: u64) {
     match self.runtime.database.borrow_mut().tables.get_mut(&table_id) {
-      Some(table) => table.clear(),
+      Some(table) => table.borrow_mut().clear(),
       None => (),
     };
   }
