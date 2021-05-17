@@ -449,6 +449,8 @@ impl Block {
             let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
             args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
           }
+
+          args.iter().for_each(|mut arg| arg.borrow_mut().iterator.init_iterators());
           
           match functions.get(name) {
             Some(Some(mech_fn)) => {

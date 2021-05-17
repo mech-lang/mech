@@ -128,8 +128,6 @@ impl ValueIterator {
   }
 
   pub fn init_iterators(&mut self) {
-    let before_rows = self.rows();
-    let before_columns = self.columns();
 
     unsafe {
       match self.row_index {
@@ -151,10 +149,8 @@ impl ValueIterator {
         _ => (),
       };
     }
-    let after_rows = self.rows();
-    let after_columns = self.columns();
 
-    if before_rows != after_rows || before_columns != after_columns {
+    if self.elements() != self.computed_indices.len() {
       let row_len = self.raw_row_iter.len();
       let column_len = if self.raw_column_iter.len() == 0 {1} else {self.raw_column_iter.len()};
       self.row_iter = IndexRepeater::new(self.raw_row_iter.clone(),column_len,1);
@@ -380,11 +376,8 @@ impl Iterator for ValueIterator {
   type Item = (Value, bool);
   fn next(&mut self) -> Option<(Value, bool)> {
     if self.computed_indices.len() > 0 {
-      println!("{:?}", self.computed_indices);
-      println!("{:?}", self.ix);
       if self.ix < self.computed_indices.len() {
         let computed_index = self.computed_indices[self.ix];
-        println!("{:?}", computed_index);
         self.ix += 1;
         Some(self.get_unchecked_linear(computed_index))
       } else if self.inf_cycle {

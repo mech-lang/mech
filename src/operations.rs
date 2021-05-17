@@ -37,7 +37,6 @@ pub extern "C" fn set_all(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   let in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
   let mut vi = in_arg.iterator.clone();
-  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -90,7 +89,6 @@ pub extern "C" fn set_any(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   let in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
   let mut vi = in_arg.iterator.clone();
-  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -143,7 +141,6 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   let mut in_arg = &mut arguments[0].borrow_mut();
   let in_arg_name = in_arg.name;
   let mut vi = in_arg.iterator.clone();
-  vi.init_iterators();
   let mut out = arguments[1].borrow().iterator.clone();
 
   let rows = vi.rows();
@@ -202,7 +199,6 @@ pub extern "C" fn stats_sum(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
 pub extern "C" fn table_append__row(arguments: &mut Vec<Rc<RefCell<Argument>>>) {
   //TODO There needs to be some checking of dimensions here
   let mut vi = &mut arguments[0].borrow_mut().iterator.clone();
-  vi.init_iterators();
   let mut out = &mut arguments[1].borrow_mut().iterator.clone();
   let out_rows = out.rows();
   let out_columns = if out.columns() == 0 {vi.columns()} else {out.columns()};
@@ -235,46 +231,44 @@ pub extern "C" fn table_append__row(arguments: &mut Vec<Rc<RefCell<Argument>>>) 
 #[no_mangle]
 pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   let mut input = &mut arguments[0].borrow_mut().iterator;
-  let mut out = &mut arguments[1].borrow_mut();
+  let mut out = &mut arguments[1].borrow_mut().iterator;
 
-  if out.iterator.table_rows() == 0 || out.iterator.table_columns() == 0 {
-    out.iterator.resize(input.rows(), input.columns());
+  if out.table_rows() == 0 || out.table_columns() == 0 {
+    out.resize(input.rows(), input.columns());
+  }
+
+  if out.computed_indices.len() == 0 {
+    out.compute_indices();
   }
 
   if input.is_scalar() {
     input.inf_cycle();
   } else {
     // If we're indexing on a table, then match the input iter with the output iter
-    match (out.iterator.row_index, input.row_index) {
+    match (out.row_index, input.row_index) {
       (TableIndex::Table(_), TableIndex::All) => {
-        input.row_index = out.iterator.row_index.clone();
-        input.raw_row_iter = out.iterator.raw_row_iter.clone();
-        input.row_iter = out.iterator.row_iter.clone();
-        input.init_iterators();
+        input.row_index = out.row_index.clone();
+        input.raw_row_iter = out.raw_row_iter.clone();
+        input.row_iter = out.row_iter.clone();
       }
       _ => (),
     }
-    match (out.iterator.column_index, input.column_index) {
+    match (out.column_index, input.column_index) {
       (TableIndex::Table(_), TableIndex::All) => {
-        input.column_index = out.iterator.column_index.clone();
-        input.raw_column_iter = out.iterator.raw_column_iter.clone();
-        input.column_iter = out.iterator.column_iter.clone();
-        input.init_iterators();
+        input.column_index = out.column_index.clone();
+        input.raw_column_iter = out.raw_column_iter.clone();
+        input.column_iter = out.column_iter.clone();
       }
       _ => (),
     }
-  }
-
-  let mut out_iterator = out.iterator.linear_index_iterator();
-  if out.iterator.computed_indices.len() == 0 {
-    out.iterator.compute_indices();
   }
 
   loop {
     let in_value = input.next();
-    let out_ix = out.iterator.next_index();
+    let out_ix = out.next_index();
+    println!("{:?} {:?}", in_value, out_ix);
     match (in_value, out_ix) {
-      (Some((value,_)),Some(out_ix)) => out.iterator.set_unchecked_linear(out_ix, value),
+      (Some((value,_)),Some(out_ix)) => out.set_unchecked_linear(out_ix, value),
       _ => {
         input.reset();
         break
@@ -287,7 +281,6 @@ pub extern "C" fn table_set(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
 pub extern "C" fn table_copy(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   let vi = &mut arguments[0].borrow_mut().iterator.clone();
   let mut out = &mut arguments[1].borrow_mut().iterator.clone();
-  vi.init_iterators();
 
   out.resize(vi.rows(), vi.columns());
   for j in 1..=vi.columns() {
@@ -303,12 +296,8 @@ pub extern "C" fn table_horizontal__concatenate(arguments:  &mut Vec<Rc<RefCell<
   let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Get the size of the output table we will create, and resize the out table
-  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|arg| {
-    let mut vi = &mut arg.borrow_mut().iterator;
-    vi.init_iterators();
-    vi.rows()
-  }).max().unwrap();
-  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).sum();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.rows()).max().unwrap();
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.columns()).sum();
   out.iterator.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
@@ -330,18 +319,14 @@ pub extern "C" fn table_vertical__concatenate(arguments:  &mut Vec<Rc<RefCell<Ar
   let mut out = &mut arguments.last().unwrap().borrow_mut();
 
   // Do all of the arguments have a compatible width?
-  if arguments.iter().take(arguments.len()-1).map(|arg| {
-    let mut vi = &mut arg.borrow_mut().iterator;
-    vi.init_iterators();
-    vi.columns()
-  }).collect::<HashSet<usize>>().len() != 1 {
+  if arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.columns()).collect::<HashSet<usize>>().len() != 1 {
     // TODO Warn that one or more arguments is the wrong height
     return;
   }
   
   // Get the size of the output table we will create, and resize the out table
-  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.columns()).max().unwrap();
-  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|vi| vi.borrow().iterator.rows()).sum();
+  let out_columns: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.columns()).max().unwrap();
+  let out_rows: usize = arguments.iter().take(arguments.len()-1).map(|arg| arg.borrow().iterator.rows()).sum();
   out.iterator.resize(out_rows, out_columns);
 
   // Iterate through the input table and insert values into output table
@@ -390,48 +375,46 @@ macro_rules! binary_infix {
   ($func_name:ident, $op:tt) => (
     #[no_mangle]
     pub extern "C" fn $func_name(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
+      println!("XOR");
       // TODO test argument count is 3
-      let mut lhs = &mut arguments[0].borrow_mut();
-      let mut rhs = &mut arguments[1].borrow_mut();
-      let mut out = &mut arguments[2].borrow_mut();
-      if out.iterator.computed_indices.len() == 0 {
-        let (mut out_rows, mut out_columns) = 
-        // Equal dimensions
-        if lhs.iterator.rows() == rhs.iterator.rows() && lhs.iterator.columns() == rhs.iterator.columns() {
-          (lhs.iterator.rows(), lhs.iterator.columns())
-        // LHS scalar
-        } else if lhs.iterator.is_scalar() {
-          lhs.iterator.inf_cycle();
-          (rhs.iterator.rows(), rhs.iterator.columns())
-        // RHS scalar
-        } else if rhs.iterator.is_scalar() {
-          rhs.iterator.inf_cycle();
-          (lhs.iterator.rows(), lhs.iterator.columns())      
-        } else {
-          // TODO Warn of mismatch of dimensions
-          return;
-        };
-        out.iterator.resize(out_rows, out_columns);
-        out.iterator.row_iter = IndexRepeater::new(IndexIterator::Range(1..=out_rows), out_columns, 1);
-        out.iterator.column_iter = IndexRepeater::new(IndexIterator::Range(1..=out_columns), 1, out_rows as u64);
-        out.iterator.compute_indices();
-      }
+      let mut lhs = &mut arguments[0].borrow_mut().iterator;
+      let mut rhs = &mut arguments[1].borrow_mut().iterator;
+      let mut out = &mut arguments[2].borrow_mut().iterator;
+      let (mut out_rows, mut out_columns) = 
+      // Equal dimensions
+      if lhs.rows() == rhs.rows() && lhs.columns() == rhs.columns() {
+        (lhs.rows(), lhs.columns())
+      // LHS scalar
+      } else if lhs.is_scalar() {
+        lhs.inf_cycle();
+        (rhs.rows(), rhs.columns())
+      // RHS scalar
+      } else if rhs.is_scalar() {
+        rhs.inf_cycle();
+        (lhs.rows(), lhs.columns())      
+      } else {
+        // TODO Warn of mismatch of dimensions
+        return;
+      };
+      out.resize(out_rows, out_columns);
+      out.init_iterators();
       loop {
-        let lhs_value = lhs.iterator.next();
-        let rhs_value = rhs.iterator.next();
-        let out_ix = out.iterator.next_index();
+        let lhs_value = lhs.next();
+        let rhs_value = rhs.next();
+        let out_ix = out.next_index();
+        
         match (lhs_value, rhs_value) {
           (Some((lhs_value,_)), Some((rhs_value,_))) => {
             match lhs_value.$op(rhs_value) {
               Ok(result) => {
-                out.iterator.set_unchecked_linear(out_ix.unwrap(), result);
+                out.set_unchecked_linear(out_ix.unwrap(), result);
               }
               Err(_) => (), // TODO Handle error here
             }
           }
           _ => {
-            lhs.iterator.reset();
-            rhs.iterator.reset();
+            lhs.reset();
+            rhs.reset();
             break
           },
         }        
