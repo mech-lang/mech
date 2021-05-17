@@ -120,7 +120,7 @@ impl Table {
   pub fn resize(&mut self, rows: usize, columns: usize) {
     self.rows = rows;
     self.columns = columns;
-    self.data.resize(rows * columns, 0);
+    self.data.resize(rows * columns, Value::empty());
     self.changed.resize(rows * columns, false);
   }
 
