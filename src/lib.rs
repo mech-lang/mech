@@ -4,7 +4,9 @@ extern crate mech_utilities;
 extern crate lazy_static;
 use mech_core::{Transaction};
 use mech_core::{Value, ValueMethods, IndexIterator, Table, TableIndex, ValueIterator};
-use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string};
+use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, Argument};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 lazy_static! {
   static ref TABLE: u64 = hash_string("table");
@@ -13,15 +15,17 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn set_none(arguments: &Vec<(u64, ValueIterator)>) {
+pub extern "C" fn set_none(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
   // TODO test argument count is 1
-  let (in_arg_name, vi) = &arguments[0];
-  let (_, mut out) = arguments[1].clone();
+  let arg = arguments[0].borrow();
+  let in_arg_name = arg.name;
+  let vi = arg.iterator.clone();
+  let mut out = arguments.last().unwrap().borrow().iterator.clone();
 
   let rows = vi.rows();
   let cols = vi.columns();
 
-  if *in_arg_name == *ROW {
+  if in_arg_name == *ROW {
     out.resize(vi.rows(), 1);
     for i in 1..=rows {
       let mut flag: bool = true;
@@ -34,7 +38,7 @@ pub extern "C" fn set_none(arguments: &Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(i, 1, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *COLUMN {
+  } else if in_arg_name == *COLUMN {
     out.resize(1, cols);
     for (i,m) in (1..=cols).zip(vi.column_iter.clone()) {
       let mut flag: bool = true;
@@ -47,7 +51,7 @@ pub extern "C" fn set_none(arguments: &Vec<(u64, ValueIterator)>) {
       }
       out.set_unchecked(1, i, Value::from_bool(flag));
     }
-  } else if *in_arg_name == *TABLE {
+  } else if in_arg_name == *TABLE {
     out.resize(1, 1);
     let mut flag: bool = true;
     for (value, _) in vi.clone() {
