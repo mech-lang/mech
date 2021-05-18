@@ -75,6 +75,7 @@ lazy_static! {
   static ref END__ANGLE: u64 = hash_string("end-angle");
   static ref QUADRATIC: u64 = hash_string("quadratic");
   static ref CONTROL__POINT: u64 = hash_string("control-point");
+  static ref CONTROL__POINTS: u64 = hash_string("control-points");
   static ref END__POINT: u64 = hash_string("end-point");
   static ref X1: u64 = hash_string("x1");
   static ref X2: u64 = hash_string("x2");
@@ -125,6 +126,7 @@ lazy_static! {
   static ref LEFT: u64 = hash_string("left");
   static ref RIGHT: u64 = hash_string("right");
   static ref CENTER: u64 = hash_string("center");
+  static ref BEZIER: u64 = hash_string("bezier");
 }
 
 #[wasm_bindgen]
@@ -2273,6 +2275,30 @@ impl WasmCore {
                               }
                               _ => (), // Expected control-point and end-point fields
                             }
+                        // -------------------
+                        // PATH BEZIER
+                        // -------------------
+                        } else if shape == *BEZIER {
+                          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                          match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINTS)),
+                                  parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                            (Some(control__point_table_id), Some(end__point_table_id)) => {
+                              let control__point_table = self.core.get_table(control__point_table_id).unwrap();
+                              let end__point_table = self.core.get_table(end__point_table_id).unwrap();
+                              match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                      control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                      control__point_table.get_f64(&TableIndex::Index(2), &TableIndex::Alias(*X)),
+                                      control__point_table.get_f64(&TableIndex::Index(2), &TableIndex::Alias(*Y)),
+                                      end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                      end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                (Some(cx1), Some(cy1), Some(cx2), Some(cy2), Some(ex), Some(ey)) => {
+                                  context.bezier_curve_to(cx1, cy1, cx2, cy2, ex, ey);
+                                }
+                                _ => (), // Expected x and y fields
+                              }
+                            }
+                            _ => (), // Expected control-point and end-point fields
+                          }
                           // -------------------
                           // PATH ARC
                           // -------------------
