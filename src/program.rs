@@ -201,9 +201,11 @@ impl Program {
       let m: Vec<_> = fun_name.split('/').collect();
       let m = m[0];
       let underscore_name = m.replace("-","_");
-      #[cfg(unix)]
+      #[cfg(target_os = "macos")]
+      let machine_name = format!("libmech_{}.dylib", underscore_name);
+      #[cfg(target_os = "linux")]
       let machine_name = format!("libmech_{}.so", underscore_name);
-      #[cfg(windows)]
+      #[cfg(target_os = "windows")]
       let machine_name = format!("mech_{}.dll", underscore_name);
 
       match (&fun, self.machine_repository.get(m)) {
@@ -285,9 +287,11 @@ impl Program {
       match self.loaded_machines.contains(&needed_machine_id) {
         false => {
           self.loaded_machines.insert(needed_machine_id);
-          #[cfg(unix)]
+          #[cfg(target_os = "macos")]
+          let machine_name = format!("libmech_{}.dylib", m[0]);
+          #[cfg(target_os = "linux")]
           let machine_name = format!("libmech_{}.so", m[0]);
-          #[cfg(windows)]
+          #[cfg(target_os = "windows")]
           let machine_name = format!("mech_{}.dll", m[0]);
           match self.machine_repository.get(m[0]) {
             Some((ver, path)) => {
