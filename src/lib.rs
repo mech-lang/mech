@@ -8,3 +8,4 @@ extern crate lazy_static;
 //use mech_core::Value;
 
 pub mod out;
+pub mod serial;
