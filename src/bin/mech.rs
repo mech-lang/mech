@@ -400,7 +400,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (ws_outgoing, ws_incoming) = crossbeam_channel::unbounded();
     let thread_receiver = mech_client.incoming.clone();
     // Start a receive loop. Generally this will just pass messages on to the websocket client:
-    let thread = thread::Builder::new().name("Websocket Receiving Thread".to_string()).spawn(move || {
+    let thread = thread::Builder::new().name("Receiving Thread".to_string()).spawn(move || {
       // Get all responses from the thread
       'receive_loop: loop {
         match thread_receiver.recv() {
