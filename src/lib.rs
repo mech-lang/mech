@@ -24,7 +24,7 @@ pub enum WebsocketMessage {
 
 // Run loop messages are sent to the run loop from the client
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RunLoopMessage {
   Stop,
   StepBack,
@@ -42,6 +42,7 @@ pub enum RunLoopMessage {
   Code((u64,MechCode)),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
+  RemoteCore(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
