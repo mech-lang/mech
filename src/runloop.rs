@@ -14,13 +14,14 @@ use colored::*;
 use super::program::Program;
 use super::persister::Persister;
 
-use std::net::UdpSocket;
+use std::net::{SocketAddr, UdpSocket};
+use std::io;
 
 // ## Run Loop
 
 // Client messages are sent to the client from the run loop
 
-pub enum MechChannel {
+/*pub enum MechChannel {
   Crossbeam(crossbeam_channel::Sender<ClientMessage>),
   UdpSocket(UdpSocket),
 }
@@ -38,9 +39,9 @@ impl MechChannel {
       }
     }
   }
-}
+}*/
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub enum ClientMessage {
   Stop,
   Pause,
@@ -49,7 +50,7 @@ pub enum ClientMessage {
   Exit(i32),
   Time(usize),
   NewBlocks(usize),
-  //Table(Option<Table>),
+  Table(Option<Table>),
   Transaction(Transaction),
   String(String),
   //Block(Block),
@@ -106,6 +107,7 @@ impl RunLoop {
 
 pub struct ProgramRunner {
   pub name: String,
+  pub socket: io::Result<UdpSocket>,
   //pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -130,6 +132,7 @@ impl ProgramRunner {
     
     ProgramRunner {
       name: name.to_owned(),
+      socket: UdpSocket::bind("127.0.0.1:0"),
       //program,
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
@@ -258,6 +261,19 @@ impl ProgramRunner {
             //program.mech.step_forward_one();
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
+          (Ok(RunLoopMessage::RemoteCore(remote_core_address)), _) => {
+            match self.socket {
+              Ok(ref socket) => {
+                if !program.remote_cores.contains(&remote_core_address) {
+                  program.remote_cores.insert(remote_core_address.clone());
+                  let buf: [u8;6] = [1,2,3,4,5,6];
+                  let len = socket.send_to(&buf, remote_core_address).unwrap();
+                  println!("Sent {:?}", len);
+                }
+              }
+              Err(_) => (),
+            }
+          } 
           (Ok(RunLoopMessage::String((string,color))), _) => {
             let r: u8 = (color >> 16) as u8;
             let g: u8 = (color >> 8) as u8;
@@ -379,7 +395,7 @@ impl ProgramRunner {
         channel.send(PersisterMessage::Stop);
       }*/
     }).unwrap();
-    RunLoop { name: self.name, thread, outgoing: runloop_outgoing, incoming }
+    RunLoop { name: "Foo".to_string(), thread, outgoing: runloop_outgoing, incoming }
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {

@@ -33,6 +33,8 @@ use super::runloop::ClientMessage;
 
 use libloading::Library;
 use std::io::copy;
+use std::io;
+use std::net::{SocketAddr, UdpSocket};
 
 use time;
 
@@ -68,6 +70,7 @@ impl MachineRegistrar for Registrar {
 pub struct Program {
   pub name: String,
   pub mech: Core,
+  pub remote_cores: HashSet<String>,
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
@@ -94,6 +97,7 @@ impl Program {
       capacity,
       machine_repository: HashMap::new(), 
       mech,
+      remote_cores: HashSet::new(),
       cores: HashMap::new(),
       libraries: HashMap::new(),
       machines: HashMap::new(),
