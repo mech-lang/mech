@@ -609,29 +609,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
 
     let mech_client_channel = mech_client.outgoing.clone();
+    let socket_address = mech_client.socket_address.clone();
 
     let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+      // A socket bound to 3235 is the maestro. It will be the one other cores search for
       match UdpSocket::bind("127.0.0.1:3235") {
         Ok(socket) => {
-          let mut buf = [0; 255];
-          println!("RECV");
-          let (amt, src) = socket.recv_from(&mut buf).unwrap();
-          println!("{:?}", amt);
-          println!("{:?}", src);
-          println!("{:?}", buf);
-          mech_client_channel.send(RunLoopMessage::RemoteCore(src.to_string()));
+          let mut buf = [0; 16_383];
+          loop {
+            let (amt, src) = socket.recv_from(&mut buf).unwrap();
+            let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
+            match message {
+              Ok(RunLoopMessage::RemoteCore(remote_core_address)) => {
+                println!("Remote Core Connected: {}", remote_core_address);
+                mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
+              },
+              _ => (),
+            }
+          }
         }
         Err(_) => {
           let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-          let buf: [u8;6] = [1,2,3,4,5,6];
-          let len = socket.send_to(&buf, "127.0.0.1:3235").unwrap();
-          println!("Sent: {:?}", len);
-          let mut buf = [0; 255];
-          let (amt, src) = socket.recv_from(&mut buf).unwrap();
-          println!("{:?}", amt);
-          println!("{:?}", src);
-          println!("{:?}", buf);
-          mech_client_channel.send(RunLoopMessage::RemoteCore(src.to_string()));
+          let message = bincode::serialize(&RunLoopMessage::RemoteCore(socket_address)).unwrap();
+          // Send a remote core message to the maestro
+          let len = socket.send_to(&message, "127.0.0.1:3235").unwrap();
         }
       }
     }).unwrap();
