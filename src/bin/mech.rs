@@ -59,6 +59,7 @@ use std::collections::HashMap;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
+use std::net::UdpSocket;
 
 #[macro_use]
 extern crate serde_derive;
@@ -591,9 +592,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repl = matches.is_present("repl_mode");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
 
-
-  
-
     let mut code: Vec<MechCode> = read_mech_files(&mech_paths).await?;
     if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
@@ -609,6 +607,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_client = runner.run();
     
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
+
+    let mech_client_channel = mech_client.outgoing.clone();
+
+    let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+      match UdpSocket::bind("127.0.0.1:3235") {
+        Ok(socket) => {
+          let mut buf = [0; 255];
+          println!("RECV");
+          let (amt, src) = socket.recv_from(&mut buf).unwrap();
+          println!("{:?}", amt);
+          println!("{:?}", src);
+          println!("{:?}", buf);
+          mech_client_channel.send(RunLoopMessage::RemoteCore(src.to_string()));
+        }
+        Err(_) => {
+          let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+          let buf: [u8;6] = [1,2,3,4,5,6];
+          let len = socket.send_to(&buf, "127.0.0.1:3235").unwrap();
+          println!("Sent: {:?}", len);
+          let mut buf = [0; 255];
+          let (amt, src) = socket.recv_from(&mut buf).unwrap();
+          println!("{:?}", amt);
+          println!("{:?}", src);
+          println!("{:?}", buf);
+          mech_client_channel.send(RunLoopMessage::RemoteCore(src.to_string()));
+        }
+      }
+    }).unwrap();
+    
+
 
     let mut skip_receive = false;
   
