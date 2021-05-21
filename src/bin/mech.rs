@@ -207,7 +207,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
 
-    let mut runner = ProgramRunner::new("Mech REPL", 1500000);
+    let mut runner = ProgramRunner::new("Mech Server", 1500000);
     let mech_client = runner.run();
     for c in code {
       mech_client.send(RunLoopMessage::Code((0,c)));
@@ -491,7 +491,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let miniblocks = minify_blocks(&blocks);
 
     println!("{}", "[Running]".bright_green());
-    let runner = ProgramRunner::new("Mech REPL", 1000);
+    let runner = ProgramRunner::new("Mech Test", 1000);
     let mech_client = runner.run();
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
     
@@ -603,48 +603,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let miniblocks = minify_blocks(&blocks);
 
     println!("{}", "[Running]".bright_green());
-    let runner = ProgramRunner::new("Mech REPL", 1000);
+    let runner = ProgramRunner::new("Mech Runner", 1000);
     let mech_client = runner.run();
     
     mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
 
+    let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
+    let mech_client_name = mech_client.name.clone();
     let mech_client_channel = mech_client.outgoing.clone();
     let socket_address = mech_client.socket_address.clone();
-
-    let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
-      // A socket bound to 3235 is the maestro. It will be the one other cores search for
-      match UdpSocket::bind("127.0.0.1:3235") {
-        Ok(socket) => {
-          let mut buf = [0; 16_383];
-          loop {
-            let (amt, src) = socket.recv_from(&mut buf).unwrap();
-            let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
-            match message {
-              Ok(RunLoopMessage::RemoteCore(remote_core_address)) => {
-                println!("Remote Core Connected: {}", remote_core_address);
-                mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
-              },
-              _ => (),
+    match socket_address {
+      Some(socket_address) => {
+        println!("{} Core socket started at: {}", formatted_name, socket_address.clone());
+        let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+          let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
+          // A socket bound to 3235 is the maestro. It will be the one other cores search for
+          match UdpSocket::bind("127.0.0.1:3235") {
+            Ok(socket) => {
+              println!("{} Maestro socket started at: 127.0.0.1:3235", &formatted_name.clone());
+              let mut buf = [0; 16_383];
+              loop {
+                let (amt, src) = socket.recv_from(&mut buf).unwrap();
+                let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
+                match message {
+                  Ok(RunLoopMessage::RemoteCore(remote_core_address)) => {
+                    println!("Remote Core Connected: {}", remote_core_address);
+                    mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
+                  },
+                  _ => (),
+                }
+              }
+            }
+            Err(_) => {
+              let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+              let message = bincode::serialize(&RunLoopMessage::RemoteCore(socket_address.clone().to_string())).unwrap();
+              // Send a remote core message to the maestro
+              let len = socket.send_to(&message, "127.0.0.1:3235").unwrap();
             }
           }
-        }
-        Err(_) => {
-          let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-          let message = bincode::serialize(&RunLoopMessage::RemoteCore(socket_address)).unwrap();
-          // Send a remote core message to the maestro
-          let len = socket.send_to(&message, "127.0.0.1:3235").unwrap();
-        }
+        }).unwrap();
       }
-    }).unwrap();
-    
+      None => (),
+    };
 
-
-    let mut skip_receive = false;
   
     //ClientHandler::new("Mech REPL", None, None, None, cores);
-    let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let thread_receiver = mech_client.incoming.clone();
     
+    // Some state variables to control receive loop
+    let mut skip_receive = false;
     let mut to_exit = false;
     let mut exit_code = 0;
 
