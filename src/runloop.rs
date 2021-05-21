@@ -61,7 +61,7 @@ pub enum ClientMessage {
 
 pub struct RunLoop {
   pub name: String,
-  pub socket_address: String,
+  pub socket_address: Option<String>,
   thread: JoinHandle<()>,
   pub outgoing: Sender<RunLoopMessage>,
   pub incoming: Receiver<ClientMessage>,
@@ -108,7 +108,7 @@ impl RunLoop {
 
 pub struct ProgramRunner {
   pub name: String,
-  pub socket: io::Result<UdpSocket>,
+  pub socket: Option<Arc<UdpSocket>>,
   //pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -131,9 +131,14 @@ impl ProgramRunner {
       program.mech.process_transaction(&Transaction::from_change(change));
     }*/
     
+    let socket = match UdpSocket::bind("127.0.0.1:0") {
+      Ok(socket) => Some(Arc::new(socket)),
+      _ => None,
+    };
+
     ProgramRunner {
       name: name.to_owned(),
-      socket: UdpSocket::bind("127.0.0.1:0"),
+      socket,
       //program,
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
@@ -172,13 +177,42 @@ impl ProgramRunner {
     //let mut program = self.program;
     //let persistence_channel = self.persistence_channel;
 
-    let name = self.name.clone();
+    let name = format!("{}", &self.name.clone());
     let socket_address = match self.socket {
-      Ok(ref socket) => socket.local_addr().unwrap().to_string(),
-      Err(_) => "".to_string(),
+      Some(ref socket) => Some(socket.local_addr().unwrap().to_string()),
+      None => None,
     };
 
-    let thread = thread::Builder::new().name(self.name.to_owned()).spawn(move || {
+
+    match &self.socket {
+      Some(ref socket) => {
+        let socket_receiver = socket.clone();
+        // Start a socket receiving thread
+        let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+          let mut buf = [0; 16_383];
+          loop {
+            let (amt, src) = socket_receiver.recv_from(&mut buf).unwrap();
+            let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
+            match message {
+              Ok(RunLoopMessage::Ping) => {
+                println!("Got a ping from: {:?}", src);
+                let message = bincode::serialize(&RunLoopMessage::Pong).unwrap();
+                socket_receiver.send_to(&message, src);
+              }
+              Ok(RunLoopMessage::Pong) => {
+                println!("Got a pong from: {:?}", src);
+              }
+              Ok(x) => println!("Unhandled Message {:?}", x),
+              Err(error) => println!("{:?}", error),
+            }
+          }
+        }).unwrap();
+      }
+      None => (),
+    }
+
+    // Start start a channel receiving thread    
+    let thread = thread::Builder::new().name(name.clone()).spawn(move || {
 
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
@@ -269,16 +303,17 @@ impl ProgramRunner {
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::RemoteCore(remote_core_address)), _) => {
-            match self.socket {
-              Ok(ref socket) => {
+            match &self.socket {
+              Some(ref socket) => {
                 if !program.remote_cores.contains(&remote_core_address) {
+                  // We've got a new remote core. Let's ask it what it needs from us
+                  // and tell it about all the other cores in our network.
                   program.remote_cores.insert(remote_core_address.clone());
-                  let buf: [u8;6] = [1,2,3,4,5,6];
-                  let len = socket.send_to(&buf, remote_core_address).unwrap();
-                  println!("Sent {:?}", len);
+                  let message = bincode::serialize(&RunLoopMessage::Ping).unwrap();
+                  let len = socket.send_to(&message, remote_core_address).unwrap();
                 }
               }
-              Err(_) => (),
+              None => (),
             }
           } 
           (Ok(RunLoopMessage::String((string,color))), _) => {
