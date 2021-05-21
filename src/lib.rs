@@ -26,6 +26,8 @@ pub enum WebsocketMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RunLoopMessage {
+  Ping,
+  Pong,
   Stop,
   StepBack,
   StepForward,
