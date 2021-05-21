@@ -167,7 +167,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .help("Input arguments")
         .required(false)
         .multiple(true)
-        .takes_value(true))        
+        .takes_value(true))   
+      .arg(Arg::with_name("maestro")
+        .short("m")
+        .long("maestro")
+        .value_name("MAESTRO")
+        .help("Sets address of maestro core (127.0.0.1:3235)")
+        .takes_value(true))  
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
@@ -591,6 +597,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl = matches.is_present("repl_mode");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
+    let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
 
     let mut code: Vec<MechCode> = read_mech_files(&mech_paths).await?;
     if input_arguments.len() > 0 {
@@ -618,16 +625,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
-          match UdpSocket::bind("127.0.0.1:3235") {
+          match UdpSocket::bind(maestro_address.clone()) {
             Ok(socket) => {
-              println!("{} Maestro socket started at: 127.0.0.1:3235", &formatted_name.clone());
+              println!("{} Maestro socket started at: {}", formatted_name, maestro_address);
               let mut buf = [0; 16_383];
               loop {
                 let (amt, src) = socket.recv_from(&mut buf).unwrap();
                 let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
                 match message {
                   Ok(RunLoopMessage::RemoteCore(remote_core_address)) => {
-                    println!("Remote Core Connected: {}", remote_core_address);
+                    println!("{} Remote Core Connected: {}", formatted_name, remote_core_address);
                     mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
                   },
                   _ => (),
@@ -638,7 +645,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
               let message = bincode::serialize(&RunLoopMessage::RemoteCore(socket_address.clone().to_string())).unwrap();
               // Send a remote core message to the maestro
-              let len = socket.send_to(&message, "127.0.0.1:3235").unwrap();
+              let len = socket.send_to(&message, maestro_address).unwrap();
             }
           }
         }).unwrap();
