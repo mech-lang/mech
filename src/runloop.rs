@@ -61,6 +61,7 @@ pub enum ClientMessage {
 
 pub struct RunLoop {
   pub name: String,
+  pub socket_address: String,
   thread: JoinHandle<()>,
   pub outgoing: Sender<RunLoopMessage>,
   pub incoming: Receiver<ClientMessage>,
@@ -170,6 +171,12 @@ impl ProgramRunner {
     let (client_outgoing, incoming) = crossbeam_channel::unbounded();
     //let mut program = self.program;
     //let persistence_channel = self.persistence_channel;
+
+    let name = self.name.clone();
+    let socket_address = match self.socket {
+      Ok(ref socket) => socket.local_addr().unwrap().to_string(),
+      Err(_) => "".to_string(),
+    };
 
     let thread = thread::Builder::new().name(self.name.to_owned()).spawn(move || {
 
@@ -395,7 +402,8 @@ impl ProgramRunner {
         channel.send(PersisterMessage::Stop);
       }*/
     }).unwrap();
-    RunLoop { name: "Foo".to_string(), thread, outgoing: runloop_outgoing, incoming }
+
+    RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming }
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {
