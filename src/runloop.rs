@@ -3,7 +3,7 @@ use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId, TableIndex};
 use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration};
+use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
@@ -184,37 +184,42 @@ impl ProgramRunner {
     };
 
 
-    match &self.socket {
-      Some(ref socket) => {
-        let socket_receiver = socket.clone();
-        // Start a socket receiving thread
-        let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
-          let mut buf = [0; 16_383];
-          loop {
-            let (amt, src) = socket_receiver.recv_from(&mut buf).unwrap();
-            let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
-            match message {
-              Ok(RunLoopMessage::Ping) => {
-                println!("Got a ping from: {:?}", src);
-                let message = bincode::serialize(&RunLoopMessage::Pong).unwrap();
-                socket_receiver.send_to(&message, src);
-              }
-              Ok(RunLoopMessage::Pong) => {
-                println!("Got a pong from: {:?}", src);
-              }
-              Ok(x) => println!("Unhandled Message {:?}", x),
-              Err(error) => println!("{:?}", error),
-            }
-          }
-        }).unwrap();
-      }
-      None => (),
-    }
-
     // Start start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
 
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
+
+      let program_channel = program.outgoing.clone();
+
+      match &self.socket {
+        Some(ref socket) => {
+          let socket_receiver = socket.clone();
+          // Start a socket receiving thread
+          let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+            let mut buf = [0; 16_383];
+            loop {
+              let (amt, src) = socket_receiver.recv_from(&mut buf).unwrap();
+              let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
+              match message {
+                Ok(SocketMessage::RemoteCore(remote_core_address)) => {
+                  program_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
+                }
+                Ok(SocketMessage::Ping) => {
+                  println!("Got a ping from: {:?}", src);
+                  let message = bincode::serialize(&SocketMessage::Pong).unwrap();
+                  socket_receiver.send_to(&message, src);
+                }
+                Ok(SocketMessage::Pong) => {
+                  println!("Got a pong from: {:?}", src);
+                }
+                Ok(x) => println!("Unhandled Message {:?}", x),
+                Err(error) => println!("{:?}", error),
+              }
+            }
+          }).unwrap();
+        }
+        None => (),
+      }
 
       //program.download_dependencies(Some(client_outgoing.clone()));
 
@@ -278,10 +283,10 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
-          /*(Ok(RunLoopMessage::GetTable(table_id)), _) => { 
+          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
             let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
             client_outgoing.send(table_msg);
-          },*/
+          },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
             client_outgoing.send(ClientMessage::Pause);
@@ -309,7 +314,7 @@ impl ProgramRunner {
                   // We've got a new remote core. Let's ask it what it needs from us
                   // and tell it about all the other cores in our network.
                   program.remote_cores.insert(remote_core_address.clone());
-                  let message = bincode::serialize(&RunLoopMessage::Ping).unwrap();
+                  let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.unwrap())).unwrap();
                   let len = socket.send_to(&message, remote_core_address).unwrap();
                 }
               }
