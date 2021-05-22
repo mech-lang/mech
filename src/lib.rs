@@ -14,9 +14,12 @@ use crossbeam_channel::Sender;
 // ## Client Message
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum WebsocketMessage {
+pub enum SocketMessage {
+  Ping,
+  Pong,
+  RemoteCore(String),
   Listening(Register),
-  Control(u8),
+  Producing(Register),
   Code(MechCode),
   RemoveBlock(usize),
   Transaction(Transaction),
