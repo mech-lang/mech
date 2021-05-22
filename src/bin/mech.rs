@@ -41,7 +41,7 @@ use mech::{
   ClientMessage, 
   Parser,
   MechCode,
-  WebsocketMessage,
+  SocketMessage,
   compile_code,
   read_mech_files,
   ReplCommand,
@@ -631,9 +631,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               let mut buf = [0; 16_383];
               loop {
                 let (amt, src) = socket.recv_from(&mut buf).unwrap();
-                let message: Result<RunLoopMessage, bincode::Error> = bincode::deserialize(&buf);
+                let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                 match message {
-                  Ok(RunLoopMessage::RemoteCore(remote_core_address)) => {
+                  Ok(SocketMessage::RemoteCore(remote_core_address)) => {
                     println!("{} Remote Core Connected: {}", formatted_name, remote_core_address);
                     mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
                   },
@@ -643,7 +643,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(_) => {
               let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-              let message = bincode::serialize(&RunLoopMessage::RemoteCore(socket_address.clone().to_string())).unwrap();
+              let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone().to_string())).unwrap();
               // Send a remote core message to the maestro
               let len = socket.send_to(&message, maestro_address).unwrap();
             }
