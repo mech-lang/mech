@@ -183,7 +183,6 @@ impl ProgramRunner {
       None => None,
     };
 
-
     // Start start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
 
@@ -314,7 +313,7 @@ impl ProgramRunner {
                   // We've got a new remote core. Let's ask it what it needs from us
                   // and tell it about all the other cores in our network.
                   program.remote_cores.insert(remote_core_address.clone());
-                  let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.unwrap())).unwrap();
+                  let message = bincode::serialize(&SocketMessage::RemoteCore(socket.local_addr().unwrap().to_string())).unwrap();
                   let len = socket.send_to(&message, remote_core_address).unwrap();
                 }
               }
