@@ -41,7 +41,7 @@ pub enum RunLoopMessage {
   Exit(i32),
   PrintCore(Option<u64>),
   PrintRuntime,
-  Listening(Register),
+  Listening((u64,Register)),
   GetTable(u64),
   Transaction(Transaction),
   Code((u64,MechCode)),
