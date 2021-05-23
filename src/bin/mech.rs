@@ -634,7 +634,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                 match message {
                   Ok(SocketMessage::RemoteCore(remote_core_address)) => {
-                    println!("{} Remote Core Connected: {}", formatted_name, remote_core_address);
                     mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
                   },
                   _ => (),
