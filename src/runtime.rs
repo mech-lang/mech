@@ -303,8 +303,10 @@ impl Runtime {
     }
 
     // Keep track of needed tables
-    self.needed_registers.extend(&block.input);
-    self.needed_registers.extend(&block.output_dependencies);
+    let mut needed_registers: HashSet<Register> = HashSet::new();
+    needed_registers.extend(&block.input);
+    needed_registers.extend(&block.output_dependencies);
+    self.needed_registers.extend(needed_registers.difference(&self.defined_registers));
 
     // Figure out if all the requirements are met
     for register in &block.input {
