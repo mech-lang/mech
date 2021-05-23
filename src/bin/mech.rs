@@ -348,7 +348,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let message: SocketMessage = bincode::deserialize(&bin).unwrap();
             match message {
               SocketMessage::Listening(register) => {
-                self.mech_outgoing.send(RunLoopMessage::Listening(register));
+                //self.mech_outgoing.send(RunLoopMessage::Listening(register));
               },
               _ => (),
             }
