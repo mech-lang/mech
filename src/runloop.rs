@@ -7,6 +7,7 @@ use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, Machin
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
+use hashbrown::{HashSet, HashMap};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 use colored::*;
@@ -16,6 +17,7 @@ use super::persister::Persister;
 
 use std::net::{SocketAddr, UdpSocket};
 use std::io;
+use std::time::Instant;
 
 // ## Run Loop
 
@@ -203,6 +205,9 @@ impl ProgramRunner {
                 Ok(SocketMessage::RemoteCore(remote_core_address)) => {
                   program_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
                 }
+                Ok(SocketMessage::Listening(remote_core_address)) => {
+                  program_channel.send(RunLoopMessage::Listening((hash_string(&src.to_string()), remote_core_address)));
+                }
                 Ok(SocketMessage::Ping) => {
                   println!("Got a ping from: {:?}", src);
                   let message = bincode::serialize(&SocketMessage::Pong).unwrap();
@@ -210,6 +215,9 @@ impl ProgramRunner {
                 }
                 Ok(SocketMessage::Pong) => {
                   println!("Got a pong from: {:?}", src);
+                }
+                Ok(SocketMessage::Transaction(txn)) => {
+                  program_channel.send(RunLoopMessage::Transaction(txn));
                 }
                 Ok(x) => println!("Unhandled Message {:?}", x),
                 Err(error) => println!("{:?}", error),
@@ -234,49 +242,80 @@ impl ProgramRunner {
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            use std::time::Instant;
+            // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;   
+            // Trigger any machines that are now ready due to the transaction
             program.trigger_machines();  
-            //println!("{:?}", program.mech);
-            println!("Txn took {:0.4?} ms", time / 1_000_000.0);
-            //println!("{}", program.mech.get_table("ball".to_string()).unwrap().borrow().rows);
-            /*let mut changes: Vec<Change> = Vec::new();
-            for i in pre_changes..program.mech.store.len() {
-              let change = &program.mech.store.changes[i-1];
-              match change {
-                Change::Set{table, ..} => {
-                  match program.listeners.get(&TableId::Global(*table)) {
-                    Some(_) => changes.push(change.clone()),
-                    _ => (),
+            // For all changed registers, inform all listeners of changes
+            for changed_register in &program.mech.runtime.aggregate_changed_this_round {
+              match (program.listeners.get(&changed_register),program.mech.get_table(*changed_register.table_id.unwrap())) {
+                (Some(listeners),Some(table)) => {
+                  let mut changes = vec![];
+                  let mut values = vec![];
+                  for i in 1..=table.rows {
+                    for j in 1..=table.columns {
+                      let (value, _) = table.get_unchecked(i,j);
+                      values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                    }
+                  }
+                  changes.push(Change::Set{table_id: table.id, values});                  
+                  let txn = Transaction{changes};
+                  let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                  // Send the transaction to each listener
+                  for core_id in listeners {
+                    match (&self.socket,program.remote_cores.get(&core_id)) {
+                      (Some(ref socket),Some(remote_core_address)) => {
+                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      }
+                      _ => (),
+                    }
                   }
                 }
-                _ => ()
-              } 
+                _ => (),
+              }
             }
-            if !changes.is_empty() {
-              let txn = Transaction::from_changeset(changes);
-              client_outgoing.send(ClientMessage::Transaction(txn));
-            }*/
+            println!("Txn took {:0.4?} ms", time / 1_000_000.0);
             client_outgoing.send(ClientMessage::StepDone);
           },
-          (Ok(RunLoopMessage::Listening(ref register)), _) => {
-            println!("Someone is listening for: {:?}", register);
-            /*
-            match program.mech.output.get(register) {
-              Some(_) => {
-                // We produce a table for which they're listening, so let's mark that
-                // so we can send updates
-                program.listeners.insert(register.clone()); 
+          (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
+            match program.mech.runtime.output.contains(&register) {
+              // We produce a table for which they're listening
+              true => {
+                // Mark down that this register has a listener for future updates
+                let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
+                listeners.insert(core_id);
                 // Send over the table we have now
-                let table_ref = program.mech.get_table_by_id(&register.table);
-                client_outgoing.send(ClientMessage::Table(Some(table_ref.unwrap().borrow().clone())));
+                match program.mech.get_table(*register.table_id.unwrap()) {
+                  Some(table) => {
+                    // Decompose the table into changes for a transaction
+                    let mut changes = vec![];
+                    changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
+                    let mut values = vec![];
+                    for i in 1..=table.rows {
+                      for j in 1..=table.columns {
+                        let (value, _) = table.get_unchecked(i,j);
+                        values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                      }
+                    }
+                    changes.push(Change::Set{table_id: table.id, values});
+                    let txn = Transaction{changes};
+                    // Send the transaction to the remote core
+                    match (&self.socket,program.remote_cores.get(&core_id)) {
+                      (Some(ref socket),Some(remote_core_address)) => {
+                        let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      }
+                      _ => (),
+                    }                    
+                  }
+                  None => (),
+                }
               }, 
-              _ => (),
-            }*/
-            
+              false => (),
+            }
           },
           (Ok(RunLoopMessage::Stop), _) => { 
             client_outgoing.send(ClientMessage::Stop);
@@ -311,19 +350,25 @@ impl ProgramRunner {
               Some(ref socket) => {
                 let socket_address = socket.local_addr().unwrap().to_string();
                 if remote_core_address != socket_address {
-                  if !program.remote_cores.contains(&remote_core_address) {
-                    // We've got a new remote core. Let's ask it what it needs from us
-                    // and tell it about all the other cores in our network.
-                    program.remote_cores.insert(remote_core_address.clone());
-                    client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
-                    let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone())).unwrap();
-                    let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
-                    for core_address in &program.remote_cores {
-                      let message = bincode::serialize(&SocketMessage::RemoteCore(core_address.to_string())).unwrap();
+                  match program.remote_cores.get(&hash_string(&remote_core_address)) {
+                    None => {
+                      // We've got a new remote core. Let's ask it what it needs from us
+                      // and tell it about all the other cores in our network.
+                      program.remote_cores.insert(hash_string(&remote_core_address),remote_core_address.clone());
+                      client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
+                      let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone())).unwrap();
                       let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      for (core_id, core_address) in &program.remote_cores {
+                        let message = bincode::serialize(&SocketMessage::RemoteCore(core_address.to_string())).unwrap();
+                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      }
+                    } 
+                    Some(_) => {
+                      for register in &program.mech.runtime.needed_registers {
+                        let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
+                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      }
                     }
-                  } else {
-                    println!("Core {:?}", remote_core_address);
                   }
                 }
               }
@@ -405,7 +450,7 @@ impl ProgramRunner {
 
             // Get the result
             let echo_table = program.mech.get_table(hash_string("ans"));
-            program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: TableIndex::All, column: TableIndex::All }); 
+            //program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: TableIndex::All, column: TableIndex::All }); 
 
             // Send it
             //client_outgoing.send(ClientMessage::Table(echo_table));

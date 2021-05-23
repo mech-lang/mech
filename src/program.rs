@@ -7,7 +7,6 @@ extern crate colored;
 use colored::*;
 
 use std::thread::{self, JoinHandle};
-use std::collections::{HashMap, HashSet, Bound, BTreeMap};
 use std::collections::hash_map::Entry;
 use std::mem;
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
@@ -26,6 +25,7 @@ use mech_syntax::compiler::Compiler;
 use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
+use hashbrown::{HashSet, HashMap};
 
 use super::download_machine;
 use super::persister::Persister;
@@ -70,7 +70,7 @@ impl MachineRegistrar for Registrar {
 pub struct Program {
   pub name: String,
   pub mech: Core,
-  pub remote_cores: HashSet<String>,
+  pub remote_cores: HashMap<u64,String>,
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
@@ -82,7 +82,7 @@ pub struct Program {
   pub errors: HashSet<Error>,
   programs: u64,
   loaded_machines: HashSet<u64>,
-  pub listeners: HashSet<Register>,
+  pub listeners: HashMap<Register,HashSet<u64>>,
 }
 
 impl Program {
@@ -97,7 +97,7 @@ impl Program {
       capacity,
       machine_repository: HashMap::new(), 
       mech,
-      remote_cores: HashSet::new(),
+      remote_cores: HashMap::new(),
       cores: HashMap::new(),
       libraries: HashMap::new(),
       machines: HashMap::new(),
@@ -107,7 +107,7 @@ impl Program {
       outgoing,
       errors: HashSet::new(),
       programs: 0,
-      listeners: HashSet::new(),
+      listeners: HashMap::new(),
     }
   }
 
