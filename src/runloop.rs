@@ -309,12 +309,22 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::RemoteCore(remote_core_address)), _) => {
             match &self.socket {
               Some(ref socket) => {
-                if !program.remote_cores.contains(&remote_core_address) {
-                  // We've got a new remote core. Let's ask it what it needs from us
-                  // and tell it about all the other cores in our network.
-                  program.remote_cores.insert(remote_core_address.clone());
-                  let message = bincode::serialize(&SocketMessage::RemoteCore(socket.local_addr().unwrap().to_string())).unwrap();
-                  let len = socket.send_to(&message, remote_core_address).unwrap();
+                let socket_address = socket.local_addr().unwrap().to_string();
+                if remote_core_address != socket_address {
+                  if !program.remote_cores.contains(&remote_core_address) {
+                    // We've got a new remote core. Let's ask it what it needs from us
+                    // and tell it about all the other cores in our network.
+                    program.remote_cores.insert(remote_core_address.clone());
+                    client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
+                    let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone())).unwrap();
+                    let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                    for core_address in &program.remote_cores {
+                      let message = bincode::serialize(&SocketMessage::RemoteCore(core_address.to_string())).unwrap();
+                      let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                    }
+                  } else {
+                    println!("Core {:?}", remote_core_address);
+                  }
                 }
               }
               None => (),
