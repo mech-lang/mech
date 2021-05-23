@@ -345,9 +345,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           }
           Ok(ws::Message::Text(text)) => ctx.text(text),
           Ok(ws::Message::Binary(bin)) => {
-            let message: WebsocketMessage = bincode::deserialize(&bin).unwrap();
+            let message: SocketMessage = bincode::deserialize(&bin).unwrap();
             match message {
-              WebsocketMessage::Listening(register) => {
+              SocketMessage::Listening(register) => {
                 self.mech_outgoing.send(RunLoopMessage::Listening(register));
               },
               _ => (),

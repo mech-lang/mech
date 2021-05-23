@@ -14,7 +14,7 @@ pub use mech_core::QuantityMath;
 pub use mech_syntax::compiler::Compiler;
 pub use mech_syntax::parser::{Parser, Node as ParserNode};
 pub use mech_program::{Program, ProgramRunner, RunLoop, ClientMessage};
-pub use mech_utilities::{RunLoopMessage, MiniBlock, MechCode, WebsocketMessage};
+pub use mech_utilities::{RunLoopMessage, MiniBlock, MechCode, SocketMessage};
 pub use self::repl::{ReplCommand, parse_repl_command};
 
 
