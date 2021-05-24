@@ -1,9 +1,5 @@
 block
-  #ball = 1:5
+  #x = [1 2 3; 4 5 6]
 
 block
-  #time/timer += [period: 16]
-
-block
-  ~ #time/timer.ticks{1}
-  #ball := #ball + 1
+  #z = #x + #y
