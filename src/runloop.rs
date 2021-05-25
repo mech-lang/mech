@@ -199,28 +199,37 @@ impl ProgramRunner {
           let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
             let mut buf = [0; 16_383];
             loop {
-              let (amt, src) = socket_receiver.recv_from(&mut buf).unwrap();
-              let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-              match message {
-                Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                  program_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+              match socket_receiver.recv_from(&mut buf) {
+                Ok((amt, src)) => {
+                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
+                  match message {
+                    Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
+                      program_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                    }
+                    Ok(SocketMessage::RemoteCoreDisconnect(remote_core_address)) => {
+                      program_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address));
+                    }
+                    Ok(SocketMessage::Listening(remote_core_address)) => {
+                      program_channel.send(RunLoopMessage::Listening((hash_string(&src.to_string()), remote_core_address)));
+                    }
+                    Ok(SocketMessage::Ping) => {
+                      println!("Got a ping from: {:?}", src);
+                      let message = bincode::serialize(&SocketMessage::Pong).unwrap();
+                      socket_receiver.send_to(&message, src);
+                    }
+                    Ok(SocketMessage::Pong) => {
+                      println!("Got a pong from: {:?}", src);
+                    }
+                    Ok(SocketMessage::Transaction(txn)) => {
+                      program_channel.send(RunLoopMessage::Transaction(txn));
+                    }
+                    Ok(x) => println!("Unhandled Message {:?}", x),
+                    Err(error) => println!("{:?}", error),
+                  }
                 }
-                Ok(SocketMessage::Listening(remote_core_address)) => {
-                  program_channel.send(RunLoopMessage::Listening((hash_string(&src.to_string()), remote_core_address)));
+                Err(error) => {
+
                 }
-                Ok(SocketMessage::Ping) => {
-                  println!("Got a ping from: {:?}", src);
-                  let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                  socket_receiver.send_to(&message, src);
-                }
-                Ok(SocketMessage::Pong) => {
-                  println!("Got a pong from: {:?}", src);
-                }
-                Ok(SocketMessage::Transaction(txn)) => {
-                  program_channel.send(RunLoopMessage::Transaction(txn));
-                }
-                Ok(x) => println!("Unhandled Message {:?}", x),
-                Err(error) => println!("{:?}", error),
               }
             }
           }).unwrap();
@@ -346,7 +355,27 @@ impl ProgramRunner {
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
           (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_address)), _) => {
-            client_outgoing.send(ClientMessage::String(format!("Remote Core Disconnected: {}", remote_core_address)));
+            match &self.socket {
+              Some(ref socket) => {
+                let socket_address = socket.local_addr().unwrap().to_string();
+                if remote_core_address != socket_address {
+                  match program.remote_cores.get(&hash_string(&remote_core_address)) {
+                    None => {
+
+                    } 
+                    Some(_) => {
+                      client_outgoing.send(ClientMessage::String(format!("Remote Core Disconnected: {}", remote_core_address)));
+                      program.remote_cores.remove(&hash_string(&remote_core_address));
+                      for (core_id, core_address) in &program.remote_cores {
+                        let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_address.to_string())).unwrap();
+                        let len = socket.send_to(&message, core_address.clone()).unwrap();
+                      }
+                    }
+                  }
+                }
+              }
+              None => (),
+            }          
           }
           (Ok(RunLoopMessage::RemoteCoreConnect(remote_core_address)), _) => {
             match &self.socket {
