@@ -60,7 +60,8 @@ use std::collections::HashMap;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use std::net::UdpSocket;
+use std::net::{UdpSocket, SocketAddr};
+use std::sync::Arc;
 
 #[macro_use]
 extern crate serde_derive;
@@ -85,6 +86,7 @@ use std::time::{Duration, SystemTime};
 
 use std::rc::Rc;
 use std::cell::Cell;
+use std::sync::Mutex;
 
 #[macro_use]
 extern crate lazy_static;
@@ -108,6 +110,10 @@ lazy_static! {
   static ref MECH_TEST: u64 = hash_string("mech/test");
   static ref NAME: u64 = hash_string("name");
   static ref RESULT: u64 = hash_string("result");
+}
+
+lazy_static! {
+  static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
 }
 
 // ## Mech Entry
@@ -619,6 +625,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let mech_client_name = mech_client.name.clone();
     let mech_client_channel = mech_client.outgoing.clone();
+    let mech_client_heartbeat_channel = mech_client.outgoing.clone();
     let socket_address = mech_client.socket_address.clone();
     match socket_address {
       Some(socket_address) => {
@@ -628,29 +635,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
           match UdpSocket::bind(maestro_address.clone()) {
             Ok(socket) => {
-              println!("{} Maestro socket started at: {}", formatted_name, maestro_address);
+              println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
               let mut buf = [0; 16_383];
-              let mut core_map = HashMap::new();
+              let heartbeat_thread = thread::Builder::new().name("heartbeat sender".to_string()).spawn(move || {
+                loop {
+                  thread::sleep(Duration::from_millis(500));
+                  let now = SystemTime::now();
+                  let mut core_map = CORE_MAP.lock().unwrap();
+                  for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
+                    mech_client_heartbeat_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
+                  }
+                }
+              }).unwrap();
               loop {
                 let (amt, src) = socket.recv_from(&mut buf).unwrap();
+                let now = SystemTime::now();
                 let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                 match message {
                   Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                    core_map.insert(src,(remote_core_address.clone(), SystemTime::now()));
+                    CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
                     mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
                   },
                   Ok(SocketMessage::Ping) => {
-                    let now = SystemTime::now();
+                    let mut core_map = CORE_MAP.lock().unwrap();
                     match core_map.get_mut(&src) {
                       Some((_, last_seen)) => {
                         *last_seen = now;
                       } 
                       None => (),
                     }
-                    // Disconnect all cores that haven't been seen since 1 second ago
-                    for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                      mech_client_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
-                    }
+                    let message = bincode::serialize(&SocketMessage::Pong).unwrap();
+                    let len = socket.send_to(&message, src).unwrap();
                   },
                   _ => (),
                 }
