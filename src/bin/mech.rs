@@ -641,8 +641,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   },
                   Ok(SocketMessage::Ping) => {
                     let now = SystemTime::now();
-                    let (_, last_seen) = core_map.get_mut(&src).unwrap();
-                    *last_seen = now;
+                    match core_map.get_mut(&src) {
+                      Some((_, last_seen)) => {
+                        *last_seen = now;
+                      } 
+                      None => (),
+                    }
                     // Disconnect all cores that haven't been seen since 1 second ago
                     for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
                       mech_client_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
