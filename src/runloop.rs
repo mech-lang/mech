@@ -286,7 +286,7 @@ impl ProgramRunner {
                 _ => (),
               }
             }
-            println!("Txn took {:0.4?} ms", time / 1_000_000.0);
+            client_outgoing.send(ClientMessage::String(format!("Txn took {:0.4?} ms", time / 1_000_000.0)));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
