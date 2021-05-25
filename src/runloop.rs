@@ -202,8 +202,8 @@ impl ProgramRunner {
               let (amt, src) = socket_receiver.recv_from(&mut buf).unwrap();
               let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
               match message {
-                Ok(SocketMessage::RemoteCore(remote_core_address)) => {
-                  program_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
+                Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
+                  program_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
                 }
                 Ok(SocketMessage::Listening(remote_core_address)) => {
                   program_channel.send(RunLoopMessage::Listening((hash_string(&src.to_string()), remote_core_address)));
@@ -345,7 +345,10 @@ impl ProgramRunner {
             //program.mech.step_forward_one();
             //client_outgoing.send(ClientMessage::Time(program.mech.offset));
           } 
-          (Ok(RunLoopMessage::RemoteCore(remote_core_address)), _) => {
+          (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_address)), _) => {
+            client_outgoing.send(ClientMessage::String(format!("Remote Core Disconnected: {}", remote_core_address)));
+          }
+          (Ok(RunLoopMessage::RemoteCoreConnect(remote_core_address)), _) => {
             match &self.socket {
               Some(ref socket) => {
                 let socket_address = socket.local_addr().unwrap().to_string();
@@ -356,10 +359,10 @@ impl ProgramRunner {
                       // and tell it about all the other cores in our network.
                       program.remote_cores.insert(hash_string(&remote_core_address),remote_core_address.clone());
                       client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
-                      let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone())).unwrap();
+                      let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
                       let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       for (core_id, core_address) in &program.remote_cores {
-                        let message = bincode::serialize(&SocketMessage::RemoteCore(core_address.to_string())).unwrap();
+                        let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(core_address.to_string())).unwrap();
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
                     } 
