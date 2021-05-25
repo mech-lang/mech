@@ -17,7 +17,8 @@ use crossbeam_channel::Sender;
 pub enum SocketMessage {
   Ping,
   Pong,
-  RemoteCore(String),
+  RemoteCoreConnect(String),
+  RemoteCoreDisconnect(String),
   Listening(Register),
   Producing(Register),
   Code(MechCode),
@@ -47,7 +48,8 @@ pub enum RunLoopMessage {
   Code((u64,MechCode)),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
-  RemoteCore(String),
+  RemoteCoreConnect(String),
+  RemoteCoreDisconnect(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
