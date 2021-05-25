@@ -1,3 +1,4 @@
+#![feature(hash_drain_filter)]
 // # Mech
 
 /*
@@ -80,7 +81,7 @@ use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 //extern crate ws;
 //use ws::{listen, Handler as WsHandler, Sender as WsSender, Result as WsResult, Message as WsMessage, Handshake, CloseCode, Error as WsError};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use std::rc::Rc;
 use std::cell::Cell;
@@ -629,12 +630,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(socket) => {
               println!("{} Maestro socket started at: {}", formatted_name, maestro_address);
               let mut buf = [0; 16_383];
+              let mut core_map = HashMap::new();
               loop {
                 let (amt, src) = socket.recv_from(&mut buf).unwrap();
                 let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                 match message {
-                  Ok(SocketMessage::RemoteCore(remote_core_address)) => {
-                    mech_client_channel.send(RunLoopMessage::RemoteCore(remote_core_address));
+                  Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
+                    core_map.insert(src,(remote_core_address.clone(), SystemTime::now()));
+                    mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                  },
+                  Ok(SocketMessage::Ping) => {
+                    let now = SystemTime::now();
+                    let (_, last_seen) = core_map.get_mut(&src).unwrap();
+                    *last_seen = now;
+                    // Disconnect all cores that haven't been seen since 1 second ago
+                    for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
+                      mech_client_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
+                    }
                   },
                   _ => (),
                 }
@@ -642,9 +654,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(_) => {
               let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-              let message = bincode::serialize(&SocketMessage::RemoteCore(socket_address.clone().to_string())).unwrap();
+              let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone().to_string())).unwrap();
               // Send a remote core message to the maestro
-              let len = socket.send_to(&message, maestro_address).unwrap();
+              let len = socket.send_to(&message, maestro_address.clone()).unwrap();
+              loop {
+                thread::sleep(Duration::from_millis(500));
+                let message = bincode::serialize(&SocketMessage::Ping).unwrap();
+                let len = socket.send_to(&message, maestro_address.clone()).unwrap();
+              }
             }
           }
         }).unwrap();
