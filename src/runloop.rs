@@ -388,6 +388,8 @@ impl ProgramRunner {
                       // and tell it about all the other cores in our network.
                       program.remote_cores.insert(hash_string(&remote_core_address),remote_core_address.clone());
                       client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
+                      let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
+                      let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       for (core_id, core_address) in &program.remote_cores {
                         let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(core_address.to_string())).unwrap();
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
