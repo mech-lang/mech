@@ -633,53 +633,74 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
-          match UdpSocket::bind(maestro_address.clone()) {
-            Ok(socket) => {
-              println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
-              let mut buf = [0; 16_383];
-              let heartbeat_thread = thread::Builder::new().name("heartbeat sender".to_string()).spawn(move || {
+          'socket_loop: loop {
+            match UdpSocket::bind(maestro_address.clone()) {
+              Ok(socket) => {
+                println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
+                let mut buf = [0; 16_383];
+                let heartbeat_thread = thread::Builder::new().name("heartbeat sender".to_string()).spawn(move || {
+                  loop {
+                    thread::sleep(Duration::from_millis(500));
+                    let now = SystemTime::now();
+                    let mut core_map = CORE_MAP.lock().unwrap();
+                    for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
+                      mech_client_heartbeat_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
+                    }
+                  }
+                }).unwrap();
                 loop {
-                  thread::sleep(Duration::from_millis(500));
+                  let (amt, src) = socket.recv_from(&mut buf).unwrap();
                   let now = SystemTime::now();
-                  let mut core_map = CORE_MAP.lock().unwrap();
-                  for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                    mech_client_heartbeat_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
+                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
+                  match message {
+                    Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
+                      CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
+                      mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                    },
+                    Ok(SocketMessage::Ping) => {
+                      let mut core_map = CORE_MAP.lock().unwrap();
+                      match core_map.get_mut(&src) {
+                        Some((_, last_seen)) => {
+                          *last_seen = now;
+                        } 
+                        None => (),
+                      }
+                      let message = bincode::serialize(&SocketMessage::Pong).unwrap();
+                      let len = socket.send_to(&message, src).unwrap();
+                    },
+                    _ => (),
                   }
                 }
-              }).unwrap();
-              loop {
-                let (amt, src) = socket.recv_from(&mut buf).unwrap();
-                let now = SystemTime::now();
-                let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-                match message {
-                  Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                    CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                    mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
-                  },
-                  Ok(SocketMessage::Ping) => {
-                    let mut core_map = CORE_MAP.lock().unwrap();
-                    match core_map.get_mut(&src) {
-                      Some((_, last_seen)) => {
-                        *last_seen = now;
-                      } 
-                      None => (),
-                    }
-                    let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                    let len = socket.send_to(&message, src).unwrap();
-                  },
-                  _ => (),
-                }
               }
-            }
-            Err(_) => {
-              let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-              let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone().to_string())).unwrap();
-              // Send a remote core message to the maestro
-              let len = socket.send_to(&message, maestro_address.clone()).unwrap();
-              loop {
-                thread::sleep(Duration::from_millis(500));
-                let message = bincode::serialize(&SocketMessage::Ping).unwrap();
+              Err(_) => {
+                let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+                let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone().to_string())).unwrap();
+                // Send a remote core message to the maestro
                 let len = socket.send_to(&message, maestro_address.clone()).unwrap();
+                let mut buf = [0; 16_383];
+                loop {
+                  thread::sleep(Duration::from_millis(500));
+                  let message = bincode::serialize(&SocketMessage::Ping).unwrap();
+                  let len = socket.send_to(&message, maestro_address.clone()).unwrap();
+                  match socket.recv_from(&mut buf) {
+                    Ok((amt, src)) => {
+                      let now = SystemTime::now();
+                      if src.to_string() == maestro_address {
+                        let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
+                        match message {
+                          Ok(SocketMessage::Pong) => {
+                            // Maestro is still alive
+                          },
+                          _ => (),
+                        }
+                      }
+                    } 
+                    Err(_) => {
+                      println!("Maestro is dead");
+                      continue 'socket_loop;
+                    }
+                  }
+                }
               }
             }
           }
