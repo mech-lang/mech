@@ -707,7 +707,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                       }
                     } 
                     Err(_) => {
-                      println!("Maestro is dead");
+                      println!("{} Maestro is dead.", formatted_name);
                       continue 'socket_loop;
                     }
                   }
