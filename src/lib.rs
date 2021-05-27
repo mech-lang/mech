@@ -33,7 +33,7 @@ use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
 use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, NumberLiteralKind, QuantityMath};
-use mech_utilities::{WebsocketMessage, MiniBlock};
+use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 use std::sync::Arc;
@@ -212,7 +212,7 @@ impl WasmCore {
       timers: HashMap::new(),
     }
   }
-  /*
+  
   pub fn start_websocket(&mut self, address: String) -> Result<(), JsValue> {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
@@ -222,7 +222,7 @@ impl WasmCore {
    
     // OnMessage
     {
-      let wasm_core = self as *mut Core;
+      let wasm_core = self as *mut WasmCore;
       let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
         log!("Got a message: {:?}", e);
         // Handle difference Text/Binary,...
@@ -230,22 +230,8 @@ impl WasmCore {
           log!("message event, received arraybuffer: {:?}", abuf);
           let array = js_sys::Uint8Array::new(&abuf);
           let len = array.byte_length() as usize;
-          log!("Arraybuffer received {}bytessss: {:?}", len, array.to_vec());
-
-          let msg: WebsocketMessage = bincode::deserialize(&array.to_vec()).unwrap();
+          let msg: SocketMessage = bincode::deserialize(&array.to_vec()).unwrap();
           log!("{:?}", msg);
-          match msg {
-            WebsocketMessage::Table(mut ntable) => {
-              let table = ntable.to_table();
-              unsafe {
-                (*wasm_core).core.register_table(table);
-                (*wasm_core).core.step();
-                (*wasm_core).add_application();
-              }
-            }
-            _ => (),
-          }
-
 
           /*
           // here you can for example use Serde Deserialize decode the message
@@ -266,8 +252,7 @@ impl WasmCore {
             let len = array.byte_length() as usize;
             log!("Blob received {}bytes: {:?}", len, array.to_vec());
             // here you can for example use the received image/png data
-          })
-              as Box<dyn FnMut(web_sys::ProgressEvent)>);
+          }) as Box<dyn FnMut(web_sys::ProgressEvent)>);
           fr.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
           fr.read_as_array_buffer(&blob).expect("blob not readable");
           onloadend_cb.forget();
@@ -290,16 +275,14 @@ impl WasmCore {
 
     // OnOpen
     {
-      let wasm_core = self as *mut Core;
+      let wasm_core = self as *mut WasmCore;
       let cloned_ws = ws.clone();
       let onopen_callback = Closure::wrap(Box::new(move |_| {
         log!("socket opened");
         // Upon an open connection, send the server a list of tables about which we want updates
         unsafe {
-          log!("{:?}", (*wasm_core).core.input);
-          log!("{:?}", (*wasm_core).core.output);
-          for input_table_id in (*wasm_core).core.input.iter() {
-            let result = bincode::serialize(&WebsocketMessage::Listening(input_table_id.clone())).unwrap();
+          for input_table_id in (*wasm_core).core.runtime.input.iter() {
+            let result = bincode::serialize(&SocketMessage::Listening(input_table_id.clone())).unwrap();
             // send off binary message
             match cloned_ws.send_with_u8_array(&result) {
               Ok(_) => log!("binary message successfully sent"),
@@ -381,7 +364,7 @@ impl WasmCore {
       closure.forget();
     }
     self.websocket = Some(ws);
-    */
+    
 
 
 
@@ -415,8 +398,8 @@ impl WasmCore {
     self.programs = compiler.programs.clone();
     //self.render_program();
     log!("Compiled {} blocks.", compiler.blocks.len());
-  }
-  */
+  }*/
+  
   pub fn add_timers(&mut self) {
     let window = web_sys::window().expect("no global `window` exists");
    
