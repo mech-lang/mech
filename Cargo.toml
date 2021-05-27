@@ -42,6 +42,7 @@ seahash = "4.1.0"
 crossterm = "0.17"
 lazy_static = "1.4.0"
 tui = { version = "0.10", default-features = false, features = ['crossterm'] }
+tungstenite = "0.13.0"
 
 [workspace]
 

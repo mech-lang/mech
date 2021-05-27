@@ -60,7 +60,8 @@ use std::collections::HashMap;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use std::net::{UdpSocket, SocketAddr};
+use std::net::{UdpSocket, TcpListener, SocketAddr};
+extern crate tungstenite;
 use std::sync::Arc;
 
 #[macro_use]
@@ -232,7 +233,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
           }
         }
-        x => println!("{:?}", x),
+        x => println!("Received Message {:?}", x),
       }
     }
 
@@ -651,6 +652,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                   }
                 }).unwrap();
+                // TCP socket thread for websocket connections
+                let websocket_thread = thread::Builder::new().name("heartbeat sender".to_string()).spawn(move || {
+                  let server = TcpListener::bind("127.0.0.1:3236").unwrap();
+                  println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
+                  for stream in server.incoming() {
+                    std::thread::spawn (move || {
+                      match stream {
+                        Ok(stream) => {
+                          println!("New Connection: {:?}", stream.peer_addr());
+                          let mut websocket = tungstenite::server::accept(stream).unwrap();
+                          loop {
+                            let msg = websocket.read_message().unwrap();
+                            // We do not want to send back ping/pong messages.
+                            match msg {
+                              tungstenite::Message::Binary(msg) => {
+                                let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
+                                match message {
+                                  Ok(x) => {println!("Message {:?}", x)},
+                                  _ => {println!("Unhandled Message");},
+                                }
+                              }
+                              _ => (),
+                            }
+                          }
+                        }
+                        _ => (),
+                      }
+                    });
+                  }
+                });
+
+                // Loop to receive UDP messages from remote cores
                 loop {
                   let (amt, src) = socket.recv_from(&mut buf).unwrap();
                   let now = SystemTime::now();
