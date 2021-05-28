@@ -3,7 +3,7 @@ use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId, TableIndex};
 use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
+use mech_utilities::{RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
@@ -16,6 +16,7 @@ use super::program::Program;
 use super::persister::Persister;
 
 use std::net::{SocketAddr, UdpSocket};
+extern crate tungstenite;
 use std::io;
 use std::time::Instant;
 
@@ -190,7 +191,7 @@ impl ProgramRunner {
 
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
-      let program_channel = program.outgoing.clone();
+      let program_channel_udpsocket = program.outgoing.clone();
 
       match &self.socket {
         Some(ref socket) => {
@@ -204,13 +205,13 @@ impl ProgramRunner {
                   let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                   match message {
                     Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                      program_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                      program_channel_udpsocket.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
                     }
                     Ok(SocketMessage::RemoteCoreDisconnect(remote_core_address)) => {
-                      program_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address));
+                      program_channel_udpsocket.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address));
                     }
-                    Ok(SocketMessage::Listening(remote_core_address)) => {
-                      program_channel.send(RunLoopMessage::Listening((hash_string(&src.to_string()), remote_core_address)));
+                    Ok(SocketMessage::Listening(register)) => {
+                      program_channel_udpsocket.send(RunLoopMessage::Listening((hash_string(&src.to_string()), register)));
                     }
                     Ok(SocketMessage::Ping) => {
                       println!("Got a ping from: {:?}", src);
@@ -221,7 +222,7 @@ impl ProgramRunner {
                       println!("Got a pong from: {:?}", src);
                     }
                     Ok(SocketMessage::Transaction(txn)) => {
-                      program_channel.send(RunLoopMessage::Transaction(txn));
+                      program_channel_udpsocket.send(RunLoopMessage::Transaction(txn));
                     }
                     Ok(x) => println!("Unhandled Message {:?}", x),
                     Err(error) => println!("{:?}", error),
@@ -276,7 +277,7 @@ impl ProgramRunner {
                   // Send the transaction to each listener
                   for core_id in listeners {
                     match (&self.socket,program.remote_cores.get(&core_id)) {
-                      (Some(ref socket),Some(remote_core_address)) => {
+                      (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
                       _ => (),
@@ -312,10 +313,14 @@ impl ProgramRunner {
                     changes.push(Change::Set{table_id: table.id, values});
                     let txn = Transaction{changes};
                     // Send the transaction to the remote core
-                    match (&self.socket,program.remote_cores.get(&core_id)) {
-                      (Some(ref socket),Some(remote_core_address)) => {
+                    match (&self.socket,program.remote_cores.get_mut(&core_id)) {
+                      (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      }
+                      (_,Some(MechSocket::WebSocket(ref mut websocket))) => {
+                        let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                        Arc::get_mut(websocket).unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
                       }
                       _ => (),
                     }                    
@@ -367,8 +372,15 @@ impl ProgramRunner {
                       client_outgoing.send(ClientMessage::String(format!("Remote Core Disconnected: {}", remote_core_address)));
                       program.remote_cores.remove(&hash_string(&remote_core_address));
                       for (core_id, core_address) in &program.remote_cores {
-                        let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_address.to_string())).unwrap();
-                        let len = socket.send_to(&message, core_address.clone()).unwrap();
+                        match core_address {
+                          MechSocket::UdpSocket(core_address) => {
+                            let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_address.to_string())).unwrap();
+                            let len = socket.send_to(&message, core_address.clone()).unwrap();
+                          }
+                          MechSocket::WebSocket(_) => {
+                            // TODO
+                          }
+                        }
                       }
                     }
                   }
@@ -377,7 +389,7 @@ impl ProgramRunner {
               None => (),
             }          
           }
-          (Ok(RunLoopMessage::RemoteCoreConnect(remote_core_address)), _) => {
+          (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address))), _) => {
             match &self.socket {
               Some(ref socket) => {
                 let socket_address = socket.local_addr().unwrap().to_string();
@@ -386,13 +398,20 @@ impl ProgramRunner {
                     None => {
                       // We've got a new remote core. Let's ask it what it needs from us
                       // and tell it about all the other cores in our network.
-                      program.remote_cores.insert(hash_string(&remote_core_address),remote_core_address.clone());
-                      client_outgoing.send(ClientMessage::String(format!("Remote Core Connected: {}", remote_core_address)));
+                      program.remote_cores.insert(hash_string(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
+                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", remote_core_address)));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
                       let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       for (core_id, core_address) in &program.remote_cores {
-                        let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(core_address.to_string())).unwrap();
-                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                        match core_address {
+                          MechSocket::UdpSocket(core_address) => {
+                            let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(core_address.to_string())).unwrap();
+                            let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                          }
+                          MechSocket::WebSocket(_) => {
+                            // TODO
+                          }
+                        }
                       }
                     } 
                     Some(_) => {
@@ -407,6 +426,41 @@ impl ProgramRunner {
               None => (),
             }
           } 
+          (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(mut websocket))), _) => {
+            client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
+            //program.remote_cores.insert(123456,MechSocket::WebSocket(websocket.clone()));
+            let program_channel_websocket = program.outgoing.clone();
+            let thread = thread::Builder::new().name("websocket listener".to_string()).spawn(move || {
+              loop {
+                match Arc::get_mut(&mut websocket) {
+                  Some(websocket) => {
+                    match websocket.read_message() {
+                      Ok(msg) => {
+                        match msg {
+                          tungstenite::Message::Binary(msg) => {
+                            let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
+                            match message {
+                              Ok(SocketMessage::Listening(register)) => {
+                                println!("Listening for: {:?}", register);
+                                program_channel_websocket.send(RunLoopMessage::Listening((123456, register)));
+                              },
+                              x => {println!("Unhandled Message: {:?}", x);},
+                            }
+                          }
+                          _ => (),
+                        }
+                      }
+                      _ => {
+                        println!("Disconnected");
+                        break;
+                      },
+                    }
+                  }
+                  None => (), 
+                }
+              }
+            }).unwrap();
+          }
           (Ok(RunLoopMessage::String((string,color))), _) => {
             let r: u8 = (color >> 16) as u8;
             let g: u8 = (color >> 8) as u8;

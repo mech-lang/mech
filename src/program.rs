@@ -22,7 +22,7 @@ use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId};
 use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration};
+use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration, MechSocket};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 use hashbrown::{HashSet, HashMap};
@@ -70,7 +70,7 @@ impl MachineRegistrar for Registrar {
 pub struct Program {
   pub name: String,
   pub mech: Core,
-  pub remote_cores: HashMap<u64,String>,
+  pub remote_cores: HashMap<u64,MechSocket>,
   pub cores: HashMap<u64,Core>,
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
