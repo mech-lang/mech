@@ -5,6 +5,9 @@ extern crate serde;
 extern crate mech_core;
 extern crate hashbrown;
 extern crate crossbeam_channel;
+extern crate tungstenite;
+use tungstenite::protocol::{WebSocket};
+use std::sync::Arc;
 
 use hashbrown::HashMap;
 use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
@@ -28,7 +31,13 @@ pub enum SocketMessage {
 
 // Run loop messages are sent to the run loop from the client
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
+pub enum MechSocket {
+  UdpSocket(String),
+  WebSocket(Arc<WebSocket<std::net::TcpStream>>),
+}
+
+#[derive(Debug)]
 pub enum RunLoopMessage {
   Ping,
   Pong,
@@ -48,7 +57,7 @@ pub enum RunLoopMessage {
   Code((u64,MechCode)),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
-  RemoteCoreConnect(String),
+  RemoteCoreConnect(MechSocket),
   RemoteCoreDisconnect(String),
 }
 
