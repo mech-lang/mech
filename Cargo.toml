@@ -22,3 +22,4 @@ serde = {version = "1.0.123", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.123"
 hashbrown = "0.11.0"
 crossbeam-channel = "0.4.0"
+tungstenite = "0.13.0"
