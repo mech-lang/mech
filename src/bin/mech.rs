@@ -48,6 +48,7 @@ use mech::{
   ReplCommand,
   parse_repl_command,
   minify_blocks,
+  MechSocket,
 };
 use mech::QuantityMath;
 
@@ -626,7 +627,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let mech_client_name = mech_client.name.clone();
     let mech_client_channel = mech_client.outgoing.clone();
-    let mech_client_heartbeat_channel = mech_client.outgoing.clone();
+    let mech_client_channel_ws = mech_client.outgoing.clone();
+    let mech_client_channel_heartbeat = mech_client.outgoing.clone();
     let mech_socket_address = mech_client.socket_address.clone();
     match mech_socket_address {
       Some(mech_socket_address) => {
@@ -648,7 +650,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut core_map = CORE_MAP.lock().unwrap();
                     // If a core hasn't been heard from since 1 second ago, disconnect it.
                     for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                      mech_client_heartbeat_channel.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
+                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
                     }
                   }
                 }).unwrap();
@@ -657,29 +659,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   let server = TcpListener::bind("127.0.0.1:3236").unwrap();
                   println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
                   for stream in server.incoming() {
-                    std::thread::spawn (move || {
-                      match stream {
-                        Ok(stream) => {
-                          println!("New Connection: {:?}", stream.peer_addr());
-                          let mut websocket = tungstenite::server::accept(stream).unwrap();
-                          loop {
-                            let msg = websocket.read_message().unwrap();
-                            // We do not want to send back ping/pong messages.
-                            match msg {
-                              tungstenite::Message::Binary(msg) => {
-                                let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
-                                match message {
-                                  Ok(x) => {println!("Message {:?}", x)},
-                                  _ => {println!("Unhandled Message");},
-                                }
-                              }
-                              _ => (),
-                            }
-                          }
-                        }
-                        _ => (),
+                    match stream {
+                      Ok(stream) => {
+                        println!("New Connection: {:?}", stream.peer_addr());
+                        let mut websocket = tungstenite::server::accept(stream).unwrap();
+                        mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(Arc::new(websocket))));
                       }
-                    });
+                      _ => (),
+                    }
                   }
                 });
 
@@ -692,7 +679,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // If a remote core connects, send a connection message back to it
                     Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
                       CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                      mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                      mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone())).unwrap();
                       let len = socket.send_to(&message, src.clone()).unwrap();
                     },
@@ -733,7 +720,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                           },
                           Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
                             CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                            mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(remote_core_address));
+                            mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
                           }
                           _ => (),
                         }
