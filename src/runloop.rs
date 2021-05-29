@@ -332,34 +332,6 @@ impl ProgramRunner {
               false => (),
             }
           },
-          (Ok(RunLoopMessage::Stop), _) => { 
-            client_outgoing.send(ClientMessage::Stop);
-            break 'runloop;
-          },
-          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
-            client_outgoing.send(table_msg);
-          },
-          (Ok(RunLoopMessage::Pause), false) => { 
-            paused = true;
-            client_outgoing.send(ClientMessage::Pause);
-          },
-          (Ok(RunLoopMessage::Resume), true) => {
-            paused = false;
-            //program.mech.resume();
-            client_outgoing.send(ClientMessage::Resume);
-          },
-          (Ok(RunLoopMessage::StepBack), _) => {
-            if !paused {
-              paused = true;
-            }
-            //program.mech.step_back_one();
-            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
-          }
-          (Ok(RunLoopMessage::StepForward), true) => {
-            //program.mech.step_forward_one();
-            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
-          } 
           (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_address)), _) => {
             match &self.socket {
               Some(ref socket) => {
@@ -429,7 +401,7 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(mut websocket))), _) => {
             client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
-            //program.remote_cores.insert(123456,MechSocket::WebSocket(websocket.clone()));
+            program.remote_cores.insert(123456,MechSocket::WebSocket(websocket.clone()));
             let program_channel_websocket = program.outgoing.clone();
             let thread = thread::Builder::new().name("websocket listener".to_string()).spawn(move || {
               loop {
@@ -442,7 +414,6 @@ impl ProgramRunner {
                             let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
                             match message {
                               Ok(SocketMessage::Listening(register)) => {
-                                println!("Listening for: {:?}", register);
                                 program_channel_websocket.send(RunLoopMessage::Listening((123456, register)));
                               },
                               x => {println!("Unhandled Message: {:?}", x);},
@@ -571,6 +542,34 @@ impl ProgramRunner {
             program.mech.step();
             client_outgoing.send(ClientMessage::StepDone);
           }
+          (Ok(RunLoopMessage::Stop), _) => { 
+            client_outgoing.send(ClientMessage::Stop);
+            break 'runloop;
+          },
+          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
+            let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
+            client_outgoing.send(table_msg);
+          },
+          (Ok(RunLoopMessage::Pause), false) => { 
+            paused = true;
+            client_outgoing.send(ClientMessage::Pause);
+          },
+          (Ok(RunLoopMessage::Resume), true) => {
+            paused = false;
+            //program.mech.resume();
+            client_outgoing.send(ClientMessage::Resume);
+          },
+          (Ok(RunLoopMessage::StepBack), _) => {
+            if !paused {
+              paused = true;
+            }
+            //program.mech.step_back_one();
+            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
+          }
+          (Ok(RunLoopMessage::StepForward), true) => {
+            //program.mech.step_forward_one();
+            //client_outgoing.send(ClientMessage::Time(program.mech.offset));
+          } 
           (Err(_), _) => {
             break 'runloop
           },
