@@ -61,7 +61,9 @@ use std::collections::HashMap;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use std::net::{UdpSocket, TcpListener, SocketAddr};
+use std::net::{UdpSocket, SocketAddr};
+extern crate tokio;
+use tokio::net::{TcpListener, TcpStream};
 extern crate tungstenite;
 use std::sync::Arc;
 
@@ -119,7 +121,7 @@ lazy_static! {
 }
 
 // ## Mech Entry
-#[actix_rt::main]
+#[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   #[cfg(windows)]
@@ -237,7 +239,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         x => println!("Received Message {:?}", x),
       }
     }
-
+/*
     async fn tables(
       session: Session, 
       req: web::HttpRequest, 
@@ -489,7 +491,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .run()
     .await?;
     println!("{} Closing server.", "[Mech Server]".bright_cyan());
-    std::process::exit(0);
+    std::process::exit(0);*/
 
     None
   // ------------------------------------------------
@@ -633,7 +635,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match mech_socket_address {
       Some(mech_socket_address) => {
         println!("{} Core socket started at: {}", formatted_name, mech_socket_address.clone());
-        let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
+        tokio::spawn(async move {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
           'socket_loop: loop {
@@ -655,10 +657,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   }
                 }).unwrap();
                 // TCP socket thread for websocket connections
-                let websocket_thread = thread::Builder::new().name("heartbeat sender".to_string()).spawn(move || {
-                  let server = TcpListener::bind("127.0.0.1:3236").unwrap();
+                tokio::spawn(async move {
+                  let ws_server = TcpListener::bind("127.0.0.1:3236").await.unwrap();
                   println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
-                  for stream in server.incoming() {
+                  while let Ok((stream, addr)) = ws_server.accept().await {
+                    println!("WS: {:?} {:?}", stream, addr);
+                    //tokio::spawn(handle_connection(state.clone(), stream, addr));
+                  }
+                  
+                  /*for stream in server.incoming() {
                     match stream {
                       Ok(stream) => {
                         println!("New Connection: {:?}", stream.peer_addr());
@@ -667,7 +674,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                       }
                       _ => (),
                     }
-                  }
+                  }*/
                 });
 
                 // Loop to receive UDP messages from remote cores
@@ -735,7 +742,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               }
             }
           }
-        }).unwrap();
+        });
       }
       None => (),
     };

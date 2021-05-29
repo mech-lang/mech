@@ -36,13 +36,13 @@ actix-rt = "1.0.0"
 actix-session = "0.3.0"
 actix-files = "0.2.1"
 actix-web-actors = "2.0.0"
-tokio = { version = "0.2", features = ["macros"] }
 crossbeam-channel = "0.4.0"
 seahash = "4.1.0"
 crossterm = "0.17"
 lazy_static = "1.4.0"
 tui = { version = "0.10", default-features = false, features = ['crossterm'] }
 tungstenite = "0.13.0"
+tokio = {version = "1.6.1", features = ["full"]}
 
 [workspace]
 
