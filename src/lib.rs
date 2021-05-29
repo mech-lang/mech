@@ -8,6 +8,7 @@ extern crate crossbeam_channel;
 extern crate tungstenite;
 use tungstenite::protocol::{WebSocket};
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use hashbrown::HashMap;
 use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
@@ -34,7 +35,7 @@ pub enum SocketMessage {
 #[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
-  WebSocket(Arc<WebSocket<std::net::TcpStream>>),
+  WebSocket(Arc<Mutex<WebSocket<std::net::TcpStream>>>),
 }
 
 #[derive(Debug)]
