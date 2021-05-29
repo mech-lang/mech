@@ -663,7 +663,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                       Ok(stream) => {
                         println!("New Connection: {:?}", stream.peer_addr());
                         let mut websocket = tungstenite::server::accept(stream).unwrap();
-                        mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(Arc::new(websocket))));
+                        mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(Arc::new(Mutex::new(websocket)))));
                       }
                       _ => (),
                     }
