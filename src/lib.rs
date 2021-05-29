@@ -5,10 +5,7 @@ extern crate serde;
 extern crate mech_core;
 extern crate hashbrown;
 extern crate crossbeam_channel;
-extern crate tungstenite;
-use tungstenite::protocol::{WebSocket};
-use std::sync::Arc;
-use std::sync::Mutex;
+
 
 use hashbrown::HashMap;
 use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
@@ -32,12 +29,24 @@ pub enum SocketMessage {
 
 // Run loop messages are sent to the run loop from the client
 
+// This is dumb that I need to put this on every line :(
+#[cfg(not(target_arch = "wasm32"))]
+extern crate tungstenite;
+#[cfg(not(target_arch = "wasm32"))]
+use tungstenite::protocol::{WebSocket};
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::Mutex;
+
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
   WebSocket(Arc<Mutex<WebSocket<std::net::TcpStream>>>),
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum RunLoopMessage {
   Ping,
@@ -97,6 +106,7 @@ pub trait Machine {
   fn on_change(&mut self, table: &Table) -> Result<(), String>;
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
