@@ -19,6 +19,7 @@ use std::net::{SocketAddr, UdpSocket};
 extern crate tungstenite;
 use std::io;
 use std::time::Instant;
+use std::sync::Mutex;
 
 // ## Run Loop
 
@@ -318,9 +319,9 @@ impl ProgramRunner {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
-                      (_,Some(MechSocket::WebSocket(ref mut websocket))) => {
+                      (_,Some(MechSocket::WebSocket(websocket))) => {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                        Arc::get_mut(websocket).unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
+                        websocket.lock().unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
                       }
                       _ => (),
                     }                    
@@ -432,8 +433,8 @@ impl ProgramRunner {
             let program_channel_websocket = program.outgoing.clone();
             let thread = thread::Builder::new().name("websocket listener".to_string()).spawn(move || {
               loop {
-                match Arc::get_mut(&mut websocket) {
-                  Some(websocket) => {
+                match websocket.lock() {
+                  Ok(mut websocket) => {
                     match websocket.read_message() {
                       Ok(msg) => {
                         match msg {
@@ -456,7 +457,7 @@ impl ProgramRunner {
                       },
                     }
                   }
-                  None => (), 
+                  _ => (), 
                 }
               }
             }).unwrap();
