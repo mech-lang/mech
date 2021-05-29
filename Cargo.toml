@@ -22,4 +22,5 @@ serde = {version = "1.0.123", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.123"
 hashbrown = "0.11.0"
 crossbeam-channel = "0.4.0"
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tungstenite = "0.13.0"
