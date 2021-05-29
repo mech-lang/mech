@@ -281,7 +281,7 @@ impl WasmCore {
         log!("socket opened");
         // Upon an open connection, send the server a list of tables about which we want updates
         unsafe {
-          for input_table_id in (*wasm_core).core.runtime.input.iter() {
+          for input_table_id in (*wasm_core).core.runtime.needed_registers.iter() {
             let result = bincode::serialize(&SocketMessage::Listening(input_table_id.clone())).unwrap();
             // send off binary message
             match cloned_ws.send_with_u8_array(&result) {
