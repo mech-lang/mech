@@ -6,10 +6,8 @@ extern crate mech_core;
 extern crate hashbrown;
 extern crate crossbeam_channel;
 
-
 use hashbrown::HashMap;
 use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
-
 use crossbeam_channel::Sender;
 
 // ## Client Message
@@ -31,19 +29,15 @@ pub enum SocketMessage {
 
 // This is dumb that I need to put this on every line :(
 #[cfg(not(target_arch = "wasm32"))]
-extern crate tungstenite;
-#[cfg(not(target_arch = "wasm32"))]
-use tungstenite::protocol::{WebSocket};
+extern crate tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::Mutex;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
-  WebSocket(Arc<Mutex<WebSocket<std::net::TcpStream>>>),
+  WebSocket(Arc<tokio::net::TcpStream>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
