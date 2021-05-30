@@ -17,6 +17,7 @@ use super::persister::Persister;
 
 use std::net::{SocketAddr, UdpSocket};
 extern crate tungstenite;
+extern crate tokio;
 use std::io;
 use std::time::Instant;
 use std::sync::Mutex;
@@ -321,7 +322,7 @@ impl ProgramRunner {
                       }
                       (_,Some(MechSocket::WebSocket(websocket))) => {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                        websocket.lock().unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
+                        //websocket.lock().unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
                       }
                       _ => (),
                     }                    
@@ -403,35 +404,30 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
             program.remote_cores.insert(123456,MechSocket::WebSocket(websocket.clone()));
             let program_channel_websocket = program.outgoing.clone();
-            let thread = thread::Builder::new().name("websocket listener".to_string()).spawn(move || {
-              loop {
-                match websocket.lock() {
-                  Ok(mut websocket) => {
-                    match websocket.read_message() {
-                      Ok(msg) => {
-                        match msg {
-                          tungstenite::Message::Binary(msg) => {
-                            let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
-                            match message {
-                              Ok(SocketMessage::Listening(register)) => {
-                                program_channel_websocket.send(RunLoopMessage::Listening((123456, register)));
-                              },
-                              x => {println!("Unhandled Message: {:?}", x);},
-                            }
-                          }
-                          _ => (),
+            tokio::spawn(async move {
+              //loop {
+                /*match websocket.read_message() {
+                  Ok(msg) => {
+                    match msg {
+                      tungstenite::Message::Binary(msg) => {
+                        let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
+                        match message {
+                          Ok(SocketMessage::Listening(register)) => {
+                            program_channel_websocket.send(RunLoopMessage::Listening((123456, register)));
+                          },
+                          x => {println!("Unhandled Message: {:?}", x);},
                         }
                       }
-                      _ => {
-                        println!("Disconnected");
-                        break;
-                      },
+                      _ => (),
                     }
                   }
-                  _ => (), 
-                }
-              }
-            }).unwrap();
+                  _ => {
+                    println!("Disconnected");
+                    break;
+                  },
+                }*/
+              //}
+            });
           }
           (Ok(RunLoopMessage::String((string,color))), _) => {
             let r: u8 = (color >> 16) as u8;
