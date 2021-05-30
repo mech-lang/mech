@@ -32,12 +32,14 @@ pub enum SocketMessage {
 extern crate tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+extern crate tokio_tungstenite;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
-  WebSocket(Arc<tokio::net::TcpStream>),
+  WebSocket(tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
