@@ -31,7 +31,7 @@ use std::io::prelude::*;
 
 extern crate nom;
 
-pub async fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
+pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
 
   let mut code: Vec<MechCode> = Vec::new();
 
@@ -83,7 +83,7 @@ pub async fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, 
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
       println!("{} {}", "[Downloading]".bright_green(), path.display());
-      let program = reqwest::get(path.to_str().unwrap()).await?.text().await?;
+      let program = reqwest::blocking::get(path.to_str().unwrap())?.text()?;
       code.push(MechCode::String(program));
     } else {
       // Compile a directory of mech files
