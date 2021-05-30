@@ -206,44 +206,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-    // Spin up a mech core and compiler
-    let mut core = Core::new(1000, 1000);
-    core.load_standard_library();
-    let code = read_mech_files(&mech_paths)?;
-    let blocks = compile_code(code.clone());
-    let miniblocks = minify_blocks(&blocks);
 
-    let serialized_miniblocks: Vec<u8> = bincode::serialize(&miniblocks).unwrap();
-
-    let mut runner = ProgramRunner::new("Mech Server", 1500000);
-    let mech_client = runner.run();
-    for c in code {
-      mech_client.send(RunLoopMessage::Code((0,c)));
-    }
-    loop {
-      match mech_client.receive() {
-        Ok(ClientMessage::Done) => {
-          if mech_client.is_empty() {
-            break;
-          }
-        }
-        x => println!("Received Message {:?}", x),
-      }
-    }
 
     let index = warp::get()
-                      .and(warp::path::end())
-                      .and(warp::fs::dir("./notebook/"));
+                .and(warp::path::end())
+                .and(warp::fs::dir("./notebook/"));
 
-    let pkg = warp::path("pkg").and(warp::fs::dir("./notebook/pkg"));
+    let pkg = warp::path("pkg")
+              .and(warp::fs::dir("./notebook/pkg"));
 
-    let blocks = warp::path("blocks").map(move || {
-      let code = read_mech_files(&mech_paths).unwrap();
-      let blocks = compile_code(code);
-      let miniblocks = minify_blocks(&blocks);
-      let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
-      format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
-    });
+    let blocks = warp::path("blocks")
+                .and(warp::addr::remote())
+                .map(move |addr: Option<SocketAddr>| {
+                  println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
+                  let code = read_mech_files(&mech_paths).unwrap();
+                  let blocks = compile_code(code);
+                  let miniblocks = minify_blocks(&blocks);
+                  let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
+                  format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
+                });
 
     let routes = index.or(pkg).or(blocks);
 
