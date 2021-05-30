@@ -73,17 +73,6 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate serde;
 
-#[macro_use]
-extern crate actix_web;
-extern crate actix_rt;
-extern crate actix_files;
-extern crate actix;
-extern crate actix_web_actors;
-use actix::prelude::*;
-use actix_web::{get, web, App as ActixApp, HttpServer, HttpResponse, Responder, Error, HttpRequest};
-use actix_session::{CookieSession, Session};
-use actix::{Actor, StreamHandler};
-use actix_web_actors::ws;
 //extern crate ws;
 //use ws::{listen, Handler as WsHandler, Sender as WsSender, Result as WsResult, Message as WsMessage, Handshake, CloseCode, Error as WsError};
 use std::time::{Duration, SystemTime};
@@ -98,6 +87,9 @@ extern crate lazy_static;
 #[macro_use]
 extern crate crossbeam_channel;
 use crossbeam_channel::{Sender, Receiver};
+
+extern crate warp;
+use warp::Filter;
 
 extern crate tui;
 use tui::backend::CrosstermBackend;
@@ -218,7 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Spin up a mech core and compiler
     let mut core = Core::new(1000, 1000);
     core.load_standard_library();
-    let code = read_mech_files(&mech_paths).await?;
+    let code = read_mech_files(&mech_paths)?;
     let blocks = compile_code(code.clone());
     let miniblocks = minify_blocks(&blocks);
 
@@ -239,259 +231,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         x => println!("Received Message {:?}", x),
       }
     }
-/*
-    async fn tables(
-      session: Session, 
-      req: web::HttpRequest, 
-      info: web::Path<(String)>, 
-      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>
-    ) -> impl Responder {
-      println!("Serving");
-      use core::hash::Hasher;
-      //println!("Connection Info {:?}", req.connection_info());
-      //println!("Head {:?}", req.head());
-      let mut id: u64 = seahash::hash(format!("{:?}", req.head()).as_bytes());
-      if let Some(uid) = session.get::<u64>("mech-user/id").unwrap() {
-        println!("Mech user: {:x}", uid);
-        id = uid
-      } else {
-        session.set("mech-user/id", id);
-      }
 
+    let index = warp::get()
+                      .and(warp::path::end())
+                      .and(warp::fs::dir("./notebook/"));
 
-      /*
-      let (sender, receiver) = data.get_ref();
-      loop {
-        match receiver.recv() {
-          Ok(ClientMessage::Done) => {
-            if receiver.is_empty() {
-              break;
-            }
-            
-          }
-          x => println!("{:?}", x),
-        }
-      }
+    let pkg = warp::path("pkg").and(warp::fs::dir("./notebook/pkg"));
 
-      let code = format!("#ans = #{}", info);
-      sender.send(RunLoopMessage::EchoCode(code));
-      let mut message = String::new();
-      loop {
-        match receiver.recv() {
-          Ok(ClientMessage::Done) => {
-            if receiver.is_empty() {
-              break;
-            }
-          }
-          Err(x) => {
-            println!("{:?}",x);
-            break;
-          }
-          Ok(ClientMessage::Table(table)) => {
-            message = format!("{:?}", table);
-          }
-          x => println!("{:?}", x),
-        }
-      }*/
-        
-      //message
-      format!("{:x}", id)
-    }
-
-    async fn serve_blocks(data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>) -> impl Responder {
-      let (sender, receiver, _, mech_paths) = data.get_ref();
-      let code = read_mech_files(&mech_paths).await.unwrap();
+    let blocks = warp::path("blocks").map(move || {
+      let code = read_mech_files(&mech_paths).unwrap();
       let blocks = compile_code(code);
       let miniblocks = minify_blocks(&blocks);
       let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
       format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
-    }
+    });
 
-    #[derive(Message)]
-    #[rtype(result = "()")]
-    struct RegisterWSClient {
-        addr: Addr<MyWebSocket>,
-    }
-
-    #[derive(Message, Debug)]
-    #[rtype(result = "()")]
-    struct ServerEvent {
-        event: Vec<u8>,
-    }
-
-    async fn ws_index(
-      r: HttpRequest, 
-      stream: web::Payload, 
-      data: web::Data<(Sender<RunLoopMessage>,Receiver<ClientMessage>,Addr<ServerMonitor>,Vec<String>)>,
-    ) -> Result<HttpResponse, Error> {
-      let (outgoing, _, monitor,_) = data.get_ref();
-      let (addr, res) = ws::start_with_addr(MyWebSocket {mech_outgoing: outgoing.clone()}, &r, stream).unwrap();
-      monitor.do_send(RegisterWSClient { addr: addr });
-      Ok(res)
-    }
-
-
-    struct MyWebSocket {
-      mech_outgoing: Sender<RunLoopMessage>,
-    }
-
-    impl Actor for MyWebSocket {
-      type Context = ws::WebsocketContext<Self>;
-    }
-
-    impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
-      fn handle(
-        &mut self,
-        msg: Result<ws::Message, ws::ProtocolError>,
-        ctx: &mut Self::Context,
-      ) {
-        // process websocket messages
-        println!("WS: {:?}", msg);
-        match msg {
-          Ok(ws::Message::Ping(msg)) => {
-            ctx.pong(&msg);
-          }
-          Ok(ws::Message::Pong(_)) => {
-            ctx.text("Message!");
-          }
-          Ok(ws::Message::Text(text)) => ctx.text(text),
-          Ok(ws::Message::Binary(bin)) => {
-            let message: SocketMessage = bincode::deserialize(&bin).unwrap();
-            match message {
-              SocketMessage::Listening(register) => {
-                //self.mech_outgoing.send(RunLoopMessage::Listening(register));
-              },
-              _ => (),
-            }
-          },
-          Ok(ws::Message::Close(_)) => {
-              ctx.stop();
-          }
-          _ => ctx.stop(),
-        }
-      }
-    }
-
-    impl Handler<ServerEvent> for MyWebSocket {
-      type Result = ();
-
-      fn handle(&mut self, msg: ServerEvent, ctx: &mut Self::Context) {
-        println!("Handling a server event: {:?}", msg);
-        ctx.binary(msg.event);
-      }
-    }
-
-    struct ServerMonitor {
-      listeners: Vec<Addr<MyWebSocket>>,
-      incoming: Receiver<Vec<u8>>,
-    }
-
-    impl Actor for ServerMonitor {
-      type Context = Context<Self>;
-
-      fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(Duration::from_millis(10), |act, _| {
-          loop {
-            match &act.incoming.try_recv() {
-              Ok(message) => {
-                println!("GOTA A MESSAGE {:?}", message);
-                for listener in &act.listeners {
-                  listener.do_send(ServerEvent{ event: message.to_vec() });
-                }
-              }
-              Err(_) => break,
-            }
-          }
-        });
-      }
-    }
-
-    impl Handler<RegisterWSClient> for ServerMonitor {
-        type Result = ();
-
-        fn handle(&mut self, msg: RegisterWSClient, _: &mut Context<Self>) {
-          println!("Adding a new connection to the server monitor");
-          self.listeners.push(msg.addr);
-        }
-    }
-
-    let (ws_outgoing, ws_incoming) = crossbeam_channel::unbounded();
-    let thread_receiver = mech_client.incoming.clone();
-    // Start a receive loop. Generally this will just pass messages on to the websocket client:
-    let thread = thread::Builder::new().name("Receiving Thread".to_string()).spawn(move || {
-      // Get all responses from the thread
-      'receive_loop: loop {
-        match thread_receiver.recv() {
-          (Ok(ClientMessage::Pause)) => {
-            //println!("{} Paused", formatted_name);
-          },
-          (Ok(ClientMessage::Resume)) => {
-            //println!("{} Resumed", formatted_name);
-          },
-          (Ok(ClientMessage::Clear)) => {
-            //println!("{} Cleared", formatted_name);
-          },
-          (Ok(ClientMessage::NewBlocks(count))) => {
-            //println!("Compiled {} blocks.", count);
-          },
-          (Ok(ClientMessage::String(message))) => {
-            //println!("{} {}", formatted_name, message);
-            //print!("{}", ">: ".truecolor(246,192,78));
-          },
-          /*(Ok(ClientMessage::Table(table))) => {
-            // Send the table received from the client over the websocket
-            match table {
-              Some(table) => {
-                let ntable = NetworkTable::new(&table);
-                let msg: Vec<u8> = bincode::serialize(&WebsocketMessage::Table(ntable)).unwrap();
-                ws_outgoing.send(msg);
-                //ctx.binary(msg);
-              }
-              None => (),
-            }
-          },*/
-          (Ok(ClientMessage::Transaction(txn))) => {
-            //println!("{} Transaction: {:?}", formatted_name, txn);
-          },
-          (Ok(ClientMessage::Done)) => {
-            // Do nothing
-          },
-          (Err(x)) => {
-            //println!("{} {}", "[Error]".bright_red(), x);
-            break 'receive_loop;
-          }
-          q => {
-            //println!("else: {:?}", q);
-          },
-        };
-      }
-    }).unwrap();
+    let routes = index.or(pkg).or(blocks);
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
-    let srvmon = ServerMonitor { listeners: vec![], incoming: ws_incoming }.start();
-    let data = web::Data::new((
-      mech_client.outgoing.clone(), 
-      mech_client.incoming.clone(), 
-      srvmon.clone(),
-      mech_paths.clone(),
-    ));
-    HttpServer::new(move || {
-        ActixApp::new()
-          .app_data(data.clone())
-          .wrap(CookieSession::signed(&[0; 32]).secure(false))
-          .service(web::resource("/tables/{query}").route(web::get().to(tables)))
-          .service(web::resource("/blocks").route(web::get().to(serve_blocks)))
-          // websocket route
-          .service(web::resource("/ws/").route(web::get().to(ws_index)))
-          .service(actix_files::Files::new("/", "./notebook/").index_file("index.html"))
-          // static files
-          //.service(fs::Files::new("/", "static/").index_file("index.html"))
-    })
-    .bind(full_address)?
-    .run()
-    .await?;
+    warp::serve(routes).run(([127, 0, 0, 1], 8081)).await;
+
     println!("{} Closing server.", "[Mech Server]".bright_cyan());
-    std::process::exit(0);*/
+    std::process::exit(0);
 
     None
   // ------------------------------------------------
@@ -503,7 +264,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut passed_all_tests = true;
     mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
 
-    let code = read_mech_files(&mech_paths).await?;
+    let code = read_mech_files(&mech_paths)?;
     let blocks = compile_code(code);
     let miniblocks = minify_blocks(&blocks);
 
@@ -610,7 +371,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
 
-    let mut code: Vec<MechCode> = read_mech_files(&mech_paths).await?;
+    let mut code: Vec<MechCode> = read_mech_files(&mech_paths)?;
     if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
       let inargs_code = format!("block
@@ -810,7 +571,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let code = read_mech_files(&mech_paths).await?;
+    let code = read_mech_files(&mech_paths)?;
     let blocks = compile_code(code);
     let miniblocks = minify_blocks(&blocks);
 
