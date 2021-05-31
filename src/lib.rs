@@ -281,7 +281,6 @@ impl WasmCore {
       let wasm_core = self as *mut WasmCore;
       let cloned_ws = ws.clone();
       let onopen_callback = Closure::wrap(Box::new(move |_| {
-        log!("socket opened");
         // Upon an open connection, send the server a list of tables about which we want updates
         unsafe {
           for input_table_id in (*wasm_core).core.runtime.needed_registers.iter() {
