@@ -34,12 +34,17 @@ extern crate tokio;
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate tokio_tungstenite;
+#[cfg(not(target_arch = "wasm32"))]
+extern crate futures_util;
+#[cfg(not(target_arch = "wasm32"))]
+extern crate tungstenite;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
   WebSocket(tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>),
+  WebSocketSender(futures_util::stream::SplitSink<tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>, tungstenite::Message>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
