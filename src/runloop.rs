@@ -18,9 +18,14 @@ use super::persister::Persister;
 use std::net::{SocketAddr, UdpSocket};
 extern crate tungstenite;
 extern crate tokio;
+extern crate futures_util;
+use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
+
 use std::io;
 use std::time::Instant;
 use std::sync::Mutex;
+
+
 
 // ## Run Loop
 
@@ -354,6 +359,7 @@ impl ProgramRunner {
                           MechSocket::WebSocket(_) => {
                             // TODO
                           }
+                          _ => (),
                         }
                       }
                     }
@@ -385,6 +391,7 @@ impl ProgramRunner {
                           MechSocket::WebSocket(_) => {
                             // TODO
                           }
+                          _ => (),
                         }
                       }
                     } 
@@ -400,11 +407,26 @@ impl ProgramRunner {
               None => (),
             }
           } 
-          (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(mut websocket))), _) => {
-            client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
-            program.remote_cores.insert(123456,MechSocket::WebSocket(websocket.clone()));
+          (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream))), _) => {
+            let address = ws_stream.get_ref().peer_addr().unwrap();
+            let (outgoing, incoming) = ws_stream.split();
+            program.remote_cores.insert(hash_string(&address.to_string()),MechSocket::WebSocketSender(outgoing));
             let program_channel_websocket = program.outgoing.clone();
             tokio::spawn(async move {
+              let broadcast_incoming = incoming.try_for_each(|msg| {
+                println!("Received a message from {}: {}", address, msg.to_text().unwrap());
+                future::ok(())
+              });
+            });
+
+            /*let peer_address = raw_stream.peer_addr().unwrap();
+            let ws_stream = tokio_tungstenite::accept_async(raw_stream)
+                                              .await
+                                              .expect("Error during the websocket handshake occurred");
+            client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
+            program.remote_cores.insert(hash_string(&peer_address),MechSocket::WebSocket(raw_stream.clone()));
+            
+            */
               //loop {
                 /*match websocket.read_message() {
                   Ok(msg) => {
@@ -427,7 +449,8 @@ impl ProgramRunner {
                   },
                 }*/
               //}
-            });
+
+
           }
           (Ok(RunLoopMessage::String((string,color))), _) => {
             let r: u8 = (color >> 16) as u8;
