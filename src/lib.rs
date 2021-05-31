@@ -31,23 +31,13 @@ pub enum SocketMessage {
 
 // This is dumb that I need to put this on every line :(
 #[cfg(not(target_arch = "wasm32"))]
-extern crate tokio;
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::Arc;
-#[cfg(not(target_arch = "wasm32"))]
-extern crate tokio_tungstenite;
-#[cfg(not(target_arch = "wasm32"))]
-extern crate futures_util;
-#[cfg(not(target_arch = "wasm32"))]
-extern crate tungstenite;
-#[cfg(not(target_arch = "wasm32"))]
 extern crate websocket;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub enum MechSocket {
   UdpSocket(String),
   WebSocket(websocket::sync::Client<std::net::TcpStream>),
-  WebSocketSender(futures_util::stream::SplitSink<tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>, tungstenite::Message>),
+  WebSocketSender(websocket::sender::Writer<std::net::TcpStream>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
