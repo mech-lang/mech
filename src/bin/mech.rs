@@ -400,14 +400,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 });
                 // TCP socket thread for websocket connections
                 thread::spawn(move || {
-                  let server = Server::bind("127.0.0.1:2794").unwrap();
-
-                  /*let ws_server = TcpListener::bind("127.0.0.1:3236").unwrap();
+                  let server = Server::bind("127.0.0.1:3236").unwrap();
                   println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
-                  while let Ok((raw_stream, addr)) = ws_server.accept() {
-                    let ws_stream = tokio_tungstenite::accept_async(raw_stream).unwrap();
+                  for request in server.filter_map(Result::ok) {
+                    let mut ws_stream = request.accept().unwrap();
+                    let address = ws_stream.peer_addr().unwrap();
                     mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream)));
-                  }*/
+                  }
                 });
 
                 // Loop to receive UDP messages from remote cores
