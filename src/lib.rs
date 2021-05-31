@@ -25,7 +25,7 @@ extern crate mech_core;
 extern crate mech_syntax;
 extern crate mech_utilities;
 extern crate colored;
-extern crate tokio_tungstenite;
+extern crate websocket;
 
 use colored::*;
 use libloading::Library;

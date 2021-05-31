@@ -16,10 +16,8 @@ use super::program::Program;
 use super::persister::Persister;
 
 use std::net::{SocketAddr, UdpSocket};
-extern crate tungstenite;
-extern crate tokio;
-extern crate futures_util;
-use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
+extern crate websocket;
+use websocket::OwnedMessage;
 
 use std::io;
 use std::time::Instant;
@@ -325,9 +323,9 @@ impl ProgramRunner {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
-                      (_,Some(MechSocket::WebSocket(websocket))) => {
+                      (_,Some(MechSocket::WebSocketSender(websocket))) => {
                         let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                        //websocket.lock().unwrap().write_message(tungstenite::Message::Binary(message)).unwrap();
+                        websocket.send_message(&OwnedMessage::Binary(message)).unwrap();
                       }
                       _ => (),
                     }                    
@@ -408,49 +406,32 @@ impl ProgramRunner {
             }
           } 
           (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream))), _) => {
-            let address = ws_stream.get_ref().peer_addr().unwrap();
-            let (outgoing, incoming) = ws_stream.split();
-            program.remote_cores.insert(hash_string(&address.to_string()),MechSocket::WebSocketSender(outgoing));
+            let remote_core_address = ws_stream.peer_addr().unwrap();
+            let remote_core_id = hash_string(&remote_core_address.to_string());
+            let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
+            program.remote_cores.insert(remote_core_id,MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
-            tokio::spawn(async move {
-              let broadcast_incoming = incoming.try_for_each(|msg| {
-                println!("Received a message from {}: {}", address, msg.to_text().unwrap());
-                future::ok(())
-              });
-            });
-
-            /*let peer_address = raw_stream.peer_addr().unwrap();
-            let ws_stream = tokio_tungstenite::accept_async(raw_stream)
-                                              .await
-                                              .expect("Error during the websocket handshake occurred");
-            client_outgoing.send(ClientMessage::String(format!("Remote websocket connected.")));
-            program.remote_cores.insert(hash_string(&peer_address),MechSocket::WebSocket(raw_stream.clone()));
-            
-            */
-              //loop {
-                /*match websocket.read_message() {
-                  Ok(msg) => {
-                    match msg {
-                      tungstenite::Message::Binary(msg) => {
-                        let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
-                        match message {
-                          Ok(SocketMessage::Listening(register)) => {
-                            program_channel_websocket.send(RunLoopMessage::Listening((123456, register)));
-                          },
-                          x => {println!("Unhandled Message: {:?}", x);},
-                        }
-                      }
-                      _ => (),
+            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", remote_core_address)));
+            thread::spawn(move || {
+              for message in ws_incoming.incoming_messages() {
+                let message = message.unwrap();
+                match message {
+                  OwnedMessage::Close(_) => {
+                    return;
+                  }
+                  OwnedMessage::Binary(msg) => {
+                    let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&msg);
+                    match message {
+                      Ok(SocketMessage::Listening(register)) => {
+                        program_channel_websocket.send(RunLoopMessage::Listening((remote_core_id, register)));
+                      },
+                      x => {println!("Unhandled Message: {:?}", x);},
                     }
                   }
-                  _ => {
-                    println!("Disconnected");
-                    break;
-                  },
-                }*/
-              //}
-
-
+                  _ => (),
+                }
+              }  
+            });
           }
           (Ok(RunLoopMessage::String((string,color))), _) => {
             let r: u8 = (color >> 16) as u8;
