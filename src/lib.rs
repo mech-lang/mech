@@ -5,7 +5,9 @@ extern crate serde;
 extern crate mech_core;
 extern crate hashbrown;
 extern crate crossbeam_channel;
+extern crate core as rust_core;
 
+use rust_core::fmt;
 use hashbrown::HashMap;
 use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
 use crossbeam_channel::Sender;
@@ -38,13 +40,26 @@ extern crate tokio_tungstenite;
 extern crate futures_util;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate tungstenite;
+#[cfg(not(target_arch = "wasm32"))]
+extern crate websocket;
 
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug)]
 pub enum MechSocket {
   UdpSocket(String),
-  WebSocket(tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>),
+  WebSocket(websocket::sync::Client<std::net::TcpStream>),
   WebSocketSender(futures_util::stream::SplitSink<tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>, tungstenite::Message>),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl fmt::Debug for MechSocket {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &MechSocket::UdpSocket(ref address) => write!(f, "MechSocket::UdpSocket({})", address),
+      &MechSocket::WebSocket(ref ws) => write!(f, "MechSocket::WebSocket({})", ws.peer_addr().unwrap()),
+      &MechSocket::WebSocketSender(_) => write!(f, "MechSocket::WebSocketSender()"),
+    }
+  }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
