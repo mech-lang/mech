@@ -292,18 +292,6 @@ impl WasmCore {
             }
           }
         }
-
-
-        /*
-        match cloned_ws.send_with_str("ping") {
-          Ok(_) => log!("message successfully sent"),
-          Err(err) => log!("error sending message: {:?}", err),
-        }
-        // send off binary message
-        match cloned_ws.send_with_u8_array(&vec![0, 1, 2, 3]) {
-          Ok(_) => log!("binary message successfully sent"),
-          Err(err) => log!("error sending message: {:?}", err),
-        }*/
       }) as Box<dyn FnMut(JsValue)>);
       ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
       onopen_callback.forget();
