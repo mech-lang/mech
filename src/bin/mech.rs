@@ -61,12 +61,12 @@ use std::collections::HashMap;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use std::net::{SocketAddr};
+use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 extern crate tokio;
-use tokio::net::{UdpSocket, TcpListener, TcpStream};
-use tokio::sync::Mutex;
-extern crate tungstenite;
-extern crate tokio_tungstenite;
+use std::sync::Mutex;
+extern crate websocket;
+use websocket::sync::Server;
+use websocket::OwnedMessage;
 use std::sync::Arc;
 
 #[macro_use]
@@ -377,21 +377,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match mech_socket_address {
       Some(mech_socket_address) => {
         println!("{} Core socket started at: {}", formatted_name, mech_socket_address.clone());
-        tokio::spawn(async move {
+        thread::spawn(move || {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
           'socket_loop: loop {
-            match UdpSocket::bind(maestro_address.clone()).await {
+            match UdpSocket::bind(maestro_address.clone()) {
               // The maestro core
               Ok(socket) => {
                 println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
                 let mut buf = [0; 16_383];
                 // Heartbeat thread periodically checks to see how long it's been since we've last heard from each remote core
-                tokio::spawn(async move {
+                thread::spawn(move || {
                   loop {
                     thread::sleep(Duration::from_millis(500));
                     let now = SystemTime::now();
-                    let mut core_map = CORE_MAP.lock().await;
+                    let mut core_map = CORE_MAP.lock().unwrap();
                     // If a core hasn't been heard from since 1 second ago, disconnect it.
                     for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
                       mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address.to_string()));
@@ -399,30 +399,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   }
                 });
                 // TCP socket thread for websocket connections
-                tokio::spawn(async move {
-                  let ws_server = TcpListener::bind("127.0.0.1:3236").await.unwrap();
+                thread::spawn(move || {
+                  let server = Server::bind("127.0.0.1:2794").unwrap();
+
+                  /*let ws_server = TcpListener::bind("127.0.0.1:3236").unwrap();
                   println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
-                  while let Ok((raw_stream, addr)) = ws_server.accept().await {
-                    let ws_stream = tokio_tungstenite::accept_async(raw_stream).await.unwrap();
+                  while let Ok((raw_stream, addr)) = ws_server.accept() {
+                    let ws_stream = tokio_tungstenite::accept_async(raw_stream).unwrap();
                     mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream)));
-                  }
+                  }*/
                 });
 
                 // Loop to receive UDP messages from remote cores
                 loop {
-                  let (amt, src) = socket.recv_from(&mut buf).await.unwrap();
+                  let (amt, src) = socket.recv_from(&mut buf).unwrap();
                   let now = SystemTime::now();
                   let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
                   match message {
                     // If a remote core connects, send a connection message back to it
                     Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                      CORE_MAP.lock().await.insert(src,(remote_core_address.clone(), SystemTime::now()));
+                      CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
                       mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone())).unwrap();
-                      let len = socket.send_to(&message, src.clone()).await.unwrap();
+                      let len = socket.send_to(&message, src.clone()).unwrap();
                     },
                     Ok(SocketMessage::Ping) => {
-                      let mut core_map = CORE_MAP.lock().await;
+                      let mut core_map = CORE_MAP.lock().unwrap();
                       match core_map.get_mut(&src) {
                         Some((_, last_seen)) => {
                           *last_seen = now;
@@ -430,7 +432,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         None => (),
                       }
                       let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                      let len = socket.send_to(&message, src).await.unwrap();
+                      let len = socket.send_to(&message, src).unwrap();
                     },
                     _ => (),
                   }
@@ -438,15 +440,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               }
               // Maestro port is bound, start a remote core
               Err(_) => {
-                let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
                 let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
                 // Send a remote core message to the maestro
-                let len = socket.send_to(&message, maestro_address.clone()).await.unwrap();
+                let len = socket.send_to(&message, maestro_address.clone()).unwrap();
                 let mut buf = [0; 16_383];
                 loop {
                   let message = bincode::serialize(&SocketMessage::Ping).unwrap();
-                  let len = socket.send_to(&message, maestro_address.clone()).await.unwrap();
-                  match socket.recv_from(&mut buf).await {
+                  let len = socket.send_to(&message, maestro_address.clone()).unwrap();
+                  match socket.recv_from(&mut buf) {
                     Ok((amt, src)) => {
                       let now = SystemTime::now();
                       if src.to_string() == maestro_address {
@@ -457,7 +459,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Maestro is still alive
                           },
                           Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                            CORE_MAP.lock().await.insert(src,(remote_core_address.clone(), SystemTime::now()));
+                            CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
                             mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
                           }
                           _ => (),
