@@ -224,14 +224,17 @@ impl WasmCore {
     {
       let wasm_core = self as *mut WasmCore;
       let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
-        log!("Got a message: {:?}", e);
-        // Handle difference Text/Binary,...
         if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-          log!("message event, received arraybuffer: {:?}", abuf);
           let array = js_sys::Uint8Array::new(&abuf);
           let len = array.byte_length() as usize;
-          let msg: SocketMessage = bincode::deserialize(&array.to_vec()).unwrap();
-          log!("{:?}", msg);
+          let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&array.to_vec());
+          match msg {
+            Ok(SocketMessage::Transaction(txn)) => {
+              log!("{:?}", txn);
+            }
+            msg => log!("{:?}", msg),
+          }
+          
 
           /*
           // here you can for example use Serde Deserialize decode the message
