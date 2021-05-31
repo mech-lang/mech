@@ -27,3 +27,4 @@ tungstenite = "0.13.0"
 tokio = {version = "1.6.1", features = ["net"]}
 tokio-tungstenite = "0.14.0"
 futures-util = "0.3.15"
+websocket = "0.26.2"
