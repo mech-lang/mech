@@ -1605,7 +1605,9 @@ impl Compiler {
           _ => NumberLiteral{kind: *kind, bytes: bytes.clone()}, // TODO Do the right byte representation for the rest of the number literal kinds
         };
         let value = Value::from_number_literal(&number_literal);
-        self.number_literals.insert(value, number_literal);
+        if number_literal.bytes.len() > 7 {
+          self.number_literals.insert(value, number_literal);
+        } 
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value, unit: 0});
       }
       Node::Empty => {
