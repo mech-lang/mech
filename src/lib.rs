@@ -1960,23 +1960,19 @@ impl WasmCore {
         Some((stroke_id,_)) => {
           match stroke_id.as_number_literal() {
             Some(stroke_number_literal_id) => {
-              let number_literal = unsafe{ (*wasm_core).core.get_number_literal(&stroke_number_literal_id).unwrap() };
-              let color_string = match number_literal.kind {
-                NumberLiteralKind::Hexadecimal => {
-                  if number_literal.bytes.len() == 3 {
-                    let mut byte_string: String = "#".to_string();
-                    for byte in number_literal.bytes {
-                      byte_string = format!("{}{:02x}", byte_string, byte);
-                    }
-                    byte_string
-                  } else {
-                    log!("Color must be a three byte hexadecimal number literal (You passed in {}). Defaulting to 0x000000", number_literal.bytes.len());
-                    "#000000".to_string()
+              match unsafe{ (*wasm_core).core.get_number_literal(stroke_number_literal_id) } {
+                Some(number_literal) => {
+                  let mut color_string: String = "#".to_string();
+                  for byte in number_literal {
+                    color_string = format!("{}{:02x}", color_string, byte);
                   }
+                  color_string
                 }
-                _ => "#000000".to_string(),
-              };
-              color_string
+                None => {
+                  log!("NONE");
+                  "#000000".to_string()
+                }
+              }
             },
             _ => {
               log!("Color must be a three byte hexadecimal number literal. Defaulting to 0x000000");
