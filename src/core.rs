@@ -3,7 +3,7 @@ use errors::{Error, ErrorType};
 use database::{Database, Change, Transaction};
 use runtime::Runtime;
 use table::{Table, TableIndex, TableId};
-use value::{Value, NumberLiteral};
+use value::{Value, NumberLiteral, ValueMethods};
 use std::sync::Arc;
 use std::cell::RefCell;
 use rust_core::fmt;
@@ -96,10 +96,22 @@ impl Core {
     }
   }
 
-  pub fn get_number_literal(&self, id: &u64) -> Option<NumberLiteral> {
+  pub fn get_number_literal(&self, id: u64) -> Option<Vec<u8>> {
     match self.database.borrow().store.number_literals.get(&id) {
-      Some(number_literal) => Some(number_literal.clone()),
-      None => None,
+      Some(number_literal) => Some(number_literal.bytes.clone()),
+      None => {
+        if id.is_number_literal() {
+          let len = id.len().unwrap();
+          let mut bytes: Vec<u8> = Vec::with_capacity(len);
+          for i in 0..len {
+            bytes.push((id >> i * 8) as u8);
+          }
+          bytes.reverse();
+          Some(bytes)
+        } else {
+          None
+        }
+      },
     }
   }
 
