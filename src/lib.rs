@@ -231,8 +231,10 @@ impl WasmCore {
           match msg {
             Ok(SocketMessage::Transaction(txn)) => {
               log!("{:?}", txn);
-              (*wasm_core).core.process_transaction(txn);
-              (*wasm_core).render();
+              unsafe {
+                (*wasm_core).core.process_transaction(&txn);
+                (*wasm_core).render();
+              }
             }
             msg => log!("{:?}", msg),
           }
