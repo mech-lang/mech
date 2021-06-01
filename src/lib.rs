@@ -216,7 +216,7 @@ impl WasmCore {
   pub fn start_websocket(&mut self, address: String) -> Result<(), JsValue> {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-
+    let wasm_core = self as *mut WasmCore;
     // create callback
     let cloned_ws = ws.clone();
    
@@ -231,11 +231,11 @@ impl WasmCore {
           match msg {
             Ok(SocketMessage::Transaction(txn)) => {
               log!("{:?}", txn);
+              (*wasm_core).mech.process_transaction(txn);
+              (*wasm_core).render();
             }
             msg => log!("{:?}", msg),
           }
-          
-
           /*
           // here you can for example use Serde Deserialize decode the message
           // for demo purposes we switch back to Blob-type and send off another binary message
