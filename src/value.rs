@@ -89,6 +89,9 @@ pub trait ValueMethods {
   fn is_empty(&self) -> bool;
   fn is_number(&self) -> bool;
   fn is_reference(&self) -> bool;
+  fn is_number_literal(&self) -> bool;
+  fn is_number_literal_interned(&self) -> bool;
+  fn len(&self) -> Option<usize>;
   fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
@@ -122,7 +125,6 @@ const STRING: u64 = 0x8000000000000000;
 const NUMBER_LITERAL: u64 = 0xC000000000000000;
 const NUMBER_LITERAL_INTERNED: u64 = 0xD000000000000000;
 
-
 impl ValueMethods for Value {
 
   fn empty() -> Value {
@@ -136,7 +138,10 @@ impl ValueMethods for Value {
         let shift = (number_literal.bytes.len() - ix - 1) * 8;
         number = number | ((*byte as u64) << shift);
       }
-      number + NUMBER_LITERAL
+      let len = (number_literal.bytes.len() as u64) << (14 * 4);
+      number = number + NUMBER_LITERAL;
+      number = number | len;
+      number
     } else {
       hash_string(&format!("byte vector: {:?}",number_literal)) + NUMBER_LITERAL_INTERNED
     }
@@ -203,11 +208,11 @@ impl ValueMethods for Value {
   }
 
   fn as_raw(&self) -> u64 {
-    self & 0x00FFFFFFFFFFFFFF
+    self & 0x0FFFFFFFFFFFFFFF
   }
 
   fn get_tag(&self) -> u64 {
-    self & 0xFF00000000000000
+    self & 0xF000000000000000
   }
 
   fn as_quantity(&self) -> Option<Quantity> {
@@ -243,7 +248,30 @@ impl ValueMethods for Value {
       REFERENCE => true,
       _ => false,
     }
-  }    
+  }   
+  
+  fn is_number_literal(&self) -> bool {
+    match self.get_tag() {
+      NUMBER_LITERAL => true,
+      _ => false,
+    }
+  } 
+
+  fn len(&self) -> Option<usize> {
+    match self.is_number_literal() {
+      true => {
+        Some(((self & 0x0F00000000000000) >> (14 * 4)) as usize)
+      },
+      _ => None,
+    }
+  } 
+
+  fn is_number_literal_interned(&self) -> bool {
+    match self.get_tag() {
+      NUMBER_LITERAL_INTERNED => true,
+      _ => false,
+    }
+  } 
 
   fn as_f64(&self) -> Option<f64> {
     match self.is_number() {
