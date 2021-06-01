@@ -869,7 +869,7 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
                             }
                           },
                           None => {
-                            format!("{}{:0x}",tfm, value);
+                            format!("{}0x{:0x}",tfm, value & 0x00FFFFFFFFFFFFFF);
                           }
                         };
                       }
