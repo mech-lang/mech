@@ -120,7 +120,7 @@ impl Table {
   pub fn resize(&mut self, rows: usize, columns: usize) {
     self.rows = rows;
     self.columns = columns;
-    self.data.resize(rows * columns, Value::empty());
+    self.data.resize(rows * columns, 0);
     self.changed.resize(rows * columns, false);
   }
 
@@ -437,35 +437,41 @@ impl fmt::Debug for Table {
                               }
                             }
                             None => {
-                              let number_literal = self.store.number_literals.get(&value).unwrap();
-                              match number_literal.kind {
-                                NumberLiteralKind::Hexadecimal => {
-                                  let mut tfm = format!("0x");
-                                  for byte in &number_literal.bytes {
-                                    tfm = format!("{}{:02x}",tfm, byte);
+                              match self.store.number_literals.get(&value) {
+                                Some(number_literal) => {
+                                  match number_literal.kind {
+                                    NumberLiteralKind::Hexadecimal => {
+                                      let mut tfm = format!("0x");
+                                      for byte in &number_literal.bytes {
+                                        tfm = format!("{}{:02x}",tfm, byte);
+                                      }
+                                      tfm
+                                    }
+                                    NumberLiteralKind::Binary => {
+                                      let mut tfm = format!("0b");
+                                      for byte in &number_literal.bytes {
+                                        tfm = format!("{}{:b}",tfm, byte);
+                                      }
+                                      tfm
+                                    }
+                                    NumberLiteralKind::Octal => {
+                                      let mut tfm = format!("0o");
+                                      for byte in &number_literal.bytes {
+                                        tfm = format!("{}{:o}",tfm, byte);
+                                      }
+                                      tfm
+                                    }
+                                    NumberLiteralKind::Decimal => {
+                                      let mut tfm = format!("0d");
+                                      for byte in &number_literal.bytes {
+                                        tfm = format!("{}{:}",tfm, byte);
+                                      }
+                                      tfm
+                                    }
                                   }
-                                  tfm
                                 }
-                                NumberLiteralKind::Binary => {
-                                  let mut tfm = format!("0b");
-                                  for byte in &number_literal.bytes {
-                                    tfm = format!("{}{:b}",tfm, byte);
-                                  }
-                                  tfm
-                                }
-                                NumberLiteralKind::Octal => {
-                                  let mut tfm = format!("0o");
-                                  for byte in &number_literal.bytes {
-                                    tfm = format!("{}{:o}",tfm, byte);
-                                  }
-                                  tfm
-                                }
-                                NumberLiteralKind::Decimal => {
-                                  let mut tfm = format!("0d");
-                                  for byte in &number_literal.bytes {
-                                    tfm = format!("{}{:}",tfm, byte);
-                                  }
-                                  tfm
+                                None => {
+                                  format!("0x{:0x}", value & 0x00FFFFFFFFFFFFFF)
                                 }
                               }
                             }

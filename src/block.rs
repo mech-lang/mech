@@ -839,33 +839,39 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
                         tfm = format!("{}{:?}",tfm, block.store.strings.get(value).unwrap());
                       }
                       None => {
-                        let number_literal = block.store.number_literals.get(value).unwrap();
-                        match number_literal.kind {
-                          NumberLiteralKind::Hexadecimal => {
-                            tfm = format!("{}0x",tfm);
-                            for byte in &number_literal.bytes {
-                              tfm = format!("{}{:x}",tfm, byte);
+                        match block.store.number_literals.get(value) {
+                          Some(number_literal) => {
+                            match number_literal.kind {
+                              NumberLiteralKind::Hexadecimal => {
+                                tfm = format!("{}0x",tfm);
+                                for byte in &number_literal.bytes {
+                                  tfm = format!("{}{:x}",tfm, byte);
+                                }
+                              }
+                              NumberLiteralKind::Binary => {
+                                tfm = format!("{}0b",tfm);
+                                for byte in &number_literal.bytes {
+                                  tfm = format!("{}{:b}",tfm, byte);
+                                }
+                              }
+                              NumberLiteralKind::Octal => {
+                                tfm = format!("{}0o",tfm);
+                                for byte in &number_literal.bytes {
+                                  tfm = format!("{}{:o}",tfm, byte);
+                                }
+                              }
+                              NumberLiteralKind::Decimal => {
+                                tfm = format!("{}0d",tfm);
+                                for byte in &number_literal.bytes {
+                                  tfm = format!("{}{:}",tfm, byte);
+                                }
+                              }
                             }
+                          },
+                          None => {
+                            format!("{}{:0x}",tfm, value);
                           }
-                          NumberLiteralKind::Binary => {
-                            tfm = format!("{}0b",tfm);
-                            for byte in &number_literal.bytes {
-                              tfm = format!("{}{:b}",tfm, byte);
-                            }
-                          }
-                          NumberLiteralKind::Octal => {
-                            tfm = format!("{}0o",tfm);
-                            for byte in &number_literal.bytes {
-                              tfm = format!("{}{:o}",tfm, byte);
-                            }
-                          }
-                          NumberLiteralKind::Decimal => {
-                            tfm = format!("{}0d",tfm);
-                            for byte in &number_literal.bytes {
-                              tfm = format!("{}{:}",tfm, byte);
-                            }
-                          }
-                        }
+                        };
                       }
                     }
                   }
