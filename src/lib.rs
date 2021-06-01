@@ -231,7 +231,7 @@ impl WasmCore {
           match msg {
             Ok(SocketMessage::Transaction(txn)) => {
               log!("{:?}", txn);
-              (*wasm_core).mech.process_transaction(txn);
+              (*wasm_core).core.process_transaction(txn);
               (*wasm_core).render();
             }
             msg => log!("{:?}", msg),
