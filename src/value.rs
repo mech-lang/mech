@@ -120,6 +120,8 @@ const FALSE: u64 = 0x4000000000000000;
 const REFERENCE: u64 = 0x2000000000000000;
 const STRING: u64 = 0x8000000000000000;
 const NUMBER_LITERAL: u64 = 0xC000000000000000;
+const NUMBER_LITERAL_INTERNED: u64 = 0xD000000000000000;
+
 
 impl ValueMethods for Value {
 
@@ -128,9 +130,16 @@ impl ValueMethods for Value {
   }
 
   fn from_number_literal(number_literal: &NumberLiteral) -> Value {
-    let mut vector_hash = hash_string(&format!("byte vector: {:?}",number_literal));
-    vector_hash = vector_hash + NUMBER_LITERAL;
-    vector_hash
+    if number_literal.bytes.len() <= 7 {
+      let mut number: u64 = 0;
+      for (ix, byte) in number_literal.bytes.iter().enumerate() {
+        let shift = (number_literal.bytes.len() - ix - 1) * 8;
+        number = number | ((*byte as u64) << shift);
+      }
+      number + NUMBER_LITERAL
+    } else {
+      hash_string(&format!("byte vector: {:?}",number_literal)) + NUMBER_LITERAL_INTERNED
+    }
   }
 
   fn from_string(string: &String) -> Value {
@@ -224,7 +233,7 @@ impl ValueMethods for Value {
 
   fn is_number(&self) -> bool {
     match self.get_tag() {
-      EMPTY | REFERENCE | TRUE | FALSE | STRING | NUMBER_LITERAL => false,
+      EMPTY | REFERENCE | TRUE | FALSE | STRING | NUMBER_LITERAL | NUMBER_LITERAL_INTERNED => false,
       _ => true,
     }
   }
@@ -290,7 +299,7 @@ impl ValueMethods for Value {
 
   fn as_number_literal(&self) -> Option<u64> {
     match self.get_tag() {
-      NUMBER_LITERAL => Some(*self),
+      NUMBER_LITERAL | NUMBER_LITERAL_INTERNED => Some(*self),
       _ => None,
     }
   }
