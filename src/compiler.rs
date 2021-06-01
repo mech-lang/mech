@@ -1583,18 +1583,22 @@ impl Compiler {
         let number_literal = match kind {
           NumberLiteralKind::Hexadecimal => {
             let mut new_bytes = vec![];
-            for i in (0..=bytes.len()).step_by(2) {
-              let b1 = if i == bytes.len() {
-                break;
-              } else {
-                bytes[i]
-              };
-              let b2 = if i + 1 == bytes.len() {
-                0
-              } else {
-                bytes[i + 1]
-              };
-              new_bytes.push(b1 << 4 | b2);
+            if bytes.len() == 1 {
+              new_bytes = bytes.to_vec();
+            } else {
+              for i in (0..=bytes.len()).step_by(2) {
+                let b1 = if i == bytes.len() {
+                  break;
+                } else {
+                  bytes[i]
+                };
+                let b2 = if i + 1 == bytes.len() {
+                  0
+                } else {
+                  bytes[i + 1]
+                };
+                new_bytes.push(b1 << 4 | b2);
+              }
             }
             NumberLiteral{kind: *kind, bytes: new_bytes}
           }
