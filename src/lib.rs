@@ -312,64 +312,7 @@ impl WasmCore {
     self.websocket = Some(ws);
     Ok(())
   }
-
-    /*
-    let mut ws = web_sys::WebSocket::new(&address).unwrap();
-    //let wasm_core = self as *mut Core;
-    // Set On Opened
-    {
-      let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-        log!("Opened {:?}", event);
-        /*unsafe {
-          let mut message_data: Vec<u64> = Vec::new();
-          for input_register in (*wasm_core).core.input.iter() {
-            message_data.push(input_register.table);
-          }
-          let json_msg = serde_json::to_string(&WebsocketClientMessage::Listening(message_data)).unwrap();
-          (*wasm_core).websocket.clone().unwrap().send_with_str(&json_msg);
-        }*/
-      }) as Box<dyn FnMut(_)>);
-      ws.set_onopen(Some(&closure.as_ref().unchecked_ref()));
-      closure.forget();
-    }
-    // Set On Messaged
-    {
-      let closure = Closure::wrap(Box::new(move |event: web_sys::MessageEvent| {
-        log!("On Message: {:?}", event);
-        /*let deserialized: Result<WebsocketClientMessage, serde_json::Error> = serde_json::from_str(&event.data().as_string().unwrap());
-        unsafe {
-          match deserialized {
-            Ok(WebsocketClientMessage::Listening(remote_tables)) => {
-              for table_id in remote_tables {
-                let ws = (*wasm_core).websocket.clone().unwrap().clone();
-                let (ws, remote_tables) = (*wasm_core).remote_tables.entry(1).or_insert((ws, HashSet::new()));
-                remote_tables.insert(table_id.clone());
-              }
-            },
-            Ok(WebsocketClientMessage::Transaction(txn)) => {
-              (*wasm_core).core.process_transaction(&txn);
-            },
-            _ => (),
-          }
-
-        }*/
-      }) as Box<dyn FnMut(_)>);
-      ws.set_onmessage(Some(&closure.as_ref().unchecked_ref()));
-      closure.forget();
-    }
-    // Set On Close
-    {
-      let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-        log!("Closing");
-      }) as Box<dyn FnMut(_)>);
-      ws.set_onclose(Some(&closure.as_ref().unchecked_ref()));
-      closure.forget();
-    }
-    self.websocket = Some(ws);
-    
-
-
-
+/*
   pub fn connect_remote_cores(&mut self) {
     let wasm_core = self as *mut Core;
     match self.core.get_table("mech/remote-cores".to_string()) {
