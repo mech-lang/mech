@@ -139,11 +139,11 @@ pub struct WasmCore {
   nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
-  roots: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
   event_id: u32,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
+  applications: HashSet<u64>,
 }
 
 #[wasm_bindgen]
@@ -205,11 +205,11 @@ impl WasmCore {
       nodes: HashMap::new(),
       views: HashSet::new(),
       inline_views: HashSet::new(),
-      roots: HashSet::new(),
       websocket: None,
       remote_tables: HashMap::new(),
       event_id: 0,
       timers: HashMap::new(),
+      applications: HashSet::new(),
     }
   }
   
@@ -1316,6 +1316,111 @@ impl WasmCore {
   }*/
 
   */
+
+  pub fn init(&mut self) -> Result<(), JsValue> {
+    let wasm_core = self as *mut WasmCore;
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+
+    {
+      let key_closure = |table_id| { 
+        Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+          let window = web_sys::window().expect("no global `window` exists");
+          let document = window.document().expect("should have a document on window");
+          let key = event.key();
+          // TODO Make this safe
+          unsafe {
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, 
+              values: vec![(TableIndex::Index(1), 
+              TableIndex::Alias(*KEY),
+              Value::from_string(&key.to_string()))],
+            });    
+            (*wasm_core).event_id += 1;
+            let eid = (*wasm_core).event_id;
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, values: vec![
+              (TableIndex::Index(1), 
+              TableIndex::Alias(*EVENT__ID),
+              Value::from_u32(eid))],
+            });           
+            (*wasm_core).process_transaction();
+            (*wasm_core).render();
+            //let table = (*wasm_core).core.get_table(hash_string("balls"));
+            //log!("{:?}", table);
+          }
+        }) as Box<dyn FnMut(_)>)
+      };
+      let keydown_callback = key_closure(*HTML_EVENT_KEY__DOWN);
+      document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
+      let keyup_callback = key_closure(*HTML_EVENT_KEY__UP);
+      document.add_event_listener_with_callback("keyup", keyup_callback.as_ref().unchecked_ref())?;
+      keydown_callback.forget();
+      keyup_callback.forget();
+    }
+    {
+      let pointer_closure = |table_id| { 
+        Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+          let window = web_sys::window().expect("no global `window` exists");
+          let document = window.document().expect("should have a document on window");
+          let target = event.target().unwrap();
+          let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
+          let target_table_id = target_element.id().parse::<u64>().unwrap();
+          //log!("{:?}", target_element.id().parse::<u64>().unwrap());
+
+          let x = event.offset_x();
+          let y = event.offset_y();
+          //log!("event: {:?} {:?}", x, y);
+          // TODO Make this safe
+          unsafe {
+
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, values: vec![
+              (TableIndex::Index(1), 
+              TableIndex::Alias(*X),
+              Value::from_i32(x as i32))],
+            });
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, values: vec![
+              (TableIndex::Index(1), 
+              TableIndex::Alias(*Y),
+              Value::from_i32(y as i32))],
+            });              
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, values: vec![
+              (TableIndex::Index(1), 
+              TableIndex::Alias(*TARGET),
+              Value::from_id(target_table_id))],
+            });            
+            (*wasm_core).event_id += 1;
+            let eid = (*wasm_core).event_id;
+            (*wasm_core).changes.push(Change::Set{
+              table_id: table_id, values: vec![
+              (TableIndex::Index(1), 
+              TableIndex::Alias(*EVENT__ID),
+              Value::from_u32(eid))],
+            });           
+            (*wasm_core).process_transaction();
+            (*wasm_core).render();
+            //let table = (*wasm_core).core.get_table(hash_string("clicked"));
+            //log!("{:?}", table);
+          }
+        }) as Box<dyn FnMut(_)>)
+      };
+      let move_callback = pointer_closure(*HTML_EVENT_POINTER__MOVE);
+      document.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
+      let down_callback = pointer_closure(*HTML_EVENT_POINTER__DOWN);
+      document.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
+      let up_callback = pointer_closure(*HTML_EVENT_POINTER__UP);
+      document.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
+
+      move_callback.forget();
+      down_callback.forget();
+      up_callback.forget();
+    }
+    Ok(())
+  }
+
   pub fn add_application(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
     let table = self.core.get_table(*HTML_APP);
@@ -1323,75 +1428,27 @@ impl WasmCore {
       Some(app_table) => {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-
-        {
-          let key_closure = |table_id| { 
-            Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-              let window = web_sys::window().expect("no global `window` exists");
-              let document = window.document().expect("should have a document on window");
-              let key = event.key();
-              // TODO Make this safe
-              unsafe {
-                (*wasm_core).changes.push(Change::Set{
-                  table_id: table_id, 
-                  values: vec![(TableIndex::Index(1), 
-                  TableIndex::Alias(*KEY),
-                  Value::from_string(&key.to_string()))],
-                });    
-                (*wasm_core).event_id += 1;
-                let eid = (*wasm_core).event_id;
-                (*wasm_core).changes.push(Change::Set{
-                  table_id: table_id, values: vec![
-                  (TableIndex::Index(1), 
-                  TableIndex::Alias(*EVENT__ID),
-                  Value::from_u32(eid))],
-                });           
-                (*wasm_core).process_transaction();
-                (*wasm_core).render();
-                //let table = (*wasm_core).core.get_table(hash_string("balls"));
-                //log!("{:?}", table);
-              }
-            }) as Box<dyn FnMut(_)>)
-          };
-          let keydown_callback = key_closure(*HTML_EVENT_KEY__DOWN);
-          document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
-          let keyup_callback = key_closure(*HTML_EVENT_KEY__UP);
-          document.add_event_listener_with_callback("keyup", keyup_callback.as_ref().unchecked_ref())?;
-          keydown_callback.forget();
-          keyup_callback.forget();
-        }
-
-
         for row in 1..=app_table.rows as usize {
           match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
                  app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
             (Some((root_id,_)), Some((contents,_))) => {
-              let root_string_id = &self.core.get_string(&root_id).unwrap();
-              self.roots.insert(root_id.clone());
-              match document.get_element_by_id(&root_string_id) {
-                Some(drawing_area) => {
-                  let app = self.render_value(contents)?;
-                  drawing_area.append_child(&app)?;
+              match self.applications.contains(&root_id) {
+                true => continue,
+                false => {
+                  self.applications.insert(root_id.clone());
+                  let root_string_id = &self.core.get_string(&root_id).unwrap();
+                  match document.get_element_by_id(&root_string_id) {
+                    Some(drawing_area) => {
+                      let app = self.render_value(contents)?;
+                      drawing_area.append_child(&app)?;
+                    }
+                    _ => {log!("No drawing area found.");},
+                  }
                 }
-                _ => {log!("No drawing area found.");},
               }
             }
             _ => {log!("No root or contents column in #html/app");}, // TODO Alert user there is no root and or contents column in app_table
           }        
-        }
-        for canvas_id in &self.canvases {
-          match document.get_element_by_id(&format!("{}",canvas_id)) {
-            Some(canvas) => {
-              let canvas: web_sys::HtmlCanvasElement = canvas
-                .dyn_into::<web_sys::HtmlCanvasElement>()
-                .map_err(|_| ())
-                .unwrap();
-              unsafe {
-                (*wasm_core).render_canvas(&canvas);
-              }
-            }
-            _ => (),
-          }
         }
       }
       _ => {log!("No #html/app in the core");}, // TODO Alert the user no app was found
@@ -1403,23 +1460,7 @@ impl WasmCore {
     let wasm_core = self as *mut WasmCore;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
-    // ---------------------
-    // RENDER ALL CANVASES
-    // ---------------------
-    for canvas_id in &self.canvases {
-      match document.get_element_by_id(&format!("{}",canvas_id)) {
-        Some(canvas) => {
-          let canvas: web_sys::HtmlCanvasElement = canvas
-            .dyn_into::<web_sys::HtmlCanvasElement>()
-            .map_err(|_| ())
-            .unwrap();
-          unsafe {
-            (*wasm_core).render_canvas(&canvas);
-          }
-        }
-        _ => (),
-      }
-    }
+    self.render_canvases();
     Ok(())
   }
 
@@ -1580,66 +1621,6 @@ impl WasmCore {
                       }
                     }
                     _ => (),
-                  }
-                  {
-                    let pointer_closure = |table_id| { 
-                      Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                        let window = web_sys::window().expect("no global `window` exists");
-                        let document = window.document().expect("should have a document on window");
-                        let target = event.target().unwrap();
-                        let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
-                        let target_table_id = target_element.id().parse::<u64>().unwrap();
-                        //log!("{:?}", target_element.id().parse::<u64>().unwrap());
-
-                        let x = event.offset_x();
-                        let y = event.offset_y();
-                        //log!("event: {:?} {:?}", x, y);
-                        // TODO Make this safe
-                        unsafe {
-
-                          (*wasm_core).changes.push(Change::Set{
-                            table_id: table_id, values: vec![
-                            (TableIndex::Index(1), 
-                            TableIndex::Alias(*X),
-                            Value::from_i32(x as i32))],
-                          });
-                          (*wasm_core).changes.push(Change::Set{
-                            table_id: table_id, values: vec![
-                            (TableIndex::Index(1), 
-                            TableIndex::Alias(*Y),
-                            Value::from_i32(y as i32))],
-                          });              
-                          (*wasm_core).changes.push(Change::Set{
-                            table_id: table_id, values: vec![
-                            (TableIndex::Index(1), 
-                            TableIndex::Alias(*TARGET),
-                            Value::from_id(target_table_id))],
-                          });            
-                          (*wasm_core).event_id += 1;
-                          let eid = (*wasm_core).event_id;
-                          (*wasm_core).changes.push(Change::Set{
-                            table_id: table_id, values: vec![
-                            (TableIndex::Index(1), 
-                            TableIndex::Alias(*EVENT__ID),
-                            Value::from_u32(eid))],
-                          });           
-                          (*wasm_core).process_transaction();
-                          (*wasm_core).render();
-                          //let table = (*wasm_core).core.get_table(hash_string("clicked"));
-                          //log!("{:?}", table);
-                        }
-                      }) as Box<dyn FnMut(_)>)
-                    };
-                    let move_callback = pointer_closure(*HTML_EVENT_POINTER__MOVE);
-                    canvas.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
-                    let down_callback = pointer_closure(*HTML_EVENT_POINTER__DOWN);
-                    canvas.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
-                    let up_callback = pointer_closure(*HTML_EVENT_POINTER__UP);
-                    canvas.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
-
-                    move_callback.forget();
-                    down_callback.forget();
-                    up_callback.forget();
                   }
                   container.append_child(&canvas)?;
                 }
@@ -1898,6 +1879,29 @@ impl WasmCore {
     }
     Ok(())
   }*/
+
+  pub fn render_canvases(&mut self) -> Result<(), JsValue> {
+    let wasm_core = self as *mut WasmCore;
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    
+    for canvas_id in &self.canvases {
+      match document.get_element_by_id(&format!("{}",canvas_id)) {
+        Some(canvas) => {
+          let canvas: web_sys::HtmlCanvasElement = canvas
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .map_err(|_| ())
+            .unwrap();
+          unsafe {
+            (*wasm_core).render_canvas(&canvas);
+          }
+        }
+        _ => (),
+      }
+    }
+    Ok(())
+  }
+
 
   pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
 
