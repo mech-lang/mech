@@ -392,7 +392,8 @@ impl WasmCore {
     self.core.register_blocks(blocks);
     self.core.step();
     self.add_timers();
-      
+    self.add_applications();
+
     log!("Loaded {} blocks.", len);
   }
 
@@ -526,7 +527,6 @@ impl WasmCore {
       down_callback.forget();
       up_callback.forget();
     }
-    self.add_applications();
     Ok(())
   }
 
