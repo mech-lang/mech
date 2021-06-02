@@ -1206,7 +1206,7 @@ impl WasmCore {
             //context.close_path();
             context.restore();
           // ---------------------
-          // RENDER A IMAGE
+          // RENDER AN IMAGE
           // --------------------- 
           } else if shape == *IMAGE {
             match (parameters_table.get_string(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
