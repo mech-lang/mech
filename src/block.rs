@@ -240,10 +240,24 @@ impl Block {
            // _ => (),
           }
         }
-        Transformation::Set{table_id, row: _, column: _} => {
+        Transformation::Set{table_id, row, column} => {
           let register_all = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
           self.output.insert(register_all);       
           self.output_dependencies.insert(register_all);          
+          match row {
+            TableIndex::Table(TableId::Global(id)) => {
+              let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
+              self.input.insert(register);
+            }
+            _ => (),
+          }
+          match column {
+            TableIndex::Table(TableId::Global(id)) => {
+              let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
+              self.input.insert(register);
+            }
+            _ => (),
+          }
         }
         Transformation::Whenever{table_id, registers, ..} => {
           let whenever_ix_table_id = hash_string("~");
