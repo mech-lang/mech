@@ -298,6 +298,16 @@ impl WasmCore {
       ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
       onopen_callback.forget();
     }
+
+    // On Close
+    {
+      let onclose_callback = Closure::wrap(Box::new(move |event: web_sys::Event| {
+        log!("Closing");
+      }) as Box<dyn FnMut(_)>);
+      ws.set_onclose(Some(&onclose_callback.as_ref().unchecked_ref()));
+      onclose_callback.forget();
+    }
+
     // Todo, make sef.websocket int oa vector of websockets.
     self.websocket = Some(ws);
     Ok(())
