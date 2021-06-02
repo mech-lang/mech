@@ -10,17 +10,14 @@
       async function run() {
         await init();
         let wasm_core = new_core();
+        wasm_core.init();
         var xhr = new XMLHttpRequest();
         xhr.open('GET', "./blocks", false);
         xhr.send();
         let program = xhr.responseText;
         let blocks = JSON.parse(program).blocks;
-        //wasm_core.clear();
         wasm_core.load_blocks(blocks);
-        //wasm_core.connect_remote_cores();
-        wasm_core.add_application();
-        wasm_core.start_websocket("ws://127.0.0.1:3236");
-        //wasm_core.connect_remote_core("ws://127.0.0.1:3012/ws/");
+        wasm_core.connect_remote_core("ws://127.0.0.1:3236");
       }
       run();
     </script>
