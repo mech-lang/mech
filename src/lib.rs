@@ -213,7 +213,7 @@ impl WasmCore {
     }
   }
   
-  pub fn start_websocket(&mut self, address: String) -> Result<(), JsValue> {
+  pub fn connect_remote_core(&mut self, address: String) -> Result<(), JsValue> {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
     let wasm_core = self as *mut WasmCore;
