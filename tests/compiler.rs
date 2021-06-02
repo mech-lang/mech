@@ -403,6 +403,36 @@ block
 block
   #test = stats/sum(column: #foo.y)", Value::from_i32(40));
 
+test_mech!(set_multirow_empty,"
+block
+  #html/event/pointer-move = [|x y| _ _]
+  #html/event/pointer-down = [|x y| _ _]
+
+Define the environment
+  #balls = [|x   y   vx vy radius|
+              250 250  0 0  10
+              100 100  0 0  25]
+  #gravity = 9.8
+
+## Pointer
+
+Keep track of which balls are clicked
+  ~ #gravity
+  #clicked = #balls.x != #balls.x
+
+Determine if the pointer is within the ball's hitbox
+  ~ #html/event/pointer-move
+  dx = #html/event/pointer-move.x - #balls.x
+  dy = #html/event/pointer-move.y - #balls.y
+  #hover = [((dx ^ 2 + dy ^ 2) ^ 0.5) < #balls.radius]
+
+Click the circle
+  ~ #html/event/pointer-down
+  #clicked{#hover} := true
+  
+block
+  #test = #balls.x{1} + #balls.x{2}", Value::from_i32(350));
+
 test_mech!(set_column_alias,"
 block
   #test = #ball.x
