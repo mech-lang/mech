@@ -219,8 +219,6 @@ impl WasmCore {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
     let wasm_core = self as *mut WasmCore;
-    // create callback
-    let cloned_ws = ws.clone();
    
     // OnMessage
     {
@@ -240,33 +238,8 @@ impl WasmCore {
             }
             msg => log!("{:?}", msg),
           }
-          /*
-          // here you can for example use Serde Deserialize decode the message
-          // for demo purposes we switch back to Blob-type and send off another binary message
-          cloned_ws.set_binary_type(web_sys::BinaryType::Blob);
-          match cloned_ws.send_with_u8_array(&vec![5, 6, 7, 8]) {
-            Ok(_) => log!("binary message successfully sent"),
-            Err(err) => log!("error sending message: {:?}", err),
-          }*/
-        } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
-          log!("message event, received blob: {:?}", blob);
-          // better alternative to juggling with FileReader is to use https://crates.io/crates/gloo-file
-          let fr = web_sys::FileReader::new().unwrap();
-          let fr_c = fr.clone();
-          // create onLoadEnd callback
-          let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
-            let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
-            let len = array.byte_length() as usize;
-            log!("Blob received {}bytes: {:?}", len, array.to_vec());
-            // here you can for example use the received image/png data
-          }) as Box<dyn FnMut(web_sys::ProgressEvent)>);
-          fr.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
-          fr.read_as_array_buffer(&blob).expect("blob not readable");
-          onloadend_cb.forget();
-        } else if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
-          log!("message event, received Text: {:?}", txt);
         } else {
-          log!("message event, received Unknown: {:?}", e.data());
+          log!("Unhandled Message {:?}", e.data());
         }
       }) as Box<dyn FnMut(MessageEvent)>);
       ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
@@ -304,7 +277,7 @@ impl WasmCore {
     // On Close
     {
       let onclose_callback = Closure::wrap(Box::new(move |event: web_sys::Event| {
-        log!("Closing");
+        log!("Websocket Closed.");
       }) as Box<dyn FnMut(_)>);
       ws.set_onclose(Some(&onclose_callback.as_ref().unchecked_ref()));
       onclose_callback.forget();
