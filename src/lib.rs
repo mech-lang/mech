@@ -230,9 +230,9 @@ impl WasmCore {
           let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&array.to_vec());
           match msg {
             Ok(SocketMessage::Transaction(txn)) => {
-              log!("{:?}", txn);
               unsafe {
                 (*wasm_core).core.process_transaction(&txn);
+                (*wasm_core).add_application();
                 (*wasm_core).render();
               }
             }
