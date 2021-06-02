@@ -1418,10 +1418,11 @@ impl WasmCore {
       down_callback.forget();
       up_callback.forget();
     }
+    self.add_applications();
     Ok(())
   }
 
-  pub fn add_application(&mut self) -> Result<(), JsValue> {
+  pub fn add_applications(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
     let table = self.core.get_table(*HTML_APP);
     match table {
@@ -1884,7 +1885,7 @@ impl WasmCore {
     let wasm_core = self as *mut WasmCore;
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
-    
+
     for canvas_id in &self.canvases {
       match document.get_element_by_id(&format!("{}",canvas_id)) {
         Some(canvas) => {
