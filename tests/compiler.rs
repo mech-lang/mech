@@ -564,6 +564,23 @@ block
 block
   #x := 10", Value::from_i32(10));
 
+test_mech!(set_table_index_row_dependency,"
+block
+  #x = [x: 3]
+
+block
+  #balls = [x: 10]
+
+block
+  ~ #x
+  #balls.x{#clicked} := #x.x
+  
+block
+  #clicked = true
+  
+block
+  #test = #balls.x", Value::from_i32(3));
+
 // ## Concat
 
 test_mech!(concat_horzcat_data,"
