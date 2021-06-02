@@ -144,6 +144,7 @@ pub struct WasmCore {
   event_id: u32,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   applications: HashSet<u64>,
+  document: web_sys::Document,
 }
 
 #[wasm_bindgen]
@@ -210,6 +211,7 @@ impl WasmCore {
       event_id: 0,
       timers: HashMap::new(),
       applications: HashSet::new(),
+      document: web_sys::window().unwrap().document().unwrap(),
     }
   }
   
@@ -428,14 +430,10 @@ impl WasmCore {
 
   pub fn init(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
 
     {
       let key_closure = |table_id| { 
         Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-          let window = web_sys::window().expect("no global `window` exists");
-          let document = window.document().expect("should have a document on window");
           let key = event.key();
           // TODO Make this safe
           unsafe {
@@ -461,17 +459,15 @@ impl WasmCore {
         }) as Box<dyn FnMut(_)>)
       };
       let keydown_callback = key_closure(*HTML_EVENT_KEY__DOWN);
-      document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
+      self.document.add_event_listener_with_callback("keydown", keydown_callback.as_ref().unchecked_ref())?;
       let keyup_callback = key_closure(*HTML_EVENT_KEY__UP);
-      document.add_event_listener_with_callback("keyup", keyup_callback.as_ref().unchecked_ref())?;
+      self.document.add_event_listener_with_callback("keyup", keyup_callback.as_ref().unchecked_ref())?;
       keydown_callback.forget();
       keyup_callback.forget();
     }
     {
       let pointer_closure = |table_id| { 
         Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-          let window = web_sys::window().expect("no global `window` exists");
-          let document = window.document().expect("should have a document on window");
           let target = event.target().unwrap();
           let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
           let target_table_id = target_element.id().parse::<u64>().unwrap();
@@ -517,11 +513,11 @@ impl WasmCore {
         }) as Box<dyn FnMut(_)>)
       };
       let move_callback = pointer_closure(*HTML_EVENT_POINTER__MOVE);
-      document.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
+      self.document.add_event_listener_with_callback("pointermove", move_callback.as_ref().unchecked_ref())?;
       let down_callback = pointer_closure(*HTML_EVENT_POINTER__DOWN);
-      document.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
+      self.document.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
       let up_callback = pointer_closure(*HTML_EVENT_POINTER__UP);
-      document.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
+      self.document.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
 
       move_callback.forget();
       down_callback.forget();
@@ -535,8 +531,6 @@ impl WasmCore {
     let table = self.core.get_table(*HTML_APP);
     match table {
       Some(app_table) => {
-        let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("should have a document on window");
         for row in 1..=app_table.rows as usize {
           match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
                  app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
@@ -546,7 +540,7 @@ impl WasmCore {
                 false => {
                   self.applications.insert(root_id.clone());
                   let root_string_id = &self.core.get_string(&root_id).unwrap();
-                  match document.get_element_by_id(&root_string_id) {
+                  match self.document.get_element_by_id(&root_string_id) {
                     Some(drawing_area) => {
                       let app = self.render_value(contents)?;
                       drawing_area.append_child(&app)?;
@@ -567,16 +561,12 @@ impl WasmCore {
 
   pub fn render(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
     self.render_canvases();
     Ok(())
   }
 
   fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let mut div = document.create_element("div")?;
+    let mut div = self.document.create_element("div")?;
     match value.value_type() {
       ValueType::String => {
         let str_hash = value.as_string().unwrap();
@@ -600,9 +590,7 @@ impl WasmCore {
 
   fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let mut container: web_sys::Element = document.create_element("div")?;
+    let mut container: web_sys::Element = self.document.create_element("div")?;
     let element_id = hash_string(&format!("div-{:?}", table.id));
     container.set_id(&format!("{:?}",element_id));
     container.set_attribute("table-id", &format!("{}", table.id))?;
@@ -637,7 +625,7 @@ impl WasmCore {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
-                  let mut link: web_sys::Element = document.create_element("a")?;
+                  let mut link: web_sys::Element = self.document.create_element("a")?;
                   let href_string = &self.core.get_string(&href).unwrap();
                   let element_id = hash_string(&format!("a-{:?}-{:?}", table.id, row));
                   link.set_attribute("href",href_string)?;
@@ -656,7 +644,7 @@ impl WasmCore {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
                 Some((src,_)) => {
-                  let mut img: web_sys::Element = document.create_element("img")?;
+                  let mut img: web_sys::Element = self.document.create_element("img")?;
                   let src_string = &self.core.get_string(&src).unwrap();
                   let element_id = hash_string(&format!("img-{:?}-{:?}", table.id, row));
                   img.set_attribute("src",src_string)?;
@@ -675,7 +663,7 @@ impl WasmCore {
                   let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
-                  let mut button: web_sys::Element = document.create_element("button")?;
+                  let mut button: web_sys::Element = self.document.create_element("button")?;
                   let element_id = hash_string(&format!("button-{:?}-{:?}", table.id, row));
                   button.set_id(&format!("{:?}",element_id));
                   button.append_child(&rendered)?;
@@ -690,7 +678,7 @@ impl WasmCore {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some(contents) => {
-                  let mut canvas: web_sys::Element = document.create_element("canvas")?;
+                  let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
                   let element_id = hash_string(&format!("canvas-{:?}-{:?}", table.id, row));
                   canvas.set_id(&format!("{:?}",element_id));
                   self.canvases.insert(element_id);
@@ -746,7 +734,7 @@ impl WasmCore {
                 (Some((min,_)), Some((max,_)), Some((value,_))) => {
                   match (min.as_f64(), max.as_f64(), value.as_f64()) {
                     (Some(min_value), Some(max_value), Some(value_value)) => {
-                      let mut slider: web_sys::Element = document.create_element("input")?;
+                      let mut slider: web_sys::Element = self.document.create_element("input")?;
                       let mut slider: web_sys::HtmlInputElement = slider
                         .dyn_into::<web_sys::HtmlInputElement>()
                         .map_err(|_| ())
@@ -806,7 +794,7 @@ impl WasmCore {
     } else {
       // Make a div for each row
       for row in 1..=table.rows {
-        let mut row_div = document.create_element("div")?;
+        let mut row_div = self.document.create_element("div")?;
         let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
         row_div.set_id(&format!("{:?}",element_id));
         // Make an internal div for each cell 
@@ -814,7 +802,7 @@ impl WasmCore {
           // Get contents
           match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
             Some((contents,_)) => {
-              let mut cell_div = document.create_element("div")?;
+              let mut cell_div = self.document.create_element("div")?;
               let element_id = hash_string(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
               let rendered = self.render_value(contents)?;
               rendered.set_id(&format!("{:?}",element_id));
@@ -831,11 +819,8 @@ impl WasmCore {
 
   pub fn render_canvases(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-
     for canvas_id in &self.canvases {
-      match document.get_element_by_id(&format!("{}",canvas_id)) {
+      match self.document.get_element_by_id(&format!("{}",canvas_id)) {
         Some(canvas) => {
           let canvas: web_sys::HtmlCanvasElement = canvas
             .dyn_into::<web_sys::HtmlCanvasElement>()
