@@ -1,8 +1,8 @@
 # Ball
 
 Define the environment
-  #balls = [|x   y   vx vy radius|
-             250 250  0 0  10
-             100 100  0 0  25
-             50  50   0 0  15]
+  #balls = [|x   y   vx vy radius color|
+             250 250  0 0  10     0xA00000
+             100 100  0 0  25     0xA00000
+             50  50   0 0  15     0xA00000]
   #gravity = 9.8

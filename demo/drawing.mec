@@ -7,10 +7,15 @@ Set up drawing elements
       center-x: #balls.x 
       center-y: #balls.y 
       radius: #balls.radius 
-      fill: 0xA00000 
+      fill: #balls.color
       line-width: 5
     ]
   ]
+
+Change color of hovered balls
+  #balls.color{#clicked} := 0x0000C0
+  #balls.color{#hover} := 0x00A000
+  #balls.color{!#hover} := 0xA00000
 
 Draw a circle
   canvas = [
