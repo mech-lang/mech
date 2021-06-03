@@ -368,7 +368,7 @@ impl WasmCore {
     self.core.step();
     self.add_timers();
     self.add_applications();
-
+    self.render();
     log!("Loaded {} blocks.", len);
   }
 
@@ -441,9 +441,9 @@ impl WasmCore {
     {
       let pointer_closure = |table_id| { 
         Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-          let target = event.target().unwrap();
-          let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
-          let target_table_id = target_element.id().parse::<u64>().unwrap();
+          //let target = event.target().unwrap();
+          //let target_element = target.dyn_ref::<web_sys::HtmlElement>().unwrap();
+          //let target_table_id = target_element.id().parse::<u64>().unwrap();
           //log!("{:?}", target_element.id().parse::<u64>().unwrap());
 
           let x = event.offset_x();
@@ -464,12 +464,12 @@ impl WasmCore {
               TableIndex::Alias(*Y),
               Value::from_i32(y as i32))],
             });              
-            (*wasm_core).changes.push(Change::Set{
+            /*(*wasm_core).changes.push(Change::Set{
               table_id: table_id, values: vec![
               (TableIndex::Index(1), 
               TableIndex::Alias(*TARGET),
               Value::from_id(target_table_id))],
-            });            
+            });*/            
             (*wasm_core).event_id += 1;
             let eid = (*wasm_core).event_id;
             (*wasm_core).changes.push(Change::Set{
