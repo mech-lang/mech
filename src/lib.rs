@@ -982,61 +982,65 @@ impl WasmCore {
           // RENDER A RECTANGLE
           // ---------------------    
           } else if shape == *RECTANGLE {
-            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)),
-                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT))) {
-              (Some(x), Some(y), Some(width), Some(height)) => {
-                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                let fill = get_stroke_string(&parameters_table,1, *FILL);
-                let line_width = get_line_width(&parameters_table,1);
-                context.save();
-                context.set_fill_style(&JsValue::from_str(&fill));
-                context.fill_rect(x,y,width,height);
-                context.set_stroke_style(&JsValue::from_str(&stroke));
-                context.set_line_width(line_width);
-                context.stroke_rect(x,y,width,height);
-                context.restore();
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*WIDTH)),
+                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*HEIGHT))) {
+                (Some(x), Some(y), Some(width), Some(height)) => {
+                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table,row, *FILL);
+                  let line_width = get_line_width(&parameters_table,row);
+                  context.save();
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.fill_rect(x,y,width,height);
+                  context.set_stroke_style(&JsValue::from_str(&stroke));
+                  context.set_line_width(line_width);
+                  context.stroke_rect(x,y,width,height);
+                  context.restore();
+                }
+                _ => {
+                  log!("Missing x, y, width, height");
+                },
               }
-              _ => {
-                log!("Missing x, y, width, height");
-              },
-            }
+              }
           // ---------------------
           // RENDER TEXT
           // ---------------------    
           } else if shape == *TEXT {
-            match (parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*TEXT)),
-                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-              (Some((text_value,_)), Some(x), Some(y)) => {
-                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                let fill = get_stroke_string(&parameters_table,1, *FILL);
-                let line_width = get_line_width(&parameters_table,1);
-                let text = get_property(&parameters_table, 1, *TEXT);
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y))) {
+                (Some((text_value,_)), Some(x), Some(y)) => {
+                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table,row, *FILL);
+                  let line_width = get_line_width(&parameters_table,row);
+                  let text = get_property(&parameters_table, row, *TEXT);
 
-                context.save();
-                context.set_fill_style(&JsValue::from_str(&fill));
-                context.set_line_width(line_width);
-                match parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*FONT)) {
-                  Some(font_table_id) => {
-                    let font_table = self.core.get_table(font_table_id).unwrap();
-                    let size = get_property(&font_table, 1, *SIZE);
-                    let face = match &*get_property(&font_table, 1, *FACE) {
-                      "" => "sans-serif".to_string(),
-                      x => x.to_string(),
-                    };
-                    let font_string = format!("{}px {}", size, face);
-                    context.set_font(&*font_string);
+                  context.save();
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.set_line_width(line_width);
+                  match parameters_table.get_reference(&TableIndex::Index(row), &TableIndex::Alias(*FONT)) {
+                    Some(font_table_id) => {
+                      let font_table = self.core.get_table(font_table_id).unwrap();
+                      let size = get_property(&font_table, row, *SIZE);
+                      let face = match &*get_property(&font_table, row, *FACE) {
+                        "" => "sans-serif".to_string(),
+                        x => x.to_string(),
+                      };
+                      let font_string = format!("{}px {}", size, face);
+                      context.set_font(&*font_string);
+                    }
+                    _ => (),
                   }
-                  _ => (),
+                  context.fill_text(&text,x,y);
+                  context.restore();
                 }
-                context.fill_text(&text,x,y);
-                context.restore();
+                _ => {
+                  log!("Missing x, y, text");
+                },
               }
-              _ => {
-                log!("Missing x, y, text");
-              },
             }
           // ---------------------
           // RENDER A PATH
