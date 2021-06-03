@@ -1199,6 +1199,22 @@ block
 ```
 "#, Value::from_i32(1));
 
+test_mech!(mechdown_sub_sub_titles, r#"
+# Title
+
+block
+  #x = 1
+  
+## Subtitle
+
+block
+  #y = 2
+
+### Subsubtitle
+
+block 
+  #test = #x + #y"#, Value::from_i32(3));
+
 // ## Comments
 
 test_mech!(comment_line, r#"
@@ -1238,7 +1254,6 @@ Messages
                 2    "Two"]
 block
   #name-tag >- [type: "div" content: #messages.name]"#, Value::from_u64(3));
-
 
 // ## Boolean values
 

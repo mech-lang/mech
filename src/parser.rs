@@ -1160,8 +1160,7 @@ fn title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn subtitle(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, _) = hashtag(input)?;
-  let (input, _) = hashtag(input)?;
+  let (input, _) = many1(hashtag)(input)?;
   let (input, _) = space1(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
