@@ -127,6 +127,15 @@ lazy_static! {
   static ref RIGHT: u64 = hash_string("right");
   static ref CENTER: u64 = hash_string("center");
   static ref BEZIER: u64 = hash_string("bezier");
+  static ref HTML_LOCATION: u64 = hash_string("html/location");
+  static ref HASH: u64 = hash_string("hash");
+  static ref HOST: u64 = hash_string("host");
+  static ref HOST__NAME: u64 = hash_string("host-name");
+  static ref ORIGIN: u64 = hash_string("origin");
+  static ref PATH__NAME: u64 = hash_string("path-name");
+  static ref PORT: u64 = hash_string("port");
+  static ref PROTOCOL: u64 = hash_string("protocol");
+  static ref SEARCH: u64 = hash_string("search");
 }
 
 #[wasm_bindgen]
@@ -144,6 +153,7 @@ pub struct WasmCore {
   event_id: u32,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   applications: HashSet<u64>,
+  window: web_sys::Window,
   document: web_sys::Document,
 }
 
@@ -168,6 +178,16 @@ impl WasmCore {
     mech.insert_string("y");
     mech.insert_string("target");
     mech.insert_string("event-id");
+    mech.insert_string("html/location");
+    mech.insert_string("hash");
+    mech.insert_string("host");
+    mech.insert_string("host-name");
+    mech.insert_string("href");
+    mech.insert_string("origin");
+    mech.insert_string("path");
+    mech.insert_string("port");
+    mech.insert_string("protocol");
+    mech.insert_string("search");
 
     let new_table = |table_id: u64, rows: usize, a: Vec<u64>, | {
       let mut changes = Vec::new();
@@ -193,6 +213,7 @@ impl WasmCore {
     changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
     changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY, *EVENT__ID]));
     changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY, *EVENT__ID]));
+    changes.append(&mut new_table(*HTML_LOCATION, 1, vec![*HASH, *HOST, *HOST__NAME, *HREF, *ORIGIN, *PATH__NAME, *PORT, *PROTOCOL, *SEARCH]));
 
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
@@ -211,6 +232,7 @@ impl WasmCore {
       event_id: 0,
       timers: HashMap::new(),
       applications: HashSet::new(),
+      window: web_sys::window().unwrap(),
       document: web_sys::window().unwrap().document().unwrap(),
     }
   }
@@ -491,11 +513,76 @@ impl WasmCore {
       self.document.add_event_listener_with_callback("pointerdown", down_callback.as_ref().unchecked_ref())?;
       let up_callback = pointer_closure(*HTML_EVENT_POINTER__UP);
       self.document.add_event_listener_with_callback("pointerup", up_callback.as_ref().unchecked_ref())?;
-
       move_callback.forget();
       down_callback.forget();
       up_callback.forget();
     }
+
+    {
+      let onhashchange_closure = Closure::wrap(Box::new(move |event: web_sys::HashChangeEvent| {
+        unsafe { 
+          let location = (*wasm_core).window.location(); 
+          let mut hash = location.hash().unwrap();
+          if hash.len() > 1 {
+            hash = hash[1..].to_string();
+          }
+          (*wasm_core).changes.push(Change::Set{
+            table_id: *HTML_LOCATION, values: vec![
+            (TableIndex::Index(1), 
+            TableIndex::Alias(*HASH),
+            Value::from_string(&hash))],
+          });
+          (*wasm_core).changes.push(Change::InternString{string: hash});
+          (*wasm_core).process_transaction();
+          (*wasm_core).render();
+          let table = (*wasm_core).core.get_table(*HTML_LOCATION).unwrap();
+          log!("{:?}", table);
+        }
+      }) as Box<dyn FnMut(_)>);
+      self.window.set_onhashchange(Some(onhashchange_closure.as_ref().unchecked_ref()));
+      onhashchange_closure.forget();
+    }
+    
+    let location = self.window.location();
+    let hash = location.hash()?;
+    if hash.len() > 1 {
+      let hash = hash[1..].to_string();
+    }
+    let host = location.host()?;
+    let hostname = location.hostname()?;
+    let href = location.href()?;
+    let origin = location.origin()?;
+    let pathname = location.pathname()?;
+    let port = location.port()?;
+    let protocol = location.protocol()?;
+    let mut search = location.search()?;
+    if search.len() > 1 {
+      search = search[1..].to_string();
+    }
+    let mut changes = vec![Change::Set{
+      table_id: *HTML_LOCATION, values: vec![
+      (TableIndex::Index(1), TableIndex::Alias(*HASH), Value::from_string(&hash)),
+      (TableIndex::Index(1), TableIndex::Alias(*HOST), Value::from_string(&host)),
+      (TableIndex::Index(1), TableIndex::Alias(*HOST__NAME), Value::from_string(&hostname)),
+      (TableIndex::Index(1), TableIndex::Alias(*HREF), Value::from_string(&href)),
+      (TableIndex::Index(1), TableIndex::Alias(*ORIGIN), Value::from_string(&origin)),
+      (TableIndex::Index(1), TableIndex::Alias(*PATH__NAME), Value::from_string(&pathname)),
+      (TableIndex::Index(1), TableIndex::Alias(*PORT), Value::from_string(&port)),
+      (TableIndex::Index(1), TableIndex::Alias(*PROTOCOL), Value::from_string(&protocol)),
+      (TableIndex::Index(1), TableIndex::Alias(*SEARCH), Value::from_string(&search))]
+    }, 
+    Change::InternString{string: hash}, 
+    Change::InternString{string: host}, 
+    Change::InternString{string: hostname}, 
+    Change::InternString{string: href}, 
+    Change::InternString{string: origin}, 
+    Change::InternString{string: pathname}, 
+    Change::InternString{string: port}, 
+    Change::InternString{string: protocol}, 
+    Change::InternString{string: search}];
+    self.changes.append(&mut changes);
+    self.process_transaction();
+
     Ok(())
   }
 
