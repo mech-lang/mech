@@ -64,6 +64,8 @@ features = [
   'Blob',
   'ErrorEvent',
   'ProgressEvent',
+  'HashChangeEvent',
   'FileReader',
+  'Location',
   'console',
 ]
