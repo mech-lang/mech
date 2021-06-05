@@ -285,6 +285,9 @@ impl ProgramRunner {
                       (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
+                      (_,Some(MechSocket::WebSocketSender(websocket))) => {
+                        websocket.send_message(&OwnedMessage::Binary(message)).unwrap();
+                      }
                       _ => (),
                     }
                   }
