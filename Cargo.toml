@@ -5,13 +5,13 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "http://mech-lang.org"
-repository = "https://github.com/mech-lang/math"
+repository = "https://github.com/mech-machines/math"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "mech-lang/math", branch = "master" }
+gitlab = { repository = "mech-lang/machines/math", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
