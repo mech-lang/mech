@@ -32,7 +32,7 @@ use alloc::vec::Vec;
 use core::fmt;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, NumberLiteralKind, QuantityMath};
+use mech_core::{Register, format_register, hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, NumberLiteralKind, QuantityMath};
 use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -149,7 +149,7 @@ pub struct WasmCore {
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashMap<u64, (web_sys::WebSocket, HashSet<u64>)>,
+  remote_tables: HashSet<Register>,
   event_id: u32,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   applications: HashSet<u64>,
@@ -228,7 +228,7 @@ impl WasmCore {
       views: HashSet::new(),
       inline_views: HashSet::new(),
       websocket: None,
-      remote_tables: HashMap::new(),
+      remote_tables: HashSet::new(),
       event_id: 0,
       timers: HashMap::new(),
       applications: HashSet::new(),
@@ -258,6 +258,11 @@ impl WasmCore {
                 (*wasm_core).render();
               }
             }
+            Ok(SocketMessage::Listening(register)) => {
+              unsafe {
+                (*wasm_core).remote_tables.insert(register);
+              }
+            }
             msg => log!("{:?}", msg),
           }
         } else {
@@ -280,12 +285,11 @@ impl WasmCore {
       let wasm_core = self as *mut WasmCore;
       let cloned_ws = ws.clone();
       let onopen_callback = Closure::wrap(Box::new(move |_| {
-        // Upon an open connection, send the server a list of tables about which we want updates
+        // Upon an open connection, send the server a list of tables to which we are listening
         unsafe {
           for input_table_id in (*wasm_core).core.runtime.needed_registers.iter() {
             let result = bincode::serialize(&SocketMessage::Listening(input_table_id.clone())).unwrap();
-            // send off binary message
-            match cloned_ws.send_with_u8_array(&result) {
+              match cloned_ws.send_with_u8_array(&result) {
               Ok(_) => log!("binary message successfully sent"),
               Err(err) => log!("error sending message: {:?}", err),
             }
@@ -305,7 +309,7 @@ impl WasmCore {
       onclose_callback.forget();
     }
 
-    // Todo, make sef.websocket int oa vector of websockets.
+    // Todo, make sef.websocket into a vector of websockets.
     self.websocket = Some(ws);
     Ok(())
   }
@@ -395,31 +399,33 @@ impl WasmCore {
   }
 
   pub fn process_transaction(&mut self) {
-    //if !self.core.paused {
-      let txn = Transaction{changes: self.changes.clone()};
-      //let pre_changes = self.core.store.len();
-      self.core.process_transaction(&txn);
-      //self.render();
-      /*
-      for (id, (ws, remote_tables)) in self.remote_tables.iter() {
-        let mut changes: Vec<Change> = Vec::new();
-        for i in pre_changes..self.core.store.len() {
-          let change = &self.core.store.changes[i-1];
-          match change {
-            Change::Set{table_id, ..} => {
-              match remote_tables.contains(&table_id) {
-                true => changes.push(change.clone()),
-                _ => (),
-              }
+    let txn = Transaction{changes: self.changes.clone()};
+    //log!("txn {:?}", txn);
+    self.core.process_transaction(&txn);
+    //self.render();
+    //log!("--------------------------");
+    //for register in &self.core.runtime.aggregate_changed_this_round {
+    //  log!("{:?}", format_register(&self.core.database.borrow().store.strings, register));
+   // }
+    /*
+    for (id, (ws, remote_tables)) in self.remote_tables.iter() {
+      let mut changes: Vec<Change> = Vec::new();
+      for i in pre_changes..self.core.store.len() {
+        let change = &self.core.store.changes[i-1];
+        match change {
+          Change::Set{table_id, ..} => {
+            match remote_tables.contains(&table_id) {
+              true => changes.push(change.clone()),
+              _ => (),
             }
-            _ => ()
-          } 
-        }
-        let txn = Transaction{changes};
-        let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
-        ws.send_with_str(&txn_msg);
-      }*/
-    //}
+          }
+          _ => ()
+        } 
+      }
+      let txn = Transaction{changes};
+      let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
+      ws.send_with_str(&txn_msg);
+    }*/
     self.changes.clear();
   }
 
