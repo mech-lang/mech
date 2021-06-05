@@ -24,7 +24,7 @@ mod value;
 mod index;
 
 pub use self::database::{Database, Store, Transaction, Change};
-pub use self::block::{Block, BlockState, Transformation, Register};
+pub use self::block::{Block, BlockState, Transformation, Register, format_register};
 pub use self::index::{IndexRepeater, IndexIterator, TableIterator, ValueIterator, ConstantIterator};
 pub use self::table::{Table, TableId, TableIndex};
 pub use self::core::Core;
