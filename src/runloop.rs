@@ -412,7 +412,13 @@ impl ProgramRunner {
             let remote_core_address = ws_stream.peer_addr().unwrap();
             let remote_core_id = hash_string(&remote_core_address.to_string());
             let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
-            program.remote_cores.insert(remote_core_id,MechSocket::WebSocketSender(ws_outgoing));
+            // Tell the remote websocket what this core is listening for
+            for register in &program.mech.runtime.needed_registers {
+              let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
+              ws_outgoing.send_message(&OwnedMessage::Binary(message.clone())).unwrap();
+            }
+            // Store the websocket sender
+            program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
             client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", remote_core_address)));
             thread::spawn(move || {
