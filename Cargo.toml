@@ -21,6 +21,6 @@ mech-core = {git = "https://gitlab.com/mech-lang/core"}
 serde = {version = "1.0.123", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.123"
 hashbrown = "0.11.0"
-crossbeam-channel = "0.4.0"
+crossbeam-channel = "0.5.1"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 websocket = "0.26.2"
