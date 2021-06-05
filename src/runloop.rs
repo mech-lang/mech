@@ -281,12 +281,12 @@ impl ProgramRunner {
                   let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
                   // Send the transaction to each listener
                   for core_id in listeners {
-                    match (&self.socket,program.remote_cores.get(&core_id)) {
+                    match (&self.socket,program.remote_cores.get_mut(&core_id)) {
                       (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
                       (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                        websocket.send_message(&OwnedMessage::Binary(message)).unwrap();
+                        websocket.send_message(&OwnedMessage::Binary(message.clone())).unwrap();
                       }
                       _ => (),
                     }
