@@ -9,15 +9,26 @@
       import init, {new_core} from './pkg/mech_notebook.js';
       async function run() {
         await init();
-        let wasm_core = new_core();
-        wasm_core.init();
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', "./blocks", false);
-        xhr.send();
-        let program = xhr.responseText;
-        let blocks = JSON.parse(program).blocks;
-        wasm_core.load_blocks(blocks);
-        wasm_core.connect_remote_core("ws://127.0.0.1:3236");
+        xhr.open('GET', "./blocks", true);
+        xhr.onload = function (e) {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              let wasm_core = new_core();
+              wasm_core.init();
+              let program = xhr.responseText;
+              let blocks = JSON.parse(program).blocks;
+              wasm_core.load_blocks(blocks);
+              wasm_core.connect_remote_core("ws://127.0.0.1:3236");
+            } else {
+              console.error(xhr.statusText);
+            }
+          }
+        };
+        xhr.onerror = function (e) {
+          console.error(xhr.statusText);
+        };
+        xhr.send(null);        
       }
       run();
     </script>
