@@ -311,6 +311,9 @@ impl ProgramRunner {
                     // Decompose the table into changes for a transaction
                     let mut changes = vec![];
                     changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
+                    for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
+                      changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
+                    } 
                     let mut values = vec![];
                     for i in 1..=table.rows {
                       for j in 1..=table.columns {
