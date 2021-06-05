@@ -541,8 +541,6 @@ impl WasmCore {
           (*wasm_core).changes.push(Change::InternString{string: hash});
           (*wasm_core).process_transaction();
           (*wasm_core).render();
-          let table = (*wasm_core).core.get_table(*HTML_LOCATION).unwrap();
-          log!("{:?}", table);
         }
       }) as Box<dyn FnMut(_)>);
       self.window.set_onhashchange(Some(onhashchange_closure.as_ref().unchecked_ref()));
