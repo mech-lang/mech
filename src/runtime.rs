@@ -79,6 +79,22 @@ impl Runtime {
     self.functions.insert(name_hash, fxn);
   }
 
+  pub fn set_ready(&mut self, register: &Register) {
+    match self.input_to_block.get(register) {
+      Some(block_ids) => {
+        for block_id in block_ids.iter() {
+          match self.blocks.get_mut(block_id) {
+            Some(block) => {
+              block.ready.insert(register.clone());
+            }
+            _ => (),
+          }
+        }
+      } 
+      _ => (),
+    }
+  }
+
   pub fn run_network(&mut self) -> Result<(), Error> {
     self.aggregate_changed_this_round.clear(); 
     let mut recursion_ix = 0;

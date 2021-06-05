@@ -127,7 +127,11 @@ impl Core {
       match change {
         Change::NewTable{table_id, ..} => {
           let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
-          self.runtime.output.insert(register);
+          self.runtime.set_ready(&register);
+        }
+        Change::SetColumnAlias{table_id, column_ix, column_alias} => {
+          let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::Alias(*column_alias)};
+          self.runtime.set_ready(&register);
         }
         _ => (),
       }
