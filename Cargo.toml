@@ -24,7 +24,7 @@ mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 mech-math = {git = "https://gitlab.com/mech-lang/machines/math"}
 
-hashbrown = "0.11.0"
+hashbrown = "0.11.2"
 wasm-bindgen = "0.2.74"
 bincode = "1.2.1"
 js-sys = "0.3.51"
