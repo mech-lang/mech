@@ -14,10 +14,10 @@
         xhr.onload = function (e) {
           if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-              let wasm_core = new_core();
-              wasm_core.init();
               let program = xhr.responseText;
               let blocks = JSON.parse(program).blocks;
+              let wasm_core = new_core();
+              wasm_core.init();
               wasm_core.load_blocks(blocks);
               wasm_core.connect_remote_core("ws://127.0.0.1:3236");
             } else {
