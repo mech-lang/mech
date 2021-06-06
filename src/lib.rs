@@ -7,15 +7,12 @@ extern crate hashbrown;
 //extern crate web_sys;
 #[macro_use]
 extern crate alloc;
-#[macro_use]
-extern crate serde_derive;
 extern crate core;
 extern crate web_sys;
 extern crate mech_core;
 extern crate mech_syntax;
 extern crate mech_utilities;
 extern crate mech_math;
-extern crate serde_json;
 extern crate bincode;
 #[macro_use]
 extern crate lazy_static;
