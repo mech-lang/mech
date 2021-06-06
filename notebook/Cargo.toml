@@ -18,41 +18,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 mech-wasm = {git = "https://gitlab.com/mech-lang/wasm"}
 
-hashbrown = "0.11.0"
-wasm-bindgen = "0.2.70"
-serde = {version = "1.0.123", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.123"
-serde_json = "1.0.62"
-
-[dev-dependencies]
-wasm-bindgen-test = "0.3.10"
+wasm-bindgen = "0.2.74"
 
 [dependencies.web-sys]
-version = "0.3.47"
+version = "0.3.51"
 features = [
-  'Document',
-  'Element',
-  'HtmlElement',
-  'HtmlDivElement',
-  'HtmlImageElement',
-  'HtmlCanvasElement',
-  'HtmlInputElement',
-  'InputEvent',
-  'MouseEvent',
-  'KeyboardEvent',
-  'TouchEvent',
-  'Event',
-  'EventTarget',
-  'CanvasRenderingContext2d',
-  'Node',
-  'Window',
-  'Selection',
-  'Range',
-  'HtmlCollection',
-  'WebSocket',
-  'MessageEvent',
-  'console',
   'XmlHttpRequest',
-  'FileList',
-  'File'
 ]
