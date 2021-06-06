@@ -4,7 +4,6 @@
 #![feature(get_mut_unchecked)]
 extern crate wasm_bindgen;
 extern crate hashbrown;
-//extern crate web_sys;
 #[macro_use]
 extern crate alloc;
 extern crate core;
@@ -364,7 +363,6 @@ impl WasmCore {
       _ => (),
     }    
   }
-
 
   pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
     let miniblocks: Vec<MiniBlock> = bincode::deserialize(&serialized_miniblocks).unwrap();
