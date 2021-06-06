@@ -3,8 +3,6 @@ use wasm_bindgen::prelude::*;
 #[macro_use]
 extern crate mech_wasm;
 use mech_wasm::WasmCore;
-//use mech_core::Core;
-//use mech_syntax::compiler::Compiler;
 
 use web_sys::XmlHttpRequest;
 
