@@ -285,10 +285,7 @@ impl WasmCore {
         unsafe {
           for input_table_id in (*wasm_core).core.runtime.needed_registers.iter() {
             let result = bincode::serialize(&SocketMessage::Listening(input_table_id.clone())).unwrap();
-              match cloned_ws.send_with_u8_array(&result) {
-              Ok(_) => log!("binary message successfully sent"),
-              Err(err) => log!("error sending message: {:?}", err),
-            }
+            cloned_ws.send_with_u8_array(&result);
           }
         }
       }) as Box<dyn FnMut(JsValue)>);
@@ -395,32 +392,32 @@ impl WasmCore {
 
   pub fn process_transaction(&mut self) {
     let txn = Transaction{changes: self.changes.clone()};
-    //log!("txn {:?}", txn);
     self.core.process_transaction(&txn);
-    //self.render();
-    //log!("--------------------------");
-    //for register in &self.core.runtime.aggregate_changed_this_round {
-    //  log!("{:?}", format_register(&self.core.database.borrow().store.strings, register));
-   // }
-    /*
-    for (id, (ws, remote_tables)) in self.remote_tables.iter() {
-      let mut changes: Vec<Change> = Vec::new();
-      for i in pre_changes..self.core.store.len() {
-        let change = &self.core.store.changes[i-1];
-        match change {
-          Change::Set{table_id, ..} => {
-            match remote_tables.contains(&table_id) {
-              true => changes.push(change.clone()),
-              _ => (),
+    match &self.websocket {
+      Some(ws) => {
+        for changed_register in &self.core.runtime.aggregate_changed_this_round {
+          match (self.remote_tables.get(&changed_register),self.core.get_table(*changed_register.table_id.unwrap())) {
+            (Some(listeners),Some(table)) => {
+              let mut changes = vec![];
+              let mut values = vec![];
+              for i in 1..=table.rows {
+                for j in 1..=table.columns {
+                  let (value, _) = table.get_unchecked(i,j);
+                  values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                }
+              }
+              changes.push(Change::Set{table_id: table.id, values});                  
+              let txn = Transaction{changes};
+              let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+              // Send the transaction over the websocket to the remote core
+              ws.send_with_u8_array(&message);
             }
+            _ => (),
           }
-          _ => ()
-        } 
+        }       
       }
-      let txn = Transaction{changes};
-      let txn_msg = serde_json::to_string(&WebsocketMessage::Transaction(txn.clone())).unwrap();
-      ws.send_with_str(&txn_msg);
-    }*/
+      _ => (),
+    }
     self.changes.clear();
   }
 
