@@ -16,8 +16,6 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
 mech-wasm = {git = "https://gitlab.com/mech-lang/wasm"}
 
 hashbrown = "0.11.0"

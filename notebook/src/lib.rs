@@ -2,8 +2,6 @@ use wasm_bindgen::prelude::*;
 
 #[macro_use]
 extern crate mech_wasm;
-extern crate mech_core;
-extern crate mech_syntax;
 use mech_wasm::WasmCore;
 //use mech_core::Core;
 //use mech_syntax::compiler::Compiler;
