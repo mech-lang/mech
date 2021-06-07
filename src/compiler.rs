@@ -220,10 +220,11 @@ pub fn spacer(width: usize, f: &mut fmt::Formatter) {
 
 // Define a program struct that has everything we need to render a mech program.
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub struct Program {
   pub title: Option<String>,
   pub sections: Vec<Section>,
+  pub blocks: Vec<Block>,
 }
 
 impl fmt::Debug for Program {
@@ -411,10 +412,11 @@ impl Compiler {
   }
 
   pub fn compile_fragment(&mut self, input: Node) -> Option<Program> {
-    let block = self.compile_block(input).unwrap();
+    let block = self.compile_block(&input).unwrap();
     let program = Program{title: None, sections: vec![
       Section {title: None, elements: vec![Element::Block(block)]}
-    ]};
+    ], blocks: self.blocks.clone()};
+    self.blocks.clear();
     self.program += 1;
     self.section = 1;
     Some(program)
@@ -443,7 +445,7 @@ impl Compiler {
                                       Node::TableRow{children: vec![
                                         Node::TableColumn{children: vec![
                                           children[0].clone()]}]}]}]}]}]}]}]};
-              let block = self.compile_block(block_tree);
+              let block = self.compile_block(&block_tree);
             }
             _ => (),
           }
@@ -482,7 +484,8 @@ impl Compiler {
             _ => (),
           };
         }
-        let program = Program{title, sections};
+        let program = Program{title, sections, blocks: self.blocks.clone()};
+        self.blocks.clear();
         Some(program)
       },
       _ => None,
@@ -517,10 +520,10 @@ impl Compiler {
     let element = match input {
       Node::Paragraph{..} => Some(Element::Paragraph(self.compile_paragraph(input).unwrap())),
       Node::UnorderedList{..} => Some(Element::List(self.compile_unordered_list(input).unwrap())),
-      Node::Block{..} => Some(Element::Block(self.compile_block(input).unwrap())),
+      Node::Block{..} => Some(Element::Block(self.compile_block(&input).unwrap())),
       Node::CodeBlock{..} => Some(Element::CodeBlock(input)),
       Node::MechCodeBlock{ref children} => {
-        let (block_id, node) = self.compile_block(children[1].clone()).unwrap();
+        let (block_id, node) = self.compile_block(&children[1]).unwrap();
         // set the block's state based on the provided flag
         match children[0] {
           Node::String{ref text} => {
@@ -538,8 +541,8 @@ impl Compiler {
     element
   }
 
-  pub fn compile_block(&mut self, node: Node) -> Option<(u64, Node)> {
-    let block = match node.clone() {
+  pub fn compile_block(&mut self, node: &Node) -> Option<(u64, Node)> {
+    match node {
       Node::Fragment{children} |
       Node::Block{children} => {
 
@@ -907,11 +910,10 @@ impl Compiler {
         }
         self.variable_names.clear();
         self.blocks.push(block.clone());
-        Some((block.id, node))
+        Some((block.id, node.clone()))
       },
       _ => None,
-    };
-    block
+    }
   }
 
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
