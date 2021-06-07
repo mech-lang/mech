@@ -77,6 +77,7 @@ pub enum Node {
   Infix{ children: Vec<Node> },
   Program{ children: Vec<Node> },
   Title{ children: Vec<Node> },
+  CoreTitle{ children: Vec<Node> },
   Subtitle{ children: Vec<Node> },
   SectionTitle{ children: Vec<Node> },
   Head{ children: Vec<Node> },
@@ -246,6 +247,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Program{children} => {print!("Program\n"); Some(children)},
     Node::IdentifierCharacter{children} => {print!("IdentifierCharacter\n"); Some(children)},
     Node::Title{children} => {print!("Title\n"); Some(children)},
+    Node::CoreTitle{children} => {print!("CoreTitle\n"); Some(children)},
     Node::Subtitle{children} => {print!("Subtitle\n"); Some(children)},
     Node::SectionTitle{children} => {print!("SectionTitle\n"); Some(children)},
     Node::Section{children} => {print!("Section\n"); Some(children)},
@@ -1232,6 +1234,14 @@ fn code_block(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 // Mechdown
 
+fn core_title(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = at(input)?;
+  let (input, _) = space1(input)?;
+  let (input, text) = text(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Node::CoreTitle { children: vec![text] }))
+}
+
 fn inline_mech_code(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, _) = tuple((left_bracket,left_bracket))(input)?;
   let (input, expression) = expression(input)?;
@@ -1285,6 +1295,11 @@ fn fragment(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 pub fn program(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let mut program = vec![];
   let (input, _) = opt(whitespace)(input)?;
+  let (input, core_title) = opt(core_title)(input)?;
+  match core_title {
+    Some(core_title) => program.push(core_title),
+    None => (),
+  };
   let (input, title) = opt(title)(input)?;
   match title {
     Some(title) => program.push(title),
@@ -1297,8 +1312,8 @@ pub fn program(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 }
 
 fn parse_mech(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, program) = alt((program, fragment))(input)?;
-  Ok((input, Node::Root { children:  vec![program] }))
+  let (input, program) = many1(alt((program, fragment)))(input)?;
+  Ok((input, Node::Root { children: program }))
 }
 
 fn raw_transformation(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
