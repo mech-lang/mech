@@ -14,8 +14,8 @@ macro_rules! test_mech {
       let mut core = Core::new(100, 100);
       core.load_standard_library();
       let input = String::from($input);
-      compiler.compile_string(input);
-      core.runtime.register_blocks(compiler.blocks);
+      let programs = compiler.compile_string(input);
+      core.runtime.register_blocks(programs[0].blocks.clone());
       let table = hash_string("test");
       let row = TableIndex::Index(1);
       let column = TableIndex::Index(1);
