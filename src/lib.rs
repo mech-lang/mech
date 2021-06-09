@@ -236,11 +236,11 @@ impl WasmCore {
   pub fn connect_remote_core(&mut self, address: String) -> Result<(), JsValue> {
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-    let wasm_core = self as *mut WasmCore;
    
     // OnMessage
     {
       let wasm_core = self as *mut WasmCore;
+      let cloned_ws = ws.clone();
       let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
         if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
           let array = js_sys::Uint8Array::new(&abuf);
@@ -257,6 +257,30 @@ impl WasmCore {
             Ok(SocketMessage::Listening(register)) => {
               unsafe {
                 (*wasm_core).remote_tables.insert(register);
+                // Send over the table we have now
+                match (*wasm_core).core.get_table(*register.table_id.unwrap()) {
+                  Some(table) => {
+                    // Decompose the table into changes for a transaction
+                    let mut changes = vec![];
+                    changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
+                    for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
+                      changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
+                    } 
+                    let mut values = vec![];
+                    for i in 1..=table.rows {
+                      for j in 1..=table.columns {
+                        let (value, _) = table.get_unchecked(i,j);
+                        values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                      }
+                    }
+                    changes.push(Change::Set{table_id: table.id, values});
+                    let txn = Transaction{changes};
+                    // Send the transaction to the remote core
+                    let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                    cloned_ws.send_with_u8_array(&message);                   
+                  }
+                  None => (),
+                }
               }
             }
             msg => log!("{:?}", msg),
