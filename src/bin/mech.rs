@@ -221,8 +221,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(move |addr: Option<SocketAddr>| {
                   println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
                   let code = read_mech_files(&mech_paths).unwrap();
-                  let blocks = compile_code(code);
-                  let miniblocks = minify_blocks(&blocks);
+                  let programs = compile_code(code);
+                  let miniblocks = programs.iter().flat_map(|ref p| p.blocks.clone()).collect::<Vec<MiniBlock>>();
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
                   format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
                 });
@@ -244,15 +244,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
     mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
-
     let code = read_mech_files(&mech_paths)?;
-    let blocks = compile_code(code);
-    let miniblocks = minify_blocks(&blocks);
+    let programs = compile_code(code);
 
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech Test", 1000);
     let mech_client = runner.run();
-    mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
     
     let mut tests_count = 0;
     let mut tests_passed = 0;
@@ -359,14 +357,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   #system/input-arguments += [{}]", arg_string);
       code.push(MechCode::String(inargs_code));
     }
-    let blocks = compile_code(code);
-    let miniblocks = minify_blocks(&blocks);
+    let programs = compile_code(code);
 
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech Runner", 1000);
     let mech_client = runner.run();
     
-    mech_client.send(RunLoopMessage::Code((0, MechCode::MiniBlocks(miniblocks))));
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
 
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let mech_client_name = mech_client.name.clone();
@@ -543,8 +540,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let code = read_mech_files(&mech_paths)?;
-    let blocks = compile_code(code);
-    let miniblocks = minify_blocks(&blocks);
+    let programs = compile_code(code);
 
     let output_name = match matches.value_of("output_name") {
       Some(name) => format!("{}.blx",name),
@@ -554,7 +550,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
     let mut writer = BufWriter::new(file);
     
-    let result = bincode::serialize(&miniblocks).unwrap();
+    let result = bincode::serialize(&programs).unwrap();
     if let Err(e) = writer.write_all(&result) {
       panic!("{} Failed to write core! {:?}", "[Error]".bright_red(), e);
     }
@@ -740,7 +736,7 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            mech_client.send(RunLoopMessage::Code((0,MechCode::String(code))));
+            mech_client.send(RunLoopMessage::Code(MechCode::String(code)));
           },
           ReplCommand::EchoCode(code) => {
             mech_client.send(RunLoopMessage::EchoCode(code));
