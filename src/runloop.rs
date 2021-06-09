@@ -197,6 +197,8 @@ impl ProgramRunner {
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
       let program_channel_udpsocket = program.outgoing.clone();
+      let program_channel_udpsocket = program.outgoing.clone();
+
 
       match &self.socket {
         Some(ref socket) => {
@@ -286,7 +288,12 @@ impl ProgramRunner {
                         let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       }
                       (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                        websocket.send_message(&OwnedMessage::Binary(message.clone())).unwrap();
+                        match websocket.send_message(&OwnedMessage::Binary(message.clone())) {
+                          Err(_) => {
+                            program.outgoing.send(RunLoopMessage::RemoteCoreDisconnect(*core_id));
+                          }
+                          _ => (),
+                        };
                       }
                       _ => (),
                     }
@@ -342,22 +349,22 @@ impl ProgramRunner {
               false => (),
             }
           },
-          (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_address)), _) => {
+          (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_id)), _) => {
             match &self.socket {
               Some(ref socket) => {
-                let socket_address = socket.local_addr().unwrap().to_string();
-                if remote_core_address != socket_address {
-                  match program.remote_cores.get(&hash_string(&remote_core_address)) {
+                let socket_address = hash_string(&socket.local_addr().unwrap().to_string());
+                if remote_core_id != socket_address {
+                  match program.remote_cores.get(&remote_core_id) {
                     None => {
 
                     } 
                     Some(_) => {
-                      client_outgoing.send(ClientMessage::String(format!("Remote Core Disconnected: {}", remote_core_address)));
-                      program.remote_cores.remove(&hash_string(&remote_core_address));
+                      client_outgoing.send(ClientMessage::String(format!("Remote core disconnected: {}", humanize(&remote_core_id))));
+                      program.remote_cores.remove(&remote_core_id);
                       for (core_id, core_address) in &program.remote_cores {
                         match core_address {
                           MechSocket::UdpSocket(core_address) => {
-                            let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_address.to_string())).unwrap();
+                            let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_id)).unwrap();
                             let len = socket.send_to(&message, core_address.clone()).unwrap();
                           }
                           MechSocket::WebSocket(_) => {
@@ -383,7 +390,7 @@ impl ProgramRunner {
                       // We've got a new remote core. Let's ask it what it needs from us
                       // and tell it about all the other cores in our network.
                       program.remote_cores.insert(hash_string(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
-                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", remote_core_address)));
+                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address)))));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
                       let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
                       for (core_id, core_address) in &program.remote_cores {
@@ -423,7 +430,7 @@ impl ProgramRunner {
             // Store the websocket sender
             program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
-            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", remote_core_address)));
+            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address.to_string())))));
             thread::spawn(move || {
               for message in ws_incoming.incoming_messages() {
                 let message = message.unwrap();
