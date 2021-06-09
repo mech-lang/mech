@@ -127,8 +127,10 @@ impl Program {
 
   pub fn compile_program(&mut self, input: String) {
     let mut compiler = Compiler::new();
-    compiler.compile_string(input.clone());
-    self.mech.register_blocks(compiler.blocks);
+    let programs = compiler.compile_string(input.clone());
+    for p in programs {
+      self.mech.register_blocks(p.blocks);
+    }
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = *MECH_CODE;
     self.programs += 1;
@@ -138,11 +140,13 @@ impl Program {
 
   pub fn compile_fragment(&mut self, input: String) {
     let mut compiler = Compiler::new();
-    compiler.compile_string(input.clone());
-    for mut block in compiler.blocks {
-      block.id = (self.mech.runtime.blocks.len() + 1) as u64;
-      self.mech.runtime.ready_blocks.insert(block.id);
-      self.mech.register_blocks(vec![block]);
+    let programs = compiler.compile_string(input.clone());
+    for p in programs {
+      for mut block in p.blocks {
+        block.id = (self.mech.runtime.blocks.len() + 1) as u64;
+        self.mech.runtime.ready_blocks.insert(block.id);
+        self.mech.register_blocks(vec![block]);
+      }
     }
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = *MECH_CODE;

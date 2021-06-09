@@ -464,8 +464,6 @@ impl ProgramRunner {
                 for p in programs {
                   program.mech.register_blocks(p.blocks); 
                 }
-                program.trigger_machines();
-                program.download_dependencies(Some(client_outgoing.clone())); 
               },
               MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
