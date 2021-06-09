@@ -171,11 +171,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .required(false)
         .multiple(true)
         .takes_value(true))   
+      .arg(Arg::with_name("address")
+        .short("a")
+        .long("address")
+        .value_name("ADDRESS")
+        .help("Sets address of core socket (127.0.0.1)")
+        .takes_value(true)) 
+      .arg(Arg::with_name("port")
+        .short("p")
+        .long("port")
+        .value_name("PORT")
+        .help("Sets port of core socket (defaults to OS assigned port)")
+        .takes_value(true)) 
       .arg(Arg::with_name("maestro")
         .short("m")
         .long("maestro")
         .value_name("MAESTRO")
-        .help("Sets address of maestro core (127.0.0.1:3235)")
+        .help("Sets address of the maestro core (127.0.0.1:3235)")
+        .takes_value(true))  
+      .arg(Arg::with_name("websocket")
+        .short("w")
+        .long("websocket")
+        .value_name("WEBSOCKET")
+        .help("Sets the address of maestro websocket (127.0.0.1:3236)")
         .takes_value(true))  
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
@@ -203,10 +221,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let port = matches.value_of("port").unwrap_or("8081");
     let address = matches.value_of("address").unwrap_or("127.0.0.1");
-    let full_address = format!("{}:{}",address,port);
+    let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
-
 
 
     let index = warp::get()
@@ -230,7 +247,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let routes = index.or(pkg).or(blocks);
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
-    warp::serve(routes).run(([127, 0, 0, 1], 8081)).await;
+    let socket_address: SocketAddr = full_address.parse().unwrap();
+    warp::serve(routes).run(socket_address).await;
 
     println!("{} Closing server.", "[Mech Server]".bright_cyan());
     std::process::exit(0);
@@ -348,8 +366,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl = matches.is_present("repl_mode");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
+    let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
+    let port: String = matches.value_of("port").unwrap_or("0").to_string();
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
-
+    let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
+    
     let mut code: Vec<MechCode> = read_mech_files(&mech_paths)?;
     if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
@@ -397,8 +418,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 });
                 // TCP socket thread for websocket connections
                 thread::spawn(move || {
-                  let server = Server::bind("127.0.0.1:3236").unwrap();
-                  println!("{} {} Websocket server started at: 127.0.0.1:3236", formatted_name, "[Maestro]".truecolor(246,192,78));
+                  let server = Server::bind(websocket_address.clone()).unwrap();
+                  println!("{} {} Websocket server started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), websocket_address);
                   for request in server.filter_map(Result::ok) {
                     let mut ws_stream = request.accept().unwrap();
                     let address = ws_stream.peer_addr().unwrap();
@@ -436,7 +457,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               }
               // Maestro port is bound, start a remote core
               Err(_) => {
-                let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+                let socket = UdpSocket::bind(format!("{}:{}",address,port)).unwrap();
                 let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
                 // Send a remote core message to the maestro
                 let len = socket.send_to(&message, maestro_address.clone()).unwrap();
