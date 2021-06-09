@@ -21,7 +21,7 @@ pub enum SocketMessage {
   Ping,
   Pong,
   RemoteCoreConnect(String),
-  RemoteCoreDisconnect(String),
+  RemoteCoreDisconnect(u64),
   Listening(Register),
   Producing(Register),
   Code(MechCode),
@@ -76,7 +76,7 @@ pub enum RunLoopMessage {
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
-  RemoteCoreDisconnect(String),
+  RemoteCoreDisconnect(u64),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
