@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![feature(get_mut_unchecked)]
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -8,8 +9,9 @@ extern crate crossbeam_channel;
 extern crate core as rust_core;
 
 use rust_core::fmt;
+use std::sync::Arc;
 use hashbrown::HashMap;
-use mech_core::{Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
+use mech_core::{Block, Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
 use crossbeam_channel::Sender;
 
 // ## Client Message
@@ -70,7 +72,7 @@ pub enum RunLoopMessage {
   Listening((u64,Register)),
   GetTable(u64),
   Transaction(Transaction),
-  Code((u64,MechCode)),
+  Code(MechCode),
   EchoCode(String),
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
@@ -102,13 +104,35 @@ impl MiniBlock {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MiniProgram {
+  pub title: Option<String>,
   pub blocks: Vec<MiniBlock>,
+}
+
+pub fn maximize_block(miniblock: &MiniBlock) -> Block {
+  let mut block = Block::new(100);
+  for tfms in &miniblock.transformations {
+    block.register_transformations(tfms.clone());
+  }
+  for error in &miniblock.errors {
+    block.errors.insert(error.clone());
+  }
+  block.plan = miniblock.plan.clone();
+  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
+  for (ref key, ref value) in &miniblock.strings {
+    store.strings.insert(key.clone(), value.to_string());
+  }
+  for (ref key, ref value) in &miniblock.number_literals {
+    store.number_literals.insert(key.clone(), value.clone());
+  }
+  block.id = miniblock.id;
+  block
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
   MiniBlocks(Vec<MiniBlock>),
+  MiniPrograms(Vec<MiniProgram>),
 }
 
 pub trait Machine {
