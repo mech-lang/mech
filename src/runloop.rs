@@ -3,7 +3,7 @@ use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId, TableIndex};
 use mech_core::hash_string;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
+use mech_utilities::{maximize_block, RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
@@ -455,57 +455,48 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
-          (Ok(RunLoopMessage::Code(code_tuple)), _) => {
-            let block_count = program.mech.runtime.blocks.len();
-            match code_tuple {
-              (0, MechCode::String(code)) => {
+          (Ok(RunLoopMessage::Code(code)), _) => {
+            // Load the program
+            match code {
+              MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
-                compiler.compile_string(code);
-                program.mech.register_blocks(compiler.blocks);
+                let programs = compiler.compile_string(code);
+                for p in programs {
+                  program.mech.register_blocks(p.blocks); 
+                }
                 program.trigger_machines();
-                program.download_dependencies(Some(client_outgoing.clone()));
-
-                client_outgoing.send(ClientMessage::StepDone);
+                program.download_dependencies(Some(client_outgoing.clone())); 
               },
-              (0, MechCode::MiniBlocks(miniblocks)) => {
+              MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
                 for miniblock in miniblocks {
-                  let mut block = Block::new(100);
-                  for tfms in miniblock.transformations {
-                    block.register_transformations(tfms);
-                  }
-                  for error in miniblock.errors {
-                    block.errors.insert(error.clone());
-                    program.errors.insert(error);
-                  }
-                  block.plan = miniblock.plan.clone();
-                  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-                  for (key, value) in miniblock.strings {
-                    store.strings.insert(key, value.to_string());
-                  }
-                  for (key, value) in miniblock.number_literals {
-                    store.number_literals.insert(key, value.clone());
-                  }
-                  block.id = miniblock.id;
-                  blocks.push(block);
+                  blocks.push(maximize_block(&miniblock));
                 }
                 program.mech.register_blocks(blocks);
-                program.trigger_machines();
-                program.download_dependencies(Some(client_outgoing.clone()));
-                for error in &program.mech.runtime.errors {
-                  program.errors.insert(error.clone());
-                }
-                if program.errors.len() > 0 {
-                  let error_string = format_errors(&program);
-                  client_outgoing.send(ClientMessage::String(error_string));
-                  client_outgoing.send(ClientMessage::Exit(1));
-                }
-                client_outgoing.send(ClientMessage::StepDone);
               }
-              (ix, code) => {
-
+              MechCode::MiniPrograms(miniprograms) => {
+                for p in miniprograms {
+                  let mut blocks: Vec<Block> = Vec::new();
+                  for miniblock in p.blocks {
+                    blocks.push(maximize_block(&miniblock));
+                  }
+                  program.mech.register_blocks(blocks);
+                }
               }
             }
+            // Start the program
+            program.trigger_machines();
+            program.download_dependencies(Some(client_outgoing.clone()));
+            // React to errors
+            for error in &program.mech.runtime.errors {
+              program.errors.insert(error.clone());
+            }
+            if program.errors.len() > 0 {
+              let error_string = format_errors(&program);
+              client_outgoing.send(ClientMessage::String(error_string));
+              client_outgoing.send(ClientMessage::Exit(1));
+            }
+            client_outgoing.send(ClientMessage::StepDone);
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
             
