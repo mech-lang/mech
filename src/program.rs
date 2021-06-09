@@ -183,10 +183,12 @@ impl Program {
       };
 
       let mut registry_compiler = Compiler::new();
-      registry_compiler.compile_string(registry_file);
+      let programs = registry_compiler.compile_string(registry_file);
       let mut registry_core = Core::new(100,100);
-      registry_core.load_standard_library(); 
-      registry_core.register_blocks(registry_compiler.blocks);
+      registry_core.load_standard_library();
+      for p in programs {
+        registry_core.register_blocks(p.blocks);
+      }
       registry_core.step();
 
       // Convert the machine listing into a hash map
