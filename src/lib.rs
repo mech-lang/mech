@@ -13,14 +13,9 @@ extern crate hashbrown;
 extern crate nom;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
 
 pub mod lexer;
 #[macro_use]
 pub mod parser;
 pub mod compiler;
 pub mod formatter;
-
-pub use self::compiler::Node;
