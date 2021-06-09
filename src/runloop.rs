@@ -443,6 +443,9 @@ impl ProgramRunner {
                     match message {
                       Ok(SocketMessage::Listening(register)) => {
                         program_channel_websocket.send(RunLoopMessage::Listening((remote_core_id, register)));
+                      }
+                      Ok(SocketMessage::Transaction(txn)) => {
+                        program_channel_websocket.send(RunLoopMessage::Transaction(txn));
                       },
                       x => {println!("Unhandled Message: {:?}", x);},
                     }
