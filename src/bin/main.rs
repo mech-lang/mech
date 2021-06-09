@@ -1,6 +1,5 @@
 extern crate mech_syntax;
 extern crate mech_core;
-extern crate time;
 
 use mech_syntax::compiler::{Compiler, Node, Element};
 use mech_syntax::formatter::Formatter;

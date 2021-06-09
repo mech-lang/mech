@@ -31,7 +31,7 @@ lazy_static! {
 
 // ## Compiler Nodes
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Node {
   Root{ children: Vec<Node> },
   Fragment{ children: Vec<Node> },

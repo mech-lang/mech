@@ -6,7 +6,7 @@
 
 // ## Tokens
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Token {
   Alpha,
   Digit,
