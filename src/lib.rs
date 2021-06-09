@@ -100,6 +100,11 @@ impl MiniBlock {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MiniProgram {
+  pub blocks: Vec<MiniBlock>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
