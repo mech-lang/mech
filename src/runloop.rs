@@ -23,6 +23,11 @@ use std::io;
 use std::time::Instant;
 use std::sync::Mutex;
 
+extern crate miniz_oxide;
+
+use miniz_oxide::inflate::decompress_to_vec;
+use miniz_oxide::deflate::compress_to_vec;
+
 
 
 // ## Run Loop
@@ -205,11 +210,12 @@ impl ProgramRunner {
           let socket_receiver = socket.clone();
           // Start a socket receiving thread
           let thread = thread::Builder::new().name("remote core listener".to_string()).spawn(move || {
-            let mut buf = [0; 16_383];
+            let mut compressed_message = [0; 16_383];
             loop {
-              match socket_receiver.recv_from(&mut buf) {
+              match socket_receiver.recv_from(&mut compressed_message) {
                 Ok((amt, src)) => {
-                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
+                  let serialized_message = decompress_to_vec(&compressed_message).expect("Failed to decompress!");
+                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&serialized_message);
                   match message {
                     Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
                       program_channel_udpsocket.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
@@ -223,7 +229,8 @@ impl ProgramRunner {
                     Ok(SocketMessage::Ping) => {
                       println!("Got a ping from: {:?}", src);
                       let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                      socket_receiver.send_to(&message, src);
+                      let compressed_message = compress_to_vec(&message,6);
+                      socket_receiver.send_to(&compressed_message, src);
                     }
                     Ok(SocketMessage::Pong) => {
                       println!("Got a pong from: {:?}", src);
@@ -284,14 +291,15 @@ impl ProgramRunner {
                   changes.push(Change::Set{table_id: table.id, values});                  
                   let txn = Transaction{changes};
                   let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                  let compressed_message = compress_to_vec(&message,6);
                   // Send the transaction to each listener
                   for core_id in listeners {
                     match (&self.socket,program.remote_cores.get_mut(&core_id)) {
                       (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
-                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                        let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                       }
                       (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                        match websocket.send_message(&OwnedMessage::Binary(message.clone())) {
+                        match websocket.send_message(&OwnedMessage::Binary(compressed_message.clone())) {
                           Err(_) => {
                             program.outgoing.send(RunLoopMessage::RemoteCoreDisconnect(*core_id));
                           }
@@ -335,15 +343,15 @@ impl ProgramRunner {
                     }
                     changes.push(Change::Set{table_id: table.id, values});
                     let txn = Transaction{changes};
+                    let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                    let compressed_message = compress_to_vec(&message,6);
                     // Send the transaction to the remote core
                     match (&self.socket,program.remote_cores.get_mut(&core_id)) {
                       (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
-                        let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                        let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                       }
                       (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                        let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                        websocket.send_message(&OwnedMessage::Binary(message)).unwrap();
+                        websocket.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
                       }
                       _ => (),
                     }                    
@@ -370,7 +378,8 @@ impl ProgramRunner {
                         match core_address {
                           MechSocket::UdpSocket(core_address) => {
                             let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(remote_core_id)).unwrap();
-                            let len = socket.send_to(&message, core_address.clone()).unwrap();
+                            let compressed_message = compress_to_vec(&message,6);
+                            let len = socket.send_to(&compressed_message, core_address.clone()).unwrap();
                           }
                           MechSocket::WebSocket(_) => {
                             // TODO
@@ -397,12 +406,14 @@ impl ProgramRunner {
                       program.remote_cores.insert(hash_string(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
                       client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address)))));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
-                      let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                      let compressed_message = compress_to_vec(&message,6);                    
+                      let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                       for (core_id, core_address) in &program.remote_cores {
                         match core_address {
                           MechSocket::UdpSocket(core_address) => {
                             let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(core_address.to_string())).unwrap();
-                            let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                            let compressed_message = compress_to_vec(&message,6);                    
+                            let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                           }
                           MechSocket::WebSocket(_) => {
                             // TODO
@@ -414,7 +425,8 @@ impl ProgramRunner {
                     Some(_) => {
                       for register in &program.mech.runtime.needed_registers {
                         let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
-                        let len = socket.send_to(&message, remote_core_address.clone()).unwrap();
+                        let compressed_message = compress_to_vec(&message,6);                    
+                        let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                       }
                     }
                   }
@@ -430,7 +442,8 @@ impl ProgramRunner {
             // Tell the remote websocket what this core is listening for
             for register in &program.mech.runtime.needed_registers {
               let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
-              ws_outgoing.send_message(&OwnedMessage::Binary(message.clone())).unwrap();
+              let compressed_message = compress_to_vec(&message,6);
+              ws_outgoing.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
             }
             // Store the websocket sender
             program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
