@@ -13,6 +13,14 @@ use std::io;
 
 extern crate seahash;
 
+extern crate miniz_oxide;
+
+use miniz_oxide::inflate::decompress_to_vec;
+use miniz_oxide::deflate::compress_to_vec;
+
+extern crate base64;
+use base64::{encode, decode};
+
 extern crate clap;
 use clap::{Arg, App, ArgMatches, SubCommand};
 
@@ -241,7 +249,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   let programs = compile_code(code);
                   let miniblocks = programs.iter().flat_map(|ref p| p.blocks.clone()).collect::<Vec<MiniBlock>>();
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
-                  format!("{{\"blocks\": {:?} }}", serialized_miniblocks)
+                  let compressed_miniblocks = compress_to_vec(&serialized_miniblocks,6);
+                  encode(compressed_miniblocks)
                 });
 
     let routes = index.or(pkg).or(blocks);

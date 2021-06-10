@@ -38,6 +38,8 @@ tui = { version = "0.10", default-features = false, features = ['crossterm'] }
 tokio = {version = "1.6.1", features = ["full"]}
 warp = "0.3"
 websocket = "0.26.2"
+miniz_oxide = "0.4.4"
+base64 = "0.13.0"
 
 [workspace]
 
