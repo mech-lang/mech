@@ -339,6 +339,15 @@ impl Table {
     }
   }
 
+  pub fn set_data(&mut self, data: &Vec<Value>) {
+    let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
+    store.changed = true;
+    self.data = data.to_vec();
+    for ix in 0..self.data.len() {
+      self.changed[ix] = true;
+    }
+  }
+
   pub fn set_unchecked(&mut self, row: usize, column: usize, value: Value) {
     let ix = self.index_unchecked(row, column);
     if self.data[ix] != value {
