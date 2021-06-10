@@ -248,9 +248,9 @@ impl WasmCore {
       let cloned_ws = ws.clone();
       let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
         if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-          let array = js_sys::Uint8Array::new(&abuf);
-          let len = array.byte_length() as usize;
-          let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&array.to_vec());
+          let compressed_message = js_sys::Uint8Array::new(&abuf);
+          let serialized_message = decompress_to_vec(&compressed_message.to_vec()).expect("Failed to decompress!");
+          let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&serialized_message.to_vec());
           match msg {
             Ok(SocketMessage::Transaction(txn)) => {
               unsafe {
