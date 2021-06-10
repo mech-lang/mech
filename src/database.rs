@@ -110,6 +110,19 @@ impl Database {
             }
           }
         },
+        Change::Table{table_id, data} => {
+          match self.tables.get_mut(&table_id) {
+            Some(table) => {
+              table.borrow_mut().set_data(data);
+              // Mark the table as updated
+              let register = Register{table_id: TableId::Global(*table_id), row: TableIndex::All, column: TableIndex::All};
+              self.changed_this_round.insert(register);
+            },
+            None => {
+              // TODO Throw an error here and roll back all changes
+            }
+          }          
+        },
         Change::InternString{string} => {
           let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
           store.strings.insert(Value::from_string(&string), string.to_string());
@@ -146,6 +159,7 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 // Updates the database
 pub enum Change {
+  Table{table_id: u64, data: Vec<Value>},
   Set{table_id: u64, values: Vec<(TableIndex, TableIndex, Value)>},
   SetColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
   NewTable{table_id: u64, rows: usize, columns: usize},
