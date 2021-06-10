@@ -248,47 +248,74 @@ impl WasmCore {
       let cloned_ws = ws.clone();
       let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
         if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-          let compressed_message = js_sys::Uint8Array::new(&abuf);
-          let serialized_message = decompress_to_vec(&compressed_message.to_vec()).expect("Failed to decompress!");
-          let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&serialized_message.to_vec());
-          match msg {
-            Ok(SocketMessage::Transaction(txn)) => {
+          let compressed_message = js_sys::Uint8Array::new(&abuf).to_vec();
+          let serialized_message = decompress_to_vec(&compressed_message).expect("Failed to decompress!");
+          match serialized_message[0] {
+            0x42 => {
+              let mut table_id: u64 = 0;
+              for i in 1..8 {
+                let b = serialized_message[i];
+                table_id = table_id | (b as u64) << ((i - 1) * 8);
+              }
+              let mut value: u64 = 0;
+              let mut data = vec![];
+              for i in 9..serialized_message.len() {
+                let b = serialized_message[i];
+                value = value | (b as u64) << (((i - 9) % 8) * 8);
+                if (i - 9) % 8 == 7 {
+                  data.push(value.clone());
+                  value = 0;
+                }
+              }
               unsafe {
+                let txn = Transaction{changes: vec![Change::Table{table_id,data}]};
                 (*wasm_core).core.process_transaction(&txn);
                 (*wasm_core).add_applications();
                 (*wasm_core).render();
               }
             }
-            Ok(SocketMessage::Listening(register)) => {
-              unsafe {
-                (*wasm_core).remote_tables.insert(register);
-                // Send over the table we have now
-                match (*wasm_core).core.get_table(*register.table_id.unwrap()) {
-                  Some(table) => {
-                    // Decompose the table into changes for a transaction
-                    let mut changes = vec![];
-                    changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
-                    for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
-                      changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
-                    } 
-                    let mut values = vec![];
-                    for i in 1..=table.rows {
-                      for j in 1..=table.columns {
-                        let (value, _) = table.get_unchecked(i,j);
-                        values.push((TableIndex::Index(i), TableIndex::Index(j), value));
-                      }
-                    }
-                    changes.push(Change::Set{table_id: table.id, values});
-                    let txn = Transaction{changes};
-                    // Send the transaction to the remote core
-                    let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                    cloned_ws.send_with_u8_array(&message);                   
+            _ => {
+              let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&serialized_message.to_vec());
+              match msg {
+                Ok(SocketMessage::Transaction(txn)) => {
+                  unsafe {
+                    (*wasm_core).core.process_transaction(&txn);
+                    (*wasm_core).add_applications();
+                    (*wasm_core).render();
                   }
-                  None => (),
                 }
+                Ok(SocketMessage::Listening(register)) => {
+                  unsafe {
+                    (*wasm_core).remote_tables.insert(register);
+                    // Send over the table we have now
+                    match (*wasm_core).core.get_table(*register.table_id.unwrap()) {
+                      Some(table) => {
+                        // Decompose the table into changes for a transaction
+                        let mut changes = vec![];
+                        changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
+                        for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
+                          changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
+                        } 
+                        let mut values = vec![];
+                        for i in 1..=table.rows {
+                          for j in 1..=table.columns {
+                            let (value, _) = table.get_unchecked(i,j);
+                            values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                          }
+                        }
+                        changes.push(Change::Set{table_id: table.id, values});
+                        let txn = Transaction{changes};
+                        // Send the transaction to the remote core
+                        let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                        cloned_ws.send_with_u8_array(&message);                   
+                      }
+                      None => (),
+                    }
+                  }
+                }
+                msg => log!("{:?}", msg),
               }
-            }
-            msg => log!("{:?}", msg),
+            },
           }
         } else {
           log!("Unhandled Message {:?}", e.data());
