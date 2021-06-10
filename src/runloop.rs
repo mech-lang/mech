@@ -28,8 +28,6 @@ extern crate miniz_oxide;
 use miniz_oxide::inflate::decompress_to_vec;
 use miniz_oxide::deflate::compress_to_vec;
 
-
-
 // ## Run Loop
 
 // Client messages are sent to the client from the run loop
@@ -280,18 +278,23 @@ impl ProgramRunner {
               set.insert(changed_register.table_id.clone());
               match (program.listeners.get(&changed_register),program.mech.get_table(*changed_register.table_id.unwrap())) {
                 (Some(listeners),Some(table)) => {
-                  let mut changes = vec![];
-                  let mut values = vec![];
-                  for i in 1..=table.rows {
-                    for j in 1..=table.columns {
-                      let (value, _) = table.get_unchecked(i,j);
-                      values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                  let mut data: Vec<u8> = vec![0; (table.data.len()+1)*8+1];
+                  data[0] = 0x42;
+                  for i in 0..8 {
+                    data[1+i] = (table.id >> (i * 8)) as u8
+                  }
+                  for i in 0..table.data.len() {
+                    let val = table.data[i];
+                    for j in 0..8 {
+                      let shifted = (val >> (j * 8)) as u8;
+                      data[j+i*8+9] = shifted;
                     }
                   }
-                  changes.push(Change::Set{table_id: table.id, values});                  
-                  let txn = Transaction{changes};
+                  let compressed_message = compress_to_vec(&data,6);
+                  /*let change = Change::Table{table_id: table.id, data: table.data};
+                  let txn = Transaction{changes: vec![change]};
                   let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                  let compressed_message = compress_to_vec(&message,6);
+                  let compressed_message = compress_to_vec(&message,6);*/
                   // Send the transaction to each listener
                   for core_id in listeners {
                     match (&self.socket,program.remote_cores.get_mut(&core_id)) {
