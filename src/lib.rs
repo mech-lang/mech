@@ -15,7 +15,12 @@ extern crate mech_math;
 extern crate bincode;
 #[macro_use]
 extern crate lazy_static;
+extern crate miniz_oxide;
+extern crate base64;
 
+use base64::{encode, decode};
+use miniz_oxide::inflate::decompress_to_vec;
+use miniz_oxide::deflate::compress_to_vec;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::cell::Cell;
@@ -383,6 +388,12 @@ impl WasmCore {
       }
       _ => (),
     }    
+  }
+
+  pub fn load_compressed_blocks(&mut self, encoded_miniblocks: String) {
+    let compressed_miniblocks = decode(encoded_miniblocks).unwrap();
+    let serialized_miniblocks = decompress_to_vec(compressed_miniblocks.as_slice()).expect("Failed to decompress!");
+    self.load_blocks(serialized_miniblocks);
   }
 
   pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
