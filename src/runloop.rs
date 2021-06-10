@@ -261,13 +261,16 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
-            program.mech.process_transaction(&txn);
-            let end_ns = time::precise_time_ns();
-            let time = (end_ns - start_ns) as f64;   
+            program.mech.process_transaction(&txn);   
             // Trigger any machines that are now ready due to the transaction
             program.trigger_machines();  
             // For all changed registers, inform all listeners of changes
+            let mut set = HashSet::new();
             for changed_register in &program.mech.runtime.aggregate_changed_this_round {
+              if set.contains(&changed_register.table_id) {
+                continue;
+              }
+              set.insert(changed_register.table_id.clone());
               match (program.listeners.get(&changed_register),program.mech.get_table(*changed_register.table_id.unwrap())) {
                 (Some(listeners),Some(table)) => {
                   let mut changes = vec![];
@@ -302,6 +305,8 @@ impl ProgramRunner {
                 _ => (),
               }
             }
+            let end_ns = time::precise_time_ns();
+            let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::String(format!("Txn took {:0.4?} ms", time / 1_000_000.0)));
             client_outgoing.send(ClientMessage::StepDone);
           },
