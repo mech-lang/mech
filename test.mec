@@ -1,10 +1,17 @@
 # Pong
 
 Game elements
+<<<<<<< HEAD
   #pong/ball = [x: 500 y: 250 vx: 5 vy: 5]
 
 Add a game timer
   #time/timer += [period: 100]
+=======
+  #pong/ball = [x: 100 y: 100 vx: 0 vy: 5]
+
+Add a game timer
+  #time/timer += [period: 1000]
+>>>>>>> 0481480a0ee3bcf6f26be950fedaaed6fa2ba3e2
 
 ## Movement
 

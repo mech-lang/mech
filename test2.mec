@@ -1,0 +1,28 @@
+# Client
+
+## Drawing
+
+Set up drawing elements 
+  #pong/circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: #pong/ball.x 
+      center-y: #pong/ball.y 
+      radius: 10 
+      fill: 0x222222 
+      line-width: 5
+    ]
+  ]
+
+Draw to canvas
+  #pong/game-board = [
+    type: "canvas" 
+    contains: [|shape parameters| #pong/circle] 
+    parameters: [width: 1000 height: 500]
+  ]
+
+Attach game to root
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| #pong/game-board]
+  ]
