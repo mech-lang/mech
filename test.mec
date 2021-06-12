@@ -1,5 +1,14 @@
-block
-  #x = [1 2 3; 4 5 6]
+# Pong
 
-block
-  #z = #x + #y
+Game elements
+  #pong/ball = [x: 500 y: 250 vx: 5 vy: 5]
+
+Add a game timer
+  #time/timer += [period: 100]
+
+## Movement
+
+Move the ball with every tick of the timer
+  ~ #time/timer.ticks{1}
+  #pong/ball.x := #pong/ball.x + #pong/ball.vx
+  #pong/ball.y := #pong/ball.y + #pong/ball.vy
