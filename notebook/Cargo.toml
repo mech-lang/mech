@@ -16,6 +16,6 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-wasm = {path = "../../wasm"}
+mech-wasm = {git = "https://gitlab.com/mech-lang/wasm"}
 
 wasm-bindgen = "0.2.74"
