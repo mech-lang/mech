@@ -751,7 +751,7 @@ fn inline_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 // ### Statements
 
 fn comment_sigil(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-  let (input, _) = tag("//")(input)?;
+  let (input, _) = tag("--")(input)?;
   Ok((input, Node::Null))
 }
 

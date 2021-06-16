@@ -1219,7 +1219,7 @@ block
 
 test_mech!(comment_line, r#"
 block
-  // This is a comment
+  -- This is a comment
   #test = 123"#, Value::from_i32(123));
 
 // ## Recursion
