@@ -18,7 +18,7 @@
               let wasm_core = new_core();
               wasm_core.init();
               wasm_core.load_compressed_blocks(encoded_blocks);
-              wasm_core.connect_remote_core("ws://146.115.212.166:3236");
+              wasm_core.connect_remote_core("ws://127.0.0.1:3236");
             } else {
               console.error(xhr.statusText);
             }
