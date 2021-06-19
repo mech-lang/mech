@@ -19,6 +19,8 @@ lazy_static! {
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref GRAMS: u64 = hash_string("g");
   static ref KILOGRAMS: u64 = hash_string("kg");
+  static ref HERTZ: u64 = hash_string("Hz");
+  static ref SECONDS: u64 = hash_string("s");
 }
 
 // ## Block
@@ -214,6 +216,7 @@ impl Block {
         Transformation::Constant{table_id, value, unit} => {
           let (domain, scale) = if unit == *GRAMS { (1, 0) }
             else if unit            == *KILOGRAMS { (1, 3) }
+            else if unit            == *HZ { (2, 0) }
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),
@@ -332,6 +335,7 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
+    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
