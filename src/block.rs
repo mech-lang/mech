@@ -216,7 +216,8 @@ impl Block {
         Transformation::Constant{table_id, value, unit} => {
           let (domain, scale) = if unit == *GRAMS { (1, 0) }
             else if unit            == *KILOGRAMS { (1, 3) }
-            else if unit            == *HZ { (2, 0) }
+            else if unit            == *HERTZ { (2, 0) }
+            else if unit            == *SECONDS { (3, 0) }
 //              "m" => (2, 0),
 //              "km" => (2, 3),
 //              "ms" => (3, 0),
