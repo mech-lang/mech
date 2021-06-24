@@ -27,6 +27,8 @@ rlibc = { version = "=1.0", optional = true }
 lazy_static = "1.4.0"
 seahash = "4.1.0"
 indexmap = "1.6.2"
+rayon = "1.5.1"
+time = "0.2.25"
 
 [dependencies.num-traits]
 version = "0.2.14"
