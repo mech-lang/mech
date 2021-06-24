@@ -67,6 +67,7 @@ pub enum Node {
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   AnonymousTable{ children: Vec<Node> },
+  AnonymousMatrix{ children: Vec<Node> },
   TableRow{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   FunctionBinding{ children: Vec<Node> },
@@ -185,6 +186,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Comparator{children} => {print!("Comparator\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::AnonymousTable{children} => {print!("AnonymousTable\n"); Some(children)},
+    Node::AnonymousMatrix{children} => {print!("AnonymousMatrix\n"); Some(children)},
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
@@ -739,6 +741,23 @@ fn anonymous_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   };
   table.append(&mut table_rows);
   Ok((input, Node::AnonymousTable{children: table}))
+}
+
+fn anonymous_matrix(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
+  let (input, _) = left_angle(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = space0(input)?;
+  let (input, table_header) = opt(table_header)(input)?;
+  let (input, mut table_rows) = many0(table_row)(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = right_angle(input)?;
+  let mut table = vec![];
+  match table_header {
+    Some(table_header) => table.push(table_header),
+    _ => (),
+  };
+  table.append(&mut table_rows);
+  Ok((input, Node::AnonymousMatrix{children: table}))
 }
 
 fn inline_table(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
