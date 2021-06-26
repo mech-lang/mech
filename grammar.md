@@ -108,6 +108,7 @@ table_row = {space | tab}, {table_column}, [semicolon], [newline];
 attribute = identifier, space, [comma], space;
 table_header = bar , {attribute}, bar, space, [newline];
 anonymous_table = left_bracket, space, [table_header], {table_row}, right_bracket;
+anonymous_matrix = left_angle, space, [table_header], {table_row}, right_angle;
 inline_table = left_bracket, {binding} , right_bracket;
 ```
 
