@@ -63,6 +63,7 @@ pub enum Node {
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
+  AnonymousMatrixDefine {children: Vec<Node> },
   InlineTable {children: Vec<Node> },
   TableHeader {children: Vec<Node> },
   Attribute {children: Vec<Node> },
