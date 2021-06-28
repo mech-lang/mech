@@ -1,14 +1,13 @@
 # Pong
 
 Game elements
-  #pong/ball = [x: 500 y: 250 vx: 5 vy: 5]
+  #pong/ball = [x: 1:10000000]
 
 Add a game timer
-  #time/timer += [period: 100]
+  #time/timer += [period: 1000]
 
 ## Movement
 
 Move the ball with every tick of the timer
   ~ #time/timer.ticks{1}
-  #pong/ball.x := #pong/ball.x + #pong/ball.vx
-  #pong/ball.y := #pong/ball.y + #pong/ball.vy
+  #pong/ball.x := #pong/ball.x + 1
