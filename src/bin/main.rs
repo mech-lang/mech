@@ -11,6 +11,7 @@ extern crate time;
 extern crate nalgebra;
 
 use nalgebra::base::Matrix2;
+use nalgebra::base::DMatrix;
 
 fn main() {
 
@@ -27,17 +28,17 @@ fn main() {
   // performance target: 10 million updates per 60Hz cycle
   // stack allocated tables
 
-  const n: usize = 1000;
+  const n: usize = 10_000_000;
+  let dm = DMatrix::from_element(n,1,1.0);
+  let dx = DMatrix::from_element(n,1,2.0); 
+  
   //let mut v: Vec<u32> = vec![0;n];
   //let mut v: [u64;n] = [0;n];
   let start_ns = time::precise_time_ns();
-  let a = Matrix2::new(0.0, 1.0, 2.0, 3.0);
-  let b = Matrix2::new(4.0, 5.0, 6.0, 7.0);
-  let expected = Matrix2::new(0.0, 5.0, 12.0, 21.0);
+  let c = dm + dx;
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f64;
-  println!("{:0.9?} ns", time);
-
+  println!("{:0.9?} ms", time / 1_000_000.0);
 
 /*
     let n = 10)=000;
