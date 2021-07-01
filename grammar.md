@@ -163,7 +163,7 @@ l4 = l5, {l4_infix};
 l4_infix = space, and | or, space, l5;
 l5 = l6, {l5_infix};
 l5_infix = space, not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than, space, l6;
-l6 = empty | true_literal | false_literal | anonymous_table | function | data | string | rational_number | number_literal | quantity |negation | parenthetical_expression;
+l6 = empty | true_literal | false_literal | anonymous_table | function | data | string | matrix | rational_number | number_literal | quantity |negation | parenthetical_expression;
 math_expression = l0;
 ```
 
