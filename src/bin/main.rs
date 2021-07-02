@@ -27,6 +27,7 @@ fn main() {
   // pre-serialized memory layout
   // performance target: 10 million updates per 60Hz cycle
   // stack allocated tables
+  // matrix library in std
 
   const n: usize = 10_000_000;
   let dm = DMatrix::from_element(n,1,1.0);
