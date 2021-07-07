@@ -15,6 +15,16 @@ use nalgebra::base::Matrix2;
 use nalgebra::base::DMatrix;
 use rayon::prelude::*;
 
+use std::thread;
+use std::time::Duration;
+
+fn long_running_computation(x: &u64) -> u64 {
+  let ten_millis = Duration::from_millis(10);
+  let now = time::Instant::now();
+  thread::sleep(ten_millis);
+  x + 1
+}
+
 fn main() {
 
   // New runtime
@@ -31,8 +41,9 @@ fn main() {
   // stack allocated tables
   // matrix library in std
 
-  const n: usize = 1_000_000_000;
+  const n: usize = 1000;
 
+  /*
   {
     let dm = DMatrix::from_element(n,1,0.0);
     let start_ns = time::precise_time_ns();
@@ -40,23 +51,24 @@ fn main() {
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     println!("MATRIX {:0.9?} ms", time / 1_000_000.0);
-  }
+  }*/
   {
     let mut v: Vec<u64> = vec![0;n];
     let start_ns = time::precise_time_ns();
-    let x: Vec<u64> = v.par_iter().map(|x| x + 1).collect();
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("PARI {:0.9?} ms", time / 1_000_000.0);
-  }
-  {
-    let mut v: Vec<u64> = vec![0;n];
-    let start_ns = time::precise_time_ns();
-    let x: Vec<u64> = v.iter().map(|x| x + 1).collect();
+    let x: Vec<u64> = v.iter().map(|x| long_running_computation(x)).collect();
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     println!("ITER {:0.9?} ms", time / 1_000_000.0);
   }
+  {
+    let mut v: Vec<u64> = vec![0;n];
+    let start_ns = time::precise_time_ns();
+    let x: Vec<u64> = v.par_iter().map(|x| long_running_computation(x)).collect();
+    let end_ns = time::precise_time_ns();
+    let time = (end_ns - start_ns) as f64;
+    println!("PARA {:0.9?} ms", time / 1_000_000.0);
+  }
+  /*
   {
     let mut v: Vec<u64> = vec![0;n];
     let mut x: Vec<u64> = vec![0;n];
@@ -67,7 +79,6 @@ fn main() {
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     println!("LOOP {:0.9?} ms", time / 1_000_000.0);
-  }
-
+  }*/
   
 }
