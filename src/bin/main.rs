@@ -68,17 +68,4 @@ fn main() {
     let time = (end_ns - start_ns) as f64;
     println!("PARA {:0.9?} ms", time / 1_000_000.0);
   }
-  /*
-  {
-    let mut v: Vec<u64> = vec![0;n];
-    let mut x: Vec<u64> = vec![0;n];
-    let start_ns = time::precise_time_ns();
-    for ix in 0..n {
-      x[ix] = v[ix] + 1;
-    }
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("LOOP {:0.9?} ms", time / 1_000_000.0);
-  }*/
-  
 }
