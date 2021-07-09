@@ -25,7 +25,8 @@ fn long_running_computation(x: &u64) -> u64 {
   x + 1
 }
 
-fn main() {
+#[tokio::main]
+pub async fn main() -> Result<()> {
 
   // New runtime
   // requirements:
@@ -68,4 +69,6 @@ fn main() {
     let time = (end_ns - start_ns) as f64;
     println!("PARA {:0.9?} ms", time / 1_000_000.0);
   }
+
+  Ok(())
 }

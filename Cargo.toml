@@ -30,6 +30,7 @@ indexmap = "1.6.2"
 rayon = "1.5.1"
 time = "0.2.25"
 nalgebra = "0.27.1"
+tokio = { version = "1", features = ["full"] }
 
 [dependencies.num-traits]
 version = "0.2.14"
