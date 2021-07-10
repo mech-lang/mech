@@ -12,6 +12,7 @@ extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
 
+/*
 mod database;
 mod runtime;
 mod table;
@@ -31,7 +32,7 @@ pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
 pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
-pub use self::operations::{MechFunction, Argument};
+pub use self::operations::{MechFunction, Argument};*/
 
 pub fn hash_string(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
