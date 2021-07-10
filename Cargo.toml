@@ -10,6 +10,7 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 
 [badges]
 gitlab = { repository = "mech-lang/core", branch = "main" }
