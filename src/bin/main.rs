@@ -2,7 +2,7 @@
 
 extern crate mech_core;
 
-use mech_core::{Register, Table, TableId, Database, TableIterator, IndexRepeater, TableIndex, ValueIterator, Value, ValueMethods, Store, IndexIterator, ConstantIterator};
+//use mech_core::{Register, Table, TableId, Database, TableIterator, IndexRepeater, TableIndex, ValueIterator, Value, ValueMethods, Store, IndexIterator, ConstantIterator};
 use std::sync::Arc;
 use std::cell::RefCell;
 
@@ -26,7 +26,7 @@ fn long_running_computation(x: &u64) -> u64 {
 }
 
 #[tokio::main]
-pub async fn main() -> Result<()> {
+pub async fn main() -> Result<(),String> {
 
   // New runtime
   // requirements:
