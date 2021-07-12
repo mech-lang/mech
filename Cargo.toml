@@ -32,6 +32,8 @@ rayon = "1.5.1"
 time = "0.2.25"
 nalgebra = "0.27.1"
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.7"
+futures = "0.3.15"
 
 [dependencies.num-traits]
 version = "0.2.14"
