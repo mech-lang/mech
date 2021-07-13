@@ -187,13 +187,13 @@ async fn main() {
     let vy: Vec<i64> = vec![1;n];
     let bounds: Vec<i64> = vec![500, 500];
 
-    // Advance balls
-    let start_ns = time::precise_time_ns();
+    let x_fut = tokio::task::spawn(do_x(x,vx));
+    let y_fut = tokio::task::spawn(do_y(y,vy));
 
-    // Handle X
-    let x2 = do_x(x,vx).await;
-    let y2 = do_y(y,vy).await;
+    let start_ns = time::precise_time_ns();
+    let (x,y) = tokio::join!(x_fut,y_fut);
     let end_ns = time::precise_time_ns();
+    
     let time = (end_ns - start_ns) as f64;
     println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (time / 1_000_000_000.0));
   }
