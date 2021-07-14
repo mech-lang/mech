@@ -2,6 +2,7 @@
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::fmt;
+use std::ptr;
 
   // New runtime
   // requirements:
@@ -178,7 +179,7 @@ use tokio_stream::StreamExt;
 pub struct Table {
   pub rows: usize,
   pub cols: usize,
-  data: Vec<u64>,
+  data: Vec<i64>,
 }
 
 impl Table {
@@ -192,7 +193,7 @@ impl Table {
     table
   }
 
-  pub fn get_linear(&self, ix: usize) -> Option<u64> {
+  pub fn get_linear(&self, ix: usize) -> Option<i64> {
     if ix > self.data.len() {
       None
     } else {
@@ -200,7 +201,7 @@ impl Table {
     }
   }
 
-  pub fn set_linear(&mut self, ix: usize, value: u64) -> Result<(),()> {
+  pub fn set_linear(&mut self, ix: usize, value: i64) -> Result<(),()> {
     if ix > self.data.len() {
       Err(())
     } else {
@@ -209,7 +210,7 @@ impl Table {
     }
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Option<u64> {
+  pub fn get(&self, row: usize, col: usize) -> Option<i64> {
     let ix = (col * self.rows) + row;
     if ix > self.data.len() {
       None
@@ -218,7 +219,7 @@ impl Table {
     }
   }
 
-  pub fn set(&mut self, row: usize, col: usize, value: u64) -> Result<(),()> {
+  pub fn set(&mut self, row: usize, col: usize, value: i64) -> Result<(),()> {
     let ix = (col * self.rows) + row;
     if ix > self.data.len() {
       Err(())
@@ -227,6 +228,45 @@ impl Table {
       Ok(())
     }
   }
+
+  pub fn get_col(&mut self, col: usize) -> Option<Vec<i64>> {
+    if col > self.cols {
+      None
+    } else {
+      Some(self.data[self.rows*col..self.rows*col+self.rows].into())
+    }
+  }
+
+  pub fn get_col_unchecked(&mut self, col: usize) -> Vec<i64> {
+    self.data[self.rows*col..self.rows*col+self.rows].into()
+  }
+
+  pub fn set_col(&mut self, col: usize, data: &Vec<i64>) -> Result<(),()> {
+    if col > self.cols || data.len() != self.rows {
+      Err(())
+    } else {
+      let src_len = data.len();
+      let dst_len = self.data.len();
+      unsafe {
+        let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
+        let src_ptr = data.as_ptr();
+        ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
+      }
+      Ok(())
+    }
+  }
+
+  pub fn set_col_unchecked(&mut self, col: usize, data: &Vec<i64>) {
+    let src_len = data.len();
+    let dst_len = self.data.len();
+    unsafe {
+      let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
+      let src_ptr = data.as_ptr();
+      ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
+    }
+  }
+
+
 }
 
 impl fmt::Debug for Table {
@@ -248,31 +288,34 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 4 as usize;
-  let x: Vec<i64> = vec![0;n];
-  let y: Vec<i64> = vec![0;n];
-  let vx: Vec<i64> = vec![1;n];
-  let vy: Vec<i64> = vec![1;n];
+  let n = 1e1 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
-    balls.set(i,2,1);
-    balls.set(i,3,1);
+    balls.set(i,0,1);
+    balls.set(i,1,2);
+    balls.set(i,2,3);
+    balls.set(i,3,4);
   }
-  println!("{:?}", balls);
+  let mut col = balls.get_col(3).unwrap();
   let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
-  loop {
+  println!("{:?}", balls);
+  for _ in 0..1000 {
     let start_ns = time::precise_time_ns();
-    let ((x, vx),(y, vy)) = if n <= 10_000 {
-      let x2 = do_x(x.clone(),vx.clone()).await;
-      let y2 = do_y(y.clone(),vy.clone()).await;
+    let ((x2, vx2),(y2, vy2)) = if n <= 10_000 {
+      let x2 = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
+      let y2 = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)).await;
       (x2, y2)
     } else {
-      let x_fut = tokio::task::spawn(par_do_x(x.clone(),vx.clone()));
-      let y_fut = tokio::task::spawn(par_do_y(y.clone(),vy.clone()));
+      let x_fut = tokio::task::spawn(par_do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)));
+      let y_fut = tokio::task::spawn(par_do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)));
       let (x2, y2) = tokio::join!(x_fut,y_fut);
       (x2.unwrap(), y2.unwrap())
     };
+    balls.set_col_unchecked(0,&x2);
+    balls.set_col_unchecked(1,&y2);
+    balls.set_col_unchecked(2,&vx2);
+    balls.set_col_unchecked(3,&vy2);
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     total_time.push_back(time);
@@ -281,9 +324,11 @@ async fn main() {
     }    
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64;
     println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (average_time / 1_000_000_000.0));
+    break;
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
+  println!("{:?}", balls);
 
 }
