@@ -1,6 +1,7 @@
 
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::fmt;
 
   // New runtime
   // requirements:
@@ -174,16 +175,90 @@ async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
 
 use tokio_stream::StreamExt;
 
+pub struct Table {
+  pub rows: usize,
+  pub cols: usize,
+  data: Vec<u64>,
+}
+
+impl Table {
+  pub fn new(rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      rows,
+      cols,
+      data: Vec::with_capacity(rows*cols*2),
+    };
+    table.data.resize(rows*cols,0);
+    table
+  }
+
+  pub fn get_linear(&self, ix: usize) -> Option<u64> {
+    if ix > self.data.len() {
+      None
+    } else {
+      Some(self.data[ix])
+    }
+  }
+
+  pub fn set_linear(&mut self, ix: usize, value: u64) -> Result<(),()> {
+    if ix > self.data.len() {
+      Err(())
+    } else {
+      self.data[ix] = value;
+      Ok(())
+    }
+  }
+
+  pub fn get(&self, row: usize, col: usize) -> Option<u64> {
+    let ix = (col * self.rows) + row;
+    if ix > self.data.len() {
+      None
+    } else {
+      Some(self.data[ix])
+    }
+  }
+
+  pub fn set(&mut self, row: usize, col: usize, value: u64) -> Result<(),()> {
+    let ix = (col * self.rows) + row;
+    if ix > self.data.len() {
+      Err(())
+    } else {
+      self.data[ix] = value;
+      Ok(())
+    }
+  }
+}
+
+impl fmt::Debug for Table {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for row in 0..self.rows {
+      for col in 0..self.cols {
+        let v = self.get(row,col).unwrap();
+        write!(f,"{:?} ", v)?;
+      }
+      write!(f,"\n")?;
+    }
+    Ok(())
+  }
+}
+
 #[tokio::main]
 async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
+  let n = 4 as usize;
   let x: Vec<i64> = vec![0;n];
   let y: Vec<i64> = vec![0;n];
   let vx: Vec<i64> = vec![1;n];
   let vy: Vec<i64> = vec![1;n];
+  let mut balls = Table::new(n,4);
+  for i in 0..n {
+    balls.set(i,2,1);
+    balls.set(i,3,1);
+  }
+  println!("{:?}", balls);
   let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
   loop {
