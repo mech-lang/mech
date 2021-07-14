@@ -26,107 +26,60 @@ use tokio_stream;
 use futures::future::join_all;
 
 fn advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
-  if x.len() <= 10000 {
-    x.iter().zip(vx).map(|(x,y)| x + y).collect()
-  } else {
-    x.par_iter().zip(vx).map(|(x,y)| x + y).collect()
-  }
+  x.iter().zip(vx).map(|(x,y)| x + y).collect()
 }
 
 fn accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
-  if vx.len() <= 10000 {
-    vx.iter().map(|x| x + gravity[0]).collect()
-  } else {
-    vx.par_iter().map(|x| x + gravity[0]).collect()
-  }
+  vx.iter().map(|x| x + gravity[0]).collect()
 }
 
 fn filter1(x: &Vec<i64>) -> Vec<i64> {
-  if x.len() <= 10000 {
-    x.par_iter().map(|x| (*x < 100) as i64).collect()
-  } else {
-    x.par_iter().map(|x| (*x < 100) as i64).collect()
-  }
+  x.iter().map(|x| (*x < 100) as i64).collect()
 }
 
 fn filter2(x: &Vec<i64>) -> Vec<i64> {
-  if x.len() <= 10000 {
-    x.par_iter().map(|x| (*x > 500) as i64).collect()
-  } else {
-    x.par_iter().map(|x| (*x > 500) as i64).collect()
-  }
+  x.iter().map(|x| (*x > 500) as i64).collect()
 }
+
 fn bounce1(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  if x.len() <= 10000 {
-    x.iter().zip(ix).map(|(x,y)| if *y == 1 {
-      100
-    } else {
-      *x
-    }).collect()  
+  x.iter().zip(ix).map(|(x,y)| if *y == 1 {
+    100
   } else {
-    x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
-      100
-    } else {
-      *x
-    }).collect()  
-  }
+    *x
+  }).collect()
 }
 
 fn bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  if x.len() <= 10000 {
-    x.iter().zip(ix).map(|(x,y)| if *y == 1 {
-      500
-    } else {
-      *x
-    }).collect()
+  x.iter().zip(ix).map(|(x,y)| if *y == 1 {
+    500
   } else {
-    x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
-      500
-    } else {
-      *x
-    }).collect()
-  }
+    *x
+  }).collect()
 }
 
 fn bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  if vx.len() <= 10000 {
-    vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
-      -*x
-    } else {
-      *x
-    }).collect()
+  vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
+    -*x
   } else {
-    vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
-      -*x
-    } else {
-      *x
-    }).collect()
-  }
+    *x
+  }).collect()
 }
 
 fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  if vx.len() <= 10000 {
-    vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
-      *x * 90 / 100
-    } else {
-      *x
-    }).collect()
+  vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
+    *x * 90 / 100
   } else {
-    vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
-      *x * 90 / 100
-    } else {
-      *x
-    }).collect()
-  }
+    *x
+  }).collect()
 }
 
 async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let gravity: Vec<i64> = vec![1];
+  let gravity = vec![1];
   let y2 = advance(&y,&vy);
   let vy2 = advance(&vy,&gravity);
   let iy1 = filter1(&y2);
   let iy2 = filter2(&y2);
-  let y3 = bounce1(&y2,&iy1);
+  let y3= bounce1(&y2,&iy1);
   let y4 = bounce2(&y3,&iy2);
   let vy3 = bounce3(&vy2, &iy1);
   let vy4 = bounce3(&vy3, &iy2);
