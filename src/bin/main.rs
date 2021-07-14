@@ -19,6 +19,7 @@ use std::cell::RefCell;
 use nalgebra::base::Matrix2;
 use nalgebra::base::DMatrix;
 use rayon::prelude::*;
+use std::collections::VecDeque;
 
 use std::thread;
 use tokio::time::{sleep,Duration};
@@ -178,31 +179,33 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  for n in sizes {
-    let x: Vec<i64> = vec![0;n];
-    let y: Vec<i64> = vec![0;n];
-    let vx: Vec<i64> = vec![1;n];
-    let vy: Vec<i64> = vec![1;n];
-    let bounds: Vec<i64> = vec![500, 500];
-    
-    //let x_fut = tokio::task::spawn(do_x(x,vx));
-    //let y_fut = tokio::task::spawn(do_y(y,vy));
-
+  let n = 1e6 as usize;
+  let x: Vec<i64> = vec![0;n];
+  let y: Vec<i64> = vec![0;n];
+  let vx: Vec<i64> = vec![1;n];
+  let vy: Vec<i64> = vec![1;n];
+  let bounds: Vec<i64> = vec![500, 500];
+  let mut total_time = VecDeque::new();
+  loop {
     let start_ns = time::precise_time_ns();
-    let (x2,y2) = if n <= 10_000 {
-      let x2 = do_x(x,vx).await;
-      let y2 = do_y(y,vy).await;
+    let ((x, vx),(y, vy)) = if n <= 10_000 {
+      let x2 = do_x(x.clone(),vx.clone()).await;
+      let y2 = do_y(y.clone(),vy.clone()).await;
       (x2, y2)
     } else {
-      let x_fut = tokio::task::spawn(par_do_x(x,vx));
-      let y_fut = tokio::task::spawn(par_do_y(y,vy));
+      let x_fut = tokio::task::spawn(par_do_x(x.clone(),vx.clone()));
+      let y_fut = tokio::task::spawn(par_do_y(y.clone(),vy.clone()));
       let (x2, y2) = tokio::join!(x_fut,y_fut);
       (x2.unwrap(), y2.unwrap())
     };
     let end_ns = time::precise_time_ns();
-
     let time = (end_ns - start_ns) as f64;
-    println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (time / 1_000_000_000.0));
+    total_time.push_back(time);
+    if total_time.len() > 1000 {
+      total_time.pop_front();
+    }    
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64;
+    println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (average_time / 1_000_000_000.0));
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
