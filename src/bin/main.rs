@@ -25,27 +25,6 @@ use tokio::time::{sleep,Duration};
 use tokio_stream;
 use futures::future::join_all;
 
-/*
-async fn long_running_computation(x: u64) -> u64 {
-  let pause = Duration::from_micros(1000);
-  sleep(pause).await;
-  x + 2
-}
-
-fn long_running_computation_sync(x: &u64) -> u64 {
-  let pause = std::time::Duration::from_micros(1000);
-  thread::sleep(pause);
-  x + 2
-}
-
-async fn short_running_computation(x: i64) -> i64 {
-  x + 2
-}
-
-fn short_running_computation_sync(x: &i64) -> i64 {
-  x + 2
-}*/
-
 fn advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
   if x.len() <= 10000 {
     x.iter().zip(vx).map(|(x,y)| x + y).collect()
@@ -64,37 +43,33 @@ fn accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
 
 fn filter1(x: &Vec<i64>) -> Vec<i64> {
   if x.len() <= 10000 {
-    x.iter().map(|x| (*x < 100) as i64).collect()
+    x.par_iter().map(|x| (*x < 100) as i64).collect()
   } else {
     x.par_iter().map(|x| (*x < 100) as i64).collect()
   }
-
 }
 
 fn filter2(x: &Vec<i64>) -> Vec<i64> {
   if x.len() <= 10000 {
-    x.iter().map(|x| (*x > 500) as i64).collect()
+    x.par_iter().map(|x| (*x > 500) as i64).collect()
   } else {
     x.par_iter().map(|x| (*x > 500) as i64).collect()
   }
-
 }
-
 fn bounce1(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
   if x.len() <= 10000 {
     x.iter().zip(ix).map(|(x,y)| if *y == 1 {
       100
     } else {
       *x
-    }).collect()
+    }).collect()  
   } else {
     x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
       100
     } else {
       *x
-    }).collect()
+    }).collect()  
   }
-
 }
 
 fn bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
@@ -111,7 +86,6 @@ fn bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
       *x
     }).collect()
   }
-
 }
 
 fn bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
@@ -128,7 +102,6 @@ fn bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
       *x
     }).collect()
   }
-
 }
 
 fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
@@ -145,31 +118,30 @@ fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
       *x
     }).collect()
   }
-
 }
 
 async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   let gravity: Vec<i64> = vec![1];
-  let y2: Vec<i64> = advance(&y,&vy);
-  let vy2: Vec<i64> = advance(&vy, &gravity);
-  let iy1: Vec<i64> = filter1(&y2);
-  let iy2: Vec<i64> = filter2(&y2);
-  let y3: Vec<i64> = bounce1(&y2,&iy1);
-  let y4: Vec<i64> = bounce2(&y3,&iy2);
-  let vy3: Vec<i64> = bounce3(&vy2, &iy1);
-  let vy4: Vec<i64> = bounce3(&vy3, &iy2);
-  let vy5: Vec<i64> = dampen(&vy4, &iy2);
+  let y2 = advance(&y,&vy);
+  let vy2 = advance(&vy,&gravity);
+  let iy1 = filter1(&y2);
+  let iy2 = filter2(&y2);
+  let y3 = bounce1(&y2,&iy1);
+  let y4 = bounce2(&y3,&iy2);
+  let vy3 = bounce3(&vy2, &iy1);
+  let vy4 = bounce3(&vy3, &iy2);
+  let vy5 = dampen(&vy4, &iy2);
   (y4,vy5)
 }
 
 async fn do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let x2: Vec<i64> = advance(&x,&vx);
-  let ix1: Vec<i64> = filter1(&x2);
-  let ix2: Vec<i64> = filter2(&x2);
-  let x3: Vec<i64> = bounce1(&x2,&ix1);
-  let x4: Vec<i64> = bounce2(&x3,&ix2);
-  let vx2: Vec<i64> = bounce3(&vx, &ix1);
-  let vx3: Vec<i64> = bounce3(&vx2, &ix2);
+  let x2 = advance(&x,&vx);
+  let ix1 = filter1(&x2);
+  let ix2 = filter2(&x2);
+  let x3 = bounce1(&x2,&ix1);
+  let x4 = bounce2(&x3,&ix2);
+  let vx2 = bounce3(&vx, &ix1);
+  let vx3 = bounce3(&vx2, &ix2);
   (x4,vx3)
 }
 
@@ -181,21 +153,23 @@ async fn main() {
   
   let start_ns0 = time::precise_time_ns();
   for n in sizes {
+    for _ in 0..1 {
     let x: Vec<i64> = vec![0;n];
     let y: Vec<i64> = vec![0;n];
     let vx: Vec<i64> = vec![1;n];
     let vy: Vec<i64> = vec![1;n];
     let bounds: Vec<i64> = vec![500, 500];
-
+    
     let x_fut = tokio::task::spawn(do_x(x,vx));
     let y_fut = tokio::task::spawn(do_y(y,vy));
 
     let start_ns = time::precise_time_ns();
-    let (x,y) = tokio::join!(x_fut,y_fut);
+    let (x2,y2) = tokio::join!(x_fut,y_fut);
     let end_ns = time::precise_time_ns();
-    
+
     let time = (end_ns - start_ns) as f64;
     println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (time / 1_000_000_000.0));
+    }
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
