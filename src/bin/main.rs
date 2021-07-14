@@ -98,6 +98,79 @@ async fn do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   (x4,vx3)
 }
 
+fn par_advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().zip(vx).map(|(x,y)| x + y).collect()
+}
+
+fn par_accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
+  vx.par_iter().map(|x| x + gravity[0]).collect()
+}
+
+fn par_filter1(x: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().map(|x| (*x < 100) as i64).collect()
+}
+
+fn par_filter2(x: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().map(|x| (*x > 500) as i64).collect()
+}
+
+fn par_bounce1(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+    100
+  } else {
+    *x
+  }).collect()
+}
+
+fn par_bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+    500
+  } else {
+    *x
+  }).collect()
+}
+
+fn par_bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
+  vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+    -*x
+  } else {
+    *x
+  }).collect()
+}
+
+fn par_dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
+  vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+    *x * 90 / 100
+  } else {
+    *x
+  }).collect()
+}
+
+async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
+  let gravity = vec![1];
+  let y2 = par_advance(&y,&vy);
+  let vy2 = par_advance(&vy,&gravity);
+  let iy1 = par_filter1(&y2);
+  let iy2 = par_filter2(&y2);
+  let y3= par_bounce1(&y2,&iy1);
+  let y4 = par_bounce2(&y3,&iy2);
+  let vy3 = par_bounce3(&vy2, &iy1);
+  let vy4 = par_bounce3(&vy3, &iy2);
+  let vy5 = par_dampen(&vy4, &iy2);
+  (y4,vy5)
+}
+
+async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
+  let x2 = par_advance(&x,&vx);
+  let ix1 = par_filter1(&x2);
+  let ix2 = par_filter2(&x2);
+  let x3 = par_bounce1(&x2,&ix1);
+  let x4 = par_bounce2(&x3,&ix2);
+  let vx2 = par_bounce3(&vx, &ix1);
+  let vx3 = par_bounce3(&vx2, &ix2);
+  (x4,vx3)
+}
+
 use tokio_stream::StreamExt;
 
 #[tokio::main]
@@ -106,97 +179,33 @@ async fn main() {
   
   let start_ns0 = time::precise_time_ns();
   for n in sizes {
-    for _ in 0..1 {
     let x: Vec<i64> = vec![0;n];
     let y: Vec<i64> = vec![0;n];
     let vx: Vec<i64> = vec![1;n];
     let vy: Vec<i64> = vec![1;n];
     let bounds: Vec<i64> = vec![500, 500];
     
-    let x_fut = tokio::task::spawn(do_x(x,vx));
-    let y_fut = tokio::task::spawn(do_y(y,vy));
+    //let x_fut = tokio::task::spawn(do_x(x,vx));
+    //let y_fut = tokio::task::spawn(do_y(y,vy));
 
     let start_ns = time::precise_time_ns();
-    let (x2,y2) = tokio::join!(x_fut,y_fut);
+    let (x2,y2) = if n <= 10_000 {
+      let x2 = do_x(x,vx).await;
+      let y2 = do_y(y,vy).await;
+      (x2, y2)
+    } else {
+      let x_fut = tokio::task::spawn(par_do_x(x,vx));
+      let y_fut = tokio::task::spawn(par_do_y(y,vy));
+      let (x2, y2) = tokio::join!(x_fut,y_fut);
+      (x2.unwrap(), y2.unwrap())
+    };
     let end_ns = time::precise_time_ns();
 
     let time = (end_ns - start_ns) as f64;
     println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (time / 1_000_000_000.0));
-    }
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
 
-
-  
-  /*
-  for n in &sizes {
-    let mut v: Vec<u64> = vec![0;*n];
-    let start_ns = time::precise_time_ns();
-    let x: Vec<u64> = v.iter().map(|x| {
-      short_running_computation_sync(x)
-    }).collect();
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("{:e} BASE   {:0.2e} ms", n, time / 1_000_000.0);
-  }
-  for n in &sizes {
-    let mut v: Vec<u64> = vec![0;*n];
-    let start_ns = time::precise_time_ns();
-    let x: Vec<u64> = v.par_iter().map(|x| {
-      short_running_computation_sync(x)
-    }).collect();
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("{:e} PARA   {:0.2e} ms", n, time / 1_000_000.0);
-  }
-  for n in &sizes {
-    let mut futures = vec![];
-    let mut v: Vec<u64> = vec![0;*n];
-    //let mut stream = tokio_stream::iter(&v);
-    //let mut i = 0;
-    for i in 1..*n {
-      let fut = tokio::task::spawn(short_running_computation(i as u64));
-      futures.push(fut);
-    }
-    let start_ns = time::precise_time_ns();
-    let results = join_all(futures).await;
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("{:e} ASYNC  {:0.2e} ms", n, time / 1_000_000.0);
-  }*/
 }
-
-/*
-#[tokio::main]
-pub async fn main() -> Result<(),String> {
-
-  const n: usize = 10;
-  {
-    let mut v: Vec<u64> = vec![0;n];
-    let start_ns = time::precise_time_ns();
-    v.iter_mut().for_each(|x| {
-      *x = *x + 2;
-    });
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("BASE {:0.4?} ms", time / 1_000_000.0);
-  }
-  {
-    let mut v: Vec<u64> = vec![0;n];
-    let mut stream = tokio_stream::iter(&v);
-    let start_ns = time::precise_time_ns();
-    let mut stream = tokio_stream::iter(&[1, 2, 3]);
-
-    while let Some(v) = stream.next().await {
-        println!("GOT = {:?}", v);
-    }
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    println!("ITER {:0.4?} ms", time / 1_000_000.0);
-  }
-
-
-  Ok(())
-}*/
