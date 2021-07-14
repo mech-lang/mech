@@ -37,7 +37,7 @@ fn accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
 }
 
 fn filter1(x: &Vec<i64>) -> Vec<i64> {
-  x.iter().map(|x| (*x < 100) as i64).collect()
+  x.iter().map(|x| (*x < 0) as i64).collect()
 }
 
 fn filter2(x: &Vec<i64>) -> Vec<i64> {
@@ -79,7 +79,7 @@ fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
 async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   let gravity = vec![1];
   let y2 = advance(&y,&vy);
-  let vy2 = advance(&vy,&gravity);
+  let vy2 = accelerate(&vy,&gravity);
   let iy1 = filter1(&y2);
   let iy2 = filter2(&y2);
   let y3= bounce1(&y2,&iy1);
@@ -110,7 +110,7 @@ fn par_accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
 }
 
 fn par_filter1(x: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().map(|x| (*x < 100) as i64).collect()
+  x.par_iter().map(|x| (*x < 0) as i64).collect()
 }
 
 fn par_filter2(x: &Vec<i64>) -> Vec<i64> {
@@ -152,7 +152,7 @@ fn par_dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
 async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   let gravity = vec![1];
   let y2 = par_advance(&y,&vy);
-  let vy2 = par_advance(&vy,&gravity);
+  let vy2 = par_accelerate(&vy,&gravity);
   let iy1 = par_filter1(&y2);
   let iy2 = par_filter2(&y2);
   let y3= par_bounce1(&y2,&iy1);
@@ -288,19 +288,18 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e1 as usize;
+  let n = 1e7 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
-    balls.set(i,0,1);
-    balls.set(i,1,2);
+    balls.set(i,0,i as i64);
+    balls.set(i,1,i as i64);
     balls.set(i,2,3);
     balls.set(i,3,4);
   }
   let mut col = balls.get_col(3).unwrap();
   let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
-  println!("{:?}", balls);
-  for _ in 0..1000 {
+  for _ in 0..4000 as usize {
     let start_ns = time::precise_time_ns();
     let ((x2, vx2),(y2, vy2)) = if n <= 10_000 {
       let x2 = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
@@ -321,14 +320,11 @@ async fn main() {
     total_time.push_back(time);
     if total_time.len() > 1000 {
       total_time.pop_front();
-    }    
-    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64;
-    println!("{:e} - {:0.2e} ms ({:0.2?}Hz)", n, time / 1_000_000.0 / n as f64, 1.0 / (average_time / 1_000_000_000.0));
-    break;
+    }   
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
-  println!("{:?}", balls);
-
 }
