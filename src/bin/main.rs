@@ -288,7 +288,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e7 as usize;
+  let n = 1e6 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as i64);
