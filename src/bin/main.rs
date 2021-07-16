@@ -27,6 +27,7 @@ use std::thread;
 use tokio::time::{sleep,Duration};
 use tokio_stream;
 use futures::future::join_all;
+use futures::stream::futures_unordered::FuturesUnordered;
 
 fn advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
   x.iter().zip(vx).map(|(x,y)| x + y).collect()
@@ -241,7 +242,7 @@ impl Table {
     self.data[self.rows*col..self.rows*col+self.rows].into()
   }
 
-  pub fn set_col(&mut self, col: usize, data: &Vec<i64>) -> Result<(),()> {
+  pub async fn set_col(&mut self, col: usize, data: &Vec<i64>) -> Result<(),()> {
     if col > self.cols || data.len() != self.rows {
       Err(())
     } else {
@@ -256,7 +257,7 @@ impl Table {
     }
   }
 
-  pub fn set_col_unchecked(&mut self, col: usize, data: &Vec<i64>) {
+  pub async fn set_col_unchecked(&mut self, col: usize, data: &Vec<i64>) {
     let src_len = data.len();
     let dst_len = self.data.len();
     unsafe {
@@ -266,7 +267,21 @@ impl Table {
     }
   }
 
+  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, i64> {
+    self.data.par_chunks_exact_mut(self.rows)
+  }
 
+
+}
+
+
+pub async fn replace(data: Vec<i64>, dest: &mut [i64]) {
+  let src_len = data.len();
+  unsafe {
+    let dst_ptr = dest.as_mut_ptr();
+    let src_ptr = data.as_ptr();
+    ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
+  }
 }
 
 impl fmt::Debug for Table {
@@ -299,31 +314,36 @@ async fn main() {
   let mut col = balls.get_col(3).unwrap();
   let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
-  for _ in 0..4000 as usize {
+
+  for _ in 0..40000 as usize {
     let start_ns = time::precise_time_ns();
-    let ((x2, vx2),(y2, vy2)) = if n <= 10_000 {
-      let x2 = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
-      let y2 = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)).await;
-      (x2, y2)
+    if n <= 10_000 {
+      let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
+      let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)).await;
+      balls.set_col_unchecked(0,&x2);
+      balls.set_col_unchecked(1,&y2);
+      balls.set_col_unchecked(2,&vx2);
+      balls.set_col_unchecked(3,&vy2);
     } else {
       let x_fut = tokio::task::spawn(par_do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)));
       let y_fut = tokio::task::spawn(par_do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)));
-      let (x2, y2) = tokio::join!(x_fut,y_fut);
-      (x2.unwrap(), y2.unwrap())
-    };
-    balls.set_col_unchecked(0,&x2);
-    balls.set_col_unchecked(1,&y2);
-    balls.set_col_unchecked(2,&vx2);
-    balls.set_col_unchecked(3,&vy2);
+      let (x2,y2) = tokio::join!(x_fut,y_fut);
+      let ((x2,vx2),(y2,vy2)) = (x2.unwrap(),y2.unwrap());
+      balls.set_col_unchecked(0,&x2);
+      balls.set_col_unchecked(1,&y2);
+      balls.set_col_unchecked(2,&vx2);
+      balls.set_col_unchecked(3,&vy2);
+    }
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     total_time.push_back(time);
     if total_time.len() > 1000 {
       total_time.pop_front();
-    }   
+    }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));   
   }
+
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
