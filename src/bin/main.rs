@@ -303,7 +303,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
+  let n = 1e5 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as i64);
@@ -315,7 +315,7 @@ async fn main() {
   let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
 
-  for _ in 0..40000 as usize {
+  loop {
     let start_ns = time::precise_time_ns();
     if n <= 10_000 {
       let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
@@ -329,10 +329,9 @@ async fn main() {
       let y_fut = tokio::task::spawn(par_do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)));
       let (x2,y2) = tokio::join!(x_fut,y_fut);
       let ((x2,vx2),(y2,vy2)) = (x2.unwrap(),y2.unwrap());
-      balls.set_col_unchecked(0,&x2);
-      balls.set_col_unchecked(1,&y2);
-      balls.set_col_unchecked(2,&vx2);
-      balls.set_col_unchecked(3,&vy2);
+      balls.column_iterator().zip(vec![x2,vx2,y2,vy2]).for_each(|(col,x)| {
+        replace(x,col);
+      });
     }
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
