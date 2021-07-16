@@ -30,48 +30,40 @@ use futures::future::join_all;
 use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 
-fn advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
-  x.iter().zip(vx).map(|(x,y)| x + y).collect()
+fn add_vectors(x: &Vec<i64>, y: &Vec<i64>) -> Vec<i64> {
+  x.iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn accelerate(vx: &Vec<i64>, gravity: i64) -> Vec<i64> {
-  vx.iter().map(|x| x + gravity).collect()
+fn add_scalar(x: &Vec<i64>, y: i64) -> Vec<i64> {
+  x.iter().map(|x| x + y).collect()
 }
 
-fn filter1(x: &Vec<i64>) -> Vec<i64> {
-  x.iter().map(|x| (*x < 0) as i64).collect()
+fn less_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+  x.iter().map(|x| (*x < y)).collect()
 }
 
-fn filter2(x: &Vec<i64>) -> Vec<i64> {
-  x.iter().map(|x| (*x > 500) as i64).collect()
+fn greater_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+  x.iter().map(|x| (*x > y)).collect()
 }
 
-fn bounce1(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  x.iter().zip(ix).map(|(x,y)| if *y == 1 {
-    100
+fn set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
+  x.iter().zip(ix).map(|(x,y)| if *y == true {
+    v
   } else {
     *x
   }).collect()
 }
 
-fn bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  x.iter().zip(ix).map(|(x,y)| if *y == 1 {
-    500
-  } else {
-    *x
-  }).collect()
-}
-
-fn bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  vx.iter().zip(ix).map(|(x,y)| if *y == true {
     -*x
   } else {
     *x
   }).collect()
 }
 
-fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn dampen(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  vx.iter().zip(ix).map(|(x,y)| if *y == true {
     *x * 90 / 100
   } else {
     *x
@@ -79,13 +71,12 @@ fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
 }
 
 async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let gravity = 1;
-  let y2 = advance(&y,&vy);
-  let vy2 = accelerate(&vy,gravity);
-  let iy1 = filter1(&y2);
-  let iy2 = filter2(&y2);
-  let y3= bounce1(&y2,&iy1);
-  let y4 = bounce2(&y3,&iy2);
+  let y2 = add_vectors(&y,&vy);
+  let vy2 = add_scalar(&vy,1);
+  let iy1 = less_than_scalar(&y2,0);
+  let iy2 = greater_than_scalar(&y2,500);
+  let y3= set_scalar(&y2,&iy1,0);
+  let y4 = set_scalar(&y3,&iy2,500);
   let vy3 = bounce3(&vy2, &iy1);
   let vy4 = bounce3(&vy3, &iy2);
   let vy5 = dampen(&vy4, &iy2);
@@ -93,11 +84,11 @@ async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
 }
 
 async fn do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let x2 = advance(&x,&vx);
-  let ix1 = filter1(&x2);
-  let ix2 = filter2(&x2);
-  let x3 = bounce1(&x2,&ix1);
-  let x4 = bounce2(&x3,&ix2);
+  let x2 = add_vectors(&x,&vx);
+  let ix1 = less_than_scalar(&x2,0);
+  let ix2 = greater_than_scalar(&x2,500);
+  let x3 = set_scalar(&x2,&ix1,0);
+  let x4 = set_scalar(&x3,&ix2,500);
   let vx2 = bounce3(&vx, &ix1);
   let vx3 = bounce3(&vx2, &ix2);
   (x4,vx3)
@@ -119,17 +110,9 @@ fn par_greater_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
   x.par_iter().map(|x| (*x > y)).collect()
 }
 
-fn par_bounce1(x: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+fn par_set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
   x.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    100
-  } else {
-    *x
-  }).collect()
-}
-
-fn par_bounce2(x: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
-  x.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    500
+    v
   } else {
     *x
   }).collect()
@@ -152,13 +135,12 @@ fn par_dampen(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
 }
 
 async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let gravity = 1;
   let y2 = par_add_vectors(&y,&vy);
-  let vy2 = par_add_scalar(&vy,gravity);
+  let vy2 = par_add_scalar(&vy,1);
   let iy1 = par_less_than_scalar(&y2,0);
   let iy2 = par_greater_than_scalar(&y2,500);
-  let y3= par_bounce1(&y2,&iy1);
-  let y4 = par_bounce2(&y3,&iy2);
+  let y3= par_set_scalar(&y2,&iy1,0);
+  let y4 = par_set_scalar(&y3,&iy2,500);
   let vy3 = par_bounce3(&vy2, &iy1);
   let vy4 = par_bounce3(&vy3, &iy2);
   let vy5 = par_dampen(&vy4, &iy2);
@@ -169,8 +151,8 @@ async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   let x2 = par_add_vectors(&x,&vx);
   let ix1 = par_less_than_scalar(&x2,0);
   let ix2 = par_greater_than_scalar(&x2,500);
-  let x3 = par_bounce1(&x2,&ix1);
-  let x4 = par_bounce2(&x3,&ix2);
+  let x3 = par_set_scalar(&x2,&ix1,0);
+  let x4 = par_set_scalar(&x3,&ix2,500);
   let vx2 = par_bounce3(&vx, &ix1);
   let vx3 = par_bounce3(&vx2, &ix2);
   (x4,vx3)
@@ -273,9 +255,7 @@ impl Table {
     self.data.par_chunks_exact_mut(self.rows)
   }
 
-
 }
-
 
 pub async fn replace(data: Vec<i64>, dest: &mut [i64]) {
   let src_len = data.len();
