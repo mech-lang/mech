@@ -28,13 +28,14 @@ use tokio::time::{sleep,Duration};
 use tokio_stream;
 use futures::future::join_all;
 use futures::stream::futures_unordered::FuturesUnordered;
+use tokio_stream::StreamExt;
 
 fn advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
   x.iter().zip(vx).map(|(x,y)| x + y).collect()
 }
 
-fn accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
-  vx.iter().map(|x| x + gravity[0]).collect()
+fn accelerate(vx: &Vec<i64>, gravity: i64) -> Vec<i64> {
+  vx.iter().map(|x| x + gravity).collect()
 }
 
 fn filter1(x: &Vec<i64>) -> Vec<i64> {
@@ -78,9 +79,9 @@ fn dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
 }
 
 async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let gravity = vec![1];
+  let gravity = 1;
   let y2 = advance(&y,&vy);
-  let vy2 = accelerate(&vy,&gravity);
+  let vy2 = accelerate(&vy,gravity);
   let iy1 = filter1(&y2);
   let iy2 = filter2(&y2);
   let y3= bounce1(&y2,&iy1);
@@ -102,48 +103,48 @@ async fn do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   (x4,vx3)
 }
 
-fn par_advance(x: &Vec<i64>, vx: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().zip(vx).map(|(x,y)| x + y).collect()
+fn par_add_vectors(x: &Vec<i64>, y: &Vec<i64>) -> Vec<i64> {
+  x.par_iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn par_accelerate(vx: &Vec<i64>, gravity: &Vec<i64>) -> Vec<i64> {
-  vx.par_iter().map(|x| x + gravity[0]).collect()
+fn par_add_scalar(x: &Vec<i64>, y: i64) -> Vec<i64> {
+  x.par_iter().map(|x| x + y).collect()
 }
 
-fn par_filter1(x: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().map(|x| (*x < 0) as i64).collect()
+fn par_less_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+  x.par_iter().map(|x| (*x < y)).collect()
 }
 
-fn par_filter2(x: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().map(|x| (*x > 500) as i64).collect()
+fn par_greater_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+  x.par_iter().map(|x| (*x > y)).collect()
 }
 
-fn par_bounce1(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn par_bounce1(x: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  x.par_iter().zip(ix).map(|(x,y)| if *y == true {
     100
   } else {
     *x
   }).collect()
 }
 
-fn par_bounce2(x: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  x.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn par_bounce2(x: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  x.par_iter().zip(ix).map(|(x,y)| if *y == true {
     500
   } else {
     *x
   }).collect()
 }
 
-fn par_bounce3(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn par_bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
     -*x
   } else {
     *x
   }).collect()
 }
 
-fn par_dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
-  vx.par_iter().zip(ix).map(|(x,y)| if *y == 1 {
+fn par_dampen(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+  vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
     *x * 90 / 100
   } else {
     *x
@@ -151,11 +152,11 @@ fn par_dampen(vx: &Vec<i64>, ix: &Vec<i64>) -> Vec<i64> {
 }
 
 async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let gravity = vec![1];
-  let y2 = par_advance(&y,&vy);
-  let vy2 = par_accelerate(&vy,&gravity);
-  let iy1 = par_filter1(&y2);
-  let iy2 = par_filter2(&y2);
+  let gravity = 1;
+  let y2 = par_add_vectors(&y,&vy);
+  let vy2 = par_add_scalar(&vy,gravity);
+  let iy1 = par_less_than_scalar(&y2,0);
+  let iy2 = par_greater_than_scalar(&y2,500);
   let y3= par_bounce1(&y2,&iy1);
   let y4 = par_bounce2(&y3,&iy2);
   let vy3 = par_bounce3(&vy2, &iy1);
@@ -165,9 +166,9 @@ async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
 }
 
 async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let x2 = par_advance(&x,&vx);
-  let ix1 = par_filter1(&x2);
-  let ix2 = par_filter2(&x2);
+  let x2 = par_add_vectors(&x,&vx);
+  let ix1 = par_less_than_scalar(&x2,0);
+  let ix2 = par_greater_than_scalar(&x2,500);
   let x3 = par_bounce1(&x2,&ix1);
   let x4 = par_bounce2(&x3,&ix2);
   let vx2 = par_bounce3(&vx, &ix1);
@@ -175,7 +176,8 @@ async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
   (x4,vx3)
 }
 
-use tokio_stream::StreamExt;
+
+pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<i64>>);
 
 pub struct Table {
   pub rows: usize,
@@ -303,7 +305,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e5 as usize;
+  let n = 1e6 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as i64);
@@ -317,14 +319,14 @@ async fn main() {
 
   loop {
     let start_ns = time::precise_time_ns();
-    if n <= 10_000 {
+    /*if n <= 10_000 {
       let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
       let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)).await;
       balls.set_col_unchecked(0,&x2);
       balls.set_col_unchecked(1,&y2);
       balls.set_col_unchecked(2,&vx2);
       balls.set_col_unchecked(3,&vy2);
-    } else {
+    } else {*/
       let x_fut = tokio::task::spawn(par_do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)));
       let y_fut = tokio::task::spawn(par_do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)));
       let (x2,y2) = tokio::join!(x_fut,y_fut);
@@ -332,7 +334,7 @@ async fn main() {
       balls.column_iterator().zip(vec![x2,vx2,y2,vy2]).for_each(|(col,x)| {
         replace(x,col);
       });
-    }
+    //}
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     total_time.push_back(time);
@@ -340,9 +342,8 @@ async fn main() {
       total_time.pop_front();
     }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));   
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
-
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
