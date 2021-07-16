@@ -30,23 +30,27 @@ use futures::future::join_all;
 use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 
-fn add_vectors(x: &Vec<i64>, y: &Vec<i64>) -> Vec<i64> {
+fn add_vectors(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn add_scalar(x: &Vec<i64>, y: i64) -> Vec<i64> {
+fn add_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
   x.iter().map(|x| x + y).collect()
 }
 
-fn less_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+fn multiply_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
+  x.iter().map(|x| x * y).collect()
+}
+
+fn less_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.iter().map(|x| (*x < y)).collect()
 }
 
-fn greater_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+fn greater_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.iter().map(|x| (*x > y)).collect()
 }
 
-fn set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
+fn set_scalar(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
   x.iter().zip(ix).map(|(x,y)| if *y == true {
     v
   } else {
@@ -54,7 +58,7 @@ fn set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
   }).collect()
 }
 
-fn bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+fn bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
   vx.iter().zip(ix).map(|(x,y)| if *y == true {
     -*x
   } else {
@@ -62,55 +66,63 @@ fn bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
   }).collect()
 }
 
-fn dampen(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+fn dampen(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
   vx.iter().zip(ix).map(|(x,y)| if *y == true {
-    *x * 90 / 100
+    *x * 0.9
   } else {
     *x
   }).collect()
 }
 
-async fn do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
+fn do_y(y: Vec<f64>, vy: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
   let y2 = add_vectors(&y,&vy);
-  let vy2 = add_scalar(&vy,1);
-  let iy1 = less_than_scalar(&y2,0);
-  let iy2 = greater_than_scalar(&y2,500);
-  let y3= set_scalar(&y2,&iy1,0);
-  let y4 = set_scalar(&y3,&iy2,500);
+  let vy2 = add_scalar(&vy,1.0);
+  let iy1 = less_than_scalar(&y2,0.0);
+  let iy2 = greater_than_scalar(&y2,500.0);
+  let y3= set_scalar(&y2,&iy1,0.0);
+  let y4 = set_scalar(&y3,&iy2,500.0);
   let vy3 = bounce3(&vy2, &iy1);
   let vy4 = bounce3(&vy3, &iy2);
   let vy5 = dampen(&vy4, &iy2);
   (y4,vy5)
 }
 
-async fn do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
+fn do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
   let x2 = add_vectors(&x,&vx);
-  let ix1 = less_than_scalar(&x2,0);
-  let ix2 = greater_than_scalar(&x2,500);
-  let x3 = set_scalar(&x2,&ix1,0);
-  let x4 = set_scalar(&x3,&ix2,500);
+  let ix1 = less_than_scalar(&x2,0.0);
+  let ix2 = greater_than_scalar(&x2,500.0);
+  let x3 = set_scalar(&x2,&ix1,0.0);
+  let x4 = set_scalar(&x3,&ix2,500.0);
   let vx2 = bounce3(&vx, &ix1);
   let vx3 = bounce3(&vx2, &ix2);
   (x4,vx3)
 }
 
-fn par_add_vectors(x: &Vec<i64>, y: &Vec<i64>) -> Vec<i64> {
+fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.par_iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn par_add_scalar(x: &Vec<i64>, y: i64) -> Vec<i64> {
+fn par_add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
   x.par_iter().map(|x| x + y).collect()
 }
 
-fn par_less_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
+  x.par_iter().zip(y).map(|(x,y)| *x || *y).collect()
+}
+
+fn par_multiply_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
+  x.par_iter().map(|x| x * y).collect()
+}
+
+fn par_less_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.par_iter().map(|x| (*x < y)).collect()
 }
 
-fn par_greater_than_scalar(x: &Vec<i64>, y: i64) -> Vec<bool> {
+fn par_greater_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.par_iter().map(|x| (*x > y)).collect()
 }
 
-fn par_set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
+fn par_set_vs(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
   x.par_iter().zip(ix).map(|(x,y)| if *y == true {
     v
   } else {
@@ -118,7 +130,15 @@ fn par_set_scalar(x: &Vec<i64>, ix: &Vec<bool>, v: i64) -> Vec<i64> {
   }).collect()
 }
 
-fn par_bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+fn par_set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
+  x.par_iter().zip(ix).zip(v).map(|((x,y),v)| if *y == true {
+    *v
+  } else {
+    *x
+  }).collect()
+}
+
+fn par_bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
   vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
     -*x
   } else {
@@ -126,45 +146,46 @@ fn par_bounce3(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
   }).collect()
 }
 
-fn par_dampen(vx: &Vec<i64>, ix: &Vec<bool>) -> Vec<i64> {
+fn par_dampen(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
   vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    *x * 90 / 100
+    *x * 0.9
   } else {
     *x
   }).collect()
 }
 
-async fn par_do_y(y: Vec<i64>, vy: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let y2 = par_add_vectors(&y,&vy);
-  let vy2 = par_add_scalar(&vy,1);
-  let iy1 = par_less_than_scalar(&y2,0);
-  let iy2 = par_greater_than_scalar(&y2,500);
-  let y3= par_set_scalar(&y2,&iy1,0);
-  let y4 = par_set_scalar(&y3,&iy2,500);
-  let vy3 = par_bounce3(&vy2, &iy1);
-  let vy4 = par_bounce3(&vy3, &iy2);
-  let vy5 = par_dampen(&vy4, &iy2);
-  (y4,vy5)
-}
-
-async fn par_do_x(x: Vec<i64>, vx: Vec<i64>) -> (Vec<i64>,Vec<i64>) {
-  let x2 = par_add_vectors(&x,&vx);
-  let ix1 = par_less_than_scalar(&x2,0);
-  let ix2 = par_greater_than_scalar(&x2,500);
-  let x3 = par_set_scalar(&x2,&ix1,0);
-  let x4 = par_set_scalar(&x3,&ix2,500);
-  let vx2 = par_bounce3(&vx, &ix1);
-  let vx3 = par_bounce3(&vx2, &ix2);
+async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {  
+  let x2 = par_add_vv(&x,&vx);
+  let ix1 = par_less_than_vs(&x2,0.0);
+  let ix2 = par_greater_than_vs(&x2,500.0);
+  let x3 = par_set_vs(&x2,&ix1,0.0);
+  let x4 = par_set_vs(&x3,&ix2,500.0);
+  let neg_vx = par_multiply_vs(&vx,-1.0);
+  let ix3 = par_or_vv(&ix1,&ix2);
+  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
+  let vx3 = par_dampen(&vx2, &ix2);
   (x4,vx3)
 }
 
+async fn par_do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
+  let x2 = par_add_vv(&x,&vx);
+  let ix1 = par_less_than_vs(&x2,0.0);
+  let ix2 = par_greater_than_vs(&x2,500.0);
+  let x3 = par_set_vs(&x2,&ix1,0.0);
+  let x4 = par_set_vs(&x3,&ix2,500.0);
+  let neg_vx = par_multiply_vs(&vx,-1.0);
+  let ix3 = par_or_vv(&ix1,&ix2);
+  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
+  (x4,vx2)
+}
 
-pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<i64>>);
+
+pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
 
 pub struct Table {
   pub rows: usize,
   pub cols: usize,
-  data: Vec<i64>,
+  data: Vec<f64>,
 }
 
 impl Table {
@@ -174,11 +195,11 @@ impl Table {
       cols,
       data: Vec::with_capacity(rows*cols*2),
     };
-    table.data.resize(rows*cols,0);
+    table.data.resize(rows*cols,0.0);
     table
   }
 
-  pub fn get_linear(&self, ix: usize) -> Option<i64> {
+  pub fn get_linear(&self, ix: usize) -> Option<f64> {
     if ix > self.data.len() {
       None
     } else {
@@ -186,7 +207,7 @@ impl Table {
     }
   }
 
-  pub fn set_linear(&mut self, ix: usize, value: i64) -> Result<(),()> {
+  pub fn set_linear(&mut self, ix: usize, value: f64) -> Result<(),()> {
     if ix > self.data.len() {
       Err(())
     } else {
@@ -195,7 +216,7 @@ impl Table {
     }
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Option<i64> {
+  pub fn get(&self, row: usize, col: usize) -> Option<f64> {
     let ix = (col * self.rows) + row;
     if ix > self.data.len() {
       None
@@ -204,7 +225,7 @@ impl Table {
     }
   }
 
-  pub fn set(&mut self, row: usize, col: usize, value: i64) -> Result<(),()> {
+  pub fn set(&mut self, row: usize, col: usize, value: f64) -> Result<(),()> {
     let ix = (col * self.rows) + row;
     if ix > self.data.len() {
       Err(())
@@ -214,7 +235,7 @@ impl Table {
     }
   }
 
-  pub fn get_col(&mut self, col: usize) -> Option<Vec<i64>> {
+  pub fn get_col(&mut self, col: usize) -> Option<Vec<f64>> {
     if col > self.cols {
       None
     } else {
@@ -222,11 +243,11 @@ impl Table {
     }
   }
 
-  pub fn get_col_unchecked(&mut self, col: usize) -> Vec<i64> {
+  pub fn get_col_unchecked(&mut self, col: usize) -> Vec<f64> {
     self.data[self.rows*col..self.rows*col+self.rows].into()
   }
 
-  pub async fn set_col(&mut self, col: usize, data: &Vec<i64>) -> Result<(),()> {
+  pub async fn set_col(&mut self, col: usize, data: &Vec<f64>) -> Result<(),()> {
     if col > self.cols || data.len() != self.rows {
       Err(())
     } else {
@@ -241,7 +262,7 @@ impl Table {
     }
   }
 
-  pub async fn set_col_unchecked(&mut self, col: usize, data: &Vec<i64>) {
+  pub async fn set_col_unchecked(&mut self, col: usize, data: &Vec<f64>) {
     let src_len = data.len();
     let dst_len = self.data.len();
     unsafe {
@@ -251,13 +272,13 @@ impl Table {
     }
   }
 
-  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, i64> {
+  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, f64> {
     self.data.par_chunks_exact_mut(self.rows)
   }
 
 }
 
-pub async fn replace(data: Vec<i64>, dest: &mut [i64]) {
+pub async fn replace(data: Vec<f64>, dest: &mut [f64]) {
   let src_len = data.len();
   unsafe {
     let dst_ptr = dest.as_mut_ptr();
@@ -288,27 +309,30 @@ async fn main() {
   let n = 1e6 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
-    balls.set(i,0,i as i64);
-    balls.set(i,1,i as i64);
-    balls.set(i,2,3);
-    balls.set(i,3,4);
+    balls.set(i,0,i as f64);
+    balls.set(i,1,i as f64);
+    balls.set(i,2,3.0);
+    balls.set(i,3,4.0);
   }
   let mut col = balls.get_col(3).unwrap();
-  let bounds: Vec<i64> = vec![500, 500];
   let mut total_time = VecDeque::new();
 
   loop {
     let start_ns = time::precise_time_ns();
-    /*if n <= 10_000 {
-      let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)).await;
-      let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)).await;
+    /*if n <= 10_000 {*/
+    /*  let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2));
+      let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3));
       balls.set_col_unchecked(0,&x2);
       balls.set_col_unchecked(1,&y2);
       balls.set_col_unchecked(2,&vx2);
-      balls.set_col_unchecked(3,&vy2);
-    } else {*/
-      let x_fut = tokio::task::spawn(par_do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2)));
-      let y_fut = tokio::task::spawn(par_do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3)));
+      balls.set_col_unchecked(3,&vy2);*/
+    //} else {
+      let x = balls.get_col_unchecked(0);
+      let vx = balls.get_col_unchecked(1);
+      let y = balls.get_col_unchecked(2);
+      let vy = balls.get_col_unchecked(3);
+      let x_fut = tokio::task::spawn(par_do_x(x,vx));
+      let y_fut = tokio::task::spawn(par_do_y(y,vy));
       let (x2,y2) = tokio::join!(x_fut,y_fut);
       let ((x2,vx2),(y2,vy2)) = (x2.unwrap(),y2.unwrap());
       balls.column_iterator().zip(vec![x2,vx2,y2,vy2]).for_each(|(col,x)| {
