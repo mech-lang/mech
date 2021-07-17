@@ -152,7 +152,7 @@ async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
   let ix2 = par_greater_than_vs(&x2,500.0);
   let x3 = par_set_vs(&x2,&ix1,0.0);
   let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-0.9);
+  let neg_vx = par_multiply_vs(&vx,-0.8);
   let ix3 = par_or_vv(&ix1,&ix2);
   let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
   (x4,vx2)
@@ -170,6 +170,41 @@ async fn par_do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
   (x4,vx2)
 }
 
+/*
+# Bouncing Balls
+
+Define the environment
+  #ball = [|x   y   vx vy|
+            10  10  20  0]
+  #time/timer += [period: 15, ticks: 0]
+  #gravity = 1
+  #boundary = [width: 500 height: 500]
+
+## Update condition
+
+Update the block positions on each tick of the timer
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the boundary height
+  ~ #ball.y
+  iy = #ball.y > #boundary.height
+  iyy = #ball.y < 0
+  #ball.y{iy} := #boundary.height
+  #ball.vy{iy | iyy} := -#ball.vy * 0.80
+
+Keep the balls within the boundary width
+  ~ #ball.x
+  ix = #ball.x > #boundary.width
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary.width
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
+*/
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
 
