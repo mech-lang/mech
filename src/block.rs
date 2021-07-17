@@ -336,7 +336,6 @@ impl Block {
   }
 
   pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
-    println!("{:?}", self);
     self.triggered += 1;
     'step_loop: for step in &self.plan {
       match step {
