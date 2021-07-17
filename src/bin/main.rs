@@ -146,25 +146,16 @@ fn par_bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
   }).collect()
 }
 
-fn par_dampen(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    *x * 0.9
-  } else {
-    *x
-  }).collect()
-}
-
 async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {  
   let x2 = par_add_vv(&x,&vx);
   let ix1 = par_less_than_vs(&x2,0.0);
   let ix2 = par_greater_than_vs(&x2,500.0);
   let x3 = par_set_vs(&x2,&ix1,0.0);
   let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-1.0);
+  let neg_vx = par_multiply_vs(&vx,-0.9);
   let ix3 = par_or_vv(&ix1,&ix2);
   let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-  let vx3 = par_dampen(&vx2, &ix2);
-  (x4,vx3)
+  (x4,vx2)
 }
 
 async fn par_do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
@@ -306,7 +297,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
+  let n = 1e5 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as f64);
