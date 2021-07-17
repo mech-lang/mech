@@ -138,14 +138,6 @@ fn par_set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
   }).collect()
 }
 
-fn par_bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    -*x
-  } else {
-    *x
-  }).collect()
-}
-
 async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {  
   let x2 = par_add_vv(&x,&vx);
   let ix1 = par_less_than_vs(&x2,0.0);
