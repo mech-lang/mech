@@ -39,3 +39,6 @@ futures = "0.3.15"
 version = "0.2.14"
 default-features = false
 features = ["libm"]
+
+map_in_place = "*"
+ndarray = {version = "0.15.3", features = ["rayon"]}

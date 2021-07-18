@@ -1,384 +1,74 @@
 
-use std::sync::Arc;
-use std::cell::RefCell;
-use std::fmt;
-use std::ptr;
-
-  // New runtime
-  // requirements:
-  // pass all tests
-  // robust units
-  // all number types
-  // Unicode
-  // async blocks
-  // parallel operators
-  // rewind capability
-  // pre-serialized memory layout
-  // performance target: 10 million updates per 60Hz cycle
-  // stack allocated tables
-  // matrix library in std
-
-use nalgebra::base::Matrix2;
-use nalgebra::base::DMatrix;
-use rayon::prelude::*;
+use map_in_place::MapVecInPlace;
 use std::collections::VecDeque;
+use rayon::prelude::*;
+use ndarray::arr1;
 
-use std::thread;
-use tokio::time::{sleep,Duration};
-use tokio_stream;
-use futures::future::join_all;
-use futures::stream::futures_unordered::FuturesUnordered;
-use tokio_stream::StreamExt;
+fn main() {
+    let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
+
+    for n in sizes {
+        let mut v: Vec<f64> = vec![1.0; n];
+        let mut a = arr1(&vec![1.0; n]);
 
 
-fn add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
-  x.iter().zip(y).map(|(x,y)| x + y).collect()
+        let mut total_time = VecDeque::new();
+        for _ in 0..4000 {
+            let start_ns = time::precise_time_ns();
+
+            a.par_mapv_inplace(|x| x + 1.0);
+
+            //v = v.map(|n| n + 1.0);
+            //v = v.iter().map(|n| n + 1).collect::<Vec<f64>>();
+            //v = v.par_iter().map(|n| n + 1 ).collect::<Vec<f64>>();
+
+            let end_ns = time::precise_time_ns();
+            let time = (end_ns - start_ns) as f64;
+            total_time.push_back(time);
+            if total_time.len() > 1000 {
+            total_time.pop_front();
+            }
+        }
+        let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+        println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+        //println!("{:?}", a.sum());
+    }
 }
-
-fn add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.iter().map(|x| x + y).collect()
-}
-
-fn or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
-  x.iter().zip(y).map(|(x,y)| *x || *y).collect()
-}
-
-fn multiply_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.iter().map(|x| x * y).collect()
-}
-
-fn less_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.iter().map(|x| (*x < y)).collect()
-}
-
-fn greater_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.iter().map(|x| (*x > y)).collect()
-}
-
-fn set_vs(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
-  x.iter().zip(ix).map(|(x,y)| if *y == true {
-    v
-  } else {
-    *x
-  }).collect()
-}
-
-fn set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
-  x.iter().zip(ix).zip(v).map(|((x,y),v)| if *y == true {
-    *v
-  } else {
-    *x
-  }).collect()
-}
-
-
-fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
-  x.par_iter().zip(y).map(|(x,y)| x + y).collect()
-}
-
-fn par_add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.par_iter().map(|x| x + y).collect()
-}
-
-fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
-  x.par_iter().zip(y).map(|(x,y)| *x || *y).collect()
-}
-
-fn par_multiply_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.par_iter().map(|x| x * y).collect()
-}
-
-fn par_less_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.par_iter().map(|x| (*x < y)).collect()
-}
-
-fn par_greater_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.par_iter().map(|x| (*x > y)).collect()
-}
-
-fn par_set_vs(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
-  x.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    v
-  } else {
-    *x
-  }).collect()
-}
-
-fn par_set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
-  x.par_iter().zip(ix).zip(v).map(|((x,y),v)| if *y == true {
-    *v
-  } else {
-    *x
-  }).collect()
-}
-
-/*async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {  
-  let x2 = par_add_vv(&x,&vx);
-  let ix1 = par_less_than_vs(&x2,0.0);
-  let ix2 = par_greater_than_vs(&x2,500.0);
-  let x3 = par_set_vs(&x2,&ix1,0.0);
-  let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-0.8);
-  let ix3 = par_or_vv(&ix1,&ix2);
-  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-  (x4,vx2)
-}
-
-async fn par_do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let x2 = par_add_vv(&x,&vx);
-  let ix1 = par_less_than_vs(&x2,0.0);
-  let ix2 = par_greater_than_vs(&x2,500.0);
-  let x3 = par_set_vs(&x2,&ix1,0.0);
-  let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-1.0);
-  let ix3 = par_or_vv(&ix1,&ix2);
-  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-  (x4,vx2)
-}*/
 
 /*
-# Bouncing Balls
+// BASE
+1e1 - 10504201.68Hz
+1e2 - 6373486.30Hz
+1e3 - 3408316.29Hz
+1e4 - 59594.05Hz
+1e5 - 14598.39Hz
+1e6 - 363.17Hz
+1e7 - 31.27Hz
 
-Define the environment
-  #ball = [|x   y   vx vy|
-            10  10  20  0]
-  #time/timer += [period: 15, ticks: 0]
-  #gravity = 1
-  #boundary = [width: 500 height: 500]
+// RAYON
+1e1 - 78299.34Hz
+1e2 - 43857.34Hz
+1e3 - 30101.53Hz
+1e4 - 17297.45Hz
+1e5 - 8135.22Hz
+1e6 - 456.35Hz
 
-## Update condition
+// NDARRAY IN PLACE
+1e1 - 29411764.71Hz
+1e2 - 9624639.08Hz
+1e3 - 5861664.71Hz
+1e4 - 511012.32Hz
+1e5 - 40693.75Hz
+1e6 - 2565.97Hz
+1e7 - 116.51Hz
 
-Update the block positions on each tick of the timer
-  ~ #time/timer.ticks
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
+// NDARRAY IN PLACE PARALLEL
+1e1 - 138094.84Hz
+1e2 - 52806.67Hz
+1e3 - 41284.44Hz
+1e4 - 24468.60Hz
+1e5 - 19147.55Hz
+1e6 - 4799.01Hz
+1e7 - 140.54Hz
 
-## Boundary Condition
-
-Keep the balls within the boundary height
-  ~ #ball.y
-  iy = #ball.y > #boundary.height
-  iyy = #ball.y < 0
-  #ball.y{iy} := #boundary.height
-  #ball.vy{iy | iyy} := -#ball.vy * 0.80
-
-Keep the balls within the boundary width
-  ~ #ball.x
-  ix = #ball.x > #boundary.width
-  ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.width
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 0.80
 */
-
-pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
-
-pub struct Table {
-  pub rows: usize,
-  pub cols: usize,
-  data: Vec<f64>,
-}
-
-impl Table {
-  pub fn new(rows: usize, cols: usize) -> Table {
-    let mut table = Table {
-      rows,
-      cols,
-      data: Vec::with_capacity(rows*cols*2),
-    };
-    table.data.resize(rows*cols,0.0);
-    table
-  }
-
-  pub fn get_linear(&self, ix: usize) -> Option<f64> {
-    if ix > self.data.len() {
-      None
-    } else {
-      Some(self.data[ix])
-    }
-  }
-
-  pub fn set_linear(&mut self, ix: usize, value: f64) -> Result<(),()> {
-    if ix > self.data.len() {
-      Err(())
-    } else {
-      self.data[ix] = value;
-      Ok(())
-    }
-  }
-
-  pub fn get(&self, row: usize, col: usize) -> Option<f64> {
-    let ix = (col * self.rows) + row;
-    if ix > self.data.len() {
-      None
-    } else {
-      Some(self.data[ix])
-    }
-  }
-
-  pub fn set(&mut self, row: usize, col: usize, value: f64) -> Result<(),()> {
-    let ix = (col * self.rows) + row;
-    if ix > self.data.len() {
-      Err(())
-    } else {
-      self.data[ix] = value;
-      Ok(())
-    }
-  }
-
-  pub fn get_col(&mut self, col: usize) -> Option<Vec<f64>> {
-    if col > self.cols {
-      None
-    } else {
-      Some(self.data[self.rows*col..self.rows*col+self.rows].into())
-    }
-  }
-
-  pub fn get_col_unchecked(&mut self, col: usize) -> Vec<f64> {
-    self.data[self.rows*col..self.rows*col+self.rows].into()
-  }
-
-  pub fn set_col(&mut self, col: usize, data: &Vec<f64>) -> Result<(),()> {
-    if col > self.cols || data.len() != self.rows {
-      Err(())
-    } else {
-      let src_len = data.len();
-      let dst_len = self.data.len();
-      unsafe {
-        let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
-        let src_ptr = data.as_ptr();
-        ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-      }
-      Ok(())
-    }
-  }
-
-  pub fn set_col_unchecked(&mut self, col: usize, data: &Vec<f64>) {
-    let src_len = data.len();
-    let dst_len = self.data.len();
-    unsafe {
-      let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
-      let src_ptr = data.as_ptr();
-      ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-    }
-  }
-
-  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, f64> {
-    self.data.par_chunks_exact_mut(self.rows)
-  }
-
-}
-
-pub async fn replace(data: Vec<f64>, dest: &mut [f64]) {
-  let src_len = data.len();
-  unsafe {
-    let dst_ptr = dest.as_mut_ptr();
-    let src_ptr = data.as_ptr();
-    ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-  }
-}
-
-impl fmt::Debug for Table {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    for row in 0..self.rows {
-      for col in 0..self.cols {
-        let v = self.get(row,col).unwrap();
-        write!(f,"{:?} ", v)?;
-      }
-      write!(f,"\n")?;
-    }
-    Ok(())
-  }
-}
-
-#[tokio::main]
-async fn main() {
-  let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
-  
-  let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
-  let mut balls = Table::new(n,4);
-  for i in 0..n {
-    balls.set(i,0,i as f64);
-    balls.set(i,1,i as f64);
-    balls.set(i,2,3.0);
-    balls.set(i,3,4.0);
-  }
-  let mut col = balls.get_col(3).unwrap();
-  let mut total_time = VecDeque::new();
-
-  loop {
-    let start_ns = time::precise_time_ns();
-    /*if n <= 10_000 {*/
-    /*  let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2));
-      let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3));
-      balls.set_col_unchecked(0,&x2);
-      balls.set_col_unchecked(1,&y2);
-      balls.set_col_unchecked(2,&vx2);
-      balls.set_col_unchecked(3,&vy2);*/
-    //} else {
-      let x = balls.get_col_unchecked(0);
-      let vx = balls.get_col_unchecked(1);
-      let y = balls.get_col_unchecked(2);
-      let vy = balls.get_col_unchecked(3);
-      //let x_fut = tokio::task::spawn(par_do_x(x,vx));
-      //let y_fut = tokio::task::spawn(par_do_y(y,vy));
-
-      /*let x2 = add_vv(&x,&vx);
-      let ix1 = less_than_vs(&x2,0.0);
-      let ix2 = greater_than_vs(&x2,500.0);
-      let x2 = set_vs(&x2,&ix1,0.0);
-      let x2 = set_vs(&x2,&ix2,500.0);
-      let neg_vx = multiply_vs(&vx,-0.8);
-      let ix3 = or_vv(&ix1,&ix2);
-      let vx2 = set_vv(&vx, &ix3, &neg_vx);
-      let y2 = add_vv(&y,&vy);
-      let iy1 = less_than_vs(&y2,0.0);
-      let iy2 = greater_than_vs(&y2,500.0);
-      let y3 = set_vs(&y2,&iy1,0.0);
-      let y4 = set_vs(&y3,&iy2,500.0);
-      let neg_vy = multiply_vs(&vy,-1.0);
-      let iy3 = or_vv(&iy1,&iy2);
-      let vy2 = set_vv(&vy, &iy3, &neg_vy);*/
-
-      let x2 = par_add_vv(&x,&vx);
-      let ix1 = par_less_than_vs(&x2,0.0);
-      let ix2 = par_greater_than_vs(&x2,500.0);
-      let x3 = par_set_vs(&x2,&ix1,0.0);
-      let x4 = par_set_vs(&x3,&ix2,500.0);
-      let neg_vx = par_multiply_vs(&vx,-0.8);
-      let ix3 = par_or_vv(&ix1,&ix2);
-      let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-      
-      let y2 = par_add_vv(&y,&vy);
-      let iy1 = par_less_than_vs(&y2,0.0);
-      let iy2 = par_greater_than_vs(&y2,500.0);
-      let y3 = par_set_vs(&y2,&iy1,0.0);
-      let y4 = par_set_vs(&y3,&iy2,500.0);
-      let neg_vy = par_multiply_vs(&vy,-1.0);
-      let iy3 = par_or_vv(&iy1,&iy2);
-      let vy2 = par_set_vv(&vy, &iy3, &neg_vy);
-
-      balls.set_col_unchecked(0,&x2);
-      balls.set_col_unchecked(1,&vx2);
-      balls.set_col_unchecked(2,&y2);
-      balls.set_col_unchecked(3,&vy2);
-      /*balls.column_iterator().zip(vec![x2,vx2,y4,vy2]).for_each(|(col,x)| {
-        replace(x,col);
-      });*/
-    //}
-    let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
-    total_time.push_back(time);
-    if total_time.len() > 1000 {
-      total_time.pop_front();
-    }
-    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    println!("{:e} - {:0.2?} ({:0.2?}Hz)", n, 1.0 / (time / 1_000_000_000.0), 1.0 / (average_time / 1_000_000_000.0));
-  }
-  let end_ns0 = time::precise_time_ns();
-  let time = (end_ns0 - start_ns0) as f64;
-  println!("{:0.4?} s", time / 1e9);
-}
