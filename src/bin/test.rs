@@ -239,7 +239,7 @@ impl Table {
     self.data[self.rows*col..self.rows*col+self.rows].into()
   }
 
-  pub async fn set_col(&mut self, col: usize, data: &Vec<f64>) -> Result<(),()> {
+  pub fn set_col(&mut self, col: usize, data: &Vec<f64>) -> Result<(),()> {
     if col > self.cols || data.len() != self.rows {
       Err(())
     } else {
@@ -254,7 +254,7 @@ impl Table {
     }
   }
 
-  pub async fn set_col_unchecked(&mut self, col: usize, data: &Vec<f64>) {
+  pub fn set_col_unchecked(&mut self, col: usize, data: &Vec<f64>) {
     let src_len = data.len();
     let dst_len = self.data.len();
     unsafe {
@@ -351,7 +351,7 @@ async fn main() {
       let neg_vx = par_multiply_vs(&vx,-0.8);
       let ix3 = par_or_vv(&ix1,&ix2);
       let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-
+      
       let y2 = par_add_vv(&y,&vy);
       let iy1 = par_less_than_vs(&y2,0.0);
       let iy2 = par_greater_than_vs(&y2,500.0);
@@ -361,9 +361,9 @@ async fn main() {
       let iy3 = par_or_vv(&iy1,&iy2);
       let vy2 = par_set_vv(&vy, &iy3, &neg_vy);
 
-      balls.set_col_unchecked(0,&x4);
+      balls.set_col_unchecked(0,&x2);
       balls.set_col_unchecked(1,&vx2);
-      balls.set_col_unchecked(2,&y4);
+      balls.set_col_unchecked(2,&y2);
       balls.set_col_unchecked(3,&vy2);
       /*balls.column_iterator().zip(vec![x2,vx2,y4,vy2]).for_each(|(col,x)| {
         replace(x,col);
