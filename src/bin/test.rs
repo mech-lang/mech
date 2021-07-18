@@ -30,27 +30,32 @@ use futures::future::join_all;
 use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 
-fn add_vectors(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
+
+fn add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn add_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
+fn add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
   x.iter().map(|x| x + y).collect()
 }
 
-fn multiply_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
+fn or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
+  x.iter().zip(y).map(|(x,y)| *x || *y).collect()
+}
+
+fn multiply_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
   x.iter().map(|x| x * y).collect()
 }
 
-fn less_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
+fn less_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.iter().map(|x| (*x < y)).collect()
 }
 
-fn greater_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
+fn greater_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
   x.iter().map(|x| (*x > y)).collect()
 }
 
-fn set_scalar(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
+fn set_vs(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
   x.iter().zip(ix).map(|(x,y)| if *y == true {
     v
   } else {
@@ -58,45 +63,14 @@ fn set_scalar(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
   }).collect()
 }
 
-fn bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == true {
-    -*x
+fn set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
+  x.iter().zip(ix).zip(v).map(|((x,y),v)| if *y == true {
+    *v
   } else {
     *x
   }).collect()
 }
 
-fn dampen(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == true {
-    *x * 0.9
-  } else {
-    *x
-  }).collect()
-}
-
-fn do_y(y: Vec<f64>, vy: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let y2 = add_vectors(&y,&vy);
-  let vy2 = add_scalar(&vy,1.0);
-  let iy1 = less_than_scalar(&y2,0.0);
-  let iy2 = greater_than_scalar(&y2,500.0);
-  let y3= set_scalar(&y2,&iy1,0.0);
-  let y4 = set_scalar(&y3,&iy2,500.0);
-  let vy3 = bounce3(&vy2, &iy1);
-  let vy4 = bounce3(&vy3, &iy2);
-  let vy5 = dampen(&vy4, &iy2);
-  (y4,vy5)
-}
-
-fn do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let x2 = add_vectors(&x,&vx);
-  let ix1 = less_than_scalar(&x2,0.0);
-  let ix2 = greater_than_scalar(&x2,500.0);
-  let x3 = set_scalar(&x2,&ix1,0.0);
-  let x4 = set_scalar(&x3,&ix2,500.0);
-  let vx2 = bounce3(&vx, &ix1);
-  let vx3 = bounce3(&vx2, &ix2);
-  (x4,vx3)
-}
 
 fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.par_iter().zip(y).map(|(x,y)| x + y).collect()
@@ -352,6 +326,23 @@ async fn main() {
       //let x_fut = tokio::task::spawn(par_do_x(x,vx));
       //let y_fut = tokio::task::spawn(par_do_y(y,vy));
 
+      /*let x2 = add_vv(&x,&vx);
+      let ix1 = less_than_vs(&x2,0.0);
+      let ix2 = greater_than_vs(&x2,500.0);
+      let x2 = set_vs(&x2,&ix1,0.0);
+      let x2 = set_vs(&x2,&ix2,500.0);
+      let neg_vx = multiply_vs(&vx,-0.8);
+      let ix3 = or_vv(&ix1,&ix2);
+      let vx2 = set_vv(&vx, &ix3, &neg_vx);
+      let y2 = add_vv(&y,&vy);
+      let iy1 = less_than_vs(&y2,0.0);
+      let iy2 = greater_than_vs(&y2,500.0);
+      let y3 = set_vs(&y2,&iy1,0.0);
+      let y4 = set_vs(&y3,&iy2,500.0);
+      let neg_vy = multiply_vs(&vy,-1.0);
+      let iy3 = or_vv(&iy1,&iy2);
+      let vy2 = set_vv(&vy, &iy3, &neg_vy);*/
+
       let x2 = par_add_vv(&x,&vx);
       let ix1 = par_less_than_vs(&x2,0.0);
       let ix2 = par_greater_than_vs(&x2,500.0);
@@ -360,6 +351,7 @@ async fn main() {
       let neg_vx = par_multiply_vs(&vx,-0.8);
       let ix3 = par_or_vv(&ix1,&ix2);
       let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
+
       let y2 = par_add_vv(&y,&vy);
       let iy1 = par_less_than_vs(&y2,0.0);
       let iy2 = par_greater_than_vs(&y2,500.0);
@@ -368,9 +360,14 @@ async fn main() {
       let neg_vy = par_multiply_vs(&vy,-1.0);
       let iy3 = par_or_vv(&iy1,&iy2);
       let vy2 = par_set_vv(&vy, &iy3, &neg_vy);
-      balls.column_iterator().zip(vec![x4,vx2,y4,vy2]).for_each(|(col,x)| {
+
+      balls.set_col_unchecked(0,&x4);
+      balls.set_col_unchecked(1,&vx2);
+      balls.set_col_unchecked(2,&y4);
+      balls.set_col_unchecked(3,&vy2);
+      /*balls.column_iterator().zip(vec![x2,vx2,y4,vy2]).for_each(|(col,x)| {
         replace(x,col);
-      });
+      });*/
     //}
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
@@ -379,7 +376,7 @@ async fn main() {
       total_time.pop_front();
     }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    println!("{:e} - {:0.2?} ({:0.2?}Hz)", n, 1.0 / (time / 1_000_000_000.0), 1.0 / (average_time / 1_000_000_000.0));
   }
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
