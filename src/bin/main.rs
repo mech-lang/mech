@@ -31,80 +31,12 @@ use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
-fn add_vectors(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
-  x.iter().zip(y).map(|(x,y)| x + y).collect()
+fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
 }
 
-fn add_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.iter().map(|x| x + y).collect()
-}
-
-fn multiply_scalar(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.iter().map(|x| x * y).collect()
-}
-
-fn less_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.iter().map(|x| (*x < y)).collect()
-}
-
-fn greater_than_scalar(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.iter().map(|x| (*x > y)).collect()
-}
-
-fn set_scalar(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
-  x.iter().zip(ix).map(|(x,y)| if *y == true {
-    v
-  } else {
-    *x
-  }).collect()
-}
-
-fn bounce3(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == true {
-    -*x
-  } else {
-    *x
-  }).collect()
-}
-
-fn dampen(vx: &Vec<f64>, ix: &Vec<bool>) -> Vec<f64> {
-  vx.iter().zip(ix).map(|(x,y)| if *y == true {
-    *x * 0.9
-  } else {
-    *x
-  }).collect()
-}
-
-fn do_y(y: Vec<f64>, vy: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let y2 = add_vectors(&y,&vy);
-  let vy2 = add_scalar(&vy,1.0);
-  let iy1 = less_than_scalar(&y2,0.0);
-  let iy2 = greater_than_scalar(&y2,500.0);
-  let y3= set_scalar(&y2,&iy1,0.0);
-  let y4 = set_scalar(&y3,&iy2,500.0);
-  let vy3 = bounce3(&vy2, &iy1);
-  let vy4 = bounce3(&vy3, &iy2);
-  let vy5 = dampen(&vy4, &iy2);
-  (y4,vy5)
-}
-
-fn do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let x2 = add_vectors(&x,&vx);
-  let ix1 = less_than_scalar(&x2,0.0);
-  let ix2 = greater_than_scalar(&x2,500.0);
-  let x3 = set_scalar(&x2,&ix1,0.0);
-  let x4 = set_scalar(&x3,&ix2,500.0);
-  let vx2 = bounce3(&vx, &ix1);
-  let vx3 = bounce3(&vx2, &ix2);
-  (x4,vx3)
-}
-
-fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
-  x.par_iter().zip(y).map(|(x,y)| x + y).collect()
-}
-
-fn par_add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.par_iter().map(|x| x + y).collect()
+fn par_add_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs + rhs);
 }
 
 fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
@@ -317,6 +249,11 @@ async fn main() {
   let mut y = vec![1.0; n];
   let mut vy = vec![1.0; n];
 
+  let mut y2 = vec![0.0; n];
+  let mut x2 = vec![0.0; n];
+  let mut vy2 = vec![0.0; n];
+  let mut vx2 = vec![0.0; n];
+
   loop {
     let start_ns = time::precise_time_ns();
     /*if n <= 10_000 {*/
@@ -332,8 +269,8 @@ async fn main() {
       //let y = balls.get_col_unchecked(2);
       //let vy = balls.get_col_unchecked(3);
 
-      let y2 = par_add_vv(&y,&vy);
-      let vy2 = par_add_vs(&vy,1.0);
+      par_add_vv(&y,&vy, &mut y2);
+      par_add_vs(&y,1.0, &mut vy2);
       let iy1 = par_less_than_vs(&y2,0.0);
       let iy2 = par_greater_than_vs(&y2,500.0);
       let y3 = par_set_vs(&y2,&iy1,0.0);
@@ -342,7 +279,8 @@ async fn main() {
       let iy3 = par_or_vv(&iy1,&iy2);
       let vy3 = par_set_vv(&vy2, &iy3, &neg_vy);
 
-      let x2 = par_add_vv(&x,&vx);
+      par_add_vv(&x,&vx, &mut x2);
+      par_add_vs(&x,1.0, &mut vx2);
       let ix1 = par_less_than_vs(&x2,0.0);
       let ix2 = par_greater_than_vs(&x2,500.0);
       let x3 = par_set_vs(&x2,&ix1,0.0);
