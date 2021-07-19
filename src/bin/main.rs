@@ -31,6 +31,29 @@ use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
+/*
+      // #ball.y{iy} := #boundary.height
+      par_set_vs(&iy, 500.0, &mut y);
+
+      // #ball.vy{iy | iyy} := #ball.vy * -0.80
+      par_or_vv(&iy, &iyy, &mut iy_or);
+      par_multiply_vs(&vy, -0.8, &mut vy2);
+      par_set_vv(&vy2, &iy_or, &mut vy);
+
+    // Keep the balls within the boundary height
+      // ix = #ball.x > #boundary.width
+      par_greater_than_vs(&x, 500.0, &mut ix);
+
+
+      // #ball.x{ix} := #boundary.width
+      par_set_vs(&ix, 500.0, &mut x);
+
+      // #ball.vx{ix | ixx} := #ball.vx * -0.80
+      par_or_vv(&ix, &ixx, &mut ix_or);
+      par_multiply_vs(&vx, -0.8, &mut vx2);
+      par_set_vv(&ix_or, &vx2, &mut vx);
+      */
+
 fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
   out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
 }
@@ -39,73 +62,37 @@ fn par_add_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
   out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs + rhs);
 }
 
-fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
-  x.par_iter().zip(y).map(|(x,y)| *x || *y).collect()
+fn par_or_vv(lhs: &Vec<bool>, rhs: &Vec<bool>, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).zip(rhs).map(|((out, lhs),rhs)| *out = *lhs || *rhs);
 }
 
-fn par_multiply_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.par_iter().map(|x| x * y).collect()
+fn par_multiply_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs * rhs);
 }
 
-fn par_less_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.par_iter().map(|x| (*x < y)).collect()
+fn par_less_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs < rhs);
 }
 
-fn par_greater_than_vs(x: &Vec<f64>, y: f64) -> Vec<bool> {
-  x.par_iter().map(|x| (*x > y)).collect()
+fn par_greater_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs > rhs);
 }
 
-fn par_set_vs(x: &Vec<f64>, ix: &Vec<bool>, v: f64) -> Vec<f64> {
-  x.par_iter().zip(ix).map(|(x,y)| if *y == true {
-    v
-  } else {
-    *x
-  }).collect()
+fn par_set_vs(ix: &Vec<bool>, x: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(ix).map(|(out,ix)| if *ix == true {
+    *out = x
+  });
 }
 
-fn par_set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
-  x.par_iter().zip(ix).zip(v).map(|((x,y),v)| if *y == true {
-    *v
-  } else {
-    *x
-  }).collect()
+fn par_set_vv(ix: &Vec<bool>, x: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(ix).zip(x).map(|((out,ix),x)| if *ix == true {
+    *out = *x
+  });
 }
 
-/*
-# Bouncing Balls
-
-Define the environment
-  #ball = [|x   y   vx vy|
-            10  10  20  0]
-  #time/timer += [period: 15, ticks: 0]
-  #gravity = 1
-  #boundary = [width: 500 height: 500]
-
-## Update condition
-
-Update the block positions on each tick of the timer
-  ~ #time/timer.ticks
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
-
-## Boundary Condition
-
-Keep the balls within the boundary height
-  ~ #ball.y
-  iy = #ball.y > #boundary.height
-  iyy = #ball.y < 0
-  #ball.y{iy} := #boundary.height
-  #ball.vy{iy | iyy} := -#ball.vy * 0.80
-
-Keep the balls within the boundary width
-  ~ #ball.x
-  ix = #ball.x > #boundary.width
-  ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.width
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 0.80
-*/
+fn par_set_all_vv(x: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(x).map(|(out,x)| *out = *x);
+}
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
 
@@ -244,59 +231,70 @@ async fn main() {
   let mut col = balls.get_col(3).unwrap();
   let mut total_time = VecDeque::new();
 
+  // Table
   let mut x = vec![1.0; n];
-  let mut vx = vec![1.0; n];
   let mut y = vec![1.0; n];
+  let mut vx = vec![1.0; n];
   let mut vy = vec![1.0; n];
 
-  let mut y2 = vec![0.0; n];
+  // Temp Vars
   let mut x2 = vec![0.0; n];
+  let mut y2 = vec![0.0; n];
   let mut vy2 = vec![0.0; n];
+  let mut iy = vec![false; n];
+  let mut iyy = vec![false; n];
+  let mut iy_or = vec![false; n];
+  let mut ix = vec![false; n];
+  let mut ixx = vec![false; n];
+  let mut ix_or = vec![false; n];
   let mut vx2 = vec![0.0; n];
-
+  
   loop {
     let start_ns = time::precise_time_ns();
     /*if n <= 10_000 {*/
-    /*  let (x2, vx2) = do_x(balls.get_col_unchecked(0),balls.get_col_unchecked(2));
-      let (y2, vy2) = do_y(balls.get_col_unchecked(1),balls.get_col_unchecked(3));
-      balls.set_col_unchecked(0,&x2);
-      balls.set_col_unchecked(1,&y2);
-      balls.set_col_unchecked(2,&vx2);
-      balls.set_col_unchecked(3,&vy2);*/
-    //} else {
-      //let x = balls.get_col_unchecked(0);
-      //let vx = balls.get_col_unchecked(1);
-      //let y = balls.get_col_unchecked(2);
-      //let vy = balls.get_col_unchecked(3);
+    // Update the block positions on each tick of the timer
+      // #ball.x := #ball.x + #ball.vx
+      par_add_vv(&x, &vx, &mut x2);
+      par_set_all_vv(&x2, &mut x);
 
-      par_add_vv(&y,&vy, &mut y2);
-      par_add_vs(&y,1.0, &mut vy2);
-      let iy1 = par_less_than_vs(&y2,0.0);
-      let iy2 = par_greater_than_vs(&y2,500.0);
-      let y3 = par_set_vs(&y2,&iy1,0.0);
-      let y4 = par_set_vs(&y3,&iy2,500.0);
-      let neg_vy = par_multiply_vs(&vy,-0.8);
-      let iy3 = par_or_vv(&iy1,&iy2);
-      let vy3 = par_set_vv(&vy2, &iy3, &neg_vy);
+      // #ball.y := #ball.y + #ball.vy
+      par_add_vv(&y, &vy, &mut y2);
+      par_set_all_vv(&y2, &mut y);
 
-      par_add_vv(&x,&vx, &mut x2);
-      par_add_vs(&x,1.0, &mut vx2);
-      let ix1 = par_less_than_vs(&x2,0.0);
-      let ix2 = par_greater_than_vs(&x2,500.0);
-      let x3 = par_set_vs(&x2,&ix1,0.0);
-      let x4 = par_set_vs(&x3,&ix2,500.0);
-      let neg_vx = par_multiply_vs(&vx,-1.0);
-      let ix3 = par_or_vv(&ix1,&ix2);
-      let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
+      // #ball.vy := #ball.vy + #gravity
+      par_add_vs(&vy, 1.0, &mut vy2);
+      par_set_all_vv(&vy2, &mut vy);
 
-      replace(&x4, &mut x);
-      replace(&vx2, &mut vx);
-      replace(&y4, &mut y);
-      replace(&vy3, &mut vy);
+    // Keep the balls within the boundary height
+      // iy = #ball.y > #boundary.height
+      par_greater_than_vs(&y, 500.0, &mut iy);
 
-      //balls.column_iterator().zip(vec![x4,vx2,y4,vy2]).for_each(|(col,x)| {
-      //  replace(x,col);
-      //});
+      // iyy = #ball.y < 0
+      par_less_than_vs(&y, 0.0, &mut iyy);
+
+      // #ball.y{iy} := #boundary.height
+      par_set_vs(&iy, 500.0, &mut y);
+
+      // #ball.vy{iy | iyy} := #ball.vy * -0.80
+      par_or_vv(&iy, &iyy, &mut iy_or);
+      par_multiply_vs(&vy, -0.8, &mut vy2);
+      par_set_vv(&iy_or, &vy2, &mut vy);
+
+    // Keep the balls within the boundary height
+      // ix = #ball.x > #boundary.width
+      par_greater_than_vs(&x, 500.0, &mut ix);
+
+      // ixx = #ball.x < 0
+      par_less_than_vs(&x, 0.0, &mut ixx);
+
+      // #ball.x{ix} := #boundary.width
+      par_set_vs(&ix, 500.0, &mut x);
+
+      // #ball.vx{ix | ixx} := #ball.vx * -0.80
+      par_or_vv(&ix, &ixx, &mut ix_or);
+      par_multiply_vs(&vx, -0.8, &mut vx2);
+      par_set_vv(&ix_or, &vx2, &mut vx);
+
     //}
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
@@ -311,3 +309,40 @@ async fn main() {
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
 }
+
+
+/*
+# Bouncing Balls
+
+Define the environment
+  #ball = [|x   y   vx vy|
+            10  10  20  0]
+  #time/timer += [period: 15, ticks: 0]
+  #gravity = 1
+  #boundary = [width: 500 height: 500]
+
+## Update condition
+
+Update the block positions on each tick of the timer
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the boundary height
+  ~ #ball.y
+  iy = #ball.y > #boundary.height
+  iyy = #ball.y < 0
+  #ball.y{iy} := #boundary.height
+  #ball.vy{iy | iyy} := -#ball.vy * 0.80
+
+Keep the balls within the boundary width
+  ~ #ball.x
+  ix = #ball.x > #boundary.width
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary.width
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
+*/
