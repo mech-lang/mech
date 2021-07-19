@@ -31,67 +31,53 @@ use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
-/*
-      // #ball.y{iy} := #boundary.height
-      set_vs(&iy, 500.0, &mut y);
-
-      // #ball.vy{iy | iyy} := #ball.vy * -0.80
-      or_vv(&iy, &iyy, &mut iy_or);
-      multiply_vs(&vy, -0.8, &mut vy2);
-      set_vv(&vy2, &iy_or, &mut vy);
-
-    // Keep the balls within the boundary height
-      // ix = #ball.x > #boundary.width
-      greater_than_vs(&x, 500.0, &mut ix);
-
-
-      // #ball.x{ix} := #boundary.width
-      set_vs(&ix, 500.0, &mut x);
-
-      // #ball.vx{ix | ixx} := #ball.vx * -0.80
-      or_vv(&ix, &ixx, &mut ix_or);
-      multiply_vs(&vx, -0.8, &mut vx2);
-      set_vv(&ix_or, &vx2, &mut vx);
-      */
-
-fn add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
-  out.iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
+fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
 }
 
-fn add_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
-  out.iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs + rhs);
+fn par_add_vv_ip(lhs: &mut Vec<f64>, rhs: &Vec<f64>) {
+  lhs.par_iter_mut().zip(rhs).for_each(|(lhs, rhs)| *lhs += *rhs);
 }
 
-fn or_vv(lhs: &Vec<bool>, rhs: &Vec<bool>, out: &mut Vec<bool>) {
-  out.iter_mut().zip(lhs).zip(rhs).map(|((out, lhs),rhs)| *out = *lhs || *rhs);
+fn par_add_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs + rhs);
 }
 
-fn multiply_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
-  out.iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs * rhs);
+fn par_add_vs_ip(lhs: &mut Vec<f64>, rhs: f64) {
+  lhs.par_iter_mut().for_each(|lhs| *lhs += rhs);
 }
 
-fn less_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
-  out.iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs < rhs);
+fn par_or_vv(lhs: &Vec<bool>, rhs: &Vec<bool>, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs);
 }
 
-fn greater_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
-  out.iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs > rhs);
+fn par_multiply_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs * rhs);
 }
 
-fn set_vs(ix: &Vec<bool>, x: f64, out: &mut Vec<f64>) {
-  out.iter_mut().zip(ix).map(|(out,ix)| if *ix == true {
+fn par_less_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs < rhs);
+}
+
+fn par_greater_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
+  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs > rhs);
+}
+
+fn par_set_vs(ix: &Vec<bool>, x: f64, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(ix).for_each(|(out,ix)| {
+  if *ix == true {
     *out = x
-  });
+  }});
 }
 
-fn set_vv(ix: &Vec<bool>, x: &Vec<f64>, out: &mut Vec<f64>) {
-  out.iter_mut().zip(ix).zip(x).map(|((out,ix),x)| if *ix == true {
+fn par_set_vv(ix: &Vec<bool>, x: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(ix).zip(x).for_each(|((out,ix),x)| if *ix == true {
     *out = *x
   });
 }
 
-fn set_all_vv(x: &Vec<f64>, out: &mut Vec<f64>) {
-  out.iter_mut().zip(x).map(|(out,x)| *out = *x);
+fn par_set_all_vv(x: &Vec<f64>, out: &mut Vec<f64>) {
+  out.par_iter_mut().zip(x).for_each(|(out,x)| *out = *x);
 }
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
@@ -186,6 +172,10 @@ impl Table {
     }
   }
 
+  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, f64> {
+    self.data.par_chunks_exact_mut(self.rows)
+  }
+
 }
 
 pub async fn replace(data: &Vec<f64>, dest: &mut [f64]) {
@@ -216,7 +206,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-for n in sizes { //  let n = 1e6 as usize;
+  let n = 1e6 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as f64);
@@ -230,7 +220,7 @@ for n in sizes { //  let n = 1e6 as usize;
   // Table
   let mut x = vec![1.0; n];
   let mut y = vec![1.0; n];
-  let mut vx = vec![1.0; n];
+  let mut vx = vec![2.0; n];
   let mut vy = vec![1.0; n];
 
   // Temp Vars
@@ -245,51 +235,48 @@ for n in sizes { //  let n = 1e6 as usize;
   let mut ix_or = vec![false; n];
   let mut vx2 = vec![0.0; n];
   
-  for _ in 0..2000 {
+  for _ in 0..4000 {
     let start_ns = time::precise_time_ns();
     /*if n <= 10_000 {*/
     // Update the block positions on each tick of the timer
       // #ball.x := #ball.x + #ball.vx
-      add_vv(&x, &vx, &mut x2);
-      set_all_vv(&x2, &mut x);
+      par_add_vv_ip(&mut x, &vx);
 
       // #ball.y := #ball.y + #ball.vy
-      add_vv(&y, &vy, &mut y2);
-      set_all_vv(&y2, &mut y);
+      par_add_vv_ip(&mut y, &vy);
 
       // #ball.vy := #ball.vy + #gravity
-      add_vs(&vy, 1.0, &mut vy2);
-      set_all_vv(&vy2, &mut vy);
+      par_add_vs_ip(&mut vy, 1.0);
 
     // Keep the balls within the boundary height
       // iy = #ball.y > #boundary.height
-      greater_than_vs(&y, 500.0, &mut iy);
+      par_greater_than_vs(&y, 500.0, &mut iy);
 
       // iyy = #ball.y < 0
-      less_than_vs(&y, 0.0, &mut iyy);
+      par_less_than_vs(&y, 0.0, &mut iyy);
 
       // #ball.y{iy} := #boundary.height
-      set_vs(&iy, 500.0, &mut y);
+      par_set_vs(&iy, 500.0, &mut y);
 
       // #ball.vy{iy | iyy} := #ball.vy * -0.80
-      or_vv(&iy, &iyy, &mut iy_or);
-      multiply_vs(&vy, -0.8, &mut vy2);
-      set_vv(&iy_or, &vy2, &mut vy);
+      par_or_vv(&iy, &iyy, &mut iy_or);
+      par_multiply_vs(&vy, -0.8, &mut vy2);
+      par_set_vv(&iy_or, &vy2, &mut vy);
 
     // Keep the balls within the boundary height
       // ix = #ball.x > #boundary.width
-      greater_than_vs(&x, 500.0, &mut ix);
+      par_greater_than_vs(&x, 500.0, &mut ix);
 
       // ixx = #ball.x < 0
-      less_than_vs(&x, 0.0, &mut ixx);
+      par_less_than_vs(&x, 0.0, &mut ixx);
 
       // #ball.x{ix} := #boundary.width
-      set_vs(&ix, 500.0, &mut x);
+      par_set_vs(&ix, 500.0, &mut x);
 
       // #ball.vx{ix | ixx} := #ball.vx * -0.80
-      or_vv(&ix, &ixx, &mut ix_or);
-      multiply_vs(&vx, -0.8, &mut vx2);
-      set_vv(&ix_or, &vx2, &mut vx);
+      par_or_vv(&ix, &ixx, &mut ix_or);
+      par_multiply_vs(&vx, -0.8, &mut vx2);
+      par_set_vv(&ix_or, &vx2, &mut vx);
 
     //}
     let end_ns = time::precise_time_ns();
@@ -303,18 +290,42 @@ for n in sizes { //  let n = 1e6 as usize;
   println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
-  //println!("{:0.4?} s", time / 1e9);
+  println!("{:0.4?} s", time / 1e9);
 }
-}
+
 
 /*
-n	   In Place (Hz)	 Para In Place
-1E1	 4,440,497.34 	 11,363.29 
-1E2	 1,129,943.50 	 6,572.16 
-1E3	 220,264.32 	   4,997.36 
-1E4	 19,599.20 	     3,679.61 
-1E5	 2,011.86 	     2,071.62 
-1E6	 104.43 	       191.42 
-1E7	 9.84 	         18.64 
+# Bouncing Balls
 
+Define the environment
+  #ball = [|x   y   vx vy|
+            10  10  20  0]
+  #time/timer += [period: 15, ticks: 0]
+  #gravity = 1
+  #boundary = [width: 500 height: 500]
+
+## Update condition
+
+Update the block positions on each tick of the timer
+  ~ #time/timer.ticks
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+## Boundary Condition
+
+Keep the balls within the boundary height
+  ~ #ball.y
+  iy = #ball.y > #boundary.height
+  iyy = #ball.y < 0
+  #ball.y{iy} := #boundary.height
+  #ball.vy{iy | iyy} := -#ball.vy * 0.80
+
+Keep the balls within the boundary width
+  ~ #ball.x
+  ix = #ball.x > #boundary.width
+  ixx = #ball.x < 0
+  #ball.x{ix} := #boundary.width
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
 */
