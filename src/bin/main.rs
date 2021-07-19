@@ -103,8 +103,8 @@ fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.par_iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn par_add_vs(x: Vec<f64>, y: f64) {
-  x.map(|x| x + y);
+fn par_add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
+  x.par_iter().map(|x| x + y).collect()
 }
 
 fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
@@ -137,30 +137,6 @@ fn par_set_vv(x: &Vec<f64>, ix: &Vec<bool>, v: &Vec<f64>) -> Vec<f64> {
   } else {
     *x
   }).collect()
-}
-
-async fn par_do_y(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {  
-  let x2 = par_add_vv(&x,&vx);
-  let ix1 = par_less_than_vs(&x2,0.0);
-  let ix2 = par_greater_than_vs(&x2,500.0);
-  let x3 = par_set_vs(&x2,&ix1,0.0);
-  let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-0.8);
-  let ix3 = par_or_vv(&ix1,&ix2);
-  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-  (x4,vx2)
-}
-
-async fn par_do_x(x: Vec<f64>, vx: Vec<f64>) -> (Vec<f64>,Vec<f64>) {
-  let x2 = par_add_vv(&x,&vx);
-  let ix1 = par_less_than_vs(&x2,0.0);
-  let ix2 = par_greater_than_vs(&x2,500.0);
-  let x3 = par_set_vs(&x2,&ix1,0.0);
-  let x4 = par_set_vs(&x3,&ix2,500.0);
-  let neg_vx = par_multiply_vs(&vx,-1.0);
-  let ix3 = par_or_vv(&ix1,&ix2);
-  let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
-  (x4,vx2)
 }
 
 /*
@@ -297,7 +273,7 @@ impl Table {
 
 }
 
-pub async fn replace(data: Vec<f64>, dest: &mut [f64]) {
+pub async fn replace(data: &Vec<f64>, dest: &mut [f64]) {
   let src_len = data.len();
   unsafe {
     let dst_ptr = dest.as_mut_ptr();
@@ -336,6 +312,11 @@ async fn main() {
   let mut col = balls.get_col(3).unwrap();
   let mut total_time = VecDeque::new();
 
+  let mut x = vec![1.0; n];
+  let mut vx = vec![1.0; n];
+  let mut y = vec![1.0; n];
+  let mut vy = vec![1.0; n];
+
   loop {
     let start_ns = time::precise_time_ns();
     /*if n <= 10_000 {*/
@@ -346,19 +327,20 @@ async fn main() {
       balls.set_col_unchecked(2,&vx2);
       balls.set_col_unchecked(3,&vy2);*/
     //} else {
-      let x = balls.get_col_unchecked(0);
-      let vx = balls.get_col_unchecked(1);
-      let y = balls.get_col_unchecked(2);
-      let vy = balls.get_col_unchecked(3);
+      //let x = balls.get_col_unchecked(0);
+      //let vx = balls.get_col_unchecked(1);
+      //let y = balls.get_col_unchecked(2);
+      //let vy = balls.get_col_unchecked(3);
 
       let y2 = par_add_vv(&y,&vy);
+      let vy2 = par_add_vs(&vy,1.0);
       let iy1 = par_less_than_vs(&y2,0.0);
       let iy2 = par_greater_than_vs(&y2,500.0);
       let y3 = par_set_vs(&y2,&iy1,0.0);
       let y4 = par_set_vs(&y3,&iy2,500.0);
       let neg_vy = par_multiply_vs(&vy,-0.8);
       let iy3 = par_or_vv(&iy1,&iy2);
-      let vy2 = par_set_vv(&vy, &iy3, &neg_vy);
+      let vy3 = par_set_vv(&vy2, &iy3, &neg_vy);
 
       let x2 = par_add_vv(&x,&vx);
       let ix1 = par_less_than_vs(&x2,0.0);
@@ -369,9 +351,14 @@ async fn main() {
       let ix3 = par_or_vv(&ix1,&ix2);
       let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
 
-      balls.column_iterator().zip(vec![x4,vx2,y4,vy2]).for_each(|(col,x)| {
-        replace(x,col);
-      });
+      replace(&x4, &mut x);
+      replace(&vx2, &mut vx);
+      replace(&y4, &mut y);
+      replace(&vy3, &mut vy);
+
+      //balls.column_iterator().zip(vec![x4,vx2,y4,vy2]).for_each(|(col,x)| {
+      //  replace(x,col);
+      //});
     //}
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
