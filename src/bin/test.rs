@@ -27,6 +27,16 @@ where
   });
 }
 
+fn par_add_vv2<A>(out: &mut ArrayBase<A,Ix1>, lhs: &ArrayBase<A,Ix1>, rhs: &ArrayBase<A,Ix1>) 
+where
+  A: DataMut<Elem = f64>
+{ 
+  Zip::from(out).and(lhs).and(rhs).par_for_each(|out, &lhs, &rhs| {
+    *out = lhs + rhs;
+  });
+}
+
+
 fn par_less_than_vs<A,B>(ix: &mut ArrayBase<B,Ix1>, lhs: &ArrayBase<A,Ix1>, rhs: f64) 
 where
   A: Data<Elem = f64>,
@@ -61,7 +71,7 @@ where
 
 fn main() {
   //const sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
-  const n: usize = 1e7 as usize;
+  const n: usize = 1e6 as usize;
   //for n in sizes {
     let mut y = arr1(&vec![1.0; n]);
     let mut vy = arr1(&vec![2.0; n]);
