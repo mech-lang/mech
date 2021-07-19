@@ -1,38 +1,122 @@
-
-use map_in_place::MapVecInPlace;
 use std::collections::VecDeque;
 use rayon::prelude::*;
-use ndarray::arr1;
+use ndarray::{arr1, array, Array1, Array2, ArrayBase, Axis, DataMut, Data, Ix1, Ix2, ArrayView1, Zip};
+use map_in_place::MapVecInPlace;
+
+
+fn par_add_vs<A>(a: &mut ArrayBase<A,Ix1>, b: f64) 
+where
+  A: DataMut<Elem = f64>
+{ 
+  a.par_mapv_inplace(|x| x + b);
+}
+
+fn par_multiply_vs<A>(a: &mut ArrayBase<A,Ix1>, b: f64) 
+where
+  A: DataMut<Elem = f64>
+{ 
+  a.par_mapv_inplace(|x| x * b);
+}
+
+fn par_add_vv<A>(a: &mut ArrayBase<A,Ix1>, b: &ArrayBase<A,Ix1>) 
+where
+  A: DataMut<Elem = f64>
+{ 
+  Zip::from(a).and(b).par_for_each(|a, &b| {
+    *a = *a + b;
+  });
+}
+
+fn par_less_than_vs<A,B>(ix: &mut ArrayBase<B,Ix1>, lhs: &ArrayBase<A,Ix1>, rhs: f64) 
+where
+  A: Data<Elem = f64>,
+  B: DataMut<Elem = bool>
+{ 
+  Zip::from(ix).and(lhs).par_for_each(|ix, lhs| {
+    *ix = *lhs < rhs;
+  });
+}
+
+fn par_greater_than_vs<A,B>(ix: &mut ArrayBase<B,Ix1>, lhs: &ArrayBase<A,Ix1>, rhs: f64) 
+where
+  A: Data<Elem = f64>,
+  B: DataMut<Elem = bool>
+{ 
+  Zip::from(ix).and(lhs).par_for_each(|ix, lhs| {
+    *ix = *lhs > rhs;
+  });
+}
+
+fn par_set_vs<A,B>(lhs: &mut ArrayBase<A,Ix1>, ix: &ArrayBase<B,Ix1>, rhs: f64) 
+where
+  A: DataMut<Elem = f64>,
+  B: Data<Elem = bool>
+{ 
+  Zip::from(lhs).and(ix).par_for_each(|lhs, ix| {
+    if *ix == true {
+      *lhs = rhs;
+    }
+  });
+}
 
 fn main() {
-    let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
+  //const sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
+  const n: usize = 1e7 as usize;
+  //for n in sizes {
+    let mut y = arr1(&vec![1.0; n]);
+    let mut vy = arr1(&vec![2.0; n]);
+    let mut iy1 = arr1(&vec![false; n]);
+    let mut iy2 = arr1(&vec![false; n]);
+    let mut iyy = arr1(&vec![false; n]);
 
-    for n in sizes {
-        let mut v: Vec<f64> = vec![1.0; n];
-        let mut a = arr1(&vec![1.0; n]);
+    let mut x = arr1(&vec![1.0; n]);
+    let mut vx = arr1(&vec![2.0; n]);
+    let mut ix1 = arr1(&vec![false; n]);
+    let mut ix2 = arr1(&vec![false; n]);
+    let mut ixy = arr1(&vec![false; n]);
 
 
-        let mut total_time = VecDeque::new();
-        for _ in 0..4000 {
-            let start_ns = time::precise_time_ns();
+    let mut total_time = VecDeque::new();
+    for _ in 0..1000 {
+      let start_ns = time::precise_time_ns();
 
-            a.par_mapv_inplace(|x| x + 1.0);
 
-            //v = v.map(|n| n + 1.0);
-            //v = v.iter().map(|n| n + 1).collect::<Vec<f64>>();
-            //v = v.par_iter().map(|n| n + 1 ).collect::<Vec<f64>>();
 
-            let end_ns = time::precise_time_ns();
-            let time = (end_ns - start_ns) as f64;
-            total_time.push_back(time);
-            if total_time.len() > 1000 {
-            total_time.pop_front();
-            }
-        }
-        let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-        println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
-        //println!("{:?}", a.sum());
+      par_add_vv(&mut y, &vy);
+      par_less_than_vs(&mut iy1, &y, 0.0);
+      par_greater_than_vs(&mut iy2, &y, 500.0);
+      par_set_vs(&mut y, &iy1, 0.0);
+      par_set_vs(&mut y, &iy2, 500.0);
+      par_multiply_vs(&mut y,-0.8);
+
+      par_add_vv(&mut x, &vx);
+      par_less_than_vs(&mut ix1, &x, 0.0);
+      par_greater_than_vs(&mut ix2, &x, 500.0);
+      par_set_vs(&mut x, &ix1, 0.0);
+      par_set_vs(&mut x, &ix2, 500.0);
+      par_multiply_vs(&mut x,-0.8);
+
+      /*let y2 = par_add_vv(&y,&vy);
+      let iy1 = par_less_than_vs(&y2,0.0);
+      let iy2 = par_greater_than_vs(&y2,500.0);
+      let y3 = par_set_vs(&y2,&iy1,0.0);
+      let y4 = par_set_vs(&y3,&iy2,500.0);
+      let neg_vy = par_multiply_vs(&vy,-0.8);
+      let iy3 = par_or_vv(&iy1,&iy2);
+      let vy2 = par_set_vv(&vy, &iy3, &neg_vy);*/
+
+
+      let end_ns = time::precise_time_ns();
+      let time = (end_ns - start_ns) as f64;
+      total_time.push_back(time);
+      if total_time.len() > 100 {
+        total_time.pop_front();
+      }
     }
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+    println!("{:0.2?}", 1.0 / (average_time / 1_000_000_000.0));
+    //println!("{:?}", a.sum());
+  //}
 }
 
 /*

@@ -29,6 +29,7 @@ use tokio_stream;
 use futures::future::join_all;
 use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
+use map_in_place::MapVecInPlace;
 
 fn add_vectors(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.iter().zip(y).map(|(x,y)| x + y).collect()
@@ -102,8 +103,8 @@ fn par_add_vv(x: &Vec<f64>, y: &Vec<f64>) -> Vec<f64> {
   x.par_iter().zip(y).map(|(x,y)| x + y).collect()
 }
 
-fn par_add_vs(x: &Vec<f64>, y: f64) -> Vec<f64> {
-  x.par_iter().map(|x| x + y).collect()
+fn par_add_vs(x: Vec<f64>, y: f64) {
+  x.map(|x| x + y);
 }
 
 fn par_or_vv(x: &Vec<bool>, y: &Vec<bool>) -> Vec<bool> {
@@ -324,7 +325,7 @@ async fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e5 as usize;
+  let n = 1e6 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as f64);
@@ -349,11 +350,26 @@ async fn main() {
       let vx = balls.get_col_unchecked(1);
       let y = balls.get_col_unchecked(2);
       let vy = balls.get_col_unchecked(3);
-      let x_fut = tokio::task::spawn(par_do_x(x,vx));
-      let y_fut = tokio::task::spawn(par_do_y(y,vy));
-      let (x2,y2) = tokio::join!(x_fut,y_fut);
-      let ((x2,vx2),(y2,vy2)) = (x2.unwrap(),y2.unwrap());
-      balls.column_iterator().zip(vec![x2,vx2,y2,vy2]).for_each(|(col,x)| {
+
+      let y2 = par_add_vv(&y,&vy);
+      let iy1 = par_less_than_vs(&y2,0.0);
+      let iy2 = par_greater_than_vs(&y2,500.0);
+      let y3 = par_set_vs(&y2,&iy1,0.0);
+      let y4 = par_set_vs(&y3,&iy2,500.0);
+      let neg_vy = par_multiply_vs(&vy,-0.8);
+      let iy3 = par_or_vv(&iy1,&iy2);
+      let vy2 = par_set_vv(&vy, &iy3, &neg_vy);
+
+      let x2 = par_add_vv(&x,&vx);
+      let ix1 = par_less_than_vs(&x2,0.0);
+      let ix2 = par_greater_than_vs(&x2,500.0);
+      let x3 = par_set_vs(&x2,&ix1,0.0);
+      let x4 = par_set_vs(&x3,&ix2,500.0);
+      let neg_vx = par_multiply_vs(&vx,-1.0);
+      let ix3 = par_or_vv(&ix1,&ix2);
+      let vx2 = par_set_vv(&vx, &ix3, &neg_vx);
+
+      balls.column_iterator().zip(vec![x4,vx2,y4,vy2]).for_each(|(col,x)| {
         replace(x,col);
       });
     //}
