@@ -31,6 +31,21 @@ use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
+// binop vector-vector          -- lhs: &Vec<f64>,     rhs: &Vec<f64>    out: &mut Vec<f64>
+// binop vector-vector in-place -- lhs: &mut Vec<f64>  rhs: &Vec<f64>
+// binop vector-scalar          -- lhs: &Vec<f64>,     rhs: f64          out: &mut Vec<f64>
+// binop vector-scalar in-place -- lhs: &mut Vec<f64>  rhs: f64
+// truth vector-vector          -- lhs: &Vec<bool>     rhs: &Vec<bool>   out: &mut Vec<bool>
+// comp  vector-scalar          -- lhs: &Vec<f64>      rhs: f64          out: &mut Vec<bool>
+// set   vector-scalar          -- ix: &Vec<bool>      x:   f64          out: &mut Vec<f64>
+// set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
+
+enum Transformation {
+  BinOpVV((&Vec<f64>,&Vec<f64>,&mut Vec<f64>))
+  BinOpVVIP((&Vec<f64>,&Vec<f64>)
+}
+
+
 fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
   out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
 }
@@ -74,10 +89,6 @@ fn par_set_vv(ix: &Vec<bool>, x: &Vec<f64>, out: &mut Vec<f64>) {
   out.par_iter_mut().zip(ix).zip(x).for_each(|((out,ix),x)| if *ix == true {
     *out = *x
   });
-}
-
-fn par_set_all_vv(x: &Vec<f64>, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(x).for_each(|(out,x)| *out = *x);
 }
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
@@ -235,19 +246,26 @@ async fn main() {
   let mut ix_or = vec![false; n];
   let mut vx2 = vec![0.0; n];
   
+  let f = vec![Transformation::BinOpVVIP((&mut x, &vx)),
+               Transformation::BinOpVVIP((&mut y, &vy))];
+
   for _ in 0..4000 {
     let start_ns = time::precise_time_ns();
     /*if n <= 10_000 {*/
+    {
     // Update the block positions on each tick of the timer
       // #ball.x := #ball.x + #ball.vx
-      par_add_vv_ip(&mut x, &vx);
+      //par_add_vv_ip(&mut x, &vx);
+      //f[0](&mut x, &vx);
 
       // #ball.y := #ball.y + #ball.vy
-      par_add_vv_ip(&mut y, &vy);
+      //par_add_vv_ip(&mut y, &vy);
+      //f[1](&mut y, &vy);
 
       // #ball.vy := #ball.vy + #gravity
-      par_add_vs_ip(&mut vy, 1.0);
-
+      //par_add_vs_ip(&mut vy, 1.0);
+    }
+    /*{
     // Keep the balls within the boundary height
       // iy = #ball.y > #boundary.height
       par_greater_than_vs(&y, 500.0, &mut iy);
@@ -262,7 +280,8 @@ async fn main() {
       par_or_vv(&iy, &iyy, &mut iy_or);
       par_multiply_vs(&vy, -0.8, &mut vy2);
       par_set_vv(&iy_or, &vy2, &mut vy);
-
+    }
+    {
     // Keep the balls within the boundary height
       // ix = #ball.x > #boundary.width
       par_greater_than_vs(&x, 500.0, &mut ix);
@@ -277,7 +296,7 @@ async fn main() {
       par_or_vv(&ix, &ixx, &mut ix_or);
       par_multiply_vs(&vx, -0.8, &mut vx2);
       par_set_vv(&ix_or, &vx2, &mut vx);
-
+    }*/
     //}
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
@@ -285,9 +304,10 @@ async fn main() {
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
-  let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
