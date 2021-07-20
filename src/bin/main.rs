@@ -167,6 +167,7 @@ pub type ArgBool = Rc<RefCell<Vec<bool>>>;
 pub type OutF64 = Rc<RefCell<Vec<f64>>>;
 pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
+#[derive(Debug)]
 enum Transformation {
   ParAddVVIP((OutF64, ArgF64)),  
   ParAddVSIP((OutF64, f64)),
@@ -244,46 +245,58 @@ fn main() {
   let mut ixx = Rc::new(RefCell::new(vec![false; n]));
   let mut ix_or = Rc::new(RefCell::new(vec![false; n]));
   let mut vx2 = Rc::new(RefCell::new(vec![0.0; n]));
-  
-  let mut tfms = vec![
-  // Update the block positions on each tick of the timer
+
+  // Update the block positions on each tick of the timer  
+  let mut block1 = vec![
     // #ball.x := #ball.x + #ball.vx
-    Transformation::ParAddVVIP((x.clone(), vx.clone())),
+    Rc::new(RefCell::new(Transformation::ParAddVVIP((x.clone(), vx.clone())))),
     // #ball.y := #ball.y + #ball.vy    
-    Transformation::ParAddVVIP((y.clone(), vy.clone())),
+    Rc::new(RefCell::new(Transformation::ParAddVVIP((y.clone(), vy.clone())))),
     // #ball.vy := #ball.vy + #gravity
-    Transformation::ParAddVSIP((vy.clone(), 1.0)),
-
+    Rc::new(RefCell::new(Transformation::ParAddVSIP((vy.clone(), 1.0)))),
+  ];
+  
   // Keep the balls within the boundary height
+  let mut block2 = vec![
     // iy = #ball.y > #boundary.height
-    Transformation::ParGreaterThanVS((y.clone(), 500.0, iy.clone())),
+    Rc::new(RefCell::new(Transformation::ParGreaterThanVS((y.clone(), 500.0, iy.clone())))),
     // iyy = #ball.y < 0
-    Transformation::ParLessThanVS((y.clone(), 0.0, iyy.clone())),
+    Rc::new(RefCell::new(Transformation::ParLessThanVS((y.clone(), 0.0, iyy.clone())))),
     // #ball.y{iy} := #boundary.height
-    Transformation::ParSetVS((iy.clone(), 500.0, y.clone())),
+    Rc::new(RefCell::new(Transformation::ParSetVS((iy.clone(), 500.0, y.clone())))),
     // #ball.vy{iy | iyy} := #ball.vy * -0.80
-    Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())),
-    Transformation::ParMultiplyVS((vy.clone(), -0.8, vy2.clone())),
-    Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())),
-
-  // Keep the balls within the boundary width
-    // ix = #ball.x > #boundary.width
-    Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())),
-    // ixx = #ball.x < 0
-    Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())),
-    // #ball.x{ix} := #boundary.width
-    Transformation::ParSetVS((ix.clone(), 500.0, x.clone())),
-    // #ball.vx{ix | ixx} := #ball.vx * -0.80
-    Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())),
-    Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())),
-    Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())),
+    Rc::new(RefCell::new(Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())))),
+    Rc::new(RefCell::new(Transformation::ParMultiplyVS((vy.clone(), -0.8, vy2.clone())))),
+    Rc::new(RefCell::new(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())))),
   ];
 
-  for _ in 0..4000 {
+  // Keep the balls within the boundary width
+  let mut block3 = vec![
+    // ix = #ball.x > #boundary.width
+    Rc::new(RefCell::new(Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())))),
+    // ixx = #ball.x < 0
+    Rc::new(RefCell::new(Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())))),
+    // #ball.x{ix} := #boundary.width
+    Rc::new(RefCell::new(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())))),
+    // #ball.vx{ix | ixx} := #ball.vx * -0.80
+    Rc::new(RefCell::new(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())))),
+    Rc::new(RefCell::new(Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())))),
+    Rc::new(RefCell::new(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())))),
+  ];
+
+  let mut blocks = vec![
+    Rc::new(RefCell::new(block1)), 
+    Rc::new(RefCell::new(block2)), 
+    Rc::new(RefCell::new(block3))
+  ];
+
+  for _ in 0..2000 {
     let start_ns = time::precise_time_ns();
 
-    for ref mut tfm in &mut tfms {
-      tfm.run();
+    for ref mut block in &mut blocks.iter() {
+      for ref mut tfm in &mut block.borrow_mut().iter() {
+        tfm.borrow_mut().run();
+      }
     }
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
