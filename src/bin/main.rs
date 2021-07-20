@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use std::fmt;
 use std::ptr;
+use std::rc::Rc;
 
   // New runtime
   // requirements:
@@ -41,10 +42,9 @@ use map_in_place::MapVecInPlace;
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
 enum Transformation {
-  BinOpVV((&Vec<f64>,&Vec<f64>,&mut Vec<f64>))
-  BinOpVVIP((&Vec<f64>,&Vec<f64>)
+  BinOpVV((Rc<Vec<f64>>, Rc<Vec<f64>>, Rc<RefCell<Vec<f64>>>)),
+  BinOpVVIP((Rc<RefCell<Vec<f64>>>, Rc<Vec<f64>>)),
 }
-
 
 fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
   out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
@@ -229,10 +229,15 @@ async fn main() {
   let mut total_time = VecDeque::new();
 
   // Table
-  let mut x = vec![1.0; n];
+  let mut x = Rc::new(RefCell::new(vec![1.0; n]));
+  let mut y = Rc::new(RefCell::new(vec![1.0; n]));
+  let mut vx = Rc::new(vec![2.0; n]);
+  let mut vy = Rc::new(vec![1.0; n]);
+
+  /*let mut x = vec![1.0; n];
   let mut y = vec![1.0; n];
   let mut vx = vec![2.0; n];
-  let mut vy = vec![1.0; n];
+  let mut vy = vec![1.0; n];*/
 
   // Temp Vars
   let mut x2 = vec![0.0; n];
@@ -246,12 +251,25 @@ async fn main() {
   let mut ix_or = vec![false; n];
   let mut vx2 = vec![0.0; n];
   
-  let f = vec![Transformation::BinOpVVIP((&mut x, &vx)),
-               Transformation::BinOpVVIP((&mut y, &vy))];
+  let mut tfms = vec![Transformation::BinOpVVIP((x.clone(), vx)),
+                      Transformation::BinOpVVIP((y, vy.clone())),
+                      Transformation::BinOpVVIP((x.clone(), vy.clone()))];
 
   for _ in 0..4000 {
     let start_ns = time::precise_time_ns();
-    /*if n <= 10_000 {*/
+
+    for tfm in &tfms {
+      match tfm {
+        Transformation::BinOpVVIP((lhs, rhs)) => {
+          let rhs_ptr = Rc::as_ptr(&rhs);
+          unsafe {
+            lhs.borrow_mut().par_iter_mut().zip(&*rhs_ptr).for_each(|(lhs, rhs)| *lhs += rhs);
+          }
+        }
+        _ => (),
+      }
+    }
+
     {
     // Update the block positions on each tick of the timer
       // #ball.x := #ball.x + #ball.vx
@@ -260,6 +278,7 @@ async fn main() {
 
       // #ball.y := #ball.y + #ball.vy
       //par_add_vv_ip(&mut y, &vy);
+
       //f[1](&mut y, &vy);
 
       // #ball.vy := #ball.vy + #gravity
