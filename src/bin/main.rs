@@ -32,51 +32,6 @@ use futures::stream::futures_unordered::FuturesUnordered;
 use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
-fn par_add_vv(lhs: &Vec<f64>, rhs: &Vec<f64>, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs + *rhs);
-}
-
-fn par_add_vv_ip(lhs: &mut Vec<f64>, rhs: &Vec<f64>) {
-  lhs.par_iter_mut().zip(rhs).for_each(|(lhs, rhs)| *lhs += *rhs);
-}
-
-fn par_add_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs + rhs);
-}
-
-fn par_add_vs_ip(lhs: &mut Vec<f64>, rhs: f64) {
-  lhs.par_iter_mut().for_each(|lhs| *lhs += rhs);
-}
-
-fn par_or_vv(lhs: &Vec<bool>, rhs: &Vec<bool>, out: &mut Vec<bool>) {
-  out.par_iter_mut().zip(lhs).zip(rhs).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs);
-}
-
-fn par_multiply_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs * rhs);
-}
-
-fn par_less_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
-  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs < rhs);
-}
-
-fn par_greater_than_vs(lhs: &Vec<f64>, rhs: f64, out: &mut Vec<bool>) {
-  out.par_iter_mut().zip(lhs).for_each(|(out, lhs)| *out = *lhs > rhs);
-}
-
-fn par_set_vs(ix: &Vec<bool>, x: f64, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(ix).for_each(|(out,ix)| {
-  if *ix == true {
-    *out = x
-  }});
-}
-
-fn par_set_vv(ix: &Vec<bool>, x: &Vec<f64>, out: &mut Vec<f64>) {
-  out.par_iter_mut().zip(ix).zip(x).for_each(|((out,ix),x)| if *ix == true {
-    *out = *x
-  });
-}
-
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
 
 pub struct Table {
@@ -225,6 +180,35 @@ enum Transformation {
   SetVV((ArgBool,ArgF64,OutF64)),
 }
 
+impl Transformation {
+  pub fn run(&mut self) {
+    match &*self {
+      // MATH
+      Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Transformation::AddVSIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); }
+      Transformation::MultiplyVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); }
+      // COMPARE
+      Transformation::GreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
+      Transformation::LessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      // LOGIC
+      Transformation::OrVV((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
+      // SET
+      Transformation::SetVS((ix, rhs, out)) => {
+        out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
+          if *ix == true {
+            *out = *rhs
+          }});          
+      }
+      Transformation::SetVV((ix, rhs, out)) => {
+        out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).zip(&(*rhs.borrow())).for_each(|((out,ix),x)| if *ix == true {
+          *out = *x
+        });          
+      }
+      _ => (),
+    }
+  }
+}
+
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
@@ -241,10 +225,16 @@ fn main() {
   let mut total_time = VecDeque::new();
 
   // Table
-  let mut x = Rc::new(RefCell::new(vec![1.0; n]));
-  let mut y = Rc::new(RefCell::new(vec![1.0; n]));
-  let mut vx = Rc::new(RefCell::new(vec![2.0; n]));
-  let mut vy = Rc::new(RefCell::new(vec![1.0; n]));
+  let balls = vec![
+    Rc::new(RefCell::new(vec![1.0; n])),
+    Rc::new(RefCell::new(vec![1.0; n])),
+    Rc::new(RefCell::new(vec![2.0; n])),
+    Rc::new(RefCell::new(vec![1.0; n]))
+  ];
+  let mut x = balls[0].clone();
+  let mut y = balls[1].clone();
+  let mut vx = balls[2].clone();
+  let mut vy = balls[3].clone();
 
   // Temp Vars
   let mut x2 = Rc::new(RefCell::new(vec![0.0; n]));
@@ -276,7 +266,7 @@ fn main() {
     Transformation::SetVS((iy.clone(), 500.0, y.clone())),
     // #ball.vy{iy | iyy} := #ball.vy * -0.80
     Transformation::OrVV((iy.clone(), iyy.clone(), iy_or.clone())),
-    Transformation::MultiplyVS((vy.clone(), -0.8, y2.clone())),
+    Transformation::MultiplyVS((vy.clone(), -0.8, vy2.clone())),
     Transformation::SetVV((iy_or.clone(), vy2.clone(), vy.clone())),
 
   // Keep the balls within the boundary width
@@ -288,101 +278,27 @@ fn main() {
     Transformation::SetVS((ix.clone(), 500.0, x.clone())),
     // #ball.vx{ix | ixx} := #ball.vx * -0.80
     Transformation::OrVV((ix.clone(), ixx.clone(), ix_or.clone())),
-    Transformation::MultiplyVS((vx.clone(), -0.8, x2.clone())),
+    Transformation::MultiplyVS((vx.clone(), -0.8, vx2.clone())),
     Transformation::SetVV((ix_or.clone(), vx2.clone(), vx.clone())),
   ];
 
   for _ in 0..4000 {
     let start_ns = time::precise_time_ns();
 
-    
-    for tfm in &tfms {
-      match tfm {
-        // MATH
-        Transformation::AddVVIP((lhs, rhs)) => {
-          lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs);
-        }
-        Transformation::AddVSIP((lhs, rhs)) => {
-          lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs);
-        }
-        Transformation::MultiplyVS((lhs, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs);          
-        }
-        // COMPARE
-        Transformation::GreaterThanVS((lhs, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs);
-        }
-        Transformation::LessThanVS((lhs, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs);
-        }
-        // LOGIC
-        Transformation::OrVV((lhs, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs);          
-        }
-        // SET
-        Transformation::SetVS((ix, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
-            if *ix == true {
-              *out = *rhs
-            }});          
-        }
-        Transformation::SetVV((ix, rhs, out)) => {
-          out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).zip(&(*rhs.borrow())).for_each(|((out,ix),x)| if *ix == true {
-            *out = *x
-          });          
-        }
-        _ => (),
-      }
+    for ref mut tfm in &mut tfms {
+      tfm.run();
     }
-
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
     total_time.push_back(time);
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
-    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    
   }
-
+  let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
 }
-
-
-/*
-# Bouncing Balls
-
-Define the environment
-  #ball = [|x   y   vx vy|
-            10  10  20  0]
-  #time/timer += [period: 15, ticks: 0]
-  #gravity = 1
-  #boundary = [width: 500 height: 500]
-
-## Update condition
-
-Update the block positions on each tick of the timer
-  ~ #time/timer.ticks
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
-
-## Boundary Condition
-
-Keep the balls within the boundary height
-  ~ #ball.y
-  iy = #ball.y > #boundary.height
-  iyy = #ball.y < 0
-  #ball.y{iy} := #boundary.height
-  #ball.vy{iy | iyy} := -#ball.vy * 0.80
-
-Keep the balls within the boundary width
-  ~ #ball.x
-  ix = #ball.x > #boundary.width
-  ixx = #ball.x < 0
-  #ball.x{ix} := #boundary.width
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 0.80
-*/
