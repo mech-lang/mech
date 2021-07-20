@@ -168,43 +168,40 @@ pub type OutF64 = Rc<RefCell<Vec<f64>>>;
 pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
 enum Transformation {
-  AddVV((ArgF64, ArgF64, OutF64)),
-  AddVS((ArgF64, f64, OutF64)),
-  MultiplyVS((ArgF64, f64, OutF64)),
-  AddVVIP((OutF64, ArgF64)),  
-  AddVSIP((OutF64, f64)),
-  OrVV((ArgBool,ArgBool,OutBool)),
-  LessThanVS((ArgF64,f64,OutBool)),
-  GreaterThanVS((ArgF64,f64,OutBool)),
-  SetVS((ArgBool,f64,OutF64)),
-  SetVV((ArgBool,ArgF64,OutF64)),
+  ParAddVVIP((OutF64, ArgF64)),  
+  ParAddVSIP((OutF64, f64)),
+  ParMultiplyVS((ArgF64, f64, OutF64)),
+  ParOrVV((ArgBool,ArgBool,OutBool)),
+  ParLessThanVS((ArgF64,f64,OutBool)),
+  ParGreaterThanVS((ArgF64,f64,OutBool)),
+  ParSetVS((ArgBool,f64,OutF64)),
+  ParSetVV((ArgBool,ArgF64,OutF64)),
 }
 
 impl Transformation {
   pub fn run(&mut self) {
     match &*self {
       // MATH
-      Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::AddVSIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); }
-      Transformation::MultiplyVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); }
+      Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Transformation::ParAddVSIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); }
+      Transformation::ParMultiplyVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); }
       // COMPARE
-      Transformation::GreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
-      Transformation::LessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
+      Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
       // LOGIC
-      Transformation::OrVV((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
+      Transformation::ParOrVV((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
       // SET
-      Transformation::SetVS((ix, rhs, out)) => {
+      Transformation::ParSetVS((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
           if *ix == true {
             *out = *rhs
           }});          
       }
-      Transformation::SetVV((ix, rhs, out)) => {
+      Transformation::ParSetVV((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).zip(&(*rhs.borrow())).for_each(|((out,ix),x)| if *ix == true {
           *out = *x
         });          
       }
-      _ => (),
     }
   }
 }
@@ -251,35 +248,35 @@ fn main() {
   let mut tfms = vec![
   // Update the block positions on each tick of the timer
     // #ball.x := #ball.x + #ball.vx
-    Transformation::AddVVIP((x.clone(), vx.clone())),
+    Transformation::ParAddVVIP((x.clone(), vx.clone())),
     // #ball.y := #ball.y + #ball.vy    
-    Transformation::AddVVIP((y.clone(), vy.clone())),
+    Transformation::ParAddVVIP((y.clone(), vy.clone())),
     // #ball.vy := #ball.vy + #gravity
-    Transformation::AddVSIP((vy.clone(), 1.0)),
+    Transformation::ParAddVSIP((vy.clone(), 1.0)),
 
   // Keep the balls within the boundary height
     // iy = #ball.y > #boundary.height
-    Transformation::GreaterThanVS((y.clone(), 500.0, iy.clone())),
+    Transformation::ParGreaterThanVS((y.clone(), 500.0, iy.clone())),
     // iyy = #ball.y < 0
-    Transformation::LessThanVS((y.clone(), 0.0, iyy.clone())),
+    Transformation::ParLessThanVS((y.clone(), 0.0, iyy.clone())),
     // #ball.y{iy} := #boundary.height
-    Transformation::SetVS((iy.clone(), 500.0, y.clone())),
+    Transformation::ParSetVS((iy.clone(), 500.0, y.clone())),
     // #ball.vy{iy | iyy} := #ball.vy * -0.80
-    Transformation::OrVV((iy.clone(), iyy.clone(), iy_or.clone())),
-    Transformation::MultiplyVS((vy.clone(), -0.8, vy2.clone())),
-    Transformation::SetVV((iy_or.clone(), vy2.clone(), vy.clone())),
+    Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())),
+    Transformation::ParMultiplyVS((vy.clone(), -0.8, vy2.clone())),
+    Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())),
 
   // Keep the balls within the boundary width
     // ix = #ball.x > #boundary.width
-    Transformation::GreaterThanVS((x.clone(), 500.0, ix.clone())),
+    Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())),
     // ixx = #ball.x < 0
-    Transformation::LessThanVS((x.clone(), 0.0, ixx.clone())),
+    Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())),
     // #ball.x{ix} := #boundary.width
-    Transformation::SetVS((ix.clone(), 500.0, x.clone())),
+    Transformation::ParSetVS((ix.clone(), 500.0, x.clone())),
     // #ball.vx{ix | ixx} := #ball.vx * -0.80
-    Transformation::OrVV((ix.clone(), ixx.clone(), ix_or.clone())),
-    Transformation::MultiplyVS((vx.clone(), -0.8, vx2.clone())),
-    Transformation::SetVV((ix_or.clone(), vx2.clone(), vx.clone())),
+    Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())),
+    Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())),
+    Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())),
   ];
 
   for _ in 0..4000 {
