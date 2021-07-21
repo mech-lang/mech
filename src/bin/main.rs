@@ -71,15 +71,20 @@ impl Table {
     }
   }
 
+  pub fn get_column_unchecked(&self, col: usize) -> Column {
+    self.data[col].clone()
+  }
+
 }
 
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     for row in 0..self.rows {
+      write!(f,"│ ")?;
       for col in 0..self.cols {
         let v = self.get(row,col).unwrap();
-        write!(f,"{:?} | ", v)?;
+        write!(f,"{:0.2?} │ ", v)?;
       }
       write!(f,"\n")?;
     }
@@ -153,21 +158,13 @@ fn main() {
     balls.set(i,2,3.0);
     balls.set(i,3,4.0);
   }
-  println!("{:?}", balls);
-  loop{}
   let mut total_time = VecDeque::new();
 
   // Table
-  let balls = vec![
-    Rc::new(RefCell::new(vec![1.0; n])),
-    Rc::new(RefCell::new(vec![1.0; n])),
-    Rc::new(RefCell::new(vec![2.0; n])),
-    Rc::new(RefCell::new(vec![1.0; n]))
-  ];
-  let mut x = balls[0].clone();
-  let mut y = balls[1].clone();
-  let mut vx = balls[2].clone();
-  let mut vy = balls[3].clone();
+  let mut x = balls.get_column_unchecked(0);
+  let mut y = balls.get_column_unchecked(1);
+  let mut vx = balls.get_column_unchecked(2);
+  let mut vy = balls.get_column_unchecked(3);
 
   // Temp Vars
   let mut x2 = Rc::new(RefCell::new(vec![0.0; n]));
@@ -241,6 +238,7 @@ fn main() {
     }
     
   }
+  println!("{:?}", balls);
   let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
   println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
