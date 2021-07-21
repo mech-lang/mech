@@ -33,11 +33,12 @@ use tokio_stream::StreamExt;
 use map_in_place::MapVecInPlace;
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
+pub type Column = Rc<RefCell<Vec<f64>>>;
 
 pub struct Table {
   pub rows: usize,
   pub cols: usize,
-  data: Vec<f64>,
+  data: Vec<Column>,
 }
 
 impl Table {
@@ -45,98 +46,31 @@ impl Table {
     let mut table = Table {
       rows,
       cols,
-      data: Vec::with_capacity(rows*cols*2),
+      data: Vec::with_capacity(cols),
     };
-    table.data.resize(rows*cols,0.0);
+    for col in 0..cols {
+      table.data.push(Rc::new(RefCell::new(vec![0.0; rows])));
+    }
     table
   }
 
-  pub fn get_linear(&self, ix: usize) -> Option<f64> {
-    if ix > self.data.len() {
-      None
-    } else {
-      Some(self.data[ix])
-    }
-  }
-
-  pub fn set_linear(&mut self, ix: usize, value: f64) -> Result<(),()> {
-    if ix > self.data.len() {
-      Err(())
-    } else {
-      self.data[ix] = value;
-      Ok(())
-    }
-  }
-
   pub fn get(&self, row: usize, col: usize) -> Option<f64> {
-    let ix = (col * self.rows) + row;
-    if ix > self.data.len() {
+    if col < self.cols && row < self.rows {
+      Some(self.data[col].borrow()[row])
+    } else {
       None
-    } else {
-      Some(self.data[ix])
     }
   }
 
-  pub fn set(&mut self, row: usize, col: usize, value: f64) -> Result<(),()> {
-    let ix = (col * self.rows) + row;
-    if ix > self.data.len() {
-      Err(())
-    } else {
-      self.data[ix] = value;
+  pub fn set(&self, row: usize, col: usize, val: f64) -> Result<(),()> {
+    if col < self.cols && row < self.rows {
+      self.data[col].borrow_mut()[row] = val;
       Ok(())
-    }
-  }
-
-  pub fn get_col(&mut self, col: usize) -> Option<Vec<f64>> {
-    if col > self.cols {
-      None
     } else {
-      Some(self.data[self.rows*col..self.rows*col+self.rows].into())
-    }
-  }
-
-  pub fn get_col_unchecked(&mut self, col: usize) -> Vec<f64> {
-    self.data[self.rows*col..self.rows*col+self.rows].into()
-  }
-
-  pub async fn set_col(&mut self, col: usize, data: &Vec<f64>) -> Result<(),()> {
-    if col > self.cols || data.len() != self.rows {
       Err(())
-    } else {
-      let src_len = data.len();
-      let dst_len = self.data.len();
-      unsafe {
-        let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
-        let src_ptr = data.as_ptr();
-        ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-      }
-      Ok(())
     }
   }
 
-  pub async fn set_col_unchecked(&mut self, col: usize, data: &Vec<f64>) {
-    let src_len = data.len();
-    let dst_len = self.data.len();
-    unsafe {
-      let dst_ptr = self.data.as_mut_ptr().offset((col * self.rows) as isize);
-      let src_ptr = data.as_ptr();
-      ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-    }
-  }
-
-  pub fn column_iterator(&mut self) -> rayon::slice::ChunksExactMut<'_, f64> {
-    self.data.par_chunks_exact_mut(self.rows)
-  }
-
-}
-
-pub async fn replace(data: &Vec<f64>, dest: &mut [f64]) {
-  let src_len = data.len();
-  unsafe {
-    let dst_ptr = dest.as_mut_ptr();
-    let src_ptr = data.as_ptr();
-    ptr::copy_nonoverlapping(src_ptr, dst_ptr, src_len);
-  }
 }
 
 impl fmt::Debug for Table {
@@ -145,7 +79,7 @@ impl fmt::Debug for Table {
     for row in 0..self.rows {
       for col in 0..self.cols {
         let v = self.get(row,col).unwrap();
-        write!(f,"{:?} ", v)?;
+        write!(f,"{:?} | ", v)?;
       }
       write!(f,"\n")?;
     }
@@ -211,7 +145,7 @@ fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
+  let n = 1e1 as usize;
   let mut balls = Table::new(n,4);
   for i in 0..n {
     balls.set(i,0,i as f64);
@@ -219,7 +153,8 @@ fn main() {
     balls.set(i,2,3.0);
     balls.set(i,3,4.0);
   }
-  let mut col = balls.get_col(3).unwrap();
+  println!("{:?}", balls);
+  loop{}
   let mut total_time = VecDeque::new();
 
   // Table
