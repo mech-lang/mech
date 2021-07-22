@@ -1,49 +1,49 @@
 
+// New runtime
+// requirements:
+// pass all tests
+// robust units
+// all number types
+// Unicode
+// async blocks
+// parallel operators
+// rewind capability
+// pre-serialized memory layout
+// performance target: 10 million updates per 60Hz cycle
+// stack allocated tables
+// matrix library in std
+
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
+use hashbrown::{HashMap, HashSet};
+use seahash;
 
-  // New runtime
-  // requirements:
-  // pass all tests
-  // robust units
-  // all number types
-  // Unicode
-  // async blocks
-  // parallel operators
-  // rewind capability
-  // pre-serialized memory layout
-  // performance target: 10 million updates per 60Hz cycle
-  // stack allocated tables
-  // matrix library in std
-
-use nalgebra::base::Matrix2;
-use nalgebra::base::DMatrix;
 use rayon::prelude::*;
 use std::collections::VecDeque;
-
 use std::thread;
-use tokio::time::{sleep,Duration};
-use tokio_stream;
-use futures::future::join_all;
-use futures::stream::futures_unordered::FuturesUnordered;
-use tokio_stream::StreamExt;
-use map_in_place::MapVecInPlace;
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Vec<f64>>);
 pub type Column = Rc<RefCell<Vec<f64>>>;
 
+pub fn hash_string(input: &str) -> u64 {
+  seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
+
+#[derive(Clone)]
 pub struct Table {
+  pub id: u64,
   pub rows: usize,
   pub cols: usize,
   data: Vec<Column>,
 }
 
 impl Table {
-  pub fn new(rows: usize, cols: usize) -> Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
     let mut table = Table {
+      id,
       rows,
       cols,
       data: Vec::with_capacity(cols),
@@ -101,9 +101,9 @@ impl fmt::Debug for Table {
 // set   vector-scalar          -- ix: &Vec<bool>      x:   f64          out: &mut Vec<f64>
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
-pub type ArgF64 = Rc<RefCell<Vec<f64>>>;
+pub type ArgF64 = Column;
 pub type ArgBool = Rc<RefCell<Vec<bool>>>;
-pub type OutF64 = Rc<RefCell<Vec<f64>>>;
+pub type OutF64 = Column;
 pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
 #[derive(Debug)]
@@ -146,18 +146,52 @@ impl Transformation {
   }
 }
 
+struct Database {
+  tables: HashMap<u64,Table>,
+}
+
+impl Database {
+  pub fn new() -> Database {
+    Database {
+      tables: HashMap::new(),
+    }
+  }
+
+  pub fn insert_table(&mut self, table: Table) -> Option<Table> {
+    self.tables.insert(table.id, table)
+  }
+
+  pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
+    self.tables.get(&hash_string(table_name))
+  }
+
+}
+
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   
   let start_ns0 = time::precise_time_ns();
-  let n = 1e1 as usize;
-  let mut balls = Table::new(n,4);
-  for i in 0..n {
-    balls.set(i,0,i as f64);
-    balls.set(i,1,i as f64);
-    balls.set(i,2,3.0);
-    balls.set(i,3,4.0);
+  let n = 1e6 as usize;
+
+  // Create a database
+  let mut database = Database::new();
+
+  {
+    // Create a table
+    let balls = Table::new(hash_string("balls"),n,4);
+    for i in 0..n {
+      balls.set(i,0,i as f64);
+      balls.set(i,1,i as f64);
+      balls.set(i,2,3.0);
+      balls.set(i,3,4.0);
+    }
+
+    // Create a database, add the table to the database
+    database.insert_table(balls.clone());
   }
+
+  let balls = database.get_table("balls").unwrap();
+
   let mut total_time = VecDeque::new();
 
   // Table
@@ -238,7 +272,6 @@ fn main() {
     }
     
   }
-  println!("{:?}", balls);
   let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
   println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
