@@ -109,7 +109,7 @@ pub type OutBool = Rc<RefCell<Vec<bool>>>;
 #[derive(Debug)]
 enum Transformation {
   ParAddVVIP((OutF64, ArgF64)),  
-  ParAddVSIP((OutF64, f64)),
+  ParAddVSIP((OutF64, ArgF64)),
   ParMultiplyVS((ArgF64, f64, OutF64)),
   ParOrVV((ArgBool,ArgBool,OutBool)),
   ParLessThanVS((ArgF64,f64,OutBool)),
@@ -123,7 +123,10 @@ impl Transformation {
     match &*self {
       // MATH
       Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::ParAddVSIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); }
+      Transformation::ParAddVSIP((lhs, rhs)) => { 
+        let rhs = rhs.borrow()[0];
+        lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
+      }
       Transformation::ParMultiplyVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); }
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
@@ -165,7 +168,6 @@ impl Core {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
-
     for (table_id, adds) in txn {
       match self.database.get_table_by_id(table_id) {
         Some(table) => {
@@ -185,6 +187,7 @@ impl Core {
         }
       }
     }
+    self.step();
     Ok(())
   }
 
@@ -205,10 +208,7 @@ impl Core {
       block.borrow_mut().solve();
     }
   }
-
-
 }
-
 
 struct Database {
   tables: HashMap<u64,Table>,
@@ -238,14 +238,25 @@ impl Database {
 pub type Plan = Vec<Rc<RefCell<Transformation>>>;
 
 struct Block {
-  pub plan: Plan,
+  id: u64,
+  plan: Plan,
 }
 
 impl Block {
   pub fn new() -> Block {
     Block {
+      id: 0,
       plan: Vec::new(),
     }
+  }
+
+  pub fn gen_id(&mut self) -> u64 {
+    self.id = hash_string(&format!("{:?}", self.plan));
+    self.id
+  }
+
+  pub fn id(&self) -> u64 {
+    self.id
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) {
@@ -270,12 +281,18 @@ fn main() {
   let mut core = Core::new();
 
   {
-    // Create timer table
+    // #time/timer += [period: 60Hz]
     let time_timer = Table::new(hash_string("time/timer"),1,2);
     time_timer.set(0,0,60.0);
     core.insert_table(time_timer.clone());
 
-    // Create a table
+    // #gravity = 1
+    let gravity = Table::new(hash_string("gravity"),1,1);
+    gravity.set(0,0,1.0);
+    core.insert_table(gravity.clone());
+
+    // Create balls
+    // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
     let balls = Table::new(hash_string("balls"),n,4);
     for i in 0..n {
       balls.set(i,0,i as f64);
@@ -286,13 +303,15 @@ fn main() {
     core.insert_table(balls.clone());
   }
 
-  let balls = core.get_table("balls").unwrap();
-
   // Table
+  let balls = core.get_table("balls").unwrap();
   let mut x = balls.get_column_unchecked(0);
   let mut y = balls.get_column_unchecked(1);
   let mut vx = balls.get_column_unchecked(2);
   let mut vy = balls.get_column_unchecked(3);
+
+  let gravity = core.get_table("gravity").unwrap();
+  let mut g = gravity.get_column_unchecked(0);
 
   // Temp Vars
   let mut x2 = Rc::new(RefCell::new(vec![0.0; n]));
@@ -313,8 +332,9 @@ fn main() {
   // #ball.y := #ball.y + #ball.vy    
   block1.add_tfm(Transformation::ParAddVVIP((y.clone(), vy.clone())));
   // #ball.vy := #ball.vy + #gravity
-  block1.add_tfm(Transformation::ParAddVSIP((vy.clone(), 1.0)));
-  
+  block1.add_tfm(Transformation::ParAddVSIP((vy.clone(), g.clone())));
+  block1.gen_id();
+
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
   // iy = #ball.y > #boundary.height
@@ -327,28 +347,31 @@ fn main() {
   block2.add_tfm(Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())));
   block2.add_tfm(Transformation::ParMultiplyVS((vy.clone(), -0.8, vy2.clone())));
   block2.add_tfm(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
+  block2.gen_id();
 
   // Keep the balls within the boundary width
   let mut block3 = Block::new();
   // ix = #ball.x > #boundary.width
-  block2.add_tfm(Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
+  block3.add_tfm(Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
   // ixx = #ball.x < 0
-  block2.add_tfm(Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
+  block3.add_tfm(Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
   // #ball.x{ix} := #boundary.width
-  block2.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
+  block3.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
   // #ball.vx{ix | ixx} := #ball.vx * -0.80
-  block2.add_tfm(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())));
-  block2.add_tfm(Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())));
-  block2.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
+  block3.add_tfm(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())));
+  block3.add_tfm(Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())));
+  block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
+  block3.gen_id();
 
   core.insert_block(block1);
   core.insert_block(block2);
   core.insert_block(block3);
 
-  for _ in 0..2000 {
+  for i in 0..2000 {
+    let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f64)])];
     let start_ns = time::precise_time_ns();
 
-    core.step();
+    core.process_transaction(&txn);
 
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f64;
