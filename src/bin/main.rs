@@ -110,7 +110,7 @@ pub type OutBool = Rc<RefCell<Vec<bool>>>;
 enum Transformation {
   ParAddVVIP((OutF64, ArgF64)),  
   ParAddVSIP((OutF64, ArgF64)),
-  ParMultiplyVS((ArgF64, f64, OutF64)),
+  ParMultiplyVS((ArgF64, ArgF64, OutF64)),
   ParOrVV((ArgBool,ArgBool,OutBool)),
   ParLessThanVS((ArgF64,f64,OutBool)),
   ParGreaterThanVS((ArgF64,f64,OutBool)),
@@ -127,7 +127,10 @@ impl Transformation {
         let rhs = rhs.borrow()[0];
         lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
       }
-      Transformation::ParMultiplyVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); }
+      Transformation::ParMultiplyVS((lhs, rhs, out)) => { 
+        let rhs = rhs.borrow()[0];
+        out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
+      }
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
       Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
@@ -291,6 +294,11 @@ fn main() {
     gravity.set(0,0,1.0);
     core.insert_table(gravity.clone());
 
+    // #gravity = 1
+    let cosnt1 = Table::new(hash_string("-0.8"),1,1);
+    cosnt1.set(0,0,-0.8);
+    core.insert_table(cosnt1.clone());
+
     // Create balls
     // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
     let balls = Table::new(hash_string("balls"),n,4);
@@ -312,6 +320,9 @@ fn main() {
 
   let gravity = core.get_table("gravity").unwrap();
   let mut g = gravity.get_column_unchecked(0);
+
+  let const1 = core.get_table("-0.8").unwrap();
+  let mut c1 = const1.get_column_unchecked(0);
 
   // Temp Vars
   let mut x2 = Rc::new(RefCell::new(vec![0.0; n]));
@@ -345,7 +356,7 @@ fn main() {
   block2.add_tfm(Transformation::ParSetVS((iy.clone(), 500.0, y.clone())));
   // #ball.vy{iy | iyy} := #ball.vy * -0.80
   block2.add_tfm(Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())));
-  block2.add_tfm(Transformation::ParMultiplyVS((vy.clone(), -0.8, vy2.clone())));
+  block2.add_tfm(Transformation::ParMultiplyVS((vy.clone(), c1.clone(), vy2.clone())));
   block2.add_tfm(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
   block2.gen_id();
 
@@ -359,7 +370,7 @@ fn main() {
   block3.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
   // #ball.vx{ix | ixx} := #ball.vx * -0.80
   block3.add_tfm(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())));
-  block3.add_tfm(Transformation::ParMultiplyVS((vx.clone(), -0.8, vx2.clone())));
+  block3.add_tfm(Transformation::ParMultiplyVS((vx.clone(), c1.clone(), vx2.clone())));
   block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
   block3.gen_id();
 
