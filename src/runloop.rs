@@ -318,7 +318,7 @@ impl ProgramRunner {
             }
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;
-            client_outgoing.send(ClientMessage::String(format!("Txn took {:0.4?} ms", time / 1_000_000.0)));
+            client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
