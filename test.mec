@@ -1,13 +1,32 @@
 # Pong
 
 Game elements
-  #pong/ball = [x: 1:10000000]
+  #ball = [x: 1:1000000, y: 1:1000000, vx: 1, vy: 1]
+  #gravity = 1
 
 Add a game timer
-  #time/timer += [period: 1000]
+  #time/timer += [period: 16]
 
 ## Movement
 
 Move the ball with every tick of the timer
   ~ #time/timer.ticks{1}
-  #pong/ball.x := #pong/ball.x + 1
+  #ball.x := #ball.x + #ball.vx
+  #ball.y := #ball.y + #ball.vy
+  #ball.vy := #ball.vy + #gravity
+
+Keep the balls within the boundary height
+  ~ #time/timer.ticks{1}
+  iy = #ball.y > 500
+  iyy = #ball.y < 0
+  #ball.y{iy} := 500
+  #ball.y{iyy} := 0
+  #ball.vy{iy | iyy} := -#ball.vy * 0.80
+
+Keep the balls within the boundary width
+  ~ #time/timer.ticks{1}
+  ix = #ball.x > 500
+  ixx = #ball.x < 0
+  #ball.x{ix} := 500
+  #ball.x{ixx} := 0
+  #ball.vx{ix | ixx} := -#ball.vx * 0.80
