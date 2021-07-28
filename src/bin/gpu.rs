@@ -6,13 +6,11 @@ use wgpu::util::DeviceExt;
 const OVERFLOW: u32 = 0xffffffff;
 
 async fn run() {
-  let numbers = vec![1;10000];
+  let numbers = vec![1.0;1_000_000];
   let result = execute_gpu(&numbers).await;
-
-  //println!("{:?}", result);
 }
 
-async fn execute_gpu(numbers: &[u32]) {
+async fn execute_gpu(numbers: &[f32]) {
     // Instantiates instance of WebGPU
     let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
 
@@ -37,42 +35,39 @@ async fn execute_gpu(numbers: &[u32]) {
 
     let info = adapter.get_info();
 
-    let mut result: Vec<u32> = numbers.to_vec(); 
+    let mut result: Vec<f32> = numbers.to_vec(); 
     let start_ns0 = time::precise_time_ns();
     let n = 1000;
     for _ in 0..n as usize {
+      result = execute_gpu_inner(&device, &queue, &result).await.unwrap();
       result = execute_gpu_inner(&device, &queue, &result).await.unwrap();
     }
     let end_ns0 = time::precise_time_ns();
     let time = (end_ns0 - start_ns0) as f64;
     println!("{:0.2?}Hz", 1.0 / ((time / 1_000_000_000.0) / n as f64));
-    //println!("{:?}", result);
 }
 
 async fn execute_gpu_inner(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    numbers: &[u32],
-) -> Option<Vec<u32>> {
+    numbers: &[f32],
+) -> Option<Vec<f32>> {
     // Loads the shader from WGSL
     let cs_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
         label: None,
         source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(
           r#"[[block]]
-struct PrimeIndices {
-    data: [[stride(4)]] array<u32>;
-}; // this is used as both input and output for convenience
+struct DataBuf {
+    data: [[stride(4)]] array<f32>;
+};
 
 [[group(0), binding(0)]]
-var<storage> v_indices: [[access(read_write)]] PrimeIndices;
+var<storage> v1: [[access(read_write)]] DataBuf;
 
-fn add(n_base: u32) -> u32{
-    return n_base + 1u;
-}
-
-[[stage(compute), workgroup_size(1)]]
+[[stage(compute), workgroup_size(64)]]
 fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
-    v_indices.data[global_id.x] = add(v_indices.data[global_id.x]);
+    // TODO: a more interesting computation than this.
+    v1.data[global_id.x] = v1.data[global_id.x] + 1.0f;
 }"#
         )),
       flags: wgpu::ShaderFlags::empty(),
@@ -99,7 +94,7 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
     //   The destination of a copy.
     //   The source of a copy.
     let storage_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Storage Buffer"),
+        label: Some("x"),
         contents: bytemuck::cast_slice(numbers),
         usage: wgpu::BufferUsage::STORAGE
             | wgpu::BufferUsage::COPY_DST
@@ -130,11 +125,12 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
             resource: storage_buffer.as_entire_binding(),
         }],
     });
-    let start_ns0 = time::precise_time_ns();
     // A command encoder executes one or many pipelines.
     // It is to WebGPU what a command buffer is to Vulkan.
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+  
+    let start_ns0 = time::precise_time_ns();
     {
       let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
       cpass.set_pipeline(&compute_pipeline);
@@ -160,13 +156,15 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
     device.poll(wgpu::Maintain::Wait);
 
     // Awaits until `buffer_future` can be read from
-    if let Ok(()) = buffer_future.await {
+    let result: Option<Vec<f32>> = if let Ok(()) = buffer_future.await {
+      let end_ns0 = time::precise_time_ns();
+      let time = (end_ns0 - start_ns0) as f64;
         // Gets contents of buffer
         let data = buffer_slice.get_mapped_range();
         // Since contents are got in bytes, this converts these bytes back to u32
         let result = data
             .chunks_exact(4)
-            .map(|b| u32::from_ne_bytes(b.try_into().unwrap()))
+            .map(|b| f32::from_ne_bytes(b.try_into().unwrap()))
             .collect();
 
         // With the current interface, we have to make sure all mapped views are
@@ -183,7 +181,8 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
         Some(result)
     } else {
         panic!("failed to run compute on gpu!")
-    }
+    };
+    result
 }
 
 fn main() {
@@ -212,19 +211,20 @@ fn main() {
         if **x > 500.0 {
           **x = 500.0;
           **vx *= -0.8;
-        }
-        if **y > 500.0 {
-          **y = 500.0;
-          **vy *= -0.8;
-        }
-        if **y < 0.0 {
-          **y = 0.0;
-          **vy *= -0.8;
-        }
+        } else 
         if **x < 0.0 {
           **x = 0.0;
           **vx *= -0.8;
         }
+        if **y > 500.0 {
+          **y = 500.0;
+          **vy *= -0.8;
+        } else 
+        if **y < 0.0 {
+          **y = 0.0;
+          **vy *= -0.8;
+        }
+
       }
     }
     let end_ns0 = time::precise_time_ns();
