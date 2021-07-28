@@ -159,6 +159,7 @@ pub type Transaction = Vec<Change>;
 struct Core {
   blocks: Vec<Rc<RefCell<Block>>>,
   database: Database,
+  pub schedule: Vec<Vec<usize>>,
 }
 
 impl Core {
@@ -167,6 +168,7 @@ impl Core {
     Core {
       blocks: Vec::new(),
       database: Database::new(),
+      schedule: Vec::new(),
     }
   }
 
@@ -207,8 +209,10 @@ impl Core {
   }
 
   pub fn step(&mut self) {
-    for ref mut block in &mut self.blocks.iter() {
-      block.borrow_mut().solve();
+    for block_ixes in &mut self.schedule.iter() {
+      for block_ix in block_ixes {
+        self.blocks[*block_ix].borrow_mut().solve();
+      }
     }
   }
 }
@@ -374,11 +378,14 @@ fn main() {
   block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
   block3.gen_id();
 
+  core.schedule.push(vec![0]);
+  core.schedule.push(vec![1, 2]);
+
   core.insert_block(block1);
   core.insert_block(block2);
   core.insert_block(block3);
 
-  for i in 0..2000 {
+  for i in 0..50 {
     let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f64)])];
     let start_ns = time::precise_time_ns();
 
