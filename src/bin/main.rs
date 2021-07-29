@@ -114,6 +114,7 @@ enum Transformation {
   ParOrVV((ArgBool,ArgBool,OutBool)),
   ParLessThanVS((ArgF64,f64,OutBool)),
   ParGreaterThanVS((ArgF64,f64,OutBool)),
+  ParCSGreaterThanVS((ArgF64,f64,f64)),
   ParSetVS((ArgBool,f64,OutF64)),
   ParSetVV((ArgBool,ArgF64,OutF64)),
 }
@@ -134,6 +135,12 @@ impl Transformation {
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
       Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Transformation::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
+        lhs.borrow_mut().par_iter_mut().for_each(|lhs| if *lhs > *rhs {
+          *lhs = *swap;
+        }); 
+      }
+
       // LOGIC
       Transformation::ParOrVV((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
       // SET
@@ -159,7 +166,7 @@ pub type Transaction = Vec<Change>;
 struct Core {
   blocks: Vec<Rc<RefCell<Block>>>,
   database: Database,
-  pub schedule: Vec<Vec<usize>>,
+  pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
 impl Core {
@@ -168,11 +175,12 @@ impl Core {
     Core {
       blocks: Vec::new(),
       database: Database::new(),
-      schedule: Vec::new(),
+      schedules: HashMap::new(),
     }
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
+    let mut registers = Vec::new();
     for (table_id, adds) in txn {
       match self.database.get_table_by_id(table_id) {
         Some(table) => {
@@ -182,7 +190,9 @@ impl Core {
                 // Index out of bounds.
                 return Err(());
               }
-              _ => (),
+              _ => {
+                registers.push((*table_id,*row,*col));
+              },
             }
           }
         }
@@ -192,7 +202,9 @@ impl Core {
         }
       }
     }
-    self.step();
+    for register in registers {
+      self.step(&register);
+    }
     Ok(())
   }
 
@@ -208,12 +220,18 @@ impl Core {
     self.blocks.push(Rc::new(RefCell::new(block)));
   }
 
-  pub fn step(&mut self) {
-    for block_ixes in &mut self.schedule.iter() {
-      for block_ix in block_ixes {
-        self.blocks[*block_ix].borrow_mut().solve();
+  pub fn step(&mut self, register: &(u64,usize,usize)) {
+    match &mut self.schedules.get(register) {
+      Some(schedule) => {
+        for blocks in schedule.iter() {
+          for block_ix in blocks {
+            self.blocks[*block_ix].borrow_mut().solve();
+          }
+        }
       }
+      _ => (),
     }
+
   }
 }
 
@@ -329,8 +347,6 @@ fn main() {
   let mut c1 = const1.get_column_unchecked(0);
 
   // Temp Vars
-  let mut x2 = Rc::new(RefCell::new(vec![0.0; n]));
-  let mut y2 = Rc::new(RefCell::new(vec![0.0; n]));
   let mut vy2 = Rc::new(RefCell::new(vec![0.0; n]));
   let mut iy = Rc::new(RefCell::new(vec![false; n]));
   let mut iyy = Rc::new(RefCell::new(vec![false; n]));
@@ -378,14 +394,13 @@ fn main() {
   block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
   block3.gen_id();
 
-  core.schedule.push(vec![0]);
-  core.schedule.push(vec![1, 2]);
+  core.schedules.insert((hash_string("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
 
   core.insert_block(block1);
   core.insert_block(block2);
   core.insert_block(block3);
 
-  for i in 0..50 {
+  for i in 0..20000 {
     let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f64)])];
     let start_ns = time::precise_time_ns();
 
@@ -397,10 +412,10 @@ fn main() {
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
-    
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
-  let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f64;
   println!("{:0.4?} s", time / 1e9);
