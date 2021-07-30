@@ -235,3 +235,183 @@ fn main() {
     let time = (end_ns0 - start_ns0) as f64;
     println!("{:0.2?}Hz", 1.0 / ((time / 1_000_000_000.0) / n as f64));    
 }
+
+/*
+//! This is the main file of the project. It contains structures used by all other parts of the
+//! engine and the main method
+
+mod config;
+mod galaxygen;
+mod render;
+
+use {
+    cgmath::{Matrix4, Point3, Vector3},
+    config::{Config, Construction},
+    ron::de::from_reader,
+    std::{env, f32::consts::PI, fs::File},
+};
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+/// An object with a position, velocity and mass that can be sent to the GPU.
+pub struct Particle {
+    /// Position
+    pos: Point3<f32>, // 4, 8, 12
+
+    /// The radius of the particle (currently unused)
+    radius: f32, // 16
+
+    /// Velocity
+    vel: Vector3<f32>, // 4, 8, 12
+    _p: f32, // 16
+
+    /// Mass
+    mass: f64, // 4, 8
+    _p2: [f32; 2], // 12, 16
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+/// All variables that define the state of the program. Will be sent to the GPU.
+pub struct Globals {
+    /// The camera matrix (projection x view matrix)
+    matrix: Matrix4<f32>, // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+    /// The current camera position (used for particle size)
+    camera_pos: Point3<f32>, // 16, 17, 18
+    /// The number of particles
+    particles: u32, // 19
+    /// Newton's law of gravitation has problems with 1D particles, this value works against
+    /// gravitation in close ranges.
+    safety: f64, // 20, 21
+    /// How much time passes each frame
+    delta: f32, // 22
+
+    _p: f32, // 23
+}
+
+impl Particle {
+    fn new(pos: Point3<f32>, vel: Vector3<f32>, mass: f64, density: f64) -> Self {
+        Self {
+            pos,
+            // V = 4/3*pi*r^3
+            // V = m/ d
+            // 4/3*pi*r^3 = m / d
+            // r^3 = 3*m / (4*d*pi)
+            // r = cbrt(3*m / (4*d*pi))
+            radius: (3.0 * mass / (4.0 * density * PI as f64)).cbrt() as f32,
+            vel,
+            mass,
+            _p: 0.0,
+            _p2: [0.0; 2],
+        }
+    }
+}
+
+pub type dvec3 = Vec<(f32,f32,f32)>;
+
+fn length2(v: Vector3<f32>) -> f32 {
+    v.x * v.x + v.y * v.y + v.z * v.z
+}
+
+fn normalize(v: Vector3<f32>) -> Vector3<f32> {
+    v
+}
+
+const G: f32 = 6.67408e-11;
+
+fn run_sim(data_old: &Vec<Particle>, data: &mut Vec<Particle>) {
+    // Get index of current particle
+    let delta = 36e0;
+    let safety = 1e20;
+
+    for i in 0..data_old.len() {
+        // Gravity
+        let mut temp: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+
+        // Go through all other particles...
+        for j in  0..data_old.len() {
+            // Skip self
+            if(j == i) { continue; }
+
+            // If a single particle with no mass is encountered, the entire loop
+            // terminates (because they are sorted by mass)
+            if(data_old[j].mass == 0.0) { break; }
+
+            let diff: Vector3<f32> = data_old[j].pos - data_old[i].pos;
+            temp += normalize(diff) * data_old[j].mass as f32 / (length2(diff)+safety);
+        }
+
+        // Update data
+        data[i].vel += temp * G * delta;
+        let v = data[i].vel;
+        data[i].pos += v * delta;
+    }
+}
+
+
+fn main() {
+    let config = read_config().unwrap_or_else(|| {
+        println!("Using default config.");
+        default_config()
+    });
+
+    // Construct particles from config
+    let particles = config.construct_particles();
+
+    let globals = Globals {
+        matrix: Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0)),
+        camera_pos: config.camera_pos.into(),
+        particles: particles.len() as u32,
+        safety: config.safety,
+        delta: 0.0,
+        _p: 0.0,
+    };
+
+    /*let old_particles = particles.clone();
+    let mut new_particles = particles.clone();
+    loop {
+    let start_ns = time::precise_time_ns();
+
+    run_sim(&old_particles,&mut new_particles);
+
+    let end_ns = time::precise_time_ns();
+    let time = (end_ns - start_ns) as f64;
+    println!("{:0.2?}Hz", 1.0 / (time / 1_000_000_000.0));
+    }*/
+    
+    render::run(globals, particles);
+}
+
+/// Read configuration file
+fn read_config() -> Option<Config> {
+    let input_path = env::args().nth(1)?;
+    let f = File::open(&input_path).expect("Failed opening file!");
+    let config = from_reader(f).expect("Failed to parse config!");
+
+    Some(config)
+}
+
+fn default_config() -> Config {
+    Config {
+        camera_pos: [0.0, 0.0, 1e10],
+        safety: 1e20,
+        constructions: vec![
+            Construction::Galaxy {
+                center_pos: [-1e11, -1e11, 0.0],
+                center_vel: [10e6, 0.0, 0.0],
+                center_mass: 1e35,
+                amount: 500000,
+                normal: [1.0, 0.0, 0.0],
+            },
+            Construction::Galaxy {
+                center_pos: [1e11, 1e11, 0.0],
+                center_vel: [0.0, 0.0, 0.0],
+                center_mass: 3e35,
+                amount: 500000,
+                normal: [1.0, 1.0, 0.0],
+            },
+        ],
+    }
+}
+
+*/
