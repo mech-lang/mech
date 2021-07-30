@@ -16,7 +16,10 @@ async fn execute_gpu(numbers: &[f32]) {
 
     // `request_adapter` instantiates the general connection to the GPU
     let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .request_adapter(&wgpu::RequestAdapterOptionsBase{
+          power_preference: wgpu::PowerPreference::HighPerformance, 
+          compatible_surface: None,
+        })
         .await.unwrap();
 
     // `request_device` instantiates the feature specific connection to the GPU, defining some parameters,
@@ -35,11 +38,12 @@ async fn execute_gpu(numbers: &[f32]) {
 
     let info = adapter.get_info();
 
+    println!("{:?}", info);
+
     let mut result: Vec<f32> = numbers.to_vec(); 
     let start_ns0 = time::precise_time_ns();
     let n = 1000;
     for _ in 0..n as usize {
-      result = execute_gpu_inner(&device, &queue, &result).await.unwrap();
       result = execute_gpu_inner(&device, &queue, &result).await.unwrap();
     }
     let end_ns0 = time::precise_time_ns();
@@ -64,7 +68,7 @@ struct DataBuf {
 [[group(0), binding(0)]]
 var<storage> v1: [[access(read_write)]] DataBuf;
 
-[[stage(compute), workgroup_size(64)]]
+[[stage(compute), workgroup_size(1)]]
 fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
     // TODO: a more interesting computation than this.
     v1.data[global_id.x] = v1.data[global_id.x] + 1.0f;
