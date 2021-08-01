@@ -414,4 +414,18 @@ fn default_config() -> Config {
     }
 }
 
+function balls(x,y,vx,vy)
+  x = x + vx;
+  y = y + vy;
+  vy = vy + vy;
+  ix = x .< 500;
+  ixx = x .> 0;
+  iy = y .< 500;
+  iyy = y .> 0;
+  x[ix] = x[ix].+500;
+  y[iy] = y[iy].+500;
+  x[ixx] = x[ixx].*0;
+  y[iyy] = y[iyy].*0;
+end
+
 */
