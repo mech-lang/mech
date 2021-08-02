@@ -400,7 +400,7 @@ fn main() {
   core.insert_block(block2);
   core.insert_block(block3);
 
-  for i in 0..2000 {
+  for i in 0..200000 {
     let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f64)])];
     let start_ns = time::precise_time_ns();
 
