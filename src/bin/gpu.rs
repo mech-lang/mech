@@ -428,4 +428,43 @@ function balls(x,y,vx,vy)
   y[iyy] = y[iyy].*0;
 end
 
+fn length2(v: Vector3<f32>) -> f32 {
+    v.x * v.x + v.y * v.y + v.z * v.z
+}
+
+fn normalize(v: Vector3<f32>) -> Vector3<f32> {
+    v
+}
+
+const G: f32 = 6.67408e-11;
+
+fn run_sim(data_old: &Vec<Particle>, data: &mut Vec<Particle>) {
+    // Get index of current particle
+    let delta = 36e0;
+    let safety = 1e20;
+
+    for i in 0..data_old.len() {
+        // Gravity
+        let mut temp: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+
+        // Go through all other particles...
+        for j in  0..data_old.len() {
+            // Skip self
+            if(j == i) { continue; }
+
+            // If a single particle with no mass is encountered, the entire loop
+            // terminates (because they are sorted by mass)
+            if(data_old[j].mass == 0.0) { break; }
+
+            let diff: Vector3<f32> = data_old[j].pos - data_old[i].pos;
+            temp += normalize(diff) * data_old[j].mass as f32 / (length2(diff)+safety);
+        }
+
+        // Update data
+        data[i].vel += temp * G * delta;
+        let v = data[i].vel;
+        data[i].pos += v * delta;
+    }
+}
+
 */
