@@ -40,6 +40,7 @@ wgpu = "0.9.0"
 pollster = "0.2.4"
 env_logger = "0.9.0"
 bytemuck = "1.7.2"
+arrayfire = "3.8.0"
 
 [dependencies.num-traits]
 version = "0.2.14"
