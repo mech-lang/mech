@@ -1,3 +1,71 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::fmt;
+use crate::Column;
+
+#[derive(Clone)]
+pub struct Table {
+  pub id: u64,
+  pub rows: usize,
+  pub cols: usize,
+  data: Vec<Column>,
+}
+
+impl Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      id,
+      rows,
+      cols,
+      data: Vec::with_capacity(cols),
+    };
+    for col in 0..cols {
+      table.data.push(Rc::new(RefCell::new(vec![0.0; rows])));
+    }
+    table
+  }
+
+  pub fn get(&self, row: usize, col: usize) -> Option<f64> {
+    if col < self.cols && row < self.rows {
+      Some(self.data[col].borrow()[row])
+    } else {
+      None
+    }
+  }
+
+  pub fn set(&self, row: usize, col: usize, val: f64) -> Result<(),()> {
+    if col < self.cols && row < self.rows {
+      self.data[col].borrow_mut()[row] = val;
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn get_column_unchecked(&self, col: usize) -> Column {
+    self.data[col].clone()
+  }
+
+}
+
+impl fmt::Debug for Table {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for row in 0..self.rows {
+      write!(f,"│ ")?;
+      for col in 0..self.cols {
+        let v = self.get(row,col).unwrap();
+        write!(f,"{:0.2?} │ ", v)?;
+      }
+      write!(f,"\n")?;
+    }
+    Ok(())
+  }
+}
+
+
+
+/*
 // # Table
 
 // ## Prelude
@@ -635,3 +703,4 @@ fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) -> fmt:
   }
   Ok(())
 }
+*/
