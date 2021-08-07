@@ -1,3 +1,39 @@
+use crate::{Table,hash_string};
+use hashbrown::HashMap;
+
+pub type Change = (u64, Vec<(usize, usize, f64)>);
+
+pub type Transaction = Vec<Change>;
+
+pub struct Database {
+  tables: HashMap<u64,Table>,
+}
+
+impl Database {
+  pub fn new() -> Database {
+    Database {
+      tables: HashMap::new(),
+    }
+  }
+
+  pub fn insert_table(&mut self, table: Table) -> Option<Table> {
+    self.tables.insert(table.id, table)
+  }
+
+  pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
+    self.tables.get(&hash_string(table_name))
+  }
+
+  pub fn get_table_by_id(&mut self, table_id: &u64) -> Option<&Table> {
+    self.tables.get(table_id)
+  }
+
+}
+
+
+
+
+/*
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Register};
@@ -165,3 +201,4 @@ pub enum Change {
   NewTable{table_id: u64, rows: usize, columns: usize},
   InternString{string: String},
 }
+*/
