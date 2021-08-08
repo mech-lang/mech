@@ -1,4 +1,44 @@
-use table::{Table, TableId, TableIndex};
+use crate::{Transformation, hash_string};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+pub type Plan = Vec<Rc<RefCell<Transformation>>>;
+
+pub struct Block {
+  id: u64,
+  plan: Plan,
+}
+
+impl Block {
+  pub fn new() -> Block {
+    Block {
+      id: 0,
+      plan: Vec::new(),
+    }
+  }
+
+  pub fn gen_id(&mut self) -> u64 {
+    self.id = hash_string(&format!("{:?}", self.plan));
+    self.id
+  }
+
+  pub fn id(&self) -> u64 {
+    self.id
+  }
+
+  pub fn add_tfm(&mut self, tfm: Transformation) {
+    self.plan.push(Rc::new(RefCell::new(tfm)));
+  }
+
+  pub fn solve(&mut self) {
+    for ref mut tfm in &mut self.plan.iter() {
+      tfm.borrow_mut().solve();
+    }
+  }
+
+}
+
+/*use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteralKind};
 use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator, IndexRepeater};
 use database::{Database, Store, Change, Transaction};
@@ -1127,3 +1167,4 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     x => format!("{:?}", x),
   }
 }
+*/
