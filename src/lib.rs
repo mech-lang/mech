@@ -11,19 +11,21 @@ extern crate num_traits;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-/*
 mod database;
-mod runtime;
+//mod runtime;
 mod table;
-mod operations;
-mod quantities;
-mod errors;
+mod transformation;
+//mod operations;
+//mod quantities;
+//mod errors;
 mod core;
 mod block;
-mod value;
-mod index;
-
+//mod value;
+//mod index;
+/*
 pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, BlockState, Transformation, Register, format_register};
 pub use self::index::{IndexRepeater, IndexIterator, TableIterator, ValueIterator, ConstantIterator};
@@ -33,6 +35,14 @@ pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
 pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
 pub use self::operations::{MechFunction, Argument};*/
+
+pub use self::table::{Table};
+pub use self::database::{Database, Transaction};
+pub use self::transformation::{Transformation};
+pub use self::block::Block;
+pub use self::core::Core;
+
+pub type Column = Rc<RefCell<Vec<f64>>>;
 
 pub fn hash_string(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF

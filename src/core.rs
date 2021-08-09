@@ -1,3 +1,84 @@
+use crate::{Database, Block, Table, Transaction};
+use hashbrown::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub struct Core {
+  blocks: Vec<Rc<RefCell<Block>>>,
+  database: Database,
+  pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
+}
+
+impl Core {
+
+  pub fn new() -> Core {
+    Core {
+      blocks: Vec::new(),
+      database: Database::new(),
+      schedules: HashMap::new(),
+    }
+  }
+
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
+    let mut registers = Vec::new();
+    for (table_id, adds) in txn {
+      match self.database.get_table_by_id(table_id) {
+        Some(table) => {
+          for (row,col,val) in adds {
+            match table.set(*row, *col, *val) {
+              Err(_) => {
+                // Index out of bounds.
+                return Err(());
+              }
+              _ => {
+                registers.push((*table_id,*row,*col));
+              },
+            }
+          }
+        }
+        _ => {
+          // Table doesn't exist
+          return Err(());
+        }
+      }
+    }
+    for register in registers {
+      self.step(&register);
+    }
+    Ok(())
+  }
+
+  pub fn insert_table(&mut self, table: Table) -> Option<Table> {
+    self.database.insert_table(table)
+  }
+
+  pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
+    self.database.get_table(table_name)
+  }
+
+  pub fn insert_block(&mut self, block: Block) {
+    self.blocks.push(Rc::new(RefCell::new(block)));
+  }
+
+  pub fn step(&mut self, register: &(u64,usize,usize)) {
+    match &mut self.schedules.get(register) {
+      Some(schedule) => {
+        for blocks in schedule.iter() {
+          for block_ix in blocks {
+            self.blocks[*block_ix].borrow_mut().solve();
+          }
+        }
+      }
+      _ => (),
+    }
+
+  }
+}
+
+
+
+
+/*
 use block::{Block, Register};
 use errors::{Error, ErrorType};
 use database::{Database, Change, Transaction};
@@ -188,3 +269,4 @@ impl fmt::Debug for Core {
     Ok(())
   }
 }
+*/
