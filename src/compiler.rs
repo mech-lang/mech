@@ -1,4 +1,4 @@
-// # Mech Syntax Compiler
+/*// # Mech Syntax Compiler
 
 // ## Preamble
 
@@ -1610,3 +1610,4 @@ fn magnitude(n: usize) -> u64 {
   }
   m
 }
+*/
