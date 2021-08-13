@@ -15,7 +15,11 @@ use nom::{
   error::VerboseError,
   multi::{many1, many0},
   bytes::complete::{tag},
-  character::complete::{char, hex_digit1, oct_digit1, alpha1, digit1, space0, space1},
+  character::complete::{char, hex_digit1, oct_digit1, digit1, space0, space1},
+};
+
+use nom_unicode::{
+  complete::alpha1,
 };
 
 // ## Parser Node

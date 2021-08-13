@@ -24,7 +24,8 @@ mech-core = {git = "https://gitlab.com/mech-lang/core"}
 
 hashbrown = "0.11.2"
 lazy_static = "1.4.0"
-nom = { version = "5.1.1"}
+nom = "6.2.1"
+nom-unicode = "0.2.0"
 rlibc = { version = "=1.0", optional = true }
 serde = "1.0.123"
 serde_derive = "1.0.123"
