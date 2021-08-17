@@ -2,7 +2,8 @@
 
 // ## Prelude
 
-use lexer::Token;
+use crate::lexer::Token;
+
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
@@ -15,12 +16,14 @@ use nom::{
   error::VerboseError,
   multi::{many1, many0},
   bytes::complete::{tag},
-  character::complete::{char, hex_digit1, oct_digit1, digit1, space0, space1},
+  character::complete::{char, hex_digit1, oct_digit1, space0, space1},
 };
 
 use nom_unicode::{
-  complete::alpha1,
+  complete::{alpha1, digit1},
 };
+
+use unicode_segmentation::*;
 
 // ## Parser Node
 
@@ -369,6 +372,8 @@ impl Parser {
   }
 
   pub fn parse(&mut self, text: &str) {
+
+    let parse_tree2 = word(text);
     let parse_tree = parse_mech(text);
     match parse_tree {
       Ok((rest, tree)) => {
@@ -477,9 +482,40 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 fn word(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, bytes) = alpha1(input)?;
-  let chars = bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect();
-  Ok((input, Node::Word{children: chars}))
+
+  println!("{:?}", input);
+  println!("{:?}", bytes);
+
+
+
+  //let chars = bytes.chars().map(|b| Node::Token{token: Token::Alpha, byte: b as u8}).collect();
+  Ok((input, Node::Word{children: vec![]}))
 }
+/*
+fn word2(input: Graphemes) -> IResult<Graphemes, Node, VerboseError<&str>> {
+  //let (input, program) = many1(alt((program, fragment)))(input)?
+
+  let (input, matching) = many1(alpha2)(input)?;
+
+  println!("rest  {}", input.as_str());
+  println!("match {}", matching);
+
+  Ok((input, Node::Word{children: vec![]}))
+}
+
+fn alpha2(input: Graphemes) -> IResult<Graphemes, &str, VerboseError<&str>> {
+  let mut input = input.clone();
+  let grapheme = input.next().unwrap();
+  let mut chars = grapheme.chars();
+  match chars.nth(0) {
+    Some(c) => {
+      Ok((input,grapheme))    
+    }
+    None => {
+      Err(nom::Err::Failure(VerboseError{errors: vec![("Not Alphabetic", nom::error::VerboseErrorKind::Context(""))]}))
+    }
+  }
+}*/
 
 fn number(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
   let (input, bytes) = digit1(input)?;
