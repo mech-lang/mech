@@ -151,7 +151,7 @@ pub enum Node {
   BinaryLiteral{bytes: Vec<u8>},
   RationalNumber{children: Vec<Node>},
   Token{token: Token, byte: u8},
-  Token2{token: Token, bytes: Vec<u8>},
+  Token2{token: Token, chars: Vec<char>},
   Add,
   Subtract,
   Multiply,
@@ -291,7 +291,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
     Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
     Node::Token{token, byte} => {print!("Token({:?} ({:?}))\n", token, byte); None},
-    Node::Token2{token, bytes} => {print!("Token2({:?} ({:?}))\n", token, bytes); None},
+    Node::Token2{token, chars} => {print!("Token2({:?} ({:?}))\n", token, chars); None},
     Node::CommentSigil{children} => {print!("CommentSigil\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::Any{children} => {print!("Any\n"); Some(children)},
@@ -377,7 +377,7 @@ impl Parser {
 
     let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
 
-    let parse_tree2 = word2(graphemes);
+    let parse_tree2 = at2(graphemes);
     println!("{:?}", parse_tree2);
     /*
     let parse_tree = parse_mech(text);
@@ -484,49 +484,62 @@ leaf!{semicolon, ";", Token::Semicolon}
 leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
 
+pub fn tag2(tag: String) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
+  move |mut input: Vec<&str>| {
+    let tag_graphemes = tag.graphemes(true).collect::<Vec<&str>>();
+    let tag_len = tag_graphemes.len();
+    if tag_graphemes.iter().zip(input.iter().take(tag_len)).all(|(t,i)| t==i) {
+      let rest = input.split_off(tag_len);
+      Ok((rest, input))
+    } else {
+      Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    }
+  }
+}
+
 macro_rules! leaf2 {
   ($name:ident, $byte:expr, $token:expr) => (
-    fn $name(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
-      let (input, byte) = tag($byte)(input)?;
-      Ok((input, Node::Token2{token: $token, byte: (byte.as_bytes())[0]}))
+    fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+      let (input, graphemes) = tag2($byte.to_string())(input)?;
+      Ok((input, Node::Token2{token: $token, chars: vec![]}))
     }
   )
 }
 
-leaf2!{at, "@", Token::At}
-leaf2!{hashtag, "#", Token::HashTag}
-leaf2!{period, ".", Token::Period}
-leaf2!{colon, ":", Token::Colon}
-leaf2!{comma, ",", Token::Comma}
-leaf2!{apostrophe, "'", Token::Apostrophe}
-leaf2!{left_bracket, "[", Token::LeftBracket}
-leaf2!{right_bracket, "]", Token::RightBracket}
-leaf2!{left_parenthesis, "(", Token::LeftParenthesis}
-leaf2!{right_parenthesis, ")", Token::RightParenthesis}
-leaf2!{left_brace, "{", Token::LeftBrace}
-leaf2!{right_brace, "}", Token::RightBrace}
-leaf2!{equal, "=", Token::Equal}
-leaf2!{left_angle, "<", Token::LessThan}
-leaf2!{right_angle, ">", Token::GreaterThan}
-leaf2!{exclamation, "!", Token::Exclamation}
-leaf2!{question, "?", Token::Question}
-leaf2!{plus, "+", Token::Plus}
-leaf2!{dash, "-", Token::Dash}
-leaf2!{underscore, "_", Token::Underscore}
-leaf2!{asterisk, "*", Token::Asterisk}
-leaf2!{slash, "/", Token::Slash}
-leaf2!{backslash, "\\", Token::Backslash}
-leaf2!{caret, "^", Token::Caret}
-leaf2!{space, " ", Token::Space}
-leaf2!{tab, "\t", Token::Tab}
-leaf2!{tilde, "~", Token::Tilde}
-leaf2!{grave, "`", Token::Grave}
-leaf2!{bar, "|", Token::Bar}
-leaf2!{quote, "\"", Token::Quote}
-leaf2!{ampersand, "&", Token::Ampersand}
-leaf2!{semicolon, ";", Token::Semicolon}
-leaf2!{new_line_char, "\n", Token::Newline}
-leaf2!{carriage_return, "\r", Token::CarriageReturn}
+leaf2!{at2, "@", Token::At}
+leaf2!{hashtag2, "#", Token::HashTag}
+leaf2!{period2, ".", Token::Period}
+leaf2!{colon2, ":", Token::Colon}
+leaf2!{comma2, ",", Token::Comma}
+leaf2!{apostrophe2, "'", Token::Apostrophe}
+leaf2!{left_bracket2, "[", Token::LeftBracket}
+leaf2!{right_bracket2, "]", Token::RightBracket}
+leaf2!{left_parenthesis2, "(", Token::LeftParenthesis}
+leaf2!{right_parenthesis2, ")", Token::RightParenthesis}
+leaf2!{left_brace2, "{", Token::LeftBrace}
+leaf2!{right_brace2, "}", Token::RightBrace}
+leaf2!{equal2, "=", Token::Equal}
+leaf2!{left_angle2, "<", Token::LessThan}
+leaf2!{right_angle2, ">", Token::GreaterThan}
+leaf2!{exclamation2, "!", Token::Exclamation}
+leaf2!{question2, "?", Token::Question}
+leaf2!{plus2, "+", Token::Plus}
+leaf2!{dash2, "-", Token::Dash}
+leaf2!{underscore2, "_", Token::Underscore}
+leaf2!{asterisk2, "*", Token::Asterisk}
+leaf2!{slash2, "/", Token::Slash}
+leaf2!{backslash2, "\\", Token::Backslash}
+leaf2!{caret2, "^", Token::Caret}
+leaf2!{space2, " ", Token::Space}
+leaf2!{tab2, "\t", Token::Tab}
+leaf2!{tilde2, "~", Token::Tilde}
+leaf2!{grave2, "`", Token::Grave}
+leaf2!{bar2, "|", Token::Bar}
+leaf2!{quote2, "\"", Token::Quote}
+leaf2!{ampersand2, "&", Token::Ampersand}
+leaf2!{semicolon2, ";", Token::Semicolon}
+leaf2!{new_line_char2, "\n", Token::Newline}
+leaf2!{carriage_return2, "\r", Token::CarriageReturn}
 
 
 // ## The Basics
@@ -539,7 +552,7 @@ fn word(input: &str) -> IResult<&str, Node, VerboseError<&str>> {
 
 fn word2(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, matching) = many1(alpha2)(input)?;
-  let chars: Vec<Node> = matching.iter().map(|b| Node::Token2{token: Token::Alpha, bytes: b.bytes().collect::<Vec<u8>>()}).collect();
+  let chars: Vec<Node> = matching.iter().map(|b| Node::Token2{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Word{children: chars}))
 }
 
