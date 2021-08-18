@@ -145,8 +145,7 @@ pub enum Node {
   OctalLiteral{bytes: Vec<u8>},
   BinaryLiteral{bytes: Vec<u8>},
   RationalNumber{children: Vec<Node>},
-  Token{token: Token, byte: u8},
-  Token2{token: Token, chars: Vec<char>},
+  Token{token: Token, chars: Vec<char>},
   Add,
   Subtract,
   Multiply,
@@ -285,8 +284,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Whitespace{children} => {print!("Whitespace\n"); Some(children)},
     Node::SpaceOrTab{children} => {print!("SpaceOrTab\n"); Some(children)},
     Node::NewLine{children} => {print!("NewLine\n"); Some(children)},
-    Node::Token{token, byte} => {print!("Token({:?} ({:?}))\n", token, byte); None},
-    Node::Token2{token, chars} => {print!("Token2({:?} ({:?}))\n", token, chars); None},
+    Node::Token{token, chars} => {print!("Token({:?} ({:?}))\n", token, chars); None},
     Node::CommentSigil{children} => {print!("CommentSigil\n"); Some(children)},
     Node::Comment{children} => {print!("Comment\n"); Some(children)},
     Node::Any{children} => {print!("Any\n"); Some(children)},
@@ -475,7 +473,7 @@ macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
       let (input, graphemes) = ascii_tag($byte)(input)?;
-      Ok((input, Node::Token2{token: $token, chars: vec![]}))
+      Ok((input, Node::Token{token: $token, chars: vec![]}))
     }
   )
 }
@@ -519,7 +517,7 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 // ## The Basics
 fn word(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, matching) = many1(alpha)(input)?;
-  let chars: Vec<Node> = matching.iter().map(|b| Node::Token2{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
+  let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Word{children: chars}))
 }
 
@@ -583,7 +581,7 @@ fn oct_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
 
 fn number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, matching) = digit1(input)?;
-  let chars: Vec<Node> = matching.iter().map(|b| Node::Token2{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
+  let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Number{children: chars}))
 }
 
