@@ -440,6 +440,9 @@ impl fmt::Debug for Parser {
 pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
   let tag = tag.to_string();
   move |mut input: Vec<&str>| {
+    if input.len() == 0 {
+      return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    }
     let tag_graphemes = tag.graphemes(true).collect::<Vec<&str>>();
     let tag_len = tag_graphemes.len();
     if tag_graphemes.iter().zip(input.iter().take(tag_len)).all(|(t,i)| t==i) {
@@ -454,6 +457,9 @@ pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
 pub fn ascii_tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, &str>  {
   let tag = tag.to_string();
   move |mut input: Vec<&str>| {
+    if input.len() == 0 {
+      return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    }
     let tag_graphemes = tag.graphemes(true).collect::<Vec<&str>>();
     let tag_len = tag_graphemes.len();
     if tag_graphemes.iter().zip(input.iter().take(tag_len)).all(|(t,i)| t==i) {
@@ -468,7 +474,7 @@ pub fn ascii_tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, &str>  {
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-      let (input, graphemes) = tag($byte)(input)?;
+      let (input, graphemes) = ascii_tag($byte)(input)?;
       Ok((input, Node::Token2{token: $token, chars: vec![]}))
     }
   )
