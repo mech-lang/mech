@@ -46,6 +46,15 @@ block
 
 test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::from_i32(123));
 
+// ## Unicode
+
+test_mech!(unicode, "
+block 
+  😃 = 1
+  🤦🏼‍♂️ = 2
+  y̆és = 🤦🏼‍♂️ + 😃
+  #test = y̆és",Value::from_i32(3));
+
 // ## Table
 
 test_mech!(table_define_inline_expressions, "
