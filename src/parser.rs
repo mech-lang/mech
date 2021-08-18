@@ -170,7 +170,7 @@ pub enum Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    print_recurse(self, 0);
+    print_recurse(self, 1);
     Ok(())
   }
 }
@@ -372,13 +372,10 @@ impl Parser {
 
     let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
 
-    let parse_tree2 = parse_mech(graphemes);
-    println!("{:?}", parse_tree2);
-    /*
-    let parse_tree = parse_mech(text);
+    let parse_tree = parse_mech(graphemes);
     match parse_tree {
       Ok((rest, tree)) => {
-        self.unparsed = rest.to_string();
+        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
         self.parse_tree = tree;
       },
       Err(q) => match q {
@@ -388,7 +385,7 @@ impl Parser {
         _ => (),
       }
       _ => (),
-    }*/
+    }
   }
 
   pub fn parse_block(&mut self, text: &str) {
