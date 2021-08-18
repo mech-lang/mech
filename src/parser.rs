@@ -15,7 +15,7 @@ use nom::{
   combinator::opt,
   error::VerboseError,
   multi::{many1, many0},
-  character::complete::{char, hex_digit1, oct_digit1, space0, space1},
+  character::complete::{char},
 };
 
 use unicode_segmentation::*;
@@ -372,7 +372,7 @@ impl Parser {
 
     let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
 
-    let parse_tree2 = number2(graphemes);
+    let parse_tree2 = parse_mech(graphemes);
     println!("{:?}", parse_tree2);
     /*
     let parse_tree = parse_mech(text);
@@ -392,10 +392,11 @@ impl Parser {
   }
 
   pub fn parse_block(&mut self, text: &str) {
-    let parse_tree = parse_block(text);
+    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    let parse_tree = parse_block(graphemes);
     match parse_tree {
       Ok((rest, tree)) => {
-        self.unparsed = rest.to_string();
+        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
         self.parse_tree = tree;
       },
       _ => (),
@@ -403,10 +404,11 @@ impl Parser {
   }
 
   pub fn parse_fragment(&mut self, text: &str) -> Result<(),()> {
-    let parse_tree = parse_fragment(text);
+    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    let parse_tree = parse_fragment(graphemes);
     match parse_tree {
       Ok((rest, tree)) => {
-        self.unparsed = rest.to_string();
+        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
         self.parse_tree = tree;
         Ok(())
       },
@@ -435,7 +437,8 @@ impl fmt::Debug for Parser {
   }
 }
 
-pub fn tag(tag: String) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
+pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
+  let tag = tag.to_string();
   move |mut input: Vec<&str>| {
     let tag_graphemes = tag.graphemes(true).collect::<Vec<&str>>();
     let tag_len = tag_graphemes.len();
@@ -448,10 +451,24 @@ pub fn tag(tag: String) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  
   }
 }
 
+pub fn ascii_tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, &str>  {
+  let tag = tag.to_string();
+  move |mut input: Vec<&str>| {
+    let tag_graphemes = tag.graphemes(true).collect::<Vec<&str>>();
+    let tag_len = tag_graphemes.len();
+    if tag_graphemes.iter().zip(input.iter().take(tag_len)).all(|(t,i)| t==i) {
+      let rest = input.split_off(tag_len);
+      Ok((rest, input[0]))
+    } else {
+      Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    }
+  }
+}
+
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-      let (input, graphemes) = tag2($byte.to_string())(input)?;
+      let (input, graphemes) = tag($byte)(input)?;
       Ok((input, Node::Token2{token: $token, chars: vec![]}))
     }
   )
@@ -538,8 +555,28 @@ fn digit(mut input: Vec<&str>) -> IResult<Vec<&str>, &str> {
   }
 }
 
+fn digit1(input: Vec<&str>) -> IResult<Vec<&str>, Vec<&str>> {
+  let result = many1(digit)(input)?;
+  Ok(result)
+}
+
+fn bin_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
+  let result = alt((ascii_tag("1"),ascii_tag("0")))(input)?;
+  Ok(result)
+}
+
+fn hex_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
+  let result = alt((digit,ascii_tag("a")))(input)?;
+  Ok(result)
+}
+
+fn oct_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
+  let result = alt((digit,ascii_tag("a")))(input)?;
+  Ok(result)
+}
+
 fn number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, matching) = many1(digit)(input)?;
+  let (input, matching) = digit1(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token2{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Number{children: chars}))
 }
@@ -582,17 +619,17 @@ fn identifier(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn carriage_newline(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("\r\n".to_string())(input)?;
+  let (input, _) = tag("\r\n")(input)?;
   Ok((input, Node::Null))
 }
 
 fn true_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("true".to_string())(input)?;
+  let (input, _) = tag("true")(input)?;
   Ok((input, Node::True))
 }
 
 fn false_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("false".to_string())(input)?;
+  let (input, _) = tag("false")(input)?;
   Ok((input, Node::False))
 }
 
@@ -609,9 +646,8 @@ fn whitespace(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn floating_point(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input,_) = period(input)?;
-  let (input, bytes) = digit1(input)?;
-  let digits = bytes.chars().map(|b| Node::Token{token: Token::Digit, byte: b as u8}).collect();
-  Ok((input, Node::FloatingPoint{children: digits}))
+  let (input, chars) = digit1(input)?;
+  Ok((input, Node::Null))
 }
 
 fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -637,37 +673,33 @@ fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, numerator) = alt((quantity, number_literal))(input)?;
-  let (input, _) = tag("/".to_string())(input)?;
+  let (input, _) = tag("/")(input)?;
   let (input, denominator) = alt((quantity, number_literal))(input)?;
-  Ok((input, Node::RationalNumber{children: vec![numerator, denominator]}))
+  Ok((input, Node::Null))
 }
 
 fn decimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("0d".to_string())(input)?;
-  let (input, number_string) = digit1(input)?;
-  let bytes = number_string.as_bytes();
-  Ok((input, Node::DecimalLiteral{bytes: bytes.to_vec()}))
+  let (input, _) = ascii_tag("0d")(input)?;
+  let (input, chars) = digit1(input)?;
+  Ok((input, Node::Null))
 }
 
 fn hexadecimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("0x".to_string())(input)?;
-  let (input, number_string) = hex_digit1(input)?;
-  let bytes = number_string.as_bytes();
-  Ok((input, Node::HexadecimalLiteral{bytes: bytes.to_vec()}))
+  let (input, _) = ascii_tag("0x")(input)?;
+  let (input, number_string) = many1(hex_digit)(input)?;
+  Ok((input, Node::Null))
 }
 
 fn octal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("0o".to_string())(input)?;
-  let (input, number_string) = oct_digit1(input)?;
-  let bytes = number_string.as_bytes();
-  Ok((input, Node::OctalLiteral{bytes: bytes.to_vec()}))
+  let (input, _) = ascii_tag("0o")(input)?;
+  let (input, number_string) = many1(oct_digit)(input)?;
+  Ok((input, Node::Null))
 }
 
 fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("0b".to_string())(input)?;
-  let (input, number_string) = many1(alt((char('0'), char('1'))))(input)?;
-  let bytes: Vec<u8> = number_string.iter().map(|c| c.to_string()).collect::<Vec<String>>().join("").as_bytes().to_vec();
-  Ok((input, Node::BinaryLiteral{bytes: bytes}))
+  let (input, _) = ascii_tag("0b")(input)?;
+  let (input, number_string) = many1(bin_digit)(input)?;
+  Ok((input, Node::Null))
 }
 
 fn constant(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -691,7 +723,7 @@ fn select_all(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn subscript(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, subscript) = alt((select_all, expression, tilde))(input)?;
-  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, Node::Subscript{children: vec![subscript]}))
 }
 
@@ -744,18 +776,18 @@ fn table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
-  let (input, _) = tuple((colon, space0))(input)?;
+  let (input, _) = tuple((colon, many0(space)))(input)?;
   let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
-  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   Ok((input, Node::Binding{children: vec![binding_id, bound]}))
 }
 
 fn function_binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, binding_id) = identifier(input)?;
-  let (input, _) = tuple((colon, space0))(input)?;
+  let (input, _) = tuple((colon, many0(space)))(input)?;
   let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
-  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, Node::FunctionBinding{children: vec![binding_id, bound]}))
 }
 
@@ -776,21 +808,21 @@ fn table_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn attribute(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, identifier) = identifier(input)?;
-  let (input, _) = tuple((space0, opt(comma), space0))(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, Node::Attribute{children: vec![identifier]}))
 }
 
 fn table_header(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = bar(input)?;
   let (input, attributes) = many1(attribute)(input)?;
-  let (input, _) = tuple((bar, space0, opt(newline)))(input)?;
+  let (input, _) = tuple((bar, many0(space), opt(newline)))(input)?;
   Ok((input, Node::TableHeader{children: attributes}))
 }
 
 fn anonymous_table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, mut table_rows) = many0(table_row)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -807,7 +839,7 @@ fn anonymous_table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn anonymous_matrix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_angle(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, mut table_rows) = many0(table_row)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -831,7 +863,7 @@ fn inline_table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 // ### Statements
 
 fn comment_sigil(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("--".to_string())(input)?;
+  let (input, _) = tag("--")(input)?;
   Ok((input, Node::Null))
 }
 
@@ -842,7 +874,7 @@ fn comment(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn add_row_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("+=".to_string())(input)?;
+  let (input, _) = tag("+=")(input)?;
   Ok((input, Node::Null))
 }
 
@@ -854,7 +886,7 @@ fn add_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn set_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag(":=".to_string())(input)?;
+  let (input, _) = tag(":=")(input)?;
   Ok((input, Node::Null))
 }
 
@@ -894,27 +926,27 @@ fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn split_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag(">-".to_string())(input)?;
+  let (input, _) = tag(">-")(input)?;
   Ok((input, Node::Null))
 }
 
 fn join_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("-<".to_string())(input)?;
+  let (input, _) = tag("-<")(input)?;
   Ok((input, Node::Null))
 }
 
 fn whenever_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("~".to_string())(input)?;
+  let (input, _) = tag("~")(input)?;
   Ok((input, Node::Null))
 }
 
 fn until_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("~|".to_string())(input)?;
+  let (input, _) = tag("~|")(input)?;
   Ok((input, Node::Null))
 }
 
 fn wait_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("|~".to_string())(input)?;
+  let (input, _) = tag("|~")(input)?;
   Ok((input, Node::Null))
 }
 
@@ -972,37 +1004,37 @@ fn function(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn matrix_multiply(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("**".to_string())(input)?;
+  let (input, _) = tag("**")(input)?;
   Ok((input, Node::Null))
 }
 
 fn add(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("+".to_string())(input)?;
+  let (input, _) = tag("+")(input)?;
   Ok((input, Node::Add))
 }
 
 fn subtract(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("-".to_string())(input)?;
+  let (input, _) = tag("-")(input)?;
   Ok((input, Node::Subtract))
 }
 
 fn multiply(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("*".to_string())(input)?;
+  let (input, _) = tag("*")(input)?;
   Ok((input, Node::Multiply))
 }
 
 fn divide(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("/".to_string())(input)?;
+  let (input, _) = tag("/")(input)?;
   Ok((input, Node::Divide))
 }
 
 fn exponent(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("^".to_string())(input)?;
+  let (input, _) = tag("^")(input)?;
   Ok((input, Node::Exponent))
 }
 
 fn range_op(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag(":".to_string())(input)?;
+  let (input, _) = tag(":")(input)?;
   Ok((input, Node::Range))
 }
 
@@ -1015,9 +1047,9 @@ fn l0(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l0_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, op) = range_op(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, l1) = l1(input)?;
   Ok((input, Node::L0Infix { children: vec![op, l1] }))
 }
@@ -1115,32 +1147,32 @@ fn math_expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 // #### Filter Expressions
 
 fn not_equal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("!=".to_string())(input)?;
+  let (input, _) = tag("!=")(input)?;
   Ok((input, Node::NotEqual))
 }
 
 fn equal_to(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("==".to_string())(input)?;
+  let (input, _) = tag("==")(input)?;
   Ok((input, Node::Equal))
 }
 
 fn greater_than(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag(">".to_string())(input)?;
+  let (input, _) = tag(">")(input)?;
   Ok((input, Node::GreaterThan))
 }
 
 fn less_than(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("<".to_string())(input)?;
+  let (input, _) = tag("<")(input)?;
   Ok((input, Node::LessThan))
 }
 
 fn greater_than_equal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag(">=".to_string())(input)?;
+  let (input, _) = tag(">=")(input)?;
   Ok((input, Node::GreaterThanEqual))
 }
 
 fn less_than_equal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("<=".to_string())(input)?;
+  let (input, _) = tag("<=")(input)?;
   Ok((input, Node::LessThanEqual))
 }
 
@@ -1152,7 +1184,7 @@ named!(state_machine<CompleteStr, Node>, do_parse!(
   (Node::StateMachine { children: vec![source, transitions] })));
 
 fn next_state_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("->".to_string())(input)?;
+  let (input, _) = tag("->")(input)?;
   Ok((input, Node::Null))
 }
 
@@ -1173,12 +1205,12 @@ fn state_transition(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 // #### Logic Expressions
 
 fn or(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("|".to_string())(input)?;
+  let (input, _) = tag("|")(input)?;
   Ok((input, Node::Or))
 }
 
 fn and(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("&".to_string())(input)?;
+  let (input, _) = tag("&")(input)?;
   Ok((input, Node::And))
 }
 
@@ -1196,9 +1228,9 @@ fn xor(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 // #### Other Expressions
 
 fn string_interpolation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("{{".to_string())(input)?;
+  let (input, _) = tag("{{")(input)?;
   let (input, expression) = expression(input)?;
-  let (input, _) = tag("}}".to_string())(input)?;
+  let (input, _) = tag("}}")(input)?;
   Ok((input, Node::StringInterpolation { children: vec![expression] }))
 }
 
@@ -1219,7 +1251,7 @@ fn expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn transformation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = tuple((space,space))(input)?;
   let (input, statement) = statement(input)?;
-  let (input, _) = tuple((space0,opt(newline)))(input)?;
+  let (input, _) = tuple((many0(space),opt(newline)))(input)?;
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
@@ -1233,7 +1265,7 @@ fn block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn title(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = hashtag(input)?;
-  let (input, _) = space1(input)?;
+  let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Title { children: vec![text] }))
@@ -1241,7 +1273,7 @@ fn title(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn subtitle(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many1(hashtag)(input)?;
-  let (input, _) = space1(input)?;
+  let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Subtitle { children: vec![text] }))
@@ -1251,7 +1283,7 @@ fn section_title(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
   let (input, _) = hashtag(input)?;
-  let (input, _) = space1(input)?;
+  let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::SectionTitle { children: vec![text] }))
@@ -1261,7 +1293,7 @@ fn inline_code(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = grave(input)?;
   let (input, text) = text(input)?;
   let (input, _) = grave(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   Ok((input, Node::InlineCode { children: vec![text] }))
 }
 
@@ -1292,7 +1324,7 @@ fn unordered_list(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn list_item(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = dash(input)?;
-  let (input, _) = space1(input)?;
+  let (input, _) = many1(space)(input)?;
   let (input, list_item) = paragraph(input)?;
   let (input, _) = opt(newline)(input)?;
   Ok((input, Node::ListItem { children: vec![list_item] }))
@@ -1383,7 +1415,7 @@ fn parse_mech(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn raw_transformation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, statement) = statement(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, _) = opt(newline)(input)?;
   Ok((input, Node::Transformation { children:  vec![statement] }))
 }
