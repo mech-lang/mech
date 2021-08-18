@@ -594,12 +594,13 @@ fn bin_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
 }
 
 fn hex_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
-  let result = alt((digit,ascii_tag("a")))(input)?;
+  let result = alt((digit, ascii_tag("a"), ascii_tag("b"), ascii_tag("c"), ascii_tag("d"), ascii_tag("e"), ascii_tag("f"), 
+                           ascii_tag("A"), ascii_tag("B"), ascii_tag("C"), ascii_tag("D"), ascii_tag("E"), ascii_tag("F")))(input)?;
   Ok(result)
 }
 
 fn oct_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
-  let result = alt((digit,ascii_tag("a")))(input)?;
+  let result = alt((ascii_tag("0"),ascii_tag("1"),ascii_tag("2"),ascii_tag("3"),ascii_tag("4"),ascii_tag("5"),ascii_tag("6"),ascii_tag("7")))(input)?;
   Ok(result)
 }
 
