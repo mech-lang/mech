@@ -108,6 +108,7 @@ pub enum Node {
   String{ children: Vec<Node> },
   StringInterpolation{ children: Vec<Node> },
   Word{ children: Vec<Node> },
+  Emoji{ children: Vec<Node> },
   Section{ children: Vec<Node> },
   ProseOrCode{ children: Vec<Node> },
   Whitespace{ children: Vec<Node> },
@@ -196,6 +197,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::FloatingPoint{children} => {print!("FloatingPoint\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
+    Node::Emoji{children} => {print!("Emoji\n"); Some(children)},
     Node::Paragraph{children} => {print!("Paragraph\n"); Some(children)},
     Node::ParagraphText{children} => {print!("ParagraphText\n"); Some(children)},
     Node::FormattedText{children} => {print!("FormattedText\n"); Some(children)},
@@ -515,6 +517,31 @@ leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 
 // ## The Basics
+fn emoji_grapheme(mut input: Vec<&str>) -> IResult<Vec<&str>, &str> {
+  if input.len() >= 1 {
+    let rest = input.split_off(1);
+    let chars = input[0].chars();
+    match chars.peekable().peek() {
+      Some(c) => {
+        if !c.is_ascii() && !c.is_alphabetic() {
+          Ok((rest, input[0]))
+        } else {
+          Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+        }
+      }
+      None => Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    }
+  } else {
+    Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+  }
+}
+
+fn emoji(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, matching) = many1(emoji_grapheme)(input)?;
+  let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, Node::Emoji{children: chars}))
+}
+
 fn word(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, matching) = many1(alpha)(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
@@ -586,37 +613,37 @@ fn number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn punctuation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, punctuation) = alt((period , exclamation , question , comma , colon , semicolon , dash , apostrophe , left_parenthesis , right_parenthesis , left_angle , right_angle , left_brace , right_brace))(input)?;
+  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
 
 fn symbol(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, symbol) = alt((ampersand , bar , at , slash , backslash , hashtag , equal , tilde , plus , asterisk , caret , underscore))(input)?;
+  let (input, symbol) = alt((ampersand, bar, at, slash, backslash, hashtag, equal, tilde, plus, asterisk, caret, underscore))(input)?;
   Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
 fn single_text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = alt((word , space , number , punctuation , symbol))(input)?;
+  let (input, word) = alt((word, space, number, punctuation, symbol, emoji))(input)?;
   Ok((input, Node::Text{children: vec![word]}))
 }
 
 fn text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = many1(alt((word , space , number , punctuation , symbol)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
 fn paragraph_rest(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = many1(alt((word , space , number , punctuation , symbol , quote)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, symbol, quote, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
 fn paragraph_starter(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation , question , comma , colon , semicolon , left_parenthesis, right_parenthesis)))(input)?;
+  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, left_parenthesis, right_parenthesis, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
 fn identifier(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, (word, mut rest)) = tuple((word, many0(alt((word, number, dash, slash)))))(input)?;
+  let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
   Ok((input, Node::Identifier{children: id}))
@@ -1376,7 +1403,7 @@ fn mech_code_block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn section(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, section_title) = opt(subtitle)(input)?;
-  let (input, mut section_elements) = many1(alt((block , code_block , mech_code_block , paragraph , unordered_list)))(input)?;
+  let (input, mut section_elements) = many1(alt((block, code_block, mech_code_block, paragraph, unordered_list)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut section = vec![];
   match section_title {

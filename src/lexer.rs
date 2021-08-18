@@ -46,4 +46,5 @@ pub enum Token {
   CarriageReturn,
   Tab,
   EndOfStream,
+  Emoji,
 }
