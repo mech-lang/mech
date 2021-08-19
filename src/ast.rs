@@ -849,8 +849,8 @@ impl Ast {
         let mut result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
-      parser::Node::DecimalLiteral{bytes} => {
-        let dec_bytes: Vec<u8> = bytes.iter().map(|b| {
+      /*parser::Node::DecimalLiteral{chars} => {
+        let dec_bytes: Vec<u8> = chars.iter().map(|b| {
           match b {
             48 => 0,
             49 => 1,
@@ -868,7 +868,7 @@ impl Ast {
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: dec_bytes});
       },
       parser::Node::BinaryLiteral{bytes} => {
-        let bin_bytes: Vec<u8> = bytes.iter().map(|b| {
+        let bin_bytes: Vec<u8> = chars.iter().map(|b| {
           match b {
             48 => 0,
             49 => 1,
@@ -877,8 +877,8 @@ impl Ast {
         }).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Binary, bytes: bin_bytes});
       }
-      parser::Node::OctalLiteral{bytes} => {
-        let oct_bytes: Vec<u8> = bytes.iter().map(|b| {
+      parser::Node::OctalLiteral{chars} => {
+        let oct_bytes: Vec<u8> = chars.iter().map(|b| {
           match b {
             48 => 0,
             49 => 1,
@@ -893,8 +893,8 @@ impl Ast {
         }).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Octal, bytes: oct_bytes});
       }
-      parser::Node::HexadecimalLiteral{bytes} => {
-        let hex_bytes: Vec<u8> = bytes.iter().map(|b| {
+      parser::Node::HexadecimalLiteral{chars} => {
+        let hex_bytes: Vec<u8> = chars.iter().map(|b| {
           match b {
             48 => 0,
             49 => 1,
@@ -916,7 +916,7 @@ impl Ast {
           }
         }).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
-      },
+      },*/
       parser::Node::True => {
         compiled.push(Node::True);
       },

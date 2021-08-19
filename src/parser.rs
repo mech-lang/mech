@@ -140,11 +140,13 @@ pub enum Node {
   StateMachine{children: Vec<Node>},
   StateTransition{children: Vec<Node>},
   Quantity{children: Vec<Node>},
+  Value{children: Vec<Node>},
+  BooleanLiteral{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
-  DecimalLiteral{bytes: Vec<u8>},
-  HexadecimalLiteral{bytes: Vec<u8>},
-  OctalLiteral{bytes: Vec<u8>},
-  BinaryLiteral{bytes: Vec<u8>},
+  DecimalLiteral{chars: Vec<char>},
+  HexadecimalLiteral{chars: Vec<char>},
+  OctalLiteral{chars: Vec<char>},
+  BinaryLiteral{chars: Vec<char>},
   RationalNumber{children: Vec<Node>},
   Token{token: Token, chars: Vec<char>},
   Add,
@@ -293,13 +295,15 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::NumberLiteral{children} => {print!("NumberLiteral\n"); Some(children)},
-    Node::DecimalLiteral{bytes} => {print!("DecimalLiteral\n"); None},
-    Node::HexadecimalLiteral{bytes} => {print!("HexadecimalLiteral\n"); None},
-    Node::OctalLiteral{bytes} => {print!("OctalLiteral\n"); None},
-    Node::BinaryLiteral{bytes} => {print!("BinaryLiteral\n"); None},
+    Node::DecimalLiteral{chars} => {print!("DecimalLiteral({:?})\n", chars); None},
+    Node::HexadecimalLiteral{chars} => {print!("HexadecimalLiteral({:?})\n", chars); None},
+    Node::OctalLiteral{chars} => {print!("OctalLiteral({:?})\n", chars); None},
+    Node::BinaryLiteral{chars} => {print!("BinaryLiteral({:?})\n", chars); None},
     Node::RationalNumber{children} => {print!("RationalNumber\n"); Some(children)},
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::StateTransition{children} => {print!("StateTransition\n"); Some(children)},
+    Node::Value{children} => {print!("Value\n"); Some(children)},
+    Node::BooleanLiteral{children} => {print!("BooleanLiteral\n"); Some(children)},
     Node::Add => {print!("Add\n",); None},
     Node::Subtract => {print!("Subtract\n",); None},
     Node::Multiply => {print!("Multiply\n",); None},
@@ -652,6 +656,11 @@ fn carriage_newline(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::Null))
 }
 
+fn boolean_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, boolean) = alt((true_literal, false_literal))(input)?;
+  Ok((input, Node::BooleanLiteral{children: vec![boolean]}))
+}
+
 fn true_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = tag("true")(input)?;
   Ok((input, Node::True))
@@ -682,16 +691,13 @@ fn floating_point(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, number) = number(input)?;
   let (input, float) = opt(floating_point)(input)?;
-  let (input, unit) = opt(identifier)(input)?;
+  let (input, unit) = identifier(input)?;
   let mut quantity = vec![number];
   match float {
     Some(fp) => quantity.push(fp),
     _ => (),
   };
-  match unit {
-    Some(unit) => quantity.push(unit),
-    _ => (),
-  };
+  quantity.push(unit);
   Ok((input, Node::Quantity{children: quantity}))
 }
 
@@ -708,32 +714,32 @@ fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn decimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = ascii_tag("0d")(input)?;
+  let (input, _) = opt(ascii_tag("0d"))(input)?;
   let (input, chars) = digit1(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn hexadecimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = ascii_tag("0x")(input)?;
-  let (input, number_string) = many1(hex_digit)(input)?;
-  Ok((input, Node::Null))
+  let (input, chars) = many1(hex_digit)(input)?;
+  Ok((input, Node::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn octal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = ascii_tag("0o")(input)?;
-  let (input, number_string) = many1(oct_digit)(input)?;
-  Ok((input, Node::Null))
+  let (input, chars) = many1(oct_digit)(input)?;
+  Ok((input, Node::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = ascii_tag("0b")(input)?;
-  let (input, number_string) = many1(bin_digit)(input)?;
-  Ok((input, Node::Null))
+  let (input, chars) = many1(bin_digit)(input)?;
+  Ok((input, Node::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
-fn constant(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, constant) = alt((string, quantity))(input)?;
-  Ok((input, Node::Constant{children: vec![constant]}))
+fn value(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, value) = alt((empty, quantity, number_literal, boolean_literal, string))(input)?;
+  Ok((input, Node::Value{children: vec![value]}))
 }
 
 fn empty(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -806,7 +812,7 @@ fn binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
   let (input, _) = tuple((colon, many0(space)))(input)?;
-  let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
+  let (input, bound) = alt((empty, expression, identifier, value))(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   Ok((input, Node::Binding{children: vec![binding_id, bound]}))
@@ -815,7 +821,7 @@ fn binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn function_binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, binding_id) = identifier(input)?;
   let (input, _) = tuple((colon, many0(space)))(input)?;
-  let (input, bound) = alt((empty, expression, identifier, constant))(input)?;
+  let (input, bound) = alt((expression, identifier, value))(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, Node::FunctionBinding{children: vec![binding_id, bound]}))
 }
@@ -823,7 +829,7 @@ fn function_binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn table_column(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((true_literal, false_literal, empty, expression, data, rational_number, number_literal, quantity))(input)?;
+  let (input, item) = alt((expression, data, value))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
@@ -1018,7 +1024,7 @@ fn parenthetical_expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn negation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = dash(input)?;
-  let (input, negated) = alt((data, constant))(input)?;
+  let (input, negated) = alt((data, value))(input)?;
   Ok((input, Node::Negation { children: vec![negated] }))
 }
 
@@ -1164,7 +1170,7 @@ fn l5_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l6(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, l6) = alt((empty, true_literal, false_literal, anonymous_table, function, data, string, rational_number, number_literal, quantity, negation, not, parenthetical_expression))(input)?;
+  let (input, l6) = alt((anonymous_table, function, data, value, negation, not, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
