@@ -964,6 +964,7 @@ impl Ast {
         }
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Emoji{children} |
       parser::Node::Constant{children} |
       parser::Node::StateMachine{children} |
       parser::Node::StateTransition{children} |
