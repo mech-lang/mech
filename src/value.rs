@@ -5,9 +5,9 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-use quantities::{Quantity, ToQuantity, QuantityMath};
-use errors::{ErrorType};
-use ::{hash_string};
+//use quantities::{Quantity, ToQuantity, QuantityMath};
+//use errors::{ErrorType};
+use crate::{hash_string};
 
 // ## Value structs and enums
 
@@ -59,6 +59,9 @@ impl NumberLiteral {
     container
   }
 }
+
+
+/*
 
 // ## Value Methods
 
@@ -447,3 +450,5 @@ impl ValueMethods for Value {
   }
 
 }
+
+*/
