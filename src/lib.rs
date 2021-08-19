@@ -15,11 +15,9 @@ extern crate nom_unicode;
 #[macro_use]
 extern crate lazy_static;
 
-
-
 pub mod lexer;
 //#[macro_use]
 pub mod parser;
-//pub mod ast;
+pub mod ast;
 //pub mod compiler;
 //pub mod formatter;

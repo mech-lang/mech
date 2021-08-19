@@ -4,8 +4,8 @@ fn main() {
 
   let mut parser = Parser::new();
 
-  parser.parse("y̆és");
-  //parser.parse("y̆es = 😃 + 1");
+  parser.parse("block
+  y̆és = 1 + 1");
 
   println!("{:?}", parser.parse_tree);
 

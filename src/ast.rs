@@ -1,4 +1,17 @@
-// ## Compiler Nodes
+// # AST
+
+// ## Prelude
+
+use crate::parser;
+use crate::lexer::Token;
+
+#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(feature = "no-std")] use alloc::fmt;
+
+use mech_core::hash_string;
+
+
+// ## AST Nodes
 
 #[derive(Clone, PartialEq)]
 pub enum Node {
@@ -83,7 +96,7 @@ pub enum Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    print_recurse(self, 0, f);
+    print_recurse(self, 1, f);
     Ok(())
   }
 }
@@ -164,6 +177,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::MechCodeBlock{children} => {write!(f,"MechCodeBlock\n").ok(); Some(children)},
     _ => {write!(f,"Unhandled Compiler Node").ok(); None},
   };
+
   match children {
     Some(childs) => {
       for child in childs {
