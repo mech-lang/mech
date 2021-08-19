@@ -1,7 +1,43 @@
+// # Table
+
+// A table starts with a tag, and has a matrix of memory available for data, 
+// where each column represents an attribute, and each row represents an entity.
+
+// ## Prelude
+
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::Column;
+use crate::{Column, humanize};
+
+// ### Table Id
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub enum TableId {
+  Local(u64),
+  Global(u64),
+}
+
+impl TableId {
+  pub fn unwrap(&self) -> &u64 {
+    match self {
+      TableId::Local(id) => id,
+      TableId::Global(id) => id,
+    }
+  }
+}
+
+impl fmt::Debug for TableId {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &TableId::Local(ref id) => write!(f, "Local({:})", humanize(id)),
+      &TableId::Global(ref id) => write!(f, "Global({:})", humanize(id)),
+    }
+  }
+}
+
+// ## Table
 
 #[derive(Clone)]
 pub struct Table {
@@ -10,6 +46,7 @@ pub struct Table {
   pub cols: usize,
   data: Vec<Column>,
 }
+
 
 impl Table {
   pub fn new(id: u64, rows: usize, cols: usize) -> Table {
