@@ -200,17 +200,27 @@ pub fn spacer(width: usize, f: &mut fmt::Formatter) {
   write!(f,"├").ok();
 }
 
-pub struct AST {
+pub struct Ast {
   current_char: usize,
   current_line: usize,
   current_col: usize,
   depth: usize,
-  syntax_tree: Node,
+  pub syntax_tree: Node,
 }
 
-impl AST {
+impl Ast {
 
-  pub fn compile_nodes(&mut self, nodes: Vec<parser::Node>) -> Vec<Node> {
+  pub fn new() -> Ast {
+    Ast {
+      current_char: 0,
+      current_line: 0,
+      current_col: 0,
+      depth: 0,
+      syntax_tree: Node::Null,
+    }
+  }
+
+  pub fn compile_nodes(&mut self, nodes: &Vec<parser::Node>) -> Vec<Node> {
     let mut compiled = Vec::new();
     for node in nodes {
       compiled.append(&mut self.build_syntax_tree(node));
@@ -218,7 +228,7 @@ impl AST {
     compiled
   }
 
-  pub fn build_syntax_tree(&mut self, node: parser::Node) -> Vec<Node> {
+  pub fn build_syntax_tree(&mut self, node: &parser::Node) -> Vec<Node> {
     let mut compiled = Vec::new();
     self.depth += 1;
     match node {
@@ -996,7 +1006,7 @@ impl AST {
             self.current_col += 1;
           }
         }
-        compiled.push(Node::Token{token, chars});
+        compiled.push(Node::Token{token: *token, chars: chars.to_vec()});
       },
       _ => println!("Unhandled Parser Node in Compiler: {:?}", node),
     }

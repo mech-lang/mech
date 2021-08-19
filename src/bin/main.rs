@@ -1,12 +1,18 @@
 use mech_syntax::parser::Parser;
+use mech_syntax::ast::Ast;
 
 fn main() {
 
   let mut parser = Parser::new();
+  let mut ast = Ast::new();
 
-  parser.parse("block
-  y̆és = 1 + 1");
+  parser.parse("block 
+  🤦🏼‍♂️ = 1
+  😃 = 2
+  y̆és = 🤦🏼‍♂️ + 😃");
 
-  println!("{:?}", parser.parse_tree);
+  ast.build_syntax_tree(&parser.parse_tree);
+
+  println!("{:?}", ast.syntax_tree);
 
 }
