@@ -849,74 +849,22 @@ impl Ast {
         let mut result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
-      /*parser::Node::DecimalLiteral{chars} => {
-        let dec_bytes: Vec<u8> = chars.iter().map(|b| {
-          match b {
-            48 => 0,
-            49 => 1,
-            50 => 2,
-            51 => 3,
-            52 => 4,
-            53 => 5,
-            54 => 6,
-            55 => 7,
-            56 => 8,
-            57 => 9,
-            _ => 0,        // TODO: ERROR
-          }
-        }).collect::<Vec<u8>>();
+      parser::Node::DecimalLiteral{chars} => {
+        let dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: dec_bytes});
       },
-      parser::Node::BinaryLiteral{bytes} => {
-        let bin_bytes: Vec<u8> = chars.iter().map(|b| {
-          match b {
-            48 => 0,
-            49 => 1,
-            _ => 0,        // TODO: ERROR
-          }
-        }).collect::<Vec<u8>>();
+      parser::Node::BinaryLiteral{chars} => {
+        let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Binary, bytes: bin_bytes});
       }
       parser::Node::OctalLiteral{chars} => {
-        let oct_bytes: Vec<u8> = chars.iter().map(|b| {
-          match b {
-            48 => 0,
-            49 => 1,
-            50 => 2,
-            51 => 3,
-            52 => 4,
-            53 => 5,
-            54 => 6,
-            55 => 7,
-            _ => 0,        // TODO: ERROR
-          }
-        }).collect::<Vec<u8>>();
+        let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Octal, bytes: oct_bytes});
-      }
+      },
       parser::Node::HexadecimalLiteral{chars} => {
-        let hex_bytes: Vec<u8> = chars.iter().map(|b| {
-          match b {
-            48 => 0,
-            49 => 1,
-            50 => 2,
-            51 => 3,
-            52 => 4,
-            53 => 5,
-            54 => 6,
-            55 => 7,
-            56 => 8,
-            57 => 9,
-            65 | 97 => 10, // A
-            66 | 98 => 11, // B
-            67 | 99 => 12, // C
-            68 | 100 => 13,// D
-            69 | 101 => 14,// E
-            70 | 102 => 15,// F
-            _ => 0,        // TODO: ERROR
-          }
-        }).collect::<Vec<u8>>();
+        let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
-      },*/
+      },
       parser::Node::True => {
         compiled.push(Node::True);
       },
@@ -964,6 +912,7 @@ impl Ast {
         }
       },
       // Pass through nodes. These will just be omitted
+      parser::Node::Value{children} |
       parser::Node::Emoji{children} |
       parser::Node::Constant{children} |
       parser::Node::StateMachine{children} |
@@ -1016,20 +965,4 @@ impl Ast {
     compiled
   }
 
-}
-
-fn byte_to_digit(byte: u8) -> Option<u64> {
-  match byte {
-    48 => Some(0),
-    49 => Some(1),
-    50 => Some(2),
-    51 => Some(3),
-    52 => Some(4),
-    53 => Some(5),
-    54 => Some(6),
-    55 => Some(7),
-    56 => Some(8),
-    57 => Some(9),
-    _ => None,
-  }
 }

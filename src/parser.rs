@@ -702,7 +702,7 @@ fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
+  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal))(input)?;
   Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
 }
 
@@ -738,7 +738,7 @@ fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn value(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, value) = alt((empty, quantity, number_literal, boolean_literal, string))(input)?;
+  let (input, value) = alt((empty, number_literal, quantity, decimal_literal, boolean_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
 
