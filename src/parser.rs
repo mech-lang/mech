@@ -13,9 +13,7 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
-  error::VerboseError,
   multi::{many1, many0},
-  character::complete::{char},
 };
 
 use unicode_segmentation::*;
@@ -475,7 +473,7 @@ pub fn ascii_tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, &str>  {
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-      let (input, graphemes) = ascii_tag($byte)(input)?;
+      let (input, _) = ascii_tag($byte)(input)?;
       Ok((input, Node::Token{token: $token, chars: vec![]}))
     }
   )
@@ -780,7 +778,7 @@ fn dot_index(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = period(input)?;
   let (input, identifier) = identifier(input)?;
   let (input, subscript) = opt(single_subscript_index)(input)?;
-  let mut index = match subscript {
+  let index = match subscript {
     Some(subscript) =>vec![subscript, identifier],
     None => vec![Node::Null, identifier],
   };

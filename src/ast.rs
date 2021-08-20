@@ -10,8 +10,7 @@ use crate::lexer::Token;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
-use mech_core::{hash_string, hash_chars, NumberLiteral, NumberLiteralKind, TableId};
-
+use mech_core::{hash_chars, NumberLiteralKind, TableId};
 
 // ## AST Nodes
 
@@ -561,8 +560,8 @@ impl Ast {
       // Quantities
       parser::Node::Quantity{children} => compiled.push(Node::Quantity{children: self.compile_nodes(children)}),
       parser::Node::Number{children} => {
-        let mut result = self.compile_nodes(children);
-        let mut str_result = Vec::new();
+        let result = self.compile_nodes(children);
+        let str_result = Vec::new();
         /*for node in result {
           match node {
             Node::Token{token: Token::Comma, byte} => (),
@@ -576,8 +575,8 @@ impl Ast {
         compiled.push(Node::String{text: str_result});
       },
       parser::Node::FloatingPoint{children} => {
-        let mut result = self.compile_nodes(children);
-        let mut str_result = Vec::new();
+        let result = self.compile_nodes(children);
+        let str_result = Vec::new();
         /*for node in result {
           match node {
             Node::Token{token: Token::Period, byte} => (),
@@ -615,7 +614,7 @@ impl Ast {
       parser::Node::UnorderedList{children} => compiled.push(Node::UnorderedList{children: self.compile_nodes(children)}),
       parser::Node::ListItem{children} => compiled.push(Node::ListItem{children: self.compile_nodes(children)}),
       parser::Node::Title{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let node = match &result[0] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
@@ -623,7 +622,7 @@ impl Ast {
         compiled.push(node);
       },
       parser::Node::Subtitle{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let node = match &result[0] {
           Node::String{text} => Node::Title{text: text.clone()},
           _ => Node::Null,
@@ -631,7 +630,7 @@ impl Ast {
         compiled.push(node);
       },
       parser::Node::SectionTitle{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let node = match &result[0] {
           Node::String{text} => Node::SectionTitle{text: text.clone()},
           _ => Node::Null,
@@ -640,7 +639,7 @@ impl Ast {
       },
       parser::Node::FormattedText{children} |
       parser::Node::Text{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let mut text_node = Vec::new();
         for node in result {
           match node {
@@ -654,7 +653,7 @@ impl Ast {
       },
       parser::Node::Word{children} => {
         let mut word = Vec::new();
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         for node in result {
           match node {
             Node::Token{token, mut chars} => word.append(&mut chars),
@@ -666,7 +665,7 @@ impl Ast {
       parser::Node::TableIdentifier{children} |
       parser::Node::Identifier{children} => {
         let mut word = Vec::new();
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         for node in result {
           match node {
             Node::Token{token, mut chars} => word.append(&mut chars),
@@ -693,7 +692,7 @@ impl Ast {
             Node::Null => last = node,
             _ => {
               let (name, mut children) = match node {
-                Node::Function{name, mut children} => (name.clone(), children.clone()),
+                Node::Function{name, children} => (name.clone(), children.clone()),
                 _ => (Vec::new(), vec![]),
               };
               children.push(last);
@@ -735,7 +734,7 @@ impl Ast {
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
       parser::Node::Function{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
         let mut function_name = Vec::new();
         for node in result {
@@ -748,19 +747,19 @@ impl Ast {
         compiled.push(Node::Function{name: function_name, children: children.clone()});
       },
       /*parser::Node::Negation{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let mut input = vec![Node::Quantity{value: 0, unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "math/subtract".chars().collect(), children: input });
       },*/
       /*parser::Node::Not{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let mut input = vec![Node::Quantity{value: Value::from_bool(true), unit: None}];
         input.push(result[0].clone());
         compiled.push(Node::Function{ name: "logic/xor".chars().collect(), children: input });
       },*/
       parser::Node::String{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         let string = if result.len() > 0 {
           result[0].clone()
         } else {
@@ -769,11 +768,11 @@ impl Ast {
         compiled.push(string);
       },
       parser::Node::NumberLiteral{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
       parser::Node::RationalNumber{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
       parser::Node::DecimalLiteral{chars} => {
@@ -795,7 +794,7 @@ impl Ast {
       parser::Node::True => compiled.push(Node::True),
       parser::Node::False => compiled.push(Node::False),
       parser::Node::ParentheticalExpression{children} => {
-        let mut result = self.compile_nodes(children);
+        let result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
       parser::Node::GreaterThan => compiled.push(Node::GreaterThan),
@@ -841,23 +840,18 @@ impl Ast {
       parser::Node::Body{children} |
       parser::Node::Punctuation{children} |
       parser::Node::DigitOrComma{children} |
-      parser::Node::Comment{children} |
       parser::Node::Any{children} |
       parser::Node::Symbol{children} |
       parser::Node::AddOperator{children} |
-      parser::Node::LogicOperator{children} |
       parser::Node::Subscript{children} |
       parser::Node::DataOrConstant{children} |
       parser::Node::SpaceOrTab{children} |
       parser::Node::Whitespace{children} |
       parser::Node::NewLine{children} |
-      parser::Node::Attribute{children} |
-      parser::Node::Comparator{children} |
       parser::Node::IdentifierOrConstant{children} |
       parser::Node::ProseOrCode{children}|
       parser::Node::StatementOrExpression{children} |
       parser::Node::WatchOperator{children} |
-      parser::Node::Quantity{children} |
       parser::Node::SetOperator{children} |
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
