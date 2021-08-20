@@ -1,21 +1,24 @@
-/*// # Mech Syntax Compiler
+// # Mech Syntax Compiler
 
 // ## Preamble
 
-use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, TableIndex, TableId, Register, NumberLiteral, NumberLiteralKind};
+/*use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, TableIndex, TableId, Register, NumberLiteral, NumberLiteralKind};
 use mech_core::{Quantity, QuantityMath};
+
+use mech_core::{Error, ErrorType};*/
 use mech_core::hash_string;
-use mech_core::{Error, ErrorType};
-use parser;
-use parser::Parser;
-use lexer::Token;
+
+use crate::ast::Ast;
+use crate::parser::Parser;
+use crate::lexer::Token;
+//use super::formatter::Formatter;
+
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use hashbrown::hash_set::{HashSet};
 use hashbrown::hash_map::{HashMap};
-use super::formatter::Formatter;
 use std::sync::Arc;
 use std::mem;
 
@@ -28,7 +31,7 @@ lazy_static! {
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref SET_ANY: u64 = hash_string("set/any");
 }
-
+/*
 // ## Program
 
 // Define a program struct that has everything we need to render a mech program.
@@ -1473,141 +1476,4 @@ impl Compiler {
     compiled
   }
 
-}
-
-// ## Appendix
-
-// ### Encodings
-
-fn byte_to_digit(byte: u8) -> Option<u64> {
-  match byte {
-    48 => Some(0),
-    49 => Some(1),
-    50 => Some(2),
-    51 => Some(3),
-    52 => Some(4),
-    53 => Some(5),
-    54 => Some(6),
-    55 => Some(7),
-    56 => Some(8),
-    57 => Some(9),
-    _ => None,
-  }
-}
-
-fn byte_to_char(byte: u8) -> Option<char> {
-  match byte {
-    10 => Some('\n'),
-    13 => Some('\r'),
-    32 => Some(' '),
-    33 => Some('!'),
-    34 => Some('"'),
-    35 => Some('#'),
-    36 => Some('$'),
-    37 => Some('%'),
-    38 => Some('&'),
-    39 => Some('\''),
-    40 => Some('('),
-    41 => Some(')'),
-    42 => Some('*'),
-    43 => Some('+'),
-    44 => Some(','),
-    45 => Some('-'),
-    46 => Some('.'),
-    47 => Some('/'),
-    48 => Some('0'),
-    49 => Some('1'),
-    50 => Some('2'),
-    51 => Some('3'),
-    52 => Some('4'),
-    53 => Some('5'),
-    54 => Some('6'),
-    55 => Some('7'),
-    56 => Some('8'),
-    57 => Some('9'),
-    58 => Some(':'),
-    59 => Some(';'),
-    60 => Some('<'),
-    61 => Some('='),
-    62 => Some('>'),
-    63 => Some('?'),
-    64 => Some('@'),
-    65 => Some('A'),
-    66 => Some('B'),
-    67 => Some('C'),
-    68 => Some('D'),
-    69 => Some('E'),
-    70 => Some('F'),
-    71 => Some('G'),
-    72 => Some('H'),
-    73 => Some('I'),
-    74 => Some('J'),
-    75 => Some('K'),
-    76 => Some('L'),
-    77 => Some('M'),
-    78 => Some('N'),
-    79 => Some('O'),
-    80 => Some('P'),
-    81 => Some('Q'),
-    82 => Some('R'),
-    83 => Some('S'),
-    84 => Some('T'),
-    85 => Some('U'),
-    86 => Some('V'),
-    87 => Some('W'),
-    88 => Some('X'),
-    89 => Some('Y'),
-    90 => Some('Z'),
-    91 => Some('['),
-    92 => Some('\\'),
-    93 => Some(']'),
-    94 => Some('^'),
-    95 => Some('_'),
-    96 => Some('`'),
-    97 => Some('a'),
-    98 => Some('b'),
-    99 => Some('c'),
-    100 => Some('d'),
-    101 => Some('e'),
-    102 => Some('f'),
-    103 => Some('g'),
-    104 => Some('h'),
-    105 => Some('i'),
-    106 => Some('j'),
-    107 => Some('k'),
-    108 => Some('l'),
-    109 => Some('m'),
-    110 => Some('n'),
-    111 => Some('o'),
-    112 => Some('p'),
-    113 => Some('q'),
-    114 => Some('r'),
-    115 => Some('s'),
-    116 => Some('t'),
-    117 => Some('u'),
-    118 => Some('v'),
-    119 => Some('w'),
-    120 => Some('x'),
-    121 => Some('y'),
-    122 => Some('z'),
-    123 => Some('{'),
-    124 => Some('|'),
-    125 => Some('}'),
-    126 => Some('~'),
-    _ => {
-      //println!("Unhandled Byte {:?}", byte);
-      None
-    },
-  }
-}
-
-// ### Utility Functions
-
-fn magnitude(n: usize) -> u64 {
-  let mut m = 1;
-  for i in 1 .. n {
-    m = m * 10;
-  }
-  m
-}
-*/
+}*/
