@@ -1,5 +1,7 @@
 // # AST
 
+// Takes a parse tree, produces an abstract syntax tree.
+
 // ## Prelude
 
 use crate::parser;
@@ -55,7 +57,7 @@ pub enum Node {
   Transformation{ children: Vec<Node> },
   Identifier{ name: Vec<char>, id: u64 },
   Table{ name: Vec<char>, id: u64 },
-  //Quantity {value: Quantity, unit: Option<Vec<char>>},
+  Quantity {children: Vec<Node>},
   String{ text: Vec<char> },
   Token{token: Token, chars: Vec<char>},
   Add,
@@ -144,7 +146,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::String{text} => {write!(f,"String({:?})\n", text).ok(); None},
     Node::RationalNumber{children} => {write!(f,"RationalNumber\n").ok(); Some(children)},
     Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes).ok(); None},
-    //Node::Quantity{value, unit} => {write!(f,"Quantity({}{:?})\n", value.to_f32(), unit).ok(); None},
+    Node::Quantity{children, ..} => {write!(f,"Quantity\n").ok(); Some(children)},
     Node::Table{name,id} => {write!(f,"Table(#{:?}({:#x}))\n", name, id).ok(); None},
     Node::Define{name,id} => {write!(f,"Define #{:?}({:?})\n", name, id).ok(); None},
     Node::Token{token, chars} => {write!(f,"Token({:?})\n", token).ok(); None},
@@ -232,14 +234,8 @@ impl Ast {
     let mut compiled = Vec::new();
     self.depth += 1;
     match node {
-      parser::Node::Root{children} => {
-        let result = self.compile_nodes(children);
-        self.syntax_tree = Node::Root{children: result};
-      },
-      parser::Node::Fragment{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Fragment{children: result});
-      },
+      parser::Node::Root{children} => self.syntax_tree = Node::Root{children: self.compile_nodes(children)},
+      parser::Node::Fragment{children} => compiled.push(Node::Fragment{children: self.compile_nodes(children)}),
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
         let mut children = vec![];
@@ -252,10 +248,7 @@ impl Ast {
         }
         compiled.push(Node::Program{title, children});
       },
-      parser::Node::Head{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Head{children: result});
-      },
+      parser::Node::Head{children} => compiled.push(Node::Head{children: self.compile_nodes(children)}),
       parser::Node::Section{children} => {
         let result = self.compile_nodes(children);
         let mut children = vec![];
@@ -268,10 +261,7 @@ impl Ast {
         }
         compiled.push(Node::Section{title, children});
       },
-      parser::Node::Block{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Block{children: result});
-      },
+      parser::Node::Block{children} => compiled.push(Node::Block{children: self.compile_nodes(children)}),
       parser::Node::Data{children} => {
         let result = self.compile_nodes(children);
         let mut reversed = result.clone();
@@ -311,10 +301,7 @@ impl Ast {
           }
         }
       },
-      parser::Node::Statement{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Statement{children: result});
-      },
+      parser::Node::Statement{children} => compiled.push(Node::Statement{children: self.compile_nodes(children)}),
       parser::Node::Expression{children} => {
         let result = self.compile_nodes(children);
         for node in result {
@@ -339,21 +326,10 @@ impl Ast {
         }
         compiled.push(Node::Attribute{children});
       },
-      parser::Node::Whenever{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Whenever{children: result});
-      },
-      parser::Node::Wait{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Wait{children: result});
-      },
-      parser::Node::Until{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Until{children: result});
-      },
-      parser::Node::SelectAll => {
-        compiled.push(Node::SelectAll);
-      },
+      parser::Node::Whenever{children} => compiled.push(Node::Whenever{children: self.compile_nodes(children)}),
+      parser::Node::Wait{children} => compiled.push(Node::Wait{children: self.compile_nodes(children)}),
+      parser::Node::Until{children} => compiled.push(Node::Until{children: self.compile_nodes(children)}),
+      parser::Node::SelectAll => compiled.push(Node::SelectAll),
       parser::Node::SetData{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -387,9 +363,7 @@ impl Ast {
         }
         compiled.push(Node::TableColumn{children});
       },
-      parser::Node::Empty => {
-        compiled.push(Node::Empty);
-      },
+      parser::Node::Empty => compiled.push(Node::Empty),
       parser::Node::Binding{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -426,10 +400,7 @@ impl Ast {
           compiled.push(Node::Transformation{children});
         }
       },
-      parser::Node::SelectExpression{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::SelectExpression{children: result});
-      },
+      parser::Node::SelectExpression{children} => compiled.push(Node::SelectExpression{children: self.compile_nodes(children)}),
       parser::Node::InlineTable{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -558,13 +529,8 @@ impl Ast {
         }
         compiled.push(Node::AddRow{children});
       },
-      parser::Node::Index{children} => {
-        compiled.append(&mut self.compile_nodes(children));
-      },
-      parser::Node::DotIndex{children} => {
-        let mut result = self.compile_nodes(children);
-        compiled.push(Node::DotIndex{children: result});
-      },
+      parser::Node::Index{children} => compiled.append(&mut self.compile_nodes(children)),
+      parser::Node::DotIndex{children} => compiled.push(Node::DotIndex{children: self.compile_nodes(children)}),
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -593,22 +559,7 @@ impl Ast {
         };
       },
       // Quantities
-      /*parser::Node::Quantity{children} => {
-        let mut result = self.compile_nodes(children);
-        let mut unit = None;
-        let mut str_result = Vec::new();
-        /*for node in result {
-          match node {
-            Node::Identifier{name: word, id} => unit = Some(word),
-            Node::String{text} => {
-              str_result = format!("{}{}",str_result,text);
-            }
-            _ => (),
-          }
-        }
-        let float_value: f32 = str_result.parse::<f32>().unwrap();
-        compiled.push(Node::Quantity{value: Value::from_f32(float_value), unit});*/
-      },*/
+      parser::Node::Quantity{children} => compiled.push(Node::Quantity{children: self.compile_nodes(children)}),
       parser::Node::Number{children} => {
         let mut result = self.compile_nodes(children);
         let mut str_result = Vec::new();
@@ -655,38 +606,14 @@ impl Ast {
         let node = Node::ParagraphText{text: paragraph};
         compiled.push(node);
       },
-      parser::Node::InlineCode{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::InlineCode{children: result});
-      },
-      parser::Node::CodeBlock{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::CodeBlock{children: result});
-      },
-      parser::Node::MechCodeBlock{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::MechCodeBlock{children: result});
-      },
-      parser::Node::Comment{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Comment{children: result});
-      },
-      parser::Node::InlineMechCode{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::InlineMechCode{children: result});
-      },
-      parser::Node::Paragraph{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::Paragraph{children: result});
-      },
-      parser::Node::UnorderedList{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::UnorderedList{children: result});
-      },
-      parser::Node::ListItem{children} => {
-        let result = self.compile_nodes(children);
-        compiled.push(Node::ListItem{children: result});
-      },
+      parser::Node::InlineCode{children} => compiled.push(Node::InlineCode{children: self.compile_nodes(children)}),
+      parser::Node::CodeBlock{children} => compiled.push(Node::CodeBlock{children: self.compile_nodes(children)}),
+      parser::Node::MechCodeBlock{children} => compiled.push(Node::MechCodeBlock{children: self.compile_nodes(children)}),
+      parser::Node::Comment{children} => compiled.push(Node::Comment{children: self.compile_nodes(children)}),
+      parser::Node::InlineMechCode{children} => compiled.push(Node::InlineMechCode{children: self.compile_nodes(children)}),
+      parser::Node::Paragraph{children} => compiled.push(Node::Paragraph{children: self.compile_nodes(children)}),
+      parser::Node::UnorderedList{children} => compiled.push(Node::UnorderedList{children: self.compile_nodes(children)}),
+      parser::Node::ListItem{children} => compiled.push(Node::ListItem{children: self.compile_nodes(children)}),
       parser::Node::Title{children} => {
         let mut result = self.compile_nodes(children);
         let node = match &result[0] {
@@ -865,14 +792,8 @@ impl Ast {
         let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
         compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
       },
-      parser::Node::True => {
-        compiled.push(Node::True);
-      },
-      parser::Node::Null => {
-      },
-      parser::Node::False => {
-        compiled.push(Node::False);
-      },
+      parser::Node::True => compiled.push(Node::True),
+      parser::Node::False => compiled.push(Node::False),
       parser::Node::ParentheticalExpression{children} => {
         let mut result = self.compile_nodes(children);
         compiled.push(result[0].clone());
@@ -958,6 +879,7 @@ impl Ast {
         }
         compiled.push(Node::Token{token: *token, chars: chars.to_vec()});
       },
+      parser::Node::Null => (),
       _ => println!("Unhandled Parser Node in Compiler: {:?}", node),
     }
 
