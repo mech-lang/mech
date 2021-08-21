@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 pub type Plan = Vec<Rc<RefCell<Transformation>>>;
 
+#[derive(Clone, Debug)]
 pub struct Block {
   id: u64,
   plan: Plan,
