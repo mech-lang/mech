@@ -6,9 +6,9 @@
 use mech_core::{Quantity, QuantityMath};
 
 use mech_core::{Error, ErrorType};*/
-use mech_core::hash_string;
+use mech_core::{hash_string, Block, Transformation, Table, TableId, TableIndex, Value};
 
-use crate::ast::Ast;
+use crate::ast::{Ast, Node};
 use crate::parser::Parser;
 use crate::lexer::Token;
 //use super::formatter::Formatter;
@@ -31,7 +31,7 @@ lazy_static! {
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref SET_ANY: u64 = hash_string("set/any");
 }
-/*
+
 // ## Program
 
 // Define a program struct that has everything we need to render a mech program.
@@ -177,37 +177,39 @@ impl Compiler {
     self.errors.clear();
   }
 
-  pub fn compile_string(&mut self, input: String) -> Vec<Program> {
-    self.text = input.clone();
+  pub fn compile_string(&mut self, input: &String) -> Vec<Program> {
     let mut parser = Parser::new();
-    parser.parse(&input);
+    let mut ast = Ast::new();
+    parser.parse(input);
     self.unparsed = parser.unparsed;
     self.parse_tree = parser.parse_tree.clone();
-    self.build_syntax_tree(parser.parse_tree);
-    let ast = self.syntax_tree.clone();
-    let programs = self.compile(ast);
+    let syntax_tree = ast.build_syntax_tree(&parser.parse_tree);
+    self.syntax_tree = syntax_tree.clone();
+    let programs = self.compile(syntax_tree);
     self.programs = programs.clone();
     programs
   }
 
-  pub fn compile_block_string(&mut self, input: String) -> Node {
-    self.text = input.clone();
+  pub fn compile_block_string(&mut self, input: &String) -> Node {
     let mut parser = Parser::new();
-    parser.parse_block(&input);
+    let mut ast = Ast::new();
+    parser.parse_block(input);
     self.unparsed = parser.unparsed;
     self.parse_tree = parser.parse_tree.clone();
-    let ast = self.build_syntax_tree(parser.parse_tree);
-    ast[0].clone()
+    let syntax_tree = ast.build_syntax_tree(&parser.parse_tree);
+    self.syntax_tree = syntax_tree[0];
+    self.syntax_tree.clone()
   }
 
-  pub fn compile_fragment_string(&mut self, input: String) -> Node {
-    self.text = input.clone();
+  pub fn compile_fragment_string(&mut self, input: &String) -> Node {
     let mut parser = Parser::new();
-    parser.parse_fragment(&input);
+    let mut ast = Ast::new();
+    parser.parse_fragment(input);
     self.unparsed = parser.unparsed;
     self.parse_tree = parser.parse_tree.clone();
-    let ast = self.build_syntax_tree(parser.parse_tree);
-    ast[0].clone()
+    let syntax_tree = ast.build_syntax_tree(&parser.parse_tree);
+    self.syntax_tree = syntax_tree;
+    self.syntax_tree.clone()
   }
 
   pub fn compile(&mut self, input: Node) -> Vec<Program> {
@@ -1468,12 +1470,4 @@ impl Compiler {
     compiled
   }
 
-  pub fn compile_nodes(&mut self, nodes: Vec<parser::Node>) -> Vec<Node> {
-    let mut compiled = Vec::new();
-    for node in nodes {
-      compiled.append(&mut self.build_syntax_tree(node));
-    }
-    compiled
-  }
-
-}*/
+}
