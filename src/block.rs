@@ -1,4 +1,4 @@
-use crate::{Transformation, hash_string};
+use crate::{Transformation, hash_string, TableIndex, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -37,6 +37,13 @@ impl Block {
     }
   }
 
+}
+
+#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+pub struct Register {
+  pub table_id: TableId,
+  pub row: TableIndex,
+  pub column: TableIndex,
 }
 
 /*use table::{Table, TableId, TableIndex};
