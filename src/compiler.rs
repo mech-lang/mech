@@ -6,7 +6,7 @@
 use mech_core::{Quantity, QuantityMath};
 
 use mech_core::{Error, ErrorType};*/
-use mech_core::{hash_string, Block, Transformation, Table, TableId, TableIndex, Value};
+use mech_core::{hash_string, hash_chars, Block, Transformation, Table, TableId, TableIndex};
 
 use crate::ast::{Ast, Node};
 use crate::parser::Parser;
@@ -32,6 +32,265 @@ lazy_static! {
   static ref SET_ANY: u64 = hash_string("set/any");
 }
 
+pub struct Compiler {
+
+
+}
+
+impl Compiler {
+
+  pub fn new() -> Compiler {
+    Compiler {
+
+    }
+  }
+
+  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+    let mut compiled = Vec::new();
+    for node in nodes {
+      let mut result = self.compile_transformation(node);
+      compiled.append(&mut result);
+    }
+    compiled
+  }
+
+  pub fn compile_transformation(&mut self, input: &Node) -> Vec<Transformation> {
+    let mut tfms = vec![];
+    match input {
+      Node::Identifier{name, id} => {
+        tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
+      },
+      Node::NumberLiteral{kind, bytes} => {
+        let table_id = hash_string(&format!("{:?}", input));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(table_id), rows: 1, columns: 1 });
+        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
+      },
+      Node::VariableDefine{children} => {
+        let variable_name = match &children[0] {
+          Node::Identifier{name,..} => {
+            let name_hash = hash_chars(name);
+            //self.strings.insert(name_hash, name.to_string());
+            name_hash
+          }
+          _ => 0, // TODO Error
+        };
+        // Compile input of the variable define
+        let mut input = self.compile_transformation(&children[1]);
+        // If the first element is a reference, remove it
+        match input[0] {
+          Transformation::TableReference{..} => {
+            input.remove(0);
+          }
+          _ => (),
+        }
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          }
+          _ => None,
+        };
+        tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
+        tfms.append(&mut input);
+      },
+      Node::Function{name, children} => {
+        let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
+        let mut arg_tfms = vec![];
+        for child in children {
+          let arg: u64 = match child {
+            Node::FunctionBinding{children} => {
+              match &children[0] {
+                Node::Identifier{name, id} => {
+                  *id
+                },
+                _ => 0,
+              }
+            }
+            _ => 0,
+          };
+          let mut result = self.compile_transformation(&child);
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((arg, *table_id, TableIndex::All, TableIndex::All));
+            },
+            Transformation::Select{table_id, indices, out} => {
+              let (row, column) = indices[0];
+              args.push((arg, *table_id, row, column));
+            }
+            /*Transformation::TableReference{table_id, reference} => {
+              args.push((arg, TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All));
+            }*/
+            _ => (),
+          }
+          arg_tfms.append(&mut result);
+        }
+        let name_hash = hash_chars(name);
+        let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.push(Transformation::Function{
+          name: name_hash,
+          arguments: args,
+          out: (TableId::Local(id), TableIndex::All, TableIndex::All),
+        });
+        tfms.append(&mut arg_tfms);
+      },
+      Node::SelectData{name, id, children} => {
+        let mut indices = vec![];
+        let mut all_indices = vec![];
+        let mut local_tfms = vec![];
+        for child in children {
+          match child {
+            Node::DotIndex{children} => {
+              for child in children {
+                match child {
+                  Node::Null => {
+                    indices.push(TableIndex::All);
+                  }
+                  Node::Identifier{name, id} => {
+                    indices.push(TableIndex::Alias(*id));
+                  }
+                  Node::SubscriptIndex{children} => {
+                    for child in children {
+                      match child {
+                        Node::SelectAll => {
+                          indices.push(TableIndex::All);
+                        }
+                        Node::WheneverIndex{..} => {
+                          let id = hash_string("~");
+                          if indices.len() == 2 && indices[0] == TableIndex::All {
+                            indices[0] = TableIndex::Table(TableId::Local(id));
+                          } else {
+                            indices.push(TableIndex::Table(TableId::Local(id)));
+                          }
+                        }
+                        Node::SelectData{name, id, children} => {
+                          if indices.len() == 2 && indices[0] == TableIndex::All {
+                            indices[0] = TableIndex::Table(*id);
+                          } else {
+                            indices.push(TableIndex::Table(*id));
+                          }
+                        }
+                        Node::Expression{..} => {
+                          let mut result = self.compile_transformation(child);
+                          match &result[1] {
+                            /*Transformation::Constant{table_id, value, unit} => {
+                              if indices.len() == 2 && indices[0] == TableIndex::All {
+                                indices[0] = TableIndex::Index(value.as_u64().unwrap() as usize);
+                              } else {
+                                indices.push(TableIndex::Index(value.as_u64().unwrap() as usize));
+                              }
+                            }*/
+                            Transformation::Function{name, arguments, out} => {
+                              let (output_table_id, output_row, output_col) = out;
+                              if indices.len() == 2 && indices[0] == TableIndex::All {
+                                indices[0] = TableIndex::Table(*output_table_id);
+                              } else {
+                                indices.push(TableIndex::Table(*output_table_id));
+                              }
+                            }
+                            _ => (),
+                          }
+                          local_tfms.append(&mut result);
+                        }
+                        _ => (),
+                      }
+                    }
+                  }
+                  _ => (),
+                }
+              }
+            }
+            Node::SubscriptIndex{children} => {
+              for child in children {
+                match child {
+                  Node::SelectAll => {
+                    indices.push(TableIndex::All);
+                  }
+                  Node::WheneverIndex{..} => {
+                    let id = hash_string("~");
+                    if indices.len() == 2 && indices[0] == TableIndex::All {
+                      indices[0] = TableIndex::Table(TableId::Local(id));
+                    } else {
+                      indices.push(TableIndex::Table(TableId::Local(id)));
+                    }
+                  }
+                  Node::SelectData{name, id, children} => {
+                    if indices.len() == 2 && indices[0] == TableIndex::All {
+                      indices[0] = TableIndex::Table(*id);
+                    } else {
+                      indices.push(TableIndex::Table(*id));
+                    }
+                  }
+                  Node::Expression{..} => {
+                    let mut result = self.compile_transformation(child);
+                    match &result[1] {
+                      /*Transformation::Constant{table_id, value, unit} => {
+                        if indices.len() == 2 && indices[0] == TableIndex::All {
+                          indices[0] = TableIndex::Index(value.as_u64().unwrap() as usize);
+                        } else {
+                          indices.push(TableIndex::Index(value.as_u64().unwrap() as usize));
+                        }
+                      }*/
+                      Transformation::Function{name, arguments, out} => {
+                        let (output_table_id, output_row, output_col) = out;
+                        if indices.len() == 2 && indices[0] == TableIndex::All {
+                          indices[0] = TableIndex::Table(*output_table_id);
+                        } else {
+                          indices.push(TableIndex::Table(*output_table_id));
+                        }
+                      }
+                      _ => (),
+                    }
+                    local_tfms.append(&mut result);
+                  }
+                  _ => (),
+                }
+              }
+              if children.len() == 1 {
+                indices.push(TableIndex::None);
+              }
+            }
+            _ => {
+              indices.push(TableIndex::All);
+              indices.push(TableIndex::All);
+            },
+          }
+          if indices.len() == 2 {
+            all_indices.push((indices[0],indices[1]));
+            indices.clear();
+          }
+        }
+        //all_indices.reverse();
+        let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
+        if all_indices.len() > 1 {
+          tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
+          tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
+        } else {
+          tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
+        }
+        tfms.append(&mut local_tfms);
+      }
+      Node::Program{children, ..} |
+      Node::Section{children, ..} |
+      Node::Transformation{children} |
+      Node::Statement{children} |
+      Node::Block{children} |
+      Node::MathExpression{children} |
+      Node::Expression{children} |
+      Node::Root{children} => {
+        let mut result = self.compile_transformations(children);
+        tfms.append(&mut result);
+      }
+      _ => (),
+    }
+    tfms
+  }
+
+
+
+}
+
+
+/*
 // ## Program
 
 // Define a program struct that has everything we need to render a mech program.
@@ -91,9 +350,9 @@ impl fmt::Debug for Element {
     Ok(())
   }
 }
-
+*/
 // ## Compiler
-
+/*
 #[derive(Debug)]
 pub struct Compiler {
   pub blocks: Vec<Block>,
@@ -376,329 +635,7 @@ impl Compiler {
         let mut block_produced: HashSet<u64> = HashSet::new();
         let mut block_consumed: HashSet<u64> = HashSet::new();
         let mut aliases: HashSet<u64> = HashSet::new();
-        // ----------------------------------------------------------------------------------------------------------
-        // Planner
-        // ----------------------------------------------------------------------------------------------------------
-        // This is the start of a new planner. This will evolve into its own thing I imagine. It's messy and rough now
-        for transformation_node in children {
-          let constraint_text = formatter.format(&transformation_node, false);
-          let mut compiled_tfm = self.compile_transformation(&transformation_node);
-          let mut produces: HashSet<u64> = HashSet::new();
-          let mut consumes: HashSet<u64> = HashSet::new();
-          let this_one = compiled_tfm.clone();
-          for transformation in compiled_tfm {
-            match &transformation {
-              Transformation::TableAlias{table_id, alias} => {
-                produces.insert(*alias);
-                match aliases.insert(*alias) {
-                  true => (),
-                  false => {
-                    // This alias has already been marked as produced, so it is a duplicate
-                    block.errors.insert(Error {
-                      block_id: block.id,
-                      step_text: constraint_text.clone(),
-                      error_type: ErrorType::DuplicateAlias(*alias),
-                    });
-                  },
-                }
-              }
-              Transformation::TableReference{table_id, reference} => {
-                match table_id {
-                  TableId::Local(id) => {
-                    produces.insert(*id);
-                  },
-                  _ => (),
-                };
-              }
-              Transformation::Whenever{table_id, ..} => {
-                produces.insert(hash_string("~"));
-              }
-              Transformation::Constant{table_id, ..} => {
-                match table_id {
-                  TableId::Local(id) => {
-                    produces.insert(*id);
-                  },
-                  _ => (),
-                };
-              }
-              Transformation::NewTable{table_id, ..} => {
-                match table_id {
-                  TableId::Local(id) => {
-                    produces.insert(*id);
-                  },
-                  _ => (),
-                };
-              },
-              Transformation::Select{table_id, row, column, indices, out} => {
-                match table_id {
-                  TableId::Local(id) => {consumes.insert(*id);},
-                  _ => (),
-                }
-                for (row, column) in indices {
-                  match row {
-                    TableIndex::Table(TableId::Local(id)) => {consumes.insert(*id);},
-                    _ => (),
-                  }
-                  match column {
-                    TableIndex::Table(TableId::Local(id)) => {consumes.insert(*id);},
-                    _ => (),
-                  }
-                }
-                match out {
-                  TableId::Local(id) => {
-                    produces.insert(*id);
-                  },
-                  _ => (),
-                };
-              },
-              Transformation::Function{name, arguments, out} => {
-                for (_, table_id, row, column) in arguments {
-                  match row {
-                    TableIndex::Table(TableId::Local(id)) => {consumes.insert(*id);},
-                    _ => (),
-                  }
-                  match table_id {
-                    TableId::Local(id) => {consumes.insert(*id);},
-                    _ => (),
-                  }
-                }
-                let (out_id, row, column) = out;
-                match out_id {
-                  TableId::Local(id) => {produces.insert(*id);},
-                  _ => (),
-                }
-                match row {
-                  TableIndex::Table(TableId::Local(id)) => {
-                    consumes.insert(*id);
-                  }
-                  _ => (),
-                }
-                match column {
-                  TableIndex::Table(TableId::Local(id)) => {
-                    consumes.insert(*id);
-                  }
-                  _ => (),
-                }
-              }
-              _ => (),
-            }
-            transformations.push(transformation.clone());
-          }
-          //transformations.append(&mut functions);
-          // If the constraint doesn't consume anything, put it on the top of the plan. It can run any time.
-          if consumes.len() == 0 || consumes.difference(&produces).cloned().collect::<HashSet<u64>>().len() == 0 {
-            block_produced = block_produced.union(&produces).cloned().collect();
-            plan.insert(0, (constraint_text, produces, consumes, this_one));
-          // Otherwise, the constraint consumes something, and we have to see if it's satisfied
-          } else {
-            let mut satisfied = false;
-            //let (step_node, step_produces, step_consumes, step_constraints) = step;
-            let union: HashSet<u64> = block_produced.union(&produces).cloned().collect();
-            let unsatisfied: HashSet<u64> = consumes.difference(&union).cloned().collect();
-            if unsatisfied.is_empty() {
-              block_produced = block_produced.union(&produces).cloned().collect();
-              plan.push((constraint_text, produces, consumes, this_one));
-            } else {
-              unsatisfied_transformations.push((constraint_text, produces, consumes, this_one));
-            }
-          }
-
-          // Check if any of the unsatisfied constraints have been met yet. If they have, put them on the plan.
-          let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
-            let (text, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
-            let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
-            let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
-            match unsatisfied.is_empty() {
-              true => {
-                block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
-                true
-              }
-              false => false
-            }
-          }).collect::<Vec<_>>();
-          plan.append(&mut now_satisfied);
-        }
-        // Do a final check on unsatisfied constraints that are now satisfied
-        let mut now_satisfied = unsatisfied_transformations.drain_filter(|unsatisfied_transformation| {
-          let (_, unsatisfied_produces, unsatisfied_consumes, _) = unsatisfied_transformation;
-          let union: HashSet<u64> = block_produced.union(&unsatisfied_produces).cloned().collect();
-          let unsatisfied: HashSet<u64> = unsatisfied_consumes.difference(&union).cloned().collect();
-          match unsatisfied.is_empty() {
-            true => {
-              block_produced = block_produced.union(&unsatisfied_produces).cloned().collect();
-              true
-            }
-            false => false
-          }
-        }).collect::<Vec<_>>();
-
-        plan.append(&mut now_satisfied);
         
-        let mut global_out = vec![];
-        let mut block_transformations = vec![];
-        let mut to_copy: HashMap<TableId, Vec<Transformation>> = HashMap::new();
-        let mut new_steps = vec![];
-        for step in plan {
-          let (step_text, _, _, mut step_transformations) = step;
-          let mut rtfms = step_transformations.clone();
-          rtfms.reverse();
-          for tfm in rtfms {
-            match tfm {
-              Transformation::TableReference{table_id, reference} => {
-                let referenced_table_id = reference.as_reference().unwrap();
-                block.plan.push(Transformation::Function{
-                  name: *TABLE_COPY,
-                  arguments: vec![(0,TableId::Local(referenced_table_id), TableIndex::All, TableIndex::All)],
-                  out: (TableId::Global(referenced_table_id), TableIndex::All, TableIndex::All),
-                });
-                match to_copy.get(&TableId::Local(referenced_table_id)) {
-                  Some(aliases) => {
-                    for alias in aliases {
-                      match alias {
-                        Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-                          new_steps.push(Transformation::ColumnAlias{table_id: TableId::Global(*table_id.unwrap()), column_ix: *column_ix, column_alias: *column_alias});                          
-                        }
-                        _ => (),
-                      }
-                    }
-                  }
-                  _ => (),
-                }
-              }
-              Transformation::Whenever{..} => {
-                block.plan.push(tfm.clone());
-              }
-              Transformation::Select{..} => {
-                block.plan.push(tfm.clone());
-              }
-              Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-                let aliases = to_copy.entry(table_id).or_insert(Vec::new());
-                aliases.push(tfm.clone());
-              }
-              Transformation::Function{name, ref arguments, out} => {
-                let (out_id, row, column) = out;
-                match out_id {
-                  TableId::Local(id) => block.plan.push(tfm.clone()),
-                  _ => {
-                    global_out.push(tfm.clone());
-                  },
-                }
-              }
-              _ => (),
-            }
-          }
-          step_transformations.append(&mut new_steps);
-          block_transformations.push((step_text, step_transformations));
-        }
-        block.plan.append(&mut global_out);
-
-        // Here we try to optimize the plan a little bit. The compiler will generate chains of concatenating
-        // tables sometimes where there is no actual work to be done. If we remove these moot intermediate steps,
-        // we can save time. We do this by comparing the input and outputs of consecutive steps. If the two steps
-        // can be condensed into one step, we do this.
-        let mut defunct_tables = vec![];
-        if block.plan.len() > 1 {
-          let mut new_plan = vec![];
-          let mut step_ix = 0;
-          loop {
-            if step_ix >= block.plan.len() - 1 {
-              if step_ix == block.plan.len() - 1 {
-                new_plan.push(block.plan[step_ix].clone());
-              }
-              break;
-            }
-            let this = &block.plan[step_ix];
-            let next = &block.plan[step_ix + 1];
-            match (this, next) {
-              (Transformation::Function{name, arguments, out}, Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
-                if (*name2 == *TABLE_HORZCAT || *name2 == *TABLE_VERTCAT) && arguments2.len() == 1 {
-                  defunct_tables.append(&mut arguments2.clone());
-                  let (_, out_table2, out_row2, out_column2) = arguments2[0];
-                  if *out == (out_table2, out_row2, out_column2) {
-                    let new_step = Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2};
-                    new_plan.push(new_step);
-                    step_ix += 2;
-                    continue;
-                  }
-                }
-                new_plan.push(this.clone());
-              }
-              (Transformation::Select{table_id, row, column, indices, out}, _) => {
-                if indices.len() == 1 {
-                  defunct_tables.push((0, *table_id, TableIndex::None, TableIndex::None));
-                } else {
-                  new_plan.push(this.clone());
-                }
-              }
-              _ => new_plan.push(this.clone()),
-            }
-            step_ix += 1;
-          }
-          block.plan = new_plan;
-
-          // Combine steps with set, e.g.:
-          // 1. math/add(#ball{:,:}, moe-veg-cut-six{:,:}) -> yel-ohi-sod-fil{:,:}
-          // 2. table/set(yel-ohi-sod-fil{:,:}) -> #ball{:,:}
-          // Becomes
-          // 1. math/add(#ball{:,:}, moe-veg-cut-six{:,:}) -> #ball{:,:}
-          let mut include = vec![];
-          let mut exclude: HashSet<Transformation> = HashSet::new();
-          'step_loop: for step in &block.plan {
-            match step {
-              Transformation::Function{name, arguments, out} => {
-                for step2 in &block.plan {
-                  match step2 {
-                    Transformation::Function{name: name2, arguments: arguments2, out: out2} => {
-                      if *name2 == *TABLE_SET  && arguments2.len() == 1 {
-                        let (_, table, row, column) = arguments2[0];
-                        if (table,row,column) == *out && row == TableIndex::All && column == TableIndex::All {
-                          include.push(Transformation::Function{name: *name, arguments: arguments.clone(), out: *out2});
-                          exclude.insert(step2.clone());
-                          exclude.insert(step.clone());
-                          continue 'step_loop;
-                        }
-                      }
-                    }
-                    _ => (),
-                  }
-                }
-                match exclude.contains(&step) {
-                  false => include.push(step.clone()),
-                  _ => (),
-                }
-              }
-              _ => {
-                match exclude.contains(&step) {
-                  false => include.push(step.clone()),
-                  _ => (),
-                }
-              },
-            }
-          }
-          //block.plan = include;
-        }
-        /*// Remove all defunct tables from the transformation list. These would be tables that were written to by
-        // some function that was removed from the previous optimization pass
-        let defunct_table_ids = defunct_tables.iter().map(|(_, table_id, _, _)| table_id).collect::<HashSet<&TableId>>();
-        let mut new_transformations = vec![];
-        for (tfm_text, steps) in &block_transformations {
-          let mut new_steps = vec![];
-          for step in steps {
-            match step {
-              Transformation::NewTable{table_id, ..} => {
-                match defunct_table_ids.contains(&table_id) {
-                  true => continue,
-                  false => new_steps.push(step.clone()),
-                }
-              }
-              _ => new_steps.push(step.clone()),
-            }
-          }
-          new_transformations.push((tfm_text.clone(), new_steps));
-        }
-        block_transformations = new_transformations;*/
-        // End Planner ----------------------------------------------------------------------------------------------------------
-
         for transformation in block_transformations {
           block.register_transformations(transformation);
         }
@@ -736,6 +673,7 @@ impl Compiler {
 
   pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
     let mut transformations: Vec<Transformation> = Vec::new();
+    /*
     match node {
       // An inline table is like x = [a: 1, b: 2, c :3]
       Node::InlineTable{children} => {
@@ -1436,15 +1374,15 @@ impl Compiler {
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: value, unit: 0});
       }
-      Node::Quantity{value, unit} => {
-        let table = hash_string(&format!("Quantity-{:?}{:?}", value.to_f32(), unit));
+      Node::Quantity{children} => {
+       /* let table = hash_string(&format!("Quantity-{:?}{:?}", value.to_f32(), unit));
 
         let unit = match unit {
           Some(unit_string) => hash_string(unit_string),
           None => 0,
         };
         transformations.push(Transformation::NewTable{table_id: TableId::Local(table), rows: 1, columns: 1});
-        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});
+        transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: *value, unit: unit.clone()});*/
       }
       Node::True => {
         let table = hash_string(&format!("True"));
@@ -1457,7 +1395,7 @@ impl Compiler {
         transformations.push(Transformation::Constant{table_id: TableId::Local(table), value: 0x4000000000000000, unit: 0});
       }
       _ => (),
-    }
+    }*/
     transformations
   }
 
@@ -1471,3 +1409,4 @@ impl Compiler {
   }
 
 }
+*/
