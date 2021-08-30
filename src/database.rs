@@ -1,7 +1,7 @@
 use crate::{Table,hash_string};
 use hashbrown::HashMap;
 
-pub type Change = (u64, Vec<(usize, usize, f64)>);
+pub type Change = (u64, Vec<(usize, usize, f32)>);
 
 pub type Transaction = Vec<Change>;
 
