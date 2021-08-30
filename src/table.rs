@@ -37,6 +37,44 @@ impl fmt::Debug for TableId {
   }
 }
 
+// ### TableIndex
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TableIndex {
+  Index(usize),
+  Alias(u64),
+  Table(TableId),
+  All,
+  None,
+}
+
+impl TableIndex {
+  pub fn unwrap(&self) -> usize {
+    match self {
+      TableIndex::Index(ix) => *ix,
+      TableIndex::Alias(alias) => {
+        alias.clone() as usize
+      },
+      TableIndex::Table(table_id) => *table_id.unwrap() as usize,
+      TableIndex::None |
+      TableIndex::All => 0,
+    }
+  }
+}
+
+impl fmt::Debug for TableIndex {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
+      &TableIndex::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
+      &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &TableIndex::All => write!(f, "IxAll"),
+      &TableIndex::None => write!(f, "IxNone"),
+    }
+  }
+}
+
 // ## Table
 
 #[derive(Clone)]
@@ -62,7 +100,7 @@ impl Table {
     table
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Option<f64> {
+  pub fn get(&self, row: usize, col: usize) -> Option<f32> {
     if col < self.cols && row < self.rows {
       Some(self.data[col].borrow()[row])
     } else {
@@ -70,7 +108,7 @@ impl Table {
     }
   }
 
-  pub fn set(&self, row: usize, col: usize, val: f64) -> Result<(),()> {
+  pub fn set(&self, row: usize, col: usize, val: f32) -> Result<(),()> {
     if col < self.cols && row < self.rows {
       self.data[col].borrow_mut()[row] = val;
       Ok(())
