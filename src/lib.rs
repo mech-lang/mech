@@ -19,8 +19,8 @@ mod database;
 mod table;
 mod transformation;
 //mod operations;
-//mod quantities;
-//mod errors;
+//mod quantity;
+//mod error;
 mod core;
 mod block;
 mod value;
@@ -36,14 +36,14 @@ pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
 pub use self::operations::{MechFunction, Argument};*/
 
-pub use self::table::{Table, TableId};
+pub use self::table::{Table, TableId, TableIndex};
 pub use self::database::{Database, Transaction};
 pub use self::transformation::{Transformation};
-pub use self::block::Block;
+pub use self::block::{Block, Register};
 pub use self::core::Core;
-pub use self::value::{NumberLiteral, NumberLiteralKind};
+pub use self::value::{Value, NumberLiteral, NumberLiteralKind};
 
-pub type Column = Rc<RefCell<Vec<f64>>>;
+pub type Column = Rc<RefCell<Vec<f32>>>;
 
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
