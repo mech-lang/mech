@@ -55,8 +55,8 @@ fn main() {
     // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
     let balls = Table::new(hash_string("balls"),n,4);
     for i in 0..n {
-      balls.set(i,0,i as f64);
-      balls.set(i,1,i as f64);
+      balls.set(i,0,i as f32);
+      balls.set(i,1,i as f32);
       balls.set(i,2,3.0);
       balls.set(i,3,4.0);
     }
@@ -131,22 +131,22 @@ fn main() {
   core.insert_block(block3);
 
   for i in 0..200000 {
-    let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f64)])];
+    let txn = vec![(hash_string("time/timer"), vec![(0, 1, i as f32)])];
     let start_ns = time::precise_time_ns();
 
     core.process_transaction(&txn);
 
     let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f64;
+    let time = (end_ns - start_ns) as f32;
     total_time.push_back(time);
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
-    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
+    let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
 
   let end_ns0 = time::precise_time_ns();
-  let time = (end_ns0 - start_ns0) as f64;
+  let time = (end_ns0 - start_ns0) as f32;
   println!("{:0.4?} s", time / 1e9);
 }

@@ -4,8 +4,7 @@
 
 // ## Prelude
 
-use table::{TableIndex};
-use block::Transformation;
+use crate::table::{TableIndex};
 
 // ## The Error Struct
 

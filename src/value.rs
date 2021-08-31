@@ -5,7 +5,7 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-//use quantities::{Quantity, ToQuantity, QuantityMath};
+//use crate::quantity::{Quantity, ToQuantity, QuantityMath};
 //use errors::{ErrorType};
 use crate::{hash_string};
 
@@ -60,11 +60,8 @@ impl NumberLiteral {
   }
 }
 
-
-/*
-
 // ## Value Methods
-
+/*
 pub trait ValueMethods {
   fn empty() -> Value;
   fn from_string(string: &String) -> Value;
@@ -95,7 +92,7 @@ pub trait ValueMethods {
   fn is_number_literal(&self) -> bool;
   fn is_number_literal_interned(&self) -> bool;
   fn len(&self) -> Option<usize>;
-  fn equal(&self, other: Value) -> Result<Value, ErrorType>;
+  /*fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
@@ -108,7 +105,7 @@ pub trait ValueMethods {
   fn power(&self, other: Value) -> Result<Value, ErrorType>;
   fn and(&self, other: Value) -> Result<Value, ErrorType>;
   fn or(&self, other: Value) -> Result<Value, ErrorType>;
-  fn xor(&self, other: Value) -> Result<Value, ErrorType>;
+  fn xor(&self, other: Value) -> Result<Value, ErrorType>;*/
 }
 
 
@@ -334,7 +331,7 @@ impl ValueMethods for Value {
       _ => None,
     }
   }
-
+/*
   fn equal(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.value_type(), other.value_type()) {
       (ValueType::Boolean, ValueType::Boolean) => {
@@ -447,8 +444,6 @@ impl ValueMethods for Value {
       (Some(q), Some(r)) => Ok(Value::from_bool(q ^ r)),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
-  }
+  }*/
 
-}
-
-*/
+}*/

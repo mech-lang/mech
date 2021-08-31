@@ -6,7 +6,7 @@
 // E: Exponent [2^8]
 // F: Fraction [2^23] 
 
-use errors::{ErrorType};
+use crate::error::{ErrorType};
 #[cfg(feature = "no-std")] use alloc::string::String;
 //#[cfg(feature = "no-std")] use num::traits::float::FloatCore;
 #[cfg(feature = "no-std")] use libm::F64Ext;
@@ -61,17 +61,17 @@ impl ToQuantity for u64 {
 
 pub trait QuantityMath {
   fn negate(self) -> Quantity;
-  fn add(self, Quantity) -> Quantity;
-  fn sub(self, Quantity) -> Quantity;
-  fn multiply(self, Quantity) -> Quantity;
-  fn divide(self, Quantity) -> Quantity;
-  fn power(self, Quantity) -> Quantity;
-  fn less_than(self, Quantity) -> bool;
-  fn greater_than(self, Quantity) -> bool;
-  fn less_than_equal(self, Quantity) -> bool;
-  fn greater_than_equal(self, Quantity) -> bool;
-  fn equal(self, Quantity) -> bool;
-  fn not_equal(self, Quantity) -> bool;
+  fn add(self, q: Quantity) -> Quantity;
+  fn sub(self, q: Quantity) -> Quantity;
+  fn multiply(self, q: Quantity) -> Quantity;
+  fn divide(self, q: Quantity) -> Quantity;
+  fn power(self, q: Quantity) -> Quantity;
+  fn less_than(self, q: Quantity) -> bool;
+  fn greater_than(self, q: Quantity) -> bool;
+  fn less_than_equal(self, q: Quantity) -> bool;
+  fn greater_than_equal(self, q: Quantity) -> bool;
+  fn equal(self, q: Quantity) -> bool;
+  fn not_equal(self, q: Quantity) -> bool;
   fn to_string(self) -> String;
   fn format(self) -> String;
   fn to_f32(self) -> f32;
