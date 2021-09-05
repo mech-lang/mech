@@ -32,20 +32,46 @@ lazy_static! {
   static ref SET_ANY: u64 = hash_string("set/any");
 }
 
+fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
+  let mut blocks = Vec::new();
+  for n in nodes {
+    match n {
+      Node::Block{..} => blocks.push(n.clone()),
+      Node::Root{children} |
+      Node::Body{children} |
+      Node::Section{children,..} |
+      Node::Program{children,..} |
+      Node::MechCodeBlock{children} => {
+        blocks.append(&mut get_blocks(children));
+      }
+      _ => (), 
+    }
+  }
+  blocks
+}
+
 pub struct Compiler {
-
-
 }
 
 impl Compiler {
 
   pub fn new() -> Compiler {
-    Compiler {
-
-    }
+    Compiler {}
   }
 
-  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Vec<Block> {
+    let mut blocks = Vec::new();
+    for b in get_blocks(nodes) {
+      let mut block = Block::new();
+      for tfm in self.compile_transformation(&b) {
+        block.add_tfm(tfm);
+      }
+      blocks.push(block);
+    }
+    blocks
+  }
+
+  pub fn compile_transformations(&self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
     for node in nodes {
       let mut result = self.compile_transformation(node);
@@ -54,7 +80,7 @@ impl Compiler {
     compiled
   }
 
-  pub fn compile_transformation(&mut self, input: &Node) -> Vec<Transformation> {
+  pub fn compile_transformation(&self, input: &Node) -> Vec<Transformation> {
     let mut tfms = vec![];
     match input {
       Node::Identifier{name, id} => {
