@@ -5,15 +5,22 @@ pub type Change = (u64, Vec<(usize, usize, f32)>);
 
 pub type Transaction = Vec<Change>;
 
+#[derive(Debug, Clone)]
 pub struct Database {
   tables: HashMap<u64,Table>,
+  table_alias_to_id: HashMap<u64,u64>,
 }
 
 impl Database {
   pub fn new() -> Database {
     Database {
       tables: HashMap::new(),
+      table_alias_to_id: HashMap::new(),
     }
+  }
+
+  pub fn insert_alias(&mut self, alias: u64, table_id: u64) -> Option<u64> {
+    self.table_alias_to_id.insert(alias, table_id)
   }
 
   pub fn insert_table(&mut self, table: Table) -> Option<Table> {
@@ -21,11 +28,27 @@ impl Database {
   }
 
   pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
-    self.tables.get(&hash_string(table_name))
+    let alias = hash_string(table_name);
+    match self.table_alias_to_id.get(&alias) {
+      Some(table_id) => {
+        self.tables.get(&table_id)
+      }
+      _ => None
+    }
   }
 
   pub fn get_table_by_id(&mut self, table_id: &u64) -> Option<&Table> {
-    self.tables.get(table_id)
+    match self.tables.get(table_id) {
+      None => {
+        match self.table_alias_to_id.get(&table_id) {
+          None => None,
+          Some(table_id) => {
+            self.tables.get(table_id)
+          }
+        }
+      }
+      x => x
+    }
   }
 
 }
