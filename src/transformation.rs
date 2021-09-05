@@ -21,6 +21,8 @@ pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
 #[derive(Debug)]
 pub enum Transformation {
+  AddSSIP((OutF64, ArgF64)),
+  AddVVIP((OutF64, ArgF64)),
   ParAddVVIP((OutF64, ArgF64)),  
   ParAddVSIP((OutF64, ArgF64)),
   ParMultiplyVS((ArgF64, ArgF64, OutF64)),
@@ -49,6 +51,8 @@ impl Transformation {
   pub fn solve(&mut self) {
     match &*self {
       // MATH
+      Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
+      Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVSIP((lhs, rhs)) => { 
         let rhs = rhs.borrow()[0];
