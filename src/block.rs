@@ -1,4 +1,4 @@
-use crate::{Transformation, hash_string, TableIndex, TableId};
+use crate::{Transformation, hash_string, Table, TableIndex, Database, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -7,6 +7,7 @@ pub type Plan = Vec<Rc<RefCell<Transformation>>>;
 #[derive(Clone, Debug)]
 pub struct Block {
   id: u64,
+  tables: Vec<Table>,
   plan: Plan,
 }
 
@@ -14,6 +15,7 @@ impl Block {
   pub fn new() -> Block {
     Block {
       id: 0,
+      tables: Vec::new(),
       plan: Vec::new(),
     }
   }
@@ -28,7 +30,23 @@ impl Block {
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) {
-    self.plan.push(Rc::new(RefCell::new(tfm)));
+    match tfm {
+      Transformation::NewTable{table_id, rows, columns} => {
+        match table_id {
+          TableId::Local(id) => {
+            let table = Table::new(id, rows, columns);
+            self.tables.push(table);
+          }
+          TableId::Global(id) => () 
+        }
+      },
+      Transformation::TableAlias{..} => (),
+      Transformation::NumberLiteral{kind, bytes} => {
+        let mut table = self.tables.last().unwrap();
+        table.set(0,0,bytes[0] as f32);
+      },
+      _ => self.plan.push(Rc::new(RefCell::new(tfm))),
+    }
   }
 
   pub fn solve(&mut self) {
