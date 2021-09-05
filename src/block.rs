@@ -1,13 +1,31 @@
-use crate::{Transformation, hash_string, Table, TableIndex, Database, TableId};
+// ## Block
+
+// Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
+// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
+// them or perform computations on them. Blocks can be thought of as pure functions where the input and
+// output are tables. Blocks have their own internal table store. Local tables can be defined within a
+// block, which allows the programmer to break a computation down into steps. The result of the computation
+// is then output to one or more global tables, which triggers the execution of other blocks in the network.
+
+// ## Prelude
+
+use crate::{Transformation, humanize, hash_string, Table, TableIndex, Database, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
+use hashbrown::HashMap;
 
 pub type Plan = Vec<Rc<RefCell<Transformation>>>;
+
+// ## Block
+
+lazy_static! {
+  static ref MATH_ADD: u64 = hash_string("math/add");
+}
 
 #[derive(Clone, Debug)]
 pub struct Block {
   id: u64,
-  tables: Vec<Table>,
+  tables: Database,
   plan: Plan,
 }
 
@@ -15,7 +33,7 @@ impl Block {
   pub fn new() -> Block {
     Block {
       id: 0,
-      tables: Vec::new(),
+      tables: Database::new(),
       plan: Vec::new(),
     }
   }
@@ -35,16 +53,26 @@ impl Block {
         match table_id {
           TableId::Local(id) => {
             let table = Table::new(id, rows, columns);
-            self.tables.push(table);
+            self.tables.insert_table(table);
           }
           TableId::Global(id) => () 
         }
       },
-      Transformation::TableAlias{..} => (),
-      Transformation::NumberLiteral{kind, bytes} => {
-        let mut table = self.tables.last().unwrap();
-        table.set(0,0,bytes[0] as f32);
+      Transformation::TableAlias{table_id, alias} => {
+        self.tables.insert_alias(alias, *table_id.unwrap());
       },
+      Transformation::NumberLiteral{kind, bytes} => {
+
+      },
+      Transformation::Function{name, ref arguments, out} => {
+        if name == *MATH_ADD {
+          for (_, table_id, _, _) in arguments {
+            //println!("{:?}", self.tables.get_table_by_id(table_id.unwrap()));
+          }
+        } else { 
+          self.plan.push(Rc::new(RefCell::new(tfm)));
+        }
+      } 
       _ => self.plan.push(Rc::new(RefCell::new(tfm))),
     }
   }
@@ -89,14 +117,7 @@ lazy_static! {
   static ref SECONDS: u64 = hash_string("s");
 }
 
-// ## Block
 
-// Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
-// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
-// them or perform computations on them. Blocks can be thought of as pure functions where the input and
-// output are tables. Blocks have their own internal table store. Local tables can be defined within a
-// block, which allows the programmer to break a computation down into steps. The result of the computation
-// is then output to one or more global tables, which triggers the execution of other blocks in the network.
 #[derive(Clone)]
 pub struct Block {
   pub id: u64,
