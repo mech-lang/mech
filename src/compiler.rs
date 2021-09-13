@@ -87,9 +87,9 @@ impl Compiler {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
       Node::NumberLiteral{kind, bytes} => {
-        let table_id = hash_string(&format!("{:?}", input));
-        tfms.push(Transformation::NewTable{table_id: TableId::Local(table_id), rows: 1, columns: 1 });
-        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
+        let table_id = TableId::Local(hash_string(&format!("{:?}", input)));
+        tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
+        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec(), table_id: table_id, row: 0, column: 0});
       },
       Node::VariableDefine{children} => {
         let variable_name = match &children[0] {
