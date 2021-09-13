@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{Transformation, humanize, hash_string, Table, TableIndex, Database, TableId};
+use crate::{Transformation, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -61,13 +61,61 @@ impl Block {
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(alias, *table_id.unwrap());
       },
-      Transformation::NumberLiteral{kind, bytes} => {
-
+      Transformation::Select{..} => {}
+      Transformation::NumberLiteral{kind, bytes, table_id, row, column} => {
+        match self.tables.get_table_by_id(table_id.unwrap()) {
+          Some(table) => {
+            table.set(row,column, bytes[0] as f32);
+          }
+          _ => (),
+        }
       },
       Transformation::Function{name, ref arguments, out} => {
         if name == *MATH_ADD {
-          for (_, table_id, _, _) in arguments {
-            //println!("{:?}", self.tables.get_table_by_id(table_id.unwrap()));
+          let mut arg_dims = Vec::new();
+          for (_, table_id, row, column) in arguments {
+            match self.tables.get_table_by_id(table_id.unwrap()) {
+              Some(table) => {
+                let dims = match (row, column) {
+                  (TableIndex::All, TableIndex::All) => (table.rows, table.cols),
+                  _ => (0,0),
+                };
+                arg_dims.push(dims);
+              }
+              _ => (),
+            }
+          }
+          // Categorize arguments by shape
+          let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
+            match dims {
+              (1,1) => TableShape::Scalar,
+              _ => TableShape::Pending,
+            }
+          }).collect();
+          // Now decide on the correct tfm based on the shape
+          match (&arg_shapes[0],&arg_shapes[1]) {
+            (TableShape::Scalar, TableShape::Scalar) => {
+              let mut argument_columns = vec![];
+              for (_, table_id, _, _) in arguments {
+                match self.tables.get_table_by_id(table_id.unwrap()) {
+                  Some(table) => {
+                    let mut column = table.get_column_unchecked(0);
+                    argument_columns.push(column);
+                  }
+                  _ => (),
+                }
+              }
+              let (out_table_id, _, _) = out;
+              let out_column = match self.tables.get_table_by_id(out_table_id.unwrap()) {
+                Some(table) => {
+                  Some(table.get_column_unchecked(0))
+                }
+                _ => None,
+              };
+              let tfm = Transformation::AddSS((argument_columns[0].clone(), argument_columns[1].clone(), out_column.unwrap()));
+              self.plan.push(Rc::new(RefCell::new(tfm)));
+            }
+            _ => (),
           }
         } else { 
           self.plan.push(Rc::new(RefCell::new(tfm)));

@@ -21,6 +21,7 @@ pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
 #[derive(Debug)]
 pub enum Transformation {
+  AddSS((ArgF64, ArgF64, OutF64)),
   AddSSIP((OutF64, ArgF64)),
   AddVVIP((OutF64, ArgF64)),
   ParAddVVIP((OutF64, ArgF64)),  
@@ -32,9 +33,9 @@ pub enum Transformation {
   ParCSGreaterThanVS((ArgF64,f32,f32)),
   ParSetVS((ArgBool,f32,OutF64)),
   ParSetVV((ArgBool,ArgF64,OutF64)),
+
   Identifier{ name: Vec<char>, id: u64 },
-  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8> },
-  
+  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>, table_id: TableId, row: usize, column: usize },
   TableAlias{table_id: TableId, alias: u64},
   TableReference{table_id: TableId, reference: Value},
   NewTable{table_id: TableId, rows: usize, columns: usize },
@@ -51,6 +52,9 @@ impl Transformation {
   pub fn solve(&mut self) {
     match &*self {
       // MATH
+      Transformation::AddSS((lhs, rhs, out)) => { 
+        (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]
+      }
       Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
       Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }

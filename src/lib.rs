@@ -36,7 +36,7 @@ pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
 pub use self::operations::{MechFunction, Argument};*/
 
-pub use self::table::{Table, TableId, TableIndex};
+pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Transaction};
 pub use self::transformation::{Transformation};
 pub use self::block::{Block, Register};

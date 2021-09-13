@@ -1,8 +1,18 @@
+// ## Core
+
+// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the
+// subparts of Mech, including the database (defines the what) and the runtime (defines the how).
+// The core accepts transactions and applies those to the database. Updated tables in the database
+// trigger computation in the runtime, which can further update the database. Execution terminates
+// when a steady state is reached, or an iteration limit is reached (whichever comes first). The
+// core then waits for further transactions.
+
 use crate::{Database, Block, Table, Transaction};
 use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Clone, Debug)]
 pub struct Core {
   blocks: Vec<Rc<RefCell<Block>>>,
   database: Database,
@@ -56,7 +66,8 @@ impl Core {
     self.database.get_table(table_name)
   }
 
-  pub fn insert_block(&mut self, block: Block) {
+  pub fn insert_block(&mut self, mut block: Block) {
+    block.solve();
     self.blocks.push(Rc::new(RefCell::new(block)));
   }
 
@@ -115,14 +126,7 @@ use operations::{
 };
 use ::hash_string;
 
-// ## Core
 
-// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the
-// subparts of Mech, including the database (defines the what) and the runtime (defines the how).
-// The core accepts transactions and applies those to the database. Updated tables in the database
-// trigger computation in the runtime, which can further update the database. Execution terminates
-// when a steady state is reached, or an iteration limit is reached (whichever comes first). The
-// core then waits for further transactions.
 pub struct Core {
   pub runtime: Runtime,
   pub database: Arc<RefCell<Database>>,
