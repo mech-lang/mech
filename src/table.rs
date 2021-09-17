@@ -116,6 +116,7 @@ impl Table {
       match &self.data[col] {
         Column::F32(column_f32) => Some(Value::F32(column_f32.borrow()[row])),
         Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
+        Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
         Column::Empty => None,
       }
     } else {
