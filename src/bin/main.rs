@@ -30,7 +30,7 @@ fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   let mut total_time = VecDeque::new();  
   let start_ns0 = time::precise_time_ns();
-  let n = 3 as usize;
+  let n = 1e6 as usize;
 
   // Create a core
   let mut core = Core::new();
@@ -70,11 +70,9 @@ fn main() {
     core.insert_table(balls.clone());
   }
 
-  println!("{:?}", core);
-
   // Table
   let (x,y,vx,vy) = {
-    let balls = core.get_table("balls").unwrap().borrow();
+    let balls = core.get_table_by_id(hash_string("balls")).unwrap().borrow();
     (balls.get_column_unchecked(0),
      balls.get_column_unchecked(1),
      balls.get_column_unchecked(2),
@@ -82,12 +80,12 @@ fn main() {
   };
 
   let g = {
-    let gravity = core.get_table("gravity").unwrap().borrow();
+    let gravity = core.get_table_by_id(hash_string("gravity")).unwrap().borrow();
     gravity.get_column_unchecked(0)
   };
 
   let c1 = {
-    let const1 = core.get_table("-0.8").unwrap().borrow();
+    let const1 = core.get_table_by_id(hash_string("-0.8")).unwrap().borrow();
     const1.get_column_unchecked(0)
   };
   

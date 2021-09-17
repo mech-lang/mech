@@ -66,6 +66,10 @@ impl Core {
     self.database.get_table(table_name)
   }
 
+  pub fn get_table_by_id(&mut self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
+    self.database.get_table_by_id(&table_id)
+  }
+
   pub fn insert_block(&mut self, mut block: Block) {
     block.solve();
     self.blocks.push(Rc::new(RefCell::new(block)));
