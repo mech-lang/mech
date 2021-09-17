@@ -1,13 +1,15 @@
-use crate::{Table,hash_string};
+use crate::{Table, hash_string, Value, Column};
 use hashbrown::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-pub type Change = (u64, Vec<(usize, usize, f32)>);
+pub type Change = (u64, Vec<(usize, usize, Value)>);
 
 pub type Transaction = Vec<Change>;
 
 #[derive(Debug, Clone)]
 pub struct Database {
-  tables: HashMap<u64,Table>,
+  tables: HashMap<u64,Rc<RefCell<Table>>>,
   table_alias_to_id: HashMap<u64,u64>,
 }
 
@@ -23,21 +25,21 @@ impl Database {
     self.table_alias_to_id.insert(alias, table_id)
   }
 
-  pub fn insert_table(&mut self, table: Table) -> Option<Table> {
-    self.tables.insert(table.id, table)
+  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
+    self.tables.insert(table.id, Rc::new(RefCell::new(table)))
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
+  pub fn get_table(&self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
     let alias = hash_string(table_name);
     match self.table_alias_to_id.get(&alias) {
       Some(table_id) => {
-        self.tables.get(&table_id)
+        self.tables.get(table_id)
       }
       _ => None
     }
   }
 
-  pub fn get_table_by_id(&mut self, table_id: &u64) -> Option<&Table> {
+  pub fn get_table_by_id(&self, table_id: &u64) -> Option<&Rc<RefCell<Table>>> {
     match self.tables.get(table_id) {
       None => {
         match self.table_alias_to_id.get(&table_id) {
@@ -51,6 +53,16 @@ impl Database {
     }
   }
 
+  pub fn get_table_by_id_mut(&self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
+    let table_id = match self.tables.contains_key(&table_id) {
+      true => table_id,
+      false => match self.table_alias_to_id.get(&table_id) {
+        Some(table_id) => *table_id,
+        None => return None,
+      }
+    };
+    self.tables.get(&table_id)
+  }
 }
 
 

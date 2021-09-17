@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, humanize};
+use crate::{Column, ValueKind, ColumnU8, ColumnF32, humanize, Value};
 
 // ### Table Id
 
@@ -106,25 +106,85 @@ impl Table {
       data: Vec::with_capacity(cols),
     };
     for col in 0..cols {
-      table.data.push(Rc::new(RefCell::new(vec![0.0; rows])));
+      table.data.push(Column::Empty);
     }
     table
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Option<f32> {
+  pub fn get(&self, row: usize, col: usize) -> Option<Value> {
     if col < self.cols && row < self.rows {
-      Some(self.data[col].borrow()[row])
+      match &self.data[col] {
+        Column::F32(column_f32) => Some(Value::F32(column_f32.borrow()[row])),
+        Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
+        Column::Empty => None,
+      }
     } else {
       None
     }
   }
 
-  pub fn set(&self, row: usize, col: usize, val: f32) -> Result<(),()> {
+  pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),()> {
     if col < self.cols && row < self.rows {
-      self.data[col].borrow_mut()[row] = val;
+      match (&self.data[col], val) {
+        (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::Empty, Value::U8(value_u8)) => {
+          //let column: ColumnU8 = Rc::new(RefCell::new(Vec::new()));
+          //self.data[col] = Column::U8(column);
+        },
+        _ => (),
+      }
       Ok(())
     } else {
       Err(())
+    }
+  }
+
+  pub fn set_mut(&mut self, row: usize, col: usize, val: Value) -> Result<(),()> {
+    if col < self.cols && row < self.rows {
+      match (&mut self.data[col], val) {
+        (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::Empty, Value::U8(value_u8)) => {
+          let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, Value::F32(value_f32)) => {
+          let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+        },
+        _ => (),
+      }
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn set_col_kind(&mut self, col: usize, val: ValueKind) -> Result<(),()> {
+    if col < self.cols {
+      match (&mut self.data[col], val) {
+        (Column::Empty, ValueKind::U8) => {
+          let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, ValueKind::F32) => {
+          let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+        },
+        _ => (),
+      }
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn get_column(&self, col: usize) -> Option<Column> {
+    if col < self.cols { 
+      Some(self.data[col].clone())
+    } else {
+      None
     }
   }
 
@@ -140,7 +200,7 @@ impl fmt::Debug for Table {
     for row in 0..self.rows {
       write!(f,"│ ")?;
       for col in 0..self.cols {
-        let v = self.get(row,col).unwrap();
+        let v = self.get(row,col);
         write!(f,"{:0.2?} │ ", v)?;
       }
       write!(f,"\n")?;

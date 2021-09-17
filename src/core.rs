@@ -35,7 +35,7 @@ impl Core {
       match self.database.get_table_by_id(table_id) {
         Some(table) => {
           for (row,col,val) in adds {
-            match table.set(*row, *col, *val) {
+            match table.borrow().set(*row, *col, *val) {
               Err(_) => {
                 // Index out of bounds.
                 return Err(());
@@ -58,11 +58,11 @@ impl Core {
     Ok(())
   }
 
-  pub fn insert_table(&mut self, table: Table) -> Option<Table> {
+  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
     self.database.insert_table(table)
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Option<&Table> {
+  pub fn get_table(&mut self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
     self.database.get_table(table_name)
   }
 

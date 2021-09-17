@@ -1,4 +1,4 @@
-use crate::{Column, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnF32, ValueKind, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -14,25 +14,25 @@ use std::thread;
 // set   vector-scalar          -- ix: &Vec<bool>      x:   f64          out: &mut Vec<f64>
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
-pub type ArgF64 = Column;
+pub type ArgF32 = ColumnF32;
 pub type ArgBool = Rc<RefCell<Vec<bool>>>;
-pub type OutF64 = Column;
+pub type OutF32 = ColumnF32;
 pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
 #[derive(Debug)]
 pub enum Transformation {
-  AddSS((ArgF64, ArgF64, OutF64)),
-  AddSSIP((OutF64, ArgF64)),
-  AddVVIP((OutF64, ArgF64)),
-  ParAddVVIP((OutF64, ArgF64)),  
-  ParAddVSIP((OutF64, ArgF64)),
-  ParMultiplyVS((ArgF64, ArgF64, OutF64)),
+  AddSS((ArgF32, ArgF32, OutF32)),
+  AddSSIP((OutF32, ArgF32)),
+  AddVVIP((OutF32, ArgF32)),
+  ParAddVVIP((OutF32, ArgF32)),  
+  ParAddVSIP((OutF32, ArgF32)),
+  ParMultiplyVS((ArgF32, ArgF32, OutF32)),
   ParOrVV((ArgBool,ArgBool,OutBool)),
-  ParLessThanVS((ArgF64,f32,OutBool)),
-  ParGreaterThanVS((ArgF64,f32,OutBool)),
-  ParCSGreaterThanVS((ArgF64,f32,f32)),
-  ParSetVS((ArgBool,f32,OutF64)),
-  ParSetVV((ArgBool,ArgF64,OutF64)),
+  ParLessThanVS((ArgF32,f32,OutBool)),
+  ParGreaterThanVS((ArgF32,f32,OutBool)),
+  ParCSGreaterThanVS((ArgF32,f32,f32)),
+  ParSetVS((ArgBool,f32,OutF32)),
+  ParSetVV((ArgBool,ArgF32,OutF32)),
 
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>, table_id: TableId, row: usize, column: usize },
@@ -41,6 +41,7 @@ pub enum Transformation {
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value, unit: u64},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
+  ColumnKind{table_id: TableId, column_ix: usize, column_kind: ValueKind},
   Set{table_id: TableId, row: TableIndex, column: TableIndex},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},

@@ -11,10 +11,16 @@ use crate::{hash_string};
 
 // ## Value structs and enums
 
-pub type Value = u64;
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum Value {
+  U8(u8),
+  F32(f32),
+}
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub enum ValueType {
+pub enum ValueKind {
+  U8,
+  F32,
   Quantity,
   Boolean,
   String,

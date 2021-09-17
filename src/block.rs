@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{Transformation, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{Transformation, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -65,7 +65,9 @@ impl Block {
       Transformation::NumberLiteral{kind, bytes, table_id, row, column} => {
         match self.tables.get_table_by_id(table_id.unwrap()) {
           Some(table) => {
-            table.set(row,column, bytes[0] as f32);
+            let mut t = table.borrow_mut();
+            t.set_col_kind(column, ValueKind::F32);
+            t.set(row,column,Value::F32(bytes[0] as f32));
           }
           _ => (),
         }
@@ -76,8 +78,9 @@ impl Block {
           for (_, table_id, row, column) in arguments {
             match self.tables.get_table_by_id(table_id.unwrap()) {
               Some(table) => {
+                let t = table.borrow();
                 let dims = match (row, column) {
-                  (TableIndex::All, TableIndex::All) => (table.rows, table.cols),
+                  (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
                   _ => (0,0),
                 };
                 arg_dims.push(dims);
@@ -99,21 +102,34 @@ impl Block {
               for (_, table_id, _, _) in arguments {
                 match self.tables.get_table_by_id(table_id.unwrap()) {
                   Some(table) => {
-                    let mut column = table.get_column_unchecked(0);
+                    let mut column = table.borrow().get_column_unchecked(0);
                     argument_columns.push(column);
                   }
                   _ => (),
                 }
               }
+
+
               let (out_table_id, _, _) = out;
-              let out_column = match self.tables.get_table_by_id(out_table_id.unwrap()) {
+              match self.tables.get_table_by_id(out_table_id.unwrap()) {
                 Some(table) => {
-                  Some(table.get_column_unchecked(0))
+                  let mut t = table.borrow_mut();
+                  t.set_col_kind(0, ValueKind::F32);
+                  let column = t.get_column_unchecked(0);
+                  argument_columns.push(column);
                 }
-                _ => None,
-              };
-              let tfm = Transformation::AddSS((argument_columns[0].clone(), argument_columns[1].clone(), out_column.unwrap()));
-              self.plan.push(Rc::new(RefCell::new(tfm)));
+                _ => (),
+              }
+
+
+              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+                (Column::F32(lhs), Column::F32(rhs), Column::F32(out)) => {
+                  let tfm = Transformation::AddSS((lhs.clone(), rhs.clone(), out.clone()));
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                }
+                _ => (),
+              }
+
             }
             _ => (),
           }

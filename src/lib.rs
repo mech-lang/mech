@@ -41,9 +41,17 @@ pub use self::database::{Database, Transaction};
 pub use self::transformation::{Transformation};
 pub use self::block::{Block, Register};
 pub use self::core::Core;
-pub use self::value::{Value, NumberLiteral, NumberLiteralKind};
+pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
 
-pub type Column = Rc<RefCell<Vec<f32>>>;
+pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
+pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
+
+#[derive(Clone, Debug)]
+pub enum Column {
+  F32(ColumnF32),
+  U8(ColumnU8),
+  Empty,
+}
 
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
