@@ -91,6 +91,38 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec(), table_id: table_id, row: 0, column: 0});
       },
+      Node::Table{name, id} => {
+        //self.strings.insert(*id, name.to_string());
+        tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
+      }
+      Node::TableDefine{children} => {
+        let mut output = self.compile_transformation(&children[0]);
+        // Get the output table id
+        let output_table_id = match output[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          },
+          _ => None,
+        };
+
+        tfms.append(&mut output);
+
+        let mut input = self.compile_transformation(&children[1]);
+
+        let input_table_id = match input[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some(table_id)
+          },
+          _ => None,
+        };
+        //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
+        tfms.append(&mut input);
+        tfms.push(Transformation::Select{
+          table_id: input_table_id.unwrap(), 
+          indices: vec![(TableIndex::All, TableIndex::All)], 
+          out: output_table_id.unwrap()
+        });
+      }
       Node::VariableDefine{children} => {
         let variable_name = match &children[0] {
           Node::Identifier{name,..} => {
@@ -302,11 +334,14 @@ impl Compiler {
       Node::Block{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
+      Node::AnonymousTableDefine{children} |
+      Node::TableRow{children} |
+      Node::TableColumn{children} |
       Node::Root{children} => {
         let mut result = self.compile_transformations(children);
         tfms.append(&mut result);
       }
-      _ => (),
+      x => println!("Unhandled Node {:?}", x),
     }
     tfms
   }
