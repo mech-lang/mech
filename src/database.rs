@@ -3,7 +3,11 @@ use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub type Change = (u64, Vec<(usize, usize, Value)>);
+#[derive(Debug, Clone)]
+pub enum Change {
+  Set((u64, Vec<(usize, usize, Value)>)),
+  NewTable{table_id: u64, rows: usize, columns: usize},
+}
 
 pub type Transaction = Vec<Change>;
 
@@ -35,7 +39,7 @@ impl Database {
       Some(table_id) => {
         self.tables.get(table_id)
       }
-      _ => None
+      _ => self.tables.get(&alias),
     }
   }
 
