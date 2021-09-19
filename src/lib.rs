@@ -37,9 +37,9 @@ pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiter
 pub use self::operations::{MechFunction, Argument};*/
 
 pub use self::table::{Table, TableShape, TableId, TableIndex};
-pub use self::database::{Database, Transaction};
+pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::{Transformation};
-pub use self::block::{Block, Register};
+pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
 
