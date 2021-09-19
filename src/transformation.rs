@@ -19,7 +19,7 @@ pub type ArgBool = Rc<RefCell<Vec<bool>>>;
 pub type OutF32 = ColumnF32;
 pub type OutBool = Rc<RefCell<Vec<bool>>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Transformation {
   AddSS((ArgF32, ArgF32, OutF32)),
   AddSSIP((OutF32, ArgF32)),
@@ -33,7 +33,8 @@ pub enum Transformation {
   ParCSGreaterThanVS((ArgF32,f32,f32)),
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
-
+  ParCopyVV((ArgF32,OutF32)),
+  
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>, table_id: TableId, row: usize, column: usize },
   TableAlias{table_id: TableId, alias: u64},
@@ -90,6 +91,7 @@ impl Transformation {
           *out = *x
         });          
       }
+      Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       _ => (),
     }
   }
