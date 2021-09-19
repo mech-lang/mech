@@ -27,21 +27,22 @@ macro_rules! test_mech {
         core.insert_block(block);
       }
 
-      let row = TableIndex::Index(1);
-      let column = TableIndex::Index(1);
       let test: Value = $test;
       let actual = core.get_table("test").unwrap().borrow().get(0, 0);
-      /*match actual {
-        Some((value,_)) => {
+      match actual {
+        Some(value) => {
           assert_eq!(value, test);
         },
         None => assert_eq!(0,1),
-      }*/
+      }
     }
   )
 }
 
 // ## Constant
+
+test_mech!(constant_basic, "block
+  #test = 5",Value::F32(5.0));
 
 test_mech!(constant_empty, "
 block
