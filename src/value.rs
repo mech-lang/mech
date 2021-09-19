@@ -8,14 +8,24 @@
 //use crate::quantity::{Quantity, ToQuantity, QuantityMath};
 //use errors::{ErrorType};
 use crate::{hash_string};
+use std::fmt;
 
 // ## Value structs and enums
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   U8(u8),
+  U16(u16),
+  U32(u32),
+  U64(u64),
+  I8(i8),
+  I16(i16),
+  I32(i32),
+  I64(i64),
   F32(f32),
   Bool(bool),
+  String(String),
+  Empty,
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
