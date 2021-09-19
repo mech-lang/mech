@@ -7,7 +7,7 @@
 // when a steady state is reached, or an iteration limit is reached (whichever comes first). The
 // core then waits for further transactions.
 
-use crate::{Database, Block, Table, Transaction};
+use crate::{Database, Change, Block, BlockState, Table, Transaction};
 use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -15,7 +15,8 @@ use std::cell::RefCell;
 #[derive(Clone, Debug)]
 pub struct Core {
   blocks: Vec<Rc<RefCell<Block>>>,
-  database: Database,
+  unsatisfied_blocks: Vec<Block>,
+  database: Rc<RefCell<Database>>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
@@ -24,31 +25,40 @@ impl Core {
   pub fn new() -> Core {
     Core {
       blocks: Vec::new(),
-      database: Database::new(),
+      unsatisfied_blocks: Vec::new(),
+      database: Rc::new(RefCell::new(Database::new())),
       schedules: HashMap::new(),
     }
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
     let mut registers = Vec::new();
-    for (table_id, adds) in txn {
-      match self.database.get_table_by_id(table_id) {
-        Some(table) => {
-          for (row,col,val) in adds {
-            match table.borrow().set(*row, *col, *val) {
-              Err(_) => {
-                // Index out of bounds.
-                return Err(());
+    for change in txn {
+      match change {
+        Change::Set((table_id, adds)) => {
+          match self.database.borrow().get_table_by_id(table_id) {
+            Some(table) => {
+              for (row,col,val) in adds {
+                match table.borrow().set(*row, *col, val.clone()) {
+                  Err(_) => {
+                    // Index out of bounds.
+                    return Err(());
+                  }
+                  _ => {
+                    registers.push((*table_id,*row,*col));
+                  },
+                }
               }
-              _ => {
-                registers.push((*table_id,*row,*col));
-              },
+            }
+            _ => {
+              // Table doesn't exist
+              return Err(());
             }
           }
         }
-        _ => {
-          // Table doesn't exist
-          return Err(());
+        Change::NewTable{table_id, rows, columns} => {
+          let table = Table::new(*table_id,*rows,*columns);
+          self.database.borrow_mut().insert_table(table);
         }
       }
     }
@@ -59,20 +69,35 @@ impl Core {
   }
 
   pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
-    self.database.insert_table(table)
+    self.database.borrow_mut().insert_table(table)
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
-    self.database.get_table(table_name)
+  pub fn get_table(&mut self, table_name: &str) -> Option<Rc<RefCell<Table>>> {
+    match self.database.borrow().get_table(table_name) {
+      Some(table) => Some(table.clone()),
+      None => None,
+    }
   }
 
-  pub fn get_table_by_id(&mut self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
-    self.database.get_table_by_id(&table_id)
+  pub fn get_table_by_id(&mut self, table_id: u64) -> Option<Rc<RefCell<Table>>> {
+    match self.database.borrow().get_table_by_id(&table_id) {
+      Some(table) => Some(table.clone()),
+      None => None,
+    }
   }
 
   pub fn insert_block(&mut self, mut block: Block) {
-    block.solve();
-    self.blocks.push(Rc::new(RefCell::new(block)));
+    block.global_database = self.database.clone();
+    self.process_transaction(&block.changes);
+    // try to satisfy the block
+    match block.ready() {
+      true => {
+        block.gen_id();
+        block.solve();
+        self.blocks.push(Rc::new(RefCell::new(block)));
+      }
+      false => self.unsatisfied_blocks.push(block),
+    }
   }
 
   pub fn step(&mut self, register: &(u64,usize,usize)) {
