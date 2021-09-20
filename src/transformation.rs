@@ -1,4 +1,4 @@
-use crate::{Column, ColumnF32, ValueKind, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnF32, ColumnU8, ColumnBool, ValueKind, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -15,13 +15,16 @@ use std::thread;
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
 pub type ArgF32 = ColumnF32;
-pub type ArgBool = Rc<RefCell<Vec<bool>>>;
+pub type ArgU8 = ColumnU8;
+pub type ArgBool = ColumnBool;
 pub type OutF32 = ColumnF32;
-pub type OutBool = Rc<RefCell<Vec<bool>>>;
+pub type OutU8 = ColumnU8;
+pub type OutBool = ColumnBool;
 
 #[derive(Debug, Clone)]
 pub enum Transformation {
   AddSS((ArgF32, ArgF32, OutF32)),
+  AddSSU8((ArgU8, ArgU8, OutU8)),
   AddSSIP((OutF32, ArgF32)),
   AddVVIP((OutF32, ArgF32)),
   ParAddVVIP((OutF32, ArgF32)),  
@@ -34,6 +37,8 @@ pub enum Transformation {
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
   ParCopyVV((ArgF32,OutF32)),
+  ParCopyVVU8((ArgU8,OutU8)),
+  CopySSU8((ArgU8,OutU8)),
   
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>, table_id: TableId, row: usize, column: usize },
@@ -55,6 +60,9 @@ impl Transformation {
     match &*self {
       // MATH
       Transformation::AddSS((lhs, rhs, out)) => { 
+        (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]
+      }
+      Transformation::AddSSU8((lhs, rhs, out)) => { 
         (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]
       }
       Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
@@ -92,7 +100,8 @@ impl Transformation {
         });          
       }
       Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
-      _ => (),
+      Transformation::CopySSU8((rhs, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[0] }
+      x => println!("Not Implemented: {:?}", x),
     }
   }
 }

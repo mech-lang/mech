@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{Transformation, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -101,7 +101,7 @@ impl Block {
         match self.tables.get_table_by_id(table_id.unwrap()) {
           Some(table) => {
             let mut t = table.borrow_mut();
-            t.set_col_kind(0, ValueKind::F32);
+            t.set_col_kind(0, ValueKind::U8);
             let column = t.get_column_unchecked(0);
             argument_columns.push(column);
           }
@@ -112,7 +112,7 @@ impl Block {
             match self.tables.get_table_by_id(&out_table_id) {
               Some(table) => {
                 let mut t = table.borrow_mut();
-                t.set_col_kind(0, ValueKind::F32);
+                t.set_col_kind(0, ValueKind::U8);
                 let column = t.get_column_unchecked(0);
                 argument_columns.push(column);
               }
@@ -123,7 +123,7 @@ impl Block {
             match self.global_database.borrow().get_table_by_id(&out_table_id) {
               Some(table) => {
                 let mut t = table.borrow_mut();
-                t.set_col_kind(0, ValueKind::F32);
+                t.set_col_kind(0, ValueKind::U8);
                 let column = t.get_column_unchecked(0);
                 argument_columns.push(column);
               }
@@ -132,8 +132,8 @@ impl Block {
           }
         }
         match (&argument_columns[0], &argument_columns[1]) {
-          (Column::F32(src), Column::F32(out)) => {
-            let tfm = Transformation::ParCopyVV((src.clone(), out.clone()));
+          (Column::U8(src), Column::U8(out)) => {
+            let tfm = Transformation::CopySSU8((src.clone(), out.clone()));
             self.plan.push(Rc::new(RefCell::new(tfm)));
           }
           (_, Column::Empty) => {
@@ -147,8 +147,18 @@ impl Block {
         match self.tables.get_table_by_id(table_id.unwrap()) {
           Some(table) => {
             let mut t = table.borrow_mut();
-            t.set_col_kind(*column, ValueKind::F32);
-            t.set(*row,*column,Value::F32(bytes[0] as f32));
+            match kind {
+              NumberLiteralKind::Decimal => {
+                match bytes.len() {
+                  1 => {
+                    t.set_col_kind(*column, ValueKind::U8);
+                    t.set(*row,*column,Value::U8(bytes[0] as u8));
+                  }
+                  _ => (), // TODO Handle other sizes
+                }
+              }
+              _ => (),
+            }
           }
           _ => (),
         }
@@ -166,7 +176,11 @@ impl Block {
                 };
                 arg_dims.push(dims);
               }
-              _ => (),
+              _ => {
+                self.unsatisfied_transformations.push(tfm);
+                self.state = BlockState::Unsatisfied;
+                return;
+              },
             }
           }
           // Categorize arguments by shape
@@ -177,6 +191,7 @@ impl Block {
             }
           }).collect();
           // Now decide on the correct tfm based on the shape
+
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = vec![];
@@ -193,15 +208,15 @@ impl Block {
               match self.tables.get_table_by_id(out_table_id.unwrap()) {
                 Some(table) => {
                   let mut t = table.borrow_mut();
-                  t.set_col_kind(0, ValueKind::F32);
+                  t.set_col_kind(0, ValueKind::U8);
                   let column = t.get_column_unchecked(0);
                   argument_columns.push(column);
                 }
                 _ => (),
               }
               match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
-                (Column::F32(lhs), Column::F32(rhs), Column::F32(out)) => {
-                  let tfm = Transformation::AddSS((lhs.clone(), rhs.clone(), out.clone()));
+                (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
+                  let tfm = Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone()));
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => (),
