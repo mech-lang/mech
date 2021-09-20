@@ -42,7 +42,7 @@ macro_rules! test_mech {
 // ## Constant
 
 test_mech!(constant_basic, "block
-  #test = 5",Value::F32(5.0));
+  #test = 5",Value::U8(5));
 
 test_mech!(constant_empty, "
 block

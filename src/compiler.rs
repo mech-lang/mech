@@ -63,7 +63,8 @@ impl Compiler {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
       let mut block = Block::new();
-      for tfm in self.compile_transformation(&b) {
+      let tfms = self.compile_transformation(&b);
+      for tfm in tfms {
         block.add_tfm(tfm);
       }
       blocks.push(block);
