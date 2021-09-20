@@ -36,11 +36,13 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
   let mut blocks = Vec::new();
   for n in nodes {
     match n {
+      Node::Statement{..} |
       Node::Block{..} => blocks.push(n.clone()),
       Node::Root{children} |
       Node::Body{children} |
       Node::Section{children,..} |
       Node::Program{children,..} |
+      Node::Fragment{children} |
       Node::MechCodeBlock{children} => {
         blocks.append(&mut get_blocks(children));
       }
@@ -332,6 +334,7 @@ impl Compiler {
       Node::Section{children, ..} |
       Node::Transformation{children} |
       Node::Statement{children} |
+      Node::Fragment{children} |
       Node::Block{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
