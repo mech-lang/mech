@@ -23,8 +23,11 @@ pub type OutBool = ColumnBool;
 
 #[derive(Debug, Clone)]
 pub enum Transformation {
-  AddSS((ArgF32, ArgF32, OutF32)),
+  AddSSF32((ArgF32, ArgF32, OutF32)),
   AddSSU8((ArgU8, ArgU8, OutU8)),
+  DivideSSU8((ArgU8, ArgU8, OutU8)),
+  MultiplySSU8((ArgU8, ArgU8, OutU8)),
+  SubtractSSU8((ArgU8, ArgU8, OutU8)),
   AddSSIP((OutF32, ArgF32)),
   AddVVIP((OutF32, ArgF32)),
   ParAddVVIP((OutF32, ArgF32)),  
@@ -53,18 +56,23 @@ pub enum Transformation {
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
   Select{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
+
+  Null,
 }
 
 impl Transformation {
   pub fn solve(&mut self) {
     match &*self {
       // MATH
-      Transformation::AddSS((lhs, rhs, out)) => { 
-        (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]
-      }
-      Transformation::AddSSU8((lhs, rhs, out)) => { 
-        (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]
-      }
+      // f32 arithmetic
+      Transformation::AddSSF32((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
+
+      // u8 arithmetic
+      Transformation::AddSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
+      Transformation::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
+      Transformation::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
+      Transformation::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
+
       Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
       Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }

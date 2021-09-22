@@ -31,6 +31,9 @@ pub enum BlockState {
 
 lazy_static! {
   static ref MATH_ADD: u64 = hash_string("math/add");
+  static ref MATH_DIVIDE: u64 = hash_string("math/divide");
+  static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
+  static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
 }
 
 #[derive(Clone, Debug)]
@@ -164,7 +167,7 @@ impl Block {
         }
       },
       Transformation::Function{name, ref arguments, out} => {
-        if *name == *MATH_ADD {
+        if *name == *MATH_ADD || *name == *MATH_DIVIDE {
           let mut arg_dims = Vec::new();
           for (_, table_id, row, column) in arguments {
             match self.tables.get_table_by_id(table_id.unwrap()) {
@@ -216,7 +219,12 @@ impl Block {
               }
               match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
-                  let tfm = Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone()));
+                  let tfm = if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => (),
