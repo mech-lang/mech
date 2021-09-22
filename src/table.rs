@@ -1,5 +1,220 @@
 // # Table
 
+// A table starts with a tag, and has a matrix of memory available for data, 
+// where each column represents an attribute, and each row represents an entity.
+
+// ## Prelude
+
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::fmt;
+use crate::{Column, ValueKind, ColumnU8, ColumnF32, humanize, Value};
+
+// ### Table Id
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub enum TableId {
+  Local(u64),
+  Global(u64),
+}
+
+impl TableId {
+  pub fn unwrap(&self) -> &u64 {
+    match self {
+      TableId::Local(id) => id,
+      TableId::Global(id) => id,
+    }
+  }
+}
+
+impl fmt::Debug for TableId {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &TableId::Local(ref id) => write!(f, "Local({:})", humanize(id)),
+      &TableId::Global(ref id) => write!(f, "Global({:})", humanize(id)),
+    }
+  }
+}
+
+// ## Table Shape
+
+#[derive(Debug)]
+pub enum TableShape {
+  Scalar,
+  Column(usize),
+  Row(usize),
+  Matrix(usize,usize),
+  Pending,
+}
+
+// ### TableIndex
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TableIndex {
+  Index(usize),
+  Alias(u64),
+  Table(TableId),
+  All,
+  None,
+}
+
+impl TableIndex {
+  pub fn unwrap(&self) -> usize {
+    match self {
+      TableIndex::Index(ix) => *ix,
+      TableIndex::Alias(alias) => {
+        alias.clone() as usize
+      },
+      TableIndex::Table(table_id) => *table_id.unwrap() as usize,
+      TableIndex::None |
+      TableIndex::All => 0,
+    }
+  }
+}
+
+impl fmt::Debug for TableIndex {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
+      &TableIndex::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
+      &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &TableIndex::All => write!(f, "IxAll"),
+      &TableIndex::None => write!(f, "IxNone"),
+    }
+  }
+}
+
+// ## Table
+
+#[derive(Clone)]
+pub struct Table {
+  pub id: u64,
+  pub rows: usize,
+  pub cols: usize,
+  data: Vec<Column>,
+}
+
+
+impl Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      id,
+      rows,
+      cols,
+      data: Vec::with_capacity(cols),
+    };
+    for col in 0..cols {
+      table.data.push(Column::Empty);
+    }
+    table
+  }
+
+  pub fn get(&self, row: usize, col: usize) -> Option<Value> {
+    if col < self.cols && row < self.rows {
+      match &self.data[col] {
+        Column::F32(column_f32) => Some(Value::F32(column_f32.borrow()[row])),
+        Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
+        Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
+        Column::Empty => None,
+      }
+    } else {
+      None
+    }
+  }
+
+  pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),()> {
+    if col < self.cols && row < self.rows {
+      match (&self.data[col], val) {
+        (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::Empty, Value::U8(value_u8)) => {
+          //let column: ColumnU8 = Rc::new(RefCell::new(Vec::new()));
+          //self.data[col] = Column::U8(column);
+        },
+        _ => (),
+      }
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn set_mut(&mut self, row: usize, col: usize, val: Value) -> Result<(),()> {
+    if col < self.cols && row < self.rows {
+      match (&mut self.data[col], val) {
+        (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::Empty, Value::U8(value_u8)) => {
+          let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, Value::F32(value_f32)) => {
+          let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+        },
+        _ => (),
+      }
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn set_col_kind(&mut self, col: usize, val: ValueKind) -> Result<(),()> {
+    if col < self.cols {
+      match (&mut self.data[col], val) {
+        (Column::Empty, ValueKind::U8) => {
+          let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, ValueKind::F32) => {
+          let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+        },
+        _ => (),
+      }
+      Ok(())
+    } else {
+      Err(())
+    }
+  }
+
+  pub fn get_column(&self, col: usize) -> Option<Column> {
+    if col < self.cols { 
+      Some(self.data[col].clone())
+    } else {
+      None
+    }
+  }
+
+  pub fn get_column_unchecked(&self, col: usize) -> Column {
+    self.data[col].clone()
+  }
+
+}
+
+impl fmt::Debug for Table {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for row in 0..self.rows {
+      write!(f,"│ ")?;
+      for col in 0..self.cols {
+        let v = self.get(row,col);
+        write!(f,"{:0.2?} │ ", v)?;
+      }
+      write!(f,"\n")?;
+    }
+    Ok(())
+  }
+}
+
+
+
+/*
+// # Table
+
 // ## Prelude
 
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -635,3 +850,4 @@ fn print_repeated_char(to_print: &str, n: usize, f: &mut fmt::Formatter) -> fmt:
   }
   Ok(())
 }
+*/

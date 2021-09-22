@@ -5,18 +5,35 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-use quantities::{Quantity, ToQuantity, QuantityMath};
-use errors::{ErrorType};
-use ::{hash_string};
+//use crate::quantity::{Quantity, ToQuantity, QuantityMath};
+//use errors::{ErrorType};
+use crate::{hash_string};
+use std::fmt;
 
 // ## Value structs and enums
 
-pub type Value = u64;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Value {
+  U8(u8),
+  U16(u16),
+  U32(u32),
+  U64(u64),
+  I8(i8),
+  I16(i16),
+  I32(i32),
+  I64(i64),
+  F32(f32),
+  Bool(bool),
+  String(String),
+  Empty,
+}
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub enum ValueType {
+pub enum ValueKind {
+  U8,
+  F32,
   Quantity,
-  Boolean,
+  Bool,
   String,
   Reference,
   NumberLiteral,
@@ -61,7 +78,7 @@ impl NumberLiteral {
 }
 
 // ## Value Methods
-
+/*
 pub trait ValueMethods {
   fn empty() -> Value;
   fn from_string(string: &String) -> Value;
@@ -92,7 +109,7 @@ pub trait ValueMethods {
   fn is_number_literal(&self) -> bool;
   fn is_number_literal_interned(&self) -> bool;
   fn len(&self) -> Option<usize>;
-  fn equal(&self, other: Value) -> Result<Value, ErrorType>;
+  /*fn equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
   fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
@@ -105,7 +122,7 @@ pub trait ValueMethods {
   fn power(&self, other: Value) -> Result<Value, ErrorType>;
   fn and(&self, other: Value) -> Result<Value, ErrorType>;
   fn or(&self, other: Value) -> Result<Value, ErrorType>;
-  fn xor(&self, other: Value) -> Result<Value, ErrorType>;
+  fn xor(&self, other: Value) -> Result<Value, ErrorType>;*/
 }
 
 
@@ -331,7 +348,7 @@ impl ValueMethods for Value {
       _ => None,
     }
   }
-
+/*
   fn equal(&self, other: Value) -> Result<Value, ErrorType> {
     match (self.value_type(), other.value_type()) {
       (ValueType::Boolean, ValueType::Boolean) => {
@@ -444,6 +461,6 @@ impl ValueMethods for Value {
       (Some(q), Some(r)) => Ok(Value::from_bool(q ^ r)),
       _ => Err(ErrorType::IncorrectFunctionArgumentType),
     } 
-  }
+  }*/
 
-}
+}*/

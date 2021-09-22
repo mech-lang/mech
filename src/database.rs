@@ -1,3 +1,78 @@
+use crate::{Table, hash_string, Value, Column};
+use hashbrown::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+#[derive(Debug, Clone)]
+pub enum Change {
+  Set((u64, Vec<(usize, usize, Value)>)),
+  NewTable{table_id: u64, rows: usize, columns: usize},
+}
+
+pub type Transaction = Vec<Change>;
+
+#[derive(Debug, Clone)]
+pub struct Database {
+  tables: HashMap<u64,Rc<RefCell<Table>>>,
+  table_alias_to_id: HashMap<u64,u64>,
+}
+
+impl Database {
+  pub fn new() -> Database {
+    Database {
+      tables: HashMap::new(),
+      table_alias_to_id: HashMap::new(),
+    }
+  }
+
+  pub fn insert_alias(&mut self, alias: u64, table_id: u64) -> Option<u64> {
+    self.table_alias_to_id.insert(alias, table_id)
+  }
+
+  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
+    self.tables.insert(table.id, Rc::new(RefCell::new(table)))
+  }
+
+  pub fn get_table(&self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
+    let alias = hash_string(table_name);
+    match self.table_alias_to_id.get(&alias) {
+      Some(table_id) => {
+        self.tables.get(table_id)
+      }
+      _ => self.tables.get(&alias),
+    }
+  }
+
+  pub fn get_table_by_id(&self, table_id: &u64) -> Option<&Rc<RefCell<Table>>> {
+    match self.tables.get(table_id) {
+      None => {
+        match self.table_alias_to_id.get(&table_id) {
+          None => None,
+          Some(table_id) => {
+            self.tables.get(table_id)
+          }
+        }
+      }
+      x => x
+    }
+  }
+
+  pub fn get_table_by_id_mut(&self, table_id: u64) -> Option<&Rc<RefCell<Table>>> {
+    let table_id = match self.tables.contains_key(&table_id) {
+      true => table_id,
+      false => match self.table_alias_to_id.get(&table_id) {
+        Some(table_id) => *table_id,
+        None => return None,
+      }
+    };
+    self.tables.get(&table_id)
+  }
+}
+
+
+
+
+/*
 use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Register};
@@ -165,3 +240,4 @@ pub enum Change {
   NewTable{table_id: u64, rows: usize, columns: usize},
   InternString{string: String},
 }
+*/

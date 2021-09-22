@@ -11,18 +11,21 @@ extern crate num_traits;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 mod database;
-mod runtime;
+//mod runtime;
 mod table;
-mod operations;
-mod quantities;
-mod errors;
+mod transformation;
+//mod operations;
+//mod quantity;
+//mod error;
 mod core;
 mod block;
 mod value;
-mod index;
-
+//mod index;
+/*
 pub use self::database::{Database, Store, Transaction, Change};
 pub use self::block::{Block, BlockState, Transformation, Register, format_register};
 pub use self::index::{IndexRepeater, IndexIterator, TableIterator, ValueIterator, ConstantIterator};
@@ -31,7 +34,30 @@ pub use self::core::Core;
 pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
 pub use self::errors::{Error, ErrorType};
 pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
-pub use self::operations::{MechFunction, Argument};
+pub use self::operations::{MechFunction, Argument};*/
+
+pub use self::table::{Table, TableShape, TableId, TableIndex};
+pub use self::database::{Database, Change, Transaction};
+pub use self::transformation::{Transformation};
+pub use self::block::{Block, BlockState, Register};
+pub use self::core::Core;
+pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
+
+pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
+pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
+pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
+
+#[derive(Clone, Debug)]
+pub enum Column {
+  F32(ColumnF32),
+  U8(ColumnU8),
+  Bool(ColumnBool),
+  Empty,
+}
+
+pub fn hash_chars(input: &Vec<char>) -> u64 {
+  seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
 
 pub fn hash_string(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF

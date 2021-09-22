@@ -1,351 +1,183 @@
-#![feature(get_mut_unchecked)]
 
-extern crate mech_core;
+// New runtime
+// requirements:
+// pass all tests
+// robust units
+// all number types
+// Unicode
+// async blocks
+// parallel operators
+// rewind capability
+// pre-serialized memory layout
+// performance target: 10 million updates per 60Hz cycle
+// stack allocated tables
+// matrix library in std
 
-use mech_core::{Register, Table, TableId, Database, TableIterator, IndexRepeater, TableIndex, ValueIterator, Value, ValueMethods, Store, IndexIterator, ConstantIterator};
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::fmt;
+use std::ptr;
+use std::rc::Rc;
+use hashbrown::{HashMap, HashSet};
+use seahash;
 
-extern crate seahash;
+use rayon::prelude::*;
+use std::collections::VecDeque;
+use std::thread;
+use mech_core::{Table, Column, Value, ValueKind, hash_string, Transformation, Block, Core};
 
 fn main() {
+  let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
+  let mut total_time = VecDeque::new();  
+  let start_ns0 = time::precise_time_ns();
+  let n = 1e6 as usize;
 
+  // Create a core
+  let mut core = Core::new();
 
-  /*let row_iter = unsafe { match row_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
-    TableIndex::All => {
-      match (*table).rows {
-        0 => IndexIterator::None,
-        r => IndexIterator::Range(1..=r),
-      }
-    },
-    TableIndex::Table(table_id) => {
-      let row_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-        TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(row_table))
+  {
+    // #time/timer += [period: 60Hz]
+    let mut time_timer = Table::new(hash_string("time/timer"),1,2);
+    time_timer.set_col_kind(0,ValueKind::F32);
+    time_timer.set(0,0,Value::F32(60.0));
+    core.insert_table(time_timer.clone());
+
+    // #gravity = 1
+    let mut gravity = Table::new(hash_string("gravity"),1,1);
+    gravity.set_col_kind(0,ValueKind::F32);
+    gravity.set(0,0,Value::F32(1.0));
+    core.insert_table(gravity.clone());
+
+    // -0.8
+    let mut const1 = Table::new(hash_string("-0.8"),1,1);
+    const1.set_col_kind(0,ValueKind::F32);
+    const1.set(0,0,Value::F32(-0.8));
+    core.insert_table(const1.clone());
+
+    // Create balls
+    // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
+    let mut balls = Table::new(hash_string("balls"),n,4);
+    balls.set_col_kind(0,ValueKind::F32);
+    balls.set_col_kind(1,ValueKind::F32);
+    balls.set_col_kind(2,ValueKind::F32);
+    balls.set_col_kind(3,ValueKind::F32);
+    for i in 0..n {
+      balls.set(i,0,Value::F32(i as f32));
+      balls.set(i,1,Value::F32(i as f32));
+      balls.set(i,2,Value::F32(3.0));
+      balls.set(i,3,Value::F32(4.0));
     }
-    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, db.store.clone())),
-    _ => IndexIterator::Range(1..=(*table).rows),
-  }};
-
-  let column_iter = unsafe { match column_index {
-    TableIndex::Index(ix) => IndexIterator::Constant(ConstantIterator::new(TableIndex::Index(*ix))),
-    TableIndex::All => {
-      match (*table).columns {
-        0 => IndexIterator::None,
-        c => IndexIterator::Range(1..=c),
-      }
-    }
-    TableIndex::Table(table_id) => {
-      let col_table = match table_id {
-        TableId::Global(id) => db.tables.get_mut(&id).unwrap() as *mut Table,
-        TableId::Local(id) => self.tables.get_mut(&id).unwrap() as *mut Table,
-      };
-      IndexIterator::Table(TableIterator::new(col_table))
-    }
-    TableIndex::Alias(alias) => IndexIterator::Alias(AliasIterator::new(*alias, table_id, self.store.clone())),
-    TableIndex::None => IndexIterator::None,
-    //_ => IndexIterator::Range(1..=(*table).columns),
-  }};*/
-
-  /*let to_hash = format!("{:?}{:?}", hash, register.table_id.unwrap());
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);
-
-  let to_hash = format!("{:?}{:?}", hash, register.row.unwrap());
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);
-
-  let to_hash = format!("{:?}{:?}", hash, register.column.unwrap());
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);
-
-  let to_hash = format!("{:?}{:?}{:?}",register.table_id.unwrap(),register.row.unwrap(),register.column.unwrap());
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);
-
-  let to_hash = "This is a really long string that I would like to hash, it contains a lot of bytes";
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);
-
-  let to_hash = "131176846773215564701311768467732155647";
-  println!("{:?}", &to_hash.clone());
-  hash = seahash::hash(to_hash.as_bytes());
-  println!("{:0x}", hash);*/
-
-
-  /*
-  let balls = 40000;
-
-  print!("Allocating memory...");
-  let mut core = Core::new(balls * 4 * 4);
-  core.load_standard_library();
-  println!("Done!");
-
-  let period = hash_string("period");
-  let ticks = hash_string("ticks");
-  let time_timer = hash_string("time/timer");
-  let gravity = hash_string("gravity");
-  let balls_id = hash_string("balls");
-  let x_id = hash_string("x");
-  let y_id = hash_string("y");
-  let vx_id = hash_string("vx");
-  let vy_id = hash_string("vy");
-  let math_add = hash_string("math/add");
-  let table_range = hash_string("table/range");
-  let table_horzcat = hash_string("table/horizontal-concatenate");
-  let table_set = hash_string("table/set");
-
-  let mut block = Block::new(balls * 10 * 10);
-  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-  store.strings.insert(time_timer, "time/timer".to_string());
-  store.strings.insert(period, "period".to_string());
-  store.strings.insert(ticks, "ticks".to_string());
-  store.strings.insert(gravity, "gravity".to_string());
-  store.strings.insert(balls_id, "balls".to_string());
-  store.strings.insert(x_id, "x".to_string());
-  store.strings.insert(y_id, "y".to_string());
-  store.strings.insert(vx_id, "vx".to_string());
-  store.strings.insert(vy_id, "vy".to_string());
-  store.strings.insert(table_range, "table/range".to_string());
-  store.strings.insert(table_horzcat, "table/horizontal-concatenate".to_string());
-
-  let range1 = Transformation::Function{
-    name: table_range,
-    arguments: vec![
-      (0, TableId::Local(0x01), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(0x02), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Local(x_id), TableIndex::All, TableIndex::All)
-  };
-  block.register_transformations(("x = 1:4000".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(1), unit: 0},
-    Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64), unit: 0},
-    range1.clone(),
-    Transformation::NewTable{table_id: TableId::Local(x_id), rows: balls, columns: 1},
-  ]));
-
-  let range2 = Transformation::Function{
-    name: table_range,
-    arguments: vec![
-      (0, TableId::Local(0x01), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(0x02), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Local(y_id), TableIndex::All, TableIndex::All)
-  };
-  block.register_transformations(("y = 1:4000".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x01), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x01), value: Value::from_u64(1), unit: 0},
-    Transformation::NewTable{table_id: TableId::Local(0x02), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x02), value: Value::from_u64(balls as u64), unit: 0},
-    range2.clone(),
-    Transformation::NewTable{table_id: TableId::Local(y_id), rows: balls, columns: 1},
-  ]));
-
-  let horzcat = Transformation::Function{
-    name: table_horzcat,
-    arguments: vec![
-      (0, TableId::Local(x_id), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(y_id), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(0x03), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(0x04), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::All)
-  };
-  block.register_transformations((r#"#ball = [|x   y   vx  vy|
-x   y   20  0]"#.to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x03), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x03), value: Value::from_u64(20), unit: 0},
-    Transformation::NewTable{table_id: TableId::Local(0x04), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x04), value: Value::from_u64(1), unit: 0},
-    horzcat.clone(),
-    Transformation::NewTable{table_id: TableId::Global(balls_id), rows: balls, columns: 4},
-    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 1, column_alias: x_id},
-    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 2, column_alias: y_id},
-    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 3, column_alias: vx_id},
-    Transformation::ColumnAlias{table_id: TableId::Global(balls_id), column_ix: 4, column_alias: vy_id},
-  ]));
-
-  block.register_transformations(("#gravity = 9".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Global(gravity), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Global(gravity), value: Value::from_u64(9), unit: 0},
-  ]));
-
-
-  let horzcat2 = Transformation::Function{
-    name: table_horzcat,
-    arguments: vec![
-      (0, TableId::Local(0x07), TableIndex::All, TableIndex::All),
-      (0, TableId::Local(0x08), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Global(time_timer), TableIndex::All, TableIndex::All)
-  };
-  block.register_transformations(("#time/timer = [period: 16, ticks: 0]".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Global(time_timer), rows: 1, columns: 2},
-    Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 1, column_alias: period},
-    Transformation::ColumnAlias{table_id: TableId::Global(time_timer), column_ix: 2, column_alias: ticks},
-    horzcat2.clone(),
-    Transformation::NewTable{table_id: TableId::Local(0x07), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x07), value: Value::from_u64(16), unit: 0},
-    Transformation::NewTable{table_id: TableId::Local(0x08), rows: 1, columns: 1},
-    Transformation::Constant{table_id: TableId::Local(0x08), value: Value::from_u64(0), unit: 0},
-  ]));
-
-  block.plan.push(range1);
-  block.plan.push(range2);
-  block.plan.push(horzcat);
-  block.plan.push(horzcat2);
-
-  block.gen_id();
-  core.runtime.register_block(block);
-
-
-  let mut block = Block::new(balls * 10 * 10);
-  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-  store.strings.insert(time_timer, "time/timer".to_string());
-  store.strings.insert(ticks, "ticks".to_string());
-  store.strings.insert(gravity, "gravity".to_string());
-  store.strings.insert(balls_id, "balls".to_string());
-  store.strings.insert(x_id, "x".to_string());
-  store.strings.insert(y_id, "y".to_string());
-  store.strings.insert(vx_id, "vx".to_string());
-  store.strings.insert(vy_id, "vy".to_string());
-  store.strings.insert(vy_id, "vy".to_string());
-  store.strings.insert(math_add, "math/add".to_string());
-  store.strings.insert(table_set, "table/set".to_string());
-
-  let whenever = Transformation::Whenever{
-    table_id: TableId::Global(time_timer),
-    row: TableIndex::All,
-    column: TableIndex::Alias(ticks),
-    registers: vec![Register{table_id: TableId::Global(time_timer), row: TableIndex::All, column: TableIndex::Alias(ticks)}.hash()]
-  };
-
-  block.register_transformations(("~ #time/timer.ticks".to_string(), vec![
-    whenever.clone(),
-  ]));
-
-  let xmove = Transformation::Function{
-    name: math_add,
-    arguments: vec![
-      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(x_id)),
-      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vx_id))
-    ],
-    out: (TableId::Local(0x9), TableIndex::All, TableIndex::All)
-  };
-  let xset = Transformation::Function{
-    name: table_set,
-    arguments: vec![
-      (0, TableId::Local(0x9), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(x_id))
-  };
-  block.register_transformations(("#ball.x := #ball.x + #ball.vx".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x09), rows: 1, columns: 1},
-    xset.clone(),
-    xmove.clone(),
-  ]));
-
-
-  let ymove = Transformation::Function{
-    name: math_add,
-    arguments: vec![
-      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(y_id)),
-      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)),
-    ],
-    out: (TableId::Local(0x08), TableIndex::All, TableIndex::All)
-  };
-  let yset = Transformation::Function{
-    name: table_set,
-    arguments: vec![
-      (0, TableId::Local(0x8), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(y_id))
-  };
-  block.register_transformations(("#ball.y := #ball.y + #ball.vy".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x08), rows: 1, columns: 1},
-    ymove.clone(),
-    yset.clone(),
-  ]));
-
-
-  let vymove = Transformation::Function{
-    name: math_add,
-    arguments: vec![
-      (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)),
-      (0, TableId::Global(gravity), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Local(0x07), TableIndex::All, TableIndex::All)
-  };
-  let vyset = Transformation::Function{
-    name: table_set,
-    arguments: vec![
-      (0, TableId::Local(0x7), TableIndex::All, TableIndex::All),
-    ],
-    out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id))
-  };
-  block.register_transformations(("#ball.vy := #ball.vy + g".to_string(), vec![
-    Transformation::NewTable{table_id: TableId::Local(0x07), rows: 1, columns: 1},
-    vymove.clone(),
-    vyset.clone(),
-  ]));
-
-
-
-
-
-  /*
-  block.register_transformations(("#ball.y := #ball.y + #ball.vy".to_string(), vec![
-
-  ]));
-  block.register_transformations(("#ball.vy := #ball.vy + #gravity".to_string(), vec![
-    Transformation::Function{
-      name: math_add,
-      arguments: vec![
-        (0, TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id)),
-        (0, TableId::Global(gravity), TableIndex::All, TableIndex::All),
-      ],
-      out: (TableId::Global(balls_id), TableIndex::All, TableIndex::Alias(vy_id))
-    },
-  ]));*/
-  block.plan.push(whenever);
-  block.plan.push(xmove);
-  block.plan.push(xset);
-  block.plan.push(ymove);
-  block.plan.push(yset);
-  block.plan.push(vymove);
-  block.plan.push(vyset);
-  block.gen_id();
-  core.runtime.register_block(block);
-
-
-  print!("Running computation...");
-  io::stdout().flush().unwrap();
-  let rounds = 10.0;
-  let start_ns = time::precise_time_ns();
-  for j in 0..rounds as usize {
-    let txn = Transaction{
-      changes: vec![
-        Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(j as u64))]}
-      ]
-    };
-    core.process_transaction(&txn);
+    core.insert_table(balls.clone());
   }
-  let end_ns = time::precise_time_ns();
-  let time = (end_ns - start_ns) as f64 / 1000000.0;
-  let per_iteration_time = time / rounds;
-  println!("Done!");
-  println!("{:0.4?}s total", time / 1000.0);
-  println!("{:0.4?}ms per iteration", per_iteration_time);
 
-*/
+  // Table
+  let (x,y,vx,vy) = {
+    let balls = core.get_table_by_id(hash_string("balls")).unwrap().borrow();
+    (balls.get_column_unchecked(0),
+     balls.get_column_unchecked(1),
+     balls.get_column_unchecked(2),
+     balls.get_column_unchecked(3))
+  };
+
+  let g = {
+    let gravity = core.get_table_by_id(hash_string("gravity")).unwrap().borrow();
+    gravity.get_column_unchecked(0)
+  };
+
+  let c1 = {
+    let const1 = core.get_table_by_id(hash_string("-0.8")).unwrap().borrow();
+    const1.get_column_unchecked(0)
+  };
+  
+  // Temp Vars
+  let mut vy2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
+  let mut iy = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut iyy = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut iy_or = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut ix = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut ixx = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut ix_or = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
+  let mut vx2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
+
+
+  // Update the block positions on each tick of the timer  
+  let mut block1 = Block::new();
+  match (&x,&vx,&y,&vy,&g) {
+    (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
+      // #ball.x := #ball.x + #ball.vx
+      block1.add_tfm(Transformation::ParAddVVIP((x.clone(), vx.clone())));
+      // #ball.y := #ball.y + #ball.vy    
+      block1.add_tfm(Transformation::ParAddVVIP((y.clone(), vy.clone())));
+      // #ball.vy := #ball.vy + #gravity
+      block1.add_tfm(Transformation::ParAddVSIP((vy.clone(), g.clone())));
+    }
+    _ => (),
+  }
+  block1.gen_id();
+
+
+  // Keep the balls within the boundary height
+  let mut block2 = Block::new();
+  match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy) {
+    (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy)) => {
+      // iy = #ball.y > #boundary.height
+      block2.add_tfm(Transformation::ParGreaterThanVS((y.clone(), 500.0, iy.clone())));
+      // iyy = #ball.y < 0
+      block2.add_tfm(Transformation::ParLessThanVS((y.clone(), 0.0, iyy.clone())));
+      // #ball.y{iy} := #boundary.height
+      block2.add_tfm(Transformation::ParSetVS((iy.clone(), 500.0, y.clone())));
+      // #ball.vy{iy | iyy} := #ball.vy * -0.80
+      block2.add_tfm(Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())));
+      block2.add_tfm(Transformation::ParMultiplyVS((vy.clone(), c1.clone(), vy2.clone())));
+      block2.add_tfm(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
+    }
+    _ => (),
+  }
+  block2.gen_id();
+
+  // Keep the balls within the boundary width
+  let mut block3 = Block::new();
+  match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2) {
+    (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2)) => {
+      // ix = #ball.x > #boundary.width
+      block3.add_tfm(Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
+      // ixx = #ball.x < 0
+      block3.add_tfm(Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
+      // #ball.x{ix} := #boundary.width
+      block3.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
+      // #ball.vx{ix | ixx} := #ball.vx * -0.80
+      block3.add_tfm(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())));
+      block3.add_tfm(Transformation::ParMultiplyVS((vx.clone(), c1.clone(), vx2.clone())));
+      block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
+    }
+    _ => (),
+  }
+  block3.gen_id();
+
+  
+  core.schedules.insert((hash_string("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
+
+  core.insert_block(block1);
+  core.insert_block(block2);
+  core.insert_block(block3);
+
+  for i in 0..200000 {
+    let txn = vec![(hash_string("time/timer"), vec![(0, 1, Value::F32(i as f32))])];
+    let start_ns = time::precise_time_ns();
+
+    core.process_transaction(&txn);
+
+    let end_ns = time::precise_time_ns();
+    let time = (end_ns - start_ns) as f32;
+    total_time.push_back(time);
+    if total_time.len() > 1000 {
+      total_time.pop_front();
+    }
+    let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+  }
+
+  let end_ns0 = time::precise_time_ns();
+  let time = (end_ns0 - start_ns0) as f32;
+  println!("{:0.4?} s", time / 1e9);
 }

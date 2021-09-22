@@ -1,4 +1,267 @@
-use table::{Table, TableId, TableIndex};
+// ## Block
+
+// Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
+// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
+// them or perform computations on them. Blocks can be thought of as pure functions where the input and
+// output are tables. Blocks have their own internal table store. Local tables can be defined within a
+// block, which allows the programmer to break a computation down into steps. The result of the computation
+// is then output to one or more global tables, which triggers the execution of other blocks in the network.
+
+// ## Prelude
+
+use crate::{Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use std::cell::RefCell;
+use std::rc::Rc;
+use hashbrown::HashMap;
+
+pub type Plan = Vec<Rc<RefCell<Transformation>>>;
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BlockState {
+  New,          // Has just been created, but has not been tested for satisfaction
+  Ready,        // All inputs are satisfied and the block is ready to execute
+  Done,         // All inputs are satisfied and the block has executed
+  Unsatisfied,  // One or more inputs are not satisfied
+  Error,        // One or more errors exist on the block
+  Disabled,     // The block is disabled will not execute if it otherwise would
+}
+
+// ## Block
+
+lazy_static! {
+  static ref MATH_ADD: u64 = hash_string("math/add");
+  static ref MATH_DIVIDE: u64 = hash_string("math/divide");
+  static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
+  static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
+}
+
+#[derive(Clone, Debug)]
+pub struct Block {
+  pub id: u64,
+  pub state: BlockState,
+  tables: Database,
+  plan: Plan,
+  pub changes: Transaction,
+  pub global_database: Rc<RefCell<Database>>,
+  unsatisfied_transformations: Vec<Transformation>,
+}
+
+impl Block {
+  pub fn new() -> Block {
+    Block {
+      id: 0,
+      state: BlockState::New,
+      tables: Database::new(),
+      plan: Vec::new(),
+      changes: Vec::new(),
+      global_database: Rc::new(RefCell::new(Database::new())),
+      unsatisfied_transformations: Vec::new(),
+    }
+  }
+
+  pub fn gen_id(&mut self) -> u64 {
+    self.id = hash_string(&format!("{:?}", self.plan));
+    self.id
+  }
+
+  pub fn id(&self) -> u64 {
+    self.id
+  }
+
+  pub fn ready(&mut self) -> bool {
+    let unsatisfied = self.unsatisfied_transformations.clone();
+    self.unsatisfied_transformations.clear();
+    for tfm in unsatisfied {
+      self.add_tfm(tfm);
+    }
+    if self.unsatisfied_transformations.len() == 0 {
+      self.state = BlockState::Ready;
+      true
+    } else {
+      false
+    }
+  }
+
+  pub fn add_tfm(&mut self, tfm: Transformation) {
+    match &tfm {
+      Transformation::NewTable{table_id, rows, columns} => {
+        match table_id {
+          TableId::Local(id) => {
+            let table = Table::new(*id, *rows, *columns);
+            self.tables.insert_table(table);
+          }
+          TableId::Global(id) => {
+            self.changes.push(Change::NewTable{table_id: *id, rows: *rows, columns: *columns});
+          }
+        } 
+      },
+      Transformation::TableAlias{table_id, alias} => {
+        self.tables.insert_alias(*alias, *table_id.unwrap());
+      },
+      Transformation::Select{table_id, indices, out} => {
+        let mut argument_columns = vec![];
+        match self.tables.get_table_by_id(table_id.unwrap()) {
+          Some(table) => {
+            let mut t = table.borrow_mut();
+            t.set_col_kind(0, ValueKind::U8);
+            let column = t.get_column_unchecked(0);
+            argument_columns.push(column);
+          }
+          _ => (),
+        }
+        match out {
+          TableId::Local(out_table_id) => {
+            match self.tables.get_table_by_id(&out_table_id) {
+              Some(table) => {
+                let mut t = table.borrow_mut();
+                t.set_col_kind(0, ValueKind::U8);
+                let column = t.get_column_unchecked(0);
+                argument_columns.push(column);
+              }
+              _ => (),
+            }
+          }
+          TableId::Global(out_table_id) => {
+            match self.global_database.borrow().get_table_by_id(&out_table_id) {
+              Some(table) => {
+                let mut t = table.borrow_mut();
+                t.set_col_kind(0, ValueKind::U8);
+                let column = t.get_column_unchecked(0);
+                argument_columns.push(column);
+              }
+              _ => argument_columns.push(Column::Empty),
+            }
+          }
+        }
+        match (&argument_columns[0], &argument_columns[1]) {
+          (Column::U8(src), Column::U8(out)) => {
+            let tfm = Transformation::CopySSU8((src.clone(), out.clone()));
+            self.plan.push(Rc::new(RefCell::new(tfm)));
+          }
+          (_, Column::Empty) => {
+            self.unsatisfied_transformations.push(tfm.clone());
+            self.state = BlockState::Unsatisfied;
+          },
+          _ => (), // TODO Raise an error here, we don't handle this case
+        }
+      }
+      Transformation::NumberLiteral{kind, bytes, table_id, row, column} => {
+        match self.tables.get_table_by_id(table_id.unwrap()) {
+          Some(table) => {
+            let mut t = table.borrow_mut();
+            match kind {
+              NumberLiteralKind::Decimal => {
+                match bytes.len() {
+                  1 => {
+                    t.set_col_kind(*column, ValueKind::U8);
+                    t.set(*row,*column,Value::U8(bytes[0] as u8));
+                  }
+                  _ => (), // TODO Handle other sizes
+                }
+              }
+              _ => (),
+            }
+          }
+          _ => (),
+        }
+      },
+      Transformation::Function{name, ref arguments, out} => {
+        if *name == *MATH_ADD || *name == *MATH_DIVIDE {
+          let mut arg_dims = Vec::new();
+          for (_, table_id, row, column) in arguments {
+            match self.tables.get_table_by_id(table_id.unwrap()) {
+              Some(table) => {
+                let t = table.borrow();
+                let dims = match (row, column) {
+                  (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+                  _ => (0,0),
+                };
+                arg_dims.push(dims);
+              }
+              _ => {
+                self.unsatisfied_transformations.push(tfm);
+                self.state = BlockState::Unsatisfied;
+                return;
+              },
+            }
+          }
+          // Categorize arguments by shape
+          let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
+            match dims {
+              (1,1) => TableShape::Scalar,
+              _ => TableShape::Pending,
+            }
+          }).collect();
+          // Now decide on the correct tfm based on the shape
+
+          match (&arg_shapes[0],&arg_shapes[1]) {
+            (TableShape::Scalar, TableShape::Scalar) => {
+              let mut argument_columns = vec![];
+              for (_, table_id, _, _) in arguments {
+                match self.tables.get_table_by_id(table_id.unwrap()) {
+                  Some(table) => {
+                    let mut column = table.borrow().get_column_unchecked(0);
+                    argument_columns.push(column);
+                  }
+                  _ => (),
+                }
+              }
+              let (out_table_id, _, _) = out;
+              match self.tables.get_table_by_id(out_table_id.unwrap()) {
+                Some(table) => {
+                  let mut t = table.borrow_mut();
+                  t.set_col_kind(0, ValueKind::U8);
+                  let column = t.get_column_unchecked(0);
+                  argument_columns.push(column);
+                }
+                _ => (),
+              }
+              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+                (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
+                  let tfm = if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Transformation::Null };
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                }
+                _ => (),
+              }
+
+            }
+            _ => (),
+          }
+        } else { 
+          self.plan.push(Rc::new(RefCell::new(tfm)));
+        }
+      } 
+      _ => self.plan.push(Rc::new(RefCell::new(tfm))),
+    }
+  }
+
+  pub fn solve(&mut self) -> bool {
+    if self.state == BlockState::Ready {
+      for ref mut tfm in &mut self.plan.iter() {
+        tfm.borrow_mut().solve();
+      }
+      true
+    } else {
+      false
+    }
+  }
+
+}
+
+#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+pub struct Register {
+  pub table_id: TableId,
+  pub row: TableIndex,
+  pub column: TableIndex,
+}
+
+/*use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteralKind};
 use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator, IndexRepeater};
 use database::{Database, Store, Change, Transaction};
@@ -23,14 +286,7 @@ lazy_static! {
   static ref SECONDS: u64 = hash_string("s");
 }
 
-// ## Block
 
-// Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
-// other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
-// them or perform computations on them. Blocks can be thought of as pure functions where the input and
-// output are tables. Blocks have their own internal table store. Local tables can be defined within a
-// block, which allows the programmer to break a computation down into steps. The result of the computation
-// is then output to one or more global tables, which triggers the execution of other blocks in the network.
 #[derive(Clone)]
 pub struct Block {
   pub id: u64,
@@ -1126,3 +1382,4 @@ fn format_transformation(block: &Block, tfm: &Transformation) -> String {
     x => format!("{:?}", x),
   }
 }
+*/

@@ -10,6 +10,7 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 
 [badges]
 gitlab = { repository = "mech-lang/core", branch = "main" }
@@ -27,6 +28,19 @@ rlibc = { version = "=1.0", optional = true }
 lazy_static = "1.4.0"
 seahash = "4.1.0"
 indexmap = "1.6.2"
+rayon = "1.5.1"
+time = "0.2.25"
+nalgebra = "0.27.1"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.7"
+futures = "0.3.15"
+ndarray = {version = "0.15.3", features = ["rayon"]}
+map_in_place = "*"
+wgpu = "0.9.0"
+pollster = "0.2.4"
+env_logger = "0.9.0"
+bytemuck = "1.7.2"
+arrayfire = "3.8.0"
 
 [dependencies.num-traits]
 version = "0.2.14"

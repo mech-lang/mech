@@ -1,3 +1,124 @@
+// ## Core
+
+// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the
+// subparts of Mech, including the database (defines the what) and the runtime (defines the how).
+// The core accepts transactions and applies those to the database. Updated tables in the database
+// trigger computation in the runtime, which can further update the database. Execution terminates
+// when a steady state is reached, or an iteration limit is reached (whichever comes first). The
+// core then waits for further transactions.
+
+use crate::{Database, Change, Block, BlockState, Table, Transaction};
+use hashbrown::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+#[derive(Clone, Debug)]
+pub struct Core {
+  blocks: Vec<Rc<RefCell<Block>>>,
+  unsatisfied_blocks: Vec<Block>,
+  database: Rc<RefCell<Database>>,
+  pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
+}
+
+impl Core {
+
+  pub fn new() -> Core {
+    Core {
+      blocks: Vec::new(),
+      unsatisfied_blocks: Vec::new(),
+      database: Rc::new(RefCell::new(Database::new())),
+      schedules: HashMap::new(),
+    }
+  }
+
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
+    let mut registers = Vec::new();
+    for change in txn {
+      match change {
+        Change::Set((table_id, adds)) => {
+          match self.database.borrow().get_table_by_id(table_id) {
+            Some(table) => {
+              for (row,col,val) in adds {
+                match table.borrow().set(*row, *col, val.clone()) {
+                  Err(_) => {
+                    // Index out of bounds.
+                    return Err(());
+                  }
+                  _ => {
+                    registers.push((*table_id,*row,*col));
+                  },
+                }
+              }
+            }
+            _ => {
+              // Table doesn't exist
+              return Err(());
+            }
+          }
+        }
+        Change::NewTable{table_id, rows, columns} => {
+          let table = Table::new(*table_id,*rows,*columns);
+          self.database.borrow_mut().insert_table(table);
+        }
+      }
+    }
+    for register in registers {
+      self.step(&register);
+    }
+    Ok(())
+  }
+
+  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
+    self.database.borrow_mut().insert_table(table)
+  }
+
+  pub fn get_table(&mut self, table_name: &str) -> Option<Rc<RefCell<Table>>> {
+    match self.database.borrow().get_table(table_name) {
+      Some(table) => Some(table.clone()),
+      None => None,
+    }
+  }
+
+  pub fn get_table_by_id(&mut self, table_id: u64) -> Option<Rc<RefCell<Table>>> {
+    match self.database.borrow().get_table_by_id(&table_id) {
+      Some(table) => Some(table.clone()),
+      None => None,
+    }
+  }
+
+  pub fn insert_block(&mut self, mut block: Block) {
+    block.global_database = self.database.clone();
+    self.process_transaction(&block.changes);
+    // try to satisfy the block
+    match block.ready() {
+      true => {
+        block.gen_id();
+        block.solve();
+        self.blocks.push(Rc::new(RefCell::new(block)));
+      }
+      false => self.unsatisfied_blocks.push(block),
+    }
+  }
+
+  pub fn step(&mut self, register: &(u64,usize,usize)) {
+    match &mut self.schedules.get(register) {
+      Some(schedule) => {
+        for blocks in schedule.iter() {
+          for block_ix in blocks {
+            self.blocks[*block_ix].borrow_mut().solve();
+          }
+        }
+      }
+      _ => (),
+    }
+
+  }
+}
+
+
+
+
+/*
 use block::{Block, Register};
 use errors::{Error, ErrorType};
 use database::{Database, Change, Transaction};
@@ -34,14 +155,7 @@ use operations::{
 };
 use ::hash_string;
 
-// ## Core
 
-// Cores are the smallest unit of a mech program exposed to a user. They hold references to all the
-// subparts of Mech, including the database (defines the what) and the runtime (defines the how).
-// The core accepts transactions and applies those to the database. Updated tables in the database
-// trigger computation in the runtime, which can further update the database. Execution terminates
-// when a steady state is reached, or an iteration limit is reached (whichever comes first). The
-// core then waits for further transactions.
 pub struct Core {
   pub runtime: Runtime,
   pub database: Arc<RefCell<Database>>,
@@ -188,3 +302,4 @@ impl fmt::Debug for Core {
     Ok(())
   }
 }
+*/
