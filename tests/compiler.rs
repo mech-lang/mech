@@ -137,7 +137,7 @@ test_mech!(math_constant,"#test = 10", Value::U8(10));
 
 test_mech!(math_add,"#test = 1 + 1", Value::U8(2));
 
-test_mech!(math_subtract,"#test = 1 - 1", Value::U8(0));
+test_mech!(math_subtract,"#test = 3 - 1", Value::U8(2));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::U8(4));
 
