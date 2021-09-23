@@ -10,9 +10,13 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  parser.parse("#test = 10");
+  parser.parse("block 
+  😃 = 1
+  🤦🏼‍♂️ = 2
+  y̆és = 🤦🏼‍♂️ + 😃
+  #test = y̆és");
 
-  println!("{:?}", parser.parse_tree);
+  println!("{:#?}", parser.parse_tree);
 
   ast.build_syntax_tree(&parser.parse_tree);
 
@@ -31,36 +35,3 @@ fn main() {
   println!("{:#?}", core.get_table("test").unwrap().borrow().get(0, 0));
 
 }
-
-
-
-
-int x = 10; // Stack allocated variable
-int size = stdin();
-
-char val = 5;
-char* val2 = malloc(sizeof(char)); // Heap allocated
-*val2 = val; 
-free(val2);
-
-let val: u8 = 5;
-let boxed: Box<u8> = Box::new(val);
-
-
-
-
-fn main() {
-  println!("{:?}", x);
-
-  let x = 10;
-  {
-    let y = x;
-  }
-
-  println!("{:?}", x);
-
-}
-
-
-
-
