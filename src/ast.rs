@@ -776,8 +776,20 @@ impl Ast {
         compiled.push(Node::RationalNumber{children: result});
       },
       parser::Node::DecimalLiteral{chars} => {
-        let dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: dec_bytes});
+        let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
+        let mut dec_number: u128 = 0;
+        dec_bytes.reverse();
+        for (i,byte) in dec_bytes.iter().enumerate() {
+          dec_number += *byte as u128 * 10_u128.pow(i as u32);
+        }
+        use std::mem::transmute;
+        let mut bytes: [u8; 16] = unsafe { transmute(dec_number.to_be()) };
+        let mut bytes = bytes.to_vec();
+        // Remove leading zeros
+        while bytes.len() > 1 && bytes[0] == 0 {
+          bytes.remove(0);
+        }
+        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: bytes.to_vec()});
       },
       parser::Node::BinaryLiteral{chars} => {
         let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
