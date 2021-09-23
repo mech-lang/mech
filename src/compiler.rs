@@ -53,6 +53,7 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
 }
 
 pub struct Compiler {
+
 }
 
 impl Compiler {
@@ -74,7 +75,7 @@ impl Compiler {
     blocks
   }
 
-  pub fn compile_transformations(&self, nodes: &Vec<Node>) -> Vec<Transformation> {
+  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
     for node in nodes {
       let mut result = self.compile_transformation(node);
@@ -83,16 +84,16 @@ impl Compiler {
     compiled
   }
 
-  pub fn compile_transformation(&self, input: &Node) -> Vec<Transformation> {
+  pub fn compile_transformation(&mut self, input: &Node) -> Vec<Transformation> {
     let mut tfms = vec![];
     match input {
       Node::Identifier{name, id} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
       Node::NumberLiteral{kind, bytes} => {
-        let table_id = TableId::Local(hash_string(&format!("{:?}", input)));
+        let table_id = TableId::Local(hash_string(&format!("{:?}{:?}", kind, bytes.to_vec())));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
-        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec(), table_id: table_id, row: 0, column: 0});
+        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
       },
       Node::Table{name, id} => {
         //self.strings.insert(*id, name.to_string());
@@ -197,6 +198,14 @@ impl Compiler {
         });
         tfms.append(&mut arg_tfms);
       },
+      Node::TableRow{children} => {
+        let mut result = self.compile_transformations(children);
+        tfms.append(&mut result);
+      }
+      Node::TableColumn{children} => {
+        let mut result = self.compile_transformations(children);
+        tfms.append(&mut result);
+      }
       Node::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
