@@ -28,6 +28,7 @@ pub enum Transformation {
   DivideSSU8((ArgU8, ArgU8, OutU8)),
   MultiplySSU8((ArgU8, ArgU8, OutU8)),
   SubtractSSU8((ArgU8, ArgU8, OutU8)),
+  ExponentSSU8((ArgU8, ArgU8, OutU8)),
   AddSSIP((OutF32, ArgF32)),
   AddVVIP((OutF32, ArgF32)),
   ParAddVVIP((OutF32, ArgF32)),  
@@ -72,6 +73,7 @@ impl Transformation {
       Transformation::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
       Transformation::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
       Transformation::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
+      Transformation::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
 
       Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
       Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }

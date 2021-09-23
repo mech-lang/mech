@@ -34,6 +34,7 @@ lazy_static! {
   static ref MATH_DIVIDE: u64 = hash_string("math/divide");
   static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
   static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
+  static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
 }
 
 #[derive(Clone, Debug)]
@@ -134,17 +135,19 @@ impl Block {
             }
           }
         }
-        match (&argument_columns[0], &argument_columns[1]) {
-          (Column::U8(src), Column::U8(out)) => {
-            let tfm = Transformation::CopySSU8((src.clone(), out.clone()));
-            self.plan.push(Rc::new(RefCell::new(tfm)));
+        if argument_columns.len() == 2 { 
+          match (&argument_columns[0], &argument_columns[1]) {
+            (Column::U8(src), Column::U8(out)) => {
+              let tfm = Transformation::CopySSU8((src.clone(), out.clone()));
+              self.plan.push(Rc::new(RefCell::new(tfm)));
+            }
+            (_, Column::Empty) => {
+              self.unsatisfied_transformations.push(tfm.clone());
+              self.state = BlockState::Unsatisfied;
+            },
+            _ => (), // TODO Raise an error here, we don't handle this case
           }
-          (_, Column::Empty) => {
-            self.unsatisfied_transformations.push(tfm.clone());
-            self.state = BlockState::Unsatisfied;
-          },
-          _ => (), // TODO Raise an error here, we don't handle this case
-        }
+        } 
       }
       Transformation::NumberLiteral{kind, bytes, table_id, row, column} => {
         match self.tables.get_table_by_id(table_id.unwrap()) {
@@ -175,7 +178,11 @@ impl Block {
         }
       },
       Transformation::Function{name, ref arguments, out} => {
-        if *name == *MATH_ADD || *name == *MATH_DIVIDE {
+        if *name == *MATH_ADD || 
+           *name == *MATH_DIVIDE || 
+           *name == *MATH_MULTIPLY || 
+           *name == *MATH_SUBTRACT || 
+           *name == *MATH_EXPONENT {
           let mut arg_dims = Vec::new();
           for (_, table_id, row, column) in arguments {
             match self.tables.get_table_by_id(table_id.unwrap()) {
@@ -232,6 +239,7 @@ impl Block {
                   else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_EXPONENT { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
