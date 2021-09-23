@@ -149,24 +149,25 @@ impl Block {
           }
         } 
       }
-      Transformation::NumberLiteral{kind, bytes, table_id, row, column} => {
-        match self.tables.get_table_by_id(table_id.unwrap()) {
+      Transformation::NumberLiteral{kind, bytes} => {
+        let table_id = hash_string(&format!("{:?}{:?}", kind, bytes));
+        match self.tables.get_table_by_id(&table_id) {
           Some(table) => {
             let mut t = table.borrow_mut();
             match kind {
               NumberLiteralKind::Decimal => {
                 match bytes.len() {
                   1 => {
-                    t.set_col_kind(*column, ValueKind::U8);
-                    t.set(*row,*column,Value::U8(bytes[0] as u8));
+                    t.set_col_kind(0, ValueKind::U8);
+                    t.set(0,0,Value::U8(bytes[0] as u8));
                   }
                   2 => {
-                    t.set_col_kind(*column, ValueKind::U16);
+                    t.set_col_kind(0, ValueKind::U16);
                     use std::mem::transmute;
                     use std::convert::TryInto;
                     let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
                     let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
-                    t.set(*row,*column,Value::U16(x));
+                    t.set(0,0,Value::U16(x));
                   }
                   _ => (), // TODO Handle other sizes
                 }

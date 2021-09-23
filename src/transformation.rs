@@ -45,7 +45,7 @@ pub enum Transformation {
   CopySSU8((ArgU8,OutU8)),
   
   Identifier{ name: Vec<char>, id: u64 },
-  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>, table_id: TableId, row: usize, column: usize },
+  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},
   TableAlias{table_id: TableId, alias: u64},
   TableReference{table_id: TableId, reference: Value},
   NewTable{table_id: TableId, rows: usize, columns: usize },
