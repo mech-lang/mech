@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, ColumnU8, ColumnF32, humanize, Value};
+use crate::{Column, ValueKind, ColumnU8, ColumnU16, ColumnF32, humanize, Value};
 
 // ### Table Id
 
@@ -116,6 +116,7 @@ impl Table {
       match &self.data[col] {
         Column::F32(column_f32) => Some(Value::F32(column_f32.borrow()[row])),
         Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
+        Column::U16(column_u16) => Some(Value::U16(column_u16.borrow()[row])),
         Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
         Column::Empty => None,
       }
@@ -129,6 +130,7 @@ impl Table {
       match (&self.data[col], val) {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
         (Column::Empty, Value::U8(value_u8)) => {
           //let column: ColumnU8 = Rc::new(RefCell::new(Vec::new()));
           //self.data[col] = Column::U8(column);
@@ -146,9 +148,14 @@ impl Table {
       match (&mut self.data[col], val) {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
+        (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
         (Column::Empty, Value::U8(value_u8)) => {
           let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, Value::U16(value_u16)) => {
+          let column: ColumnU16 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U16(column);
         },
         (Column::Empty, Value::F32(value_f32)) => {
           let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
@@ -168,6 +175,10 @@ impl Table {
         (Column::Empty, ValueKind::U8) => {
           let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
+        },
+        (Column::Empty, ValueKind::U16) => {
+          let column: ColumnU16 = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U16(column);
         },
         (Column::Empty, ValueKind::F32) => {
           let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));

@@ -31,6 +31,9 @@ pub enum Value {
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueKind {
   U8,
+  U16,
+  U32,
+  U64,
   F32,
   Quantity,
   Bool,

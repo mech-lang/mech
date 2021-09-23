@@ -44,6 +44,7 @@ pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
 
 pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
+pub type ColumnU16 = Rc<RefCell<Vec<u16>>>;
 pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
 pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
 
@@ -51,6 +52,7 @@ pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
 pub enum Column {
   F32(ColumnF32),
   U8(ColumnU8),
+  U16(ColumnU16),
   Bool(ColumnBool),
   Empty,
 }

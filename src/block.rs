@@ -157,6 +157,14 @@ impl Block {
                     t.set_col_kind(*column, ValueKind::U8);
                     t.set(*row,*column,Value::U8(bytes[0] as u8));
                   }
+                  2 => {
+                    t.set_col_kind(*column, ValueKind::U16);
+                    use std::mem::transmute;
+                    use std::convert::TryInto;
+                    let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+                    let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
+                    t.set(*row,*column,Value::U16(x));
+                  }
                   _ => (), // TODO Handle other sizes
                 }
               }
