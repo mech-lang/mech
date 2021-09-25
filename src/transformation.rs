@@ -24,7 +24,7 @@ pub type OutBool = ColumnBool;
 #[derive(Debug, Clone)]
 pub enum Transformation {
   AddSSF32((ArgF32, ArgF32, OutF32)),
-  AddSSU8((ArgU8, ArgU8, OutU8)),
+  AddSSU8(Vec<ColumnU8>),
   DivideSSU8((ArgU8, ArgU8, OutU8)),
   MultiplySSU8((ArgU8, ArgU8, OutU8)),
   SubtractSSU8((ArgU8, ArgU8, OutU8)),
@@ -69,7 +69,7 @@ impl Transformation {
       Transformation::AddSSF32((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
 
       // u8 arithmetic
-      Transformation::AddSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
+      Transformation::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
       Transformation::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
       Transformation::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
       Transformation::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }

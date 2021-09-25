@@ -235,8 +235,7 @@ impl Block {
               }
               match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
-                  let tfm = if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) }
-                  else if *name == *MATH_ADD { Transformation::AddSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  let tfm = if *name == *MATH_ADD { Transformation::AddSSU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
                   else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 

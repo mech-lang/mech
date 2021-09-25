@@ -3,9 +3,11 @@ use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+type FunctionName = u64;
+
 #[derive(Debug, Clone)]
 pub enum Change {
-  Set((u64, Vec<(usize, usize, Value)>)),
+  Set((FunctionName, Vec<(usize, usize, Value)>)),
   NewTable{table_id: u64, rows: usize, columns: usize},
 }
 
