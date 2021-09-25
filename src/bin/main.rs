@@ -24,7 +24,7 @@ use seahash;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
-use mech_core::{Table, Column, Value, ValueKind, hash_string, Transformation, Block, Core};
+use mech_core::{Table, Change, Column, Value, ValueKind, hash_string, Transformation, Block, Core};
 
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
@@ -72,21 +72,36 @@ fn main() {
 
   // Table
   let (x,y,vx,vy) = {
-    let balls = core.get_table_by_id(hash_string("balls")).unwrap().borrow();
-    (balls.get_column_unchecked(0),
-     balls.get_column_unchecked(1),
-     balls.get_column_unchecked(2),
-     balls.get_column_unchecked(3))
+    match core.get_table_by_id(hash_string("balls")) {
+      Some(balls_rc) => {
+        let balls = balls_rc.borrow();
+        (balls.get_column_unchecked(0),
+        balls.get_column_unchecked(1),
+        balls.get_column_unchecked(2),
+        balls.get_column_unchecked(3))
+      }
+      _ => std::process::exit(1),
+    }
   };
 
   let g = {
-    let gravity = core.get_table_by_id(hash_string("gravity")).unwrap().borrow();
-    gravity.get_column_unchecked(0)
+    match core.get_table_by_id(hash_string("gravity")) {
+      Some(gravity_rc) => {
+        let gravity = gravity_rc.borrow();
+        gravity.get_column_unchecked(0)
+      }
+      _ => std::process::exit(1),
+    }
   };
 
   let c1 = {
-    let const1 = core.get_table_by_id(hash_string("-0.8")).unwrap().borrow();
-    const1.get_column_unchecked(0)
+    match core.get_table_by_id(hash_string("-0.8")) {
+      Some(const1_rc) => {
+        let const1 = const1_rc.borrow();
+        const1.get_column_unchecked(0)
+      }
+      _ => std::process::exit(1),
+    }
   };
   
   // Temp Vars
@@ -162,7 +177,7 @@ fn main() {
   core.insert_block(block3);
 
   for i in 0..200000 {
-    let txn = vec![(hash_string("time/timer"), vec![(0, 1, Value::F32(i as f32))])];
+    let txn = vec![Change::Set((hash_string("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
     let start_ns = time::precise_time_ns();
 
     core.process_transaction(&txn);
