@@ -120,11 +120,11 @@ fn main() {
   match (&x,&vx,&y,&vy,&g) {
     (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
       // #ball.x := #ball.x + #ball.vx
-      block1.add_tfm(Transformation::ParAddVVIP((x.clone(), vx.clone())));
+      block1.add_tfm(Transformation::ParAddVVIPF32(vec![x.clone(), vx.clone()]));
       // #ball.y := #ball.y + #ball.vy    
-      block1.add_tfm(Transformation::ParAddVVIP((y.clone(), vy.clone())));
+      block1.add_tfm(Transformation::ParAddVVIPF32(vec![y.clone(), vy.clone()]));
       // #ball.vy := #ball.vy + #gravity
-      block1.add_tfm(Transformation::ParAddVSIP((vy.clone(), g.clone())));
+      block1.add_tfm(Transformation::ParAddVSIPF32(vec![vy.clone(), g.clone()]));
     }
     _ => (),
   }
@@ -142,8 +142,8 @@ fn main() {
       // #ball.y{iy} := #boundary.height
       block2.add_tfm(Transformation::ParSetVS((iy.clone(), 500.0, y.clone())));
       // #ball.vy{iy | iyy} := #ball.vy * -0.80
-      block2.add_tfm(Transformation::ParOrVV((iy.clone(), iyy.clone(), iy_or.clone())));
-      block2.add_tfm(Transformation::ParMultiplyVS((vy.clone(), c1.clone(), vy2.clone())));
+      block2.add_tfm(Transformation::ParOrVV(vec![iy.clone(), iyy.clone(), iy_or.clone()]));
+      block2.add_tfm(Transformation::ParMultiplyVSF32(vec![vy.clone(), c1.clone(), vy2.clone()]));
       block2.add_tfm(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
     }
     _ => (),
@@ -161,8 +161,8 @@ fn main() {
       // #ball.x{ix} := #boundary.width
       block3.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
       // #ball.vx{ix | ixx} := #ball.vx * -0.80
-      block3.add_tfm(Transformation::ParOrVV((ix.clone(), ixx.clone(), ix_or.clone())));
-      block3.add_tfm(Transformation::ParMultiplyVS((vx.clone(), c1.clone(), vx2.clone())));
+      block3.add_tfm(Transformation::ParOrVV(vec![ix.clone(), ixx.clone(), ix_or.clone()]));
+      block3.add_tfm(Transformation::ParMultiplyVSF32(vec![vx.clone(), c1.clone(), vx2.clone()]));
       block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
     }
     _ => (),
