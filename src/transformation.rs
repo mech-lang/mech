@@ -21,6 +21,10 @@ pub type OutF32 = ColumnF32;
 pub type OutU8 = ColumnU8;
 pub type OutBool = ColumnBool;
 
+trait MechFunction<T> {
+  fn solve(args: Vec<T>);
+}
+
 #[derive(Debug, Clone)]
 pub enum Transformation {
   AddSSF32((ArgF32, ArgF32, OutF32)),
@@ -31,10 +35,10 @@ pub enum Transformation {
   ExponentSSU8((ArgU8, ArgU8, OutU8)),
   AddSSIP((OutF32, ArgF32)),
   AddVVIP((OutF32, ArgF32)),
-  ParAddVVIP((OutF32, ArgF32)),  
-  ParAddVSIP((OutF32, ArgF32)),
-  ParMultiplyVS((ArgF32, ArgF32, OutF32)),
-  ParOrVV((ArgBool,ArgBool,OutBool)),
+  ParAddVVIPF32(Vec<ColumnF32>),  
+  ParAddVSIPF32(Vec<ColumnF32>),
+  ParMultiplyVSF32(Vec<ColumnF32>),
+  ParOrVV(Vec<ColumnBool>),
   ParLessThanVS((ArgF32,f32,OutBool)),
   ParGreaterThanVS((ArgF32,f32,OutBool)),
   ParCSGreaterThanVS((ArgF32,f32,f32)),
@@ -77,14 +81,14 @@ impl Transformation {
 
       Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
       Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::ParAddVVIP((lhs, rhs)) => { lhs.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::ParAddVSIP((lhs, rhs)) => { 
-        let rhs = rhs.borrow()[0];
-        lhs.borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
+      Transformation::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Transformation::ParAddVSIPF32(args) => { 
+        let rhs = args[1].borrow()[0];
+        args[0].borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
       }
-      Transformation::ParMultiplyVS((lhs, rhs, out)) => { 
-        let rhs = rhs.borrow()[0];
-        out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
+      Transformation::ParMultiplyVSF32(args) => { 
+        let rhs = args[1].borrow()[0];
+        args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
       }
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
@@ -96,7 +100,7 @@ impl Transformation {
       }
 
       // LOGIC
-      Transformation::ParOrVV((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).zip(&(*rhs.borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
+      Transformation::ParOrVV(args) => { args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).zip(&(*args[1].borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
       // SET
       Transformation::ParSetVS((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
