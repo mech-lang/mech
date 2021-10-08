@@ -35,6 +35,7 @@ lazy_static! {
   static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
   static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
   static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
+  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
 }
 
 #[derive(Clone, Debug)]
@@ -210,7 +211,6 @@ impl Block {
             }
           }).collect();
           // Now decide on the correct tfm based on the shape
-
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = vec![];
@@ -249,6 +249,31 @@ impl Block {
             }
             _ => (),
           }
+        } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
+          let mut width = 0;
+          let mut argument_columns = vec![];
+          for (_, table_id, _, _) in arguments {
+            match self.tables.get_table_by_id(table_id.unwrap()) {
+              Some(table) => {
+                let t = table.borrow();
+                width += t.cols;
+                let mut column = t.get_column_unchecked(0);
+                argument_columns.push(column);
+              }
+              _ => (),
+            }
+          }
+          let (out_table_id, _, _) = out;
+          match self.tables.get_table_by_id(out_table_id.unwrap()) {
+            Some(table) => {
+              let mut t = table.borrow_mut();
+              t.set_col_kind(0, ValueKind::U8);
+              let column = t.get_column_unchecked(0);
+              argument_columns.push(column);
+            }
+            _ => (),
+          }
+          println!("{:?}", width);
         } else { 
           self.plan.push(Rc::new(RefCell::new(tfm)));
         }
