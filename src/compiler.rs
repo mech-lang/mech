@@ -2,11 +2,7 @@
 
 // ## Preamble
 
-/*use mech_core::{Value, Block, BlockState, ValueMethods, Transformation, TableIndex, TableId, Register, NumberLiteral, NumberLiteralKind};
-use mech_core::{Quantity, QuantityMath};
-
-use mech_core::{Error, ErrorType};*/
-use mech_core::{hash_string, hash_chars, Block, Transformation, Table, TableId, TableIndex};
+use mech_core::{hash_string, hash_chars, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
 
 use crate::ast::{Ast, Node};
 use crate::parser::Parser;
@@ -24,8 +20,8 @@ use std::mem;
 
 lazy_static! {
   static ref TABLE_COPY: u64 = hash_string("table/copy");
-  static ref TABLE_HORZCAT: u64 = hash_string("table/horizontal-concatenate");
-  static ref TABLE_VERTCAT: u64 = hash_string("table/vertical-concatenate");
+  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
+  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
   static ref TABLE_SET: u64 = hash_string("table/set");
   static ref TABLE_APPEND__ROW: u64 = hash_string("table/append-row");
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
@@ -66,7 +62,7 @@ impl Compiler {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
       let mut block = Block::new();
-      let tfms = self.compile_transformation(&b);
+      let tfms = self.compile_node(&b);
       for tfm in tfms {
         block.add_tfm(tfm);
       }
@@ -75,32 +71,41 @@ impl Compiler {
     blocks
   }
 
-  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
     for node in nodes {
-      let mut result = self.compile_transformation(node);
+      let mut result = self.compile_node(node);
       compiled.append(&mut result);
     }
     compiled
   }
 
-  pub fn compile_transformation(&mut self, input: &Node) -> Vec<Transformation> {
+  pub fn compile_node(&mut self, node: &Node) -> Vec<Transformation> {
     let mut tfms = vec![];
-    match input {
+    match node {
       Node::Identifier{name, id} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
       Node::NumberLiteral{kind, bytes} => {
-        let table_id = TableId::Local(hash_string(&format!("{:?}{:?}", kind, bytes.to_vec())));
+        let bytes_vec = bytes.to_vec();
+        /*let kind = match bytes_vec.len() {
+          1 => NumberLiteralKind::U8,
+          2 => NumberLiteralKind::U16,
+          3..=4 => NumberLiteralKind::U32,
+          5..=8 => NumberLiteralKind::U64,
+          9..=16 => NumberLiteralKind::U128,
+          _ => NumberLiteralKind::U128, // TODO Error
+        };*/
+        let table_id = TableId::Local(hash_string(&format!("{:?}{:?}", kind, bytes_vec)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
-        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
+        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
       },
       Node::Table{name, id} => {
         //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
       Node::TableDefine{children} => {
-        let mut output = self.compile_transformation(&children[0]);
+        let mut output = self.compile_node(&children[0]);
         // Get the output table id
         let output_table_id = match output[0] {
           Transformation::NewTable{table_id,..} => {
@@ -111,7 +116,7 @@ impl Compiler {
 
         tfms.append(&mut output);
 
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
 
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
@@ -140,7 +145,7 @@ impl Compiler {
           _ => 0, // TODO Error
         };
         // Compile input of the variable define
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
         // If the first element is a reference, remove it
         match input[0] {
           Transformation::TableReference{..} => {
@@ -172,7 +177,7 @@ impl Compiler {
             }
             _ => 0,
           };
-          let mut result = self.compile_transformation(&child);
+          let mut result = self.compile_node(&child);
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((arg, *table_id, TableIndex::All, TableIndex::All));
@@ -199,11 +204,27 @@ impl Compiler {
         tfms.append(&mut arg_tfms);
       },
       Node::TableRow{children} => {
-        let mut result = self.compile_transformations(children);
-        tfms.append(&mut result);
+        let row_id = hash_string(&format!("horzcat:{:?}", children));
+        let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
+        for child in children {
+          let mut result = self.compile_node(child);
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+            }
+            _ => (),
+          }  
+          tfms.append(&mut result);       
+        }
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: args.len()});
+        tfms.push(Transformation::Function{
+          name: *TABLE_HORIZONTAL__CONCATENATE,
+          arguments: args,
+          out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
+        });
       }
       Node::TableColumn{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         tfms.append(&mut result);
       }
       Node::SelectData{name, id, children} => {
@@ -243,7 +264,7 @@ impl Compiler {
                           }
                         }
                         Node::Expression{..} => {
-                          let mut result = self.compile_transformation(child);
+                          let mut result = self.compile_node(child);
                           match &result[1] {
                             /*Transformation::Constant{table_id, value, unit} => {
                               if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -294,7 +315,7 @@ impl Compiler {
                     }
                   }
                   Node::Expression{..} => {
-                    let mut result = self.compile_transformation(child);
+                    let mut result = self.compile_node(child);
                     match &result[1] {
                       /*Transformation::Constant{table_id, value, unit} => {
                         if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -354,7 +375,7 @@ impl Compiler {
       Node::TableRow{children} |
       Node::TableColumn{children} |
       Node::Root{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         tfms.append(&mut result);
       }
       x => println!("Unhandled Node {:?}", x),
@@ -748,7 +769,7 @@ impl Compiler {
     }
   }
 
-  pub fn compile_transformation(&mut self, node: &Node) -> Vec<Transformation> {
+  pub fn compile_node(&mut self, node: &Node) -> Vec<Transformation> {
     let mut transformations: Vec<Transformation> = Vec::new();
     /*
     match node {
@@ -764,7 +785,7 @@ impl Compiler {
         let new_table_id = TableId::Local(hash_string(&format!("InlineTableHorzcatResult{:?}", children)));
         self.table = *new_table_id.unwrap();
         for child in children {
-          let mut result = self.compile_transformation(child);
+          let mut result = self.compile_node(child);
           match &result[0] {
             Transformation::TableReference{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
@@ -807,7 +828,7 @@ impl Compiler {
         self.table = *new_table_id.unwrap();
         // Compile each row of the table
         for child in children {
-          let mut result = self.compile_transformation(child);
+          let mut result = self.compile_node(child);
           // The first result is the table to which vertcat writes
           match &result[0] {
             Transformation::TableReference{table_id,..} => {
@@ -852,7 +873,7 @@ impl Compiler {
         let new_table_id = TableId::Local(hash_string(&format!("{:?}{:?}", self.row, children)));
         // Compile each column of the table
         for child in children {
-          let mut result = self.compile_transformation(child);
+          let mut result = self.compile_node(child);
           match &result[0] {
             Transformation::TableReference{table_id,..} => {
               args.push((0, *table_id, TableIndex::All, TableIndex::All));
@@ -881,13 +902,13 @@ impl Compiler {
         transformations.append(&mut tfms);
       }
       Node::TableColumn{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::TableHeader{children} => {
         for child in children {
           self.column += 1;
-          let mut result = self.compile_transformation(child);
+          let mut result = self.compile_node(child);
           transformations.append(&mut result);
         }
       }
@@ -900,7 +921,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::Binding{children} => {
@@ -913,7 +934,7 @@ impl Compiler {
           }
           _ => (),
         }
-        let mut result = self.compile_transformation(&children[1]);
+        let mut result = self.compile_node(&children[1]);
         transformations.append(&mut result);
         transformations.append(&mut tfms);
       }
@@ -921,7 +942,7 @@ impl Compiler {
         self.strings.insert(hash_string(&name.to_string()), name.to_string());
       }
       Node::Transformation{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::SplitData{children} => {
@@ -941,7 +962,7 @@ impl Compiler {
           _ => (Transformation::NewTable{table_id: TableId::Local(0), rows: 1, columns: 1},TableId::Local(0)),
         };
 
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
 
         let input_table_id = match input[0] {
           Transformation::TableReference{table_id,reference} => {
@@ -969,7 +990,7 @@ impl Compiler {
         transformations.append(&mut input);
       }
       Node::AddRow{children} => {
-        let mut output = self.compile_transformation(&children[0]);
+        let mut output = self.compile_node(&children[0]);
 
         let mut output_tup = match output[0] {
           Transformation::NewTable{table_id, ..} => {
@@ -980,7 +1001,7 @@ impl Compiler {
           _ => None,
         };
 
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
         let mut args = vec![];
         match &input[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
@@ -1007,7 +1028,7 @@ impl Compiler {
         transformations.append(&mut input);
       }
       Node::Whenever{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         match &result[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
             let (row, column) = indices[0];
@@ -1035,11 +1056,11 @@ impl Compiler {
         transformations.append(&mut result);
       }
       Node::Statement{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::SetData{children} => {
-        let mut output = self.compile_transformation(&children[0]);
+        let mut output = self.compile_node(&children[0]);
         let mut output_tup = match &output[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
             let (row, column) = indices[0];
@@ -1063,7 +1084,7 @@ impl Compiler {
           None
         };
 
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
 
         let (input_table_id, row_select, column_select) = match &input[0] {
           Transformation::Select{table_id, row, column, indices, out} => {
@@ -1144,7 +1165,7 @@ impl Compiler {
                           }
                         }
                         Node::Expression{..} => {
-                          let mut result = self.compile_transformation(child);
+                          let mut result = self.compile_node(child);
                           match &result[1] {
                             Transformation::Constant{table_id, value, unit} => {
                               if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -1197,7 +1218,7 @@ impl Compiler {
                     }
                   }
                   Node::Expression{..} => {
-                    let mut result = self.compile_transformation(child);
+                    let mut result = self.compile_node(child);
                     match &result[1] {
                       Transformation::Constant{table_id, value, unit} => {
                         if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -1255,7 +1276,7 @@ impl Compiler {
           _ => 0, // TODO Error
         };
         // Compile input of the variable define
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
         // If the first element is a reference, remove it
         match input[0] {
           Transformation::TableReference{..} => {
@@ -1273,7 +1294,7 @@ impl Compiler {
         transformations.append(&mut input);
       }
       Node::TableDefine{children} => {
-        let mut output = self.compile_transformation(&children[0]);
+        let mut output = self.compile_node(&children[0]);
 
         let mut nt_rows = 1;
         let mut nt_columns = 1;
@@ -1287,7 +1308,7 @@ impl Compiler {
         };
 
         // Rewrite input rows
-        let mut input = self.compile_transformation(&children[1]);
+        let mut input = self.compile_node(&children[1]);
 
         // If the first element is a reference, remove it
         match input[0] {
@@ -1347,19 +1368,19 @@ impl Compiler {
         transformations.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
       Node::Expression{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::RationalNumber{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::MathExpression{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::FunctionBinding{children} => {
-        let mut result = self.compile_transformations(children);
+        let mut result = self.compile_nodes(children);
         transformations.append(&mut result);
       }
       Node::Function{name, children} => {
@@ -1378,7 +1399,7 @@ impl Compiler {
             }
             _ => 0,
           };
-          let mut result = self.compile_transformation(&child);
+          let mut result = self.compile_node(&child);
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((arg, *table_id, TableIndex::All, TableIndex::All));
@@ -1476,10 +1497,10 @@ impl Compiler {
     transformations
   }
 
-  pub fn compile_transformations(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
     let mut compiled = Vec::new();
     for node in nodes {
-      let mut result = self.compile_transformation(node);
+      let mut result = self.compile_node(node);
       compiled.append(&mut result);
     }
     compiled
