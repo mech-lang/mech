@@ -10,13 +10,10 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  parser.parse("block 
-  😃 = 1
-  🤦🏼‍♂️ = 2
-  y̆és = 🤦🏼‍♂️ + 😃
-  #test = y̆és");
+  parser.parse("block
+  #ball = [4 3 5 7]");
 
-  println!("{:#?}", parser.parse_tree);
+  //println!("{:#?}", parser.parse_tree);
 
   ast.build_syntax_tree(&parser.parse_tree);
 
@@ -26,12 +23,12 @@ fn main() {
 
   core.insert_block(blocks[0].clone());
   
-  for t in blocks {
+  /*for t in blocks {
     println!("{:#?}", t);
-  }
+  }*/
 
   println!("{:#?}", core);
 
-  println!("{:#?}", core.get_table("test").unwrap().borrow().get(0, 0));
+  println!("{:#?}", core.get_table("ball"));
 
 }
