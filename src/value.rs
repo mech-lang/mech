@@ -28,7 +28,7 @@ pub enum Value {
   Empty,
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueKind {
   U8,
   U16,

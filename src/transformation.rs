@@ -1,4 +1,4 @@
-use crate::{Column, ColumnF32, ColumnU8, ColumnBool, ValueKind, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnF32, ColumnU8, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -20,6 +20,8 @@ pub type ArgBool = ColumnBool;
 pub type OutF32 = ColumnF32;
 pub type OutU8 = ColumnU8;
 pub type OutBool = ColumnBool;
+pub type ArgTable = Rc<RefCell<Table>>;
+pub type OutTable = Rc<RefCell<Table>>;
 
 trait MechFunction<T> {
   fn solve(args: Vec<T>);
@@ -46,7 +48,9 @@ pub enum Transformation {
   ParSetVV((ArgBool,ArgF32,OutF32)),
   ParCopyVV((ArgF32,OutF32)),
   ParCopyVVU8((ArgU8,OutU8)),
+  HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((ArgU8,OutU8)),
+  CopyTable((ArgTable,OutTable)),
   
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},
@@ -115,6 +119,20 @@ impl Transformation {
       }
       Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       Transformation::CopySSU8((rhs, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[0] }
+      Transformation::CopyTable((arg,out)) => {
+        let mut out_brrw = out.borrow_mut();
+        let arg_brrw = arg.borrow();
+        out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
+        for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
+          out_brrw.set_col_kind(col, *kind);
+        }
+        for col in 0..arg_brrw.cols {
+          for row in 0..arg_brrw.rows {
+            let value = arg_brrw.get(row,col).unwrap();
+            out_brrw.set(row,col,value);
+          }
+        }
+      }
       x => println!("Not Implemented: {:?}", x),
     }
   }

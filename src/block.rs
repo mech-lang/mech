@@ -102,53 +102,29 @@ impl Block {
         self.tables.insert_alias(*alias, *table_id.unwrap());
       },
       Transformation::Select{table_id, indices, out} => {
-        let mut argument_columns = vec![];
-        match self.tables.get_table_by_id(table_id.unwrap()) {
-          Some(table) => {
-            let mut t = table.borrow_mut();
-            t.set_col_kind(0, ValueKind::U8);
-            let column = t.get_column_unchecked(0);
-            argument_columns.push(column);
+        let src_table = self.tables.get_table_by_id(table_id.unwrap());
+        let out_table: Option<Rc<RefCell<Table>>> = match out {
+          TableId::Local(out_table_id) => match self.tables.get_table_by_id(&out_table_id) {
+            Some(table) => Some(table.clone()),
+            None => None,
+          },
+          TableId::Global(out_table_id) => match self.global_database.borrow().get_table_by_id(&out_table_id) {
+            Some(table) => Some(table.clone()),
+            None => None,
           }
-          _ => (),
+        };
+        match (src_table, out_table) {
+          (Some(src),Some(out)) => {
+            let tfm = Transformation::CopyTable((src.clone(), out.clone()));
+            self.plan.push(Rc::new(RefCell::new(tfm)));
+          }
+          (None, _) |
+          (_, None) => {
+            self.unsatisfied_transformations.push(tfm.clone());
+            self.state = BlockState::Unsatisfied;
+          },
+          _ => (), // TODO Raise an error here, we don't handle this case
         }
-        match out {
-          TableId::Local(out_table_id) => {
-            match self.tables.get_table_by_id(&out_table_id) {
-              Some(table) => {
-                let mut t = table.borrow_mut();
-                t.set_col_kind(0, ValueKind::U8);
-                let column = t.get_column_unchecked(0);
-                argument_columns.push(column);
-              }
-              _ => (),
-            }
-          }
-          TableId::Global(out_table_id) => {
-            match self.global_database.borrow().get_table_by_id(&out_table_id) {
-              Some(table) => {
-                let mut t = table.borrow_mut();
-                t.set_col_kind(0, ValueKind::U8);
-                let column = t.get_column_unchecked(0);
-                argument_columns.push(column);
-              }
-              _ => argument_columns.push(Column::Empty),
-            }
-          }
-        }
-        if argument_columns.len() == 2 { 
-          match (&argument_columns[0], &argument_columns[1]) {
-            (Column::U8(src), Column::U8(out)) => {
-              let tfm = Transformation::CopySSU8((src.clone(), out.clone()));
-              self.plan.push(Rc::new(RefCell::new(tfm)));
-            }
-            (_, Column::Empty) => {
-              self.unsatisfied_transformations.push(tfm.clone());
-              self.state = BlockState::Unsatisfied;
-            },
-            _ => (), // TODO Raise an error here, we don't handle this case
-          }
-        } 
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_string(&format!("{:?}{:?}", kind, bytes));
@@ -250,30 +226,36 @@ impl Block {
             _ => (),
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
-          let mut width = 0;
-          let mut argument_columns = vec![];
+          let (out_table_id, _, _) = out;
+          let out_table = self.tables.get_table_by_id(out_table_id.unwrap()).unwrap().clone();
+          let mut out_column_ix = 0;
           for (_, table_id, _, _) in arguments {
             match self.tables.get_table_by_id(table_id.unwrap()) {
               Some(table) => {
                 let t = table.borrow();
-                width += t.cols;
-                let mut column = t.get_column_unchecked(0);
-                argument_columns.push(column);
+                let mut o = out_table.borrow_mut();
+                for c in 0..t.cols {
+                  o.set_col_kind(out_column_ix, ValueKind::U8);
+                  let mut arg_col = t.get_column_unchecked(c);
+                  let mut out_col = o.get_column_unchecked(out_column_ix);
+                  match (&arg_col, &out_col) {
+                    (Column::U8(arg), Column::U8(out)) => {
+                      let tfm = Transformation::CopySSU8((arg.clone(),out.clone()));
+                      self.plan.push(Rc::new(RefCell::new(tfm)));
+                      out_column_ix += 1;
+                    }
+                    _ => (),
+                  }
+                }
               }
-              _ => (),
+              None => {
+                self.unsatisfied_transformations.push(tfm.clone());
+                self.state = BlockState::Unsatisfied;
+                return;
+              },
             }
           }
-          let (out_table_id, _, _) = out;
-          match self.tables.get_table_by_id(out_table_id.unwrap()) {
-            Some(table) => {
-              let mut t = table.borrow_mut();
-              t.set_col_kind(0, ValueKind::U8);
-              let column = t.get_column_unchecked(0);
-              argument_columns.push(column);
-            }
-            _ => (),
-          }
-          println!("{:?}", width);
+
         } else { 
           self.plan.push(Rc::new(RefCell::new(tfm)));
         }

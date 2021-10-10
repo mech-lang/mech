@@ -93,6 +93,7 @@ pub struct Table {
   pub id: u64,
   pub rows: usize,
   pub cols: usize,
+  pub col_kinds: Vec<ValueKind>,
   data: Vec<Column>,
 }
 
@@ -104,9 +105,11 @@ impl Table {
       rows,
       cols,
       data: Vec::with_capacity(cols),
+      col_kinds: Vec::with_capacity(cols),
     };
     for col in 0..cols {
       table.data.push(Column::Empty);
+      table.col_kinds.push(ValueKind::Empty);
     }
     table
   }
@@ -175,14 +178,17 @@ impl Table {
         (Column::Empty, ValueKind::U8) => {
           let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
+          self.col_kinds[col] = ValueKind::U8;
         },
         (Column::Empty, ValueKind::U16) => {
           let column: ColumnU16 = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U16(column);
+          self.col_kinds[col] = ValueKind::U16;
         },
         (Column::Empty, ValueKind::F32) => {
           let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
+          self.col_kinds[col] = ValueKind::F32;
         },
         _ => (),
       }
@@ -202,6 +208,18 @@ impl Table {
 
   pub fn get_column_unchecked(&self, col: usize) -> Column {
     self.data[col].clone()
+  }
+
+  pub fn resize(&mut self, rows: usize, cols: usize) {
+    if self.cols != cols {
+      self.cols = cols;
+      self.data.resize(cols, Column::Empty);
+      self.col_kinds.resize(cols, ValueKind::Empty);
+    }
+    if self.rows != rows {
+      self.rows = rows;
+      // TODO NEED TO RESIZE ROWS
+    }
   }
 
 }
