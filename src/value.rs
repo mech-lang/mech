@@ -81,6 +81,16 @@ impl NumberLiteral {
     }
     container
   }
+
+  pub fn as_usize(&self) -> usize {    
+    let mut container: usize = 0;
+    let usize_bytes = usize::BITS as usize / 8 ;
+    for (i,byte) in self.bytes.iter().rev().take(usize_bytes).enumerate() {
+      container = container | (*byte as usize) << (usize_bytes * i) ;
+    }
+    container
+  }
+
 }
 
 // ## Value Methods
