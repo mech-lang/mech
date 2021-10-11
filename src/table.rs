@@ -128,6 +128,26 @@ impl Table {
     }
   }
 
+  pub fn get_linear(&self, ix: usize) -> Option<Value> {
+    if ix < self.rows * self.cols {
+      let row = ix / self.cols;
+      let col = ix % self.cols;
+      self.get(row,col)
+    } else {
+      None
+    }
+  }
+
+  pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),()> {
+    if ix < self.rows * self.cols {
+      let row = ix / self.cols;
+      let col = ix % self.cols;
+      self.set(row,col, val)
+    } else {
+      Err(())
+    }
+  }
+
   pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),()> {
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
