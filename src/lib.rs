@@ -57,6 +57,20 @@ pub enum Column {
   Empty,
 }
 
+impl Column {
+
+  pub fn kind(&self) -> ValueKind {
+    match self {
+      Column::F32(_) => ValueKind::F32,
+      Column::U8(_) => ValueKind::U8,
+      Column::U16(_) => ValueKind::U16,
+      Column::Bool(_) => ValueKind::Bool,
+      Column::Empty => ValueKind::Empty,
+    }
+  }
+
+}
+
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
