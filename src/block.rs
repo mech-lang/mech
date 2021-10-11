@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -36,6 +36,7 @@ lazy_static! {
   static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
   static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
+  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
 }
 
 #[derive(Clone, Debug)]
@@ -239,6 +240,53 @@ impl Block {
 
             }
             _ => (),
+          }
+        } else if *name == *TABLE_VERTICAL__CONCATENATE {
+          let (out_table_id, _, _) = out;
+          let out_table = self.tables.get_table_by_id(out_table_id.unwrap()).unwrap().clone();
+          let mut out_column_ix = 0;
+          let mut arg_cols = vec![];
+          let mut rows = 0;
+          let mut cols = 0;
+          for (_, table_id, _, _) in arguments {
+            match self.tables.get_table_by_id(table_id.unwrap()) {
+              Some(table) => {
+                let t = table.borrow();
+                rows += t.rows;
+                cols = if cols == 0 {t.cols} 
+                       else if t.cols != cols { 0 /*TODO ERROR*/ }
+                       else { cols };
+                if arg_cols.len() == 0 {
+                  arg_cols = vec![Vec::new(); cols];
+                }
+                for c in 0..t.cols {
+                  let mut arg_col = t.get_column_unchecked(c);
+                  arg_cols[c].push(arg_col);
+                }
+              }
+              None => {
+                self.unsatisfied_transformations.push(tfm.clone());
+                self.state = BlockState::Unsatisfied;
+                return;
+              },
+            }
+          }
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.resize(rows,cols);
+          for col in 0..cols {
+            out_brrw.set_col_kind(col, ValueKind::U8);
+            let out_col = out_brrw.get_column_unchecked(col);
+            let arg_col = arg_cols[col].iter().filter_map(|arg| match arg {
+              Column::U8(col) => Some(col.clone()),
+              _ => None,
+            }).collect::<Vec<ColumnU8>>();
+            match out_col {
+              Column::U8(out_col) => {
+                let tfm = Transformation::ConcatVU8((arg_col, out_col));
+                self.plan.push(Rc::new(RefCell::new(tfm)));
+              }
+              _ => (),
+            }
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
           let (out_table_id, _, _) = out;
