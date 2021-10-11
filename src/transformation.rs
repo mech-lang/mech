@@ -50,6 +50,7 @@ pub enum Transformation {
   ParCopyVVU8((ArgU8,OutU8)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((ArgU8,OutU8)),
+  ConcatVU8((Vec<ArgU8>,OutU8)),
   CopyTable((ArgTable,OutTable)),
   
   Identifier{ name: Vec<char>, id: u64 },
@@ -119,6 +120,25 @@ impl Transformation {
       }
       Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       Transformation::CopySSU8((rhs, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[0] }
+      Transformation::ConcatVU8((args, out)) => {
+        let mut out_brrw = out.borrow_mut();
+        let mut arg_ix = 0;
+        let mut ix = 0;
+        let mut arg_brrw = args[arg_ix].borrow();
+        for r in 0..out_brrw.len() {
+          out_brrw[r] = arg_brrw[ix];
+          ix += 1;
+          if ix == arg_brrw.len() {
+            ix = 0;
+            arg_ix += 1;
+            if arg_ix == args.len() {
+              return;
+            } else {
+              arg_brrw = args[arg_ix].borrow();
+            }
+          } 
+        }
+      }
       Transformation::CopyTable((arg,out)) => {
         let mut out_brrw = out.borrow_mut();
         let arg_brrw = arg.borrow();
