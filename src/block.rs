@@ -102,6 +102,7 @@ impl Block {
         self.tables.insert_alias(*alias, *table_id.unwrap());
       },
       Transformation::Select{table_id, indices, out} => {
+
         let src_table = self.tables.get_table_by_id(table_id.unwrap());
         let out_table: Option<Rc<RefCell<Table>>> = match out {
           TableId::Local(out_table_id) => match self.tables.get_table_by_id(&out_table_id) {
@@ -113,13 +114,27 @@ impl Block {
             None => None,
           }
         };
-        match (src_table, out_table) {
-          (Some(src),Some(out)) => {
+        match (src_table, out_table, indices[0]) {
+          (Some(src),Some(out), (TableIndex::All, TableIndex::All)) => {
             let tfm = Transformation::CopyTable((src.clone(), out.clone()));
             self.plan.push(Rc::new(RefCell::new(tfm)));
           }
-          (None, _) |
-          (_, None) => {
+          (Some(src),Some(out), (TableIndex::Index(ix), TableIndex::None)) => {
+            let src_brrw = src.borrow();
+            let mut out_brrw = out.borrow_mut();
+            let mut arg_col = src_brrw.get_column_unchecked(ix - 1);
+            out_brrw.set_col_kind(0,arg_col.kind());
+            let mut out_col = out_brrw.get_column_unchecked(0);
+            match (&arg_col, &out_col) {
+              (Column::U8(arg), Column::U8(out)) => {
+                let tfm = Transformation::CopySSU8((arg.clone(),out.clone()));
+                self.plan.push(Rc::new(RefCell::new(tfm)));
+              }
+              _ => (),
+            }
+          }
+          (None, _, _) |
+          (_, None, _) => {
             self.unsatisfied_transformations.push(tfm.clone());
             self.state = BlockState::Unsatisfied;
           },
