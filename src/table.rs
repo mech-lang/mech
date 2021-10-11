@@ -227,11 +227,14 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"│ {} ", humanize(&self.id))?;
     for row in 0..self.rows {
       write!(f,"│ ")?;
       for col in 0..self.cols {
-        let v = self.get(row,col);
-        write!(f,"{:0.2?} │ ", v)?;
+        match self.get(row,col) {
+          Some(v) => write!(f,"{:0.2?} │ ", v)?, 
+          None => write!(f,"_ │")?,
+        }
       }
       write!(f,"\n")?;
     }
