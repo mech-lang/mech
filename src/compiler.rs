@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{hash_string, hash_chars, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
+use mech_core::{hash_string, hash_chars, NumberLiteral, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
 
 use crate::ast::{Ast, Node};
 use crate::parser::Parser;
@@ -117,7 +117,6 @@ impl Compiler {
         tfms.append(&mut output);
 
         let mut input = self.compile_node(&children[1]);
-
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -206,6 +205,7 @@ impl Compiler {
       Node::TableRow{children} => {
         let row_id = hash_string(&format!("horzcat:{:?}", children));
         let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
+        let mut result_tfms = vec![];
         for child in children {
           let mut result = self.compile_node(child);
           match &result[0] {
@@ -214,9 +214,10 @@ impl Compiler {
             }
             _ => (),
           }  
-          tfms.append(&mut result);       
+          result_tfms.append(&mut result);       
         }
         tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: args.len()});
+        tfms.append(&mut result_tfms);
         tfms.push(Transformation::Function{
           name: *TABLE_HORIZONTAL__CONCATENATE,
           arguments: args,
@@ -266,13 +267,14 @@ impl Compiler {
                         Node::Expression{..} => {
                           let mut result = self.compile_node(child);
                           match &result[1] {
-                            /*Transformation::Constant{table_id, value, unit} => {
+                            Transformation::NumberLiteral{kind, bytes} => {
+                              let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
                               if indices.len() == 2 && indices[0] == TableIndex::All {
-                                indices[0] = TableIndex::Index(value.as_u64().unwrap() as usize);
+                                indices[0] = TableIndex::Index(value.as_usize());
                               } else {
-                                indices.push(TableIndex::Index(value.as_u64().unwrap() as usize));
+                                indices.push(TableIndex::Index(value.as_usize()));
                               }
-                            }*/
+                            }
                             Transformation::Function{name, arguments, out} => {
                               let (output_table_id, output_row, output_col) = out;
                               if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -317,13 +319,14 @@ impl Compiler {
                   Node::Expression{..} => {
                     let mut result = self.compile_node(child);
                     match &result[1] {
-                      /*Transformation::Constant{table_id, value, unit} => {
+                      Transformation::NumberLiteral{kind, bytes} => {
+                        let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
                         if indices.len() == 2 && indices[0] == TableIndex::All {
-                          indices[0] = TableIndex::Index(value.as_u64().unwrap() as usize);
+                          indices[0] = TableIndex::Index(value.as_usize());
                         } else {
-                          indices.push(TableIndex::Index(value.as_u64().unwrap() as usize));
+                          indices.push(TableIndex::Index(value.as_usize()));
                         }
-                      }*/
+                      }
                       Transformation::Function{name, arguments, out} => {
                         let (output_table_id, output_row, output_col) = out;
                         if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -359,6 +362,7 @@ impl Compiler {
           tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
           tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
         } else {
+          tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
           tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
         }
         tfms.append(&mut local_tfms);
