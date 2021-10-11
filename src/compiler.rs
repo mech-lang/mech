@@ -202,6 +202,33 @@ impl Compiler {
         });
         tfms.append(&mut arg_tfms);
       },
+      Node::AnonymousTableDefine{children} => {
+        if children.len() > 1 {
+          let table_id = hash_string(&format!("vertcat:{:?}", children));
+          let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
+          let mut result_tfms = vec![];
+          for child in children {
+            let mut result = self.compile_node(child);
+            match &result[0] {
+              Transformation::NewTable{table_id,..} => {
+                args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+              }
+              _ => (),
+            }  
+            result_tfms.append(&mut result);       
+          }
+          tfms.push(Transformation::NewTable{table_id: TableId::Local(table_id), rows: args.len(), columns: 1});
+          tfms.append(&mut result_tfms);
+          tfms.push(Transformation::Function{
+            name: *TABLE_VERTICAL__CONCATENATE,
+            arguments: args,
+            out: (TableId::Local(table_id), TableIndex::All, TableIndex::All),
+          });
+        } else {
+          let mut result = self.compile_nodes(children);
+          tfms.append(&mut result);
+        }
+      },
       Node::TableRow{children} => {
         let row_id = hash_string(&format!("horzcat:{:?}", children));
         let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
@@ -223,11 +250,11 @@ impl Compiler {
           arguments: args,
           out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
         });
-      }
+      },
       Node::TableColumn{children} => {
         let mut result = self.compile_nodes(children);
         tfms.append(&mut result);
-      }
+      },
       Node::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
@@ -375,7 +402,6 @@ impl Compiler {
       Node::Block{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
-      Node::AnonymousTableDefine{children} |
       Node::TableRow{children} |
       Node::TableColumn{children} |
       Node::Root{children} => {
