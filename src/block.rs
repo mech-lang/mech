@@ -87,6 +87,7 @@ impl Block {
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) {
+    println!("{:?}", tfm);
     match &tfm {
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
@@ -122,13 +123,14 @@ impl Block {
           }
           (Some(src),Some(out), (TableIndex::Index(ix), TableIndex::None)) => {
             let src_brrw = src.borrow();
+            let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
             let mut out_brrw = out.borrow_mut();
-            let mut arg_col = src_brrw.get_column_unchecked(ix - 1);
+            let mut arg_col = src_brrw.get_column_unchecked(col);
             out_brrw.set_col_kind(0,arg_col.kind());
             let mut out_col = out_brrw.get_column_unchecked(0);
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => {
-                let tfm = Transformation::CopySSU8((arg.clone(),out.clone()));
+                let tfm = Transformation::CopySSU8((arg.clone(),row,out.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (),
@@ -303,7 +305,7 @@ impl Block {
                   let mut out_col = o.get_column_unchecked(out_column_ix);
                   match (&arg_col, &out_col) {
                     (Column::U8(arg), Column::U8(out)) => {
-                      let tfm = Transformation::CopySSU8((arg.clone(),out.clone()));
+                      let tfm = Transformation::CopySSU8((arg.clone(),0,out.clone()));
                       self.plan.push(Rc::new(RefCell::new(tfm)));
                       out_column_ix += 1;
                     }
