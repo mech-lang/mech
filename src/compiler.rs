@@ -203,12 +203,21 @@ impl Compiler {
         tfms.append(&mut arg_tfms);
       },
       Node::AnonymousTableDefine{children} => {
-        if children.len() > 1 {
-          let table_id = hash_string(&format!("vertcat:{:?}", children));
+        let mut table_children = children.clone();
+        match &table_children[0] {
+          Node::TableHeader{children} => {
+            let mut result = self.compile_nodes(children);
+            tfms.append(&mut result);
+            table_children.remove(0);
+          }
+          _ => (),
+        }
+        if table_children.len() > 1  {
+          let table_id = hash_string(&format!("vertcat:{:?}", table_children));
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
-          for child in children {
-            let mut result = self.compile_node(child);
+          for child in table_children {
+            let mut result = self.compile_node(&child);
             match &result[0] {
               Transformation::NewTable{table_id,..} => {
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
@@ -225,7 +234,7 @@ impl Compiler {
             out: (TableId::Local(table_id), TableIndex::All, TableIndex::All),
           });
         } else {
-          let mut result = self.compile_nodes(children);
+          let mut result = self.compile_nodes(&table_children);
           tfms.append(&mut result);
         }
       },
