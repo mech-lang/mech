@@ -128,6 +128,16 @@ impl Table {
     }
   }
 
+  pub fn index_to_subscript(&self, ix: usize) -> Option<(usize, usize)> {
+    if ix < self.rows * self.cols {
+      let row = ix / self.cols;
+      let col = ix % self.cols;
+      Some((row,col))
+    } else {
+      None
+    }
+  }
+
   pub fn get_linear(&self, ix: usize) -> Option<Value> {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
