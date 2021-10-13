@@ -110,7 +110,16 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::Select{table_id, indices, out} => {
-        let src_table = self.tables.get_table_by_id(table_id.unwrap());
+        let src_table: Option<Rc<RefCell<Table>>> = match table_id {
+          TableId::Local(table_id) => match self.tables.get_table_by_id(&table_id) {
+            Some(table) => Some(table.clone()),
+            None => None,
+          },
+          TableId::Global(table_id) => match self.global_database.borrow().get_table_by_id(&table_id) {
+            Some(table) => Some(table.clone()),
+            None => None,
+          }
+        };
         let out_table: Option<Rc<RefCell<Table>>> = match out {
           TableId::Local(out_table_id) => match self.tables.get_table_by_id(&out_table_id) {
             Some(table) => Some(table.clone()),
