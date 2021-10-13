@@ -10,8 +10,11 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  parser.parse("block
-  #ball = [4 3 5 7]");
+  parser.parse("
+block
+  #x = 123
+block
+  #test = #x");
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -22,6 +25,8 @@ fn main() {
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]);
 
   core.insert_block(blocks[0].clone());
+  core.insert_block(blocks[1].clone());
+
   
   /*for t in blocks {
     println!("{:#?}", t);
@@ -29,6 +34,6 @@ fn main() {
 
   println!("{:#?}", core);
 
-  println!("{:#?}", core.get_table("ball"));
+  println!("{:#?}", core.get_table("test"));
 
 }
