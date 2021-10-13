@@ -10,7 +10,7 @@ use crate::lexer::Token;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
-use mech_core::{hash_chars, NumberLiteralKind, TableId};
+use mech_core::{hash_chars, humanize, NumberLiteralKind, TableId};
 
 // ## AST Nodes
 
@@ -141,7 +141,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Comment{children} => {write!(f,"Comment\n").ok(); Some(children)},
     Node::SelectExpression{children} => {write!(f,"SelectExpression\n").ok(); Some(children)},
     Node::Transformation{children, ..} => {write!(f,"Transformation\n").ok(); Some(children)},
-    Node::Identifier{name, id} => {write!(f,"Identifier({:?}({:#x}))\n", name, id).ok(); None},
+    Node::Identifier{name, id} => {write!(f,"Identifier({:?}({}))\n", name, humanize(id)).ok(); None},
     Node::String{text} => {write!(f,"String({:?})\n", text).ok(); None},
     Node::RationalNumber{children} => {write!(f,"RationalNumber\n").ok(); Some(children)},
     Node::NumberLiteral{kind, bytes} => {write!(f,"NumberLiteral({:?})\n", bytes).ok(); None},
