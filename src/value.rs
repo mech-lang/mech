@@ -12,7 +12,7 @@ use std::fmt;
 
 // ## Value structs and enums
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   U8(u8),
   U16(u16),
@@ -26,6 +26,27 @@ pub enum Value {
   Bool(bool),
   String(String),
   Empty,
+}
+
+impl fmt::Debug for Value {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match &self {
+      Value::U8(v) => write!(f,"{}",v)?,
+      Value::U16(v) => write!(f,"{}",v)?, 
+      Value::U32(v) => write!(f,"{}",v)?, 
+      Value::U64(v) => write!(f,"{}",v)?, 
+      Value::I8(v) => write!(f,"{}",v)?, 
+      Value::I16(v) => write!(f,"{}",v)?, 
+      Value::I32(v) => write!(f,"{}",v)?, 
+      Value::I64(v) => write!(f,"{}",v)?, 
+      Value::F32(v) => write!(f,"{}",v)?, 
+      Value::Bool(v) => write!(f,"{}",v)?, 
+      Value::String(v) => write!(f,"{}",v)?, 
+      Value::Empty => write!(f,"_")?,
+    }
+    Ok(())
+  }
 }
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
