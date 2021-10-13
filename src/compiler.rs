@@ -55,7 +55,7 @@ pub struct Compiler {
 impl Compiler {
 
   pub fn new() -> Compiler {
-    Compiler {}
+    Compiler{}
   }
 
   pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Vec<Block> {
@@ -115,22 +115,21 @@ impl Compiler {
         };
 
         tfms.append(&mut output);
-
         let mut input = self.compile_node(&children[1]);
-        let input_table_id = match input[0] {
+        let (input_table_id, input_indices) = match input[0] {
           Transformation::NewTable{table_id,..} => {
-            Some(table_id)
+            Some((table_id,vec![(TableIndex::All, TableIndex::All)]))
           },
-          Transformation::Select{table_id,..} => {
-            Some(table_id)
+          Transformation::Select{table_id,ref indices,..} => {
+            Some((table_id,indices.clone()))
           },
           _ => None,
-        };
+        }.unwrap();
         //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
         tfms.append(&mut input);
         tfms.push(Transformation::Select{
-          table_id: input_table_id.unwrap(), 
-          indices: vec![(TableIndex::All, TableIndex::All)], 
+          table_id: input_table_id, 
+          indices: input_indices, 
           out: output_table_id.unwrap()
         });
       }
@@ -145,13 +144,6 @@ impl Compiler {
         };
         // Compile input of the variable define
         let mut input = self.compile_node(&children[1]);
-        // If the first element is a reference, remove it
-        match input[0] {
-          Transformation::TableReference{..} => {
-            input.remove(0);
-          }
-          _ => (),
-        }
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -165,6 +157,7 @@ impl Compiler {
         let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
         let mut arg_tfms = vec![];
         for child in children {
+          // get the argument identifier off the function binding. Default to 0 if there is no named arg
           let arg: u64 = match child {
             Node::FunctionBinding{children} => {
               match &children[0] {
@@ -184,10 +177,8 @@ impl Compiler {
             Transformation::Select{table_id, indices, out} => {
               let (row, column) = indices[0];
               args.push((arg, *table_id, row, column));
+              result.remove(0);
             }
-            /*Transformation::TableReference{table_id, reference} => {
-              args.push((arg, TableId::Local(reference.as_reference().unwrap()), TableIndex::All, TableIndex::All));
-            }*/
             _ => (),
           }
           arg_tfms.append(&mut result);
@@ -203,17 +194,31 @@ impl Compiler {
         tfms.append(&mut arg_tfms);
       },
       Node::AnonymousTableDefine{children} => {
+        let anon_table_id = hash_string(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
+        let mut header_tfms = Vec::new();
+        let mut columns = 1;
         match &table_children[0] {
           Node::TableHeader{children} => {
-            let mut result = self.compile_nodes(children);
-            tfms.append(&mut result);
+            let mut result = self.compile_nodes(&children);
+            columns = result.len();
+            for (ix,tfm) in result.iter().enumerate() {
+              match tfm {
+                Transformation::Identifier{name,id} => {
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix, column_alias: *id};
+                  header_tfms.push(alias_tfm);
+                }
+                _ => (),
+              }
+            }
+            header_tfms.append(&mut result);
             table_children.remove(0);
           }
           _ => (),
-        }
-        if table_children.len() > 1  {
-          let table_id = hash_string(&format!("vertcat:{:?}", table_children));
+        };
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns});
+        tfms.append(&mut header_tfms);
+        //if table_children.len() > 1  {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
@@ -226,17 +231,13 @@ impl Compiler {
             }  
             result_tfms.append(&mut result);       
           }
-          tfms.push(Transformation::NewTable{table_id: TableId::Local(table_id), rows: args.len(), columns: 1});
           tfms.append(&mut result_tfms);
           tfms.push(Transformation::Function{
             name: *TABLE_VERTICAL__CONCATENATE,
             arguments: args,
-            out: (TableId::Local(table_id), TableIndex::All, TableIndex::All),
+            out: (TableId::Local(anon_table_id), TableIndex::All, TableIndex::All),
           });
-        } else {
-          let mut result = self.compile_nodes(&table_children);
-          tfms.append(&mut result);
-        }
+        //}
       },
       Node::TableRow{children} => {
         let row_id = hash_string(&format!("horzcat:{:?}", children));
@@ -247,6 +248,11 @@ impl Compiler {
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+            }
+            Transformation::Select{table_id, indices, ..} => {
+              let (row,col) = indices[0];
+              args.push((0,table_id.clone(),row, col));
+              result.remove(0);
             }
             _ => (),
           }  
@@ -405,6 +411,7 @@ impl Compiler {
       }
       Node::Program{children, ..} |
       Node::Section{children, ..} |
+      Node::Attribute{children} |
       Node::Transformation{children} |
       Node::Statement{children} |
       Node::Fragment{children} |
