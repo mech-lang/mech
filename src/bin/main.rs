@@ -11,10 +11,20 @@ fn main() {
   let mut core = Core::new();
 
   parser.parse("
+# Title
+
 block
-  #x = 123
+  #x = 1
+  
+## Subtitle
+
 block
-  #test = #x");
+  #y = 2
+
+### Subsubtitle
+
+block 
+  #test = #x + #y");
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -26,6 +36,7 @@ block
 
   core.insert_block(blocks[0].clone());
   core.insert_block(blocks[1].clone());
+  core.insert_block(blocks[2].clone());
 
   
   /*for t in blocks {
