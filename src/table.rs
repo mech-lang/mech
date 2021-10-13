@@ -137,7 +137,7 @@ impl Table {
         Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
         Column::U16(column_u16) => Some(Value::U16(column_u16.borrow()[row])),
         Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
-        Column::Empty => None,
+        Column::Empty => Some(Value::Empty),
       }
     } else {
       None
@@ -274,7 +274,7 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut table_drawing = BoxPrinter::new();
-    table_drawing.add_line(format!("{}", humanize(&self.id)));
+    table_drawing.add_line(format!("{} ({} x {})", humanize(&self.id),self.rows,self.cols));
     table_drawing.add_table(self);
     write!(f,"{:?}",table_drawing)?;
     Ok(())

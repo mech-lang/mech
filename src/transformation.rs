@@ -59,7 +59,7 @@ pub enum Transformation {
   TableAlias{table_id: TableId, alias: u64},
   TableReference{table_id: TableId, reference: Value},
   NewTable{table_id: TableId, rows: usize, columns: usize },
-  Constant{table_id: TableId, value: Value, unit: u64},
+  Constant{table_id: TableId, value: Value},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   ColumnKind{table_id: TableId, column_ix: usize, column_kind: ValueKind},
   Set{table_id: TableId, row: TableIndex, column: TableIndex},
@@ -82,13 +82,12 @@ impl fmt::Debug for Transformation {
       Transformation::Function{name,arguments,out} => {
         write!(f,"Function(name: {}, args: {:#?}, out: {:#?})",humanize(name),arguments,out)?
       },
+      Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
       Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
       Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
-      
-
-      _ => write!(f,"Not Implemented")?
+      _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())
   }

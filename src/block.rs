@@ -160,7 +160,7 @@ impl Block {
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_string(&format!("{:?}{:?}", kind, bytes));
-        match self.tables.get_table_by_id(&table_id) {
+        match self.get_table(&TableId::Local(table_id)) {
           Some(table) => {
             let mut t = table.borrow_mut();
             match kind {
@@ -187,6 +187,11 @@ impl Block {
           _ => (),
         }
       },
+      Transformation::Constant{table_id, value} => {
+        let table = self.get_table(table_id).unwrap();
+        let mut table_brrw = table.borrow_mut();
+        table_brrw.set(0,0,value.clone());
+      }
       Transformation::Function{name, ref arguments, out} => {
         if *name == *MATH_ADD || 
            *name == *MATH_DIVIDE || 
