@@ -66,6 +66,19 @@ impl Block {
     }
   }
 
+  pub fn get_table(&self, table_id: &TableId) -> Option<Rc<RefCell<Table>>> {
+    match &table_id {
+      TableId::Local(id) => match self.tables.get_table_by_id(id) {
+        Some(table) => Some(table.clone()),
+        None => None,
+      },
+      TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
+        Some(table) => Some(table.clone()),
+        None => None,
+      }
+    }
+  }
+
   pub fn gen_id(&mut self) -> u64 {
     self.id = hash_string(&format!("{:?}", self.plan));
     self.id
@@ -110,26 +123,8 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::Select{table_id, indices, out} => {
-        let src_table: Option<Rc<RefCell<Table>>> = match table_id {
-          TableId::Local(table_id) => match self.tables.get_table_by_id(&table_id) {
-            Some(table) => Some(table.clone()),
-            None => None,
-          },
-          TableId::Global(table_id) => match self.global_database.borrow().get_table_by_id(&table_id) {
-            Some(table) => Some(table.clone()),
-            None => None,
-          }
-        };
-        let out_table: Option<Rc<RefCell<Table>>> = match out {
-          TableId::Local(out_table_id) => match self.tables.get_table_by_id(&out_table_id) {
-            Some(table) => Some(table.clone()),
-            None => None,
-          },
-          TableId::Global(out_table_id) => match self.global_database.borrow().get_table_by_id(&out_table_id) {
-            Some(table) => Some(table.clone()),
-            None => None,
-          }
-        };
+        let src_table = self.get_table(table_id);
+        let out_table = self.get_table(out);
         match (src_table, out_table, indices[0]) {
           (Some(src_table),Some(out_table), (TableIndex::All, TableIndex::All)) => {
             match (table_id, out) {
@@ -200,7 +195,7 @@ impl Block {
            *name == *MATH_EXPONENT {
           let mut arg_dims = Vec::new();
           for (_, table_id, row, column) in arguments {
-            match self.tables.get_table_by_id(table_id.unwrap()) {
+            match self.get_table(table_id) {
               Some(table) => {
                 let t = table.borrow();
                 let dims = match (row, column) {
@@ -228,7 +223,7 @@ impl Block {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = vec![];
               for (_, table_id, _, _) in arguments {
-                match self.tables.get_table_by_id(table_id.unwrap()) {
+                match self.get_table(table_id) {
                   Some(table) => {
                     let mut column = table.borrow().get_column_unchecked(0);
                     argument_columns.push(column);
@@ -241,7 +236,7 @@ impl Block {
                 }
               }
               let (out_table_id, _, _) = out;
-              match self.tables.get_table_by_id(out_table_id.unwrap()) {
+              match self.get_table(out_table_id) {
                 Some(table) => {
                   let mut t = table.borrow_mut();
                   t.set_col_kind(0, ValueKind::U8);
@@ -276,13 +271,13 @@ impl Block {
           }
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
           let (out_table_id, _, _) = out;
-          let out_table = self.tables.get_table_by_id(out_table_id.unwrap()).unwrap().clone();
+          let out_table = self.get_table(out_table_id).unwrap().clone();
           let mut out_column_ix = 0;
           let mut arg_cols = vec![];
           let mut rows = 0;
           let mut cols = 0;
           for (_, table_id, _, _) in arguments {
-            match self.tables.get_table_by_id(table_id.unwrap()) {
+            match self.get_table(table_id) {
               Some(table) => {
                 let t = table.borrow();
                 rows += t.rows;
@@ -323,10 +318,10 @@ impl Block {
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
           let (out_table_id, _, _) = out;
-          let out_table = self.tables.get_table_by_id(out_table_id.unwrap()).unwrap().clone();
+          let out_table = self.get_table(out_table_id).unwrap().clone();
           let mut out_column_ix = 0;
           for (_, table_id, _, _) in arguments {
-            match self.tables.get_table_by_id(table_id.unwrap()) {
+            match self.get_table(table_id) {
               Some(table) => {
                 let t = table.borrow();
                 let mut o = out_table.borrow_mut();
