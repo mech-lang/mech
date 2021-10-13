@@ -8,7 +8,8 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, ColumnU8, ColumnU16, ColumnF32, humanize, Value};
+use crate::{Column, ValueKind, BoxPrinter, ColumnU8, ColumnU16, ColumnF32, humanize, Value};
+use hashbrown::HashMap;
 
 // ### Table Id
 
@@ -94,6 +95,8 @@ pub struct Table {
   pub rows: usize,
   pub cols: usize,
   pub col_kinds: Vec<ValueKind>,
+  pub column_ix_to_alias: Vec<u64>,
+  pub column_alias_to_ix: HashMap<u64,usize>,
   data: Vec<Column>,
 }
 
@@ -104,6 +107,8 @@ impl Table {
       id,
       rows,
       cols,
+      column_ix_to_alias: Vec::new(),
+      column_alias_to_ix: HashMap::new(),
       data: Vec::with_capacity(cols),
       col_kinds: Vec::with_capacity(cols),
     };
@@ -112,6 +117,17 @@ impl Table {
       table.col_kinds.push(ValueKind::Empty);
     }
     table
+  }
+
+  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),()> {
+    if ix < self.cols {
+      self.column_ix_to_alias.resize(self.cols,0);
+      self.column_ix_to_alias[ix] = alias;
+      self.column_alias_to_ix.insert(alias,ix);
+      Ok(())
+    } else {
+      Err(()) // TODO Add error message
+    }
   }
 
   pub fn get(&self, row: usize, col: usize) -> Option<Value> {
@@ -257,22 +273,13 @@ impl Table {
 impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"│ {} ", humanize(&self.id))?;
-    for row in 0..self.rows {
-      write!(f,"│ ")?;
-      for col in 0..self.cols {
-        match self.get(row,col) {
-          Some(v) => write!(f,"{:0.2?} │ ", v)?, 
-          None => write!(f,"_ │")?,
-        }
-      }
-      write!(f,"\n")?;
-    }
+    let mut table_drawing = BoxPrinter::new();
+    table_drawing.add_line(format!("{}", humanize(&self.id)));
+    table_drawing.add_table(self);
+    write!(f,"{:?}",table_drawing)?;
     Ok(())
   }
 }
-
-
 
 /*
 // # Table
@@ -858,7 +865,7 @@ fn print_bottom_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Resul
   write!(f, "└")?;
   for _ in 0 .. n - 1 {
     print_repeated_char("─", m, f)?;
-    write!(f, "┴")?;
+    write!(f, "┬┴")?;
   }
   print_repeated_char("─", m, f)?;
   write!(f, "┘\n")?;
@@ -896,7 +903,7 @@ fn print_inner_span_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::R
 }
 
 fn print_inner_border(n: usize, m: usize, f: &mut fmt::Formatter) -> fmt::Result {
-  write!(f, "├")?;
+  write!(f, "├")?;┬┴├┼┤
   for _ in 0 .. n - 1 {
     print_repeated_char("─", m, f)?;
     write!(f, "┼")?;
