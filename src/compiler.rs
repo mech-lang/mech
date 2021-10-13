@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{hash_string, hash_chars, NumberLiteral, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
+use mech_core::{hash_string, Value, hash_chars, NumberLiteral, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
 
 use crate::ast::{Ast, Node};
 use crate::parser::Parser;
@@ -85,6 +85,11 @@ impl Compiler {
     match node {
       Node::Identifier{name, id} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
+      },
+      Node::Empty => {
+        let table_id = TableId::Local(hash_string("_"));
+        tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
+        tfms.push(Transformation::Constant{table_id: table_id, value: Value::Empty});
       },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
