@@ -1,7 +1,8 @@
-use crate::{Table, hash_string, Value, Column};
+use crate::{Table, BoxPrinter, humanize, hash_string, Value, Column};
 use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt;
 
 type FunctionName = u64;
 
@@ -13,7 +14,7 @@ pub enum Change {
 
 pub type Transaction = Vec<Change>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Database {
   tables: HashMap<u64,Rc<RefCell<Table>>>,
   table_alias_to_id: HashMap<u64,u64>,
@@ -71,7 +72,23 @@ impl Database {
   }
 }
 
-
+impl fmt::Debug for Database {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut db_drawing = BoxPrinter::new();
+    
+    db_drawing.add_header("tables");
+    for table in self.tables.values() {
+      db_drawing.add_line(format!("{:?}", table.borrow()));
+    }
+    db_drawing.add_header("table alias -> table id");
+    for (alias,id) in self.table_alias_to_id.iter() {
+      db_drawing.add_line(format!("{} -> {}", humanize(alias), humanize(id)));
+    }
+    write!(f,"{:?}",db_drawing)?;
+    Ok(())
+  }
+}
 
 
 /*
