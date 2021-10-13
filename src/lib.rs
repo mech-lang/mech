@@ -13,6 +13,7 @@ extern crate seahash;
 extern crate indexmap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt;
 
 mod database;
 //mod runtime;
@@ -136,3 +137,187 @@ pub const WORDLIST: &[&str;256] = &[
   "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
+
+  
+pub struct BoxPrinter {
+  pub lines: Vec<LineKind>,
+  width: usize,
+  drawing: String,
+}
+
+#[derive(Debug)]
+pub enum LineKind {
+  String(String),
+  Table(BoxTable),
+  Separator,
+}
+
+#[derive(Debug)]
+pub struct BoxTable {
+  pub width: usize,
+  pub rows: usize,
+  pub cols: usize,
+  pub strings: Vec<Vec<String>>,
+  pub column_widths: Vec<usize>,
+}
+
+impl BoxTable {
+
+  pub fn new(table: &Table) -> BoxTable {
+    let mut strings: Vec<Vec<String>> = vec![vec!["".to_string(); table.rows]; table.cols];
+    let mut column_widths = vec![0; table.cols];
+    for row in 0..table.rows {
+      for col in 0..table.cols {
+        let value_string = match table.get(row,col) {
+          Some(v) => format!("{:0.2?}", v), 
+          None => format!(""),
+        };
+        let chars = value_string.chars().collect::<Vec<char>>().len();
+        if chars > column_widths[col] {
+          column_widths[col] = chars;
+        }
+        strings[col][row] = value_string;
+      }
+    }
+    BoxTable {
+      width: column_widths.iter().sum(),
+      rows: table.rows,
+      cols: table.cols,
+      strings,
+      column_widths,
+    }
+  }
+
+}
+
+impl BoxPrinter {
+
+  pub fn new() -> BoxPrinter {
+    BoxPrinter {
+      lines: Vec::new(),
+      width: 0,
+      drawing: "\n┌─┐\n│ │\n└─┘\n".to_string(),
+    }
+  }
+
+  pub fn add_line(&mut self, lines: String) {
+    for line in lines.lines() {
+      let chars = line.chars().collect::<Vec<char>>().len();
+      if chars > self.width {
+        self.width = chars;
+      }
+      self.lines.push(LineKind::String(line.to_string()));
+    }
+    self.render_box();
+  }
+
+  pub fn add_header(&mut self, text: &str) {
+    self.lines.push(LineKind::Separator);
+    self.add_line(text.to_string());
+    self.lines.push(LineKind::Separator);
+  }
+
+  pub fn add_separator(&mut self) {
+    self.lines.push(LineKind::Separator);
+    self.render_box();
+  }
+
+  pub fn add_table(&mut self, table: &Table) {
+    let bt = BoxTable::new(table);
+    self.width = if bt.width + bt.cols > self.width {
+      bt.width + bt.cols - 1
+    } else {
+      self.width
+    };
+    self.lines.push(LineKind::Table(bt));
+    self.render_box();
+  }
+
+  fn render_box(&mut self) {
+    let top = "┌".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"┐\n".to_string();
+    let mut middle = "".to_string();
+    let mut bottom = "└".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"┘\n".to_string();
+    for line in &self.lines {
+      match line {
+        LineKind::Separator => {
+          let boxed_line = "├".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"┤\n".to_string();
+          middle += &boxed_line;
+        }
+        LineKind::Table(table) => {
+          if table.rows == 0 || table.cols == 0 {
+            continue;
+          }
+          let mut column_widths = table.column_widths.clone();
+          if table.width + table.cols < self.width {
+            let mut diff = self.width - (table.width + table.cols) + 1;
+            let mut ix = 0;
+            while diff > 0 {
+              let c = column_widths.len();
+              column_widths[ix % c] += 1;
+              ix += 1;
+              diff -= 1; 
+            }
+          }
+          middle += "├"; 
+          for col in 0..table.cols-1 {
+            middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
+            middle += "┬";
+          }
+          middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
+          middle += "┤\n";
+          for row in 0..table.rows {
+            let mut boxed_line = "│".to_string();
+            for col in 0..table.cols {
+              let cell = &table.strings[col][row];
+              let chars = cell.chars().collect::<Vec<char>>().len();
+              boxed_line += &cell; 
+              boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
+              boxed_line += &"│".to_string();
+            }
+            boxed_line += &"\n".to_string();
+            middle += &boxed_line;
+          }
+          bottom = "└".to_string(); 
+          for col in 0..table.cols-1 {
+            bottom += &BoxPrinter::format_repeated_char("─", column_widths[col]);
+            bottom += &"┴".to_string();
+          }
+          bottom += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
+          bottom += &"┘\n".to_string();
+        }
+        LineKind::String(line) => {
+          let chars = line.chars().collect::<Vec<char>>().len();
+          if self.width >= chars {
+            let boxed_line = "│".to_string() + &line + &BoxPrinter::format_repeated_char(" ", self.width - chars) + &"│\n".to_string();
+            middle += &boxed_line;
+          } else {
+            println!("Line too long: {:?}", line);
+          }
+        }
+      }
+    }
+    self.drawing = top + &middle + &bottom;
+  }
+
+  pub fn print(&self) -> String {
+    self.drawing.clone()
+  }
+
+  fn format_repeated_char(to_print: &str, n: usize) -> String {
+    let mut s = "".to_string();
+    for _ in 0..n {
+      s = format!("{}{}",s,to_print);
+    }
+    s
+  }
+
+}
+
+impl fmt::Debug for BoxPrinter {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"{}",self.drawing)?;
+    Ok(())
+  }
+}
+
