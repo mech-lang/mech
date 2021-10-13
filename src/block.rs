@@ -9,10 +9,11 @@
 
 // ## Prelude
 
-use crate::{Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
+use std::fmt;
 
 pub type Plan = Vec<Rc<RefCell<Transformation>>>;
 
@@ -39,7 +40,7 @@ lazy_static! {
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Block {
   pub id: u64,
   pub state: BlockState,
@@ -48,6 +49,7 @@ pub struct Block {
   pub changes: Transaction,
   pub global_database: Rc<RefCell<Database>>,
   unsatisfied_transformations: Vec<Transformation>,
+  transformations: Vec<Transformation>,
 }
 
 impl Block {
@@ -60,6 +62,7 @@ impl Block {
       changes: Vec::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformations: Vec::new(),
+      transformations: Vec::new(),
     }
   }
 
@@ -87,7 +90,6 @@ impl Block {
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) {
-    println!("{:?}", tfm);
     match &tfm {
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
@@ -103,8 +105,11 @@ impl Block {
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id.unwrap());
       },
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
+        table.set_column_alias(*column_ix,*column_alias);
+      },
       Transformation::Select{table_id, indices, out} => {
-
         let src_table = self.tables.get_table_by_id(table_id.unwrap());
         let out_table: Option<Rc<RefCell<Table>>> = match out {
           TableId::Local(out_table_id) => match self.tables.get_table_by_id(&out_table_id) {
@@ -117,9 +122,14 @@ impl Block {
           }
         };
         match (src_table, out_table, indices[0]) {
-          (Some(src),Some(out), (TableIndex::All, TableIndex::All)) => {
-            let tfm = Transformation::CopyTable((src.clone(), out.clone()));
-            self.plan.push(Rc::new(RefCell::new(tfm)));
+          (Some(src_table),Some(out_table), (TableIndex::All, TableIndex::All)) => {
+            match (table_id, out) {
+              (_, TableId::Global(_)) => {
+                let tfm = Transformation::CopyTable((src_table.clone(), out_table.clone()));
+                self.plan.push(Rc::new(RefCell::new(tfm)));
+              }
+              _ => (), // TODO Other possibilities,
+            }
           }
           (Some(src),Some(out), (TableIndex::Index(ix), TableIndex::None)) => {
             let src_brrw = src.borrow();
@@ -214,7 +224,11 @@ impl Block {
                     let mut column = table.borrow().get_column_unchecked(0);
                     argument_columns.push(column);
                   }
-                  _ => (),
+                  _ => {
+                    self.unsatisfied_transformations.push(tfm);
+                    self.state = BlockState::Unsatisfied;
+                    return;
+                  },
                 }
               }
               let (out_table_id, _, _) = out;
@@ -225,7 +239,11 @@ impl Block {
                   let column = t.get_column_unchecked(0);
                   argument_columns.push(column);
                 }
-                _ => (),
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
               }
               match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
@@ -237,7 +255,11 @@ impl Block {
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
-                _ => (),
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
               }
 
             }
@@ -322,11 +344,12 @@ impl Block {
           }
 
         } else { 
-          self.plan.push(Rc::new(RefCell::new(tfm)));
+          self.plan.push(Rc::new(RefCell::new(tfm.clone())));
         }
       } 
-      _ => self.plan.push(Rc::new(RefCell::new(tfm))),
+      _ => self.plan.push(Rc::new(RefCell::new(tfm.clone()))),
     }
+    self.transformations.push(tfm.clone());
   }
 
   pub fn solve(&mut self) -> bool {
@@ -340,6 +363,29 @@ impl Block {
     }
   }
 
+}
+
+impl fmt::Debug for Block {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut block_drawing = BoxPrinter::new();
+    block_drawing.add_line(format!("id: {}", humanize(&self.id)));
+    block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_header("transformations");
+    block_drawing.add_line(format!("{:#?}", &self.transformations));
+    block_drawing.add_header("tables");
+    block_drawing.add_line(format!("{:?}", &self.tables));
+    block_drawing.add_header("unsatisfied transformations");
+    block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformations));
+    block_drawing.add_header("plan");
+    for step in &self.plan {
+      block_drawing.add_line(format!("{:#?}", &step.borrow()));
+    }
+    block_drawing.add_header("changes");
+    block_drawing.add_line(format!("{:#?}", &self.changes));
+    write!(f,"{:?}",block_drawing)?;
+    Ok(())
+  }
 }
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
