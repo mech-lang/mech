@@ -1,6 +1,7 @@
-use crate::{Column, ColumnF32, ColumnU8, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnF32, humanize, ColumnU8, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::fmt;
 
 use rayon::prelude::*;
 use std::thread;
@@ -27,7 +28,7 @@ trait MechFunction<T> {
   fn solve(args: Vec<T>);
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Transformation {
   AddSSF32((ArgF32, ArgF32, OutF32)),
   AddSSU8(Vec<ColumnU8>),
@@ -66,8 +67,31 @@ pub enum Transformation {
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
   Select{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
-
   Null,
+}
+
+impl fmt::Debug for Transformation {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match &self {
+      Transformation::NewTable{table_id, rows, columns} =>  write!(f,"NewTable(table_id: {:?}, rows: {} cols: {})",table_id,rows,columns)?,
+      Transformation::Identifier{name,id} => write!(f,"Identifier(name: {:?}, id: {})",name,humanize(id))?,
+      Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",kind,bytes)?,
+      Transformation::TableAlias{table_id,alias} => write!(f,"Alias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
+      Transformation::Select{table_id,indices,out} => write!(f,"Select(table_id: {:?}, indices: {:?}, out: {:?})",table_id,indices,out)?,
+      Transformation::Function{name,arguments,out} => {
+        write!(f,"Function(name: {}, args: {:#?}, out: {:#?})",humanize(name),arguments,out)?
+      },
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
+      Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
+      Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
+      Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
+      
+
+      _ => write!(f,"Not Implemented")?
+    }
+    Ok(())
+  }
 }
 
 impl Transformation {
