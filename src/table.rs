@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, BoxPrinter, ColumnU8, ColumnU16, ColumnF32, humanize, Value};
+use crate::{Column, ValueKind, BoxPrinter, ColumnU8, ColumnBool, ColumnU16, ColumnF32, humanize, Value};
 use hashbrown::HashMap;
 
 // ### Table Id
@@ -180,6 +180,7 @@ impl Table {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
         (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
+        (Column::Bool(column_bool), Value::Bool(value_bool)) => column_bool.borrow_mut()[row] = value_bool,
         (Column::Empty, Value::U8(value_u8)) => {
           //let column: ColumnU8 = Rc::new(RefCell::new(Vec::new()));
           //self.data[col] = Column::U8(column);
@@ -198,6 +199,11 @@ impl Table {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
         (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
+        (Column::Bool(column_bool), Value::Bool(value_bool)) => column_bool.borrow_mut()[row] = value_bool,
+        (Column::Empty, Value::Bool(value_bool)) => {
+          let column: ColumnBool = Rc::new(RefCell::new(vec![false;self.rows]));
+          self.data[col] = Column::Bool(column);
+        },
         (Column::Empty, Value::U8(value_u8)) => {
           let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
@@ -235,6 +241,11 @@ impl Table {
           let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::Empty, ValueKind::Bool) => {
+          let column: ColumnBool = Rc::new(RefCell::new(vec![false;self.rows]));
+          self.data[col] = Column::Bool(column);
+          self.col_kinds[col] = ValueKind::Bool;
         },
         _ => (),
       }
