@@ -91,6 +91,16 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Empty});
       },
+      Node::True => {
+        let table_id = TableId::Local(hash_string("true"));
+        tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
+        tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(true)});
+      },
+      Node::False => {
+        let table_id = TableId::Local(hash_string("false"));
+        tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
+        tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(false)});
+      },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
         /*let kind = match bytes_vec.len() {
@@ -451,6 +461,7 @@ impl Compiler {
         let mut result = self.compile_nodes(children);
         tfms.append(&mut result);
       }
+      Node::Null => (),
       x => println!("Unhandled Node {:?}", x),
     }
     tfms

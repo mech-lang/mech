@@ -736,7 +736,7 @@ fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn value(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, value) = alt((empty, number_literal, quantity, decimal_literal, boolean_literal, string))(input)?;
+  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, decimal_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
 
@@ -827,7 +827,7 @@ fn function_binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn table_column(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((expression, data, value))(input)?;
+  let (input, item) = alt((expression, value, data, ))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
   Ok((input, Node::Column{children: vec![item]}))
 }
@@ -1168,7 +1168,7 @@ fn l5_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l6(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, l6) = alt((anonymous_table, function, data, value, negation, not, parenthetical_expression))(input)?;
+  let (input, l6) = alt((anonymous_table, function, value, data, negation, not, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 

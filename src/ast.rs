@@ -771,6 +771,12 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(result[0].clone());
       },
+      parser::Node::True => {
+        compiled.push(Node::True);
+      },
+      parser::Node::False => {
+        compiled.push(Node::False);
+      },
       parser::Node::RationalNumber{children} => {
         let result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
@@ -867,6 +873,7 @@ impl Ast {
       parser::Node::SetOperator{children} |
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
+      parser::Node::BooleanLiteral{children} |
       parser::Node::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
