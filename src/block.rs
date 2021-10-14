@@ -190,6 +190,10 @@ impl Block {
       Transformation::Constant{table_id, value} => {
         let table = self.get_table(table_id).unwrap();
         let mut table_brrw = table.borrow_mut();
+        match &value {
+          Value::Bool(_) => {table_brrw.set_col_kind(0, ValueKind::Bool);},
+          _ => (),
+        }
         table_brrw.set(0,0,value.clone());
       }
       Transformation::Function{name, ref arguments, out} => {
