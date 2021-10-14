@@ -192,6 +192,7 @@ impl Block {
         let mut table_brrw = table.borrow_mut();
         match &value {
           Value::Bool(_) => {table_brrw.set_col_kind(0, ValueKind::Bool);},
+          Value::String(_) => {table_brrw.set_col_kind(0, ValueKind::String);},
           _ => (),
         }
         table_brrw.set(0,0,value.clone());

@@ -44,10 +44,13 @@ pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
 
+pub type MechString = Vec<char>;
+
 pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
 pub type ColumnU16 = Rc<RefCell<Vec<u16>>>;
 pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
 pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
+pub type ColumnString = Rc<RefCell<Vec<MechString>>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
@@ -55,6 +58,7 @@ pub enum Column {
   U8(ColumnU8),
   U16(ColumnU16),
   Bool(ColumnBool),
+  String(ColumnString),
   Empty,
 }
 
@@ -66,6 +70,7 @@ impl Column {
       Column::U8(_) => ValueKind::U8,
       Column::U16(_) => ValueKind::U16,
       Column::Bool(_) => ValueKind::Bool,
+      Column::String(_) => ValueKind::String,
       Column::Empty => ValueKind::Empty,
     }
   }
