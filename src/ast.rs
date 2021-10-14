@@ -643,9 +643,12 @@ impl Ast {
         let mut text_node = Vec::new();
         for node in result {
           match node {
-            Node::String{mut text} => text_node.append(&mut text),
-            Node::Token{token, mut chars} => text_node.append(&mut chars),
-            //Node::Quantity{value, unit} => text_node.push_str(&format!("{}", value.to_f32())),
+            Node::String{mut text} => {
+              text_node.append(&mut text)
+            },
+            Node::Token{token, mut chars} => {
+              text_node.append(&mut chars)
+            },
             _ => (),
           }
         }

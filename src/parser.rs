@@ -474,7 +474,7 @@ macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
       let (input, _) = ascii_tag($byte)(input)?;
-      Ok((input, Node::Token{token: $token, chars: vec![]}))
+      Ok((input, Node::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>()}))
     }
   )
 }

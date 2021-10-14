@@ -101,6 +101,11 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(false)});
       },
+      Node::String{text} => {
+        let table_id = TableId::Local(hash_string(&format!("string: {:?}", text)));
+        tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
+        tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(text.to_vec())});
+      },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
         /*let kind = match bytes_vec.len() {
