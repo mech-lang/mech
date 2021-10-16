@@ -337,6 +337,7 @@ impl Block {
                 let mut o = out_table.borrow_mut();
                 for c in 0..t.cols {
                   let mut arg_col = t.get_column_unchecked(c);
+                  o.set_col_kind(out_column_ix, arg_col.kind());
                   let mut out_col = o.get_column_unchecked(out_column_ix);
                   o.set_col_kind(out_column_ix, arg_col.kind());
                   match (&arg_col, &out_col) {
