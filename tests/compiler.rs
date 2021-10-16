@@ -934,21 +934,21 @@ block
 
 test_mech!(string_basic,r#"
 block
-  #test = "Hello World""#, Value::String("Hello World".to_string()));
+  #test = "Hello World""#, Value::String("Hello World".chars().collect()));
 
 test_mech!(string_table,r#"
 block
-  #test = ["Hello" "World"]"#, Value::String("Hello".to_string()));
+  #test = ["Hello" "World"]"#, Value::String("Hello".chars().collect()));
 
 test_mech!(string_backslash,r#"
 block
-  #test = ["Hi\n"]"#, Value::String("Hi\\n".to_string()));
+  #test = ["Hi\n"]"#, Value::String("Hi\\n".chars().collect()));
 
 test_mech!(string_empty,r#"
 block
-  #test = ["" "World"]"#, Value::String("".to_string()));
+  #test = ["" "World"]"#, Value::String("".chars().collect()));
 
-test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::String("h1".to_string()));
+test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::String("h1".chars().collect()));
 
 // ## Nesting
 
