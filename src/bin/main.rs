@@ -10,23 +10,11 @@ fn main() {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  parser.parse("
-# Title
-
+  parser.parse(r#"
 block
-  #x = 1
-  
-## Subtitle
+  #x = [1 2 3]"#);
 
-block
-  #y = 2
-
-### Subsubtitle
-
-block 
-  #test = #x + #y");
-
-  //println!("{:#?}", parser.parse_tree);
+  println!("{:#?}", parser.parse_tree);
 
   ast.build_syntax_tree(&parser.parse_tree);
 
@@ -35,9 +23,6 @@ block
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]);
 
   core.insert_block(blocks[0].clone());
-  core.insert_block(blocks[1].clone());
-  core.insert_block(blocks[2].clone());
-
   
   /*for t in blocks {
     println!("{:#?}", t);
