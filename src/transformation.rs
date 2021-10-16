@@ -1,4 +1,4 @@
-use crate::{Column, ColumnF32, humanize, ColumnU8, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnF32, humanize, ColumnU8, ColumnString, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;
@@ -18,9 +18,11 @@ use std::thread;
 pub type ArgF32 = ColumnF32;
 pub type ArgU8 = ColumnU8;
 pub type ArgBool = ColumnBool;
+pub type ArgString = ColumnString;
 pub type OutF32 = ColumnF32;
 pub type OutU8 = ColumnU8;
 pub type OutBool = ColumnBool;
+pub type OutString = ColumnString;
 pub type ArgTable = Rc<RefCell<Table>>;
 pub type OutTable = Rc<RefCell<Table>>;
 
@@ -51,6 +53,7 @@ pub enum Transformation {
   ParCopyVVU8((ArgU8,OutU8)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((ArgU8,usize,OutU8)),
+  CopySSString((ArgString,usize,OutString)),
   ConcatVU8((Vec<ArgU8>,OutU8)),
   CopyTable((ArgTable,OutTable)),
   
@@ -143,6 +146,7 @@ impl Transformation {
       }
       Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       Transformation::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
+      Transformation::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
       Transformation::ConcatVU8((args, out)) => {
         let mut out_brrw = out.borrow_mut();
         let mut arg_ix = 0;
