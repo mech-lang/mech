@@ -128,7 +128,29 @@ impl Block {
         match (src_table, out_table, indices[0]) {
           (Some(src_table),Some(out_table), (TableIndex::All, TableIndex::All)) => {
             match (table_id, out) {
-              (_, TableId::Global(_)) => {
+              (_, TableId::Global(gid)) => {
+                let table_id2 = table_id;
+                // find all table aliases and copy them as well
+                let global_column_aliases = self.transformations.iter().filter_map(|tfm| 
+                match tfm {
+                  Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
+                    if table_id2 == table_id {
+                      Some(Transformation::ColumnAlias{table_id: TableId::Global(*gid), column_ix: *column_ix, column_alias: *column_alias}) 
+                    } else {
+                      None
+                    }
+                  },
+                  _ => None,
+                }).collect::<Vec<Transformation>>();
+                for alias in global_column_aliases {
+                  match alias {
+                    Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
+                      let change = Change::ColumnAlias{table_id: *table_id.unwrap(), column_ix, column_alias};
+                      self.changes.push(change);
+                    }
+                    _ => (),
+                  }
+                }
                 let tfm = Transformation::CopyTable((src_table.clone(), out_table.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
@@ -210,6 +232,7 @@ impl Block {
                 let t = table.borrow();
                 let dims = match (row, column) {
                   (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+                  (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
                   _ => (0,0),
                 };
                 arg_dims.push(dims);
@@ -221,10 +244,12 @@ impl Block {
               },
             }
           }
-          // Categorize arguments by shape
           let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
             match dims {
               (1,1) => TableShape::Scalar,
+              (x,1) => TableShape::Column(*x),
+              (1,x) => TableShape::Row(*x),
+              (x,y) => TableShape::Matrix(*x,*y),
               _ => TableShape::Pending,
             }
           }).collect();
@@ -266,6 +291,56 @@ impl Block {
                   else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *MATH_EXPONENT { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Transformation::Null };
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                }
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
+              }
+
+            }
+            (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
+              let mut argument_columns = vec![];
+              for (_, table_id, _, col) in arguments {
+                match self.get_table(table_id) {
+                  Some(table) => {
+                    let mut column = table.borrow().get_column_alias_unchecked(*col);
+                    argument_columns.push(column);
+                  }
+                  _ => {
+                    self.unsatisfied_transformations.push(tfm);
+                    self.state = BlockState::Unsatisfied;
+                    return;
+                  },
+                }
+              }
+              let (out_table_id, _, _) = out;
+              match self.get_table(out_table_id) {
+                Some(table) => {
+                  let mut t = table.borrow_mut();
+                  let (rows, _) = arg_dims[0];
+                  let cols = t.cols;
+                  t.resize(rows,cols);
+                  t.set_col_kind(0, ValueKind::U8);
+                  let column = t.get_column_unchecked(0);
+                  argument_columns.push(column);
+                }
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
+              }
+              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+                (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
+                  let tfm = if *name == *MATH_ADD { Transformation::AddVVU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
+                  //else if *name == *MATH_DIVIDE { Transformation::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_MULTIPLY { Transformation::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_SUBTRACT { Transformation::SubtractVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_EXPONENT { Transformation::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }

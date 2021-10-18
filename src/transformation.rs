@@ -34,12 +34,13 @@ trait MechFunction<T> {
 pub enum Transformation {
   AddSSF32((ArgF32, ArgF32, OutF32)),
   AddSSU8(Vec<ColumnU8>),
+  AddVVU8(Vec<ColumnU8>),
   DivideSSU8((ArgU8, ArgU8, OutU8)),
   MultiplySSU8((ArgU8, ArgU8, OutU8)),
   SubtractSSU8((ArgU8, ArgU8, OutU8)),
   ExponentSSU8((ArgU8, ArgU8, OutU8)),
-  AddSSIP((OutF32, ArgF32)),
-  AddVVIP((OutF32, ArgF32)),
+  AddSSIPF32((OutF32, ArgF32)),
+  AddVVIPF32((OutF32, ArgF32)),
   ParAddVVIPF32(Vec<ColumnF32>),  
   ParAddVSIPF32(Vec<ColumnF32>),
   ParMultiplyVSF32(Vec<ColumnF32>),
@@ -90,6 +91,7 @@ impl fmt::Debug for Transformation {
       Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
       Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
+      Transformation::AddVVU8(args) => write!(f,"AddVVU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
       _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())
@@ -105,17 +107,24 @@ impl Transformation {
 
       // u8 arithmetic
       Transformation::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
+      Transformation::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
+
       Transformation::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
       Transformation::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
       Transformation::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
       Transformation::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
 
-      Transformation::AddSSIP((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
-      Transformation::AddVVIP((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Transformation::AddSSIPF32((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
+      Transformation::AddVVIPF32((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
       Transformation::ParAddVSIPF32(args) => { 
         let rhs = args[1].borrow()[0];
         args[0].borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
+      }
+      Transformation::AddVVU8(args) => { 
+        let lhs = args[0].borrow();
+        let rhs = args[1].borrow();
+        args[2].borrow_mut().iter_mut().zip(lhs.iter()).zip(rhs.iter()).for_each(|((out, lhs), rhs)| *out = *lhs + rhs); 
       }
       Transformation::ParMultiplyVSF32(args) => { 
         let rhs = args[1].borrow()[0];

@@ -60,6 +60,19 @@ impl Core {
           let table = Table::new(*table_id,*rows,*columns);
           self.database.borrow_mut().insert_table(table);
         }
+        Change::ColumnAlias{table_id, column_ix, column_alias} => {
+          match self.database.borrow_mut().get_table_by_id(table_id) {
+            Some(table) => {
+              let mut table_brrw = table.borrow_mut();   
+              let rows = table_brrw.rows;
+              if *column_ix + 1 > table_brrw.cols {
+                table_brrw.resize(rows, column_ix + 1);
+              }    
+              table_brrw.set_column_alias(*column_ix,*column_alias);     
+            }
+            _ => ()
+          }
+        }
       }
     }
     for register in registers {
@@ -88,7 +101,14 @@ impl Core {
 
   pub fn insert_block(&mut self, mut block: Block) {
     block.global_database = self.database.clone();
-    self.process_transaction(&block.changes);
+    // Processing a transaction can lead to subsequent changes
+    // that need to be processed.
+    while block.changes.len() > 0 {
+      let changes = block.changes.clone();
+      block.changes.clear();
+      self.process_transaction(&changes);
+      block.ready();
+    }
     // try to satisfy the block
     match block.ready() {
       true => {

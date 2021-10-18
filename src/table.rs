@@ -79,7 +79,7 @@ impl fmt::Debug for TableIndex {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
-      &TableIndex::Alias(ref alias) => write!(f, "IxAlias({:#x})", alias),
+      &TableIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
       &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
       &TableIndex::All => write!(f, "IxAll"),
       &TableIndex::None => write!(f, "IxNone"),
@@ -243,6 +243,16 @@ impl Table {
     self.data[col].clone()
   }
 
+  pub fn get_column_alias_unchecked(&self, col: TableIndex) -> Column {
+    match col {
+      TableIndex::Alias(alias) => {
+        let ix = self.column_alias_to_ix.get(&alias).unwrap();
+        self.data[*ix as usize].clone()
+      }
+      _ => Column::Empty,
+    }
+  }
+
   pub fn resize(&mut self, rows: usize, cols: usize) {
     if self.cols != cols {
       self.cols = cols;
@@ -262,6 +272,14 @@ impl fmt::Debug for Table {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut table_drawing = BoxPrinter::new();
     table_drawing.add_line(format!("{} ({} x {})", humanize(&self.id),self.rows,self.cols));
+    let mut header = "".to_string();
+    for (ix, alias) in self.column_ix_to_alias.iter().enumerate() {
+      header += &format!(" {}", humanize(alias)); 
+    }
+    if header != "" {
+      table_drawing.add_separator();  
+    }
+    table_drawing.add_line(header);
     table_drawing.add_table(self);
     write!(f,"{:?}",table_drawing)?;
     Ok(())
