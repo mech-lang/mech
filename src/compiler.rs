@@ -230,15 +230,16 @@ impl Compiler {
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = move |x| {
-                    Transformation::ColumnAlias{table_id: TableId::Local(x), column_ix: ix.clone(), column_alias: id.clone()}
-                  };
+                  //let alias_tfm = move |x| {
+                    let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  //};
                   column_aliases.push(alias_tfm);
                 }
                 _ => (),
               }
             }
             header_tfms.append(&mut result);
+            header_tfms.append(&mut column_aliases);
             table_children.remove(0);
           }
           _ => (),
