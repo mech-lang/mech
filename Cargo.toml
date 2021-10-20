@@ -21,7 +21,7 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "async"}
 
 hashbrown = "0.11.2"
 lazy_static = "1.4.0"
