@@ -124,7 +124,7 @@ impl Compiler {
         //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
-      Node::SetData{children} => {
+      /*Node::SetData{children} => {
 
         let mut src = self.compile_node(&children[1]);
         let mut dest = self.compile_node(&children[0]);
@@ -154,7 +154,7 @@ impl Compiler {
 
         tfms.append(&mut dest);
         tfms.append(&mut src);
-      }
+      }*/
       Node::TableDefine{children} => {
         let mut output = self.compile_node(&children[0]);
         // Get the output table id
