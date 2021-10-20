@@ -261,20 +261,21 @@ impl Compiler {
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  //let alias_tfm = move |x| {
+                    let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  //};
                   column_aliases.push(alias_tfm);
                 }
                 _ => (),
               }
             }
-
             header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
             table_children.remove(0);
           }
           _ => (),
         };
-        if header_tfms.len() > 1  {
+        if table_children.len() > 1  {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
@@ -302,7 +303,7 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
-          let mut result = self.compile_nodes(&table_children);
+          let mut result = self.compile_nodes(children);
           tfms.append(&mut result);          
         }
       },
