@@ -50,6 +50,7 @@ pub enum Transformation {
   ParCSGreaterThanVS((ArgF32,f32,f32)),
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
+  SetVVU8((ArgU8,OutU8)),
   ParCopyVV((ArgF32,OutF32)),
   ParCopyVVU8((ArgU8,OutU8)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
@@ -66,7 +67,7 @@ pub enum Transformation {
   Constant{table_id: TableId, value: Value},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   ColumnKind{table_id: TableId, column_ix: usize, column_kind: ValueKind},
-  Set{table_id: TableId, row: TableIndex, column: TableIndex},
+  Set{src_id: TableId, src_indices: Vec<(TableIndex, TableIndex)>, dest_id: TableId, dest_indices: Vec<(TableIndex, TableIndex)>},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
@@ -83,6 +84,7 @@ impl fmt::Debug for Transformation {
       Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",kind,bytes)?,
       Transformation::TableAlias{table_id,alias} => write!(f,"Alias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
       Transformation::Select{table_id,indices,out} => write!(f,"Select(table_id: {:?}, indices: {:?}, out: {:?})",table_id,indices,out)?,
+      Transformation::Set{src_id, src_indices,dest_id,dest_indices} => write!(f,"Set(src_id: {:?}, src_indices: {:?},\n    dest_id: {:?}, dest_indices: {:?})",src_id,src_indices,dest_id,dest_indices)?,
       Transformation::Function{name,arguments,out} => {
         write!(f,"Function(name: {}, args: {:#?}, out: {:#?})",humanize(name),arguments,out)?
       },
@@ -175,6 +177,7 @@ impl Transformation {
           } 
         }
       }
+      Transformation::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
       Transformation::CopyTable((arg,out)) => {
         let mut out_brrw = out.borrow_mut();
         let arg_brrw = arg.borrow();
