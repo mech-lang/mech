@@ -124,6 +124,37 @@ impl Compiler {
         //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
+      Node::SetData{children} => {
+
+        let mut src = self.compile_node(&children[1]);
+        let mut dest = self.compile_node(&children[0]);
+
+        let (src_table_id, src_indices) = match &mut src[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
+          Transformation::Select{table_id,ref indices,..} => {
+            let table_id = table_id.clone();
+            let indices = indices.clone();
+            src.remove(0);
+            Some((table_id,indices))
+          },
+          _ => None,
+        }.unwrap();     
+
+        match &mut dest[0] {
+          Transformation::Select{table_id, indices, out} => {
+            let dest_id = table_id.clone();
+            let dest_indices = indices.clone();
+            dest.remove(0);
+            tfms.push(Transformation::Set{src_id: src_table_id, src_indices: src_indices.clone(), dest_id, dest_indices})
+          }
+          _ => (),
+        }
+
+        tfms.append(&mut dest);
+        tfms.append(&mut src);
+      }
       Node::TableDefine{children} => {
         let mut output = self.compile_node(&children[0]);
         // Get the output table id
@@ -230,21 +261,20 @@ impl Compiler {
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  //let alias_tfm = move |x| {
-                    let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
-                  //};
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
                   column_aliases.push(alias_tfm);
                 }
                 _ => (),
               }
             }
+
             header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
             table_children.remove(0);
           }
           _ => (),
         };
-        if table_children.len() > 1  {
+        if header_tfms.len() > 1  {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
@@ -272,7 +302,7 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
-          let mut result = self.compile_nodes(children);
+          let mut result = self.compile_nodes(&table_children);
           tfms.append(&mut result);          
         }
       },
