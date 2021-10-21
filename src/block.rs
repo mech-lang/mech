@@ -31,6 +31,8 @@ pub enum BlockState {
 // ## Block
 
 lazy_static! {
+  static ref COLUMN: u64 = hash_string("column");
+  static ref STATS_SUM: u64 = hash_string("stats/sum");
   static ref MATH_ADD: u64 = hash_string("math/add");
   static ref MATH_DIVIDE: u64 = hash_string("math/divide");
   static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
@@ -250,6 +252,35 @@ impl Block {
         table_brrw.set(0,0,value.clone());
       }
       Transformation::Function{name, ref arguments, out} => {
+
+        let (out_table_id, _, _) = out;
+        let out_table = self.get_table(out_table_id).unwrap().clone();
+        let mut arg_cols = vec![];
+        let mut rows = 0;
+        let mut cols = 0;
+        for (arg_name, table_id, _, _) in arguments {
+          match self.get_table(table_id) {
+            Some(table) => {
+              let t = table.borrow();
+              rows += t.rows;
+              cols = if cols == 0 {t.cols} 
+                     else if t.cols != cols { 0 /*TODO ERROR*/ }
+                     else { cols };
+              if arg_cols.len() == 0 {
+                arg_cols = vec![Vec::new(); cols];
+              }
+              for c in 0..t.cols {
+                let mut arg_col = t.get_column_unchecked(c);
+                arg_cols[c].push((arg_name, arg_col));
+              }
+            }
+            None => {
+              self.unsatisfied_transformations.push(tfm.clone());
+              self.state = BlockState::Unsatisfied;
+              return;
+            },
+          }
+        }
         if *name == *MATH_ADD || 
            *name == *MATH_DIVIDE || 
            *name == *MATH_MULTIPLY || 
@@ -384,42 +415,27 @@ impl Block {
             }
             _ => (),
           }
-        } else if *name == *TABLE_VERTICAL__CONCATENATE {
-          let (out_table_id, _, _) = out;
-          let out_table = self.get_table(out_table_id).unwrap().clone();
-          let mut out_column_ix = 0;
-          let mut arg_cols = vec![];
-          let mut rows = 0;
-          let mut cols = 0;
-          for (_, table_id, _, _) in arguments {
-            match self.get_table(table_id) {
-              Some(table) => {
-                let t = table.borrow();
-                rows += t.rows;
-                cols = if cols == 0 {t.cols} 
-                       else if t.cols != cols { 0 /*TODO ERROR*/ }
-                       else { cols };
-                if arg_cols.len() == 0 {
-                  arg_cols = vec![Vec::new(); cols];
-                }
-                for c in 0..t.cols {
-                  let mut arg_col = t.get_column_unchecked(c);
-                  arg_cols[c].push(arg_col);
-                }
+        } else if *name == *STATS_SUM {
+          let (arg_id, arg) = &arg_cols[0][0];
+          if **arg_id == *COLUMN {
+            match arg {
+              Column::U8(col) => {
+                let mut out_brrw = out_table.borrow_mut();
+                out_brrw.set_col_kind(0,ValueKind::U8);
+                let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+                let tfm = Transformation::StatsSumColU8((col.clone(),out_col));
+                self.plan.push(Rc::new(RefCell::new(tfm)));
               }
-              None => {
-                self.unsatisfied_transformations.push(tfm.clone());
-                self.state = BlockState::Unsatisfied;
-                return;
-              },
+              _ => (),
             }
           }
+        } else if *name == *TABLE_VERTICAL__CONCATENATE {
           let mut out_brrw = out_table.borrow_mut();
           out_brrw.resize(rows,cols);
           for col in 0..cols {
             out_brrw.set_col_kind(col, ValueKind::U8);
             let out_col = out_brrw.get_column_unchecked(col);
-            let arg_col = arg_cols[col].iter().filter_map(|arg| match arg {
+            let arg_col = arg_cols[col].iter().filter_map(|(_,arg)| match arg {
               Column::U8(col) => Some(col.clone()),
               _ => None,
             }).collect::<Vec<ColumnU8>>();

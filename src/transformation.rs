@@ -51,6 +51,7 @@ pub enum Transformation {
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
   SetVVU8((ArgU8,OutU8)),
+  StatsSumColU8((ArgU8,OutU8)),
   ParCopyVV((ArgF32,OutF32)),
   ParCopyVVU8((ArgU8,OutU8)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
@@ -93,7 +94,8 @@ impl fmt::Debug for Transformation {
       Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
       Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
-      Transformation::AddVVU8(args) => write!(f,"AddVVU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
+
+      Transformation::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
       _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())
@@ -191,6 +193,10 @@ impl Transformation {
             out_brrw.set(row,col,value);
           }
         }
+      }
+      Transformation::StatsSumColU8((arg,out)) => {
+        let result = arg.borrow().iter().fold(0,|sum, n| sum + n);
+        out.borrow_mut()[0] = result;
       }
       x => println!("Not Implemented: {:?}", x),
     }

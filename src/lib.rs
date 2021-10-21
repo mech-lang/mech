@@ -63,6 +63,15 @@ pub enum Column {
 }
 
 impl Column {
+  pub fn get_u8(&self) -> Option<ColumnU8> {
+    match self {
+     Column::U8(col) => Some(col.clone()),
+      _ => None,
+    }
+  }
+}
+
+impl Column {
 
   pub fn kind(&self) -> ValueKind {
     match self {
