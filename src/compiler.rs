@@ -224,18 +224,16 @@ impl Compiler {
         let mut arg_tfms = vec![];
         for child in children {
           // get the argument identifier off the function binding. Default to 0 if there is no named arg
-          let arg: u64 = match child {
-            Node::FunctionBinding{children} => {
-              match &children[0] {
-                Node::Identifier{name, id} => {
-                  *id
-                },
-                _ => 0,
-              }
-            }
+          let mut result = self.compile_node(&child);
+
+          let arg: u64 = match &result[0] {
+            Transformation::Identifier{name, id} => {
+              let arg_id = id.clone();
+              result.remove(0);
+              arg_id
+            },
             _ => 0,
           };
-          let mut result = self.compile_node(&child);
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
               args.push((arg, *table_id, TableIndex::All, TableIndex::All));
@@ -484,7 +482,6 @@ impl Compiler {
         }
         //all_indices.reverse();
         let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
-        println!("{:?}", all_indices);
         if all_indices.len() > 1 {
           tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
           tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
@@ -505,6 +502,7 @@ impl Compiler {
       Node::Expression{children} |
       Node::TableRow{children} |
       Node::TableColumn{children} |
+      Node::FunctionBinding{children} |
       Node::Root{children} => {
         let mut result = self.compile_nodes(children);
         tfms.append(&mut result);
