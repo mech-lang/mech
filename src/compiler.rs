@@ -34,12 +34,24 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
     match n {
       Node::Statement{..} |
       Node::Block{..} => blocks.push(n.clone()),
+      Node::MechCodeBlock{children} => {
+        // Do something with the block state string.
+        // ```mech: disabled
+        match &children[0] {
+          Node::String{text} => {
+            let block_state = text.iter().collect::<String>();
+            if block_state != "disabled".to_string() {
+              blocks.append(&mut get_blocks(children));
+            }
+          }
+          _ => (),
+        }
+      }
       Node::Root{children} |
       Node::Body{children} |
       Node::Section{children,..} |
       Node::Program{children,..} |
-      Node::Fragment{children} |
-      Node::MechCodeBlock{children} => {
+      Node::Fragment{children} => {
         blocks.append(&mut get_blocks(children));
       }
       _ => (), 
@@ -124,7 +136,7 @@ impl Compiler {
         //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
-      /*Node::SetData{children} => {
+      Node::SetData{children} => {
 
         let mut src = self.compile_node(&children[1]);
         let mut dest = self.compile_node(&children[0]);
@@ -154,7 +166,7 @@ impl Compiler {
 
         tfms.append(&mut dest);
         tfms.append(&mut src);
-      }*/
+      }
       Node::TableDefine{children} => {
         let mut output = self.compile_node(&children[0]);
         // Get the output table id
@@ -261,21 +273,20 @@ impl Compiler {
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  //let alias_tfm = move |x| {
-                    let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
-                  //};
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
                   column_aliases.push(alias_tfm);
                 }
                 _ => (),
               }
             }
+
             header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
             table_children.remove(0);
           }
           _ => (),
         };
-        if table_children.len() > 1  {
+        if header_tfms.len() > 1 || table_children.len() > 1  {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
@@ -303,7 +314,7 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
-          let mut result = self.compile_nodes(children);
+          let mut result = self.compile_nodes(&table_children);
           tfms.append(&mut result);          
         }
       },
