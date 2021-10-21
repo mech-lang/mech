@@ -131,26 +131,18 @@ impl Block {
               (_, TableId::Global(gid)) => {
                 let table_id2 = table_id;
                 // find all table aliases and copy them as well
-                let global_column_aliases = self.transformations.iter().filter_map(|tfm| 
-                match tfm {
-                  Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
-                    if table_id2 == table_id {
-                      Some(Transformation::ColumnAlias{table_id: TableId::Global(*gid), column_ix: *column_ix, column_alias: *column_alias}) 
-                    } else {
-                      None
-                    }
-                  },
-                  _ => None,
-                }).collect::<Vec<Transformation>>();
-                for alias in global_column_aliases {
-                  match alias {
+                for tfm in self.transformations.iter() {
+                  match tfm {
                     Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
-                      let change = Change::ColumnAlias{table_id: *table_id.unwrap(), column_ix, column_alias};
-                      self.changes.push(change);
-                    }
+                      if table_id2 == table_id {
+                        // Remap the local column alias for the global table
+                        let remapped_tfm = Change::ColumnAlias{table_id: *gid, column_ix: *column_ix, column_alias: *column_alias};
+                        self.changes.push(remapped_tfm);
+                      }
+                    },
                     _ => (),
                   }
-                }
+                } 
                 let tfm = Transformation::CopyTable((src_table.clone(), out_table.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
@@ -174,6 +166,44 @@ impl Block {
           }
           (None, _, _) |
           (_, None, _) => {
+            self.unsatisfied_transformations.push(tfm.clone());
+            self.state = BlockState::Unsatisfied;
+          },
+          _ => (), // TODO Raise an error here, we don't handle this case
+        }
+      }
+      Transformation::Set{src_id, src_indices, dest_id, dest_indices} => {
+        let src_table = self.get_table(src_id);
+        let dest_table = self.get_table(dest_id);
+        match (src_table, dest_table, src_indices[0], dest_indices[0]) {
+          (Some(src_table),Some(dest_table), (TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
+            match (src_id, dest_id) {
+              (_, TableId::Global(gid)) => {
+                let src_table_brrw = src_table.borrow();
+                let dest_table_brrw = dest_table.borrow();
+                // Copy each column because it's (:,:) -> (:,:)
+                for col in 0..src_table_brrw.cols {
+                  let src_vector = src_table_brrw.get_column_unchecked(col);
+                  let dest_vector = dest_table_brrw.get_column_unchecked(col);
+                  match (&src_vector, &dest_vector) {
+                    (Column::U8(src), Column::U8(dest)) => {
+                      let tfm = Transformation::SetVVU8((src.clone(), dest.clone()));
+                      self.plan.push(Rc::new(RefCell::new(tfm)));
+                    }
+                    _ => {
+                      self.unsatisfied_transformations.push(tfm);
+                      self.state = BlockState::Unsatisfied;
+                      return;
+                    },
+                  }
+
+                }
+              }
+              _ => (), // TODO Other possibilities,
+            }
+          }
+          (None, _, _, _) |
+          (_, None, _, _) => {
             self.unsatisfied_transformations.push(tfm.clone());
             self.state = BlockState::Unsatisfied;
           },
