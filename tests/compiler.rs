@@ -282,9 +282,9 @@ block
 
 test_mech!(range_basic,r#"
 block
-  #test = stats/sum(column: #range)
+  #range = 5 : 14
 block
-  #range = 5 : 14"#, Value::U8(95));
+  #test = stats/sum(column: #range)"#, Value::U8(95));
 
 test_mech!(range_and_cat,r#"
 block

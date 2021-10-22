@@ -19,6 +19,7 @@ use std::sync::Arc;
 use std::mem;
 
 lazy_static! {
+  static ref TABLE_RANGE: u64 = hash_string("table/range");
   static ref TABLE_COPY: u64 = hash_string("table/copy");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");

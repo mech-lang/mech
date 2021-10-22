@@ -12,9 +12,12 @@ fn main() {
 
   parser.parse(r#"
 block
-  #x = [1 2 3]"#);
+  #range = 5 : 14
 
-  println!("{:#?}", parser.parse_tree);
+block
+  #test = stats/sum(column: #range)"#);
+
+  //println!("{:#?}", parser.parse_tree);
 
   ast.build_syntax_tree(&parser.parse_tree);
 
@@ -22,7 +25,9 @@ block
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]);
 
-  core.insert_block(blocks[0].clone());
+  for block in blocks {
+    core.insert_block(block.clone());
+  }
   
   /*for t in blocks {
     println!("{:#?}", t);
