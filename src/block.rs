@@ -38,6 +38,7 @@ lazy_static! {
   static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
   static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
   static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
+  static ref TABLE_RANGE: u64 = hash_string("table/range");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
 }
@@ -412,6 +413,16 @@ impl Block {
                 },
               }
 
+            }
+            _ => (),
+          }
+        } else if *name == *TABLE_RANGE {
+          let (_, start_arg) = &arg_cols[0][0];
+          let (_, end_arg) = &arg_cols[0][1];
+          match (start_arg, end_arg) {
+            (Column::U8(start), Column::U8(end)) => {  
+              let tfm = Transformation::RangeU8((start.clone(),end.clone(),out_table.clone()));
+              self.plan.push(Rc::new(RefCell::new(tfm)));
             }
             _ => (),
           }

@@ -59,6 +59,7 @@ pub enum Transformation {
   CopySSString((ArgString,usize,OutString)),
   ConcatVU8((Vec<ArgU8>,OutU8)),
   CopyTable((ArgTable,OutTable)),
+  RangeU8((ArgU8,ArgU8,OutTable)),
   
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},
@@ -94,6 +95,7 @@ impl fmt::Debug for Transformation {
       Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
       Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
+      Transformation::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
 
       Transformation::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
       _ => write!(f,"Tfm Print Not Implemented")?
@@ -197,6 +199,19 @@ impl Transformation {
       Transformation::StatsSumColU8((arg,out)) => {
         let result = arg.borrow().iter().fold(0,|sum, n| sum + n);
         out.borrow_mut()[0] = result;
+      }
+      Transformation::RangeU8((start,end,out)) => {
+        let start_value = start.borrow()[0];
+        let end_value = end.borrow()[0];
+        let delta = end_value - start_value + 1;
+        let mut out_brrw = out.borrow_mut();
+        out_brrw.resize(delta as usize,1);
+        out_brrw.set_col_kind(0,ValueKind::U8);
+        let mut value = start_value;
+        for row in 0..out_brrw.rows {
+          out_brrw.set(row,0,Value::U8(value));
+          value += 1;
+        } 
       }
       x => println!("Not Implemented: {:?}", x),
     }
