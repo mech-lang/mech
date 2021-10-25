@@ -41,6 +41,8 @@ lazy_static! {
   static ref TABLE_RANGE: u64 = hash_string("table/range");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
+  static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
+  static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
 }
 
 #[derive(Clone)]
@@ -362,7 +364,6 @@ impl Block {
                   return;
                 },
               }
-
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
               let mut argument_columns = vec![];
@@ -416,6 +417,90 @@ impl Block {
             }
             _ => (),
           }
+        } else if *name == *COMPARE_GREATER__THAN ||
+                  *name == *COMPARE_LESS__THAN {
+          let mut arg_dims = Vec::new();
+          for (_, table_id, row, column) in arguments {
+            match self.get_table(table_id) {
+              Some(table) => {
+                let t = table.borrow();
+                let dims = match (row, column) {
+                  (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+                  (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
+                  _ => (0,0),
+                };
+                arg_dims.push(dims);
+              }
+              _ => {
+                self.unsatisfied_transformations.push(tfm);
+                self.state = BlockState::Unsatisfied;
+                return;
+              },
+            }
+          }
+          let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
+            match dims {
+              (1,1) => TableShape::Scalar,
+              (x,1) => TableShape::Column(*x),
+              (1,x) => TableShape::Row(*x),
+              (x,y) => TableShape::Matrix(*x,*y),
+              _ => TableShape::Pending,
+            }
+          }).collect();
+          match (&arg_shapes[0],&arg_shapes[1]) {
+            (TableShape::Scalar, TableShape::Scalar) => {
+              let mut argument_columns = vec![];
+              for (_, table_id, _, _) in arguments {
+                match self.get_table(table_id) {
+                  Some(table) => {
+                    let mut column = table.borrow().get_column_unchecked(0);
+                    argument_columns.push(column);
+                  }
+                  _ => {
+                    self.unsatisfied_transformations.push(tfm);
+                    self.state = BlockState::Unsatisfied;
+                    return;
+                  },
+                }
+              }
+              let (out_table_id, _, _) = out;
+              match self.get_table(out_table_id) {
+                Some(table) => {
+                  let mut t = table.borrow_mut();
+                  t.set_col_kind(0, ValueKind::Bool);
+                  let column = t.get_column_unchecked(0);
+                  argument_columns.push(column);
+                }
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
+              }
+              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+                (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
+                  let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *COMPARE_LESS__THAN { Transformation::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_NOT__EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Transformation::Null };
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                }
+                _ => {
+                  self.unsatisfied_transformations.push(tfm);
+                  self.state = BlockState::Unsatisfied;
+                  return;
+                },
+              }
+            }
+            _ => (),
+          }          
+          
+
+
+
         } else if *name == *TABLE_RANGE {
           let (_, start_arg) = &arg_cols[0][0];
           let (_, end_arg) = &arg_cols[0][1];

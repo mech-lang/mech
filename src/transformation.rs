@@ -47,6 +47,9 @@ pub enum Transformation {
   ParOrVV(Vec<ColumnBool>),
   ParLessThanVS((ArgF32,f32,OutBool)),
   ParGreaterThanVS((ArgF32,f32,OutBool)),
+  GreaterThanVSU8((ArgU8,ArgU8,OutBool)),
+  GreaterThanSSU8((ArgU8,ArgU8,OutBool)),
+  LessThanSSU8((ArgU8,ArgU8,OutBool)),
   ParCSGreaterThanVS((ArgF32,f32,f32)),
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
@@ -138,7 +141,13 @@ impl Transformation {
       }
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
-      Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Transformation::GreaterThanVSU8((lhs, rhs, out)) => { 
+        let rhs_value = rhs.borrow()[0];
+        out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > rhs_value); 
+      }
+      Transformation::GreaterThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] > (rhs.borrow())[0]; }
+      Transformation::LessThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] < (rhs.borrow())[0]; }
       Transformation::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
         lhs.borrow_mut().par_iter_mut().for_each(|lhs| if *lhs > *rhs {
           *lhs = *swap;
