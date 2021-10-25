@@ -321,19 +321,10 @@ block
 
 // ## Comparators
 
-test_mech!(comparator_greater,"
-block
-  x = 10:20
-  z = x > 15
-  #test = x{z, :}", Value::U8(16));
+test_mech!(compare_greater_than,"#test = 16 > 15", Value::Bool(true));
+test_mech!(compare_less_than,"#test = 16 < 15", Value::Bool(false));
 
-test_mech!(comparator_less,"
-block
-  x = 10:20
-  z = x < 15
-  #test = x{z, :}", Value::U8(10));
-
-test_mech!(comparator_greater_than_equal,"
+test_mech!(compare_greater_than_equal,"
 block
   #x = [1; 2; 3]
   #y = [2; 1; 3]
@@ -342,7 +333,7 @@ block
   ix = #x >= #y
   #test = stats/sum(column: #x{ix,:})", Value::U8(5)); 
 
-test_mech!(comparator_less_than_equal,"
+test_mech!(compare_less_than_equal,"
 block
   #x = [1; 2; 3]
   #y = [2; 1; 3]
@@ -352,7 +343,7 @@ block
   #test = stats/sum(column: #x{ix,:})", Value::U8(4)); 
 
 
-test_mech!(comparator_equal,"
+test_mech!(compare_equal,"
 block
   #x = [1; 2; 3; 2]
   #y = [2; 1; 3; 2]
@@ -361,7 +352,7 @@ block
   ix = #x == #y
   #test = stats/sum(column: #x{ix,:})", Value::U8(5)); 
 
-test_mech!(comparator_equal_boolean,"
+test_mech!(compare_equal_boolean,"
 block
   #x = [true; true; true; true]
   #y = [true; true; true; true]
@@ -370,7 +361,7 @@ block
   ix = #x == #y
   #test = set/all(table: ix)", Value::Bool(true)); 
 
-test_mech!(comparator_not_equal_boolean,"
+test_mech!(compare_not_equal_boolean,"
 block
   #x = [true; true; true; true]
   #y = [false; false; false; false]
@@ -379,7 +370,7 @@ block
   ix = #x != #y
   #test = set/all(table: ix)", Value::Bool(true)); 
 
-test_mech!(comparator_equal_string,r#"
+test_mech!(compare_equal_string,r#"
 block
   #x = [1; 2; 3; 4]
   #y = ["a"; "b"; "a"; "b"]
@@ -388,7 +379,7 @@ block
   ix = #y == "a"
   #test = stats/sum(column: #x{ix,:})"#, Value::U8(4)); 
 
-test_mech!(comparator_not_equal,"
+test_mech!(compare_not_equal,"
 block
   #x = [1; 2; 3; 2]
   #y = [2; 1; 3; 2]

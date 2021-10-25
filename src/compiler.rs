@@ -27,6 +27,8 @@ lazy_static! {
   static ref TABLE_APPEND__ROW: u64 = hash_string("table/append-row");
   static ref TABLE_SPLIT: u64 = hash_string("table/split");
   static ref SET_ANY: u64 = hash_string("set/any");
+  static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
+  static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
 }
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
