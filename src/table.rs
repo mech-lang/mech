@@ -231,26 +231,35 @@ impl Table {
     }
   }
 
-  pub fn get_column(&self, col: usize) -> Option<Column> {
-    if col < self.cols { 
-      Some(self.data[col].clone())
-    } else {
-      None
+  pub fn get_column(&self, col: &TableIndex) -> Option<Column> {
+    match col {
+      TableIndex::Alias(alias) => {
+        match self.column_alias_to_ix.get(&alias) {
+          Some(ix) => Some(self.data[*ix as usize].clone()),
+          None => None,
+        }
+      }
+      TableIndex::Index(ix) => {
+        if *ix < self.cols { 
+          Some(self.data[*ix].clone())
+        } else {
+          None
+        }
+      }
+      TableIndex::All => {
+        if self.cols == 1 {
+          Some(self.data[0].clone())
+        } else {
+          None
+        }
+      }
+      TableIndex::Table(_) |
+      TableIndex::None => None, 
     }
   }
 
   pub fn get_column_unchecked(&self, col: usize) -> Column {
     self.data[col].clone()
-  }
-
-  pub fn get_column_alias_unchecked(&self, col: TableIndex) -> Column {
-    match col {
-      TableIndex::Alias(alias) => {
-        let ix = self.column_alias_to_ix.get(&alias).unwrap();
-        self.data[*ix as usize].clone()
-      }
-      _ => Column::Empty,
-    }
   }
 
   pub fn resize(&mut self, rows: usize, cols: usize) {
