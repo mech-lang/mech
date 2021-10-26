@@ -9,13 +9,15 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
 use std::fmt;
 
 pub type Plan = Vec<Rc<RefCell<Transformation>>>;
+pub type Argument = (u64, TableId, TableIndex, TableIndex);
+pub type Out = (TableId, TableIndex, TableIndex);
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,7 +55,7 @@ pub struct Block {
   plan: Plan,
   pub changes: Transaction,
   pub global_database: Rc<RefCell<Database>>,
-  unsatisfied_transformations: Vec<Transformation>,
+  unsatisfied_transformations: Vec<(MechErrorKind,Transformation)>,
   transformations: Vec<Transformation>,
 }
 
@@ -96,7 +98,7 @@ impl Block {
   pub fn ready(&mut self) -> bool {
     let unsatisfied = self.unsatisfied_transformations.clone();
     self.unsatisfied_transformations.clear();
-    for tfm in unsatisfied {
+    for (_, tfm) in unsatisfied {
       self.add_tfm(tfm);
     }
     if self.unsatisfied_transformations.len() == 0 {
@@ -107,7 +109,76 @@ impl Block {
     }
   }
 
+  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<Column>,MechErrorKind> {
+    let mut argument_columns = vec![];
+    for (_, table_id, _, col) in arguments {
+      match self.get_table(table_id) {
+        Some(table) => {
+          match table.borrow().get_column(&col) {
+            Some(column) => argument_columns.push(column),
+            None => {return Err(MechErrorKind::MissingColumn((*table_id,*col)));}
+          }
+          
+        }
+        _ => {return Err(MechErrorKind::MissingTable(*table_id));}
+      }
+    }
+    Ok(argument_columns)
+  }
+
+  fn get_out_table(&self, out: &Out, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
+    let (out_table_id, _, _) = out;
+    match self.get_table(out_table_id) {
+      Some(table) => {
+        let mut t = table.borrow_mut();
+        t.set_col_kind(0, col_kind);
+        let column = t.get_column_unchecked(0);
+        Ok(column)
+      }
+      _ => Err(MechErrorKind::MissingTable(*out_table_id)),
+    }
+  }
+
+  fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechErrorKind> {
+    let mut arg_dims = Vec::new();
+    for (_, table_id, row, column) in arguments {
+      match self.get_table(table_id) {
+        Some(table) => {
+          let t = table.borrow();
+          let dims = match (row, column) {
+            (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+            (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
+            _ => (0,0),
+          };
+          arg_dims.push(dims);
+        }
+        _ => return Err(MechErrorKind::MissingTable(*table_id))
+      }
+    }
+    let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
+      match dims {
+        (1,1) => TableShape::Scalar,
+        (x,1) => TableShape::Column(*x),
+        (1,x) => TableShape::Row(*x),
+        (x,y) => TableShape::Matrix(*x,*y),
+        _ => TableShape::Pending,
+      }
+    }).collect();
+    Ok(arg_shapes)
+  }
+
   pub fn add_tfm(&mut self, tfm: Transformation) {
+    match self.compile_tfm(tfm.clone()) {
+      Ok(()) => (),
+      Err(mech_error_kind) => {
+        self.unsatisfied_transformations.push((mech_error_kind,tfm));
+        self.state = BlockState::Unsatisfied;
+        return;        
+      }
+    }
+  }
+
+  fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechErrorKind> {
     match &tfm {
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
@@ -170,10 +241,7 @@ impl Block {
             }
           }
           (None, _, _) |
-          (_, None, _) => {
-            self.unsatisfied_transformations.push(tfm.clone());
-            self.state = BlockState::Unsatisfied;
-          },
+          (_, None, _) => { return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
           _ => (), // TODO Raise an error here, we don't handle this case
         }
       }
@@ -195,11 +263,7 @@ impl Block {
                       let tfm = Transformation::SetVVU8((src.clone(), dest.clone()));
                       self.plan.push(Rc::new(RefCell::new(tfm)));
                     }
-                    _ => {
-                      self.unsatisfied_transformations.push(tfm);
-                      self.state = BlockState::Unsatisfied;
-                      return;
-                    },
+                    _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
                   }
 
                 }
@@ -208,10 +272,7 @@ impl Block {
             }
           }
           (None, _, _, _) |
-          (_, None, _, _) => {
-            self.unsatisfied_transformations.push(tfm.clone());
-            self.state = BlockState::Unsatisfied;
-          },
+          (_, None, _, _) => { return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
           _ => (), // TODO Raise an error here, we don't handle this case
         }
       }
@@ -255,7 +316,6 @@ impl Block {
         table_brrw.set(0,0,value.clone());
       }
       Transformation::Function{name, ref arguments, out} => {
-
         let (out_table_id, _, _) = out;
         let out_table = self.get_table(out_table_id).unwrap().clone();
         let mut arg_cols = vec![];
@@ -277,11 +337,7 @@ impl Block {
                 arg_cols[c].push((arg_name, arg_col));
               }
             }
-            None => {
-              self.unsatisfied_transformations.push(tfm.clone());
-              self.state = BlockState::Unsatisfied;
-              return;
-            },
+            _ => {return Err(MechErrorKind::MissingTable(*table_id));},
           }
         }
         if *name == *MATH_ADD || 
@@ -289,66 +345,13 @@ impl Block {
            *name == *MATH_MULTIPLY || 
            *name == *MATH_SUBTRACT || 
            *name == *MATH_EXPONENT {
-          let mut arg_dims = Vec::new();
-          for (_, table_id, row, column) in arguments {
-            match self.get_table(table_id) {
-              Some(table) => {
-                let t = table.borrow();
-                let dims = match (row, column) {
-                  (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-                  (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
-                  _ => (0,0),
-                };
-                arg_dims.push(dims);
-              }
-              _ => {
-                self.unsatisfied_transformations.push(tfm);
-                self.state = BlockState::Unsatisfied;
-                return;
-              },
-            }
-          }
-          let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
-            match dims {
-              (1,1) => TableShape::Scalar,
-              (x,1) => TableShape::Column(*x),
-              (1,x) => TableShape::Row(*x),
-              (x,y) => TableShape::Matrix(*x,*y),
-              _ => TableShape::Pending,
-            }
-          }).collect();
+          let arg_shapes = self.get_arg_dims(&arguments)?;
           // Now decide on the correct tfm based on the shape
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_columns = vec![];
-              for (_, table_id, _, _) in arguments {
-                match self.get_table(table_id) {
-                  Some(table) => {
-                    let mut column = table.borrow().get_column_unchecked(0);
-                    argument_columns.push(column);
-                  }
-                  _ => {
-                    self.unsatisfied_transformations.push(tfm);
-                    self.state = BlockState::Unsatisfied;
-                    return;
-                  },
-                }
-              }
-              let (out_table_id, _, _) = out;
-              match self.get_table(out_table_id) {
-                Some(table) => {
-                  let mut t = table.borrow_mut();
-                  t.set_col_kind(0, ValueKind::U8);
-                  let column = t.get_column_unchecked(0);
-                  argument_columns.push(column);
-                }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
-              }
-              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let mut out_column = self.get_out_table(out, ValueKind::U8)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
                   let tfm = if *name == *MATH_ADD { Transformation::AddSSU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
                   else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -358,44 +361,23 @@ impl Block {
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
               }
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
-              let mut argument_columns = vec![];
-              for (_, table_id, _, col) in arguments {
-                match self.get_table(table_id) {
-                  Some(table) => {
-                    let mut column = table.borrow().get_column_alias_unchecked(*col);
-                    argument_columns.push(column);
-                  }
-                  _ => {
-                    self.unsatisfied_transformations.push(tfm);
-                    self.state = BlockState::Unsatisfied;
-                    return;
-                  },
-                }
-              }
+              let mut argument_columns = self.get_arg_columns(arguments)?;
               let (out_table_id, _, _) = out;
               match self.get_table(out_table_id) {
                 Some(table) => {
                   let mut t = table.borrow_mut();
-                  let (rows, _) = arg_dims[0];
+                  let rows = argument_columns[0].rows();
                   let cols = t.cols;
                   t.resize(rows,cols);
                   t.set_col_kind(0, ValueKind::U8);
                   let column = t.get_column_unchecked(0);
                   argument_columns.push(column);
                 }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
+                _ => {return Err(MechErrorKind::MissingTable(*out_table_id));},
               }
               match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
@@ -407,77 +389,19 @@ impl Block {
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
               }
-
             }
             _ => (),
           }
         } else if *name == *COMPARE_GREATER__THAN ||
                   *name == *COMPARE_LESS__THAN {
-          let mut arg_dims = Vec::new();
-          for (_, table_id, row, column) in arguments {
-            match self.get_table(table_id) {
-              Some(table) => {
-                let t = table.borrow();
-                let dims = match (row, column) {
-                  (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-                  (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
-                  _ => (0,0),
-                };
-                arg_dims.push(dims);
-              }
-              _ => {
-                self.unsatisfied_transformations.push(tfm);
-                self.state = BlockState::Unsatisfied;
-                return;
-              },
-            }
-          }
-          let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
-            match dims {
-              (1,1) => TableShape::Scalar,
-              (x,1) => TableShape::Column(*x),
-              (1,x) => TableShape::Row(*x),
-              (x,y) => TableShape::Matrix(*x,*y),
-              _ => TableShape::Pending,
-            }
-          }).collect();
-          match (&arg_shapes[0],&arg_shapes[1]) {
+          let arg_dims = self.get_arg_dims(&arguments)?;
+          match (&arg_dims[0],&arg_dims[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_columns = vec![];
-              for (_, table_id, _, _) in arguments {
-                match self.get_table(table_id) {
-                  Some(table) => {
-                    let mut column = table.borrow().get_column_unchecked(0);
-                    argument_columns.push(column);
-                  }
-                  _ => {
-                    self.unsatisfied_transformations.push(tfm);
-                    self.state = BlockState::Unsatisfied;
-                    return;
-                  },
-                }
-              }
-              let (out_table_id, _, _) = out;
-              match self.get_table(out_table_id) {
-                Some(table) => {
-                  let mut t = table.borrow_mut();
-                  t.set_col_kind(0, ValueKind::Bool);
-                  let column = t.get_column_unchecked(0);
-                  argument_columns.push(column);
-                }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
-              }
-              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_table(out, ValueKind::Bool)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
                   let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
                   else if *name == *COMPARE_LESS__THAN { Transformation::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -488,19 +412,28 @@ impl Block {
                   else { Transformation::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
-                _ => {
-                  self.unsatisfied_transformations.push(tfm);
-                  self.state = BlockState::Unsatisfied;
-                  return;
-                },
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+              }
+            }
+            (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_table(out, ValueKind::Bool)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
+                  let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *COMPARE_LESS__THAN { Transformation::LessThanVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_NOT__EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Transformation::Null };
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                }
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
               }
             }
             _ => (),
-          }          
-          
-
-
-
+          }                    
         } else if *name == *TABLE_RANGE {
           let (_, start_arg) = &arg_cols[0][0];
           let (_, end_arg) = &arg_cols[0][1];
@@ -572,11 +505,7 @@ impl Block {
                   }
                 }
               }
-              None => {
-                self.unsatisfied_transformations.push(tfm.clone());
-                self.state = BlockState::Unsatisfied;
-                return;
-              },
+              None => { return Err(MechErrorKind::MissingTable(*table_id)); },
             }
           }
 
@@ -587,6 +516,7 @@ impl Block {
       _ => self.plan.push(Rc::new(RefCell::new(tfm.clone()))),
     }
     self.transformations.push(tfm.clone());
+    Ok(())
   }
 
   pub fn solve(&mut self) -> bool {
