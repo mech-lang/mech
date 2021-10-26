@@ -21,7 +21,7 @@ mod table;
 mod transformation;
 //mod operations;
 //mod quantity;
-//mod error;
+mod error;
 mod core;
 mod block;
 mod value;
@@ -43,6 +43,7 @@ pub use self::transformation::{Transformation};
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
+pub use self::error::{MechError, MechErrorKind};
 
 pub type MechString = Vec<char>;
 
@@ -69,9 +70,17 @@ impl Column {
       _ => None,
     }
   }
-}
 
-impl Column {
+  pub fn rows(&self) -> usize {
+    match self {
+      Column::U8(col) => col.borrow().len(),
+      Column::F32(col) => col.borrow().len(),
+      Column::Bool(col) => col.borrow().len(),
+      Column::String(col) => col.borrow().len(),
+      Column::U16(col) => col.borrow().len(),
+      Column::Empty => 0,
+    }
+  }
 
   pub fn kind(&self) -> ValueKind {
     match self {
