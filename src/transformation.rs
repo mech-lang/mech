@@ -49,7 +49,9 @@ pub enum Transformation {
   ParGreaterThanVS((ArgF32,f32,OutBool)),
   GreaterThanVSU8((ArgU8,ArgU8,OutBool)),
   GreaterThanSSU8((ArgU8,ArgU8,OutBool)),
+  GreaterThanVVU8((ArgU8,ArgU8,OutBool)),
   LessThanSSU8((ArgU8,ArgU8,OutBool)),
+  LessThanVVU8((ArgU8,ArgU8,OutBool)),
   ParCSGreaterThanVS((ArgF32,f32,f32)),
   ParSetVS((ArgBool,f32,OutF32)),
   ParSetVV((ArgBool,ArgF32,OutF32)),
@@ -100,7 +102,14 @@ impl fmt::Debug for Transformation {
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
       Transformation::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
 
+      Transformation::GreaterThanVSU8((lhs,rhs,out)) => write!(f,"GreaterThanVSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Transformation::GreaterThanSSU8((lhs,rhs,out)) => write!(f,"GreaterThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Transformation::GreaterThanVVU8((lhs,rhs,out)) => write!(f,"GreaterThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Transformation::LessThanSSU8((lhs,rhs,out)) => write!(f,"LessThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Transformation::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+
       Transformation::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
+      
       _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())
@@ -142,6 +151,12 @@ impl Transformation {
       // COMPARE
       Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
       Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Transformation::LessThanVVU8((lhs, rhs, out)) => { 
+        out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs < *rhs); 
+      }
+      Transformation::GreaterThanVVU8((lhs, rhs, out)) => { 
+        out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs > *rhs); 
+      }  
       Transformation::GreaterThanVSU8((lhs, rhs, out)) => { 
         let rhs_value = rhs.borrow()[0];
         out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > rhs_value); 
