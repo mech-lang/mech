@@ -126,11 +126,13 @@ impl Block {
     Ok(argument_columns)
   }
 
-  fn get_out_table(&self, out: &Out, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
+  fn get_out_table(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
     let (out_table_id, _, _) = out;
     match self.get_table(out_table_id) {
       Some(table) => {
         let mut t = table.borrow_mut();
+        let cols = t.cols;
+        t.resize(rows,cols);
         t.set_col_kind(0, col_kind);
         let column = t.get_column_unchecked(0);
         Ok(column)
@@ -350,7 +352,7 @@ impl Block {
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let mut out_column = self.get_out_table(out, ValueKind::U8)?;
+              let mut out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
                   let tfm = if *name == *MATH_ADD { Transformation::AddSSU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
@@ -370,7 +372,7 @@ impl Block {
               match self.get_table(out_table_id) {
                 Some(table) => {
                   let mut t = table.borrow_mut();
-                  let rows = argument_columns[0].rows();
+                  let rows = argument_columns[0].len();
                   let cols = t.cols;
                   t.resize(rows,cols);
                   t.set_col_kind(0, ValueKind::U8);
@@ -400,7 +402,7 @@ impl Block {
           match (&arg_dims[0],&arg_dims[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_table(out, ValueKind::Bool)?;
+              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
                   let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
@@ -417,7 +419,7 @@ impl Block {
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_table(out, ValueKind::Bool)?;
+              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
                   let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
