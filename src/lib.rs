@@ -71,7 +71,7 @@ impl Column {
     }
   }
 
-  pub fn rows(&self) -> usize {
+  pub fn len(&self) -> usize {
     match self {
       Column::U8(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
@@ -132,7 +132,7 @@ pub const WORDLIST: &[&str;256] = &[
   "met", "cut", "azy", "cup", "ota", "dec", "del",
   "elt", "iet", "don", "ble", "ear", "rth", "eas", 
   "war", "eig", "tee", "ele", "emm", "ene", "qua",
-  "fai", "fan", "fif", "fil", "fin", "fis", "fiv", 
+  "tst", "fan", "fif", "fil", "fin", "fis", "fiv", 
   "flo", "for", "foo", "fou", "fot", "fox", "fre",
   "fri", "fru", "gee", "gia", "glu", "fol", "gre", 
   "ham", "hap", "har", "haw", "hel", "hig", "hot", 
