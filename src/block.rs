@@ -1,4 +1,4 @@
-// ## Block
+// # Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
 // other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
@@ -73,15 +73,15 @@ impl Block {
     }
   }
 
-  pub fn get_table(&self, table_id: &TableId) -> Option<Rc<RefCell<Table>>> {
+  pub fn get_table(&self, table_id: &TableId) -> Result<Rc<RefCell<Table>>, MechErrorKind> {
     match &table_id {
       TableId::Local(id) => match self.tables.get_table_by_id(id) {
-        Some(table) => Some(table.clone()),
-        None => None,
+        Some(table) => Ok(table.clone()),
+        None => Err(MechErrorKind::MissingTable(*table_id)),
       },
       TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
-        Some(table) => Some(table.clone()),
-        None => None,
+        Some(table) => Ok(table.clone()),
+        None => Err(MechErrorKind::MissingTable(*table_id)),
       }
     }
   }
@@ -112,15 +112,11 @@ impl Block {
   fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<Column>,MechErrorKind> {
     let mut argument_columns = vec![];
     for (_, table_id, _, col) in arguments {
-      match self.get_table(table_id) {
-        Some(table) => {
-          match table.borrow().get_column(&col) {
-            Some(column) => argument_columns.push(column),
-            None => {return Err(MechErrorKind::MissingColumn((*table_id,*col)));}
-          }
-          
-        }
-        _ => {return Err(MechErrorKind::MissingTable(*table_id));}
+      let table = self.get_table(table_id)?;
+      let table_brrw = table.borrow(); 
+      match table_brrw.get_column(&col) {
+        Some(column) => argument_columns.push(column.clone()),
+        None => {return Err(MechErrorKind::MissingColumn((*table_id,*col)));}
       }
     }
     Ok(argument_columns)
@@ -128,34 +124,26 @@ impl Block {
 
   fn get_out_table(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
     let (out_table_id, _, _) = out;
-    match self.get_table(out_table_id) {
-      Some(table) => {
-        let mut t = table.borrow_mut();
-        let cols = t.cols;
-        t.resize(rows,cols);
-        t.set_col_kind(0, col_kind);
-        let column = t.get_column_unchecked(0);
-        Ok(column)
-      }
-      _ => Err(MechErrorKind::MissingTable(*out_table_id)),
-    }
+    let table = self.get_table(out_table_id)?;
+    let mut t = table.borrow_mut();
+    let cols = t.cols;
+    t.resize(rows,cols);
+    t.set_col_kind(0, col_kind);
+    let column = t.get_column_unchecked(0);
+    Ok(column)
   }
 
   fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechErrorKind> {
     let mut arg_dims = Vec::new();
     for (_, table_id, row, column) in arguments {
-      match self.get_table(table_id) {
-        Some(table) => {
-          let t = table.borrow();
-          let dims = match (row, column) {
-            (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-            (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
-            _ => (0,0),
-          };
-          arg_dims.push(dims);
-        }
-        _ => return Err(MechErrorKind::MissingTable(*table_id))
-      }
+      let table = self.get_table(table_id)?;
+      let t = table.borrow();
+      let dims = match (row, column) {
+        (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+        (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
+        _ => (0,0),
+      };
+      arg_dims.push(dims);
     }
     let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
       match dims {
@@ -201,10 +189,10 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::Select{table_id, indices, out} => {
-        let src_table = self.get_table(table_id);
-        let out_table = self.get_table(out);
-        match (src_table, out_table, indices[0]) {
-          (Some(src_table),Some(out_table), (TableIndex::All, TableIndex::All)) => {
+        let src_table = self.get_table(table_id)?;
+        let out_table = self.get_table(out)?;
+        match indices[0] {
+          (TableIndex::All, TableIndex::All) => {
             match (table_id, out) {
               (_, TableId::Global(gid)) => {
                 let table_id2 = table_id;
@@ -227,10 +215,10 @@ impl Block {
               _ => (), // TODO Other possibilities,
             }
           }
-          (Some(src),Some(out), (TableIndex::Index(ix), TableIndex::None)) => {
-            let src_brrw = src.borrow();
+          (TableIndex::Index(ix), TableIndex::None) => {
+            let src_brrw = src_table.borrow();
             let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
-            let mut out_brrw = out.borrow_mut();
+            let mut out_brrw = out_table.borrow_mut();
             let mut arg_col = src_brrw.get_column_unchecked(col);
             out_brrw.set_col_kind(0,arg_col.kind());
             let mut out_col = out_brrw.get_column_unchecked(0);
@@ -242,16 +230,24 @@ impl Block {
               _ => (),
             }
           }
-          (None, _, _) |
-          (_, None, _) => { return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+          (TableIndex::Table(ix_table_id), TableIndex::None) => {
+            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            println!("{:?}", src_table);
+            println!("{:?}", out_table);
+            let ix_table = self.get_table(&ix_table_id)?;
+            println!("{:?}", ix_table);
+
+            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+          }
           _ => (), // TODO Raise an error here, we don't handle this case
         }
       }
       Transformation::Set{src_id, src_indices, dest_id, dest_indices} => {
-        let src_table = self.get_table(src_id);
-        let dest_table = self.get_table(dest_id);
-        match (src_table, dest_table, src_indices[0], dest_indices[0]) {
-          (Some(src_table),Some(dest_table), (TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
+        let src_table = self.get_table(src_id)?;
+        let dest_table = self.get_table(dest_id)?;
+        match (src_indices[0], dest_indices[0]) {
+          ((TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
             match (src_id, dest_id) {
               (_, TableId::Global(gid)) => {
                 let src_table_brrw = src_table.borrow();
@@ -273,42 +269,36 @@ impl Block {
               _ => (), // TODO Other possibilities,
             }
           }
-          (None, _, _, _) |
-          (_, None, _, _) => { return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
           _ => (), // TODO Raise an error here, we don't handle this case
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_string(&format!("{:?}{:?}", kind, bytes));
-        match self.get_table(&TableId::Local(table_id)) {
-          Some(table) => {
-            let mut t = table.borrow_mut();
-            match kind {
-              NumberLiteralKind::Decimal => {
-                match bytes.len() {
-                  1 => {
-                    t.set_col_kind(0, ValueKind::U8);
-                    t.set(0,0,Value::U8(bytes[0] as u8));
-                  }
-                  2 => {
-                    t.set_col_kind(0, ValueKind::U16);
-                    use std::mem::transmute;
-                    use std::convert::TryInto;
-                    let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-                    let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
-                    t.set(0,0,Value::U16(x));
-                  }
-                  _ => (), // TODO Handle other sizes
-                }
+        let table =  self.get_table(&TableId::Local(table_id))?; 
+        let mut t = table.borrow_mut();
+        match kind {
+          NumberLiteralKind::Decimal => {
+            match bytes.len() {
+              1 => {
+                t.set_col_kind(0, ValueKind::U8);
+                t.set(0,0,Value::U8(bytes[0] as u8));
               }
-              _ => (),
+              2 => {
+                t.set_col_kind(0, ValueKind::U16);
+                use std::mem::transmute;
+                use std::convert::TryInto;
+                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+                let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
+                t.set(0,0,Value::U16(x));
+              }
+              _ => (), // TODO Handle other sizes
             }
           }
           _ => (),
         }
       },
       Transformation::Constant{table_id, value} => {
-        let table = self.get_table(table_id).unwrap();
+        let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
         match &value {
           Value::Bool(_) => {table_brrw.set_col_kind(0, ValueKind::Bool);},
@@ -319,27 +309,23 @@ impl Block {
       }
       Transformation::Function{name, ref arguments, out} => {
         let (out_table_id, _, _) = out;
-        let out_table = self.get_table(out_table_id).unwrap().clone();
+        let out_table = self.get_table(out_table_id)?.clone();
         let mut arg_cols = vec![];
         let mut rows = 0;
         let mut cols = 0;
         for (arg_name, table_id, _, _) in arguments {
-          match self.get_table(table_id) {
-            Some(table) => {
-              let t = table.borrow();
-              rows += t.rows;
-              cols = if cols == 0 {t.cols} 
-                     else if t.cols != cols { 0 /*TODO ERROR*/ }
-                     else { cols };
-              if arg_cols.len() == 0 {
-                arg_cols = vec![Vec::new(); cols];
-              }
-              for c in 0..t.cols {
-                let mut arg_col = t.get_column_unchecked(c);
-                arg_cols[c].push((arg_name, arg_col));
-              }
-            }
-            _ => {return Err(MechErrorKind::MissingTable(*table_id));},
+          let table = self.get_table(table_id)?;
+          let t = table.borrow();
+          rows += t.rows;
+          cols = if cols == 0 {t.cols} 
+                  else if t.cols != cols { 0 /*TODO ERROR*/ }
+                  else { cols };
+          if arg_cols.len() == 0 {
+            arg_cols = vec![Vec::new(); cols];
+          }
+          for c in 0..t.cols {
+            let mut arg_col = t.get_column_unchecked(c);
+            arg_cols[c].push((arg_name, arg_col));
           }
         }
         if *name == *MATH_ADD || 
@@ -368,20 +354,8 @@ impl Block {
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (out_table_id, _, _) = out;
-              match self.get_table(out_table_id) {
-                Some(table) => {
-                  let mut t = table.borrow_mut();
-                  let rows = argument_columns[0].len();
-                  let cols = t.cols;
-                  t.resize(rows,cols);
-                  t.set_col_kind(0, ValueKind::U8);
-                  let column = t.get_column_unchecked(0);
-                  argument_columns.push(column);
-                }
-                _ => {return Err(MechErrorKind::MissingTable(*out_table_id));},
-              }
-              match (&argument_columns[0], &argument_columns[1], &argument_columns[2]) {
+              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
                   let tfm = if *name == *MATH_ADD { Transformation::AddVVU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
                   //else if *name == *MATH_DIVIDE { Transformation::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -480,34 +454,30 @@ impl Block {
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
           let (out_table_id, _, _) = out;
-          let out_table = self.get_table(out_table_id).unwrap().clone();
+          let out_table = self.get_table(out_table_id)?.clone();
           let mut out_column_ix = 0;
           for (_, table_id, _, _) in arguments {
-            match self.get_table(table_id) {
-              Some(table) => {
-                let t = table.borrow();
-                let mut o = out_table.borrow_mut();
-                for c in 0..t.cols {
-                  let mut arg_col = t.get_column_unchecked(c);
-                  o.set_col_kind(out_column_ix, arg_col.kind());
-                  let mut out_col = o.get_column_unchecked(out_column_ix);
-                  o.set_col_kind(out_column_ix, arg_col.kind());
-                  match (&arg_col, &out_col) {
-                    (Column::U8(arg), Column::U8(out)) => {
-                      let tfm = Transformation::CopySSU8((arg.clone(),0,out.clone()));
-                      self.plan.push(Rc::new(RefCell::new(tfm)));
-                      out_column_ix += 1;
-                    }
-                    (Column::String(arg), Column::String(out)) => {
-                      let tfm = Transformation::CopySSString((arg.clone(),0,out.clone()));
-                      self.plan.push(Rc::new(RefCell::new(tfm)));
-                      out_column_ix += 1;
-                    }
-                    _ => (),
-                  }
+            let table = self.get_table(table_id)?;
+            let t = table.borrow();
+            let mut o = out_table.borrow_mut();
+            for c in 0..t.cols {
+              let mut arg_col = t.get_column_unchecked(c);
+              o.set_col_kind(out_column_ix, arg_col.kind());
+              let mut out_col = o.get_column_unchecked(out_column_ix);
+              o.set_col_kind(out_column_ix, arg_col.kind());
+              match (&arg_col, &out_col) {
+                (Column::U8(arg), Column::U8(out)) => {
+                  let tfm = Transformation::CopySSU8((arg.clone(),0,out.clone()));
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                  out_column_ix += 1;
                 }
+                (Column::String(arg), Column::String(out)) => {
+                  let tfm = Transformation::CopySSString((arg.clone(),0,out.clone()));
+                  self.plan.push(Rc::new(RefCell::new(tfm)));
+                  out_column_ix += 1;
+                }
+                _ => (),
               }
-              None => { return Err(MechErrorKind::MissingTable(*table_id)); },
             }
           }
 
