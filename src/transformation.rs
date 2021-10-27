@@ -50,6 +50,8 @@ pub enum Transformation {
   GreaterThanVSU8((ArgU8,ArgU8,OutBool)),
   GreaterThanSSU8((ArgU8,ArgU8,OutBool)),
   GreaterThanVVU8((ArgU8,ArgU8,OutBool)),
+  GreaterThanEqualVVU8((ArgU8,ArgU8,OutBool)),
+
   LessThanSSU8((ArgU8,ArgU8,OutBool)),
   LessThanVVU8((ArgU8,ArgU8,OutBool)),
   ParCSGreaterThanVS((ArgF32,f32,f32)),
@@ -64,6 +66,7 @@ pub enum Transformation {
   CopySSString((ArgString,usize,OutString)),
   ConcatVU8((Vec<ArgU8>,OutU8)),
   CopyTable((ArgTable,OutTable)),
+  CopyVBU8((ArgU8, ArgBool, OutTable)),
   RangeU8((ArgU8,ArgU8,OutTable)),
   
   Identifier{ name: Vec<char>, id: u64 },
@@ -97,8 +100,6 @@ impl fmt::Debug for Transformation {
       },
       Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
-      Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
-      Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
       Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
       Transformation::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
 
@@ -106,8 +107,14 @@ impl fmt::Debug for Transformation {
       Transformation::GreaterThanSSU8((lhs,rhs,out)) => write!(f,"GreaterThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
       Transformation::GreaterThanVVU8((lhs,rhs,out)) => write!(f,"GreaterThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
       Transformation::LessThanSSU8((lhs,rhs,out)) => write!(f,"LessThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Transformation::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Transformation::GreaterThanEqualVVU8((lhs,rhs,out)) => write!(f,"GreaterThanEqualVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
 
+      Transformation::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      
+      Transformation::CopyVBU8((arg, ix, out)) => write!(f,"CopyVBU8(arg:\n{:?}\nix:\n{:?}\nout:\n{:?})",arg.borrow(),ix,out.borrow())?,
+      Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
+      Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
+     
       Transformation::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
       
       _ => write!(f,"Tfm Print Not Implemented")?
@@ -157,6 +164,9 @@ impl Transformation {
       Transformation::GreaterThanVVU8((lhs, rhs, out)) => { 
         out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs > *rhs); 
       }  
+      Transformation::GreaterThanEqualVVU8((lhs, rhs, out)) => { 
+        out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs >= *rhs); 
+      }  
       Transformation::GreaterThanVSU8((lhs, rhs, out)) => { 
         let rhs_value = rhs.borrow()[0];
         out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > rhs_value); 
@@ -186,6 +196,23 @@ impl Transformation {
       Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       Transformation::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
       Transformation::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
+      Transformation::CopyVBU8((arg, ix, out)) => { 
+
+        let filtered: Vec<u8>  = arg.borrow().iter().zip(ix.borrow().iter()).filter_map(|(x,ix)| if *ix {Some(*x)} else {None}).collect::<Vec<u8>>();
+        let mut out_brrw = out.borrow_mut();
+        let cols = out_brrw.cols;
+        let rows = filtered.len();
+        if rows > out_brrw.rows {
+          out_brrw.resize(rows,cols)
+        }
+        out_brrw.set_col_kind(0, ValueKind::U8);
+        println!("{:?}", filtered);
+        for row in 0..filtered.len() {
+          println!("{:?}", row);
+          let value = filtered[row];
+          out_brrw.set(row,0,Value::U8(value));
+        }
+      }
       Transformation::ConcatVU8((args, out)) => {
         let mut out_brrw = out.borrow_mut();
         let mut arg_ix = 0;
