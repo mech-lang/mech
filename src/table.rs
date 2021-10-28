@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, BoxPrinter, ColumnU8, ColumnString, ColumnBool, ColumnU16, ColumnF32, humanize, Value};
+use crate::{Column, ValueKind, BoxPrinter, ColumnV, ColumnString, ColumnBool, ColumnU16, ColumnF32, humanize, Value};
 use hashbrown::HashMap;
 
 // ### Table Id
@@ -185,7 +185,7 @@ impl Table {
         (Column::Bool(column_bool), Value::Bool(value_bool)) => column_bool.borrow_mut()[row] = value_bool,
         (Column::String(column_string), Value::String(value_string)) => column_string.borrow_mut()[row] = value_string,
         (Column::Empty, Value::U8(value_u8)) => {
-          //let column: ColumnU8 = Rc::new(RefCell::new(Vec::new()));
+          //let column: ColumnV<u8> = Rc::new(RefCell::new(Vec::new()));
           //self.data[col] = Column::U8(column);
         },
         _ => (),
@@ -200,7 +200,7 @@ impl Table {
     if col < self.cols {
       match (&mut self.data[col], val) {
         (Column::Empty, ValueKind::U8) => {
-          let column: ColumnU8 = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column: ColumnV<u8> = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
           self.col_kinds[col] = ValueKind::U8;
         },

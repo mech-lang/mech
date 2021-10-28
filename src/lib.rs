@@ -25,6 +25,7 @@ mod error;
 mod core;
 mod block;
 mod value;
+mod function;
 //mod index;
 /*
 pub use self::database::{Database, Store, Transaction, Change};
@@ -39,7 +40,8 @@ pub use self::operations::{MechFunction, Argument};*/
 
 pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
-pub use self::transformation::{Transformation, Function};
+pub use self::transformation::Transformation;
+pub use self::function::{Function, MechFunction, AddSS, AddVV, ParMultiplyVS};
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
@@ -48,7 +50,6 @@ pub use self::error::{MechError, MechErrorKind};
 pub type MechString = Vec<char>;
 
 pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
-pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
 pub type ColumnU16 = Rc<RefCell<Vec<u16>>>;
 pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
 pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
@@ -58,7 +59,7 @@ pub type ColumnString = Rc<RefCell<Vec<MechString>>>;
 pub enum Column {
   V(ColumnV<u8>),
   F32(ColumnF32),
-  U8(ColumnU8),
+  U8(ColumnV<u8>),
   U16(ColumnU16),
   Bool(ColumnBool),
   String(ColumnString),
@@ -66,7 +67,7 @@ pub enum Column {
 }
 
 impl Column {
-  pub fn get_u8(&self) -> Option<ColumnU8> {
+  pub fn get_u8(&self) -> Option<ColumnV<u8>> {
     match self {
      Column::U8(col) => Some(col.clone()),
       _ => None,

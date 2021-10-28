@@ -24,7 +24,7 @@ use seahash;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
-use mech_core::{Table, Change, Column, Value, ValueKind, hash_string, Transformation, Block, Core};
+use mech_core::{Table, Function, Change, Column, Value, ValueKind, hash_string, Transformation, Block, Core, ParMultiplyVS};
 
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
@@ -120,11 +120,11 @@ fn main() {
   match (&x,&vx,&y,&vy,&g) {
     (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
       // #ball.x := #ball.x + #ball.vx
-      block1.add_tfm(Transformation::ParAddVVIPF32(vec![x.clone(), vx.clone()]));
+      block1.plan.push(Function::ParAddVVIPF32(vec![x.clone(), vx.clone()]));
       // #ball.y := #ball.y + #ball.vy    
-      block1.add_tfm(Transformation::ParAddVVIPF32(vec![y.clone(), vy.clone()]));
+      block1.plan.push(Function::ParAddVVIPF32(vec![y.clone(), vy.clone()]));
       // #ball.vy := #ball.vy + #gravity
-      block1.add_tfm(Transformation::ParAddVSIPF32(vec![vy.clone(), g.clone()]));
+      block1.plan.push(Function::ParAddVSIPF32(vec![vy.clone(), g.clone()]));
     }
     _ => (),
   }
@@ -136,15 +136,15 @@ fn main() {
   match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy) {
     (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy)) => {
       // iy = #ball.y > #boundary.height
-      block2.add_tfm(Transformation::ParGreaterThanVS((y.clone(), 500.0, iy.clone())));
+      block2.plan.push(Function::ParGreaterThanVS((y.clone(), 500.0, iy.clone())));
       // iyy = #ball.y < 0
-      block2.add_tfm(Transformation::ParLessThanVS((y.clone(), 0.0, iyy.clone())));
+      block2.plan.push(Function::ParLessThanVS((y.clone(), 0.0, iyy.clone())));
       // #ball.y{iy} := #boundary.height
-      block2.add_tfm(Transformation::ParSetVS((iy.clone(), 500.0, y.clone())));
+      block2.plan.push(Function::ParSetVS((iy.clone(), 500.0, y.clone())));
       // #ball.vy{iy | iyy} := #ball.vy * -0.80
-      block2.add_tfm(Transformation::ParOrVV(vec![iy.clone(), iyy.clone(), iy_or.clone()]));
-      block2.add_tfm(Transformation::ParMultiplyVSF32(vec![vy.clone(), c1.clone(), vy2.clone()]));
-      block2.add_tfm(Transformation::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
+      block2.plan.push(Function::ParOrVV(vec![iy.clone(), iyy.clone(), iy_or.clone()]));
+      block2.plan.push(ParMultiplyVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
+      block2.plan.push(Function::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
     }
     _ => (),
   }
@@ -155,15 +155,15 @@ fn main() {
   match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2) {
     (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2)) => {
       // ix = #ball.x > #boundary.width
-      block3.add_tfm(Transformation::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
+      block3.plan.push(Function::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
       // ixx = #ball.x < 0
-      block3.add_tfm(Transformation::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
+      block3.plan.push(Function::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
       // #ball.x{ix} := #boundary.width
-      block3.add_tfm(Transformation::ParSetVS((ix.clone(), 500.0, x.clone())));
+      block3.plan.push(Function::ParSetVS((ix.clone(), 500.0, x.clone())));
       // #ball.vx{ix | ixx} := #ball.vx * -0.80
-      block3.add_tfm(Transformation::ParOrVV(vec![ix.clone(), ixx.clone(), ix_or.clone()]));
-      block3.add_tfm(Transformation::ParMultiplyVSF32(vec![vx.clone(), c1.clone(), vx2.clone()]));
-      block3.add_tfm(Transformation::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
+      block3.plan.push(Function::ParOrVV(vec![ix.clone(), ixx.clone(), ix_or.clone()]));
+      block3.plan.push(ParMultiplyVS{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
+      block3.plan.push(Function::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
     }
     _ => (),
   }
