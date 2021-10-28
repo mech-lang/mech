@@ -39,7 +39,7 @@ pub use self::operations::{MechFunction, Argument};*/
 
 pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
-pub use self::transformation::{Transformation};
+pub use self::transformation::{Transformation, Function};
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
@@ -47,6 +47,7 @@ pub use self::error::{MechError, MechErrorKind};
 
 pub type MechString = Vec<char>;
 
+pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
 pub type ColumnU8 = Rc<RefCell<Vec<u8>>>;
 pub type ColumnU16 = Rc<RefCell<Vec<u16>>>;
 pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
@@ -55,6 +56,7 @@ pub type ColumnString = Rc<RefCell<Vec<MechString>>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
+  V(ColumnV<u8>),
   F32(ColumnF32),
   U8(ColumnU8),
   U16(ColumnU16),
@@ -73,6 +75,7 @@ impl Column {
 
   pub fn len(&self) -> usize {
     match self {
+      Column::V(col) => col.borrow().len(),
       Column::U8(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().len(),
@@ -90,6 +93,7 @@ impl Column {
       Column::Bool(_) => ValueKind::Bool,
       Column::String(_) => ValueKind::String,
       Column::Empty => ValueKind::Empty,
+      _ => ValueKind::Empty,
     }
   }
 

@@ -139,6 +139,7 @@ impl Table {
         Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
         Column::String(column_string) => Some(Value::String(column_string.borrow()[row].clone())),
         Column::Empty => Some(Value::Empty),
+        _ => Some(Value::Empty),
       }
     } else {
       None

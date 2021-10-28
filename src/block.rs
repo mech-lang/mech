@@ -9,13 +9,13 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, Function, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, ColumnU8, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
 use std::fmt;
 
-pub type Plan = Vec<Rc<RefCell<Transformation>>>;
+pub type Plan = Vec<Rc<RefCell<Function>>>;
 pub type Argument = (u64, TableId, TableIndex, TableIndex);
 pub type Out = (TableId, TableIndex, TableIndex);
 
@@ -210,7 +210,7 @@ impl Block {
                     _ => (),
                   }
                 } 
-                let tfm = Transformation::CopyTable((src_table.clone(), out_table.clone()));
+                let tfm = Function::CopyTable((src_table.clone(), out_table.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (), // TODO Other possibilities,
@@ -225,7 +225,7 @@ impl Block {
             let mut out_col = out_brrw.get_column_unchecked(0);
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => {
-                let tfm = Transformation::CopySSU8((arg.clone(),row,out.clone()));
+                let tfm = Function::CopySSU8((arg.clone(),row,out.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (),
@@ -240,7 +240,7 @@ impl Block {
 
             match (&arg_col, &ix_column) {
               (Column::U8(arg), Column::Bool(ix)) => {
-                let tfm = Transformation::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()));
+                let tfm = Function::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (),
@@ -264,7 +264,7 @@ impl Block {
                   let dest_vector = dest_table_brrw.get_column_unchecked(col);
                   match (&src_vector, &dest_vector) {
                     (Column::U8(src), Column::U8(dest)) => {
-                      let tfm = Transformation::SetVVU8((src.clone(), dest.clone()));
+                      let tfm = Function::SetVVU8((src.clone(), dest.clone()));
                       self.plan.push(Rc::new(RefCell::new(tfm)));
                     }
                     _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
@@ -347,12 +347,12 @@ impl Block {
               let mut out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
-                  let tfm = if *name == *MATH_ADD { Transformation::AddSSU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
-                  else if *name == *MATH_DIVIDE { Transformation::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *MATH_MULTIPLY { Transformation::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *MATH_SUBTRACT { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *MATH_EXPONENT { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Transformation::Null };
+                  let tfm = if *name == *MATH_ADD { Function::AddSSU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
+                  else if *name == *MATH_DIVIDE { Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_MULTIPLY { Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_SUBTRACT { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_EXPONENT { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Function::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
@@ -363,12 +363,12 @@ impl Block {
               let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
-                  let tfm = if *name == *MATH_ADD { Transformation::AddVVU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
-                  //else if *name == *MATH_DIVIDE { Transformation::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *MATH_MULTIPLY { Transformation::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *MATH_SUBTRACT { Transformation::SubtractVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *MATH_EXPONENT { Transformation::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Transformation::Null };
+                  let tfm = if *name == *MATH_ADD { Function::AddVVU8(vec![lhs.clone(), rhs.clone(), out.clone()]) }
+                  //else if *name == *MATH_DIVIDE { Function::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_MULTIPLY { Function::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_SUBTRACT { Function::SubtractVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *MATH_EXPONENT { Function::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Function::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
@@ -386,13 +386,13 @@ impl Block {
               let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
-                  let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
-                  else if *name == *COMPARE_LESS__THAN { Transformation::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Transformation::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_NOT__EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Transformation::Null };
+                  let tfm = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *COMPARE_LESS__THAN { Function::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Function::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
@@ -403,13 +403,13 @@ impl Block {
               let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
-                  let tfm = if *name == *COMPARE_GREATER__THAN { Transformation::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
-                  else if *name == *COMPARE_LESS__THAN { Transformation::LessThanVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *COMPARE_GREATER__THAN__EQUAL { Transformation::GreaterThanEqualVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Transformation::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_NOT__EQUAL { Transformation::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Transformation::Null };
+                  let tfm = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
+                  else if *name == *COMPARE_LESS__THAN { Function::LessThanVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else { Function::Null };
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                 }
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
@@ -422,7 +422,7 @@ impl Block {
           let (_, end_arg) = &arg_cols[0][1];
           match (start_arg, end_arg) {
             (Column::U8(start), Column::U8(end)) => {  
-              let tfm = Transformation::RangeU8((start.clone(),end.clone(),out_table.clone()));
+              let tfm = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
               self.plan.push(Rc::new(RefCell::new(tfm)));
             }
             _ => (),
@@ -435,7 +435,7 @@ impl Block {
                 let mut out_brrw = out_table.borrow_mut();
                 out_brrw.set_col_kind(0,ValueKind::U8);
                 let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
-                let tfm = Transformation::StatsSumColU8((col.clone(),out_col));
+                let tfm = Function::StatsSumColU8((col.clone(),out_col));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (),
@@ -453,7 +453,7 @@ impl Block {
             }).collect::<Vec<ColumnU8>>();
             match out_col {
               Column::U8(out_col) => {
-                let tfm = Transformation::ConcatVU8((arg_col, out_col));
+                let tfm = Function::ConcatVU8((arg_col, out_col));
                 self.plan.push(Rc::new(RefCell::new(tfm)));
               }
               _ => (),
@@ -474,12 +474,12 @@ impl Block {
               o.set_col_kind(out_column_ix, arg_col.kind());
               match (&arg_col, &out_col) {
                 (Column::U8(arg), Column::U8(out)) => {
-                  let tfm = Transformation::CopySSU8((arg.clone(),0,out.clone()));
+                  let tfm = Function::CopySSU8((arg.clone(),0,out.clone()));
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                   out_column_ix += 1;
                 }
                 (Column::String(arg), Column::String(out)) => {
-                  let tfm = Transformation::CopySSString((arg.clone(),0,out.clone()));
+                  let tfm = Function::CopySSString((arg.clone(),0,out.clone()));
                   self.plan.push(Rc::new(RefCell::new(tfm)));
                   out_column_ix += 1;
                 }
@@ -488,11 +488,9 @@ impl Block {
             }
           }
 
-        } else { 
-          self.plan.push(Rc::new(RefCell::new(tfm.clone())));
         }
       } 
-      _ => self.plan.push(Rc::new(RefCell::new(tfm.clone()))),
+      _ => {},
     }
     self.transformations.push(tfm.clone());
     Ok(())

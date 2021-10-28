@@ -31,7 +31,7 @@ trait MechFunction<T> {
 }
 
 #[derive(Clone)]
-pub enum Transformation {
+pub enum Function {
   AddSSF32((ArgF32, ArgF32, OutF32)),
   AddSSU8(Vec<ColumnU8>),
   AddVVU8(Vec<ColumnU8>),
@@ -68,7 +68,11 @@ pub enum Transformation {
   CopyTable((ArgTable,OutTable)),
   CopyVBU8((ArgU8, ArgBool, OutTable)),
   RangeU8((ArgU8,ArgU8,OutTable)),
-  
+  Null,
+}
+
+#[derive(Clone)]
+pub enum Transformation {
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},
   TableAlias{table_id: TableId, alias: u64},
@@ -82,7 +86,6 @@ pub enum Transformation {
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
   Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
   Select{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
-  Null,
 }
 
 impl fmt::Debug for Transformation {
@@ -100,22 +103,33 @@ impl fmt::Debug for Transformation {
       },
       Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
-      Transformation::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
-      Transformation::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
-
-      Transformation::GreaterThanVSU8((lhs,rhs,out)) => write!(f,"GreaterThanVSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Transformation::GreaterThanSSU8((lhs,rhs,out)) => write!(f,"GreaterThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Transformation::GreaterThanVVU8((lhs,rhs,out)) => write!(f,"GreaterThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Transformation::LessThanSSU8((lhs,rhs,out)) => write!(f,"LessThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Transformation::GreaterThanEqualVVU8((lhs,rhs,out)) => write!(f,"GreaterThanEqualVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-
-      Transformation::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      _ => write!(f,"Tfm Print Not Implemented")?
+    }
+    Ok(())
+  }
+}
       
-      Transformation::CopyVBU8((arg, ix, out)) => write!(f,"CopyVBU8(arg:\n{:?}\nix:\n{:?}\nout:\n{:?})",arg.borrow(),ix,out.borrow())?,
-      Transformation::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
-      Transformation::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
+      
+impl fmt::Debug for Function {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match &self {      
+      Function::AddSSU8(args) => write!(f,"AddSSU8(args: \n{:?}\n{:?}\n{:?}\n)",args[0].borrow(),args[1].borrow(),args[2].borrow())?,
+      Function::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
+
+      Function::GreaterThanVSU8((lhs,rhs,out)) => write!(f,"GreaterThanVSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Function::GreaterThanSSU8((lhs,rhs,out)) => write!(f,"GreaterThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Function::GreaterThanVVU8((lhs,rhs,out)) => write!(f,"GreaterThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Function::LessThanSSU8((lhs,rhs,out)) => write!(f,"LessThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      Function::GreaterThanEqualVVU8((lhs,rhs,out)) => write!(f,"GreaterThanEqualVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+
+      Function::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
+      
+      Function::CopyVBU8((arg, ix, out)) => write!(f,"CopyVBU8(arg:\n{:?}\nix:\n{:?}\nout:\n{:?})",arg.borrow(),ix,out.borrow())?,
+      Function::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
+      Function::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
      
-      Transformation::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
+      Function::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
       
       _ => write!(f,"Tfm Print Not Implemented")?
     }
@@ -123,80 +137,80 @@ impl fmt::Debug for Transformation {
   }
 }
 
-impl Transformation {
+impl Function {
   pub fn solve(&mut self) {
     match &*self {
       // MATH
       // f32 arithmetic
-      Transformation::AddSSF32((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
+      Function::AddSSF32((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] + (rhs.borrow())[0]; }
 
       // u8 arithmetic
-      Transformation::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
-      Transformation::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
+      Function::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
+      Function::AddSSU8(args) => { (args[2].borrow_mut())[0] = (args[0].borrow())[0] + (args[1].borrow())[0]; }
 
-      Transformation::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
-      Transformation::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
-      Transformation::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
-      Transformation::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
+      Function::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
+      Function::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
+      Function::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
+      Function::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
 
-      Transformation::AddSSIPF32((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
-      Transformation::AddVVIPF32((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Transformation::ParAddVSIPF32(args) => { 
+      Function::AddSSIPF32((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
+      Function::AddVVIPF32((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Function::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Function::ParAddVSIPF32(args) => { 
         let rhs = args[1].borrow()[0];
         args[0].borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
       }
-      Transformation::AddVVU8(args) => { 
+      Function::AddVVU8(args) => { 
         let lhs = args[0].borrow();
         let rhs = args[1].borrow();
         args[2].borrow_mut().iter_mut().zip(lhs.iter()).zip(rhs.iter()).for_each(|((out, lhs), rhs)| *out = *lhs + rhs); 
       }
-      Transformation::ParMultiplyVSF32(args) => { 
+      Function::ParMultiplyVSF32(args) => { 
         let rhs = args[1].borrow()[0];
         args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
       }
       // COMPARE
-      Transformation::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
-      Transformation::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
-      Transformation::LessThanVVU8((lhs, rhs, out)) => { 
+      Function::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
+      Function::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
+      Function::LessThanVVU8((lhs, rhs, out)) => { 
         out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs < *rhs); 
       }
-      Transformation::GreaterThanVVU8((lhs, rhs, out)) => { 
+      Function::GreaterThanVVU8((lhs, rhs, out)) => { 
         out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs > *rhs); 
       }  
-      Transformation::GreaterThanEqualVVU8((lhs, rhs, out)) => { 
+      Function::GreaterThanEqualVVU8((lhs, rhs, out)) => { 
         out.borrow_mut().iter_mut().zip(lhs.borrow().iter()).zip(rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs >= *rhs); 
       }  
-      Transformation::GreaterThanVSU8((lhs, rhs, out)) => { 
+      Function::GreaterThanVSU8((lhs, rhs, out)) => { 
         let rhs_value = rhs.borrow()[0];
         out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > rhs_value); 
       }
-      Transformation::GreaterThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] > (rhs.borrow())[0]; }
-      Transformation::LessThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] < (rhs.borrow())[0]; }
-      Transformation::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
+      Function::GreaterThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] > (rhs.borrow())[0]; }
+      Function::LessThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] < (rhs.borrow())[0]; }
+      Function::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
         lhs.borrow_mut().par_iter_mut().for_each(|lhs| if *lhs > *rhs {
           *lhs = *swap;
         }); 
       }
 
       // LOGIC
-      Transformation::ParOrVV(args) => { args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).zip(&(*args[1].borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
+      Function::ParOrVV(args) => { args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).zip(&(*args[1].borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
       // SET
-      Transformation::ParSetVS((ix, rhs, out)) => {
+      Function::ParSetVS((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
           if *ix == true {
             *out = *rhs
           }});          
       }
-      Transformation::ParSetVV((ix, rhs, out)) => {
+      Function::ParSetVV((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).zip(&(*rhs.borrow())).for_each(|((out,ix),x)| if *ix == true {
           *out = *x
         });          
       }
-      Transformation::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
-      Transformation::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
-      Transformation::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
-      Transformation::CopyVBU8((arg, ix, out)) => { 
+      Function::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
+      Function::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
+      Function::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
+      Function::CopyVBU8((arg, ix, out)) => { 
 
         let filtered: Vec<u8>  = arg.borrow().iter().zip(ix.borrow().iter()).filter_map(|(x,ix)| if *ix {Some(*x)} else {None}).collect::<Vec<u8>>();
         let mut out_brrw = out.borrow_mut();
@@ -213,7 +227,7 @@ impl Transformation {
           out_brrw.set(row,0,Value::U8(value));
         }
       }
-      Transformation::ConcatVU8((args, out)) => {
+      Function::ConcatVU8((args, out)) => {
         let mut out_brrw = out.borrow_mut();
         let mut arg_ix = 0;
         let mut ix = 0;
@@ -232,8 +246,8 @@ impl Transformation {
           } 
         }
       }
-      Transformation::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
-      Transformation::CopyTable((arg,out)) => {
+      Function::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
+      Function::CopyTable((arg,out)) => {
         let mut out_brrw = out.borrow_mut();
         let arg_brrw = arg.borrow();
         out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
@@ -247,11 +261,11 @@ impl Transformation {
           }
         }
       }
-      Transformation::StatsSumColU8((arg,out)) => {
+      Function::StatsSumColU8((arg,out)) => {
         let result = arg.borrow().iter().fold(0,|sum, n| sum + n);
         out.borrow_mut()[0] = result;
       }
-      Transformation::RangeU8((start,end,out)) => {
+      Function::RangeU8((start,end,out)) => {
         let start_value = start.borrow()[0];
         let end_value = end.borrow()[0];
         let delta = end_value - start_value + 1;
