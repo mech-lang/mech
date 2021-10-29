@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, Function, MechFunction, ColumnV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, Function, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -125,13 +125,13 @@ impl Block {
     }
   }
 
-  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<Column>,MechErrorKind> {
+  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechErrorKind> {
     let mut argument_columns = vec![];
-    for (_, table_id, _, col) in arguments {
+    for (arg_name, table_id, _, col) in arguments {
       let table = self.get_table(table_id)?;
       let table_brrw = table.borrow(); 
       match table_brrw.get_column(&col) {
-        Some(column) => argument_columns.push(column.clone()),
+        Some(column) => argument_columns.push((*arg_name,column.clone())),
         None => {return Err(MechErrorKind::MissingColumn((*table_id,*col)));}
       }
     }
@@ -329,26 +329,6 @@ impl Block {
         table_brrw.set(0,0,value.clone());
       }
       Transformation::Function{name, ref arguments, out} => {
-        let (out_table_id, _, _) = out;
-        let out_table = self.get_table(out_table_id)?.clone();
-        let mut arg_cols = vec![];
-        let mut rows = 0;
-        let mut cols = 0;
-        for (arg_name, table_id, _, _) in arguments {
-          let table = self.get_table(table_id)?;
-          let t = table.borrow();
-          rows += t.rows;
-          cols = if cols == 0 {t.cols} 
-                  else if t.cols != cols { 0 /*TODO ERROR*/ }
-                  else { cols };
-          if arg_cols.len() == 0 {
-            arg_cols = vec![Vec::new(); cols];
-          }
-          for c in 0..t.cols {
-            let mut arg_col = t.get_column_unchecked(c);
-            arg_cols[c].push((arg_name, arg_col));
-          }
-        }
         if *name == *MATH_ADD || 
            *name == *MATH_DIVIDE || 
            *name == *MATH_MULTIPLY || 
@@ -359,9 +339,11 @@ impl Block {
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let mut out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
+              let (_, c) = &argument_columns[0];
+              let len = c.len();
+              let mut out_column = self.get_out_table(out, len, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
@@ -373,9 +355,11 @@ impl Block {
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::U8)?;
+              let (_, c) = &argument_columns[0];
+              let len = c.len();
+              let out_column = self.get_out_table(out, len, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                (Column::U8(lhs), Column::U8(rhs), Column::U8(out)) => {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   //else if *name == *MATH_DIVIDE { Function::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   //else if *name == *MATH_MULTIPLY { Function::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -394,9 +378,11 @@ impl Block {
           match (&arg_dims[0],&arg_dims[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
+              let (_, c) = &argument_columns[0];
+              let len = c.len();
+              let out_column = self.get_out_table(out, len, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
                   else if *name == *COMPARE_LESS__THAN { Function::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   //else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -411,9 +397,11 @@ impl Block {
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_table(out, argument_columns[0].len(), ValueKind::Bool)?;
+              let (_, c) = &argument_columns[0];
+              let len = c.len();
+              let out_column = self.get_out_table(out, len, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                (Column::U8(lhs), Column::U8(rhs), Column::Bool(out)) => {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
                   else if *name == *COMPARE_LESS__THAN { Function::LessThanVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
@@ -429,46 +417,89 @@ impl Block {
             _ => (),
           }                    
         } else if *name == *TABLE_RANGE {
-          let (_, start_arg) = &arg_cols[0][0];
-          let (_, end_arg) = &arg_cols[0][1];
-          match (start_arg, end_arg) {
-            (Column::U8(start), Column::U8(end)) => {  
+          let mut argument_columns = self.get_arg_columns(arguments)?;
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          match (&argument_columns[0], &argument_columns[1]) {
+            ((_,Column::U8(start)), (_,Column::U8(end))) => {  
               let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
               self.plan.push(fxn);
             }
             _ => (),
           }
         } else if *name == *STATS_SUM {
-          let (arg_id, arg) = &arg_cols[0][0];
-          if **arg_id == *COLUMN {
-            match arg {
+          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          if arg_name == *COLUMN {
+            match arg_column {
               Column::U8(col) => {
+                let (out_table_id, _, _) = out;
+                let out_table = self.get_table(out_table_id)?;
                 let mut out_brrw = out_table.borrow_mut();
                 out_brrw.set_col_kind(0,ValueKind::U8);
                 let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
-                let fxn = Function::StatsSumColU8((col.clone(),out_col));
+                let fxn = Function::StatsSumColU8((col.clone(),out_col.clone()));
                 self.plan.push(fxn);
               }
               _ => (),
             }
           }
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
+          // Get all of the tables
+          let mut arg_tables = vec![];
+          let mut rows = 0;
+          let mut cols = 0;
+          // Gather tables
+          for (_,table_id,_,_) in arguments {
+            let table = self.get_table(table_id)?;
+            arg_tables.push(table);
+          }
+          // Each table should have the same number of columns
+          let cols = arg_tables[0].borrow().cols;
+          let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
+          if consistent_cols == false {
+            return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0)))); // TODO Fill in correct dimensions
+          }
+          // Check to make sure column types are consistent
+          let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
+          let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
+          if consistent_cols == false {
+            return Err(MechErrorKind::ColumnKindMismatch((ValueKind::Empty, ValueKind::Empty))); // TODO Fill in correct value kinds
+          }
+
+          // Add up the rows
+          let rows = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().rows);
+          
+          // Resize out table to match dimensions 
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
           let mut out_brrw = out_table.borrow_mut();
           out_brrw.resize(rows,cols);
-          for col in 0..cols {
-            out_brrw.set_col_kind(col, ValueKind::U8);
-            let out_col = out_brrw.get_column_unchecked(col);
-            let arg_col = arg_cols[col].iter().filter_map(|(_,arg)| match arg {
-              Column::U8(col) => Some(col.clone()),
-              _ => None,
-            }).collect::<Vec<ColumnV<u8>>>();
+
+          // Set out column kind and push a concat function
+          for (ix, kind) in (0..cols).zip(col_kinds.clone()) {
+            out_brrw.set_col_kind(ix, kind);
+            let out_col = out_brrw.get_column_unchecked(ix).clone();
+            let mut argument_columns = vec![];       
+            for table in &arg_tables {
+              let table_brrw = table.borrow();
+              match table_brrw.get_column(&TableIndex::Index(ix)) {
+                Some(column) => argument_columns.push(column.clone()),
+                None => {return Err(MechErrorKind::MissingColumn((TableId::Local(table_brrw.id),TableIndex::Index(ix))));   } // TODO Is it always a local table here?
+              }
+            }
+
             match out_col {
-              Column::U8(out_col) => {
-                let fxn = Function::ConcatVU8((arg_col, out_col));
+              Column::U8(ref out_c) => {
+                let mut u8_cols:Vec<ColumnV<u8>> = vec![];
+                for colv in argument_columns {
+                  u8_cols.push(colv.get_u8().unwrap().clone());
+                }
+                let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
               _ => (),
             }
+            
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
           let (out_table_id, _, _) = out;
@@ -534,7 +565,7 @@ impl fmt::Debug for Block {
     block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformations));
     block_drawing.add_header("plan");
     for step in &self.plan.plan {
-      //block_drawing.add_line(format!("{:#?}", &step.borrow()));
+      block_drawing.add_line(format!("{}", &step.borrow().to_string()));
     }
     block_drawing.add_header("changes");
     block_drawing.add_line(format!("{:#?}", &self.changes));

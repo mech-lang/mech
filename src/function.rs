@@ -1,7 +1,7 @@
 use crate::{Column, ColumnV, humanize, ValueKind, MechString, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::fmt;
+use std::fmt::*;
 
 use rayon::prelude::*;
 use std::thread;
@@ -22,75 +22,113 @@ pub type OutTable = Rc<RefCell<Table>>;
 
 pub trait MechFunction {
   fn solve(&mut self);
+  fn to_string(&self) -> String;
 }
 
 // ParMul Vector : Scalar
 #[derive(Debug)]
 pub struct ParMultiplyVS<T>
-where T: std::ops::Mul<Output = T> + Copy + Sync + Send
+where T: std::ops::Mul<Output = T> + Copy + Sync + Send + Debug
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
 }
 
 impl<T> MechFunction for ParMultiplyVS<T> 
-where T: std::ops::Mul<Output = T> + Copy + Sync + Send
+where T: std::ops::Mul<Output = T> + Copy + Sync + Send + Debug
 {
   fn solve(&mut self) {
     let rhs = self.rhs.borrow()[0];
     self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Add Vector : Vector
 #[derive(Debug)]
 pub struct AddVV<T> 
-where T: std::ops::Add<Output = T> + Copy
+where T: std::ops::Add<Output = T> + Copy + Debug
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
 }
 impl<T> MechFunction for AddVV<T> 
-where T: std::ops::Add<Output = T> + Copy
+where T: std::ops::Add<Output = T> + Copy + Debug
 {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs + *rhs); 
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Add Scalar : Scalar
 #[derive(Debug)]
 pub struct AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy
+where T: std::ops::Add<Output = T> + Copy + Debug
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
 }
 
 impl<T> MechFunction for AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy
+where T: std::ops::Add<Output = T> + Copy + Debug
 {
   fn solve(&mut self) {
     (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] + (self.rhs.borrow())[0];
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // ParMul Vector : Scalar
 #[derive(Debug)]
 pub struct ParAddVS<T>
-where T: std::ops::Add<Output = T> + Copy + Sync + Send
+where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
 }
 
 impl<T> MechFunction for ParAddVS<T> 
-where T: std::ops::Add<Output = T> + Copy + Sync + Send
+where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
 {
   fn solve(&mut self) {
     let rhs = self.rhs.borrow()[0];
     self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = *lhs + rhs); 
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Concat Vectors
+#[derive(Debug)]
+pub struct ConcatV<T> 
+where T: Copy + Debug
+{
+  pub args: Vec<Arg<T>>, 
+  pub out: Out<T>,
+}
 
-#[derive(Clone)]
+impl<T> MechFunction for ConcatV<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let mut arg_ix = 0;
+    let mut ix = 0;
+    let mut arg_brrw = self.args[arg_ix].borrow();
+    for r in 0..out_brrw.len() {
+      out_brrw[r] = arg_brrw[ix];
+      ix += 1;
+      if ix == arg_brrw.len() {
+        ix = 0;
+        arg_ix += 1;
+        if arg_ix == self.args.len() {
+          return;
+        } else {
+          arg_brrw = self.args[arg_ix].borrow();
+        }
+      } 
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Clone, Debug)]
 pub enum Function {
   DivideSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   MultiplySSU8((Arg<u8>, Arg<u8>, Out<u8>)),
@@ -121,37 +159,10 @@ pub enum Function {
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((Arg<u8>,usize,Out<u8>)),
   CopySSString((Arg<MechString>,usize,Out<MechString>)),
-  ConcatVU8((Vec<Arg<u8>>,Out<u8>)),
   CopyTable((ArgTable,OutTable)),
   CopyVBU8((Arg<u8>, Arg<bool>, OutTable)),
   RangeU8((Arg<u8>,Arg<u8>,OutTable)),
   Null,
-}
-      
-impl fmt::Debug for Function {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match &self {      
-      Function::RangeU8((start,end, out)) => write!(f,"RangeU8(start: {:?}, end: {:?}, out: {:?})",start.borrow(), end.borrow(), out.borrow())?,
-
-      Function::GreaterThanVSU8((lhs,rhs,out)) => write!(f,"GreaterThanVSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Function::GreaterThanSSU8((lhs,rhs,out)) => write!(f,"GreaterThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Function::GreaterThanVVU8((lhs,rhs,out)) => write!(f,"GreaterThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Function::LessThanSSU8((lhs,rhs,out)) => write!(f,"LessThanSSU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      Function::GreaterThanEqualVVU8((lhs,rhs,out)) => write!(f,"GreaterThanEqualVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-
-      Function::LessThanVVU8((lhs,rhs,out)) => write!(f,"LessThanVVU8(lhs: {:?}, rhs: {:?}, out: {:?})",lhs.borrow(), rhs.borrow(), out.borrow())?,
-      
-      Function::CopyVBU8((arg, ix, out)) => write!(f,"CopyVBU8(arg:\n{:?}\nix:\n{:?}\nout:\n{:?})",arg.borrow(),ix,out.borrow())?,
-      Function::CopySSU8((arg,ix,out)) => write!(f,"CopySSU8(arg: {:?}, ix: {}, out: {:?})",arg.borrow(),ix,out.borrow())?,
-      Function::CopyTable((arg,out)) => write!(f,"CopyTable(arg: \n{:?}\nout: \n{:?}\n)",arg.borrow(),out.borrow())?,
-     
-      Function::StatsSumColU8((arg, out)) => write!(f,"StatsSumColU8(arg: {:?} out: {:?})",arg, out)?,
-      
-      _ => write!(f,"Tfm Print Not Implemented")?
-    }
-    Ok(())
-  }
 }
 
 impl MechFunction for Function {
@@ -230,25 +241,6 @@ impl MechFunction for Function {
           out_brrw.set(row,0,Value::U8(value));
         }
       }
-      Function::ConcatVU8((args, out)) => {
-        let mut out_brrw = out.borrow_mut();
-        let mut arg_ix = 0;
-        let mut ix = 0;
-        let mut arg_brrw = args[arg_ix].borrow();
-        for r in 0..out_brrw.len() {
-          out_brrw[r] = arg_brrw[ix];
-          ix += 1;
-          if ix == arg_brrw.len() {
-            ix = 0;
-            arg_ix += 1;
-            if arg_ix == args.len() {
-              return;
-            } else {
-              arg_brrw = args[arg_ix].borrow();
-            }
-          } 
-        }
-      }
       Function::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
       Function::CopyTable((arg,out)) => {
         let mut out_brrw = out.borrow_mut();
@@ -284,4 +276,5 @@ impl MechFunction for Function {
       x => println!("Not Implemented: {:?}", x),
     }
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}    
 }
