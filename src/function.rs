@@ -30,22 +30,8 @@ pub trait MechFunction {
   fn solve(&mut self);
 }
 
-pub struct AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-
-impl<T> MechFunction for AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy
-{
-  fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] + (self.rhs.borrow())[0];
-  }
-}
-
-
-
+// ParMul Vector : Scalar
+#[derive(Debug)]
 pub struct ParMultiplyVS<T>
 where T: std::ops::Mul<Output = T> + Copy + Sync + Send
 {
@@ -61,10 +47,8 @@ where T: std::ops::Mul<Output = T> + Copy + Sync + Send
   }
 }
 
-
-
-
-
+// Add Vector : Vector
+#[derive(Debug)]
 pub struct AddVV<T> 
 where T: std::ops::Add<Output = T> + Copy
 {
@@ -78,10 +62,38 @@ where T: std::ops::Add<Output = T> + Copy
   }
 }
 
+// Add Scalar : Scalar
+#[derive(Debug)]
+pub struct AddSS<T> 
+where T: std::ops::Add<Output = T> + Copy
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+}
 
+impl<T> MechFunction for AddSS<T> 
+where T: std::ops::Add<Output = T> + Copy
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] + (self.rhs.borrow())[0];
+  }
+}
 
+// ParMul Vector : Scalar
+#[derive(Debug)]
+pub struct ParAddVS<T>
+where T: std::ops::Add<Output = T> + Copy + Sync + Send
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+}
 
-
+impl<T> MechFunction for ParAddVS<T> 
+where T: std::ops::Add<Output = T> + Copy + Sync + Send
+{
+  fn solve(&mut self) {
+    let rhs = self.rhs.borrow()[0];
+    self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = *lhs + rhs); 
+  }
+}
 
 
 #[derive(Clone)]
@@ -211,7 +223,6 @@ impl MechFunction for Function {
       Function::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
       Function::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
       Function::CopyVBU8((arg, ix, out)) => { 
-
         let filtered: Vec<u8>  = arg.borrow().iter().zip(ix.borrow().iter()).filter_map(|(x,ix)| if *ix {Some(*x)} else {None}).collect::<Vec<u8>>();
         let mut out_brrw = out.borrow_mut();
         let cols = out_brrw.cols;
@@ -220,9 +231,7 @@ impl MechFunction for Function {
           out_brrw.resize(rows,cols)
         }
         out_brrw.set_col_kind(0, ValueKind::U8);
-        println!("{:?}", filtered);
         for row in 0..filtered.len() {
-          println!("{:?}", row);
           let value = filtered[row];
           out_brrw.set(row,0,Value::U8(value));
         }
