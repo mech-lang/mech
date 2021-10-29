@@ -15,14 +15,8 @@ use std::thread;
 // set   vector-scalar          -- ix: &Vec<bool>      x:   f64          out: &mut Vec<f64>
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
-pub type ArgF32 = ColumnV<f32>;
 pub type Arg<T> = ColumnV<T>;
 pub type Out<T> = ColumnV<T>;
-pub type ArgBool = ColumnV<bool>;
-pub type ArgString = ColumnV<MechString>;
-pub type OutF32 = ColumnV<f32>;
-pub type OutBool = ColumnV<bool>;
-pub type OutString = ColumnV<MechString>;
 pub type ArgTable = Rc<RefCell<Table>>;
 pub type OutTable = Rc<RefCell<Table>>;
 
@@ -102,34 +96,34 @@ pub enum Function {
   MultiplySSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   SubtractSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   ExponentSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
-  AddSSIPF32((OutF32, ArgF32)),
-  AddVVIPF32((OutF32, ArgF32)),
+  AddSSIPF32((Out<f32>, Arg<f32>)),
+  AddVVIPF32((Out<f32>, Arg<f32>)),
   ParAddVVIPF32(Vec<ColumnV<f32>>),  
   ParAddVSIPF32(Vec<ColumnV<f32>>),
   ParMultiplyVSF32(Vec<ColumnV<f32>>),
   ParOrVV(Vec<ColumnV<bool>>),
-  ParLessThanVS((ArgF32,f32,OutBool)),
-  ParGreaterThanVS((ArgF32,f32,OutBool)),
-  GreaterThanVSU8((Arg<u8>,Arg<u8>,OutBool)),
-  GreaterThanSSU8((Arg<u8>,Arg<u8>,OutBool)),
-  GreaterThanVVU8((Arg<u8>,Arg<u8>,OutBool)),
-  GreaterThanEqualVVU8((Arg<u8>,Arg<u8>,OutBool)),
-  LessThanSSU8((Arg<u8>,Arg<u8>,OutBool)),
-  LessThanVVU8((Arg<u8>,Arg<u8>,OutBool)),
-  ParCSGreaterThanVS((ArgF32,f32,f32)),
+  ParLessThanVS((Arg<f32>,f32,Out<bool>)),
+  ParGreaterThanVS((Arg<f32>,f32,Out<bool>)),
+  GreaterThanVSU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  GreaterThanSSU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  GreaterThanVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  GreaterThanEqualVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  LessThanSSU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  LessThanVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
+  ParCSGreaterThanVS((Arg<f32>,f32,f32)),
 
-  ParSetVS((ArgBool,f32,OutF32)),
-  ParSetVV((ArgBool,ArgF32,OutF32)),
+  ParSetVS((Arg<bool>,f32,Out<f32>)),
+  ParSetVV((Arg<bool>,Arg<f32>,Out<f32>)),
   SetVVU8((Arg<u8>,Out<u8>)),
   StatsSumColU8((Arg<u8>,Out<u8>)),
-  ParCopyVV((ArgF32,OutF32)),
+  ParCopyVV((Arg<f32>,Out<f32>)),
   ParCopyVVU8((Arg<u8>,Out<u8>)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((Arg<u8>,usize,Out<u8>)),
-  CopySSString((ArgString,usize,OutString)),
+  CopySSString((Arg<MechString>,usize,Out<MechString>)),
   ConcatVU8((Vec<Arg<u8>>,Out<u8>)),
   CopyTable((ArgTable,OutTable)),
-  CopyVBU8((Arg<u8>, ArgBool, OutTable)),
+  CopyVBU8((Arg<u8>, Arg<bool>, OutTable)),
   RangeU8((Arg<u8>,Arg<u8>,OutTable)),
   Null,
 }
