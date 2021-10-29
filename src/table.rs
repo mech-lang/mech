@@ -119,6 +119,17 @@ impl Table {
     table
   }
 
+  pub fn kind(&self) -> ValueKind {
+
+    let first_col_kind = self.col_kinds[0].clone();
+    if self.col_kinds.iter().all(|kind| *kind == first_col_kind) {
+      first_col_kind
+    } else {
+      ValueKind::Compound(self.col_kinds.clone())
+    }
+
+  }
+
   pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),()> {
     if ix < self.cols {
       self.column_ix_to_alias.resize(self.cols,0);

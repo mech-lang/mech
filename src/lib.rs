@@ -58,6 +58,7 @@ pub enum Column {
   U16(ColumnV<u16>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
+  Table(Rc<RefCell<Table>>),
   Empty,
 }
 
@@ -76,6 +77,10 @@ impl Column {
       Column::Bool(col) => col.borrow().len(),
       Column::String(col) => col.borrow().len(),
       Column::U16(col) => col.borrow().len(),
+      Column::Table(table) => {
+        let t = table.borrow();
+        t.rows * t.cols
+      },
       Column::Empty => 0,
     }
   }
@@ -87,6 +92,7 @@ impl Column {
       Column::U16(_) => ValueKind::U16,
       Column::Bool(_) => ValueKind::Bool,
       Column::String(_) => ValueKind::String,
+      Column::Table(table) => table.borrow().kind(),
       Column::Empty => ValueKind::Empty,
       _ => ValueKind::Empty,
     }

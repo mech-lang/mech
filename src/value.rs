@@ -52,7 +52,7 @@ impl fmt::Debug for Value {
   }
 }
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueKind {
   U8,
   U16,
@@ -64,6 +64,7 @@ pub enum ValueKind {
   String,
   Reference,
   NumberLiteral,
+  Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
 }
 

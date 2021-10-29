@@ -76,7 +76,7 @@ where T: std::ops::Add<Output = T> + Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// ParMul Vector : Scalar
+// ParAdd Vector : Scalar
 #[derive(Debug)]
 pub struct ParAddVS<T>
 where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
@@ -247,7 +247,7 @@ impl MechFunction for Function {
         let arg_brrw = arg.borrow();
         out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
         for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
-          out_brrw.set_col_kind(col, *kind);
+          out_brrw.set_col_kind(col, kind.clone());
         }
         for col in 0..arg_brrw.cols {
           for row in 0..arg_brrw.rows {

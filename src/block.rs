@@ -127,12 +127,28 @@ impl Block {
 
   fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechErrorKind> {
     let mut argument_columns = vec![];
-    for (arg_name, table_id, _, col) in arguments {
+    for (arg_name, table_id, row, col) in arguments {
       let table = self.get_table(table_id)?;
       let table_brrw = table.borrow(); 
-      match table_brrw.get_column(&col) {
-        Some(column) => argument_columns.push((*arg_name,column.clone())),
-        None => {return Err(MechErrorKind::MissingColumn((*table_id,*col)));}
+      match (row,col) {
+        (x,TableIndex::None) => {
+          match table.borrow().kind() {
+            ValueKind::Compound(table_kind) => {
+              return Err(MechErrorKind::ColumnKindMismatch(table_kind));
+            }
+            table_kind => {
+              argument_columns.push((*arg_name,Column::Table(table.clone())));
+            }
+          }
+        }
+        _ => {
+          match table_brrw.get_column(&col) {
+            Some(column) => argument_columns.push((*arg_name,column.clone())),
+            None => {
+              return Err(MechErrorKind::MissingColumn((*table_id,*col)));
+            }
+          }
+        }
       }
     }
     Ok(argument_columns)
@@ -448,22 +464,25 @@ impl Block {
           let mut arg_tables = vec![];
           let mut rows = 0;
           let mut cols = 0;
+          
           // Gather tables
           for (_,table_id,_,_) in arguments {
             let table = self.get_table(table_id)?;
             arg_tables.push(table);
           }
+
           // Each table should have the same number of columns
           let cols = arg_tables[0].borrow().cols;
           let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
           if consistent_cols == false {
             return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0)))); // TODO Fill in correct dimensions
           }
+          
           // Check to make sure column types are consistent
           let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
           let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
           if consistent_cols == false {
-            return Err(MechErrorKind::ColumnKindMismatch((ValueKind::Empty, ValueKind::Empty))); // TODO Fill in correct value kinds
+            return Err(MechErrorKind::ColumnKindMismatch(vec![])); // TODO Fill in correct value kinds
           }
 
           // Add up the rows
