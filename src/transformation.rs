@@ -1,4 +1,4 @@
-use crate::{Column, ColumnF32, ColumnV, humanize, ColumnString, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnV, humanize, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;

@@ -1,4 +1,4 @@
-use crate::{Column, ColumnF32, ColumnV, humanize, ColumnString, ColumnBool, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::{Column, ColumnV, humanize, ValueKind, MechString, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;
@@ -15,14 +15,14 @@ use std::thread;
 // set   vector-scalar          -- ix: &Vec<bool>      x:   f64          out: &mut Vec<f64>
 // set   vector-vector          -- ix: &Vec<bool>      x:   &Vec<f64>    out: &mut Vec<f64>
 
-pub type ArgF32 = ColumnF32;
+pub type ArgF32 = ColumnV<f32>;
 pub type Arg<T> = ColumnV<T>;
 pub type Out<T> = ColumnV<T>;
-pub type ArgBool = ColumnBool;
-pub type ArgString = ColumnString;
-pub type OutF32 = ColumnF32;
-pub type OutBool = ColumnBool;
-pub type OutString = ColumnString;
+pub type ArgBool = ColumnV<bool>;
+pub type ArgString = ColumnV<MechString>;
+pub type OutF32 = ColumnV<f32>;
+pub type OutBool = ColumnV<bool>;
+pub type OutString = ColumnV<MechString>;
 pub type ArgTable = Rc<RefCell<Table>>;
 pub type OutTable = Rc<RefCell<Table>>;
 
@@ -61,6 +61,10 @@ where T: std::ops::Mul<Output = T> + Copy + Sync + Send
   }
 }
 
+
+
+
+
 pub struct AddVV<T> 
 where T: std::ops::Add<Output = T> + Copy
 {
@@ -74,6 +78,12 @@ where T: std::ops::Add<Output = T> + Copy
   }
 }
 
+
+
+
+
+
+
 #[derive(Clone)]
 pub enum Function {
   DivideSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
@@ -82,10 +92,10 @@ pub enum Function {
   ExponentSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   AddSSIPF32((OutF32, ArgF32)),
   AddVVIPF32((OutF32, ArgF32)),
-  ParAddVVIPF32(Vec<ColumnF32>),  
-  ParAddVSIPF32(Vec<ColumnF32>),
-  ParMultiplyVSF32(Vec<ColumnF32>),
-  ParOrVV(Vec<ColumnBool>),
+  ParAddVVIPF32(Vec<ColumnV<f32>>),  
+  ParAddVSIPF32(Vec<ColumnV<f32>>),
+  ParMultiplyVSF32(Vec<ColumnV<f32>>),
+  ParOrVV(Vec<ColumnV<bool>>),
   ParLessThanVS((ArgF32,f32,OutBool)),
   ParGreaterThanVS((ArgF32,f32,OutBool)),
   GreaterThanVSU8((Arg<u8>,Arg<u8>,OutBool)),

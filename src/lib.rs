@@ -50,19 +50,14 @@ pub use self::error::{MechError, MechErrorKind};
 pub type MechString = Vec<char>;
 
 pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
-pub type ColumnU16 = Rc<RefCell<Vec<u16>>>;
-pub type ColumnF32 = Rc<RefCell<Vec<f32>>>;
-pub type ColumnBool = Rc<RefCell<Vec<bool>>>;
-pub type ColumnString = Rc<RefCell<Vec<MechString>>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
-  V(ColumnV<u8>),
-  F32(ColumnF32),
+  F32(ColumnV<f32>),
   U8(ColumnV<u8>),
-  U16(ColumnU16),
-  Bool(ColumnBool),
-  String(ColumnString),
+  U16(ColumnV<u16>),
+  Bool(ColumnV<bool>),
+  String(ColumnV<MechString>),
   Empty,
 }
 
@@ -76,7 +71,6 @@ impl Column {
 
   pub fn len(&self) -> usize {
     match self {
-      Column::V(col) => col.borrow().len(),
       Column::U8(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().len(),

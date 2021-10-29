@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, BoxPrinter, ColumnV, ColumnString, ColumnBool, ColumnU16, ColumnF32, humanize, Value};
+use crate::{Column, ValueKind, BoxPrinter, ColumnV, humanize, Value};
 use hashbrown::HashMap;
 
 // ### Table Id
@@ -200,27 +200,27 @@ impl Table {
     if col < self.cols {
       match (&mut self.data[col], val) {
         (Column::Empty, ValueKind::U8) => {
-          let column: ColumnV<u8> = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
           self.col_kinds[col] = ValueKind::U8;
         },
         (Column::Empty, ValueKind::U16) => {
-          let column: ColumnU16 = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U16(column);
           self.col_kinds[col] = ValueKind::U16;
         },
         (Column::Empty, ValueKind::F32) => {
-          let column: ColumnF32 = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
         },
         (Column::Empty, ValueKind::Bool) => {
-          let column: ColumnBool = Rc::new(RefCell::new(vec![false;self.rows]));
+          let column = Rc::new(RefCell::new(vec![false;self.rows]));
           self.data[col] = Column::Bool(column);
           self.col_kinds[col] = ValueKind::Bool;
         },
         (Column::Empty, ValueKind::String) => {
-          let column: ColumnString = Rc::new(RefCell::new(vec![vec![];self.rows]));
+          let column = Rc::new(RefCell::new(vec![vec![];self.rows]));
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
         },
