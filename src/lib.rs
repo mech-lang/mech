@@ -61,8 +61,15 @@ pub enum Column {
   U64(ColumnV<u64>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
-  Reference((Reference,Vec<(Column,Column)>)),
+  Reference((Reference,(IndexColumn,IndexColumn))),
   Empty,
+}
+
+#[derive(Clone, Debug)]
+pub enum IndexColumn {
+  Index(ColumnV<u64>),
+  Bool(ColumnV<bool>),
+  None,
 }
 
 impl Column {
