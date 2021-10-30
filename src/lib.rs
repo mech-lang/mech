@@ -41,7 +41,7 @@ pub use self::operations::{MechFunction, Argument};*/
 pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::Transformation;
-pub use self::function::{Function, MechFunction, AddSS, AddVV, ParMultiplyVS, ConcatV};
+pub use self::function::{Function, MechFunction, AddSS, AddVV, ParMultiplyVS, ConcatV, StatsSumColIx};
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
@@ -50,15 +50,17 @@ pub use self::error::{MechError, MechErrorKind};
 pub type MechString = Vec<char>;
 
 pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
+pub type Reference = Rc<RefCell<Table>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
   F32(ColumnV<f32>),
   U8(ColumnV<u8>),
   U16(ColumnV<u16>),
+  U64(ColumnV<u64>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
-  Table(Rc<RefCell<Table>>),
+  Reference((Reference,Vec<(TableIndex,TableIndex)>)),
   Empty,
 }
 
@@ -70,14 +72,22 @@ impl Column {
     }
   }
 
+  pub fn get_u64(&self) -> Option<ColumnV<u64>> {
+    match self {
+     Column::U64(col) => Some(col.clone()),
+      _ => None,
+    }
+  }
+
   pub fn len(&self) -> usize {
     match self {
       Column::U8(col) => col.borrow().len(),
+      Column::U64(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().len(),
       Column::String(col) => col.borrow().len(),
       Column::U16(col) => col.borrow().len(),
-      Column::Table(table) => {
+      Column::Reference((table,index)) => {
         let t = table.borrow();
         t.rows * t.cols
       },
@@ -85,14 +95,31 @@ impl Column {
     }
   }
 
+  pub fn logical_len(&self) -> usize {
+    match self {
+      Column::U8(col) => col.borrow().len(),
+      Column::U64(col) => col.borrow().len(),
+      Column::F32(col) => col.borrow().len(),
+      Column::Bool(col) => col.borrow().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
+      Column::String(col) => col.borrow().len(),
+      Column::U16(col) => col.borrow().len(),
+      Column::Reference((table,index)) => {
+        let t = table.borrow();
+        t.rows * t.cols
+      },
+      Column::Empty => 0,
+    }    
+  }
+
   pub fn kind(&self) -> ValueKind {
     match self {
       Column::F32(_) => ValueKind::F32,
       Column::U8(_) => ValueKind::U8,
+      Column::U64(_) => ValueKind::U64,
       Column::U16(_) => ValueKind::U16,
       Column::Bool(_) => ValueKind::Bool,
       Column::String(_) => ValueKind::String,
-      Column::Table(table) => table.borrow().kind(),
+      Column::Reference((table,index)) => table.borrow().kind(),
       Column::Empty => ValueKind::Empty,
       _ => ValueKind::Empty,
     }

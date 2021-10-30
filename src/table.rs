@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, BoxPrinter, ColumnV, humanize, Value};
+use crate::{Column, ValueKind, BoxPrinter, ColumnV, humanize, Value, MechErrorKind};
 use hashbrown::HashMap;
 
 // ### Table Id
@@ -97,7 +97,7 @@ pub struct Table {
   pub col_kinds: Vec<ValueKind>,
   pub column_ix_to_alias: Vec<u64>,
   pub column_alias_to_ix: HashMap<u64,usize>,
-  data: Vec<Column>,
+  pub data: Vec<Column>,
 }
 
 
@@ -224,6 +224,11 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::Empty, ValueKind::U64) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U64(column);
+          self.col_kinds[col] = ValueKind::U64;
         },
         (Column::Empty, ValueKind::Bool) => {
           let column = Rc::new(RefCell::new(vec![false;self.rows]));
