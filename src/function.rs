@@ -122,6 +122,25 @@ impl MechFunction for StatsSumColIx
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// stats/sum(column: x)
+#[derive(Debug)]
+pub struct StatsSumCol<T>
+where T: std::ops::Add<Output = T> + Debug + Copy
+{
+  pub col: Arg<T>, pub out: Out<T>
+}
+
+impl<T> MechFunction for StatsSumCol<T>
+where T: std::ops::Add<Output = T> + Debug + Copy
+{
+  fn solve(&mut self) {
+    let mut v = self.out.borrow()[0];
+    let result = self.col.borrow().iter().fold(v,|sum, n| sum + *n);
+    self.out.borrow_mut()[0] = result
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Concat Vectors
 #[derive(Debug)]
 pub struct ConcatV<T> 
@@ -277,7 +296,6 @@ pub enum Function {
   ParSetVS((Arg<bool>,f32,Out<f32>)),
   ParSetVV((Arg<bool>,Arg<f32>,Out<f32>)),
   SetVVU8((Arg<u8>,Out<u8>)),
-  StatsSumColU8((Arg<u8>,Out<u8>)),
   ParCopyVV((Arg<f32>,Out<f32>)),
   ParCopyVVU8((Arg<u8>,Out<u8>)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
@@ -379,10 +397,6 @@ impl MechFunction for Function {
             out_brrw.set(row,col,value);
           }
         }
-      }
-      Function::StatsSumColU8((arg,out)) => {
-        let result = arg.borrow().iter().fold(0,|sum, n| sum + n);
-        out.borrow_mut()[0] = result;
       }
       Function::RangeU8((start,end,out)) => {
         let start_value = start.borrow()[0];

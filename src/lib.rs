@@ -11,6 +11,7 @@ extern crate num_traits;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
+extern crate bincode;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -41,7 +42,7 @@ pub use self::operations::{MechFunction, Argument};*/
 pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::Transformation;
-pub use self::function::{Function, MechFunction, AddSS, AddVV, ParMultiplyVS, ConcatV, StatsSumColIx, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV};
+pub use self::function::{Function, MechFunction, StatsSumCol, AddSS, AddVV, ParMultiplyVS, ConcatV, StatsSumColIx, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV};
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
@@ -60,7 +61,7 @@ pub enum Column {
   U64(ColumnV<u64>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
-  Reference((Reference,Vec<(TableIndex,TableIndex)>)),
+  Reference((Reference,Vec<(Column,Column)>)),
   Empty,
 }
 
@@ -129,6 +130,10 @@ impl Column {
 
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn hash_bytes(input: &Vec<u8>) -> u64 {
+  seahash::hash(input) & 0x00FFFFFFFFFFFFFF
 }
 
 pub fn hash_string(input: &str) -> u64 {

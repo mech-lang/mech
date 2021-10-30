@@ -6,7 +6,7 @@ use std::fmt;
 use rayon::prelude::*;
 use std::thread;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Transformation {
   Identifier{ name: Vec<char>, id: u64 },
   NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},

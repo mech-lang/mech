@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, Function, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV, StatsSumColIx, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, Function, StatsSumCol, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV, StatsSumColIx, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, hash_bytes, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -106,7 +106,8 @@ impl Block {
   }
 
   pub fn gen_id(&mut self) -> u64 {
-    self.id = hash_string(&format!("{:?}", self));
+    let encoded: Vec<u8> = bincode::serialize(&self.transformations).unwrap();
+    self.id = hash_bytes(&encoded);
     self.id
   }
 
@@ -134,13 +135,21 @@ impl Block {
       let table = self.get_table(table_id)?;
       let table_brrw = table.borrow(); 
       match (row,col) {
-        (x,TableIndex::None) => {
+        (TableIndex::Table(ix_table_id),TableIndex::None) => {
+          let ix_table = self.get_table(&ix_table_id)?;
+          let ix_table_brrw = ix_table.borrow();
           match table.borrow().kind() {
             ValueKind::Compound(table_kind) => {
               return Err(MechErrorKind::ColumnKindMismatch(table_kind));
             }
             table_kind => {
-              argument_columns.push((*arg_name,Column::Reference((table.clone(),vec![(row.clone(),col.clone())]))));
+              if ix_table_brrw.cols != 1 || 
+                 ix_table_brrw.rows != table_brrw.rows * table_brrw.cols 
+              {
+                return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))));
+              }
+              let ix_column = ix_table_brrw.get_column_unchecked(0);
+              argument_columns.push((*arg_name,Column::Reference((table.clone(),vec![(ix_column,Column::Empty)]))));
             }
           }
         }
@@ -449,51 +458,18 @@ impl Block {
           }
         } else if *name == *STATS_SUM {
           let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.set_col_kind(0,ValueKind::U8);
+          out_brrw.resize(1,1);
+          let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
           if arg_name == *COLUMN {
             match arg_column {
-              Column::U8(col) => {
-                let (out_table_id, _, _) = out;
-                let out_table = self.get_table(out_table_id)?;
-                let mut out_brrw = out_table.borrow_mut();
-                out_brrw.set_col_kind(0,ValueKind::U8);
-                let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
-                let fxn = Function::StatsSumColU8((col.clone(),out_col.clone()));
-                self.plan.push(fxn);
-              }
+              Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               Column::Reference((ref table,ref index)) => {
-                let (row, col) = &index[0];
-                match (row,col) {
-                  (linear_index, TableIndex::None) => {
-                    match linear_index {
-                      TableIndex::Table(ix_table_id) => {
-                        let (out_table_id, _, _) = out;
-                        let out_table = self.get_table(out_table_id)?;
-                        let ix_table = self.get_table(&ix_table_id)?;
-                        let ix_table_brrw = ix_table.borrow();
-                        let table_rows = table.borrow().rows;
-                        let table_cols = table.borrow().cols;
-                        if ix_table_brrw.cols != 1 || 
-                           ix_table_brrw.rows != table_rows * table_cols 
-                        {
-                          return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))));
-                        }
-                        let ix_column = ix_table_brrw.get_column_unchecked(0);
-                        match ix_column {
-                          Column::Bool(ix_col) => {
-                            let mut out_brrw = out_table.borrow_mut();
-                            out_brrw.set_col_kind(0, ValueKind::U8);
-                            out_brrw.resize(1,1);
-                            let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
-                            let fxn = StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()};
-                            self.plan.push(fxn);
-                          }
-                          _ => (),
-                        }
-
-                      }
-                      _ => (),
-                    }
-                  }
+                match &index[0] {
+                  (Column::Bool(ix_col), Column::Empty) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
                   _ => (),
                 }
               }
