@@ -331,7 +331,7 @@ block
   
 block
   ix = #x >= #y
-  #test = stats/sum(column: #x{ix,:})", Value::U8(5)); 
+  #test = stats/sum(column: #x{ix})", Value::U8(5)); 
 
 test_mech!(compare_less_than_equal,"
 block
