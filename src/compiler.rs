@@ -19,20 +19,8 @@ use std::sync::Arc;
 use std::mem;
 
 lazy_static! {
-  static ref TABLE_RANGE: u64 = hash_string("table/range");
-  static ref TABLE_COPY: u64 = hash_string("table/copy");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
-  static ref TABLE_SET: u64 = hash_string("table/set");
-  static ref TABLE_APPEND__ROW: u64 = hash_string("table/append-row");
-  static ref TABLE_SPLIT: u64 = hash_string("table/split");
-  static ref SET_ANY: u64 = hash_string("set/any");
-  static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
-  static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
-  static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_string("compare/greater-than-equal");
-  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_string("compare/less-than-equal");
-  static ref COMPARE_EQUAL: u64 = hash_string("compare/equal");
-  static ref COMPARE_NOT__EQUAL: u64 = hash_string("compare/not-equal");
 }
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
@@ -257,12 +245,12 @@ impl Compiler {
         let name_hash = hash_chars(name);
         let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
         tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.append(&mut arg_tfms);
         tfms.push(Transformation::Function{
           name: name_hash,
           arguments: args,
           out: (TableId::Local(id), TableIndex::All, TableIndex::All),
         });
-        tfms.append(&mut arg_tfms);
       },
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_string(&format!("anonymous-table: {:?}",children));
