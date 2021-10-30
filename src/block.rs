@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, Function, StatsSumColIx, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
+use crate::{BoxPrinter, Function, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV, StatsSumColIx, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, Table, TableIndex, TableShape, TableId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -61,6 +61,9 @@ lazy_static! {
   static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
   static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
   static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_string("compare/greater-than-equal");
+  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_string("compare/less-than-equal");
+  static ref COMPARE_EQUAL: u64 = hash_string("compare/equal");
+  static ref COMPARE_NOT__EQUAL: u64 = hash_string("compare/not-equal");
 }
 
 #[derive(Clone)]
@@ -389,6 +392,9 @@ impl Block {
           }
         } else if *name == *COMPARE_GREATER__THAN ||
                   *name == *COMPARE_GREATER__THAN__EQUAL ||
+                  *name == *COMPARE_LESS__THAN__EQUAL ||
+                  *name == *COMPARE_EQUAL ||
+                  *name == *COMPARE_NOT__EQUAL ||
                   *name == *COMPARE_LESS__THAN {
           let arg_dims = self.get_arg_dims(&arguments)?;
           match (&arg_dims[0],&arg_dims[1]) {
@@ -418,16 +424,14 @@ impl Block {
               let out_column = self.get_out_table(out, len, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
-                  let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanVVU8((lhs.clone(), rhs.clone(), out.clone())) }
-                  else if *name == *COMPARE_LESS__THAN { Function::LessThanVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Function::Null };
-                  self.plan.push(fxn);
+                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::DimensionMismatch(((1,2),(3,4))));}, // TODO Fill in correct dimensions
               }
             }
             _ => (),
