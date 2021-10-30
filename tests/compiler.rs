@@ -340,7 +340,7 @@ block
   
 block
   ix = #x <= #y
-  #test = stats/sum(column: #x{ix,:})", Value::U8(4)); 
+  #test = stats/sum(column: #x{ix})", Value::U8(4)); 
 
 
 test_mech!(compare_equal,"
@@ -350,7 +350,7 @@ block
   
 block
   ix = #x == #y
-  #test = stats/sum(column: #x{ix,:})", Value::U8(5)); 
+  #test = stats/sum(column: #x{ix})", Value::U8(5)); 
 
 test_mech!(compare_equal_boolean,"
 block
@@ -377,7 +377,7 @@ block
   
 block
   ix = #y == "a"
-  #test = stats/sum(column: #x{ix,:})"#, Value::U8(4)); 
+  #test = stats/sum(column: #x{ix})"#, Value::U8(4)); 
 
 test_mech!(compare_not_equal,"
 block
@@ -386,7 +386,7 @@ block
   
 block
   ix = #x != #y
-  #test = stats/sum(column: #x{ix,:})", Value::U8(3)); 
+  #test = stats/sum(column: #x{ix})", Value::U8(3)); 
 
 // ## Set
 
