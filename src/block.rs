@@ -9,7 +9,7 @@
 
 // ## Prelude
 
-use crate::{BoxPrinter, Function, StatsSumCol, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV, StatsSumColIx, MechFunction, ColumnV, ConcatV, AddVV, AddSS, MechErrorKind, Transformation, NumberLiteralKind, Change, Transaction, Value, ValueKind, Column, Database, humanize, hash_string, hash_bytes, Table, TableIndex, TableShape, TableId};
+use crate::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -30,6 +30,7 @@ impl Plan {
   pub fn push<S: MechFunction + 'static>(&mut self, fxn: S) {
     self.plan.push(Rc::new(RefCell::new(fxn)));
   }
+  
 }
 
 pub type Argument = (u64, TableId, TableIndex, TableIndex);
@@ -148,8 +149,12 @@ impl Block {
               {
                 return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))));
               }
-              let ix_column = ix_table_brrw.get_column_unchecked(0);
-              argument_columns.push((*arg_name,Column::Reference((table.clone(),vec![(ix_column,Column::Empty)]))));
+              match ix_table_brrw.get_column_unchecked(0) {
+                Column::Bool(bool_col) => argument_columns.push((*arg_name,Column::Reference((table.clone(),(IndexColumn::Bool(bool_col),IndexColumn::None))))),
+                _ => {
+                  return Err(MechErrorKind::ColumnKindMismatch(vec![ValueKind::Bool]));
+                }
+              }
             }
           }
         }
@@ -467,12 +472,7 @@ impl Block {
           if arg_name == *COLUMN {
             match arg_column {
               Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
-              Column::Reference((ref table,ref index)) => {
-                match &index[0] {
-                  (Column::Bool(ix_col), Column::Empty) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
-                  _ => (),
-                }
-              }
+              Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
               _ => (),
             }
           }
