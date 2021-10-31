@@ -114,7 +114,6 @@ fn main() {
   let mut ix_or = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
   let mut vx2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
 
-
   // Update the block positions on each tick of the timer  
   let mut block1 = Block::new();
   match (&x,&vx,&y,&vy,&g) {
@@ -129,7 +128,6 @@ fn main() {
     _ => (),
   }
   block1.gen_id();
-
 
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
@@ -169,7 +167,6 @@ fn main() {
   }
   block3.gen_id();
 
-  
   core.schedules.insert((hash_string("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
 
   core.insert_block(block1);

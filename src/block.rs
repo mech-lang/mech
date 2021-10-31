@@ -10,6 +10,14 @@
 // ## Prelude
 
 use crate::*;
+use crate::function::{
+  MechFunction,
+  Function,
+  math::*,
+  compare::*,
+  stats::*,
+  table::*,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
@@ -294,8 +302,7 @@ impl Block {
                     _ => (),
                   }
                 } 
-                let fxn = Function::CopyTable((src_table.clone(), out_table.clone()));
-                self.plan.push(fxn);
+                self.plan.push(Function::CopyTable((src_table.clone(), out_table.clone())));
               }
               _ => (), // TODO Other possibilities,
             }
@@ -305,10 +312,7 @@ impl Block {
             let (_, arg_col) = self.get_arg_column(&(0,*table_id,row,column))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
-              (Column::U8(arg), Column::U8(out)) => {
-                let fxn = CopyVV::<u8>{arg: arg.clone(), out: out.clone()};
-                self.plan.push(fxn);
-              }
+              (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
               _ => (),
             }
           }
@@ -317,12 +321,9 @@ impl Block {
             let src_brrw = src_table.borrow();
             let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
             let mut arg_col = src_brrw.get_column_unchecked(col);
-            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
+            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
-              (Column::U8(arg), Column::U8(out)) => {
-                let fxn = Function::CopySSU8((arg.clone(),row,out.clone()));
-                self.plan.push(fxn);
-              }
+              (Column::U8(arg), Column::U8(out), ) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: row, out: out.clone()}),
               _ => (),
             }
           }
@@ -335,10 +336,7 @@ impl Block {
             let mut arg_col = src_brrw.get_column_unchecked(0);
 
             match (&arg_col, &ix_column) {
-              (Column::U8(arg), Column::Bool(ix)) => {
-                let fxn = Function::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()));
-                self.plan.push(fxn);
-              }
+              (Column::U8(arg), Column::Bool(ix)) => self.plan.push(Function::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()))),
               _ => (),
             }
           }
@@ -359,10 +357,7 @@ impl Block {
                   let src_vector = src_table_brrw.get_column_unchecked(col);
                   let dest_vector = dest_table_brrw.get_column_unchecked(col);
                   match (&src_vector, &dest_vector) {
-                    (Column::U8(src), Column::U8(dest)) => {
-                      let fxn = Function::SetVVU8((src.clone(), dest.clone()));
-                      self.plan.push(fxn);
-                    }
+                    (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
                     _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
                   }
 
@@ -449,7 +444,23 @@ impl Block {
                 }
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
               }
-            }            
+            }   
+            (TableShape::Column(_), TableShape::Scalar) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let (_, c) = &argument_columns[0];
+              let len = c.len();
+              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
+                  if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  //else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                }
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+              }
+            }                      
             (TableShape::Column(_), TableShape::Column(_)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
