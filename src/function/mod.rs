@@ -31,9 +31,6 @@ pub trait MechFunction {
   fn to_string(&self) -> String;
 }
 
-
-
-
 #[derive(Clone, Debug)]
 pub enum Function {
   DivideSSU8((Arg<u8>, Arg<u8>, Out<u8>)),

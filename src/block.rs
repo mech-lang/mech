@@ -158,11 +158,45 @@ impl Block {
     }
   }
 
+  fn get_arg_scalar(&self, argument: &Argument) -> Result<(u64,Column,usize),MechErrorKind> {
+    let (_,arg_col) = self.get_arg_column(argument)?;
+    match argument {
+      (arg_name,table_id,TableIndex::Index(linear_ix),TableIndex::None) => {
+        let table = self.get_table(table_id)?;
+        let table_brrw = table.borrow();
+        let (row,col) = table_brrw.index_to_subscript(linear_ix - 1)?;
+        Ok((*arg_name,arg_col,row))
+      }
+      (arg_name,table_id,TableIndex::All,_) => {
+        Ok((*arg_name,arg_col,0))
+      }
+      _ => Err(MechErrorKind::GenericError(1234))
+    }
+  }
+
+  fn get_arg_scalars(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,usize)>,MechErrorKind> {
+    let mut argument_scalars = vec![];
+    for argument in arguments {
+      let arg_scalar = self.get_arg_scalar(argument)?;
+      argument_scalars.push(arg_scalar);
+    }
+    Ok(argument_scalars)
+  }
+
   fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column),MechErrorKind> {
     let (arg_name, table_id, row, col) = argument;
     let table = self.get_table(table_id)?;
     let table_brrw = table.borrow(); 
     match (row,col) {
+      (TableIndex::Index(ix),TableIndex::None) => {
+        let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
+        match table_brrw.get_column(&TableIndex::Index(ix_col)) {
+          Some(column) => Ok((*arg_name,column.clone())),
+          None => {
+            Err(MechErrorKind::MissingColumn((*table_id,*col)))
+          }
+        }
+      }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
@@ -223,7 +257,8 @@ impl Block {
       let t = table.borrow();
       let dims = match (row, column) {
         (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-        (TableIndex::All, TableIndex::Alias(x)) => (t.rows, 1),
+        (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
+        (TableIndex::Index(_),TableIndex::None) => (1,1),
         _ => (0,0),
       };
       arg_dims.push(dims);
@@ -319,7 +354,7 @@ impl Block {
           // Select a specific element by numberical index
           (TableIndex::Index(ix), TableIndex::None) => {
             let src_brrw = src_table.borrow();
-            let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
+            let (row,col) = src_brrw.index_to_subscript(ix-1)?;
             let mut arg_col = src_brrw.get_column_unchecked(col);
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
@@ -358,7 +393,7 @@ impl Block {
                   let dest_vector = dest_table_brrw.get_column_unchecked(col);
                   match (&src_vector, &dest_vector) {
                     (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
-                    _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                    _ => {return Err(MechErrorKind::GenericError(1235));}, // TODO Fill in correct dimensions
                   }
 
                 }
@@ -414,19 +449,17 @@ impl Block {
           // Now decide on the correct tfm based on the shape
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[0];
-              let len = c.len();
-              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
-                  if *name == *MATH_ADD { self.plan.push(AddSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+              let mut argument_scalars = self.get_arg_scalars(arguments)?;
+              let mut out_column = self.get_out_column(out, 1, ValueKind::U8)?;
+              match (&argument_scalars[0], &argument_scalars[1], &out_column) {
+                ((_,Column::U8(lhs),lix), (_,Column::U8(rhs),rix), Column::U8(out)) => {
+                  if *name == *MATH_ADD { self.plan.push(AddSIxSIx::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
                   else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1236));},
               }
             }
             (TableShape::Scalar, TableShape::Column(_)) => {
@@ -442,7 +475,7 @@ impl Block {
                   //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1237));},
               }
             }   
             (TableShape::Column(_), TableShape::Scalar) => {
@@ -458,7 +491,7 @@ impl Block {
                   //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1238));},
               }
             }                      
             (TableShape::Column(_), TableShape::Column(_)) => {
@@ -474,7 +507,7 @@ impl Block {
                   //else if *name == *MATH_SUBTRACT { Function::SubtractVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   //else if *name == *MATH_EXPONENT { Function::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1239));},
               }
             }
             _ => (),
@@ -503,7 +536,7 @@ impl Block {
                   else { Function::Null };
                   self.plan.push(fxn);
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1240));},
               }
             }
             (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
@@ -520,7 +553,7 @@ impl Block {
                   else if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                _ => {return Err(MechErrorKind::DimensionMismatch(((1,2),(3,4))));}, // TODO Fill in correct dimensions
+                _ => {return Err(MechErrorKind::GenericError(1242));},
               }
             }
             _ => (),
@@ -566,14 +599,14 @@ impl Block {
           let cols = arg_tables[0].borrow().cols;
           let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
           if consistent_cols == false {
-            return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0)))); // TODO Fill in correct dimensions
+            return Err(MechErrorKind::GenericError(1243));
           }
           
           // Check to make sure column types are consistent
           let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
           let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
           if consistent_cols == false {
-            return Err(MechErrorKind::ColumnKindMismatch(vec![])); // TODO Fill in correct value kinds
+            return Err(MechErrorKind::GenericError(1244));
           }
 
           // Add up the rows
@@ -630,7 +663,7 @@ impl Block {
           });
 
           if consistent_rows == false {
-            return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0)))); // TODO Fill in correct dimensions
+            return Err(MechErrorKind::GenericError(1245));
           }
 
           // Add up the columns

@@ -42,6 +42,24 @@ where T: std::ops::Add<Output = T> + Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Add Scalar : Vector
+#[derive(Debug)]
+pub struct AddSIxSIx<T> 
+where T: std::ops::Add<Output = T> + Copy + Debug
+{
+  pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
+}
+impl<T> MechFunction for AddSIxSIx<T> 
+where T: std::ops::Add<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    let lhs = self.lhs.borrow()[self.lix];
+    let rhs = self.rhs.borrow()[self.rix];
+    self.out.borrow_mut().iter_mut().for_each(|out| *out = lhs + rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add Vector : Scalar
 #[derive(Debug)]
 pub struct AddVS<T> 

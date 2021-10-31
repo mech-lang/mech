@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::{Column, ValueKind, BoxPrinter, ColumnV, humanize, Value, MechErrorKind};
+use crate::*;
 use hashbrown::HashMap;
 
 // ### Table Id
@@ -157,13 +157,13 @@ impl Table {
     }
   }
 
-  pub fn index_to_subscript(&self, ix: usize) -> Option<(usize, usize)> {
+  pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechErrorKind> {
+    let row = ix / self.cols;
+    let col = ix % self.cols;
     if ix < self.rows * self.cols {
-      let row = ix / self.cols;
-      let col = ix % self.cols;
-      Some((row,col))
+      Ok((row,col))
     } else {
-      None
+      Err(MechErrorKind::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
     }
   }
 
