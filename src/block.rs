@@ -150,43 +150,49 @@ impl Block {
     }
   }
 
-  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechErrorKind> {
-    let mut argument_columns = vec![];
-    for (arg_name, table_id, row, col) in arguments {
-      let table = self.get_table(table_id)?;
-      let table_brrw = table.borrow(); 
-      match (row,col) {
-        (TableIndex::Table(ix_table_id),TableIndex::None) => {
-          let ix_table = self.get_table(&ix_table_id)?;
-          let ix_table_brrw = ix_table.borrow();
-          match table.borrow().kind() {
-            ValueKind::Compound(table_kind) => {
-              return Err(MechErrorKind::ColumnKindMismatch(table_kind));
-            }
-            table_kind => {
-              if ix_table_brrw.cols != 1 || 
-                 ix_table_brrw.rows != table_brrw.rows * table_brrw.cols 
-              {
-                return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))));
-              }
-              match ix_table_brrw.get_column_unchecked(0) {
-                Column::Bool(bool_col) => argument_columns.push((*arg_name,Column::Reference((table.clone(),(IndexColumn::Bool(bool_col),IndexColumn::None))))),
-                _ => {
-                  return Err(MechErrorKind::ColumnKindMismatch(vec![ValueKind::Bool]));
-                }
-              }
-            }
+  fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column),MechErrorKind> {
+    let (arg_name, table_id, row, col) = argument;
+    let table = self.get_table(table_id)?;
+    let table_brrw = table.borrow(); 
+    match (row,col) {
+      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        match table.borrow().kind() {
+          ValueKind::Compound(table_kind) => {
+            Err(MechErrorKind::ColumnKindMismatch(table_kind))
           }
-        }
-        _ => {
-          match table_brrw.get_column(&col) {
-            Some(column) => argument_columns.push((*arg_name,column.clone())),
-            None => {
-              return Err(MechErrorKind::MissingColumn((*table_id,*col)));
+          table_kind => {
+            if ix_table_brrw.cols != 1 || 
+                ix_table_brrw.rows != table_brrw.rows * table_brrw.cols 
+            {
+              return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))))
+            }
+            match ix_table_brrw.get_column_unchecked(0) {
+              Column::Bool(bool_col) => Ok((*arg_name,Column::Reference((table.clone(),(IndexColumn::Bool(bool_col),IndexColumn::None))))),
+              _ => {
+                Err(MechErrorKind::ColumnKindMismatch(vec![ValueKind::Bool]))
+              }
             }
           }
         }
       }
+      _ => {
+        match table_brrw.get_column(&col) {
+          Some(column) => Ok((*arg_name,column.clone())),
+          None => {
+            Err(MechErrorKind::MissingColumn((*table_id,*col)))
+          }
+        }
+      }
+    }
+  }
+
+  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechErrorKind> {
+    let mut argument_columns = vec![];
+    for argument in arguments {
+      let arg_col = self.get_arg_column(argument)?;
+      argument_columns.push(arg_col);
     }
     Ok(argument_columns)
   }
@@ -268,7 +274,9 @@ impl Block {
       Transformation::Select{table_id, indices, out} => {
         let src_table = self.get_table(table_id)?;
         let out_table = self.get_table(out)?;
+        let (row, column) = indices[0].clone();
         match indices[0] {
+          // Select an entire table
           (TableIndex::All, TableIndex::All) => {
             match out {
               TableId::Global(gid) => {
@@ -292,6 +300,23 @@ impl Block {
               _ => (), // TODO Other possibilities,
             }
           }
+          // Select a column by alias
+          (TableIndex::All, TableIndex::Alias(alias)) => {
+            let (_, arg_col) = self.get_arg_column(&(0,*table_id,row,column))?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.set_col_kind(0,arg_col.kind());
+            let out_cols = out_brrw.cols;
+            out_brrw.resize(arg_col.len(),out_cols);
+            let out_col = out_brrw.get_column_unchecked(0);
+            match (&arg_col, &out_col) {
+              (Column::U8(arg), Column::U8(out)) => {
+                let fxn = CopyVV::<u8>{arg: arg.clone(), out: out.clone()};
+                self.plan.push(fxn);
+              }
+              _ => (),
+            }
+          }
+          // Select a specific element by numberical index
           (TableIndex::Index(ix), TableIndex::None) => {
             let src_brrw = src_table.borrow();
             let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
@@ -307,6 +332,7 @@ impl Block {
               _ => (),
             }
           }
+          // Select a number of specific elements by numerical index or lorgical index
           (TableIndex::Table(ix_table_id), TableIndex::None) => {
             let ix_table = self.get_table(&ix_table_id)?;
             let ix_column = ix_table.borrow().get_column_unchecked(0);
