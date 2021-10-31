@@ -174,7 +174,6 @@ impl Compiler {
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
-        println!("{:#?}", input);
         let (input_table_id, input_indices) = match &mut input[0] {
           Transformation::NewTable{table_id,..} => {
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))

@@ -12,10 +12,9 @@ fn main() {
 
   parser.parse(r#"
 block
-  #range = 5 : 14
-
-block
-  #test = stats/sum(column: #range)"#);
+  x = 3:6
+  y = 5 + x
+  #test = y{1} + y{2} + y{3} + y{4}""#);
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -23,7 +22,7 @@ block
 
   println!("{:?}", ast.syntax_tree);
 
-  let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]);
+  let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
 
   for block in blocks {
     core.insert_block(block.clone());
