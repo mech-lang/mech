@@ -2,7 +2,7 @@
 
 // ## Preamble
 
-use mech_core::{hash_string, Value, hash_chars, NumberLiteral, Block, Transformation, Table, TableId, TableIndex, NumberLiteralKind};
+use mech_core::*;
 
 use crate::ast::{Ast, Node};
 use crate::parser::Parser;
@@ -65,29 +65,29 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Vec<Block> {
+  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Result<Vec<Block>,MechErrorKind> {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
       let mut block = Block::new();
-      let tfms = self.compile_node(&b);
+      let tfms = self.compile_node(&b)?;
       for tfm in tfms {
         block.add_tfm(tfm);
       }
       blocks.push(block);
     }
-    blocks
+    Ok(blocks)
   }
 
-  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Vec<Transformation> {
+  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Result<Vec<Transformation>,MechErrorKind> {
     let mut compiled = Vec::new();
     for node in nodes {
-      let mut result = self.compile_node(node);
+      let mut result = self.compile_node(node)?;
       compiled.append(&mut result);
     }
-    compiled
+    Ok(compiled)
   }
 
-  pub fn compile_node(&mut self, node: &Node) -> Vec<Transformation> {
+  pub fn compile_node(&mut self, node: &Node) -> Result<Vec<Transformation>,MechErrorKind> {
     let mut tfms = vec![];
     match node {
       Node::Identifier{name, id} => {
@@ -133,8 +133,8 @@ impl Compiler {
       }
       Node::SetData{children} => {
 
-        let mut src = self.compile_node(&children[1]);
-        let mut dest = self.compile_node(&children[0]);
+        let mut src = self.compile_node(&children[1])?;
+        let mut dest = self.compile_node(&children[0])?;
 
         let (src_table_id, src_indices) = match &mut src[0] {
           Transformation::NewTable{table_id,..} => {
@@ -163,7 +163,7 @@ impl Compiler {
         tfms.append(&mut src);
       }
       Node::TableDefine{children} => {
-        let mut output = self.compile_node(&children[0]);
+        let mut output = self.compile_node(&children[0])?;
         // Get the output table id
         let output_table_id = match output[0] {
           Transformation::NewTable{table_id,..} => {
@@ -173,7 +173,7 @@ impl Compiler {
         };
 
         tfms.append(&mut output);
-        let mut input = self.compile_node(&children[1]);
+        let mut input = self.compile_node(&children[1])?;
         let (input_table_id, input_indices) = match &mut input[0] {
           Transformation::NewTable{table_id,..} => {
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
@@ -204,7 +204,7 @@ impl Compiler {
           _ => 0, // TODO Error
         };
         // Compile input of the variable define
-        let mut input = self.compile_node(&children[1]);
+        let mut input = self.compile_node(&children[1])?;
         let input_table_id = match input[0] {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
@@ -219,7 +219,7 @@ impl Compiler {
         let mut arg_tfms = vec![];
         for child in children {
           // get the argument identifier off the function binding. Default to 0 if there is no named arg
-          let mut result = self.compile_node(&child);
+          let mut result = self.compile_node(&child)?;
 
           let arg: u64 = match &result[0] {
             Transformation::Identifier{name, id} => {
@@ -261,7 +261,7 @@ impl Compiler {
         let mut columns = 1;
         match &table_children[0] {
           Node::TableHeader{children} => {
-            let mut result = self.compile_nodes(&children);
+            let mut result = self.compile_nodes(&children)?;
             columns = result.len();
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
@@ -283,7 +283,7 @@ impl Compiler {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
-            let mut result = self.compile_node(&child);
+            let mut result = self.compile_node(&child)?;
             match &result[0] {
               Transformation::NewTable{table_id,..} => {
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
@@ -307,7 +307,7 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
-          let mut result = self.compile_nodes(&table_children);
+          let mut result = self.compile_nodes(&table_children)?;
           tfms.append(&mut result);          
         }
       },
@@ -317,7 +317,7 @@ impl Compiler {
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in children {
-            let mut result = self.compile_node(child);
+            let mut result = self.compile_node(child)?;
             match &result[0] {
               Transformation::NewTable{table_id,..} => {
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
@@ -339,12 +339,12 @@ impl Compiler {
             out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
           });
         } else {
-          let mut result = self.compile_nodes(children);
+          let mut result = self.compile_nodes(children)?;
           tfms.append(&mut result);            
         }
       },
       Node::TableColumn{children} => {
-        let mut result = self.compile_nodes(children);
+        let mut result = self.compile_nodes(children)?;
         tfms.append(&mut result);
       },
       Node::SelectData{name, id, children} => {
@@ -384,7 +384,7 @@ impl Compiler {
                           }
                         }
                         Node::Expression{..} => {
-                          let mut result = self.compile_node(child);
+                          let mut result = self.compile_node(child)?;
                           match &result[1] {
                             Transformation::NumberLiteral{kind, bytes} => {
                               let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
@@ -436,7 +436,7 @@ impl Compiler {
                     }
                   }
                   Node::Expression{..} => {
-                    let mut result = self.compile_node(child);
+                    let mut result = self.compile_node(child)?;
                     match &result[1] {
                       Transformation::NumberLiteral{kind, bytes} => {
                         let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
@@ -499,12 +499,12 @@ impl Compiler {
       Node::TableColumn{children} |
       Node::FunctionBinding{children} |
       Node::Root{children} => {
-        let mut result = self.compile_nodes(children);
+        let mut result = self.compile_nodes(children)?;
         tfms.append(&mut result);
       }
       Node::Null => (),
       x => println!("Unhandled Node {:?}", x),
     }
-    tfms
+    Ok(tfms)
   }
 }
