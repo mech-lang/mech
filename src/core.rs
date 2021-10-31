@@ -103,11 +103,14 @@ impl Core {
     block.global_database = self.database.clone();
     // Processing a transaction can lead to subsequent changes
     // that need to be processed.
-    while block.changes.len() > 0 {
+    loop {
       let changes = block.changes.clone();
       block.changes.clear();
       self.process_transaction(&changes);
       block.ready();
+      if block.changes.len() == 0 {
+        break;
+      }
     }
     // try to satisfy the block
     match block.ready() {
@@ -116,7 +119,9 @@ impl Core {
         block.solve();
         self.blocks.push(Rc::new(RefCell::new(block)));
       }
-      false => self.unsatisfied_blocks.push(block),
+      false => {
+        self.unsatisfied_blocks.push(block)
+      },
     }
   }
 
