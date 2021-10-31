@@ -163,13 +163,12 @@ test_mech!(math_multiple_variable_graph_new_ordering,"block
 
   test_mech!(math_add_columns_alias,"
 block
-  #test = stats/sum(column: #ball.x + #ball.y)
-
-block
   x = 1:10
   y = 1:10
   #ball = [|x y|
-            x y]", Value::U8(110));
+            x y]
+block
+  #test = stats/sum(column: #ball.x + #ball.y)", Value::U8(110));
 
   test_mech!(math_add_columns_indices,"
 block
