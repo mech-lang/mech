@@ -21,7 +21,7 @@ macro_rules! test_mech {
       parser.parse(&input);
 
       ast.build_syntax_tree(&parser.parse_tree);
-      let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]);
+      let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
       
       for block in blocks {
         core.insert_block(block);

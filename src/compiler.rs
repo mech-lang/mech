@@ -174,6 +174,7 @@ impl Compiler {
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
+        println!("{:#?}", input);
         let (input_table_id, input_indices) = match &mut input[0] {
           Transformation::NewTable{table_id,..} => {
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
@@ -252,6 +253,42 @@ impl Compiler {
           out: (TableId::Local(id), TableIndex::All, TableIndex::All),
         });
       },
+      Node::InlineTable{children} => {
+        let columns = children.len();
+        let mut table_row_children = vec![];
+        let mut aliases = vec![];
+        // Compile bindings
+        for (ix, binding) in children.iter().enumerate() {
+          match binding {
+            Node::Binding{children} => {
+              let mut identifier = self.compile_node(&children[0])?;
+              match &identifier[0] {
+                Transformation::Identifier{name,id} => {
+                  let column_alias = id.clone();
+                  let column_ix = ix.clone();
+                  let alias_tfm = move |x| Transformation::ColumnAlias{table_id: x, column_ix, column_alias};
+                  aliases.push(alias_tfm);
+                }
+                _ => (),
+              }
+              table_row_children.push(children[1].clone());
+            }
+            _ => (),
+          }
+        }
+        let table_row = Node::TableRow{children: table_row_children};
+        let mut compiled_row_tfms = self.compile_node(&table_row)?;
+        let mut a_tfms = vec![];
+        match &compiled_row_tfms[0] {
+          Transformation::NewTable{table_id,..} => {
+            let mut alias_tfms = aliases.iter().map(|a| a(*table_id)).collect();
+            a_tfms.append(&mut alias_tfms);
+          }
+          _ => (),
+        }
+        tfms.append(&mut compiled_row_tfms);
+        tfms.append(&mut a_tfms);
+      }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_string(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
@@ -497,6 +534,7 @@ impl Compiler {
       Node::Expression{children} |
       Node::TableRow{children} |
       Node::TableColumn{children} |
+      Node::Binding{children} |
       Node::FunctionBinding{children} |
       Node::Root{children} => {
         let mut result = self.compile_nodes(children)?;
