@@ -244,7 +244,7 @@ test_mech!(math_scalar_plus_vector,"
 block
   x = 3:6
   y = 5 + x
-  #test = y{1,1} + y{2,1} + y{3,1} + y{4,1}", Value::U8(38));
+  #test = y{1} + y{2} + y{3} + y{4}", Value::U8(38));
 
 test_mech!(math_vector_plus_scalar_inline,"
 block
