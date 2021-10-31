@@ -30,4 +30,5 @@ pub enum MechErrorKind {
   MissingFunction(u64),                          // ID of missing function
   TransformationPending(Transformation),         // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
+  InlineTableMissingColumnAlias(TableId),              // An inline table is missing a column e.g. [x: 1 y: 2 3]
 }
