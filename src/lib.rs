@@ -12,6 +12,7 @@ extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
 extern crate bincode;
+extern crate num;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -42,7 +43,7 @@ pub use self::operations::{MechFunction, Argument};*/
 pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::Transformation;
-pub use self::function::{Function, MechFunction, StatsSumCol, AddSS, AddVV, ParMultiplyVS, ConcatV, StatsSumColIx, GreaterThanVV, LessThanVV, LessThanEqualVV, GreaterThanEqualVV, EqualVV, NotEqualVV};
+pub use self::function::*;
 pub use self::block::{Block, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
