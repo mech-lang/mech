@@ -2,6 +2,7 @@ use crate::{Column, ColumnV, humanize, ValueKind, MechString, Table, TableId, Ta
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
+use num_traits::*;
 
 use rayon::prelude::*;
 use std::thread;
@@ -125,17 +126,16 @@ impl MechFunction for StatsSumColIx
 // stats/sum(column: x)
 #[derive(Debug)]
 pub struct StatsSumCol<T>
-where T: std::ops::Add<Output = T> + Debug + Copy
+where T: std::ops::Add<Output = T> + Debug + Copy + Num
 {
   pub col: Arg<T>, pub out: Out<T>
 }
 
 impl<T> MechFunction for StatsSumCol<T>
-where T: std::ops::Add<Output = T> + Debug + Copy
+where T: std::ops::Add<Output = T> + Debug + Copy + Num
 {
   fn solve(&mut self) {
-    let mut v = self.out.borrow()[0];
-    let result = self.col.borrow().iter().fold(v,|sum, n| sum + *n);
+    let result = self.col.borrow().iter().fold(identities::Zero::zero(),|sum, n| sum + *n);
     self.out.borrow_mut()[0] = result
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -267,6 +267,22 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
 {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs != *rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Copy Vector : Vector
+#[derive(Debug)]
+pub struct CopyVV<T> 
+where T: Copy + Debug
+{
+  pub arg: Arg<T>, pub out: Out<T>
+}
+impl<T> MechFunction for CopyVV<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = *arg); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
