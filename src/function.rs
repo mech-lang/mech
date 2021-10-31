@@ -46,6 +46,23 @@ where T: std::ops::Mul<Output = T> + Copy + Sync + Send + Debug
 
 // Add Vector : Vector
 #[derive(Debug)]
+pub struct AddSV<T> 
+where T: std::ops::Add<Output = T> + Copy + Debug
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+}
+impl<T> MechFunction for AddSV<T> 
+where T: std::ops::Add<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    let lhs = self.lhs.borrow()[0];
+    self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs + *rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Add Vector : Vector
+#[derive(Debug)]
 pub struct AddVV<T> 
 where T: std::ops::Add<Output = T> + Copy + Debug
 {

@@ -197,7 +197,7 @@ impl Block {
     Ok(argument_columns)
   }
 
-  fn get_out_table(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
+  fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
     let (out_table_id, _, _) = out;
     let table = self.get_table(out_table_id)?;
     let mut t = table.borrow_mut();
@@ -303,11 +303,7 @@ impl Block {
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(alias)) => {
             let (_, arg_col) = self.get_arg_column(&(0,*table_id,row,column))?;
-            let mut out_brrw = out_table.borrow_mut();
-            out_brrw.set_col_kind(0,arg_col.kind());
-            let out_cols = out_brrw.cols;
-            out_brrw.resize(arg_col.len(),out_cols);
-            let out_col = out_brrw.get_column_unchecked(0);
+            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => {
                 let fxn = CopyVV::<u8>{arg: arg.clone(), out: out.clone()};
@@ -320,10 +316,8 @@ impl Block {
           (TableIndex::Index(ix), TableIndex::None) => {
             let src_brrw = src_table.borrow();
             let (row,col) = src_brrw.index_to_subscript(ix-1).unwrap(); // TODO Make sure the index is in bounds
-            let mut out_brrw = out_table.borrow_mut();
             let mut arg_col = src_brrw.get_column_unchecked(col);
-            out_brrw.set_col_kind(0,arg_col.kind());
-            let mut out_col = out_brrw.get_column_unchecked(0);
+            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => {
                 let fxn = Function::CopySSU8((arg.clone(),row,out.clone()));
@@ -428,7 +422,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
               let len = c.len();
-              let mut out_column = self.get_out_table(out, len, ValueKind::U8)?;
+              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -440,11 +434,27 @@ impl Block {
                 _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
               }
             }
-            (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
+            (TableShape::Scalar, TableShape::Column(_)) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let (_, c) = &argument_columns[1];
+              let len = c.len();
+              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
+                  if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  //else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                }
+                _ => {return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0))));}, // TODO Fill in correct dimensions
+              }
+            }            
+            (TableShape::Column(_), TableShape::Column(_)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
               let len = c.len();
-              let out_column = self.get_out_table(out, len, ValueKind::U8)?;
+              let out_column = self.get_out_column(out, len, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -470,7 +480,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
               let len = c.len();
-              let out_column = self.get_out_table(out, len, ValueKind::Bool)?;
+              let out_column = self.get_out_column(out, len, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
@@ -489,7 +499,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
               let len = c.len();
-              let out_column = self.get_out_table(out, len, ValueKind::Bool)?;
+              let out_column = self.get_out_column(out, len, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
