@@ -27,7 +27,8 @@ impl Plan {
     }
   }
   
-  pub fn push<S: MechFunction + 'static>(&mut self, fxn: S) {
+  pub fn push<S: MechFunction + 'static>(&mut self, mut fxn: S) {
+    fxn.solve();
     self.plan.push(Rc::new(RefCell::new(fxn)));
   }
   
@@ -43,6 +44,7 @@ pub enum BlockState {
   Done,         // All inputs are satisfied and the block has executed
   Unsatisfied,  // One or more inputs are not satisfied
   Error,        // One or more errors exist on the block
+  Pending,      // THe block is currently solving and the state is not settled
   Disabled,     // The block is disabled will not execute if it otherwise would
 }
 
@@ -75,7 +77,8 @@ pub struct Block {
   pub plan: Plan,
   pub changes: Transaction,
   pub global_database: Rc<RefCell<Database>>,
-  unsatisfied_transformations: Vec<(MechErrorKind,Transformation)>,
+  unsatisfied_transformation: Option<(MechErrorKind,Transformation)>,
+  pending_transformations: Vec<Transformation>,
   transformations: Vec<Transformation>,
 }
 
@@ -88,7 +91,8 @@ impl Block {
       plan: Plan::new(),
       changes: Vec::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
-      unsatisfied_transformations: Vec::new(),
+      unsatisfied_transformation: None,
+      pending_transformations: Vec::new(),
       transformations: Vec::new(),
     }
   }
@@ -117,16 +121,32 @@ impl Block {
   }
 
   pub fn ready(&mut self) -> bool {
-    let unsatisfied = self.unsatisfied_transformations.clone();
-    self.unsatisfied_transformations.clear();
-    for (_, tfm) in unsatisfied {
-      self.add_tfm(tfm);
-    }
-    if self.unsatisfied_transformations.len() == 0 {
-      self.state = BlockState::Ready;
-      true
-    } else {
-      false
+    match self.state {
+      BlockState::Ready => true,
+      BlockState::Disabled => false,
+      _ => {
+        match &self.unsatisfied_transformation {
+          Some((_,tfm)) => {
+            self.state = BlockState::Pending;
+            match self.add_tfm(tfm.clone()) {
+              Ok(_) => {
+                self.unsatisfied_transformation = None;
+                let mut pending_transformations = self.pending_transformations.clone();
+                self.pending_transformations.clear();
+                for tfm in pending_transformations.drain(..) {
+                  self.add_tfm(tfm);
+                }
+                self.ready()
+              }
+              Err(_) => false,
+            }
+          }
+          None => {
+            self.state = BlockState::Ready;
+            true
+          }
+        }
+      }
     }
   }
 
@@ -206,13 +226,21 @@ impl Block {
     Ok(arg_shapes)
   }
 
-  pub fn add_tfm(&mut self, tfm: Transformation) {
-    match self.compile_tfm(tfm.clone()) {
-      Ok(()) => (),
-      Err(mech_error_kind) => {
-        self.unsatisfied_transformations.push((mech_error_kind,tfm));
-        self.state = BlockState::Unsatisfied;
-        return;        
+  pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechErrorKind> {
+    match self.state {
+      BlockState::Unsatisfied => {
+        self.pending_transformations.push(tfm.clone());
+        Err(MechErrorKind::TransformationPending(tfm))
+      }
+      _ => {
+        match self.compile_tfm(tfm.clone()) {
+          Ok(()) => Ok(()),
+          Err(mech_error_kind) => {
+            self.unsatisfied_transformation = Some((mech_error_kind.clone(),tfm));
+            self.state = BlockState::Unsatisfied;
+            return Err(mech_error_kind);        
+          }
+        }
       }
     }
   }
@@ -477,12 +505,11 @@ impl Block {
             }
           }
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
+
           // Get all of the tables
           let mut arg_tables = vec![];
           let mut rows = 0;
           let mut cols = 0;
-
-          // Gather tables
           for (_,table_id,_,_) in arguments {
             let table = self.get_table(table_id)?;
             arg_tables.push(table);
@@ -538,34 +565,67 @@ impl Block {
             
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
-          let (out_table_id, _, _) = out;
-          let out_table = self.get_table(out_table_id)?.clone();
-          let mut out_column_ix = 0;
-          for (_, table_id, _, _) in arguments {
+          // Get all of the tables
+          let mut arg_tables = vec![];
+          let mut rows = 0;
+          let mut cols = 0;
+          for (_,table_id,_,_) in arguments {
             let table = self.get_table(table_id)?;
-            let t = table.borrow();
-            let mut o = out_table.borrow_mut();
-            for c in 0..t.cols {
-              let mut arg_col = t.get_column_unchecked(c);
-              o.set_col_kind(out_column_ix, arg_col.kind());
-              let mut out_col = o.get_column_unchecked(out_column_ix);
-              o.set_col_kind(out_column_ix, arg_col.kind());
-              match (&arg_col, &out_col) {
-                (Column::U8(arg), Column::U8(out)) => {
-                  let fxn = Function::CopySSU8((arg.clone(),0,out.clone()));
-                  self.plan.push(fxn);
-                  out_column_ix += 1;
-                }
-                (Column::String(arg), Column::String(out)) => {
-                  let fxn = Function::CopySSString((arg.clone(),0,out.clone()));
-                  self.plan.push(fxn);
-                  out_column_ix += 1;
-                }
-                _ => (),
-              }
-            }
+            arg_tables.push(table);
+          }
+          let arg_shapes = self.get_arg_dims(&arguments)?;
+
+          // Each table should have the same number of rows or be scalar
+          let rows = arg_tables.iter().map(|t| t.borrow().rows).max().unwrap();
+          let consistent_rows = arg_tables.iter().all(|arg| {
+            let t_rows = arg.borrow().rows;
+            t_rows == rows || t_rows == 1
+          });
+
+          if consistent_rows == false {
+            return Err(MechErrorKind::DimensionMismatch(((0,0),(0,0)))); // TODO Fill in correct dimensions
           }
 
+          // Add up the columns
+          let cols = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().cols);
+          
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?.clone();
+          let mut o = out_table.borrow_mut();
+          o.resize(rows,cols);
+          let mut out_column_ix = 0;
+
+          for (table, shape) in arg_tables.iter().zip(arg_shapes) {
+            let t = table.borrow();
+            match shape {
+              TableShape::Scalar => {
+                let mut arg_col = t.get_column_unchecked(0);
+                o.set_col_kind(out_column_ix, arg_col.kind());
+                let mut out_col = o.get_column_unchecked(out_column_ix);
+                let fxn = match (&arg_col, &out_col) {
+                  (Column::U8(arg), Column::U8(out)) => Function::CopySSU8((arg.clone(),0,out.clone())),
+                  (Column::String(arg), Column::String(out)) => Function::CopySSString((arg.clone(),0,out.clone())),
+                  _ => Function::Null,
+                };
+                self.plan.push(fxn);
+                out_column_ix += 1;
+              }
+              TableShape::Column(_) => {
+                let mut arg_col = t.get_column_unchecked(0);
+                o.set_col_kind(out_column_ix, arg_col.kind());
+                let mut out_col = o.get_column_unchecked(out_column_ix);
+                let fxn = match (&arg_col, &out_col) {
+                  (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
+                  (Column::U64(arg), Column::U64(out)) => self.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
+                  _ => {return Err(MechErrorKind::MissingFunction(*name));},
+                };
+                out_column_ix += 1;
+              }
+              _ => (),
+            }
+          }
+        } else {
+          return Err(MechErrorKind::MissingFunction(*name));
         }
       } 
       _ => {},
@@ -595,10 +655,12 @@ impl fmt::Debug for Block {
     block_drawing.add_line(format!("state: {:?}", &self.state));
     block_drawing.add_header("transformations");
     block_drawing.add_line(format!("{:#?}", &self.transformations));
+    block_drawing.add_header("unsatisfied transformations");
+    block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformation));
+    block_drawing.add_header("pending transformations");
+    block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
     block_drawing.add_header("tables");
     block_drawing.add_line(format!("{:?}", &self.tables));
-    block_drawing.add_header("unsatisfied transformations");
-    block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformations));
     block_drawing.add_header("plan");
     for step in &self.plan.plan {
       block_drawing.add_line(format!("{}", &step.borrow().to_string()));
