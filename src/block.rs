@@ -266,8 +266,8 @@ impl Block {
     let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
       match dims {
         (1,1) => TableShape::Scalar,
-        (x,1) => TableShape::Column(*x),
         (1,x) => TableShape::Row(*x),
+        (x,1) => TableShape::Column(*x),
         (x,y) => TableShape::Matrix(*x,*y),
         _ => TableShape::Pending,
       }
@@ -510,6 +510,53 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1239));},
               }
             }
+            (TableShape::Row(_), TableShape::Scalar) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+            }
+            (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
+              
+              if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
+                return Err(MechErrorKind::GenericError(6343));
+              }
+
+              let get_cols = |&argument| {
+                let (_,table_id,row,col) = argument;
+                let lhs_table = self.get_table(&table_id)?;
+                let lhs_brrw = lhs_table.borrow();
+                Ok(lhs_brrw.get_columns(&col))
+              };
+
+              let lhs_columns = get_cols(&arguments[0])?;
+              let rhs_columns = get_cols(&arguments[1])?;
+
+              let (out_table_id, _, _) = out;
+              let out_table = self.get_table(out_table_id)?;
+              let mut out_brrw = out_table.borrow_mut();
+              let cols = out_brrw.cols;
+
+              out_brrw.resize(*lhs_rows,*lhs_cols);
+
+
+              match (lhs_columns, rhs_columns) {
+                (Some(lhs_columns),Some(rhs_columns)) => {
+                  if lhs_columns.len() == rhs_columns.len() {
+                    for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+                      out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                      let out_col = out_brrw.get_column_unchecked(col_ix);
+                      match (lhs_rhs,out_col) {
+                        ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
+                          if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                        }
+                        _ => {return Err(MechErrorKind::GenericError(6343));},
+                      }
+                    }
+                  } else {
+                    return Err(MechErrorKind::GenericError(6342));
+                  }
+                }
+                _ => {return Err(MechErrorKind::GenericError(6341));},
+              }
+            }
             _ => (),
           }
         } else if *name == *COMPARE_GREATER__THAN ||
@@ -539,7 +586,7 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1240));},
               }
             }
-            (TableShape::Column(lhs_alias), TableShape::Column(rhs_alias)) => {
+            (TableShape::Column(_), TableShape::Column(_)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let (_, c) = &argument_columns[0];
               let len = c.len();

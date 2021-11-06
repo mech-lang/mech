@@ -248,6 +248,15 @@ impl Table {
     }
   }
 
+  pub fn get_columns(&self, col: &TableIndex) -> Option<Vec<Column>> {
+    match col {
+      TableIndex::All => {
+        Some(self.data.iter().cloned().collect())
+      },
+      _ => None,
+    }
+  }
+
   pub fn get_column(&self, col: &TableIndex) -> Option<Column> {
     match col {
       TableIndex::Alias(alias) => {
