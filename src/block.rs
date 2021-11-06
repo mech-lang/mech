@@ -259,7 +259,7 @@ impl Block {
         (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
         (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
         (TableIndex::Index(_),TableIndex::None) => (1,1),
-        _ => (0,0),
+        _ => {return Err(MechErrorKind::GenericError(6384));},
       };
       arg_dims.push(dims);
     }
@@ -339,7 +339,7 @@ impl Block {
                 } 
                 self.plan.push(Function::CopyTable((src_table.clone(), out_table.clone())));
               }
-              _ => (), // TODO Other possibilities,
+              _ => {return Err(MechErrorKind::GenericError(6383));},
             }
           }
           // Select a column by alias
@@ -348,7 +348,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6382));},
             }
           }
           // Select a specific element by numberical index
@@ -359,7 +359,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out), ) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: row, out: out.clone()}),
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6381));},
             }
           }
           // Select a number of specific elements by numerical index or lorgical index
@@ -372,10 +372,10 @@ impl Block {
 
             match (&arg_col, &ix_column) {
               (Column::U8(arg), Column::Bool(ix)) => self.plan.push(Function::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()))),
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6380));},
             }
           }
-          _ => (), // TODO Raise an error here, we don't handle this case
+          _ => {return Err(MechErrorKind::GenericError(6379));},
         }
       }
       Transformation::Set{src_id, src_indices, dest_id, dest_indices} => {
@@ -395,13 +395,12 @@ impl Block {
                     (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
                     _ => {return Err(MechErrorKind::GenericError(1235));}, // TODO Fill in correct dimensions
                   }
-
                 }
               }
-              _ => (), // TODO Other possibilities,
+              _ => {return Err(MechErrorKind::GenericError(6378));},
             }
           }
-          _ => (), // TODO Raise an error here, we don't handle this case
+          _ => {return Err(MechErrorKind::GenericError(6377));},
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
@@ -423,10 +422,10 @@ impl Block {
                 let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U16(x));
               }
-              _ => (), // TODO Handle other sizes
+              _ => {return Err(MechErrorKind::GenericError(6376));},
             }
           }
-          _ => (),
+          _ => {return Err(MechErrorKind::GenericError(6375));},
         }
       },
       Transformation::Constant{table_id, value} => {
@@ -536,7 +535,6 @@ impl Block {
 
               out_brrw.resize(*lhs_rows,*lhs_cols);
 
-
               match (lhs_columns, rhs_columns) {
                 (Some(lhs_columns),Some(rhs_columns)) => {
                   if lhs_columns.len() == rhs_columns.len() {
@@ -557,7 +555,7 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(6341));},
               }
             }
-            _ => (),
+            _ => {return Err(MechErrorKind::GenericError(6345));},
           }
         } else if *name == *COMPARE_GREATER__THAN ||
                   *name == *COMPARE_GREATER__THAN__EQUAL ||
@@ -603,7 +601,7 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1242));},
               }
             }
-            _ => (),
+            _ => {return Err(MechErrorKind::GenericError(6348));},
           }                    
         } else if *name == *TABLE_RANGE {
           let mut argument_columns = self.get_arg_columns(arguments)?;
@@ -614,7 +612,7 @@ impl Block {
               let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
               self.plan.push(fxn);
             }
-            _ => (),
+            _ => {return Err(MechErrorKind::GenericError(6349));},
           }
         } else if *name == *STATS_SUM {
           let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
@@ -628,7 +626,7 @@ impl Block {
             match arg_column {
               Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6351));},
             }
           }
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
@@ -687,7 +685,7 @@ impl Block {
                 let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6361));},
             }
             
           }
@@ -748,7 +746,7 @@ impl Block {
                 };
                 out_column_ix += 1;
               }
-              _ => (),
+              _ => {return Err(MechErrorKind::GenericError(6364));},
             }
           }
         } else {
