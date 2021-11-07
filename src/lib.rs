@@ -74,9 +74,17 @@ pub enum IndexColumn {
 }
 
 impl Column {
+
   pub fn get_u8(&self) -> Option<ColumnV<u8>> {
     match self {
      Column::U8(col) => Some(col.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_bool(&self) -> Option<ColumnV<bool>> {
+    match self {
+     Column::Bool(col) => Some(col.clone()),
       _ => None,
     }
   }
