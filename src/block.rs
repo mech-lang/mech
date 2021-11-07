@@ -17,6 +17,7 @@ use crate::function::{
   compare::*,
   stats::*,
   table::*,
+  set::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -75,6 +76,7 @@ lazy_static! {
   static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_string("compare/less-than-equal");
   static ref COMPARE_EQUAL: u64 = hash_string("compare/equal");
   static ref COMPARE_NOT__EQUAL: u64 = hash_string("compare/not-equal");
+  static ref SET_ANY: u64 = hash_string("set/any");
 }
 
 #[derive(Clone)]
@@ -590,9 +592,7 @@ impl Block {
           match (&arg_dims[0],&arg_dims[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[0];
-              let len = c.len();
-              let out_column = self.get_out_column(out, len, ValueKind::Bool)?;
+              let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
@@ -607,11 +607,27 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1240));},
               }
             }
-            (TableShape::Column(_), TableShape::Column(_)) => {
+            (TableShape::Column(rows), TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[0];
-              let len = c.len();
-              let out_column = self.get_out_column(out, len, ValueKind::Bool)?;
+              let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                }
+                _ => {return Err(MechErrorKind::GenericError(1252));},
+              }
+            }
+            (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+              if lhs_rows != rhs_rows {
+                return Err(MechErrorKind::GenericError(6523));
+              }
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
                   if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -650,6 +666,20 @@ impl Block {
               Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
               _ => {return Err(MechErrorKind::GenericError(6351));},
+            }
+          }
+        } else if *name == *SET_ANY {
+          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.set_col_kind(0,ValueKind::Bool);
+          out_brrw.resize(1,1);
+          let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
+          if arg_name == *COLUMN {
+            match arg_column {
+              Column::Bool(col) => self.plan.push(SetAnyCol{col: col.clone(), out: out_col.clone()}),
+              _ => {return Err(MechErrorKind::GenericError(6391));},
             }
           }
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
