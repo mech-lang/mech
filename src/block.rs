@@ -239,6 +239,13 @@ impl Block {
     Ok(argument_columns)
   }
 
+  fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<Column>,MechErrorKind> {
+    let (_,table_id,row,col) = argument;
+    let lhs_table = self.get_table(&table_id)?;
+    let lhs_brrw = lhs_table.borrow();
+    Ok(lhs_brrw.get_columns(&col).unwrap())
+  }
+
   fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
     let (out_table_id, _, _) = out;
     let table = self.get_table(out_table_id)?;
@@ -461,11 +468,9 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1236));},
               }
             }
-            (TableShape::Scalar, TableShape::Column(_)) => {
+            (TableShape::Scalar, TableShape::Column(rows)) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[1];
-              let len = c.len();
-              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
+              let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -477,11 +482,9 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1237));},
               }
             }   
-            (TableShape::Column(_), TableShape::Scalar) => {
+            (TableShape::Column(rows), TableShape::Scalar) => {
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[0];
-              let len = c.len();
-              let mut out_column = self.get_out_column(out, len, ValueKind::U8)?;
+              let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -493,11 +496,12 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1238));},
               }
             }                      
-            (TableShape::Column(_), TableShape::Column(_)) => {
+            (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+              if lhs_rows != rhs_rows {
+                return Err(MechErrorKind::GenericError(6401));
+              }
               let mut argument_columns = self.get_arg_columns(arguments)?;
-              let (_, c) = &argument_columns[0];
-              let len = c.len();
-              let out_column = self.get_out_column(out, len, ValueKind::U8)?;
+              let out_column = self.get_out_column(out, *lhs_rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -509,50 +513,69 @@ impl Block {
                 _ => {return Err(MechErrorKind::GenericError(1239));},
               }
             }
-            (TableShape::Row(_), TableShape::Scalar) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
+            (TableShape::Row(cols), TableShape::Scalar) => {
+              let lhs_columns = self.get_whole_table_arg_cols(&arguments[0])?;
+              let rhs_column = self.get_arg_column(&arguments[1])?;
+
+              let (out_table_id, _, _) = out;
+              let out_table = self.get_table(out_table_id)?;
+              let mut out_brrw = out_table.borrow_mut();
+              out_brrw.resize(1,*cols);
+
+              for (col_ix,lhs_column) in lhs_columns.iter().enumerate() {
+                out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                let out_col = out_brrw.get_column_unchecked(col_ix);
+                match (lhs_column,&rhs_column,out_col) {
+                  (Column::U8(lhs), (_,Column::U8(rhs)), Column::U8(out)) => {
+                    if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                  }
+                  _ => {return Err(MechErrorKind::GenericError(6343));},
+                }
+              }
             }
+            (TableShape::Scalar, TableShape::Row(cols)) => {
+              let rhs_columns = self.get_whole_table_arg_cols(&arguments[1])?;
+              let lhs_column = self.get_arg_column(&arguments[0])?;
+
+              let (out_table_id, _, _) = out;
+              let out_table = self.get_table(out_table_id)?;
+              let mut out_brrw = out_table.borrow_mut();
+              out_brrw.resize(1,*cols);
+
+              for (col_ix,rhs_column) in rhs_columns.iter().enumerate() {
+                out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                let out_col = out_brrw.get_column_unchecked(col_ix);
+                match (rhs_column,&lhs_column,out_col) {
+                  (Column::U8(rhs), (_,Column::U8(lhs)), Column::U8(out)) => {
+                    if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                  }
+                  _ => {return Err(MechErrorKind::GenericError(6343));},
+                }
+              }
+            }            
             (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
               
               if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
                 return Err(MechErrorKind::GenericError(6343));
               }
 
-              let get_cols = |&argument| {
-                let (_,table_id,row,col) = argument;
-                let lhs_table = self.get_table(&table_id)?;
-                let lhs_brrw = lhs_table.borrow();
-                Ok(lhs_brrw.get_columns(&col))
-              };
-
-              let lhs_columns = get_cols(&arguments[0])?;
-              let rhs_columns = get_cols(&arguments[1])?;
+              let lhs_columns = self.get_whole_table_arg_cols(&arguments[0])?;
+              let rhs_columns = self.get_whole_table_arg_cols(&arguments[1])?;
 
               let (out_table_id, _, _) = out;
               let out_table = self.get_table(out_table_id)?;
               let mut out_brrw = out_table.borrow_mut();
-              let cols = out_brrw.cols;
-
               out_brrw.resize(*lhs_rows,*lhs_cols);
 
-              match (lhs_columns, rhs_columns) {
-                (Some(lhs_columns),Some(rhs_columns)) => {
-                  if lhs_columns.len() == rhs_columns.len() {
-                    for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
-                      out_brrw.set_col_kind(col_ix, ValueKind::U8);
-                      let out_col = out_brrw.get_column_unchecked(col_ix);
-                      match (lhs_rhs,out_col) {
-                        ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
-                          if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-                        }
-                        _ => {return Err(MechErrorKind::GenericError(6343));},
-                      }
-                    }
-                  } else {
-                    return Err(MechErrorKind::GenericError(6342));
+              for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+                out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                let out_col = out_brrw.get_column_unchecked(col_ix);
+                match (lhs_rhs,out_col) {
+                  ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
+                    if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   }
+                  _ => {return Err(MechErrorKind::GenericError(6343));},
                 }
-                _ => {return Err(MechErrorKind::GenericError(6341));},
               }
             }
             _ => {return Err(MechErrorKind::GenericError(6345));},
