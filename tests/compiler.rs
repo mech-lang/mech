@@ -172,13 +172,12 @@ block
 
   test_mech!(math_add_columns_indices,"
 block
-  #test = stats/sum(column: #ball{:,1} + #ball{:,2})
-
-block
   x = 1:10
   y = 1:10
   #ball = [|x y|
-            x y]", Value::U8(110));
+            x y]
+block
+  #test = stats/sum(column: #ball{:,1} + #ball{:,2})", Value::U8(110));
 
 test_mech!(math_on_whole_table,"
 block
