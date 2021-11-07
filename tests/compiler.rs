@@ -238,7 +238,7 @@ block
   y = [10 11
        13 14]
   z = x + y
-  #test = z{1,1} + z{1,2} + z{2,1} + z{2,2}", Value::U8(60));
+  #test = z{1} + z{2} + z{3} + z{4}", Value::U8(60));
 
 test_mech!(math_scalar_plus_vector,"
 block
@@ -251,14 +251,14 @@ block
   #x = [1 2 3] + 1
   
 block
-  #test = stats/sum(row: #x)", Value::U8(9));
+  #test = #x{1} + #x{2} + #x{3}", Value::U8(9));
 
 test_mech!(math_vector_plus_scalar_inline_reverse,"
 block
   #x = 1 + [1 2 3]
     
 block
-  #test = stats/sum(row: #x)", Value::U8(9));
+  #test = #x{1} + #x{2} + #x{3}", Value::U8(9));
 
 test_mech!(math_vector_plus_scalar,"
 block
@@ -266,7 +266,7 @@ block
   #x = x + 1
 
 block
-  #test = stats/sum(row: #x)", Value::U8(9));
+  #test = #x{1} + #x{2} + #x{3}", Value::U8(9));
 
 test_mech!(math_negation_double_negative,"
 block

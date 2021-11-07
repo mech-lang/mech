@@ -12,12 +12,7 @@ fn main() {
 
   parser.parse(r#"
 block
-  #x = [1 2
-        4 5]
-  #y = [10 11
-        13 14]
-block
-  #z = #x + #y"#);
+  #x = 1 + [1 2 3]"#);
 
   //println!("{:#?}", parser.parse_tree);
 
