@@ -18,6 +18,7 @@ use crate::function::{
   stats::*,
   table::*,
   set::*,
+  logic::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -70,6 +71,10 @@ lazy_static! {
   static ref TABLE_RANGE: u64 = hash_string("table/range");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
+  static ref LOGIC_AND: u64 = hash_string("logic/and");  
+  static ref LOGIC_OR: u64 = hash_string("logic/or");
+  static ref LOGIC_NOT: u64 = hash_string("logic/not");  
+  static ref LOGIC_XOR: u64 = hash_string("logic/xor");    
   static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
   static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
   static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_string("compare/greater-than-equal");
@@ -582,12 +587,36 @@ impl Block {
             }
             _ => {return Err(MechErrorKind::GenericError(6345));},
           }
+        } else if *name == *LOGIC_AND ||
+                  *name == *LOGIC_OR ||
+                  *name == *LOGIC_NOT ||
+                  *name == *LOGIC_XOR 
+        {
+          let arg_dims = self.get_arg_dims(&arguments)?;
+          match (&arg_dims[0],&arg_dims[1]) {
+            (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                  if *name == *LOGIC_AND { self.plan.push(AndVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
+                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                }
+                _ => {return Err(MechErrorKind::GenericError(1340));},
+              }
+            }
+            _ => {return Err(MechErrorKind::GenericError(1341));},
+          }
         } else if *name == *COMPARE_GREATER__THAN ||
                   *name == *COMPARE_GREATER__THAN__EQUAL ||
                   *name == *COMPARE_LESS__THAN__EQUAL ||
                   *name == *COMPARE_EQUAL ||
                   *name == *COMPARE_NOT__EQUAL ||
-                  *name == *COMPARE_LESS__THAN {
+                  *name == *COMPARE_LESS__THAN 
+        {
           let arg_dims = self.get_arg_dims(&arguments)?;
           match (&arg_dims[0],&arg_dims[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
