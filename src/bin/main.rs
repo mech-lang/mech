@@ -12,7 +12,13 @@ fn main() {
 
   parser.parse(r#"
 block
-  #x = 1 + [1 2 3]"#);
+  foo = [|x|
+          5
+          8
+          11]  
+  ix1 = foo.x > 5
+  ix2 = foo.x < 11
+  #ix3 = ix1 & ix2"#);
 
   //println!("{:#?}", parser.parse_tree);
 

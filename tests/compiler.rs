@@ -748,16 +748,15 @@ block
 
 test_mech!(logic_and,"
 block
-  ix1 = #foo.x > 5
-  ix2 = #foo.x < 11
-  ix3 = ix1 & ix2
-  #test = #foo{ix3, 1}
-
-block
   #foo = [|x y z|
            5 6 7
            8 9 10
-           11 12 13]", Value::U8(8));
+          11 12 13]
+block
+  ix1 = #foo.x > 5
+  ix2 = #foo.x < 11
+  ix3 = ix1 & ix2
+  #test = #foo{ix3, 1}", Value::U8(8));
 
 test_mech!(logic_and_filter_inline,"
 block

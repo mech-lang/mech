@@ -560,19 +560,15 @@ impl Ast {
       // Quantities
       parser::Node::Quantity{children} => compiled.push(Node::Quantity{children: self.compile_nodes(children)}),
       parser::Node::Number{children} => {
+        let mut word = Vec::new();
         let result = self.compile_nodes(children);
-        let str_result = Vec::new();
-        /*for node in result {
+        for node in result {
           match node {
-            Node::Token{token: Token::Comma, byte} => (),
-            Node::Token{token, byte} => {
-              let digit = byte_to_digit(byte).unwrap();
-              str_result = format!("{}{}",str_result,digit);
-            },
+            Node::Token{token, mut chars} => word.append(&mut chars),
             _ => (),
           }
-        }*/
-        compiled.push(Node::String{text: str_result});
+        }
+        compiled.push(Node::String{text: word});
       },
       parser::Node::FloatingPoint{children} => {
         let result = self.compile_nodes(children);
