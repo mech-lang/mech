@@ -12,6 +12,7 @@ pub mod math;
 pub mod stats;
 pub mod table;
 pub mod set;
+pub mod logic;
 
 // binop vector-vector          -- lhs: &Vec<f64>,     rhs: &Vec<f64>    out: &mut Vec<f64>
 // binop vector-vector in-place -- lhs: &mut Vec<f64>  rhs: &Vec<f64>
