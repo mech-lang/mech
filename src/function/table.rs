@@ -10,14 +10,14 @@ use std::thread;
 // Concat Vectors
 #[derive(Debug)]
 pub struct ConcatV<T> 
-where T: Copy + Debug
+where T: Clone + Debug
 {
   pub args: Vec<Arg<T>>, 
   pub out: Out<T>,
 }
 
 impl<T> MechFunction for ConcatV<T> 
-where T: Copy + Debug
+where T: Clone + Debug
 {
   fn solve(&mut self) {
     let mut out_brrw = self.out.borrow_mut();
@@ -25,7 +25,7 @@ where T: Copy + Debug
     let mut ix = 0;
     let mut arg_brrw = self.args[arg_ix].borrow();
     for r in 0..out_brrw.len() {
-      out_brrw[r] = arg_brrw[ix];
+      out_brrw[r] = arg_brrw[ix].clone();
       ix += 1;
       if ix == arg_brrw.len() {
         ix = 0;

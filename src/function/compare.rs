@@ -7,7 +7,7 @@ use num_traits::*;
 use rayon::prelude::*;
 use std::thread;
 
-// GreaterThan Vector : Vector
+// Greater Than Vector : Vector
 #[derive(Debug)]
 pub struct GreaterThanVV<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -23,7 +23,7 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// LessThan Vector : Vector
+// Less Than Vector : Vector
 #[derive(Debug)]
 pub struct LessThanVV<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -39,7 +39,7 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// LessThan Vector : Vector
+// Less Than Equal Vector : Vector
 #[derive(Debug)]
 pub struct LessThanEqualVV<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -71,15 +71,15 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// GreaterThanEqual Vector : Vector
+// Equal Vector : Vector
 #[derive(Debug)]
 pub struct EqualVV<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Clone
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
 }
 impl<T> MechFunction for EqualVV<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Clone
 {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs == *rhs); 
@@ -87,15 +87,15 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// GreaterThanEqual Vector : Vector
+// Not Equal Vector : Vector
 #[derive(Debug)]
 pub struct NotEqualVV<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Clone
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
 }
 impl<T> MechFunction for NotEqualVV<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Clone
 {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs != *rhs); 
@@ -103,7 +103,7 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// GreaterThan Vector : Scalar
+// Greater Than Vector : Scalar
 #[derive(Debug)]
 pub struct GreaterThanVS<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -120,7 +120,7 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// LessThan Vector : Scalar
+// Less Than Vector : Scalar
 #[derive(Debug)]
 pub struct LessThanVS<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -137,7 +137,7 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// LessThan Vector : Scalar
+// Less Than Equal Vector : Scalar
 #[derive(Debug)]
 pub struct LessThanEqualVS<T> 
 where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
@@ -171,36 +171,68 @@ where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// GreaterThanEqual Vector : Scalar
+// Equal Vector : Scalar
 #[derive(Debug)]
 pub struct EqualVS<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
 }
 impl<T> MechFunction for EqualVS<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
 {
   fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs == rhs); 
+    let rhs = &self.rhs.borrow()[0];
+    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs == *rhs); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// GreaterThanEqual Vector : Scalar
+// Not Equal Vector : Scalar
 #[derive(Debug)]
 pub struct NotEqualVS<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
 {
   pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
 }
 impl<T> MechFunction for NotEqualVS<T> 
-where T: PartialEq + Eq + Copy + Debug + std::cmp::PartialOrd
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
 {
   fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs != rhs); 
+    let rhs = &self.rhs.borrow()[0];
+    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs != *rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Equal Scalar : Scalar
+#[derive(Debug)]
+pub struct EqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for EqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] == (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Not Equal Scalar : Scalar
+#[derive(Debug)]
+pub struct NotEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for NotEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] != (self.rhs.borrow())[0];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }

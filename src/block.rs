@@ -82,6 +82,7 @@ lazy_static! {
   static ref COMPARE_EQUAL: u64 = hash_string("compare/equal");
   static ref COMPARE_NOT__EQUAL: u64 = hash_string("compare/not-equal");
   static ref SET_ANY: u64 = hash_string("set/any");
+  static ref SET_ALL: u64 = hash_string("set/all");  
 }
 
 #[derive(Clone)]
@@ -645,6 +646,14 @@ impl Block {
                   else { Function::Null };
                   self.plan.push(fxn);
                 }
+                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
+                }
+                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
+                }
                 _ => {return Err(MechErrorKind::GenericError(1240));},
               }
             }
@@ -659,6 +668,14 @@ impl Block {
                   else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                }
+                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
+                }
+                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                 }
                 _ => {return Err(MechErrorKind::GenericError(1252));},
               }
@@ -677,6 +694,14 @@ impl Block {
                   else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                }
+                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                }
+                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
                 _ => {return Err(MechErrorKind::GenericError(1242));},
               }
@@ -723,6 +748,20 @@ impl Block {
               _ => {return Err(MechErrorKind::GenericError(6391));},
             }
           }
+        } else if *name == *SET_ALL {
+          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.set_col_kind(0,ValueKind::Bool);
+          out_brrw.resize(1,1);
+          let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
+          if arg_name == *COLUMN {
+            match arg_column {
+              Column::Bool(col) => self.plan.push(SetAllCol{col: col.clone(), out: out_col.clone()}),
+              _ => {return Err(MechErrorKind::GenericError(6395));},
+            }
+          }          
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
 
           // Get all of the tables
@@ -774,7 +813,7 @@ impl Block {
               Column::U8(ref out_c) => {
                 let mut u8_cols:Vec<ColumnV<u8>> = vec![];
                 for colv in argument_columns {
-                  u8_cols.push(colv.get_u8().unwrap().clone());
+                  u8_cols.push(colv.get_u8()?.clone());
                 }
                 let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
                 self.plan.push(fxn);
@@ -782,9 +821,17 @@ impl Block {
               Column::Bool(ref out_c) => {
                 let mut bool_cols:Vec<ColumnV<bool>> = vec![];
                 for colv in argument_columns {
-                  bool_cols.push(colv.get_bool().unwrap().clone());
+                  bool_cols.push(colv.get_bool()?.clone());
                 }
                 let fxn = ConcatV::<bool>{args: bool_cols, out: out_c.clone()};
+                self.plan.push(fxn);
+              }
+              Column::String(ref out_c) => {
+                let mut cols:Vec<ColumnV<MechString>> = vec![];
+                for colv in argument_columns {
+                  cols.push(colv.get_string()?.clone());
+                }
+                let fxn = ConcatV::<MechString>{args: cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
               _ => {return Err(MechErrorKind::GenericError(6361));},

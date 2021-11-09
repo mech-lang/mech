@@ -75,24 +75,31 @@ pub enum IndexColumn {
 
 impl Column {
 
-  pub fn get_u8(&self) -> Option<ColumnV<u8>> {
+  pub fn get_u8(&self) -> Result<ColumnV<u8>,MechErrorKind> {
     match self {
-     Column::U8(col) => Some(col.clone()),
-      _ => None,
+      Column::U8(col) => Ok(col.clone()),
+      _ => {return Err(MechErrorKind::GenericError(8172));},
     }
   }
 
-  pub fn get_bool(&self) -> Option<ColumnV<bool>> {
+  pub fn get_bool(&self) -> Result<ColumnV<bool>,MechErrorKind> {
     match self {
-     Column::Bool(col) => Some(col.clone()),
-      _ => None,
+      Column::Bool(col) => Ok(col.clone()),
+      _ => {return Err(MechErrorKind::GenericError(8170));},
     }
   }
 
-  pub fn get_u64(&self) -> Option<ColumnV<u64>> {
+  pub fn get_string(&self) -> Result<ColumnV<MechString>,MechErrorKind> {
     match self {
-     Column::U64(col) => Some(col.clone()),
-      _ => None,
+      Column::String(col) => Ok(col.clone()),
+      _ => {return Err(MechErrorKind::GenericError(8171));},
+    }
+  }
+
+  pub fn get_u64(&self) -> Result<ColumnV<u64>,MechErrorKind> {
+    match self {
+      Column::U64(col) => Ok(col.clone()),
+      _ => {return Err(MechErrorKind::GenericError(8173));},
     }
   }
 
