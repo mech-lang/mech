@@ -357,7 +357,7 @@ block
   
 block
   ix = #x == #y
-  #test = set/all(table: ix)", Value::Bool(true)); 
+  #test = set/all(column: ix)", Value::Bool(true)); 
 
 test_mech!(compare_not_equal_boolean,"
 block
@@ -366,7 +366,7 @@ block
   
 block
   ix = #x != #y
-  #test = set/all(table: ix)", Value::Bool(true)); 
+  #test = set/all(column: ix)", Value::Bool(true)); 
 
 test_mech!(compare_equal_string,r#"
 block

@@ -12,12 +12,12 @@ fn main() {
 
   parser.parse(r#"
 block
-  x = [true; false; true; false]
-  #y = ¬x
-
+  #x = [1; 2; 3; 4]
+  #y = ["a"; "b"; "a"; "b"]
+  
 block
-  x = [1;2;3;4]
-  #test = stats/sum(column: x{#y})"#);
+  ix = #y == "a"
+  #test = stats/sum(column: #x{ix})"#);
 
   //println!("{:#?}", parser.parse_tree);
 
