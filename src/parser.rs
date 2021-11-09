@@ -1168,7 +1168,7 @@ fn l5_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l6(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, l6) = alt((anonymous_table, function, value, data, negation, not, parenthetical_expression))(input)?;
+  let (input, l6) = alt((anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 

@@ -12,13 +12,12 @@ fn main() {
 
   parser.parse(r#"
 block
-  foo = [|x|
-          5
-          8
-          11]  
-  ix1 = foo.x > 5
-  ix2 = foo.x < 11
-  #ix3 = ix1 & ix2"#);
+  x = [true; false; true; false]
+  #y = ¬x
+
+block
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y})"#);
 
   //println!("{:#?}", parser.parse_tree);
 

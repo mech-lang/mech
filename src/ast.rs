@@ -732,6 +732,10 @@ impl Ast {
         };
         compiled.push(Node::Function{name, children: vec![input.clone()]});
       },
+      parser::Node::Not{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Function{name: "logic/not".chars().collect(), children: result});
+      },
       parser::Node::Function{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();

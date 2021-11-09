@@ -748,52 +748,48 @@ block
 
 test_mech!(logic_and,"
 block
-  #foo = [|x y z|
-           5 6 7
-           8 9 10
-          11 12 13]
+  #foo = [|x|
+           5
+           8
+          11]
 block
   ix1 = #foo.x > 5
-  ix2 = #foo.x < 11
+  ix2 = #foo.x <= 11
   ix3 = ix1 & ix2
-  #test = #foo{ix3, 1}", Value::U8(8));
+  #test = stats/sum(column: #foo{ix3})", Value::U8(19));
 
 test_mech!(logic_and_filter_inline,"
 block
-  ix = #foo.x > 5 & #foo.x < 11
-  #test = #foo{ix, 1}
-
+  #foo = [|x|
+           5
+           8
+           11]
 block
-  #foo = [|x y z|
-           5 6 7
-           8 9 10
-           11 12 13]", Value::U8(8));
+  ix = #foo.x > 5 & #foo.x <= 11
+  #test = stats/sum(column: #foo{ix})", Value::U8(19));
 
 test_mech!(logic_and_composed,"
 block
-  ix = #foo.x > 5 & #foo.x < 11 & #foo.y > 9
-  #test = #foo{ix, 1}
-
+  #foo = [|x|
+           5
+           8
+           9
+           11]
 block
-  #foo = [|x y z|
-           5 6 7
-           8 9 10
-           9 10 11
-           11 12 13]", Value::U8(9));
+  ix = #foo.x > 5 & #foo.x <= 11 & #foo.x >= 9
+  #test = stats/sum(column: #foo{ix})", Value::U8(20));
 
 test_mech!(logic_or,"
+block
+  #foo = [|x|
+           5
+           8
+           11]
 block
   ix1 = #foo.x < 7
   ix2 = #foo.x > 9
   ix3 = ix1 | ix2
-  q = #foo{ix3, 1}
-  #test = q{1,1} + q{2,1}
-
-block
-  #foo = [|x y z|
-           5 6 7
-           8 9 10
-           11 12 13]", Value::U8(16));
+  #test = stats/sum(column: #foo{ix3})", Value::U8(16));
 
 test_mech!(logic_xor,"
 block
@@ -801,7 +797,7 @@ block
   y = [false; true; true; false]
   ix = x xor y
   z = [1;2;3;4]
-  #test = stats/sum(column: z{ix,:})", Value::U8(3));
+  #test = stats/sum(column: z{ix})", Value::U8(3));
 
 test_mech!(logic_xor2,"
 block
@@ -809,7 +805,7 @@ block
   y = [false; true; true; false]
   ix = x ⊕ y
   z = [1;2;3;4]
-  #test = stats/sum(column: z{ix,:})", Value::U8(3));
+  #test = stats/sum(column: z{ix})", Value::U8(3));
 
 test_mech!(logic_xor3,"
 block
@@ -817,25 +813,25 @@ block
   y = [false; true; true; false]
   ix = x ⊻ y
   z = [1;2;3;4]
-  #test = stats/sum(column: z{ix,:})", Value::U8(3));
+  #test = stats/sum(column: z{ix})", Value::U8(3));
 
 test_mech!(logic_not,"
 block
-  x = [1;2;3;4]
-  #test = stats/sum(column: x{#y,:})
+  x = [true; false; true; false]
+  #y = ¬x
 
 block
-  x = [true; false; true; false]
-  #y = !x", Value::U8(6));
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y})", Value::U8(6));
 
 test_mech!(logic_not2,"
 block
-  x = [1;2;3;4]
-  #test = stats/sum(column: x{#y,:})
+  x = [true; false; true; false]
+  #y = !x
 
 block
-  x = [true; false; true; false]
-  #y = ¬x", Value::U8(6));
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y})", Value::U8(6));
 
 // ## Whenever
 

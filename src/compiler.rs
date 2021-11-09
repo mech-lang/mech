@@ -209,6 +209,12 @@ impl Compiler {
           Transformation::NewTable{table_id,..} => {
             Some(table_id)
           }
+          Transformation::Select{table_id,ref indices,..} => {
+            let table_id = table_id.clone();
+            let indices = indices.clone();
+            input.remove(0);
+            Some(table_id)
+          },
           _ => None,
         };
         tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
