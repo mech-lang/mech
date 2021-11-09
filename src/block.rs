@@ -587,9 +587,23 @@ impl Block {
             }
             _ => {return Err(MechErrorKind::GenericError(6345));},
           }
+        } else if *name == *LOGIC_NOT {
+          let arg_dims = self.get_arg_dims(&arguments)?;
+          match &arg_dims[0] {
+            TableShape::Column(rows) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
+              match (&argument_columns[0], &out_column) {
+                ((_,Column::Bool(arg)), Column::Bool(out)) => {
+                  self.plan.push(NotV{arg: arg.clone(), out: out.clone() });
+                }
+                _ => {return Err(MechErrorKind::GenericError(1961));},
+              }
+            }
+            _ => {return Err(MechErrorKind::GenericError(1962));},
+          }
         } else if *name == *LOGIC_AND ||
                   *name == *LOGIC_OR ||
-                  *name == *LOGIC_NOT ||
                   *name == *LOGIC_XOR 
         {
           let arg_dims = self.get_arg_dims(&arguments)?;
@@ -600,10 +614,8 @@ impl Block {
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
                   if *name == *LOGIC_AND { self.plan.push(AndVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
-                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *LOGIC_OR { self.plan.push(OrVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *LOGIC_XOR { self.plan.push(XorVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
                 _ => {return Err(MechErrorKind::GenericError(1340));},
               }
@@ -765,6 +777,14 @@ impl Block {
                   u8_cols.push(colv.get_u8().unwrap().clone());
                 }
                 let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
+                self.plan.push(fxn);
+              }
+              Column::Bool(ref out_c) => {
+                let mut bool_cols:Vec<ColumnV<bool>> = vec![];
+                for colv in argument_columns {
+                  bool_cols.push(colv.get_bool().unwrap().clone());
+                }
+                let fxn = ConcatV::<bool>{args: bool_cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
               _ => {return Err(MechErrorKind::GenericError(6361));},
