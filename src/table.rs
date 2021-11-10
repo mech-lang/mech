@@ -257,30 +257,34 @@ impl Table {
     }
   }
 
-  pub fn get_column(&self, col: &TableIndex) -> Option<Column> {
+  pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechErrorKind> {
+
     match col {
       TableIndex::Alias(alias) => {
         match self.column_alias_to_ix.get(&alias) {
-          Some(ix) => Some(self.data[*ix as usize].clone()),
-          None => None,
+          Some(ix) => Ok(self.data[*ix as usize].clone()),
+          None => Err(MechErrorKind::GenericError(2821)),
         }
       }
+      TableIndex::Index(0) => {
+        Err(MechErrorKind::GenericError(2825))
+      }
       TableIndex::Index(ix) => {
-        if *ix < self.cols { 
-          Some(self.data[*ix].clone())
+        if *ix <= self.cols { 
+          Ok(self.data[*ix-1].clone())
         } else {
-          None
+          Err(MechErrorKind::GenericError(2822))
         }
       }
       TableIndex::All => {
         if self.cols == 1 {
-          Some(self.data[0].clone())
+          Ok(self.data[0].clone())
         } else {
-          None
+          Err(MechErrorKind::GenericError(2823))
         }
       }
       TableIndex::Table(_) |
-      TableIndex::None => None, 
+      TableIndex::None => Err(MechErrorKind::GenericError(2824)), 
     }
   }
 

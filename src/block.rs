@@ -198,12 +198,8 @@ impl Block {
     match (row,col) {
       (TableIndex::Index(ix),TableIndex::None) => {
         let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
-        match table_brrw.get_column(&TableIndex::Index(ix_col)) {
-          Some(column) => Ok((*arg_name,column.clone())),
-          None => {
-            Err(MechErrorKind::MissingColumn((*table_id,*col)))
-          }
-        }
+        let col = table_brrw.get_column(&TableIndex::Index(ix_col + 1))?;
+        Ok((*arg_name,col.clone()))
       }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -227,13 +223,13 @@ impl Block {
           }
         }
       }
+      (TableIndex::All, TableIndex::Index(col_ix)) => {
+        let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
+        Ok((*arg_name,col.clone()))
+      },
       _ => {
-        match table_brrw.get_column(&col) {
-          Some(column) => Ok((*arg_name,column.clone())),
-          None => {
-            Err(MechErrorKind::MissingColumn((*table_id,*col)))
-          }
-        }
+        let col = table_brrw.get_column(&col)?;
+        Ok((*arg_name,col.clone()))
       }
     }
   }
@@ -272,6 +268,7 @@ impl Block {
       let t = table.borrow();
       let dims = match (row, column) {
         (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+        (TableIndex::All,TableIndex::Index(_)) |
         (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
         (TableIndex::Index(_),TableIndex::None) => (1,1),
         _ => {return Err(MechErrorKind::GenericError(6384));},
@@ -357,8 +354,10 @@ impl Block {
               _ => {return Err(MechErrorKind::GenericError(6383));},
             }
           }
+          // Select a column by row index
+          (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
-          (TableIndex::All, TableIndex::Alias(alias)) => {
+          (TableIndex::All, TableIndex::Alias(_)) => {
             let (_, arg_col) = self.get_arg_column(&(0,*table_id,row,column))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
@@ -404,8 +403,8 @@ impl Block {
                 let dest_table_brrw = dest_table.borrow();
                 // Copy each column because it's (:,:) -> (:,:)
                 for col in 0..src_table_brrw.cols {
-                  let src_vector = src_table_brrw.get_column_unchecked(col);
-                  let dest_vector = dest_table_brrw.get_column_unchecked(col);
+                  let src_vector = src_table_brrw.get_column(&TableIndex::Index(col+1))?;
+                  let dest_vector = dest_table_brrw.get_column(&TableIndex::Index(col+1))?;
                   match (&src_vector, &dest_vector) {
                     (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
                     _ => {return Err(MechErrorKind::GenericError(1235));}, // TODO Fill in correct dimensions
@@ -532,7 +531,7 @@ impl Block {
 
               for (col_ix,lhs_column) in lhs_columns.iter().enumerate() {
                 out_brrw.set_col_kind(col_ix, ValueKind::U8);
-                let out_col = out_brrw.get_column_unchecked(col_ix);
+                let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                 match (lhs_column,&rhs_column,out_col) {
                   (Column::U8(lhs), (_,Column::U8(rhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -552,7 +551,7 @@ impl Block {
 
               for (col_ix,rhs_column) in rhs_columns.iter().enumerate() {
                 out_brrw.set_col_kind(col_ix, ValueKind::U8);
-                let out_col = out_brrw.get_column_unchecked(col_ix);
+                let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                 match (rhs_column,&lhs_column,out_col) {
                   (Column::U8(rhs), (_,Column::U8(lhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -577,7 +576,7 @@ impl Block {
 
               for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
                 out_brrw.set_col_kind(col_ix, ValueKind::U8);
-                let out_col = out_brrw.get_column_unchecked(col_ix);
+                let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                 match (lhs_rhs,out_col) {
                   ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -803,10 +802,8 @@ impl Block {
             let mut argument_columns = vec![];       
             for table in &arg_tables {
               let table_brrw = table.borrow();
-              match table_brrw.get_column(&TableIndex::Index(ix)) {
-                Some(column) => argument_columns.push(column.clone()),
-                None => {return Err(MechErrorKind::MissingColumn((TableId::Local(table_brrw.id),TableIndex::Index(ix))));   } // TODO Is it always a local table here?
-              }
+              let column = table_brrw.get_column(&TableIndex::Index(ix+1))?;
+              argument_columns.push(column.clone());
             }
 
             match out_col {
@@ -839,6 +836,7 @@ impl Block {
             
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
+          println!("HORZCAT");
           // Get all of the tables
           let mut arg_tables = vec![];
           let mut rows = 0;
