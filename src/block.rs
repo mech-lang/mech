@@ -68,6 +68,7 @@ lazy_static! {
   static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
   static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
   static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
+  static ref MATH_NEGATE: u64 = hash_string("math/negate");
   static ref TABLE_RANGE: u64 = hash_string("table/range");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
@@ -587,6 +588,31 @@ impl Block {
             }
             _ => {return Err(MechErrorKind::GenericError(6345));},
           }
+        } else if *name == *MATH_NEGATE {
+          let arg_dims = self.get_arg_dims(&arguments)?;
+          match &arg_dims[0] {
+            TableShape::Column(rows) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, *rows, ValueKind::I8)?;
+              match (&argument_columns[0], &out_column) {
+                ((_,Column::I8(arg)), Column::I8(out)) => {
+                  self.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
+                }
+                _ => {return Err(MechErrorKind::GenericError(1961));},
+              }
+            }
+            TableShape::Scalar => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, 1, ValueKind::I8)?;
+              match (&argument_columns[0], &out_column) {
+                ((_,Column::I8(arg)), Column::I8(out)) => {
+                  self.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
+                }
+                _ => {return Err(MechErrorKind::GenericError(1961));},
+              }
+            }
+            _ => {return Err(MechErrorKind::GenericError(1962));},
+          }
         } else if *name == *LOGIC_NOT {
           let arg_dims = self.get_arg_dims(&arguments)?;
           match &arg_dims[0] {
@@ -616,6 +642,18 @@ impl Block {
                   if *name == *LOGIC_AND { self.plan.push(AndVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
                   else if *name == *LOGIC_OR { self.plan.push(OrVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *LOGIC_XOR { self.plan.push(XorVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                }
+                _ => {return Err(MechErrorKind::GenericError(1340));},
+              }
+            }
+            (TableShape::Scalar, TableShape::Scalar) => {
+              let mut argument_columns = self.get_arg_columns(arguments)?;
+              let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
+              match (&argument_columns[0], &argument_columns[1], &out_column) {
+                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                  if *name == *LOGIC_AND { self.plan.push(AndSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
+                  else if *name == *LOGIC_OR { self.plan.push(OrSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *LOGIC_XOR { self.plan.push(XorSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
                 _ => {return Err(MechErrorKind::GenericError(1340));},
               }
