@@ -176,6 +176,10 @@ impl Block {
         let (row,col) = table_brrw.index_to_subscript(linear_ix - 1)?;
         Ok((*arg_name,arg_col,row))
       }
+      (arg_name,table_id,TableIndex::Index(row),TableIndex::Index(_)) => {
+        let table = self.get_table(table_id)?;
+        Ok((*arg_name,arg_col,row-1))
+      }
       (arg_name,table_id,TableIndex::All,_) => {
         Ok((*arg_name,arg_col,0))
       }
@@ -272,6 +276,7 @@ impl Block {
         (TableIndex::All,TableIndex::Index(_)) |
         (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
         (TableIndex::Index(_),TableIndex::None) => (1,1),
+        (TableIndex::Index(_),TableIndex::Index(_)) => (1,1),
         _ => {return Err(MechErrorKind::GenericError(6384));},
       };
       arg_dims.push(dims);
@@ -380,13 +385,16 @@ impl Block {
           // Select a number of specific elements by numerical index or lorgical index
           (TableIndex::Table(ix_table_id), TableIndex::None) => {
             let ix_table = self.get_table(&ix_table_id)?;
-            let ix_column = ix_table.borrow().get_column_unchecked(0);
+            let ix_col = ix_table.borrow().get_column_unchecked(0);
             
             let src_brrw = src_table.borrow();
             let mut arg_col = src_brrw.get_column_unchecked(0);
 
-            match (&arg_col, &ix_column) {
-              (Column::U8(arg), Column::Bool(ix)) => self.plan.push(Function::CopyVBU8((arg.clone(),ix.clone(),out_table.clone()))),
+            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
+
+            match (&arg_col, &ix_col, &out_col) {
+              (Column::U8(arg), Column::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+              (Column::U8(arg), Column::U8(ix), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               _ => {return Err(MechErrorKind::GenericError(6380));},
             }
           }
@@ -515,7 +523,7 @@ impl Block {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   //else if *name == *MATH_DIVIDE { Function::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                   //else if *name == *MATH_MULTIPLY { Function::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *MATH_SUBTRACT { Function::SubtractVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_SUBTRACT { self.plan.push(SubtractVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   //else if *name == *MATH_EXPONENT { Function::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                 }
                 _ => {return Err(MechErrorKind::GenericError(1239));},
