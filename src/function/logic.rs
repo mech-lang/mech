@@ -20,6 +20,20 @@ impl MechFunction for AndVV {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// And Scalar : Scalar
+#[derive(Debug)]
+pub struct AndSS
+{
+  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+}
+impl MechFunction for AndSS 
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] && (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Or Vector : Vector
 #[derive(Debug)]
 pub struct OrVV {
@@ -33,7 +47,21 @@ impl MechFunction for OrVV {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Or Vector : Vector
+// Or Scalar : Scalar
+#[derive(Debug)]
+pub struct OrSS
+{
+  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+}
+impl MechFunction for OrSS 
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] || (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Xor Vector : Vector
 #[derive(Debug)]
 pub struct XorVV {
   pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
@@ -42,6 +70,20 @@ pub struct XorVV {
 impl MechFunction for XorVV {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs ^ *rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Xor Scalar : Scalar
+#[derive(Debug)]
+pub struct XorSS
+{
+  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+}
+impl MechFunction for XorSS 
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] ^ (self.rhs.borrow())[0];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -55,6 +97,20 @@ pub struct NotV {
 impl MechFunction for NotV {
   fn solve(&mut self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = !(*arg)); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Not Scalar
+#[derive(Debug)]
+pub struct NotS
+{
+  pub arg: Arg<bool>, pub out: Out<bool>
+}
+impl MechFunction for NotS 
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = !(self.arg.borrow())[0];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
