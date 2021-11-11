@@ -270,7 +270,7 @@ block
 test_mech!(math_negation_double_negative,"
 block
   y = -13
-  #test = -y", Value::U8(13));
+  #test = -y", Value::I8(13));
 
 test_mech!(math_parenthetical_expression_constants,"
 block

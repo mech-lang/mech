@@ -12,8 +12,9 @@ fn main() {
 
   parser.parse(r#"
 block
-  z = 1 + 2
-  #a = z * 5"#);
+  x = true
+  y = false
+  #test = x & y"#);
 
   //println!("{:#?}", parser.parse_tree);
 

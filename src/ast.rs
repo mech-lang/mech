@@ -736,6 +736,10 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::Function{name: "logic/not".chars().collect(), children: result});
       },
+      parser::Node::Negation{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::Function{name: "math/negate".chars().collect(), children: result});
+      },
       parser::Node::Function{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
