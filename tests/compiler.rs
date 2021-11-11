@@ -44,13 +44,6 @@ macro_rules! test_mech {
 test_mech!(constant_basic, "block
   #test = 5",Value::U8(5));
 
-test_mech!(constant_empty, "
-block
-  x = [1 2
-       4 _
-       _ 7]
-  #test = stats/sum(column: x{:,1})",Value::U8(5));
-
   test_mech!(constant_empty_table, "
 block
   #test = _", Value::Empty);
@@ -148,6 +141,8 @@ test_mech!(math_exponent,"#test = 3 ^ 4", Value::U8(81));
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::U8(19));
 
 test_mech!(math_constant_collision,"#test = 123 + 1", Value::U8(124));
+
+test_mech!(math_subtract_columns,"#test = stats/sum(column: [5;6;7] - [1;2;3])", Value::U8(12));
 
 test_mech!(math_multiple_variable_graph,"block
   a = z * 5
@@ -304,8 +299,8 @@ block
 test_mech!(subscript_scan,"
 block
   x = 10:20
-  z = 3:5
-  #test = x{z, :}", Value::U8(12));
+  z = 3
+  #test = x{z}", Value::U8(12));
 
 test_mech!(subscript_single_horz,"
 block
@@ -1048,13 +1043,13 @@ block
 
 test_mech!(indexing_global,r#"
 block
-  x = [1;2;3;4]
-  #test = stats/sum(column: x{#y,:})
-
-block
   x = [true; false; true; false]
   y = [false; true; true; false]
-  #y = x xor y"#, Value::U8(3));
+  #y = x xor y
+
+block
+  x = [1;2;3;4]
+  #test = stats/sum(column: x{#y})"#, Value::U8(3));
 
 // ## Functions
 

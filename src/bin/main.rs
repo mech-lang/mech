@@ -12,9 +12,9 @@ fn main() {
 
   parser.parse(r#"
 block
-  x = true
-  y = false
-  #test = x & y"#);
+  x = 3:6
+  y = 10:12
+  #test = x{1,1} + y{3,1}"#);
 
   //println!("{:#?}", parser.parse_tree);
 
