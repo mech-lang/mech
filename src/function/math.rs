@@ -93,6 +93,22 @@ where T: std::ops::Add<Output = T> + Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Subtract Vector : Vector
+#[derive(Debug)]
+pub struct SubtractVV<T> 
+where T: std::ops::Sub<Output = T> + Copy + Debug
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+}
+impl<T> MechFunction for SubtractVV<T> 
+where T: std::ops::Sub<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs - *rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add Scalar : Scalar
 #[derive(Debug)]
 pub struct AddSS<T> 
