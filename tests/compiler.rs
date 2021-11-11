@@ -151,15 +151,15 @@ test_mech!(math_constant_collision,"#test = 123 + 1", Value::U8(124));
 
 test_mech!(math_multiple_variable_graph,"block
   a = z * 5
-  #test = d * z + a
   d = 9 * z
-  z = 5", Value::U8(250));
+  z = 5
+  #test = d * z + a", Value::U8(250));
 
 test_mech!(math_multiple_variable_graph_new_ordering,"block
-  #test = d * z + a
   a = z * 5
   z = 5
-  d = 9 * z", Value::U8(250));
+  d = 9 * z
+  #test = d * z + a", Value::U8(250));
 
   test_mech!(math_add_columns_alias,"
 block

@@ -12,12 +12,8 @@ fn main() {
 
   parser.parse(r#"
 block
-  x = [1 2
-       4 5]
-  y = [10 11
-       13 14]
-  z = x + y
-  #test = z{1} + z{2} + z{3} + z{4}"#);
+  z = 1 + 2
+  #a = z * 5"#);
 
   //println!("{:#?}", parser.parse_tree);
 

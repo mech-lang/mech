@@ -69,7 +69,9 @@ impl Compiler {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
       let mut block = Block::new();
-      let tfms = self.compile_node(&b)?;
+      let mut tfms = self.compile_node(&b)?;
+      let tfms_before = tfms.clone();
+      tfms.sort();
       for tfm in tfms {
         block.add_tfm(tfm);
       }
