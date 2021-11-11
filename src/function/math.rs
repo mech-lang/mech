@@ -127,3 +127,37 @@ where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Negate Vector
+#[derive(Debug)]
+pub struct NegateS<T> 
+where T: std::ops::Neg<Output = T> + Copy + Debug
+{
+  pub arg: Arg<T>, pub out: Out<T>
+}
+
+impl<T> MechFunction for NegateS<T> 
+where T: std::ops::Neg<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = -((self.arg.borrow())[0]);
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Negate Vector
+#[derive(Debug)]
+pub struct NegateV<T> 
+where T: std::ops::Neg<Output = T> + Copy + Debug
+{
+  pub arg: Arg<T>, pub out: Out<T>
+}
+
+impl<T> MechFunction for NegateV<T> 
+where T: std::ops::Neg<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(*arg)); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
