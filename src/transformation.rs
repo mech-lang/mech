@@ -1,7 +1,8 @@
-use crate::{Column, ColumnV, humanize, ValueKind, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;
+use std::cmp::Ordering;
 
 use rayon::prelude::*;
 use std::thread;
@@ -41,5 +42,52 @@ impl fmt::Debug for Transformation {
       _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())
+  }
+}
+
+impl Ord for Transformation {
+  fn cmp(&self, other: &Self) -> Ordering {
+    Ordering::Equal
+  }
+}
+
+impl PartialOrd for Transformation {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    match (self,other) {
+      (_,Transformation::NewTable{..}) => Some(Ordering::Greater),
+      (Transformation::NewTable{..},_) => Some(Ordering::Less),
+      (_,Transformation::TableAlias{..}) => Some(Ordering::Greater),
+      (Transformation::TableAlias{..},_) => Some(Ordering::Less),
+      (_,Transformation::NumberLiteral{..}) => Some(Ordering::Greater),
+      (Transformation::NumberLiteral{..},_) => Some(Ordering::Less),
+      (Transformation::Function{name, arguments, out},
+       Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
+        let (right_out_id,_,_) = out2;
+        let (left_out_id,_,_) = out;
+        // left function comes second because it consumes right fxn output
+        for (_,left_id,_,_) in arguments {
+          if left_id == right_out_id {
+            return Some(Ordering::Greater);
+          }
+        }
+        // left function comes first because it is consumed by right function
+        for (_,right_id,_,_) in arguments2 {
+          if right_id == left_out_id {
+            return Some(Ordering::Less);
+          }
+        }
+        // fxns are unrelated
+        None
+      }
+      _ => None,
+    }
+  }
+}
+
+impl Eq for Transformation { }
+
+impl PartialEq for Transformation {
+  fn eq(&self, other: &Self) -> bool {
+    hash_string(&format!("{:?}",self)) == hash_string(&format!("{:?}",other))
   }
 }
