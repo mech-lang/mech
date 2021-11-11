@@ -60,6 +60,7 @@ pub enum Column {
   U8(ColumnV<u8>),
   U16(ColumnV<u16>),
   U64(ColumnV<u64>),
+  I8(ColumnV<i8>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
   Reference((Reference,(IndexColumn,IndexColumn))),
@@ -107,6 +108,7 @@ impl Column {
     match self {
       Column::U8(col) => col.borrow().len(),
       Column::U64(col) => col.borrow().len(),
+      Column::I8(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().len(),
       Column::String(col) => col.borrow().len(),
@@ -122,6 +124,7 @@ impl Column {
   pub fn logical_len(&self) -> usize {
     match self {
       Column::U8(col) => col.borrow().len(),
+      Column::I8(col) => col.borrow().len(),
       Column::U64(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
@@ -139,6 +142,7 @@ impl Column {
     match self {
       Column::F32(_) => ValueKind::F32,
       Column::U8(_) => ValueKind::U8,
+      Column::I8(_) => ValueKind::I8,
       Column::U64(_) => ValueKind::U64,
       Column::U16(_) => ValueKind::U16,
       Column::Bool(_) => ValueKind::Bool,
