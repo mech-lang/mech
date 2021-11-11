@@ -64,7 +64,6 @@ pub enum Function {
   CopySSU8((Arg<u8>,usize,Out<u8>)),
   CopySSString((Arg<MechString>,usize,Out<MechString>)),
   CopyTable((ArgTable,OutTable)),
-  CopyVBU8((Arg<u8>, Arg<bool>, OutTable)),
   RangeU8((Arg<u8>,Arg<u8>,OutTable)),
   Null,
 }
@@ -131,20 +130,6 @@ impl MechFunction for Function {
       Function::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       Function::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
       Function::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
-      Function::CopyVBU8((arg, ix, out)) => { 
-        let filtered: Vec<u8>  = arg.borrow().iter().zip(ix.borrow().iter()).filter_map(|(x,ix)| if *ix {Some(*x)} else {None}).collect::<Vec<u8>>();
-        let mut out_brrw = out.borrow_mut();
-        let cols = out_brrw.cols;
-        let rows = filtered.len();
-        if rows > out_brrw.rows {
-          out_brrw.resize(rows,cols)
-        }
-        out_brrw.set_col_kind(0, ValueKind::U8);
-        for row in 0..filtered.len() {
-          let value = filtered[row];
-          out_brrw.set(row,0,Value::U8(value));
-        }
-      }
       Function::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
       Function::CopyTable((arg,out)) => {
         let mut out_brrw = out.borrow_mut();
