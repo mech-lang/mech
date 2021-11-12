@@ -5,8 +5,9 @@ extern crate mech_core;
 use mech_syntax::parser::Parser;
 use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
-
-use mech_core::{hash_string, Core, TableIndex, Value};
+use std::cell::RefCell;
+use std::rc::Rc;
+use mech_core::{hash_str, Core, TableIndex, Value};
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -24,7 +25,7 @@ macro_rules! test_mech {
       let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
       
       for block in blocks {
-        core.insert_block(block);
+        core.insert_block(Rc::new(RefCell::new(block)));
       }
 
       let test: Value = $test;
@@ -102,13 +103,13 @@ test_mech!(table_define_program, "# A Working Program
 
 test_mech!(table_multi_line_inline, "
 block
-  #test = #x.x + #x.y + #x.z
-block
   #x = [
     x: 1
     y: 2
     z: 3
-  ]", Value::U8(6));
+  ]
+block
+  #test = #x.x + #x.y + #x.z", Value::U8(6));
 
 // ## Select
 

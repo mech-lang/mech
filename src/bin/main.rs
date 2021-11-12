@@ -3,6 +3,9 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::Core;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 fn main() {
 
   let mut parser = Parser::new();
@@ -12,9 +15,9 @@ fn main() {
 
   parser.parse(r#"
 block
-  x = 3:6
-  y = 10:12
-  #test = x{1,1} + y{3,1}"#);
+  #test = #x
+block
+  #x = 123"#);
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -25,7 +28,7 @@ block
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
 
   for block in blocks {
-    core.insert_block(block.clone());
+    core.insert_block(Rc::new(RefCell::new(block.clone())));
   }
   
   /*for t in blocks {

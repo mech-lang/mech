@@ -19,8 +19,8 @@ use std::sync::Arc;
 use std::mem;
 
 lazy_static! {
-  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
-  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
+  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
+  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
 }
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
@@ -65,7 +65,7 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Result<Vec<Block>,MechErrorKind> {
+  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Result<Vec<Block>,MechError> {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
       let mut block = Block::new();
@@ -80,7 +80,7 @@ impl Compiler {
     Ok(blocks)
   }
 
-  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Result<Vec<Transformation>,MechErrorKind> {
+  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Result<Vec<Transformation>,MechError> {
     let mut compiled = Vec::new();
     for node in nodes {
       let mut result = self.compile_node(node)?;
@@ -89,29 +89,29 @@ impl Compiler {
     Ok(compiled)
   }
 
-  pub fn compile_node(&mut self, node: &Node) -> Result<Vec<Transformation>,MechErrorKind> {
+  pub fn compile_node(&mut self, node: &Node) -> Result<Vec<Transformation>,MechError> {
     let mut tfms = vec![];
     match node {
       Node::Identifier{name, id} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
       Node::Empty => {
-        let table_id = TableId::Local(hash_string("_"));
+        let table_id = TableId::Local(hash_str("_"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Empty});
       },
       Node::True => {
-        let table_id = TableId::Local(hash_string("true"));
+        let table_id = TableId::Local(hash_str("true"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(true)});
       },
       Node::False => {
-        let table_id = TableId::Local(hash_string("false"));
+        let table_id = TableId::Local(hash_str("false"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(false)});
       },
       Node::String{text} => {
-        let table_id = TableId::Local(hash_string(&format!("string: {:?}", text)));
+        let table_id = TableId::Local(hash_str(&format!("string: {:?}", text)));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(text.to_vec())});
       },
@@ -125,7 +125,7 @@ impl Compiler {
           9..=16 => NumberLiteralKind::U128,
           _ => NumberLiteralKind::U128, // TODO Error
         };*/
-        let table_id = TableId::Local(hash_string(&format!("{:?}{:?}", kind, bytes_vec)));
+        let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes_vec)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
       },
@@ -251,7 +251,7 @@ impl Compiler {
           arg_tfms.append(&mut result);
         }
         let name_hash = hash_chars(name);
-        let id = hash_string(&format!("{:?}{:?}", name, arg_tfms));
+        let id = hash_str(&format!("{:?}{:?}", name, arg_tfms));
         tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         tfms.append(&mut arg_tfms);
         tfms.push(Transformation::Function{
@@ -297,7 +297,7 @@ impl Compiler {
         tfms.append(&mut a_tfms);
       }
       Node::AnonymousTableDefine{children} => {
-        let anon_table_id = hash_string(&format!("anonymous-table: {:?}",children));
+        let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
         let mut column_aliases = Vec::new();
@@ -357,7 +357,7 @@ impl Compiler {
       },
       Node::TableRow{children} => {
         if children.len() > 1 {
-          let row_id = hash_string(&format!("horzcat:{:?}", children));
+          let row_id = hash_str(&format!("horzcat:{:?}", children));
           let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
           let mut result_tfms = vec![];
           for child in children {
@@ -413,7 +413,7 @@ impl Compiler {
                           indices.push(TableIndex::All);
                         }
                         Node::WheneverIndex{..} => {
-                          let id = hash_string("~");
+                          let id = hash_str("~");
                           if indices.len() == 2 && indices[0] == TableIndex::All {
                             indices[0] = TableIndex::Table(TableId::Local(id));
                           } else {
@@ -465,7 +465,7 @@ impl Compiler {
                     indices.push(TableIndex::All);
                   }
                   Node::WheneverIndex{..} => {
-                    let id = hash_string("~");
+                    let id = hash_str("~");
                     if indices.len() == 2 && indices[0] == TableIndex::All {
                       indices[0] = TableIndex::Table(TableId::Local(id));
                     } else {
@@ -520,7 +520,7 @@ impl Compiler {
           }
         }
         //all_indices.reverse();
-        let out_id = hash_string(&format!("{:?}{:?}", *id, all_indices));
+        let out_id = hash_str(&format!("{:?}{:?}", *id, all_indices));
         if all_indices.len() > 1 {
           tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
           tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
