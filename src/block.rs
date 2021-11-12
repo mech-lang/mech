@@ -298,7 +298,7 @@ impl Block {
     match self.state {
       BlockState::Unsatisfied => {
         self.pending_transformations.push(tfm.clone());
-        Err(MechError::TransformationPending(tfm))
+        Err(MechError::GenericError(7372))
       }
       _ => {
         match self.compile_tfm(tfm.clone()) {

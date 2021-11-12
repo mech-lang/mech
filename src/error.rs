@@ -9,7 +9,7 @@ use crate::{TableIndex, ValueKind, TableId, Transformation};
 type Rows = usize;
 type Cols = usize;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechError {
   MissingTable(TableId),                            // TableId of missing table
   DimensionMismatch(((Rows,Cols),(Rows,Cols))),     // Argument dimensions are mismatched ((row,col),(row,col))
@@ -20,7 +20,7 @@ pub enum MechError {
   //DuplicateAlias(u64),                            // Alias ID
   //DomainMismatch(u64, u64),                       // domain IDs (target vs actual)
   MissingFunction(u64),                             // ID of missing function
-  TransformationPending(Transformation),            // Block is unsatisfied so the transformation is not added
+  //TransformationPending(Transformation),            // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
   GenericError(usize),
 }

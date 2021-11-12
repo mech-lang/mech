@@ -12,12 +12,15 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub type BlockRef = Rc<RefCell<Block>>;
+
 #[derive(Clone, Debug)]
 pub struct Core {
-  blocks: Vec<Rc<RefCell<Block>>>,
-  unsatisfied_blocks: Vec<Rc<RefCell<Block>>>,
+  blocks: Vec<BlockRef>,
+  unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
-  errrors: HashMap<MechError,HashSet<BlockId>>,
+  errors: HashMap<MechError,Vec<BlockRef>>,
+  potentially_ready: Vec<BlockRef>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
@@ -28,13 +31,15 @@ impl Core {
       blocks: Vec::new(),
       unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
-      errrors: HashMap::new(),
+      errors: HashMap::new(),
+      potentially_ready: Vec::new(),
       schedules: HashMap::new(),
     }
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),MechError> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
     let mut registers = Vec::new();
+    let mut block_refs = Vec::new();
     for change in txn {
       match change {
         Change::Set((table_id, adds)) => {
@@ -61,6 +66,12 @@ impl Core {
         Change::NewTable{table_id, rows, columns} => {
           let table = Table::new(*table_id,*rows,*columns);
           self.database.borrow_mut().insert_table(table);
+          match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
+            Some(mut ublocks) => {
+              block_refs.append(&mut ublocks);
+            }
+            None => (),
+          }
         }
         Change::ColumnAlias{table_id, column_ix, column_alias} => {
           match self.database.borrow_mut().get_table_by_id(table_id) {
@@ -72,7 +83,7 @@ impl Core {
               }    
               table_brrw.set_column_alias(*column_ix,*column_alias);     
             }
-            _ => ()
+            _ => {return Err(MechError::GenericError(9233));}
           }
         }
       }
@@ -80,7 +91,7 @@ impl Core {
     for register in registers {
       self.step(&register);
     }
-    Ok(())
+    Ok(block_refs)
   }
 
   pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
@@ -101,30 +112,38 @@ impl Core {
     }
   }
 
-  pub fn insert_block(&mut self, mut block: Block) -> Result<(),MechError> {
-    block.global_database = self.database.clone();
+  pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<(),MechError> {
+    let block_ref_c = block_ref.clone();
+    let mut block_brrw = block_ref.borrow_mut();
+    block_brrw.global_database = self.database.clone();
+    let mut potentially_ready = Vec::new();
     // Processing a transaction can lead to subsequent changes
     // that need to be processed.
     loop {
-      let changes = block.changes.clone();
-      block.changes.clear();
-      self.process_transaction(&changes);
-      block.ready();
-      if block.changes.len() == 0 {
+      let changes = block_brrw.changes.clone();
+      block_brrw.changes.clear();
+      let mut pr_blocks = self.process_transaction(&changes)?;
+      potentially_ready.append(&mut pr_blocks);
+      block_brrw.ready();
+      if block_brrw.changes.len() == 0 {
         break;
       }
     }
     // try to satisfy the block
-    match block.ready() {
+    match block_brrw.ready() {
       true => {
-        block.gen_id();
-        block.solve();
-        self.blocks.push(Rc::new(RefCell::new(block)));
+        block_brrw.gen_id();
+        block_brrw.solve();
+        self.blocks.push(block_ref_c.clone());
+        for pr_block in potentially_ready {
+          self.insert_block(pr_block);
+        }
         Ok(())
       }
       false => {
-        let (mech_error,_) = block.unsatisfied_transformation.as_ref().unwrap();
-        self.unsatisfied_blocks.push(Rc::new(RefCell::new(block)));
+        let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+        let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
+        blocks_with_errors.push(block_ref_c.clone());
         Err(MechError::GenericError(8963))
       },
     }
