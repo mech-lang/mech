@@ -15,9 +15,12 @@ fn main() {
 
   parser.parse(r#"
 block
-  #test = #x
+  #test = 5
+
 block
-  #x = 123"#);
+  x = 1
+  x = 3
+  #test := x"#);
 
   //println!("{:#?}", parser.parse_tree);
 
