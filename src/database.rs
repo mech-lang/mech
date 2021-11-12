@@ -1,4 +1,4 @@
-use crate::{Table, BoxPrinter, humanize, hash_str, Value, Column};
+use crate::*;
 use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -41,8 +41,11 @@ impl Database {
     }
   }
 
-  pub fn insert_alias(&mut self, alias: u64, table_id: u64) -> Option<u64> {
-    self.table_alias_to_id.insert(alias, table_id)
+  pub fn insert_alias(&mut self, alias: u64, table_id: u64) -> Result<u64,MechError> {
+    match self.table_alias_to_id.try_insert(alias, table_id) {
+      Err(_) => Err(MechError::GenericError(6333)),
+      Ok(x) => Ok(*x), 
+    }
   }
 
   pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {

@@ -327,7 +327,7 @@ impl Block {
         } 
       },
       Transformation::TableAlias{table_id, alias} => {
-        self.tables.insert_alias(*alias, *table_id.unwrap());
+        self.tables.insert_alias(*alias, *table_id.unwrap())?;
       },
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();

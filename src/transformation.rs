@@ -31,7 +31,7 @@ impl fmt::Debug for Transformation {
       Transformation::NewTable{table_id, rows, columns} =>  write!(f,"NewTable(table_id: {:?}, rows: {} cols: {})",table_id,rows,columns)?,
       Transformation::Identifier{name,id} => write!(f,"Identifier(name: {:?}, id: {})",name,humanize(id))?,
       Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",kind,bytes)?,
-      Transformation::TableAlias{table_id,alias} => write!(f,"Alias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
+      Transformation::TableAlias{table_id,alias} => write!(f,"TableAlias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
       Transformation::Select{table_id,indices,out} => write!(f,"Select(table_id: {:#?}, indices: {:#?}, out: {:#?})",table_id,indices,out)?,
       Transformation::Set{src_id, src_indices,dest_id,dest_indices} => write!(f,"Set(src_id: {:?}, src_indices: {:?},\n    dest_id: {:?}, dest_indices: {:?})",src_id,src_indices,dest_id,dest_indices)?,
       Transformation::Function{name,arguments,out} => {
