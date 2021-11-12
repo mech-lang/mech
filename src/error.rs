@@ -6,20 +6,11 @@
 
 use crate::{TableIndex, ValueKind, TableId, Transformation};
 
-// ## The Error Struct
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MechError { 
-  pub block_id: u64,
-  pub step_text: String,
-  pub error_type: MechErrorKind,
-}
-
 type Rows = usize;
 type Cols = usize;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum MechErrorKind {
+pub enum MechError {
   MissingTable(TableId),                            // TableId of missing table
   DimensionMismatch(((Rows,Cols),(Rows,Cols))),     // Argument dimensions are mismatched ((row,col),(row,col))
   MissingColumn((TableId,TableIndex)),              // The identified table is missing a needed column
