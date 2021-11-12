@@ -7,16 +7,17 @@
 // when a steady state is reached, or an iteration limit is reached (whichever comes first). The
 // core then waits for further transactions.
 
-use crate::{Database, Change, Block, BlockState, Table, Transaction};
-use hashbrown::HashMap;
+use crate::*;
+use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
 #[derive(Clone, Debug)]
 pub struct Core {
   blocks: Vec<Rc<RefCell<Block>>>,
-  unsatisfied_blocks: Vec<Block>,
+  unsatisfied_blocks: Vec<Rc<RefCell<Block>>>,
   database: Rc<RefCell<Database>>,
+  errrors: HashMap<MechError,HashSet<BlockId>>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
@@ -27,11 +28,12 @@ impl Core {
       blocks: Vec::new(),
       unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
+      errrors: HashMap::new(),
       schedules: HashMap::new(),
     }
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),()> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(),MechError> {
     let mut registers = Vec::new();
     for change in txn {
       match change {
@@ -42,7 +44,7 @@ impl Core {
                 match table.borrow().set(*row, *col, val.clone()) {
                   Err(_) => {
                     // Index out of bounds.
-                    return Err(());
+                    return Err(MechError::GenericError(9231));
                   }
                   _ => {
                     registers.push((*table_id,*row,*col));
@@ -52,7 +54,7 @@ impl Core {
             }
             _ => {
               // Table doesn't exist
-              return Err(());
+              return Err(MechError::GenericError(9232));
             }
           }
         }
@@ -99,7 +101,7 @@ impl Core {
     }
   }
 
-  pub fn insert_block(&mut self, mut block: Block) {
+  pub fn insert_block(&mut self, mut block: Block) -> Result<(),MechError> {
     block.global_database = self.database.clone();
     // Processing a transaction can lead to subsequent changes
     // that need to be processed.
@@ -118,9 +120,12 @@ impl Core {
         block.gen_id();
         block.solve();
         self.blocks.push(Rc::new(RefCell::new(block)));
+        Ok(())
       }
       false => {
-        self.unsatisfied_blocks.push(block)
+        let (mech_error,_) = block.unsatisfied_transformation.as_ref().unwrap();
+        self.unsatisfied_blocks.push(Rc::new(RefCell::new(block)));
+        Err(MechError::GenericError(8963))
       },
     }
   }

@@ -44,6 +44,7 @@ impl Plan {
   
 }
 
+pub type BlockId = u64;
 pub type Argument = (u64, TableId, TableIndex, TableIndex);
 pub type Out = (TableId, TableIndex, TableIndex);
 
@@ -88,13 +89,13 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct Block {
-  pub id: u64,
+  pub id: BlockId,
   pub state: BlockState,
   tables: Database,
   pub plan: Plan,
   pub changes: Transaction,
   pub global_database: Rc<RefCell<Database>>,
-  unsatisfied_transformation: Option<(MechErrorKind,Transformation)>,
+  pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pending_transformations: Vec<Transformation>,
   transformations: Vec<Transformation>,
 }
@@ -114,15 +115,15 @@ impl Block {
     }
   }
 
-  pub fn get_table(&self, table_id: &TableId) -> Result<Rc<RefCell<Table>>, MechErrorKind> {
+  pub fn get_table(&self, table_id: &TableId) -> Result<Rc<RefCell<Table>>, MechError> {
     match &table_id {
       TableId::Local(id) => match self.tables.get_table_by_id(id) {
         Some(table) => Ok(table.clone()),
-        None => Err(MechErrorKind::MissingTable(*table_id)),
+        None => Err(MechError::MissingTable(*table_id)),
       },
       TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
         Some(table) => Ok(table.clone()),
-        None => Err(MechErrorKind::MissingTable(*table_id)),
+        None => Err(MechError::MissingTable(*table_id)),
       }
     }
   }
@@ -167,7 +168,7 @@ impl Block {
     }
   }
 
-  fn get_arg_scalar(&self, argument: &Argument) -> Result<(u64,Column,usize),MechErrorKind> {
+  fn get_arg_scalar(&self, argument: &Argument) -> Result<(u64,Column,usize),MechError> {
     let (_,arg_col) = self.get_arg_column(argument)?;
     match argument {
       (arg_name,table_id,TableIndex::Index(linear_ix),TableIndex::None) => {
@@ -183,11 +184,11 @@ impl Block {
       (arg_name,table_id,TableIndex::All,_) => {
         Ok((*arg_name,arg_col,0))
       }
-      _ => Err(MechErrorKind::GenericError(1234))
+      _ => Err(MechError::GenericError(1234))
     }
   }
 
-  fn get_arg_scalars(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,usize)>,MechErrorKind> {
+  fn get_arg_scalars(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,usize)>,MechError> {
     let mut argument_scalars = vec![];
     for argument in arguments {
       let arg_scalar = self.get_arg_scalar(argument)?;
@@ -196,7 +197,7 @@ impl Block {
     Ok(argument_scalars)
   }
 
-  fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column),MechErrorKind> {
+  fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column),MechError> {
     let (arg_name, table_id, row, col) = argument;
     let table = self.get_table(table_id)?;
     let table_brrw = table.borrow(); 
@@ -211,18 +212,18 @@ impl Block {
         let ix_table_brrw = ix_table.borrow();
         match table.borrow().kind() {
           ValueKind::Compound(table_kind) => {
-            Err(MechErrorKind::ColumnKindMismatch(table_kind))
+            Err(MechError::ColumnKindMismatch(table_kind))
           }
           table_kind => {
             if ix_table_brrw.cols != 1 || 
                 ix_table_brrw.rows != table_brrw.rows * table_brrw.cols 
             {
-              return Err(MechErrorKind::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))))
+              return Err(MechError::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))))
             }
             match ix_table_brrw.get_column_unchecked(0) {
               Column::Bool(bool_col) => Ok((*arg_name,Column::Reference((table.clone(),(IndexColumn::Bool(bool_col),IndexColumn::None))))),
               _ => {
-                Err(MechErrorKind::ColumnKindMismatch(vec![ValueKind::Bool]))
+                Err(MechError::ColumnKindMismatch(vec![ValueKind::Bool]))
               }
             }
           }
@@ -239,7 +240,7 @@ impl Block {
     }
   }
 
-  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechErrorKind> {
+  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechError> {
     let mut argument_columns = vec![];
     for argument in arguments {
       let arg_col = self.get_arg_column(argument)?;
@@ -248,14 +249,14 @@ impl Block {
     Ok(argument_columns)
   }
 
-  fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<Column>,MechErrorKind> {
+  fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<Column>,MechError> {
     let (_,table_id,row,col) = argument;
     let lhs_table = self.get_table(&table_id)?;
     let lhs_brrw = lhs_table.borrow();
     Ok(lhs_brrw.get_columns(&col).unwrap())
   }
 
-  fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechErrorKind> {
+  fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechError> {
     let (out_table_id, _, _) = out;
     let table = self.get_table(out_table_id)?;
     let mut t = table.borrow_mut();
@@ -266,7 +267,7 @@ impl Block {
     Ok(column)
   }
 
-  fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechErrorKind> {
+  fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechError> {
     let mut arg_dims = Vec::new();
     for (_, table_id, row, column) in arguments {
       let table = self.get_table(table_id)?;
@@ -277,7 +278,7 @@ impl Block {
         (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
         (TableIndex::Index(_),TableIndex::None) => (1,1),
         (TableIndex::Index(_),TableIndex::Index(_)) => (1,1),
-        _ => {return Err(MechErrorKind::GenericError(6384));},
+        _ => {return Err(MechError::GenericError(6384));},
       };
       arg_dims.push(dims);
     }
@@ -293,11 +294,11 @@ impl Block {
     Ok(arg_shapes)
   }
 
-  pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechErrorKind> {
+  pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
     match self.state {
       BlockState::Unsatisfied => {
         self.pending_transformations.push(tfm.clone());
-        Err(MechErrorKind::TransformationPending(tfm))
+        Err(MechError::TransformationPending(tfm))
       }
       _ => {
         match self.compile_tfm(tfm.clone()) {
@@ -312,7 +313,7 @@ impl Block {
     }
   }
 
-  fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechErrorKind> {
+  fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
     match &tfm {
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
@@ -357,7 +358,7 @@ impl Block {
                 } 
                 self.plan.push(Function::CopyTable((src_table.clone(), out_table.clone())));
               }
-              _ => {return Err(MechErrorKind::GenericError(6383));},
+              _ => {return Err(MechError::GenericError(6383));},
             }
           }
           // Select a column by row index
@@ -368,7 +369,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6382));},
+              _ => {return Err(MechError::GenericError(6382));},
             }
           }
           // Select a specific element by numberical index
@@ -379,7 +380,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out), ) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: row, out: out.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6381));},
+              _ => {return Err(MechError::GenericError(6381));},
             }
           }
           // Select a number of specific elements by numerical index or lorgical index
@@ -395,10 +396,10 @@ impl Block {
             match (&arg_col, &ix_col, &out_col) {
               (Column::U8(arg), Column::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               (Column::U8(arg), Column::U8(ix), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6380));},
+              _ => {return Err(MechError::GenericError(6380));},
             }
           }
-          _ => {return Err(MechErrorKind::GenericError(6379));},
+          _ => {return Err(MechError::GenericError(6379));},
         }
       }
       Transformation::Set{src_id, src_indices, dest_id, dest_indices} => {
@@ -416,14 +417,14 @@ impl Block {
                   let dest_vector = dest_table_brrw.get_column(&TableIndex::Index(col+1))?;
                   match (&src_vector, &dest_vector) {
                     (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
-                    _ => {return Err(MechErrorKind::GenericError(1235));}, // TODO Fill in correct dimensions
+                    _ => {return Err(MechError::GenericError(1235));}, // TODO Fill in correct dimensions
                   }
                 }
               }
-              _ => {return Err(MechErrorKind::GenericError(6378));},
+              _ => {return Err(MechError::GenericError(6378));},
             }
           }
-          _ => {return Err(MechErrorKind::GenericError(6377));},
+          _ => {return Err(MechError::GenericError(6377));},
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
@@ -445,10 +446,10 @@ impl Block {
                 let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U16(x));
               }
-              _ => {return Err(MechErrorKind::GenericError(6376));},
+              _ => {return Err(MechError::GenericError(6376));},
             }
           }
-          _ => {return Err(MechErrorKind::GenericError(6375));},
+          _ => {return Err(MechError::GenericError(6375));},
         }
       },
       Transformation::Constant{table_id, value} => {
@@ -481,7 +482,7 @@ impl Block {
                   else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1236));},
+                _ => {return Err(MechError::GenericError(1236));},
               }
             }
             (TableShape::Scalar, TableShape::Column(rows)) => {
@@ -495,7 +496,7 @@ impl Block {
                   //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1237));},
+                _ => {return Err(MechError::GenericError(1237));},
               }
             }   
             (TableShape::Column(rows), TableShape::Scalar) => {
@@ -509,12 +510,12 @@ impl Block {
                   //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1238));},
+                _ => {return Err(MechError::GenericError(1238));},
               }
             }                      
             (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
               if lhs_rows != rhs_rows {
-                return Err(MechErrorKind::GenericError(6401));
+                return Err(MechError::GenericError(6401));
               }
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *lhs_rows, ValueKind::U8)?;
@@ -526,7 +527,7 @@ impl Block {
                   else if *name == *MATH_SUBTRACT { self.plan.push(SubtractVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   //else if *name == *MATH_EXPONENT { Function::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1239));},
+                _ => {return Err(MechError::GenericError(1239));},
               }
             }
             (TableShape::Row(cols), TableShape::Scalar) => {
@@ -545,7 +546,7 @@ impl Block {
                   (Column::U8(lhs), (_,Column::U8(rhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   }
-                  _ => {return Err(MechErrorKind::GenericError(6343));},
+                  _ => {return Err(MechError::GenericError(6343));},
                 }
               }
             }
@@ -565,14 +566,14 @@ impl Block {
                   (Column::U8(rhs), (_,Column::U8(lhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   }
-                  _ => {return Err(MechErrorKind::GenericError(6343));},
+                  _ => {return Err(MechError::GenericError(6343));},
                 }
               }
             }            
             (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
               
               if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-                return Err(MechErrorKind::GenericError(6343));
+                return Err(MechError::GenericError(6343));
               }
 
               let lhs_columns = self.get_whole_table_arg_cols(&arguments[0])?;
@@ -590,11 +591,11 @@ impl Block {
                   ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   }
-                  _ => {return Err(MechErrorKind::GenericError(6343));},
+                  _ => {return Err(MechError::GenericError(6343));},
                 }
               }
             }
-            _ => {return Err(MechErrorKind::GenericError(6345));},
+            _ => {return Err(MechError::GenericError(6345));},
           }
         } else if *name == *MATH_NEGATE {
           let arg_dims = self.get_arg_dims(&arguments)?;
@@ -606,7 +607,7 @@ impl Block {
                 ((_,Column::I8(arg)), Column::I8(out)) => {
                   self.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
                 }
-                _ => {return Err(MechErrorKind::GenericError(1961));},
+                _ => {return Err(MechError::GenericError(1961));},
               }
             }
             TableShape::Scalar => {
@@ -616,10 +617,10 @@ impl Block {
                 ((_,Column::I8(arg)), Column::I8(out)) => {
                   self.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
                 }
-                _ => {return Err(MechErrorKind::GenericError(1961));},
+                _ => {return Err(MechError::GenericError(1961));},
               }
             }
-            _ => {return Err(MechErrorKind::GenericError(1962));},
+            _ => {return Err(MechError::GenericError(1962));},
           }
         } else if *name == *LOGIC_NOT {
           let arg_dims = self.get_arg_dims(&arguments)?;
@@ -631,10 +632,10 @@ impl Block {
                 ((_,Column::Bool(arg)), Column::Bool(out)) => {
                   self.plan.push(NotV{arg: arg.clone(), out: out.clone() });
                 }
-                _ => {return Err(MechErrorKind::GenericError(1961));},
+                _ => {return Err(MechError::GenericError(1961));},
               }
             }
-            _ => {return Err(MechErrorKind::GenericError(1962));},
+            _ => {return Err(MechError::GenericError(1962));},
           }
         } else if *name == *LOGIC_AND ||
                   *name == *LOGIC_OR ||
@@ -651,7 +652,7 @@ impl Block {
                   else if *name == *LOGIC_OR { self.plan.push(OrVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *LOGIC_XOR { self.plan.push(XorVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1340));},
+                _ => {return Err(MechError::GenericError(1340));},
               }
             }
             (TableShape::Scalar, TableShape::Scalar) => {
@@ -663,10 +664,10 @@ impl Block {
                   else if *name == *LOGIC_OR { self.plan.push(OrSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *LOGIC_XOR { self.plan.push(XorSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
-                _ => {return Err(MechErrorKind::GenericError(1340));},
+                _ => {return Err(MechError::GenericError(1340));},
               }
             }
-            _ => {return Err(MechErrorKind::GenericError(1341));},
+            _ => {return Err(MechError::GenericError(1341));},
           }
         } else if *name == *COMPARE_GREATER__THAN ||
                   *name == *COMPARE_GREATER__THAN__EQUAL ||
@@ -699,7 +700,7 @@ impl Block {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                 }
-                _ => {return Err(MechErrorKind::GenericError(1240));},
+                _ => {return Err(MechError::GenericError(1240));},
               }
             }
             (TableShape::Column(rows), TableShape::Scalar) => {
@@ -722,12 +723,12 @@ impl Block {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                 }
-                _ => {return Err(MechErrorKind::GenericError(1252));},
+                _ => {return Err(MechError::GenericError(1252));},
               }
             }
             (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
               if lhs_rows != rhs_rows {
-                return Err(MechErrorKind::GenericError(6523));
+                return Err(MechError::GenericError(6523));
               }
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
@@ -748,10 +749,10 @@ impl Block {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                _ => {return Err(MechErrorKind::GenericError(1242));},
+                _ => {return Err(MechError::GenericError(1242));},
               }
             }
-            _ => {return Err(MechErrorKind::GenericError(6348));},
+            _ => {return Err(MechError::GenericError(6348));},
           }                    
         } else if *name == *TABLE_RANGE {
           let mut argument_columns = self.get_arg_columns(arguments)?;
@@ -762,7 +763,7 @@ impl Block {
               let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
               self.plan.push(fxn);
             }
-            _ => {return Err(MechErrorKind::GenericError(6349));},
+            _ => {return Err(MechError::GenericError(6349));},
           }
         } else if *name == *STATS_SUM {
           let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
@@ -776,7 +777,7 @@ impl Block {
             match arg_column {
               Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6351));},
+              _ => {return Err(MechError::GenericError(6351));},
             }
           }
         } else if *name == *SET_ANY {
@@ -790,7 +791,7 @@ impl Block {
           if arg_name == *COLUMN {
             match arg_column {
               Column::Bool(col) => self.plan.push(SetAnyCol{col: col.clone(), out: out_col.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6391));},
+              _ => {return Err(MechError::GenericError(6391));},
             }
           }
         } else if *name == *SET_ALL {
@@ -804,7 +805,7 @@ impl Block {
           if arg_name == *COLUMN {
             match arg_column {
               Column::Bool(col) => self.plan.push(SetAllCol{col: col.clone(), out: out_col.clone()}),
-              _ => {return Err(MechErrorKind::GenericError(6395));},
+              _ => {return Err(MechError::GenericError(6395));},
             }
           }          
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
@@ -822,14 +823,14 @@ impl Block {
           let cols = arg_tables[0].borrow().cols;
           let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
           if consistent_cols == false {
-            return Err(MechErrorKind::GenericError(1243));
+            return Err(MechError::GenericError(1243));
           }
           
           // Check to make sure column types are consistent
           let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
           let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
           if consistent_cols == false {
-            return Err(MechErrorKind::GenericError(1244));
+            return Err(MechError::GenericError(1244));
           }
 
           // Add up the rows
@@ -877,7 +878,7 @@ impl Block {
                 let fxn = ConcatV::<MechString>{args: cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
-              _ => {return Err(MechErrorKind::GenericError(6361));},
+              _ => {return Err(MechError::GenericError(6361));},
             }
             
           }
@@ -901,7 +902,7 @@ impl Block {
           });
 
           if consistent_rows == false {
-            return Err(MechErrorKind::GenericError(1245));
+            return Err(MechError::GenericError(1245));
           }
 
           // Add up the columns
@@ -935,15 +936,15 @@ impl Block {
                 let fxn = match (&arg_col, &out_col) {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
                   (Column::U64(arg), Column::U64(out)) => self.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
-                  _ => {return Err(MechErrorKind::MissingFunction(*name));},
+                  _ => {return Err(MechError::MissingFunction(*name));},
                 };
                 out_column_ix += 1;
               }
-              _ => {return Err(MechErrorKind::GenericError(6364));},
+              _ => {return Err(MechError::GenericError(6364));},
             }
           }
         } else {
-          return Err(MechErrorKind::MissingFunction(*name));
+          return Err(MechError::MissingFunction(*name));
         }
       } 
       _ => {},

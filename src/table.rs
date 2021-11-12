@@ -157,13 +157,13 @@ impl Table {
     }
   }
 
-  pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechErrorKind> {
+  pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {
     let row = ix / self.cols;
     let col = ix % self.cols;
     if ix < self.rows * self.cols {
       Ok((row,col))
     } else {
-      Err(MechErrorKind::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
+      Err(MechError::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
     }
   }
 
@@ -257,34 +257,34 @@ impl Table {
     }
   }
 
-  pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechErrorKind> {
+  pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechError> {
 
     match col {
       TableIndex::Alias(alias) => {
         match self.column_alias_to_ix.get(&alias) {
           Some(ix) => Ok(self.data[*ix as usize].clone()),
-          None => Err(MechErrorKind::GenericError(2821)),
+          None => Err(MechError::GenericError(2821)),
         }
       }
       TableIndex::Index(0) => {
-        Err(MechErrorKind::GenericError(2825))
+        Err(MechError::GenericError(2825))
       }
       TableIndex::Index(ix) => {
         if *ix <= self.cols { 
           Ok(self.data[*ix-1].clone())
         } else {
-          Err(MechErrorKind::GenericError(2822))
+          Err(MechError::GenericError(2822))
         }
       }
       TableIndex::All => {
         if self.cols == 1 {
           Ok(self.data[0].clone())
         } else {
-          Err(MechErrorKind::GenericError(2823))
+          Err(MechError::GenericError(2823))
         }
       }
       TableIndex::Table(_) |
-      TableIndex::None => Err(MechErrorKind::GenericError(2824)), 
+      TableIndex::None => Err(MechError::GenericError(2824)), 
     }
   }
 

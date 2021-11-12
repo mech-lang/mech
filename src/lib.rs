@@ -44,10 +44,10 @@ pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::Transformation;
 pub use self::function::*;
-pub use self::block::{Block, BlockState, Register};
+pub use self::block::{Block,BlockId, BlockState, Register};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
-pub use self::error::{MechError, MechErrorKind};
+pub use self::error::MechError;
 
 pub type MechString = Vec<char>;
 
@@ -76,31 +76,31 @@ pub enum IndexColumn {
 
 impl Column {
 
-  pub fn get_u8(&self) -> Result<ColumnV<u8>,MechErrorKind> {
+  pub fn get_u8(&self) -> Result<ColumnV<u8>,MechError> {
     match self {
       Column::U8(col) => Ok(col.clone()),
-      _ => {return Err(MechErrorKind::GenericError(8172));},
+      _ => {return Err(MechError::GenericError(8172));},
     }
   }
 
-  pub fn get_bool(&self) -> Result<ColumnV<bool>,MechErrorKind> {
+  pub fn get_bool(&self) -> Result<ColumnV<bool>,MechError> {
     match self {
       Column::Bool(col) => Ok(col.clone()),
-      _ => {return Err(MechErrorKind::GenericError(8170));},
+      _ => {return Err(MechError::GenericError(8170));},
     }
   }
 
-  pub fn get_string(&self) -> Result<ColumnV<MechString>,MechErrorKind> {
+  pub fn get_string(&self) -> Result<ColumnV<MechString>,MechError> {
     match self {
       Column::String(col) => Ok(col.clone()),
-      _ => {return Err(MechErrorKind::GenericError(8171));},
+      _ => {return Err(MechError::GenericError(8171));},
     }
   }
 
-  pub fn get_u64(&self) -> Result<ColumnV<u64>,MechErrorKind> {
+  pub fn get_u64(&self) -> Result<ColumnV<u64>,MechError> {
     match self {
       Column::U64(col) => Ok(col.clone()),
-      _ => {return Err(MechErrorKind::GenericError(8173));},
+      _ => {return Err(MechError::GenericError(8173));},
     }
   }
 
