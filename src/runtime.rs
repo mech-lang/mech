@@ -1,6 +1,6 @@
 use block::{Block, BlockState, Register, Transformation, format_register};
 use errors::{Error, ErrorType};
-use ::{humanize, hash_string};
+use ::{humanize, hash_str};
 use database::{Database};
 use table::{TableIndex, TableId};
 use std::cell::RefCell;
@@ -72,7 +72,7 @@ impl Runtime {
   }
 
   pub fn load_library_function(&mut self, name: &str, fxn: Option<MechFunction>) {
-    let name_hash = hash_string(name);
+    let name_hash = hash_str(name);
     let mut db = self.database.borrow_mut();
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.strings.insert(name_hash, name.to_string());

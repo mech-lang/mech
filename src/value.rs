@@ -7,7 +7,7 @@
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 //use crate::quantity::{Quantity, ToQuantity, QuantityMath};
 //use errors::{ErrorType};
-use crate::{hash_string, MechString};
+use crate::{hash_str, MechString};
 use std::fmt;
 
 // ## Value structs and enums
@@ -205,18 +205,18 @@ impl ValueMethods for Value {
       number = number | len;
       number
     } else {
-      hash_string(&format!("byte vector: {:?}",number_literal)) + NUMBER_LITERAL_INTERNED
+      hash_str(&format!("byte vector: {:?}",number_literal)) + NUMBER_LITERAL_INTERNED
     }
   }
 
   fn from_string(string: &String) -> Value {
-    let mut string_hash = hash_string(string);
+    let mut string_hash = hash_str(string);
     string_hash = string_hash + STRING;
     string_hash
   }
 
   fn from_str(string: &str) -> Value {
-    let mut string_hash = hash_string(string);
+    let mut string_hash = hash_str(string);
     string_hash = string_hash + STRING;
     string_hash
   }

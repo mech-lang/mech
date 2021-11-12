@@ -183,7 +183,7 @@ use operations::{
   set_any,
   set_all,
 };
-use ::hash_string;
+use ::hash_str;
 
 
 pub struct Core {
@@ -203,7 +203,7 @@ impl Core {
   pub fn load_standard_library(&mut self) {
     {
       let name = "table/split";
-      let name_hash = hash_string(&name);
+      let name_hash = hash_str(&name);
       let mut db = self.runtime.database.borrow_mut();
       let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
       store.strings.insert(name_hash, name.to_string());
@@ -260,7 +260,7 @@ impl Core {
   }
 
   pub fn insert_string(&self, string: &str) {
-    let hashed_string = hash_string(string);
+    let hashed_string = hash_str(string);
     let mut db = self.runtime.database.borrow_mut();
     let store = unsafe{&mut *Arc::get_mut_unchecked(&mut db.store)};
     store.strings.insert(hashed_string, string.to_string());
@@ -311,7 +311,7 @@ impl Core {
   }
 
   pub fn get_table_by_name(&self, table_name: &str) -> Option<Table> {
-    let table_id = hash_string(table_name);
+    let table_id = hash_str(table_name);
     self.get_table(table_id)
   }
 

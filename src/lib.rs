@@ -163,7 +163,7 @@ pub fn hash_bytes(input: &Vec<u8>) -> u64 {
   seahash::hash(input) & 0x00FFFFFFFFFFFFFF
 }
 
-pub fn hash_string(input: &str) -> u64 {
+pub fn hash_str(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
 

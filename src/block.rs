@@ -62,29 +62,29 @@ pub enum BlockState {
 // ## Block
 
 lazy_static! {
-  static ref COLUMN: u64 = hash_string("column");
-  static ref STATS_SUM: u64 = hash_string("stats/sum");
-  static ref MATH_ADD: u64 = hash_string("math/add");
-  static ref MATH_DIVIDE: u64 = hash_string("math/divide");
-  static ref MATH_MULTIPLY: u64 = hash_string("math/multiply");
-  static ref MATH_SUBTRACT: u64 = hash_string("math/subtract");
-  static ref MATH_EXPONENT: u64 = hash_string("math/exponent");
-  static ref MATH_NEGATE: u64 = hash_string("math/negate");
-  static ref TABLE_RANGE: u64 = hash_string("table/range");
-  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_string("table/horizontal-concatenate");
-  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_string("table/vertical-concatenate");
-  static ref LOGIC_AND: u64 = hash_string("logic/and");  
-  static ref LOGIC_OR: u64 = hash_string("logic/or");
-  static ref LOGIC_NOT: u64 = hash_string("logic/not");  
-  static ref LOGIC_XOR: u64 = hash_string("logic/xor");    
-  static ref COMPARE_GREATER__THAN: u64 = hash_string("compare/greater-than");
-  static ref COMPARE_LESS__THAN: u64 = hash_string("compare/less-than");
-  static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_string("compare/greater-than-equal");
-  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_string("compare/less-than-equal");
-  static ref COMPARE_EQUAL: u64 = hash_string("compare/equal");
-  static ref COMPARE_NOT__EQUAL: u64 = hash_string("compare/not-equal");
-  static ref SET_ANY: u64 = hash_string("set/any");
-  static ref SET_ALL: u64 = hash_string("set/all");  
+  static ref COLUMN: u64 = hash_str("column");
+  static ref STATS_SUM: u64 = hash_str("stats/sum");
+  static ref MATH_ADD: u64 = hash_str("math/add");
+  static ref MATH_DIVIDE: u64 = hash_str("math/divide");
+  static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
+  static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");
+  static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
+  static ref MATH_NEGATE: u64 = hash_str("math/negate");
+  static ref TABLE_RANGE: u64 = hash_str("table/range");
+  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
+  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
+  static ref LOGIC_AND: u64 = hash_str("logic/and");  
+  static ref LOGIC_OR: u64 = hash_str("logic/or");
+  static ref LOGIC_NOT: u64 = hash_str("logic/not");  
+  static ref LOGIC_XOR: u64 = hash_str("logic/xor");    
+  static ref COMPARE_GREATER__THAN: u64 = hash_str("compare/greater-than");
+  static ref COMPARE_LESS__THAN: u64 = hash_str("compare/less-than");
+  static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_str("compare/greater-than-equal");
+  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_str("compare/less-than-equal");
+  static ref COMPARE_EQUAL: u64 = hash_str("compare/equal");
+  static ref COMPARE_NOT__EQUAL: u64 = hash_str("compare/not-equal");
+  static ref SET_ANY: u64 = hash_str("set/any");
+  static ref SET_ALL: u64 = hash_str("set/all");  
 }
 
 #[derive(Clone)]
@@ -428,7 +428,7 @@ impl Block {
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
-        let table_id = hash_string(&format!("{:?}{:?}", kind, bytes));
+        let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
         match kind {
@@ -1012,15 +1012,15 @@ use std::sync::Arc;
 use std::rc::Rc;
 use rust_core::fmt;
 use ::humanize;
-use ::hash_string;
+use ::hash_str;
 
 lazy_static! {
-  static ref TABLE_COPY: u64 = hash_string("table/copy");
-  static ref TABLE_SPLIT: u64 = hash_string("table/split");
-  static ref GRAMS: u64 = hash_string("g");
-  static ref KILOGRAMS: u64 = hash_string("kg");
-  static ref HERTZ: u64 = hash_string("Hz");
-  static ref SECONDS: u64 = hash_string("s");
+  static ref TABLE_COPY: u64 = hash_str("table/copy");
+  static ref TABLE_SPLIT: u64 = hash_str("table/split");
+  static ref GRAMS: u64 = hash_str("g");
+  static ref KILOGRAMS: u64 = hash_str("kg");
+  static ref HERTZ: u64 = hash_str("Hz");
+  static ref SECONDS: u64 = hash_str("s");
 }
 
 
@@ -1257,7 +1257,7 @@ impl Block {
           }
         }
         Transformation::Whenever{table_id, registers, ..} => {
-          let whenever_ix_table_id = hash_string("~");
+          let whenever_ix_table_id = hash_str("~");
           self.tables.insert(whenever_ix_table_id, Arc::new(RefCell::new(Table::new(whenever_ix_table_id, 0, 1, self.store.clone()))));
           match table_id {
             TableId::Global(_id) => {
@@ -1338,7 +1338,7 @@ impl Block {
           let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
           // Get the whenever table from the local store
         {
-          let whenever_ix_table_id = hash_string("~");
+          let whenever_ix_table_id = hash_str("~");
           let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap().borrow_mut();
           // Check to see if the whenever table needs to be resized
           let before_rows = whenever_table.rows;
@@ -1482,7 +1482,7 @@ impl Block {
                 let old_table_id = vi.id();
                 let old_table_columns = vi.columns();
                 for row in vi.raw_row_iter.clone() {
-                  let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
+                  let split_table_id = hash_str(&format!("table/split/{:?}/{:?}",old_table_id,row));
                   let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
                   for column in vi.raw_column_iter.clone() {
                     let (value,_) = vi.get(&row,&column).unwrap();

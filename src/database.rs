@@ -1,4 +1,4 @@
-use crate::{Table, BoxPrinter, humanize, hash_string, Value, Column};
+use crate::{Table, BoxPrinter, humanize, hash_str, Value, Column};
 use hashbrown::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -50,7 +50,7 @@ impl Database {
   }
 
   pub fn get_table(&self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
-    let alias = hash_string(table_name);
+    let alias = hash_str(table_name);
     match self.table_alias_to_id.get(&alias) {
       Some(table_id) => {
         self.tables.get(table_id)
@@ -109,7 +109,7 @@ use table::{Table, TableId, TableIndex};
 use value::{Value, ValueMethods, NumberLiteral};
 use block::{Register};
 use errors::{Error, ErrorType};
-use ::hash_string;
+use ::hash_str;
 use std::sync::Arc;
 use std::cell::RefCell;
 use hashbrown::{HashSet, HashMap};

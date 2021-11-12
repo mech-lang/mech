@@ -14,13 +14,13 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::cell::Cell;
 use hashbrown::{HashMap, HashSet};
-use ::{hash_string};
+use ::{hash_str};
 
 
 lazy_static! {
-  static ref ROW: u64 = hash_string("row");
-  static ref COLUMN: u64 = hash_string("column");
-  static ref TABLE: u64 = hash_string("table");
+  static ref ROW: u64 = hash_str("row");
+  static ref COLUMN: u64 = hash_str("column");
+  static ref TABLE: u64 = hash_str("table");
 }
 
 pub type MechFunction = extern "C" fn(arguments: &mut Vec<Rc<RefCell<Argument>>>);

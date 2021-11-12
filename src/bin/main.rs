@@ -24,7 +24,7 @@ use seahash;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
-use mech_core::{Table, Function, Change, Column, Value, ValueKind, hash_string, Transformation, Block, Core, ParMultiplyVS};
+use mech_core::{Table, Function, Change, Column, Value, ValueKind, hash_str, Transformation, Block, Core, ParMultiplyVS};
 
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
@@ -37,26 +37,26 @@ fn main() {
 
   {
     // #time/timer += [period: 60Hz]
-    let mut time_timer = Table::new(hash_string("time/timer"),1,2);
+    let mut time_timer = Table::new(hash_str("time/timer"),1,2);
     time_timer.set_col_kind(0,ValueKind::F32);
     time_timer.set(0,0,Value::F32(60.0));
     core.insert_table(time_timer.clone());
 
     // #gravity = 1
-    let mut gravity = Table::new(hash_string("gravity"),1,1);
+    let mut gravity = Table::new(hash_str("gravity"),1,1);
     gravity.set_col_kind(0,ValueKind::F32);
     gravity.set(0,0,Value::F32(1.0));
     core.insert_table(gravity.clone());
 
     // -0.8
-    let mut const1 = Table::new(hash_string("-0.8"),1,1);
+    let mut const1 = Table::new(hash_str("-0.8"),1,1);
     const1.set_col_kind(0,ValueKind::F32);
     const1.set(0,0,Value::F32(-0.8));
     core.insert_table(const1.clone());
 
     // Create balls
     // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
-    let mut balls = Table::new(hash_string("balls"),n,4);
+    let mut balls = Table::new(hash_str("balls"),n,4);
     balls.set_col_kind(0,ValueKind::F32);
     balls.set_col_kind(1,ValueKind::F32);
     balls.set_col_kind(2,ValueKind::F32);
@@ -72,7 +72,7 @@ fn main() {
 
   // Table
   let (x,y,vx,vy) = {
-    match core.get_table_by_id(hash_string("balls")) {
+    match core.get_table_by_id(hash_str("balls")) {
       Some(balls_rc) => {
         let balls = balls_rc.borrow();
         (balls.get_column_unchecked(0),
@@ -85,7 +85,7 @@ fn main() {
   };
 
   let g = {
-    match core.get_table_by_id(hash_string("gravity")) {
+    match core.get_table_by_id(hash_str("gravity")) {
       Some(gravity_rc) => {
         let gravity = gravity_rc.borrow();
         gravity.get_column_unchecked(0)
@@ -95,7 +95,7 @@ fn main() {
   };
 
   let c1 = {
-    match core.get_table_by_id(hash_string("-0.8")) {
+    match core.get_table_by_id(hash_str("-0.8")) {
       Some(const1_rc) => {
         let const1 = const1_rc.borrow();
         const1.get_column_unchecked(0)
@@ -167,14 +167,14 @@ fn main() {
   }
   block3.gen_id();
 
-  core.schedules.insert((hash_string("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
+  core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
 
   core.insert_block(block1);
   core.insert_block(block2);
   core.insert_block(block3);
 
   for i in 0..200000 {
-    let txn = vec![Change::Set((hash_string("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
+    let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
     let start_ns = time::precise_time_ns();
 
     core.process_transaction(&txn);

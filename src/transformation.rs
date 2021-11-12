@@ -88,6 +88,6 @@ impl Eq for Transformation { }
 
 impl PartialEq for Transformation {
   fn eq(&self, other: &Self) -> bool {
-    hash_string(&format!("{:?}",self)) == hash_string(&format!("{:?}",other))
+    hash_str(&format!("{:?}",self)) == hash_str(&format!("{:?}",other))
   }
 }
