@@ -40,7 +40,7 @@ impl fmt::Debug for TableId {
 
 // ## Table Shape
 
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 pub enum TableShape {
   Scalar,
   Column(usize),

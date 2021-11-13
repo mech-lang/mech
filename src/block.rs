@@ -403,32 +403,20 @@ impl Block {
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
-        //let src_table = self.get_table(src_id)?;
-        //let dest_table = self.get_table(dest_id)?;
-        //let arg_shapes = self.get_arg_dims(&arguments)?;
-        /*match (src_indices[0], dest_indices[0]) {
-          /*((TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
-            match (src_id, dest_id) {
-              (_, TableId::Global(gid)) => {
-                let src_table_brrw = src_table.borrow();
-                let dest_table_brrw = dest_table.borrow();
-                // Copy each column because it's (:,:) -> (:,:)
-                for col in 0..src_table_brrw.cols {
-                  let src_vector = src_table_brrw.get_column(&TableIndex::Index(col+1))?;
-                  let dest_vector = dest_table_brrw.get_column(&TableIndex::Index(col+1))?;
-                  match (&src_vector, &dest_vector) {
-                    (Column::U8(src), Column::U8(dest)) => self.plan.push(Function::SetVVU8((src.clone(), dest.clone()))),
-                    _ => {return Err(MechError::GenericError(1235));}, // TODO Fill in correct dimensions
-                  }
-                }
+        let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
+        let arg_shapes = self.get_arg_dims(&arguments)?;
+        match (arg_shapes[0], arg_shapes[1]) {
+          (TableShape::Scalar, TableShape::Scalar) => {
+            let mut argument_scalars = self.get_arg_scalars(&arguments)?;
+            match (&argument_scalars[0], &argument_scalars[1]) {
+              ((_,Column::U8(arg),ix), (_,Column::U8(out),oix)) => {
+                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix})
               }
-              _ => {return Err(MechError::GenericError(6378));},
-            }*/
+              _ => {return Err(MechError::GenericError(8834));},
+            }
           }
-          z => {
-            return Err(MechError::GenericError(6377));
-          },
-        }*/
+          _ => {return Err(MechError::GenericError(8833));},
+        }
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));

@@ -132,3 +132,19 @@ where T: Copy + Debug
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Set Scalar : Scalar
+#[derive(Debug)]
+pub struct SetSIxSIx<T> 
+where T: Copy + Debug
+{
+  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>, pub oix: usize
+}
+impl<T> MechFunction for SetSIxSIx<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[self.oix] = (self.arg.borrow())[self.ix];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}

@@ -42,7 +42,7 @@ where T: std::ops::Add<Output = T> + Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Add Scalar : Vector
+// Add Scalar : Scalar
 #[derive(Debug)]
 pub struct AddSIxSIx<T> 
 where T: std::ops::Add<Output = T> + Copy + Debug
