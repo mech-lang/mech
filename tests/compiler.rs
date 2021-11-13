@@ -386,11 +386,10 @@ block
 
 test_mech!(set_column_simple,"
 block
-  #test.x := 77
-
-block
   #test = [|x|
-            9]", Value::U8(77));
+            9]
+block
+  #test.x := 77", Value::U8(77));
 
 test_mech!(set_empty_with_index,"
 block
@@ -1078,8 +1077,8 @@ block
 test_mech!(function_add_functions,r#"
 block
   x = [1 2
-       4 _
-       _ 7]
+       4 0
+       0 7]
   #test = stats/sum(column: x{:,1}) + stats/sum(column: x{:,2})"#, Value::U8(14));
 
 test_mech!(function_set_any,r#"

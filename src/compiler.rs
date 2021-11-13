@@ -154,9 +154,10 @@ impl Compiler {
         match &mut dest[0] {
           Transformation::Select{table_id, indices, out} => {
             let dest_id = table_id.clone();
-            let dest_indices = indices.clone();
+            let (dest_row, dest_col) = indices[0];
             dest.remove(0);
-            tfms.push(Transformation::Set{src_id: src_table_id, src_indices: src_indices.clone(), dest_id, dest_indices})
+            let (src_row,src_col) = src_indices[0];
+            tfms.push(Transformation::Set{src_id: src_table_id, src_row, src_col, dest_id, dest_row, dest_col});
           }
           _ => (),
         }
