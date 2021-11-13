@@ -402,11 +402,12 @@ impl Block {
           _ => {return Err(MechError::GenericError(6379));},
         }
       }
-      Transformation::Set{src_id, src_indices, dest_id, dest_indices} => {
-        let src_table = self.get_table(src_id)?;
-        let dest_table = self.get_table(dest_id)?;
-        match (src_indices[0], dest_indices[0]) {
-          ((TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
+      Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        //let src_table = self.get_table(src_id)?;
+        //let dest_table = self.get_table(dest_id)?;
+        //let arg_shapes = self.get_arg_dims(&arguments)?;
+        /*match (src_indices[0], dest_indices[0]) {
+          /*((TableIndex::All, TableIndex::All), (TableIndex::All, TableIndex::All)) => {
             match (src_id, dest_id) {
               (_, TableId::Global(gid)) => {
                 let src_table_brrw = src_table.borrow();
@@ -422,10 +423,12 @@ impl Block {
                 }
               }
               _ => {return Err(MechError::GenericError(6378));},
-            }
+            }*/
           }
-          _ => {return Err(MechError::GenericError(6377));},
-        }
+          z => {
+            return Err(MechError::GenericError(6377));
+          },
+        }*/
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
