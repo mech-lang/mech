@@ -76,6 +76,20 @@ pub enum IndexColumn {
 
 impl Column {
 
+  pub fn copy(&self) -> Column {
+    match self {
+      Column::U8(col) => Column::U8(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U16(col) => Column::U16(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U64(col) => Column::U64(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I8(col) => Column::I8(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::F32(col) => Column::F32(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Bool(col) => Column::Bool(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::String(col) => Column::String(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Reference(reference) => Column::Reference(reference.clone()),
+      _ => Column::Empty,
+    } 
+  }
+
   pub fn get_u8(&self) -> Result<ColumnV<u8>,MechError> {
     match self {
       Column::U8(col) => Ok(col.clone()),
@@ -136,6 +150,21 @@ impl Column {
       },
       Column::Empty => 0,
     }    
+  }
+
+  pub fn resize(&self, rows: usize) -> Result<(),MechError> {
+    match self {
+      Column::U8(col) => col.borrow_mut().resize(rows,0),
+      Column::U16(col) => col.borrow_mut().resize(rows,0),
+      Column::I8(col) => col.borrow_mut().resize(rows,0),
+      Column::U64(col) => col.borrow_mut().resize(rows,0),
+      Column::F32(col) => col.borrow_mut().resize(rows,0.0),
+      Column::Bool(col) => col.borrow_mut().resize(rows,false),
+      Column::String(col) => col.borrow_mut().resize(rows,vec![]),
+      Column::Reference(_) |
+      Column::Empty => {return Err(MechError::GenericError(7143));}
+    }
+    Ok(())
   }
 
   pub fn kind(&self) -> ValueKind {
@@ -256,8 +285,8 @@ impl BoxTable {
     for row in 0..table.rows {
       for col in 0..table.cols {
         let value_string = match table.get(row,col) {
-          Some(v) => format!("{:0.2?}", v), 
-          None => format!(""),
+          Ok(v) => format!("{:0.2?}", v), 
+          _ => format!(""),
         };
         let chars = value_string.chars().collect::<Vec<char>>().len();
         if chars > column_widths[col] {

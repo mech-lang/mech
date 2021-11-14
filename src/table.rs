@@ -119,6 +119,17 @@ impl Table {
     table
   }
 
+  pub fn copy(&self) -> Table {
+    let mut table = Table::new(0,self.rows,self.cols);
+    table.column_ix_to_alias = self.column_ix_to_alias.clone();
+    table.column_alias_to_ix = self.column_alias_to_ix.clone();
+    table.col_kinds = self.col_kinds.clone();
+    for col in 0..self.cols {
+      table.data[col] = self.data[col].copy();
+    }
+    table
+  }
+
   pub fn kind(&self) -> ValueKind {
 
     let first_col_kind = self.col_kinds[0].clone();
@@ -130,30 +141,30 @@ impl Table {
 
   }
 
-  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),()> {
+  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {
     if ix < self.cols {
       self.column_ix_to_alias.resize(self.cols,0);
       self.column_ix_to_alias[ix] = alias;
       self.column_alias_to_ix.insert(alias,ix);
       Ok(())
     } else {
-      Err(()) // TODO Add error message
+      Err(MechError::GenericError(1210))
     }
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Option<Value> {
+  pub fn get(&self, row: usize, col: usize) -> Result<Value,MechError> {
     if col < self.cols && row < self.rows {
       match &self.data[col] {
-        Column::F32(column_f32) => Some(Value::F32(column_f32.borrow()[row])),
-        Column::U8(column_u8) => Some(Value::U8(column_u8.borrow()[row])),
-        Column::U16(column_u16) => Some(Value::U16(column_u16.borrow()[row])),
-        Column::Bool(column_bool) => Some(Value::Bool(column_bool.borrow()[row])),
-        Column::String(column_string) => Some(Value::String(column_string.borrow()[row].clone())),
-        Column::Empty => Some(Value::Empty),
-        _ => Some(Value::Empty),
+        Column::F32(column_f32) => Ok(Value::F32(column_f32.borrow()[row])),
+        Column::U8(column_u8) => Ok(Value::U8(column_u8.borrow()[row])),
+        Column::U16(column_u16) => Ok(Value::U16(column_u16.borrow()[row])),
+        Column::Bool(column_bool) => Ok(Value::Bool(column_bool.borrow()[row])),
+        Column::String(column_string) => Ok(Value::String(column_string.borrow()[row].clone())),
+        Column::Empty => Ok(Value::Empty),
+        _ => Err(MechError::GenericError(1209)),
       }
     } else {
-      None
+      Err(MechError::GenericError(1211))
     }
   }
 
@@ -167,27 +178,27 @@ impl Table {
     }
   }
 
-  pub fn get_linear(&self, ix: usize) -> Option<Value> {
+  pub fn get_linear(&self, ix: usize) -> Result<Value,MechError> {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
       let col = ix % self.cols;
       self.get(row,col)
     } else {
-      None
+      Err(MechError::GenericError(1213))
     }
   }
 
-  pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),()> {
+  pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),MechError> {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
       let col = ix % self.cols;
       self.set(row,col, val)
     } else {
-      Err(())
+      Err(MechError::GenericError(1214))
     }
   }
 
-  pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),()> {
+  pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
@@ -203,11 +214,11 @@ impl Table {
       }
       Ok(())
     } else {
-      Err(())
+      Err(MechError::GenericError(1212))
     }
   }
 
-  pub fn set_col_kind(&mut self, col: usize, val: ValueKind) -> Result<(),()> {
+  pub fn set_col_kind(&mut self, col: usize, val: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
       match (&mut self.data[col], val) {
         (Column::Empty, ValueKind::U8) => {
@@ -240,20 +251,20 @@ impl Table {
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
         },
-        _ => (),
+        _ => {return Err(MechError::GenericError(1212));},
       }
       Ok(())
     } else {
-      Err(())
+      Err(MechError::GenericError(1215))
     }
   }
 
-  pub fn get_columns(&self, col: &TableIndex) -> Option<Vec<Column>> {
+  pub fn get_columns(&self, col: &TableIndex) -> Result<Vec<Column>, MechError> {
     match col {
       TableIndex::All => {
-        Some(self.data.iter().cloned().collect())
+        Ok(self.data.iter().cloned().collect())
       },
-      _ => None,
+      _ => Err(MechError::GenericError(1216)),
     }
   }
 
@@ -300,7 +311,9 @@ impl Table {
     }
     if self.rows != rows {
       self.rows = rows;
-      // TODO NEED TO RESIZE ROWS
+      for col in &self.data {
+        col.resize(rows);
+      }
     }
   }
 
