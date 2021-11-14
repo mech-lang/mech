@@ -358,7 +358,7 @@ impl Block {
                     _ => (),
                   }
                 } 
-                self.plan.push(Function::CopyTable((src_table.clone(), out_table.clone())));
+                self.plan.push(CopyT{arg: src_table.clone(), out: out_table.clone()});
               }
               _ => {return Err(MechError::GenericError(6383));},
             }

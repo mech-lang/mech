@@ -48,10 +48,8 @@ pub enum Function {
   ParLessThanVS((Arg<f32>,f32,Out<bool>)),
   ParGreaterThanVS((Arg<f32>,f32,Out<bool>)),
   GreaterThanVSU8((Arg<u8>,Arg<u8>,Out<bool>)),
-  GreaterThanSSU8((Arg<u8>,Arg<u8>,Out<bool>)),
   GreaterThanVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
   GreaterThanEqualVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
-  LessThanSSU8((Arg<u8>,Arg<u8>,Out<bool>)),
   LessThanVVU8((Arg<u8>,Arg<u8>,Out<bool>)),
   ParCSGreaterThanVS((Arg<f32>,f32,f32)),
 
@@ -63,7 +61,6 @@ pub enum Function {
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
   CopySSU8((Arg<u8>,usize,Out<u8>)),
   CopySSString((Arg<MechString>,usize,Out<MechString>)),
-  CopyTable((ArgTable,OutTable)),
   RangeU8((Arg<u8>,Arg<u8>,OutTable)),
   Null,
 }
@@ -105,8 +102,6 @@ impl MechFunction for Function {
         let rhs_value = rhs.borrow()[0];
         out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > rhs_value); 
       }
-      Function::GreaterThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] > (rhs.borrow())[0]; }
-      Function::LessThanSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] < (rhs.borrow())[0]; }
       Function::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
         lhs.borrow_mut().par_iter_mut().for_each(|lhs| if *lhs > *rhs {
           *lhs = *swap;
@@ -131,20 +126,6 @@ impl MechFunction for Function {
       Function::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
       Function::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
       Function::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
-      Function::CopyTable((arg,out)) => {
-        let mut out_brrw = out.borrow_mut();
-        let arg_brrw = arg.borrow();
-        out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
-        for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
-          out_brrw.set_col_kind(col, kind.clone());
-        }
-        for col in 0..arg_brrw.cols {
-          for row in 0..arg_brrw.rows {
-            let value = arg_brrw.get(row,col).unwrap();
-            out_brrw.set(row,col,value);
-          }
-        }
-      }
       Function::RangeU8((start,end,out)) => {
         let start_value = start.borrow()[0];
         let end_value = end.borrow()[0];

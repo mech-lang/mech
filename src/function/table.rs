@@ -148,3 +148,29 @@ where T: Copy + Debug
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Copy Table : Table
+#[derive(Debug)]
+pub struct CopyT 
+{
+  pub arg: ArgTable, pub out: OutTable
+}
+
+impl MechFunction for CopyT 
+{
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let arg_brrw = self.arg.borrow();
+    out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
+    for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
+      out_brrw.set_col_kind(col, kind.clone());
+    }
+    for col in 0..arg_brrw.cols {
+      for row in 0..arg_brrw.rows {
+        let value = arg_brrw.get(row,col).unwrap();
+        out_brrw.set(row,col,value);
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
