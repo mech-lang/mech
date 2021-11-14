@@ -14,11 +14,13 @@ fn main() {
   let mut core = Core::new();
 
   parser.parse(r#"
+
+
 block
-  #test = [|x|
-            9]
-block
-  #test := 77"#);
+  x = [1;2;3]
+  x{2,1} := 10
+  y = x * 2
+  #test = stats/sum(column: y)"#);
 
   //println!("{:#?}", parser.parse_tree);
 

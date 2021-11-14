@@ -31,10 +31,10 @@ macro_rules! test_mech {
       let test: Value = $test;
       let actual = core.get_table("test").unwrap().borrow().get(0, 0);
       match actual {
-        Some(value) => {
+        Ok(value) => {
           assert_eq!(value, test);
         },
-        None => assert_eq!(0,1),
+        Err(_) => assert_eq!(0,1),
       }
     }
   )
@@ -470,16 +470,10 @@ block
 
 test_mech!(set_single_index_math,"
 block
-  #test = stats/sum(column: #y)
-
-block
-  #x = [1;2;3]
-
-block
-  #y = #x * 2
-
-block
-  #x{2,1} := 10", Value::U8(28));
+  x = [1;2;3]
+  x{2,1} := 10
+  y = x * 2
+  #test = stats/sum(column: y)", Value::U8(28));
 
 test_mech!(set_logical_false,"
 block
