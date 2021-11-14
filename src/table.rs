@@ -218,9 +218,16 @@ impl Table {
     }
   }
 
-  pub fn set_col_kind(&mut self, col: usize, val: ValueKind) -> Result<(),MechError> {
+  pub fn set_kind(&mut self, kind: ValueKind) -> Result<(),MechError> {
+    for col in 0..self.cols {
+      self.set_col_kind(col,kind.clone())?;
+    }
+    Ok(())
+  }
+
+  pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
-      match (&mut self.data[col], val) {
+      match (&mut self.data[col], kind) {
         (Column::Empty, ValueKind::U8) => {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);

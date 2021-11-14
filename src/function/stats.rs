@@ -25,34 +25,32 @@ where T: std::ops::Add<Output = T> + Debug + Copy + Num
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-/*
-// stats/sum(column: x)
+
+// stats/sum(table: x)
 #[derive(Debug)]
-pub struct StatsSumRow<T>
-where T: std::ops::Add<Output = T> + Debug + Copy + Num
+pub struct StatsSumTable
 {
-  pub col: ArgTable, pub out: Out<T>
+  pub table: ArgTable, pub out: Out<u8>
 }
 
-CopyTable((ArgTable,OutTable)),
-
-
-// stats/sum(row: x)
-Function::CopyTable((arg,out)) => {
-  let mut out_brrw = out.borrow_mut();
-  let arg_brrw = arg.borrow();
-  out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
-  for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
-    out_brrw.set_col_kind(col, kind.clone());
-  }
-  for col in 0..arg_brrw.cols {
-    for row in 0..arg_brrw.rows {
-      let value = arg_brrw.get(row,col).unwrap();
-      out_brrw.set(row,col,value);
+impl MechFunction for StatsSumTable
+{
+  fn solve(&mut self) {
+    let mut sum = 0;
+    let table_brrw = self.table.borrow();
+    let table_els = table_brrw.rows * table_brrw.cols;
+    for i in 0..table_els {
+      match table_brrw.get_linear(i) {
+        Ok(Value::U8(val)) => {
+          sum += val
+        },
+        _ => (),
+      }
     }
+    (*self.out.borrow_mut())[0] = sum;
   }
-}*/
-
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
 
 // stats/sum(column: x{ix})
 #[derive(Debug)]
