@@ -459,13 +459,13 @@ block
 
 test_mech!(set_single_index,"
 block
-  #x = [400; 0; 0]
+  #x = [200; 0; 0]
  
 block 
   #x{3} := 7
 
 block
-  #test = stats/sum(column: #x)", Value::U16(407));
+  #test = stats/sum(column: #x)", Value::U8(207));
 
 
 test_mech!(set_single_index_math,"
@@ -1100,7 +1100,7 @@ block
   #test = #mech/test{2} == #mech/test{3}
   
 block
-  #mech/test = ["foo", 3, stats/sum(table: 1:2)]"#, Value::Bool(true));
+  #mech/test = ["foo", 3, stats/sum(column: 1:2)]"#, Value::Bool(true));
 
 // ## Errors
 
