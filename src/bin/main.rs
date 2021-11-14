@@ -15,10 +15,7 @@ fn main() {
 
   parser.parse(r#"
 block
-  #test = #mech/test{2} == #mech/test{3}
-  
-block
-  #mech/test = ["foo", 3, stats/sum(column: 1:2)]"#);
+  #test = stats/sum(row: [1 2; 3 4])"#);
 
   //println!("{:#?}", parser.parse_tree);
 
