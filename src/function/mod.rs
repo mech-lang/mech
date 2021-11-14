@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
+use std::ops::*;
 
 use rayon::prelude::*;
 use std::thread;
@@ -35,9 +36,6 @@ pub trait MechFunction {
 
 #[derive(Clone, Debug)]
 pub enum Function {
-  DivideSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
-  MultiplySSU8((Arg<u8>, Arg<u8>, Out<u8>)),
-  SubtractSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   ExponentSSU8((Arg<u8>, Arg<u8>, Out<u8>)),
   AddSSIPF32((Out<f32>, Arg<f32>)),
   AddVVIPF32((Out<f32>, Arg<f32>)),
@@ -69,9 +67,6 @@ impl MechFunction for Function {
   fn solve(&mut self) {
     match &*self {
       // MATH
-      Function::DivideSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] / (rhs.borrow())[0]; }
-      Function::MultiplySSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] * (rhs.borrow())[0]; }
-      Function::SubtractSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0] - (rhs.borrow())[0]; }
       Function::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
 
       Function::AddSSIPF32((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }

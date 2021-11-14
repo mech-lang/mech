@@ -3,146 +3,64 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
+use std::ops::*;
 
 use rayon::prelude::*;
 use std::thread;
 
-// ParMul Vector : Scalar
-#[derive(Debug)]
-pub struct ParMultiplyVS<T>
-where T: std::ops::Mul<Output = T> + Copy + Sync + Send + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
+pub trait MechNum<T>: Add<Output = T> + Sub<Output = T> + Div<Output = T> + Mul<Output = T> + num_traits::Pow<T, Output = T> + Sized {}
 
-impl<T> MechFunction for ParMultiplyVS<T> 
-where T: std::ops::Mul<Output = T> + Copy + Sync + Send + Debug
-{
-  fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = *lhs * rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+impl MechNum<u8> for u8 {}
 
-// Add Scalar : Vector
-#[derive(Debug)]
-pub struct AddSV<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-impl<T> MechFunction for AddSV<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    let lhs = self.lhs.borrow()[0];
-    self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs + *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Scalar : Scalar
+binary_infix_ss!(AddSS,add,MechNum);
+binary_infix_ss!(SubSS,sub,MechNum);
+binary_infix_ss!(MulSS,mul,MechNum);
+binary_infix_ss!(DivSS,div,MechNum);
+binary_infix_ss!(ExpSS,pow,MechNum);
 
-// Add Scalar : Scalar
-#[derive(Debug)]
-pub struct AddSIxSIx<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
-}
-impl<T> MechFunction for AddSIxSIx<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    let lhs = self.lhs.borrow()[self.lix];
-    let rhs = self.rhs.borrow()[self.rix];
-    self.out.borrow_mut().iter_mut().for_each(|out| *out = lhs + rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Scalar : Vector
+binary_infix_sv!(AddSV,add,MechNum);
+binary_infix_sv!(SubSV,sub,MechNum);
+binary_infix_sv!(MulSV,mul,MechNum);
+binary_infix_sv!(DivSV,div,MechNum);
+binary_infix_sv!(ExpSV,pow,MechNum);
 
-// Add Vector : Scalar
-#[derive(Debug)]
-pub struct AddVS<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-impl<T> MechFunction for AddVS<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs + rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Vector : Scalar
+binary_infix_vs!(AddVS,add,MechNum);
+binary_infix_vs!(SubVS,sub,MechNum);
+binary_infix_vs!(MulVS,mul,MechNum);
+binary_infix_vs!(DivVS,div,MechNum);
+binary_infix_vs!(ExpVS,pow,MechNum);
 
-// Add Vector : Vector
-#[derive(Debug)]
-pub struct AddVV<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-impl<T> MechFunction for AddVV<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs + *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Vector : Vector
+binary_infix_vv!(AddVV,add,MechNum);
+binary_infix_vv!(SubVV,sub,MechNum);
+binary_infix_vv!(MulVV,mul,MechNum);
+binary_infix_vv!(DivVV,div,MechNum);
+binary_infix_vv!(ExpVV,pow,MechNum);
 
-// Subtract Vector : Vector
-#[derive(Debug)]
-pub struct SubtractVV<T> 
-where T: std::ops::Sub<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-impl<T> MechFunction for SubtractVV<T> 
-where T: std::ops::Sub<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs - *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Parallel Vector : Scalar
+binary_infix_par_vs!(AddParVS,add,MechNum);
+binary_infix_par_vs!(SubParVS,sub,MechNum);
+binary_infix_par_vs!(MulParVS,mul,MechNum);
+binary_infix_par_vs!(DivParVS,div,MechNum);
+binary_infix_par_vs!(ExpParVS,pow,MechNum);
 
-// Add Scalar : Scalar
-#[derive(Debug)]
-pub struct AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
+// Parallel Vector : Vector
+binary_infix_par_vv!(AddParVV,add,MechNum);
+binary_infix_par_vv!(SubParVV,sub,MechNum);
+binary_infix_par_vv!(MulParVV,mul,MechNum);
+binary_infix_par_vv!(DivParVV,div,MechNum);
+binary_infix_par_vv!(ExpParVV,pow,MechNum);
 
-impl<T> MechFunction for AddSS<T> 
-where T: std::ops::Add<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] + (self.rhs.borrow())[0];
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+// Parallel Scalar : Vector
+binary_infix_par_vv!(AddParSV,add,MechNum);
+binary_infix_par_vv!(SubParSV,sub,MechNum);
+binary_infix_par_vv!(MulParSV,mul,MechNum);
+binary_infix_par_vv!(DivParSV,div,MechNum);
+binary_infix_par_vv!(ExpParSV,pow,MechNum);
 
-// ParAdd Vector : Scalar
-#[derive(Debug)]
-pub struct ParAddVS<T>
-where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
-}
-
-impl<T> MechFunction for ParAddVS<T> 
-where T: std::ops::Add<Output = T> + Copy + Sync + Send + Debug
-{
-  fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = *lhs + rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
 
 // Negate Vector
 #[derive(Debug)]
@@ -178,19 +96,138 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Multiply Vector : Scalar
-#[derive(Debug)]
-pub struct MultiplyVS<T> 
-where T: std::ops::Mul<Output = T> + Copy + Debug
-{
-  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+
+#[macro_export]
+macro_rules! binary_infix_sv {
+  ($func_name:ident, $op:tt, $types:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug
+    {
+      fn solve(&mut self) {
+        let lhs = self.lhs.borrow()[0];
+        self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
-impl<T> MechFunction for MultiplyVS<T> 
-where T: std::ops::Mul<Output = T> + Copy + Debug
-{
-  fn solve(&mut self) {
-    let rhs = self.rhs.borrow()[0];
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs * rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+
+#[macro_export]
+macro_rules! binary_infix_vs {
+  ($func_name:ident, $op:tt, $types:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug
+    {
+      fn solve(&mut self) {
+        let rhs = self.rhs.borrow()[0];
+        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = (*lhs).$op(rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_vv {
+  ($func_name:ident, $op:tt, $types:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug
+    {
+      fn solve(&mut self) {
+        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_par_vv {
+  ($func_name:ident, $op:tt, $types:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&mut self) {
+        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_par_vs {
+  ($func_name:ident, $op:tt, $types:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&mut self) {
+        let rhs = self.rhs.borrow()[0];
+        self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = (*lhs).$op(rhs));
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_ss {
+  ($func_name:ident, $op:tt, $types:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug
+    {
+      fn solve(&mut self) {
+        let lhs = self.lhs.borrow()[self.lix];
+        let rhs = self.rhs.borrow()[self.rix];
+        self.out.borrow_mut().iter_mut().for_each(|out| *out = lhs.$op(rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_par_sv {
+  ($func_name:ident, $op:tt, $types:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: $types<T> + Copy + Debug
+    {
+      fn solve(&mut self) {
+        let lhs = self.lhs.borrow()[0];
+        self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }

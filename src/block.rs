@@ -469,11 +469,11 @@ impl Block {
               let mut out_column = self.get_out_column(out, 1, ValueKind::U8)?;
               match (&argument_scalars[0], &argument_scalars[1], &out_column) {
                 ((_,Column::U8(lhs),lix), (_,Column::U8(rhs),rix), Column::U8(out)) => {
-                  if *name == *MATH_ADD { self.plan.push(AddSIxSIx::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
-                  else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  if *name == *MATH_ADD { self.plan.push(AddSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+                  else if *name == *MATH_SUBTRACT { self.plan.push(SubSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
+                  else if *name == *MATH_MULTIPLY { self.plan.push(MulSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
+                  else if *name == *MATH_DIVIDE { self.plan.push(DivSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
+                  else if *name == *MATH_EXPONENT { self.plan.push(ExpSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
                 }
                 _ => {return Err(MechError::GenericError(1236));},
               }
@@ -483,11 +483,11 @@ impl Block {
               let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
-                  if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  //else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  //else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                  else if *name == *MATH_SUBTRACT { self.plan.push(SubSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_MULTIPLY { self.plan.push(MulSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_DIVIDE { self.plan.push(DivSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_EXPONENT { self.plan.push(ExpSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
                 _ => {return Err(MechError::GenericError(1237));},
               }
@@ -497,11 +497,11 @@ impl Block {
               let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
-                  if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  //else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  else if *name == *MATH_MULTIPLY { self.plan.push(MultiplyVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                  else if *name == *MATH_SUBTRACT { self.plan.push(SubVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_MULTIPLY { self.plan.push(MulVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_DIVIDE { self.plan.push(DivVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_EXPONENT { self.plan.push(ExpVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
                 _ => {return Err(MechError::GenericError(1238));},
               }
@@ -515,10 +515,10 @@ impl Block {
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-                  //else if *name == *MATH_DIVIDE { Function::DivideVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *MATH_MULTIPLY { Function::MultiplyVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else if *name == *MATH_SUBTRACT { self.plan.push(SubtractVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
-                  //else if *name == *MATH_EXPONENT { Function::ExponentVVU8((lhs.clone(), rhs.clone(), out.clone())) } 
+                  else if *name == *MATH_SUBTRACT { self.plan.push(SubVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_MULTIPLY { self.plan.push(MulVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_DIVIDE { self.plan.push(DivVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                  else if *name == *MATH_EXPONENT { self.plan.push(ExpVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                 }
                 _ => {return Err(MechError::GenericError(1239));},
               }
@@ -538,6 +538,10 @@ impl Block {
                 match (lhs_column,&rhs_column,out_col) {
                   (Column::U8(lhs), (_,Column::U8(rhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_SUBTRACT { self.plan.push(SubVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_MULTIPLY { self.plan.push(MulVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_DIVIDE { self.plan.push(DivVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_EXPONENT { self.plan.push(ExpVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   }
                   _ => {return Err(MechError::GenericError(6343));},
                 }
@@ -558,6 +562,10 @@ impl Block {
                 match (rhs_column,&lhs_column,out_col) {
                   (Column::U8(rhs), (_,Column::U8(lhs)), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_SUBTRACT { self.plan.push(SubSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_MULTIPLY { self.plan.push(MulSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_DIVIDE { self.plan.push(DivSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_EXPONENT { self.plan.push(ExpSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   }
                   _ => {return Err(MechError::GenericError(6343));},
                 }
@@ -583,6 +591,10 @@ impl Block {
                 match (lhs_rhs,out_col) {
                   ((Column::U8(lhs), Column::U8(rhs)),Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+                    else if *name == *MATH_SUBTRACT { self.plan.push(SubVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_MULTIPLY { self.plan.push(MulVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_DIVIDE { self.plan.push(DivVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
+                    else if *name == *MATH_EXPONENT { self.plan.push(ExpVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   }
                   _ => {return Err(MechError::GenericError(6343));},
                 }

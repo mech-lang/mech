@@ -1,4 +1,5 @@
 #![feature(get_mut_unchecked)]
+#![feature(concat_idents)]
 
 extern crate core as rust_core;
 extern crate hashbrown;
