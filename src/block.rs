@@ -760,13 +760,14 @@ impl Block {
             _ => {return Err(MechError::GenericError(6349));},
           }
         } else if *name == *STATS_SUM {
-          let (arg_name,_,_,_) = arguments[0];
+          let (arg_name,arg_table_id,_,_) = arguments[0];
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.set_kind(ValueKind::U8);
           if arg_name == *COLUMN {
             let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
-            let (out_table_id, _, _) = out;
             let out_table = self.get_table(out_table_id)?;
-            let mut out_brrw = out_table.borrow_mut();
-            out_brrw.set_kind(ValueKind::U8);
             out_brrw.resize(1,1);
             let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
             match arg_column {
@@ -775,18 +776,12 @@ impl Block {
               _ => {return Err(MechError::GenericError(6351));},
             }
           } else if arg_name == *ROW { 
-            let (arg_name,arg_table_id,_,_) = arguments[0];
             let arg_table = self.get_table(&arg_table_id)?;
-            let table_copy = arg_table.borrow_mut().copy();
-
+            out_brrw.resize(arg_table.borrow().rows,1);
+            let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+            self.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()})
           } else if arg_name == *TABLE {
-            let (_,arg_table_id,_,_) = arguments[0];
             let arg_table = self.get_table(&arg_table_id)?;
-
-            let (out_table_id, _, _) = out;
-            let out_table = self.get_table(out_table_id)?;
-            let mut out_brrw = out_table.borrow_mut();
-            out_brrw.set_col_kind(0,ValueKind::U8);
             out_brrw.resize(1,1);
             let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
             self.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})

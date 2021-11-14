@@ -52,6 +52,32 @@ impl MechFunction for StatsSumTable
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
+pub struct StatsSumRow
+{
+  pub table: ArgTable, pub out: Out<u8>
+}
+
+impl MechFunction for StatsSumRow
+{
+  fn solve(&mut self) {
+    let table_brrw = self.table.borrow();
+    for row in 0..table_brrw.rows {
+      let mut sum = 0;
+      for col in 0..table_brrw.cols {
+        match table_brrw.get(row,col) {
+          Ok(Value::U8(val)) => {
+            sum += val
+          },
+          _ => (),
+        }
+      }
+      (*self.out.borrow_mut())[row] = sum;
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // stats/sum(column: x{ix})
 #[derive(Debug)]
 pub struct StatsSumColIx
