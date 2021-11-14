@@ -205,7 +205,7 @@ where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Equal Scalar : Scalar
+// == Scalar : Scalar
 #[derive(Debug)]
 pub struct EqualSS<T> 
 where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
@@ -221,7 +221,7 @@ where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Not Equal Scalar : Scalar
+// != Equal Scalar : Scalar
 #[derive(Debug)]
 pub struct NotEqualSS<T> 
 where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
@@ -233,6 +233,70 @@ where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
 {
   fn solve(&mut self) {
     (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] != (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// > Scalar : Scalar
+#[derive(Debug)]
+pub struct GreaterSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for GreaterSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] > (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// < Scalar : Scalar
+#[derive(Debug)]
+pub struct LessSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for LessSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] < (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// >= Scalar : Scalar
+#[derive(Debug)]
+pub struct GreaterEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for GreaterEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] >= (self.rhs.borrow())[0];
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// < Scalar : Scalar
+#[derive(Debug)]
+pub struct LessEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+}
+impl<T> MechFunction for LessEqualSS<T> 
+where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] <= (self.rhs.borrow())[0];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }

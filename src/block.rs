@@ -63,6 +63,8 @@ pub enum BlockState {
 
 lazy_static! {
   static ref COLUMN: u64 = hash_str("column");
+  static ref ROW: u64 = hash_str("row");
+  static ref TABLE: u64 = hash_str("table");
   static ref STATS_SUM: u64 = hash_str("stats/sum");
   static ref MATH_ADD: u64 = hash_str("math/add");
   static ref MATH_DIVIDE: u64 = hash_str("math/divide");
@@ -497,7 +499,7 @@ impl Block {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   //else if *name == *MATH_DIVIDE { self.plan.push(Function::DivideSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
-                  //else if *name == *MATH_MULTIPLY { self.plan.push(Function::MultiplySSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
+                  else if *name == *MATH_MULTIPLY { self.plan.push(MultiplyVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   //else if *name == *MATH_SUBTRACT { self.plan.push(Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                   //else if *name == *MATH_EXPONENT { self.plan.push(Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone()))) } 
                 }
@@ -674,22 +676,23 @@ impl Block {
               let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
                 ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
-                  let fxn = if *name == *COMPARE_GREATER__THAN { Function::GreaterThanSSU8((lhs.clone(), rhs.clone(), out.clone())) }
-                  else if *name == *COMPARE_LESS__THAN { Function::LessThanSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_GREATER__THAN__EQUAL { Function::GreaterThanEqualSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_LESS__THAN__EQUAL { Function::SubtractSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  //else if *name == *COMPARE_NOT__EQUAL { Function::ExponentSSU8((lhs.clone(), rhs.clone(), out.clone())) } 
-                  else { Function::Null };
-                  self.plan.push(fxn);
+                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+                  else {return Err(MechError::GenericError(1241));}
                 }
                 ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
+                  else {return Err(MechError::GenericError(1242));}
                 }
                 ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
+                  else {return Err(MechError::GenericError(1243));}
                 }
                 _ => {return Err(MechError::GenericError(1240));},
               }
@@ -757,19 +760,26 @@ impl Block {
             _ => {return Err(MechError::GenericError(6349));},
           }
         } else if *name == *STATS_SUM {
-          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
-          let (out_table_id, _, _) = out;
-          let out_table = self.get_table(out_table_id)?;
-          let mut out_brrw = out_table.borrow_mut();
-          out_brrw.set_col_kind(0,ValueKind::U8);
-          out_brrw.resize(1,1);
-          let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+          let (arg_name,_,_,_) = arguments[0];
           if arg_name == *COLUMN {
+            let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+            let (out_table_id, _, _) = out;
+            let out_table = self.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.set_col_kind(0,ValueKind::U8);
+            out_brrw.resize(1,1);
+            let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
             match arg_column {
               Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
               _ => {return Err(MechError::GenericError(6351));},
             }
+          } else if arg_name == *ROW { 
+            let (arg_name,arg_table_id,_,_) = arguments[0];
+            let arg_table = self.get_table(&arg_table_id)?;
+            let table_copy = arg_table.borrow_mut().copy();
+
+          } else if arg_name == *TABLE {
           }
         } else if *name == *SET_ANY {
           let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();

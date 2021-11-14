@@ -177,3 +177,20 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Multiply Vector : Scalar
+#[derive(Debug)]
+pub struct MultiplyVS<T> 
+where T: std::ops::Mul<Output = T> + Copy + Debug
+{
+  pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+}
+impl<T> MechFunction for MultiplyVS<T> 
+where T: std::ops::Mul<Output = T> + Copy + Debug
+{
+  fn solve(&mut self) {
+    let rhs = self.rhs.borrow()[0];
+    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs * rhs); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
