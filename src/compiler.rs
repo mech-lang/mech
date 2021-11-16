@@ -19,6 +19,7 @@ use std::sync::Arc;
 use std::mem;
 
 lazy_static! {
+  static ref TABLE_APPEND: u64 = hash_str("table/append");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
 }
@@ -387,6 +388,47 @@ impl Compiler {
           let mut result = self.compile_nodes(children)?;
           tfms.append(&mut result);            
         }
+      },
+      Node::AddRow{children} => {
+        let mut result_tfms = Vec::new();
+        let mut args = Vec::new();
+
+        let mut result = self.compile_node(&children[0])?;
+        match &result[0] {
+          Transformation::NewTable{table_id,..} => {
+            args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+            result.remove(0);
+          }
+          Transformation::Select{table_id, indices, ..} => {
+            let (row,col) = indices[0];
+            args.push((0,table_id.clone(),row, col));
+            result.remove(0);
+          }
+          _ => (),
+        }
+        result_tfms.append(&mut result); 
+
+        let mut result = self.compile_node(&children[1])?;
+        match &result[0] {
+          Transformation::NewTable{table_id,..} => {
+            args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+          }
+          Transformation::Select{table_id, indices, ..} => {
+            let (row,col) = indices[0];
+            args.push((0,table_id.clone(),row, col));
+            result.remove(0);
+          }
+          _ => (),
+        }
+        result_tfms.append(&mut result); 
+
+        let (_,o,or,oc) = args[0];
+        tfms.append(&mut result_tfms);
+        tfms.push(Transformation::Function{
+          name: *TABLE_APPEND,
+          arguments: vec![args[1]],
+          out: (o,or,oc),
+        });
       },
       Node::TableColumn{children} => {
         let mut result = self.compile_nodes(children)?;

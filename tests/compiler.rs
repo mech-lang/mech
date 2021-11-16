@@ -665,11 +665,11 @@ block
 
 test_mech!(append_row_expression,"
 block
-  #test = stats/sum(column: #x) 
-block
   #x = 20
 block
-  #x += 10", Value::U8(30));
+  #x += 10
+block
+  #test = stats/sum(column: #x)", Value::U8(30));
 
 test_mech!(append_row_math,"
 block
@@ -724,15 +724,14 @@ block
 
 test_mech!(append_multiple_rows,"
 block
-  #test = stats/sum(table: #x)
-
-block
   #x = [|x y|
          1 2]
 block
   #x += [|x y|
           3 4
-          5 6]", Value::U8(21)); 
+          5 6]
+block
+  #test = stats/sum(table: #x)", Value::U8(21)); 
   
 // ## Logic
 
