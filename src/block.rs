@@ -75,6 +75,7 @@ lazy_static! {
   static ref TABLE_RANGE: u64 = hash_str("table/range");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
+  static ref TABLE_APPEND: u64 = hash_str("table/append");
   static ref LOGIC_AND: u64 = hash_str("logic/and");  
   static ref LOGIC_OR: u64 = hash_str("logic/or");
   static ref LOGIC_NOT: u64 = hash_str("logic/not");  
@@ -789,6 +790,28 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6348));},
           }                    
+        } else if *name == *TABLE_APPEND {
+          let (_,src_table_id,src_rows,src_cols) = arguments[0];
+          let (dest_table_id, _, _) = out;
+        
+          let src_table = self.get_table(&src_table_id)?;
+          let dest_table = self.get_table(dest_table_id)?;
+
+          {
+            let mut src_table_brrw = src_table.borrow_mut();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            match dest_table_brrw.kind() {
+              ValueKind::Empty => {
+                dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+                dest_table_brrw.set_kind(src_table_brrw.kind());
+                dest_table_brrw.rows = 0;
+              },
+              x => {
+
+              }
+            }
+          }
+          self.plan.push(AppendRow{arg: src_table.clone(), out: dest_table.clone()});
         } else if *name == *TABLE_RANGE {
           let mut argument_columns = self.get_arg_columns(arguments)?;
           let (out_table_id, _, _) = out;
@@ -1002,8 +1025,8 @@ impl Block {
 
   pub fn solve(&mut self) -> bool {
     if self.state == BlockState::Ready {
-      for ref mut tfm in &mut self.plan.plan.iter() {
-        tfm.borrow_mut().solve();
+      for ref mut fxn in &mut self.plan.plan.iter() {
+        fxn.borrow_mut().solve();
       }
       true
     } else {

@@ -48,8 +48,11 @@ impl Database {
     }
   }
 
-  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
-    self.tables.insert(table.id, Rc::new(RefCell::new(table)))
+  pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
+    match self.tables.try_insert(table.id, Rc::new(RefCell::new(table))) {
+      Ok(x) => Ok(x.clone()),
+      Err(_) => Err(MechError::GenericError(4211)),
+    }
   }
 
   pub fn get_table(&self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {

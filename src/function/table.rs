@@ -172,13 +172,11 @@ where T: Copy + Debug
 
 // Copy Table : Table
 #[derive(Debug)]
-pub struct CopyT 
-{
+pub struct CopyT {
   pub arg: ArgTable, pub out: OutTable
 }
 
-impl MechFunction for CopyT 
-{
+impl MechFunction for CopyT {
   fn solve(&mut self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
@@ -190,6 +188,30 @@ impl MechFunction for CopyT
       for row in 0..arg_brrw.rows {
         let value = arg_brrw.get(row,col).unwrap();
         out_brrw.set(row,col,value);
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// AppendRow Table : Table
+#[derive(Debug)]
+pub struct AppendRow {
+  pub arg: ArgTable, pub out: OutTable
+}
+
+impl MechFunction for AppendRow {
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let arg_brrw = self.arg.borrow();
+    let orows = out_brrw.rows;
+    let ocols = out_brrw.cols;
+    let arows = arg_brrw.rows;
+    out_brrw.resize(orows + arows, ocols);
+    for col in 0..arg_brrw.cols {
+      for row in 0..arows {
+        let value = arg_brrw.get(row,col).unwrap();
+        out_brrw.set(orows + row,col,value);
       }
     }
   }

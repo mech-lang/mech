@@ -229,8 +229,17 @@ impl Table {
   }
 
   pub fn set_kind(&mut self, kind: ValueKind) -> Result<(),MechError> {
-    for col in 0..self.cols {
-      self.set_col_kind(col,kind.clone())?;
+    match kind {
+      ValueKind::Compound(kinds) => {
+        for col in 0..self.cols {
+          self.set_col_kind(col,kinds[col].clone())?;
+        }
+      }
+      kind => {
+        for col in 0..self.cols {
+          self.set_col_kind(col,kind.clone())?;
+        }
+      }
     }
     Ok(())
   }

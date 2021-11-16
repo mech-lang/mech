@@ -65,7 +65,7 @@ impl Core {
         }
         Change::NewTable{table_id, rows, columns} => {
           let table = Table::new(*table_id,*rows,*columns);
-          self.database.borrow_mut().insert_table(table);
+          self.database.borrow_mut().insert_table(table)?;
           match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
             Some(mut ublocks) => {
               block_refs.append(&mut ublocks);
@@ -94,7 +94,7 @@ impl Core {
     Ok(block_refs)
   }
 
-  pub fn insert_table(&mut self, table: Table) -> Option<Rc<RefCell<Table>>> {
+  pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
     self.database.borrow_mut().insert_table(table)
   }
 
@@ -133,7 +133,6 @@ impl Core {
     match block_brrw.ready() {
       true => {
         block_brrw.gen_id();
-        block_brrw.solve();
         self.blocks.push(block_ref_c.clone());
         for pr_block in potentially_ready {
           self.insert_block(pr_block);
