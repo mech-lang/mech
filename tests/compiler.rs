@@ -477,16 +477,17 @@ block
 
 test_mech!(set_logical_false,"
 block
-  #test = stats/sum(column: #ball.x)
-block
-  #x = [100; 200; 300]
+  #x = [1; 2; 3]
   #clicked = [false; false; false]
 
 block
   #ball = [x: #x]
 
 block
-  #x{#clicked} := 10", Value::U16(600));
+  #ball{#clicked} := 10
+  
+block
+  #test = stats/sum(column: #ball)", Value::U8(6));
 
 test_mech!(set_column_logical,"
 block
@@ -672,36 +673,36 @@ block
 
 test_mech!(append_row_math,"
 block
-  #test = stats/sum(column: #x) 
-block
   #x = 20
 block
-  #x += 5 * 2", Value::U8(30));
+  #x += 5 * 2
+block
+  #test = stats/sum(column: #x)", Value::U8(30));
 
 test_mech!(append_row_math_empty,"
 block
-  #test = stats/sum(column: #x) 
-block
   #x = []
 block
-  #x += 5 * 2", Value::U8(10));
-
-test_mech!(append_row_math_empty_named,"
+  #x += 5 * 2
 block
-  #test = stats/sum(column: #x) 
+  #test = stats/sum(column: #x)", Value::U8(10));
+
+test_mech!(append_row_math_empty_named," 
 block
   #x = [|x|]
 block
-  #x += 5 * 2", Value::U8(10));  
+  #x += 5 * 2
+block
+  #test = stats/sum(column: #x)", Value::U8(10));  
 
 test_mech!(append_row_math_empty_whole_table,"
-block
-  #test = #x
 block
   #x = []
 block
   x = 10 + 20
-  #x += x", Value::U8(30));
+  #x += x
+block
+  #test = #x", Value::U8(30));
 
 test_mech!(append_row_select_linear_range,"
 block

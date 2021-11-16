@@ -15,7 +15,17 @@ fn main() {
 
   parser.parse(r#"
 block
-  #test = stats/sum(row: [1 2; 3 4])"#);
+  #x = [1; 2; 3]
+  #clicked = [false; false; false]
+
+block
+  #ball = [x: #x]
+
+block
+  #ball{#clicked} := 10
+  
+block
+  #test = stats/sum(column: #ball)"#);
 
   //println!("{:#?}", parser.parse_tree);
 
