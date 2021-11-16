@@ -29,6 +29,8 @@ pub type Out<T> = ColumnV<T>;
 pub type ArgTable = Rc<RefCell<Table>>;
 pub type OutTable = Rc<RefCell<Table>>;
 
+pub trait MechNum<T>: Add<Output = T> + Sub<Output = T> + Div<Output = T> + Mul<Output = T> + num_traits::Pow<T, Output = T> + Sized {}
+
 pub trait MechFunction {
   fn solve(&mut self);
   fn to_string(&self) -> String;

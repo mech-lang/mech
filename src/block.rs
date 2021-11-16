@@ -171,7 +171,7 @@ impl Block {
   }
 
   fn get_arg_scalar(&self, argument: &Argument) -> Result<(u64,Column,usize),MechError> {
-    let (_,arg_col) = self.get_arg_column(argument)?;
+    let (_,arg_col,_) = self.get_arg_column(argument)?;
     match argument {
       (arg_name,table_id,TableIndex::Index(linear_ix),TableIndex::None) => {
         let table = self.get_table(table_id)?;
@@ -199,15 +199,22 @@ impl Block {
     Ok(argument_scalars)
   }
 
-  fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column),MechError> {
+  fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
+    let arg_dims = self.get_arg_dim(argument);
     let (arg_name, table_id, row, col) = argument;
     let table = self.get_table(table_id)?;
     let table_brrw = table.borrow(); 
     match (row,col) {
+      (TableIndex::Index(row),TableIndex::Index(_)) => {
+        let col = table_brrw.get_column(&col)?;
+        Ok((*arg_name,col.clone(),ColumnIndex::Index(row-1)))
+      }
       (TableIndex::Index(ix),TableIndex::None) => {
         let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
         let col = table_brrw.get_column(&TableIndex::Index(ix_col + 1))?;
-        Ok((*arg_name,col.clone()))
+        let (row,_) = table_brrw.index_to_subscript(ix - 1)?;
+
+        Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
       }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -220,29 +227,42 @@ impl Block {
             if ix_table_brrw.cols != 1 || 
                 ix_table_brrw.rows != table_brrw.rows * table_brrw.cols 
             {
-              return Err(MechError::DimensionMismatch(((ix_table_brrw.rows,ix_table_brrw.cols),(ix_table_brrw.rows,1))))
+              return Err(MechError::GenericError(9233));
             }
-            match ix_table_brrw.get_column_unchecked(0) {
-              Column::Bool(bool_col) => Ok((*arg_name,Column::Reference((table.clone(),(IndexColumn::Bool(bool_col),IndexColumn::None))))),
+
+            let ix = match ix_table_brrw.get_column_unchecked(0) {
+              Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+              Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
               _ => {
-                Err(MechError::ColumnKindMismatch(vec![ValueKind::Bool]))
+                return Err(MechError::GenericError(9232));
               }
+            };
+            match table_brrw.shape() {
+              TableShape::Column(rows) => {
+                let col = table_brrw.get_column_unchecked(0);
+                Ok((*arg_name,col.clone(),ix))
+              }
+              _ => Ok((*arg_name,Column::Reference((table.clone(),(ix,ColumnIndex::None))),ColumnIndex::All)),
             }
           }
         }
       }
       (TableIndex::All, TableIndex::Index(col_ix)) => {
         let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
-        Ok((*arg_name,col.clone()))
+        Ok((*arg_name,col.clone(),ColumnIndex::All))
       },
       _ => {
         let col = table_brrw.get_column(&col)?;
-        Ok((*arg_name,col.clone()))
+        if col.len() == 1 {
+          Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))
+        } else {
+          Ok((*arg_name,col.clone(),ColumnIndex::All))
+        }
       }
     }
   }
 
-  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column)>,MechError> {
+  fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
     let mut argument_columns = vec![];
     for argument in arguments {
       let arg_col = self.get_arg_column(argument)?;
@@ -270,30 +290,38 @@ impl Block {
   }
 
   fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechError> {
-    let mut arg_dims = Vec::new();
-    for (_, table_id, row, column) in arguments {
-      let table = self.get_table(table_id)?;
-      let t = table.borrow();
-      let dims = match (row, column) {
-        (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-        (TableIndex::All,TableIndex::Index(_)) |
-        (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
-        (TableIndex::Index(_),TableIndex::None) => (1,1),
-        (TableIndex::Index(_),TableIndex::Index(_)) => (1,1),
-        _ => {return Err(MechError::GenericError(6384));},
-      };
-      arg_dims.push(dims);
+    let mut arg_shapes = Vec::new();
+    for argument in arguments {
+      arg_shapes.push(self.get_arg_dim(argument)?);
     }
-    let arg_shapes: Vec<TableShape> = arg_dims.iter().map(|dims| {
-      match dims {
-        (1,1) => TableShape::Scalar,
-        (1,x) => TableShape::Row(*x),
-        (x,1) => TableShape::Column(*x),
-        (x,y) => TableShape::Matrix(*x,*y),
-        _ => TableShape::Pending,
-      }
-    }).collect();
     Ok(arg_shapes)
+  }
+
+  fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
+    let (_, table_id, row, column) = argument;
+    let table = self.get_table(table_id)?;
+    let t = table.borrow();
+    let dim = match (row, column) {
+      (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+      (TableIndex::All,TableIndex::Index(_)) |
+      (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
+      (TableIndex::Index(_),TableIndex::None) => (1,1),
+      (TableIndex::Index(_),TableIndex::Index(_)) => (1,1),
+      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+        let ix_table = self.get_table(ix_table_id)?;
+        let rows = ix_table.borrow().get_column_unchecked(0).logical_len();
+        (rows,1)
+      }
+      _ => {return Err(MechError::GenericError(6384));},
+    };
+    let arg_shape = match dim {
+      (1,1) => TableShape::Scalar,
+      (1,x) => TableShape::Row(x),
+      (x,1) => TableShape::Column(x),
+      (x,y) => TableShape::Matrix(x,y),
+      _ => TableShape::Pending,
+    };
+    Ok(arg_shape)
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
@@ -367,7 +395,7 @@ impl Block {
           (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(_)) => {
-            let (_, arg_col) = self.get_arg_column(&(0,*table_id,row,column))?;
+            let (_, arg_col,_) = self.get_arg_column(&(0,*table_id,row,column))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
@@ -407,18 +435,19 @@ impl Block {
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
         let arg_shapes = self.get_arg_dims(&arguments)?;
-        match (arg_shapes[0], arg_shapes[1]) {
-          (TableShape::Scalar, TableShape::Scalar) => {
-            let mut argument_scalars = self.get_arg_scalars(&arguments)?;
-            match (&argument_scalars[0], &argument_scalars[1]) {
-              ((_,Column::U8(arg),ix), (_,Column::U8(out),oix)) => {
-                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix})
-              }
-              _ => {return Err(MechError::GenericError(8834));},
-            }
-          }
-          _ => {return Err(MechError::GenericError(8833));},
+
+        let arg_cols = self.get_arg_columns(&arguments)?;
+        println!("{:?}", arg_cols);
+        match (&arg_cols[0], &arg_cols[1]) {
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
+            self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
+            self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
+            self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          _ => {return Err(MechError::GenericError(8835));},
         }
+
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
@@ -482,7 +511,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   else if *name == *MATH_SUBTRACT { self.plan.push(SubSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(MulSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -496,7 +525,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let mut out_column = self.get_out_column(out, *rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   else if *name == *MATH_SUBTRACT { self.plan.push(SubVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(MulVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -513,7 +542,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *lhs_rows, ValueKind::U8)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::U8(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                   else if *name == *MATH_SUBTRACT { self.plan.push(SubVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(MulVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -536,7 +565,7 @@ impl Block {
                 out_brrw.set_col_kind(col_ix, ValueKind::U8);
                 let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                 match (lhs_column,&rhs_column,out_col) {
-                  (Column::U8(lhs), (_,Column::U8(rhs)), Column::U8(out)) => {
+                  (Column::U8(lhs), (_,Column::U8(rhs),_), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                     else if *name == *MATH_SUBTRACT { self.plan.push(SubVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                     else if *name == *MATH_MULTIPLY { self.plan.push(MulVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -560,7 +589,7 @@ impl Block {
                 out_brrw.set_col_kind(col_ix, ValueKind::U8);
                 let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                 match (rhs_column,&lhs_column,out_col) {
-                  (Column::U8(rhs), (_,Column::U8(lhs)), Column::U8(out)) => {
+                  (Column::U8(rhs), (_,Column::U8(lhs),_), Column::U8(out)) => {
                     if *name == *MATH_ADD { self.plan.push(AddSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                     else if *name == *MATH_SUBTRACT { self.plan.push(SubSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
                     else if *name == *MATH_MULTIPLY { self.plan.push(MulSV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -609,7 +638,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *rows, ValueKind::I8)?;
               match (&argument_columns[0], &out_column) {
-                ((_,Column::I8(arg)), Column::I8(out)) => {
+                ((_,Column::I8(arg),_), Column::I8(out)) => {
                   self.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
                 }
                 _ => {return Err(MechError::GenericError(1961));},
@@ -619,7 +648,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, 1, ValueKind::I8)?;
               match (&argument_columns[0], &out_column) {
-                ((_,Column::I8(arg)), Column::I8(out)) => {
+                ((_,Column::I8(arg),_), Column::I8(out)) => {
                   self.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
                 }
                 _ => {return Err(MechError::GenericError(1961));},
@@ -634,7 +663,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
               match (&argument_columns[0], &out_column) {
-                ((_,Column::Bool(arg)), Column::Bool(out)) => {
+                ((_,Column::Bool(arg),_), Column::Bool(out)) => {
                   self.plan.push(NotV{arg: arg.clone(), out: out.clone() });
                 }
                 _ => {return Err(MechError::GenericError(1961));},
@@ -652,7 +681,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                   if *name == *LOGIC_AND { self.plan.push(AndVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
                   else if *name == *LOGIC_OR { self.plan.push(OrVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *LOGIC_XOR { self.plan.push(XorVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -664,7 +693,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                   if *name == *LOGIC_AND { self.plan.push(AndSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
                   else if *name == *LOGIC_OR { self.plan.push(OrSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
                   else if *name == *LOGIC_XOR { self.plan.push(XorSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
@@ -687,7 +716,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_LESS__THAN { self.plan.push(LessSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -696,12 +725,12 @@ impl Block {
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else {return Err(MechError::GenericError(1241));}
                 }
-                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                   else {return Err(MechError::GenericError(1242));}
                 }
-                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                   else {return Err(MechError::GenericError(1243));}
@@ -713,7 +742,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -721,11 +750,11 @@ impl Block {
                   else if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                 }
-                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
                 }
@@ -739,7 +768,7 @@ impl Block {
               let mut argument_columns = self.get_arg_columns(arguments)?;
               let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
               match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs)), (_,Column::U8(rhs)), Column::Bool(out)) => {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
@@ -747,11 +776,11 @@ impl Block {
                   else if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                ((_,Column::Bool(lhs)), (_,Column::Bool(rhs)), Column::Bool(out)) => {
+                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
-                ((_,Column::String(lhs)), (_,Column::String(rhs)), Column::Bool(out)) => {
+                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
                   if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                   else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
                 }
@@ -765,7 +794,7 @@ impl Block {
           let (out_table_id, _, _) = out;
           let out_table = self.get_table(out_table_id)?;
           match (&argument_columns[0], &argument_columns[1]) {
-            ((_,Column::U8(start)), (_,Column::U8(end))) => {  
+            ((_,Column::U8(start),_), (_,Column::U8(end),_)) => {  
               let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
               self.plan.push(fxn);
             }
@@ -778,13 +807,14 @@ impl Block {
           let mut out_brrw = out_table.borrow_mut();
           out_brrw.set_kind(ValueKind::U8);
           if arg_name == *COLUMN {
-            let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+            let arg = self.get_arg_columns(arguments)?[0].clone();
             let out_table = self.get_table(out_table_id)?;
             out_brrw.resize(1,1);
             let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
-            match arg_column {
-              Column::U8(col) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
-              Column::Reference((ref table, (IndexColumn::Bool(ix_col), IndexColumn::None))) => self.plan.push(StatsSumColIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
+            match arg {
+              (_,Column::U8(col),ColumnIndex::All) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
+              (_,Column::U8(col),ColumnIndex::Bool(ix_col)) => self.plan.push(StatsSumColVIx{col: col.clone(), ix: ix_col.clone(), out: out_col.clone()}),
+              (_,Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_) => self.plan.push(StatsSumColTIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
               _ => {return Err(MechError::GenericError(6351));},
             }
           } else if arg_name == *ROW { 
@@ -799,7 +829,7 @@ impl Block {
             self.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})
           }
         } else if *name == *SET_ANY {
-          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          let (arg_name, mut arg_column,_) = self.get_arg_columns(arguments)?[0].clone();
           let (out_table_id, _, _) = out;
           let out_table = self.get_table(out_table_id)?;
           let mut out_brrw = out_table.borrow_mut();
@@ -813,7 +843,7 @@ impl Block {
             }
           }
         } else if *name == *SET_ALL {
-          let (arg_name, mut arg_column) = self.get_arg_columns(arguments)?[0].clone();
+          let (arg_name, mut arg_column,_) = self.get_arg_columns(arguments)?[0].clone();
           let (out_table_id, _, _) = out;
           let out_table = self.get_table(out_table_id)?;
           let mut out_brrw = out_table.borrow_mut();
@@ -901,7 +931,6 @@ impl Block {
             
           }
         } else if *name == *TABLE_HORIZONTAL__CONCATENATE {
-          println!("HORZCAT");
           // Get all of the tables
           let mut arg_tables = vec![];
           let mut rows = 0;

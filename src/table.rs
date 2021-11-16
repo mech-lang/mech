@@ -138,7 +138,17 @@ impl Table {
     } else {
       ValueKind::Compound(self.col_kinds.clone())
     }
+  }
 
+  pub fn shape(&self) -> TableShape {
+    match (self.rows, self.cols) {
+      (0,_) |
+      (_,0) => TableShape::Pending,
+      (1,1) => TableShape::Scalar,
+      (x,1) => TableShape::Column(x),
+      (1,x) => TableShape::Row(x),
+      (x,y) => TableShape::Matrix(x,y), 
+    }
   }
 
   pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {

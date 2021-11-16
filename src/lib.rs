@@ -62,15 +62,18 @@ pub enum Column {
   U16(ColumnV<u16>),
   U64(ColumnV<u64>),
   I8(ColumnV<i8>),
+  Index(ColumnV<usize>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
-  Reference((Reference,(IndexColumn,IndexColumn))),
+  Reference((Reference,(ColumnIndex,ColumnIndex))),
   Empty,
 }
 
 #[derive(Clone, Debug)]
-pub enum IndexColumn {
-  Index(ColumnV<u64>),
+pub enum ColumnIndex {
+  All,
+  Index(usize),
+  IndexCol(ColumnV<usize>),
   Bool(ColumnV<bool>),
   None,
 }
@@ -85,6 +88,7 @@ impl Column {
       Column::I8(col) => Column::I8(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::F32(col) => Column::F32(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Bool(col) => Column::Bool(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Index(col) => Column::Index(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::String(col) => Column::String(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Reference(reference) => Column::Reference(reference.clone()),
       _ => Column::Empty,
@@ -119,6 +123,19 @@ impl Column {
     }
   }
 
+  pub fn to_index(&mut self) -> Result<Column,MechError> {
+    match self {
+      Column::U64(col) => {
+        let mut new_column: Vec<usize> = Vec::new();
+        for value in col.borrow().iter() {
+          new_column.push(*value as usize);
+        }
+        Ok(Column::Index(Rc::new(RefCell::new(new_column))))
+      }
+      _ => Err(MechError::GenericError(8174)),
+    }
+  }
+
   pub fn len(&self) -> usize {
     match self {
       Column::U8(col) => col.borrow().len(),
@@ -128,6 +145,7 @@ impl Column {
       Column::Bool(col) => col.borrow().len(),
       Column::String(col) => col.borrow().len(),
       Column::U16(col) => col.borrow().len(),
+      Column::Index(col) => col.borrow().len(),
       Column::Reference((table,index)) => {
         let t = table.borrow();
         t.rows * t.cols
@@ -145,6 +163,7 @@ impl Column {
       Column::Bool(col) => col.borrow().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
       Column::String(col) => col.borrow().len(),
       Column::U16(col) => col.borrow().len(),
+      Column::Index(col) => col.borrow().len(),
       Column::Reference((table,index)) => {
         let t = table.borrow();
         t.rows * t.cols
@@ -159,6 +178,7 @@ impl Column {
       Column::U16(col) => col.borrow_mut().resize(rows,0),
       Column::I8(col) => col.borrow_mut().resize(rows,0),
       Column::U64(col) => col.borrow_mut().resize(rows,0),
+      Column::Index(col) => col.borrow_mut().resize(rows,0),
       Column::F32(col) => col.borrow_mut().resize(rows,0.0),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
       Column::String(col) => col.borrow_mut().resize(rows,vec![]),
@@ -177,6 +197,7 @@ impl Column {
       Column::U16(_) => ValueKind::U16,
       Column::Bool(_) => ValueKind::Bool,
       Column::String(_) => ValueKind::String,
+      Column::Index(_) => ValueKind::Index,
       Column::Reference((table,index)) => table.borrow().kind(),
       Column::Empty => ValueKind::Empty,
       _ => ValueKind::Empty,

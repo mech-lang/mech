@@ -9,9 +9,7 @@ use std::thread;
 
 // stats/sum(column: x)
 #[derive(Debug)]
-pub struct StatsSumCol<T>
-where T: std::ops::Add<Output = T> + Debug + Copy + Num
-{
+pub struct StatsSumCol<T> {
   pub col: Arg<T>, pub out: Out<T>
 }
 
@@ -28,13 +26,11 @@ where T: std::ops::Add<Output = T> + Debug + Copy + Num
 
 // stats/sum(table: x)
 #[derive(Debug)]
-pub struct StatsSumTable
-{
+pub struct StatsSumTable {
   pub table: ArgTable, pub out: Out<u8>
 }
 
-impl MechFunction for StatsSumTable
-{
+impl MechFunction for StatsSumTable {
   fn solve(&mut self) {
     let mut sum = 0;
     let table_brrw = self.table.borrow();
@@ -53,13 +49,11 @@ impl MechFunction for StatsSumTable
 }
 
 #[derive(Debug)]
-pub struct StatsSumRow
-{
+pub struct StatsSumRow {
   pub table: ArgTable, pub out: Out<u8>
 }
 
-impl MechFunction for StatsSumRow
-{
+impl MechFunction for StatsSumRow {
   fn solve(&mut self) {
     let table_brrw = self.table.borrow();
     for row in 0..table_brrw.rows {
@@ -78,15 +72,32 @@ impl MechFunction for StatsSumRow
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// stats/sum(column: x)
+#[derive(Debug)]
+pub struct StatsSumColVIx<T> {
+  pub col: Arg<T>, pub ix: Arg<bool>, pub out: Out<T>
+}
+
+impl<T> MechFunction for StatsSumColVIx<T>
+where T: std::ops::Add<Output = T> + Debug + Copy + Num {
+  fn solve(&mut self) {
+    let result = self.col.borrow()
+                         .iter()
+                         .zip(self.ix.borrow().iter())
+                         .fold(identities::Zero::zero(),|sum, (n,ix)| if *ix {sum + *n} else {sum});
+    self.out.borrow_mut()[0] = result
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
 // stats/sum(column: x{ix})
 #[derive(Debug)]
-pub struct StatsSumColIx
-{
+pub struct StatsSumColTIx {
   pub col: ArgTable, pub ix: Arg<bool>, pub out: Out<u8>
 }
 
-impl MechFunction for StatsSumColIx
-{
+impl MechFunction for StatsSumColTIx {
   fn solve(&mut self) {
     let mut sum = 0;
     let table_brrw = self.col.borrow();

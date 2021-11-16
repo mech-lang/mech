@@ -8,58 +8,56 @@ use std::ops::*;
 use rayon::prelude::*;
 use std::thread;
 
-pub trait MechNum<T>: Add<Output = T> + Sub<Output = T> + Div<Output = T> + Mul<Output = T> + num_traits::Pow<T, Output = T> + Sized {}
-
 impl MechNum<u8> for u8 {}
 
 // Scalar : Scalar
-binary_infix_ss!(AddSS,add,MechNum);
-binary_infix_ss!(SubSS,sub,MechNum);
-binary_infix_ss!(MulSS,mul,MechNum);
-binary_infix_ss!(DivSS,div,MechNum);
-binary_infix_ss!(ExpSS,pow,MechNum);
+binary_infix_ss!(AddSS,add);
+binary_infix_ss!(SubSS,sub);
+binary_infix_ss!(MulSS,mul);
+binary_infix_ss!(DivSS,div);
+binary_infix_ss!(ExpSS,pow);
 
 // Scalar : Vector
-binary_infix_sv!(AddSV,add,MechNum);
-binary_infix_sv!(SubSV,sub,MechNum);
-binary_infix_sv!(MulSV,mul,MechNum);
-binary_infix_sv!(DivSV,div,MechNum);
-binary_infix_sv!(ExpSV,pow,MechNum);
+binary_infix_sv!(AddSV,add);
+binary_infix_sv!(SubSV,sub);
+binary_infix_sv!(MulSV,mul);
+binary_infix_sv!(DivSV,div);
+binary_infix_sv!(ExpSV,pow);
 
 // Vector : Scalar
-binary_infix_vs!(AddVS,add,MechNum);
-binary_infix_vs!(SubVS,sub,MechNum);
-binary_infix_vs!(MulVS,mul,MechNum);
-binary_infix_vs!(DivVS,div,MechNum);
-binary_infix_vs!(ExpVS,pow,MechNum);
+binary_infix_vs!(AddVS,add);
+binary_infix_vs!(SubVS,sub);
+binary_infix_vs!(MulVS,mul);
+binary_infix_vs!(DivVS,div);
+binary_infix_vs!(ExpVS,pow);
 
 // Vector : Vector
-binary_infix_vv!(AddVV,add,MechNum);
-binary_infix_vv!(SubVV,sub,MechNum);
-binary_infix_vv!(MulVV,mul,MechNum);
-binary_infix_vv!(DivVV,div,MechNum);
-binary_infix_vv!(ExpVV,pow,MechNum);
+binary_infix_vv!(AddVV,add);
+binary_infix_vv!(SubVV,sub);
+binary_infix_vv!(MulVV,mul);
+binary_infix_vv!(DivVV,div);
+binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
-binary_infix_par_vs!(AddParVS,add,MechNum);
-binary_infix_par_vs!(SubParVS,sub,MechNum);
-binary_infix_par_vs!(MulParVS,mul,MechNum);
-binary_infix_par_vs!(DivParVS,div,MechNum);
-binary_infix_par_vs!(ExpParVS,pow,MechNum);
+binary_infix_par_vs!(AddParVS,add);
+binary_infix_par_vs!(SubParVS,sub);
+binary_infix_par_vs!(MulParVS,mul);
+binary_infix_par_vs!(DivParVS,div);
+binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
-binary_infix_par_vv!(AddParVV,add,MechNum);
-binary_infix_par_vv!(SubParVV,sub,MechNum);
-binary_infix_par_vv!(MulParVV,mul,MechNum);
-binary_infix_par_vv!(DivParVV,div,MechNum);
-binary_infix_par_vv!(ExpParVV,pow,MechNum);
+binary_infix_par_vv!(AddParVV,add);
+binary_infix_par_vv!(SubParVV,sub);
+binary_infix_par_vv!(MulParVV,mul);
+binary_infix_par_vv!(DivParVV,div);
+binary_infix_par_vv!(ExpParVV,pow);
 
 // Parallel Scalar : Vector
-binary_infix_par_vv!(AddParSV,add,MechNum);
-binary_infix_par_vv!(SubParSV,sub,MechNum);
-binary_infix_par_vv!(MulParSV,mul,MechNum);
-binary_infix_par_vv!(DivParSV,div,MechNum);
-binary_infix_par_vv!(ExpParSV,pow,MechNum);
+binary_infix_par_vv!(AddParSV,add);
+binary_infix_par_vv!(SubParSV,sub);
+binary_infix_par_vv!(MulParSV,mul);
+binary_infix_par_vv!(DivParSV,div);
+binary_infix_par_vv!(ExpParSV,pow);
 
 
 // Negate Vector
@@ -99,13 +97,13 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 
 #[macro_export]
 macro_rules! binary_infix_sv {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug
+    where T: MechNum<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[0];
@@ -118,13 +116,13 @@ macro_rules! binary_infix_sv {
 
 #[macro_export]
 macro_rules! binary_infix_vs {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug
+    where T: MechNum<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let rhs = self.rhs.borrow()[0];
@@ -137,14 +135,14 @@ macro_rules! binary_infix_vs {
 
 #[macro_export]
 macro_rules! binary_infix_vv {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug
+    where T: MechNum<T> + Copy + Debug
     {
       fn solve(&mut self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
@@ -156,14 +154,14 @@ macro_rules! binary_infix_vv {
 
 #[macro_export]
 macro_rules! binary_infix_par_vv {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug + Send + Sync
+    where T: MechNum<T> + Copy + Debug + Send + Sync
     {
       fn solve(&mut self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
@@ -175,14 +173,14 @@ macro_rules! binary_infix_par_vv {
 
 #[macro_export]
 macro_rules! binary_infix_par_vs {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug + Send + Sync
+    where T: MechNum<T> + Copy + Debug + Send + Sync
     {
       fn solve(&mut self) {
         let rhs = self.rhs.borrow()[0];
@@ -195,13 +193,13 @@ macro_rules! binary_infix_par_vs {
 
 #[macro_export]
 macro_rules! binary_infix_ss {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug
+    where T: MechNum<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[self.lix];
@@ -215,13 +213,13 @@ macro_rules! binary_infix_ss {
 
 #[macro_export]
 macro_rules! binary_infix_par_sv {
-  ($func_name:ident, $op:tt, $types:tt) => (
+  ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: $types<T> + Copy + Debug
+    where T: MechNum<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[0];
