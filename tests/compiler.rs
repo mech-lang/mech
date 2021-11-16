@@ -285,9 +285,9 @@ block
   #test = stats/sum(table: #ball)
 
 block
-  x = 1:4000
-  y = 1:4000
-  #ball = [x y]"#, Value::U32(16004000));
+  x = 1:4
+  y = 1:4
+  #ball = [x y]"#, Value::U8(20));
 
 // ## Subscripts
 
