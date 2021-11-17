@@ -171,35 +171,6 @@ impl Block {
     }
   }
 
-  fn get_arg_scalar(&self, argument: &Argument) -> Result<(u64,Column,usize),MechError> {
-    let (_,arg_col,_) = self.get_arg_column(argument)?;
-    match argument {
-      (arg_name,table_id,TableIndex::Index(linear_ix),TableIndex::None) => {
-        let table = self.get_table(table_id)?;
-        let table_brrw = table.borrow();
-        let (row,col) = table_brrw.index_to_subscript(linear_ix - 1)?;
-        Ok((*arg_name,arg_col,row))
-      }
-      (arg_name,table_id,TableIndex::Index(row),TableIndex::Index(_)) => {
-        let table = self.get_table(table_id)?;
-        Ok((*arg_name,arg_col,row-1))
-      }
-      (arg_name,table_id,TableIndex::All,_) => {
-        Ok((*arg_name,arg_col,0))
-      }
-      _ => Err(MechError::GenericError(1234))
-    }
-  }
-
-  fn get_arg_scalars(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,usize)>,MechError> {
-    let mut argument_scalars = vec![];
-    for argument in arguments {
-      let arg_scalar = self.get_arg_scalar(argument)?;
-      argument_scalars.push(arg_scalar);
-    }
-    Ok(argument_scalars)
-  }
-
   fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
     let arg_dims = self.get_arg_dim(argument);
     let (arg_name, table_id, row, col) = argument;
@@ -314,8 +285,9 @@ impl Block {
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
       (TableIndex::All,TableIndex::Index(_)) |
       (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
-      (TableIndex::Index(_),TableIndex::None) => (1,1),
-      (TableIndex::Index(_),TableIndex::Index(_)) => (1,1),
+      (TableIndex::Index(_),TableIndex::None) |
+      (TableIndex::Index(_),TableIndex::Index(_)) |
+      (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(ix_table_id)?;
         let rows = ix_table.borrow().get_column_unchecked(0).logical_len();
@@ -513,10 +485,10 @@ impl Block {
           // Now decide on the correct tfm based on the shape
           match (&arg_shapes[0],&arg_shapes[1]) {
             (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_scalars = self.get_arg_scalars(arguments)?;
+              let mut argument_scalars = self.get_arg_columns(arguments)?;
               let mut out_column = self.get_out_column(out, 1, ValueKind::U8)?;
               match (&argument_scalars[0], &argument_scalars[1], &out_column) {
-                ((_,Column::U8(lhs),lix), (_,Column::U8(rhs),rix), Column::U8(out)) => {
+                ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix)), Column::U8(out)) => {
                   if *name == *MATH_ADD { self.plan.push(AddSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
                   else if *name == *MATH_SUBTRACT { self.plan.push(SubSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
                   else if *name == *MATH_MULTIPLY { self.plan.push(MulSS::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) } 
