@@ -300,6 +300,35 @@ impl Compiler {
         tfms.append(&mut compiled_row_tfms);
         tfms.append(&mut a_tfms);
       }
+      Node::EmptyTable{children} => {
+        let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
+        let mut table_children = children.clone();
+        let mut column_aliases = Vec::new();
+        let mut header_tfms = Vec::new();
+        let mut columns = 1;
+        match table_children.first() {
+          Some(Node::TableHeader{children}) => {
+            let mut result = self.compile_nodes(&children)?;
+            columns = result.len();
+            for (ix,tfm) in result.iter().enumerate() {
+              match tfm {
+                Transformation::Identifier{name,id} => {
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  column_aliases.push(alias_tfm);
+                }
+                _ => (),
+              }
+            }
+
+            header_tfms.append(&mut result);
+            header_tfms.append(&mut column_aliases);
+            table_children.remove(0);
+          }
+          _ => (),
+        };
+        header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: columns});
+        tfms.append(&mut header_tfms);
+      }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
@@ -582,7 +611,6 @@ impl Compiler {
       Node::Statement{children} |
       Node::Fragment{children} |
       Node::Block{children} |
-      Node::EmptyTable{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::TableRow{children} |

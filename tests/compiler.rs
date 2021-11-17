@@ -715,12 +715,12 @@ block
 
 test_mech!(append_row_select_linear,"
 block
-  #test = stats/sum(table: #x)
+  #x = [10; 30]
 block
-  #x = [10 30]
+  x = [10; 20; 30]
+  #x += x{2}  
 block
-  x = [10 20 30]
-  #x += x{2}", Value::U8(60)); 
+  #test = stats/sum(column: #x)", Value::U8(60)); 
 
 test_mech!(append_multiple_rows,"
 block
