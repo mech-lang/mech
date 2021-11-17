@@ -59,21 +59,17 @@ where T: Copy + Debug
 
 // Copy Vector : Vector
 #[derive(Debug)]
-pub struct CopySS<T> 
-where T: Copy + Debug
-{
+pub struct CopySS<T> {
   pub arg: Arg<T>, pub ix: usize , pub out: Out<T>
 }
 impl<T> MechFunction for CopySS<T> 
-where T: Copy + Debug
+where T: Clone + Debug
 {
   fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.arg.borrow())[self.ix]
+    (self.out.borrow_mut())[0] = (self.arg.borrow())[self.ix].clone()
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
-
-
 
 // Copy Vector{Bool Ix} : Vector
 #[derive(Debug)]

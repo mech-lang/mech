@@ -59,8 +59,6 @@ pub enum Function {
   ParCopyVV((Arg<f32>,Out<f32>)),
   ParCopyVVU8((Arg<u8>,Out<u8>)),
   HorizontalConcatenate((Vec<ArgTable>,OutTable)),
-  CopySSU8((Arg<u8>,usize,Out<u8>)),
-  CopySSString((Arg<MechString>,usize,Out<MechString>)),
   RangeU8((Arg<u8>,Arg<u8>,OutTable)),
   Null,
 }
@@ -120,8 +118,6 @@ impl MechFunction for Function {
         });          
       }
       Function::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
-      Function::CopySSU8((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix] }
-      Function::CopySSString((rhs, ix, out)) => { (out.borrow_mut())[0] = (rhs.borrow())[*ix].clone() }
       Function::SetVVU8((src,dest)) => { dest.borrow_mut().iter_mut().zip(&(*src.borrow())).for_each(|(dest,src)| *dest = *src); }
       Function::RangeU8((start,end,out)) => {
         let start_value = start.borrow()[0];
