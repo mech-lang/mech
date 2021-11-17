@@ -206,9 +206,17 @@ impl Block {
     let table = self.get_table(table_id)?;
     let table_brrw = table.borrow(); 
     match (row,col) {
+      (_,TableIndex::Index(ix)) |
+      (TableIndex::Index(ix),_) if ix == &0 => {
+        return Err(MechError::GenericError(9233));
+      }
       (TableIndex::Index(row),TableIndex::Index(_)) => {
         let col = table_brrw.get_column(&col)?;
         Ok((*arg_name,col.clone(),ColumnIndex::Index(row-1)))
+      }
+      (TableIndex::Index(ix),TableIndex::Alias(col_alias)) => {
+        let arg_col = table_brrw.get_column(col)?;
+        Ok((*arg_name,arg_col.clone(),ColumnIndex::Index(*ix-1)))
       }
       (TableIndex::Index(ix),TableIndex::None) => {
         let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
@@ -428,6 +436,16 @@ impl Block {
               (Column::U8(arg), Column::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               (Column::U8(arg), Column::U8(ix), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               _ => {return Err(MechError::GenericError(6380));},
+            }
+          }
+          (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
+            let (_, arg_col,arg_ix) = self.get_arg_column(&(0,*table_id,row,column))?;
+            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
+            match (&arg_col, &arg_ix, &out_col) {
+              (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+              x => {
+                println!("{:?}", x);
+                return Err(MechError::GenericError(6388));},
             }
           }
           _ => {return Err(MechError::GenericError(6379));},
@@ -1005,12 +1023,12 @@ impl Block {
                 let mut arg_col = t.get_column_unchecked(0);
                 o.set_col_kind(out_column_ix, arg_col.kind());
                 let mut out_col = o.get_column_unchecked(out_column_ix);
-                let fxn = match (&arg_col, &out_col) {
-                  (Column::U8(arg), Column::U8(out)) => Function::CopySSU8((arg.clone(),0,out.clone())),
-                  (Column::String(arg), Column::String(out)) => Function::CopySSString((arg.clone(),0,out.clone())),
-                  _ => Function::Null,
+                match (&arg_col, &out_col) {
+                  (Column::U8(arg), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
+                  (Column::String(arg), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: 0, out: out.clone()}),
+                  (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: 0, out: out.clone()}),
+                  _ => {return Err(MechError::GenericError(6366));},
                 };
-                self.plan.push(fxn);
                 out_column_ix += 1;
               }
               TableShape::Column(_) => {
