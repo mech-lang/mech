@@ -46,6 +46,7 @@ pub enum Node {
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
+  EmptyTable {children: Vec<Node> },
   AnonymousMatrixDefine {children: Vec<Node> },
   InlineTable {children: Vec<Node> },
   TableHeader {children: Vec<Node> },
@@ -116,6 +117,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::FunctionBinding{children} => {write!(f,"FunctionBinding\n").ok(); Some(children)},
     Node::TableDefine{children} => {write!(f,"TableDefine\n").ok(); Some(children)},
     Node::AnonymousTableDefine{children} => {write!(f,"AnonymousTableDefine\n").ok(); Some(children)},
+    Node::EmptyTable{children} => {write!(f,"EmptyTable\n").ok(); Some(children)},
     Node::InlineTable{children} => {write!(f,"InlineTable\n").ok(); Some(children)},
     Node::TableHeader{children} => {write!(f,"TableHeader\n").ok(); Some(children)},
     Node::Attribute{children} => {write!(f,"Attribute\n").ok(); Some(children)},
@@ -421,6 +423,17 @@ impl Ast {
           }
         }
         compiled.push(Node::AnonymousTableDefine{children});
+      },
+      parser::Node::EmptyTable{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::EmptyTable{children});
       },
       parser::Node::TableHeader{children} => {
         let result = self.compile_nodes(children);

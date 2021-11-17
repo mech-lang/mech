@@ -67,6 +67,7 @@ pub enum Node {
   Equality{ children: Vec<Node> },
   Expression{ children: Vec<Node> },
   AnonymousTable{ children: Vec<Node> },
+  EmptyTable{ children: Vec<Node> },
   AnonymousMatrix{ children: Vec<Node> },
   TableRow{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -189,6 +190,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Comparator{children} => {print!("Comparator\n"); Some(children)},
     Node::FilterExpression{children} => {print!("FilterExpression\n"); Some(children)},
     Node::AnonymousTable{children} => {print!("AnonymousTable\n"); Some(children)},
+    Node::EmptyTable{children} => {print!("EmptyTable\n"); Some(children)},
     Node::AnonymousMatrix{children} => {print!("AnonymousMatrix\n"); Some(children)},
     Node::TableRow{children} => {print!("TableRow\n"); Some(children)},
     Node::Table{children} => {print!("Table\n"); Some(children)},
@@ -869,6 +871,21 @@ fn anonymous_table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::AnonymousTable{children: table}))
 }
 
+fn empty_table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = left_bracket(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, table_header) = opt(table_header)(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let mut table = vec![];
+  match table_header {
+    Some(table_header) => table.push(table_header),
+    _ => (),
+  };
+  Ok((input, Node::EmptyTable{children: table}))
+}
+
 fn anonymous_matrix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_angle(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -1168,7 +1185,7 @@ fn l5_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l6(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, l6) = alt((anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -1275,7 +1292,7 @@ fn string(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, expression) = alt((string, inline_table, math_expression, anonymous_table))(input)?;
+  let (input, expression) = alt((string, inline_table, math_expression, empty_table, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 

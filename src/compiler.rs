@@ -178,25 +178,27 @@ impl Compiler {
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
-        let (input_table_id, input_indices) = match &mut input[0] {
-          Transformation::NewTable{table_id,..} => {
-            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
-          },
-          Transformation::Select{table_id,ref indices,..} => {
-            let table_id = table_id.clone();
-            let indices = indices.clone();
-            input.remove(0);
-            Some((table_id,indices))
-          },
-          _ => None,
-        }.unwrap();
-        //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
-        tfms.append(&mut input);
-        tfms.push(Transformation::Select{
-          table_id: input_table_id.clone(), 
-          indices: input_indices, 
-          out: output_table_id.unwrap()
-        });
+        if input.len() > 0 {
+          let (input_table_id, input_indices) = match &mut input[0] {
+            Transformation::NewTable{table_id,..} => {
+              Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+            },
+            Transformation::Select{table_id,ref indices,..} => {
+              let table_id = table_id.clone();
+              let indices = indices.clone();
+              input.remove(0);
+              Some((table_id,indices))
+            },
+            _ => None,
+          }.unwrap();
+          //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
+          tfms.append(&mut input);
+          tfms.push(Transformation::Select{
+            table_id: input_table_id.clone(), 
+            indices: input_indices, 
+            out: output_table_id.unwrap()
+          });
+        }
       }
       Node::VariableDefine{children} => {
         let variable_name = match &children[0] {
@@ -305,8 +307,8 @@ impl Compiler {
         let mut column_aliases = Vec::new();
         let mut body_tfms = Vec::new();
         let mut columns = 1;
-        match &table_children[0] {
-          Node::TableHeader{children} => {
+        match table_children.first() {
+          Some(Node::TableHeader{children}) => {
             let mut result = self.compile_nodes(&children)?;
             columns = result.len();
             for (ix,tfm) in result.iter().enumerate() {
@@ -580,6 +582,7 @@ impl Compiler {
       Node::Statement{children} |
       Node::Fragment{children} |
       Node::Block{children} |
+      Node::EmptyTable{children} |
       Node::MathExpression{children} |
       Node::Expression{children} |
       Node::TableRow{children} |
