@@ -87,7 +87,7 @@ impl<T> MechFunction for CopyVB<T>
 where T: Copy + Debug
 {
   fn solve(&mut self) {
-    // Filter the column to include only elements with a true index
+    // Filter the column to include only elements with a "true" index
     let filtered: Vec<T>  = 
       self.arg.borrow()
          .iter()
@@ -196,11 +196,11 @@ impl MechFunction for CopyT {
 
 // AppendRow Table : Table
 #[derive(Debug)]
-pub struct AppendRow {
+pub struct AppendRowT {
   pub arg: ArgTable, pub out: OutTable
 }
 
-impl MechFunction for AppendRow {
+impl MechFunction for AppendRowT {
   fn solve(&mut self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
@@ -214,6 +214,24 @@ impl MechFunction for AppendRow {
         out_brrw.set(orows + row,col,value);
       }
     }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// AppendRow Table : Table
+#[derive(Debug)]
+pub struct AppendRowSV {
+  pub arg: ArgTable, pub ix: usize,  pub out: OutTable
+}
+
+impl MechFunction for AppendRowSV {
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let arg_brrw = self.arg.borrow();
+    let orows = out_brrw.rows;
+    out_brrw.resize(orows + 1, 1);
+    let value = arg_brrw.get_linear(self.ix).unwrap();
+    out_brrw.set(orows,0,value);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }

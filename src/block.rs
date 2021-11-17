@@ -791,6 +791,9 @@ impl Block {
             _ => {return Err(MechError::GenericError(6348));},
           }                    
         } else if *name == *TABLE_APPEND {
+          let arg_shape = self.get_arg_dim(&arguments[0])?;
+          let (_,_,arow_ix,_) = arguments[0];
+
           let (_,src_table_id,src_rows,src_cols) = arguments[0];
           let (dest_table_id, _, _) = out;
         
@@ -807,11 +810,19 @@ impl Block {
                 dest_table_brrw.rows = 0;
               },
               x => {
-
               }
             }
           }
-          self.plan.push(AppendRow{arg: src_table.clone(), out: dest_table.clone()});
+          
+          let dest_shape = {dest_table.borrow().shape()};
+          match (arg_shape,arow_ix,dest_shape) {
+            (TableShape::Scalar,TableIndex::Index(ix),TableShape::Column(_)) => {
+              self.plan.push(AppendRowSV{arg: src_table.clone(), ix: ix-1, out: dest_table.clone()});
+            }
+            x => {
+              self.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
+            },
+          }
         } else if *name == *TABLE_RANGE {
           let mut argument_columns = self.get_arg_columns(arguments)?;
           let (out_table_id, _, _) = out;
@@ -835,10 +846,13 @@ impl Block {
             out_brrw.resize(1,1);
             let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
             match arg {
+              (_,Column::U8(col),ColumnIndex::Index(_)) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               (_,Column::U8(col),ColumnIndex::All) => self.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
               (_,Column::U8(col),ColumnIndex::Bool(ix_col)) => self.plan.push(StatsSumColVIx{col: col.clone(), ix: ix_col.clone(), out: out_col.clone()}),
               (_,Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_) => self.plan.push(StatsSumColTIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
-              _ => {return Err(MechError::GenericError(6351));},
+              x => {
+                println!("{:?}",x);
+                return Err(MechError::GenericError(6351));},
             }
           } else if arg_name == *ROW { 
             let arg_table = self.get_table(&arg_table_id)?;
