@@ -29,8 +29,8 @@ pub type Transaction = Vec<Change>;
 
 #[derive(Clone)]
 pub struct Database {
-  tables: HashMap<u64,Rc<RefCell<Table>>>,
-  table_alias_to_id: HashMap<u64,u64>,
+  pub tables: HashMap<u64,Rc<RefCell<Table>>>,
+  pub table_alias_to_id: HashMap<u64,TableId>,
 }
 
 impl Database {
@@ -41,7 +41,7 @@ impl Database {
     }
   }
 
-  pub fn insert_alias(&mut self, alias: u64, table_id: u64) -> Result<u64,MechError> {
+  pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
       Err(_) => Err(MechError::GenericError(6333)),
       Ok(x) => Ok(*x), 
@@ -59,7 +59,7 @@ impl Database {
     let alias = hash_str(table_name);
     match self.table_alias_to_id.get(&alias) {
       Some(table_id) => {
-        self.tables.get(table_id)
+        self.tables.get(table_id.unwrap())
       }
       _ => self.tables.get(&alias),
     }
@@ -71,7 +71,7 @@ impl Database {
         match self.table_alias_to_id.get(&table_id) {
           None => None,
           Some(table_id) => {
-            self.tables.get(table_id)
+            self.tables.get(table_id.unwrap())
           }
         }
       }
@@ -83,7 +83,7 @@ impl Database {
     let table_id = match self.tables.contains_key(&table_id) {
       true => table_id,
       false => match self.table_alias_to_id.get(&table_id) {
-        Some(table_id) => *table_id,
+        Some(table_id) => *table_id.unwrap(),
         None => return None,
       }
     };
@@ -102,7 +102,7 @@ impl fmt::Debug for Database {
     }
     db_drawing.add_header("table alias -> table id");
     for (alias,id) in self.table_alias_to_id.iter() {
-      db_drawing.add_line(format!("{} -> {}", humanize(alias), humanize(id)));
+      db_drawing.add_line(format!("{} -> {:?}", humanize(alias), id));
     }
     write!(f,"{:?}",db_drawing)?;
     Ok(())
