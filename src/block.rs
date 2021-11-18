@@ -192,7 +192,7 @@ impl Block {
     match (row,col) {
       (_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
-        return Err(MechError::GenericError(9233));
+        return Err(MechError::GenericError(3493));
       }
       (TableIndex::Index(row),TableIndex::Index(_)) => {
         let col = table_brrw.get_column(&col)?;
@@ -209,7 +209,30 @@ impl Block {
 
         Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
       }
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
+      (TableIndex::Table(ix_table_id),TableIndex::Alias(alias))  => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        match table.borrow().kind() {
+          ValueKind::Compound(table_kind) => {
+            Err(MechError::ColumnKindMismatch(table_kind))
+          }
+          table_kind => {
+            if ix_table_brrw.cols != 1 {
+              return Err(MechError::GenericError(9237));
+            }
+
+            let ix = match ix_table_brrw.get_column_unchecked(0) {
+              Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+              Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
+              _ => {
+                return Err(MechError::GenericError(9232));
+              }
+            };
+            let arg_col = table_brrw.get_column(col)?;
+            Ok((*arg_name,arg_col.clone(),ix))
+          }
+        }
+      }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
