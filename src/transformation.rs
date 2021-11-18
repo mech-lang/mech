@@ -60,6 +60,8 @@ impl PartialOrd for Transformation {
       (Transformation::TableAlias{..},_) => Some(Ordering::Less),
       (_,Transformation::NumberLiteral{..}) => Some(Ordering::Greater),
       (Transformation::NumberLiteral{..},_) => Some(Ordering::Less),
+      (Transformation::Set{src_id,..},_) => Some(Ordering::Greater),
+      (_,Transformation::Set{src_id,..}) => Some(Ordering::Less),
       (Transformation::Function{name, arguments, out},
        Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
         let (right_out_id,_,_) = out2;
