@@ -317,9 +317,7 @@ impl Block {
   fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
     let (_, table_id, row, column) = argument;
     let table = self.get_table(table_id)?;
-    println!("##{:?}", table);
     let t = table.borrow();
-    println!("##{:?}", (row,column));
     let dim = match (row, column) {
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
       (TableIndex::All,TableIndex::Index(_)) |
@@ -338,7 +336,6 @@ impl Block {
       (x,y) => TableShape::Matrix(x,y),
       _ => TableShape::Pending,
     };
-    println!("##{:?}", arg_shape);
     Ok(arg_shape)
   }
 
@@ -457,7 +454,6 @@ impl Block {
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               x => {
-                println!("{:?}", x);
                 return Err(MechError::GenericError(6388));},
             }
           }
@@ -466,8 +462,6 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
-        
-        println!("{:?}", arguments);
         
         let arg_shapes = self.get_arg_dims(&arguments)?;
 
@@ -480,7 +474,6 @@ impl Block {
           ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
             self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
           x => {
-            println!("------------{:?}", x);
             return Err(MechError::GenericError(8835));},
         }
 
@@ -823,7 +816,7 @@ impl Block {
                 _ => {return Err(MechError::GenericError(1242));},
               }
             }
-            x => {println!("222@{:?}", x);return Err(MechError::GenericError(6348));},
+            x => {return Err(MechError::GenericError(6348));},
           }                    
         } else if *name == *TABLE_APPEND {
           let arg_shape = self.get_arg_dim(&arguments[0])?;
