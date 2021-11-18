@@ -567,13 +567,11 @@ block
 
 test_mech!(set_inline_row,"
 block
-  #test = stats/sum(row: #launch-point)
-
-block
   #launch-point = [x: 0 y: 0]
-
 block
-  #launch-point := [x: 10 y: 20]", Value::U8(30));
+  #launch-point := [x: 10 y: 20]
+block
+  #test = stats/sum(row: #launch-point)", Value::U8(30));
 
 test_mech!(set_empty_table,"
 block

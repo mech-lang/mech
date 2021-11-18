@@ -15,17 +15,9 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #q = [|x y z|
-         1 2 3
-         4 5 6
-         7 8 9]
+  #launch-point = [x: 0 y: 0]
 block
-  x = #q.y
-  ix = x > 5
-  #q.y{ix} := 3
-  
-block
-  #test = #q.y{1} + #q.y{2} + #q.y{3}"#);
+  #launch-point := [x: 10 y: 20]"#);
 
   //println!("{:#?}", parser.parse_tree);
 
