@@ -396,16 +396,17 @@ block
   #foo = [|x y|]
 
 block
-  #foo.x := [true; false; true]
+  #foo := [|x y|
+          true  0
+          false 0
+          true  0]
 
 block
   ix = #foo.x == true
-  ixx = #foo.x == false
   #foo.y{ix} := 10
-  #foo.y{ixx} := 20
 
 block
-  #test = stats/sum(column: #foo.y)", Value::U8(40));
+  #test = stats/sum(column: #foo.y)", Value::U8(20));
 
 test_mech!(set_multirow_empty,"
 block
@@ -491,33 +492,30 @@ block
 
 test_mech!(set_column_logical,"
 block
-  ix = x > 0
+  #q = [|x|
+         1
+         4
+         7]
+block
   x = #q.x
-  #q.x{ix} := -1
+  ix = x > 1
+  #q.x{ix} := 10
 
 block
-  #test = #q.x{1} + #q.x{2} + #q.x{3}
-
-block
-  #q = [|x y z|
-         1 2 3
-         4 5 6
-         7 8 9]", Value::F32(-3.0));
+  #test = #q.x{1} + #q.x{2} + #q.x{3}", Value::U8(21));
 
 test_mech!(set_second_column_logical,"
-block
-  #test = #ball.y
-
-block
-  ix = x > 0
-  x = #ball.y
-  #ball.y{ix} := 3
-
 block
   #ball = [|x y z|
             1 2 3
             4 5 6
-            7 8 9]", Value::U8(3));
+            7 8 9]
+block
+  x = #ball.y
+  ix = x > 5
+  #ball.y{ix} := 3
+block
+  #test = #q.y{1} + #q.y{2} + #q.y{3}", Value::U8(10));
 
 test_mech!(set_second_omit_row_subscript,"
 block

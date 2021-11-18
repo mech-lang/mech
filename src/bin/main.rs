@@ -15,12 +15,17 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #x = [10; 30]
+  #q = [|x y z|
+         1 2 3
+         4 5 6
+         7 8 9]
 block
-  x = [10; 20; 30]
-  #x += x{2}  
+  x = #q.y
+  ix = x > 5
+  #q.y{ix} := 3
+  
 block
-  #test = stats/sum(column: #x)"#);
+  #test = #q.y{1} + #q.y{2} + #q.y{3}"#);
 
   //println!("{:#?}", parser.parse_tree);
 
