@@ -15,17 +15,14 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #ball = [|x y z|
-            1 2 3
-            4 5 6
-            7 8 9]
+  #x = [1;2;3]
+  
 block
-  x = #ball.y
-  ix = x > 5
-  #ball.y{ix} := 3
+  #x{2,1} := 10
 
 block
-  #test = #ball.y{1} + #ball.y{2} + #ball.y{3}"#);
+  y = #x * 2
+  #test = stats/sum(column: y)"#);
 
   //println!("{:#?}", parser.parse_tree);
 

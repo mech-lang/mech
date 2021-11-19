@@ -471,9 +471,13 @@ block
 
 test_mech!(set_single_index_math,"
 block
-  x = [1;2;3]
-  x{2,1} := 10
-  y = x * 2
+  #x = [1;2;3]
+  
+block
+  #x{2,1} := 10
+
+block
+  y = #x * 2
   #test = stats/sum(column: y)", Value::U8(28));
 
 test_mech!(set_logical_false,"
