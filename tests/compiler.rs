@@ -562,10 +562,10 @@ block
 block
   ix = #ball.vy > 10
   iy = #ball.vy < 5
-  #ball.y{ix | iy} := #ball.vy * 9099
+  #ball.y{ix | iy} := #ball.vy * 2
 
 block
-  #test = #ball{1,2} + #ball{3,2}", Value::U32(145584));
+  #test = #ball{1,2} + #ball{3,2}", Value::U8(32));
 
 test_mech!(set_inline_row,"
 block
