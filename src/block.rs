@@ -462,21 +462,58 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
-        
         let arg_shapes = self.get_arg_dims(&arguments)?;
-
-        let arg_cols = self.get_arg_columns(&arguments)?;
-        match (&arg_cols[0], &arg_cols[1]) {
-          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
-            self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
-          ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
-            self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
-          ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
-            self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
-          x => {
-            return Err(MechError::GenericError(8835));},
+        match (&arg_shapes[0], &arg_shapes[1]) {
+          (TableShape::Scalar, TableShape::Row(_)) |
+          (TableShape::Row(_), TableShape::Row(_)) => {
+            let src_table = self.get_table(src_id)?;
+            let dest_table = self.get_table(dest_id)?;
+            let src_table_brrw = src_table.borrow();
+            let dest_table_brrw = dest_table.borrow();
+            // The source table has named columns, so we need to match them
+            // up with the destination columns if they are out of order or
+            // incomplete.
+            if src_table_brrw.has_col_aliases() {
+              for alias in src_table_brrw.column_ix_to_alias.iter() {
+                let dest_column = dest_table_brrw.get_column(&TableIndex::Alias(*alias))?;
+                let src_column = src_table_brrw.get_column(&TableIndex::Alias(*alias))?;
+                match (src_column,dest_column) {
+                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx::<u8>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  _ => {return Err(MechError::GenericError(8839));}
+                }
+              }
+            // No column aliases, use indices instead
+            } else {
+              if src_table_brrw.cols > dest_table_brrw.cols {
+                return Err(MechError::GenericError(8840));
+              }
+              // Destination has aliases, need to use them instead 
+              if dest_table_brrw.has_col_aliases() {
+                return Err(MechError::GenericError(8842));
+              }
+              for col_ix in 1..=src_table_brrw.cols {
+                let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+                let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+                match (src_column,dest_column) {
+                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx::<u8>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  _ => {return Err(MechError::GenericError(8841));}
+                }
+              }
+            }
+          }
+          _ => {
+            let arg_cols = self.get_arg_columns(&arguments)?;
+            match (&arg_cols[0], &arg_cols[1]) {
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
+                self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
+                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
+                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+              x => {return Err(MechError::GenericError(8835));},
+            }
+          }
         }
-
       }
       Transformation::NumberLiteral{kind, bytes} => {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));

@@ -140,6 +140,10 @@ impl Table {
     }
   }
 
+  pub fn has_col_aliases(&self) -> bool {
+    self.column_ix_to_alias.len() > 0
+  }
+
   pub fn shape(&self) -> TableShape {
     match (self.rows, self.cols) {
       (0,_) |
