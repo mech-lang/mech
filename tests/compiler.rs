@@ -532,21 +532,19 @@ block
 
 test_mech!(set_rhs_math_filters_logic,"
 block
-  #ball = [|x y vx vy|
-            1 2 3 4
-            5 6 7 8
+  #ball = [|x y  vx vy|
+            1 2  3  4
+            5 6  7  8
             9 10 11 12]
-  #time/timer = [period: 15 tick: 0]
-  #gravity = 2
 
 block
   ix = #ball.vy > 10
   iy = #ball.vy < 5
   ixx = ix | iy
-  #ball.y{ixx} := #ball.vy * 9099
+  #ball.y{ixx} := #ball.vy * 2
 
 block
-  #test = #ball{1,2} + #ball{3,2}", Value::U32(145584));
+  #test = #ball{1,2} + #ball{3,2}", Value::U8(32));
 
 test_mech!(set_implicit_logic,"
 block
