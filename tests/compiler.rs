@@ -571,15 +571,15 @@ block
 block
   #launch-point := [x: 10 y: 20]
 block
-  #test = stats/sum(row: #launch-point)", Value::U8(30));
+  #test = #launch-point.x + #launch-point.y", Value::U8(30));
 
 test_mech!(set_empty_table,"
 block
-  #test = stats/sum(table: #x)
-block
   #x = []
 block
-  #x := [10 20; 30 40]", Value::U8(100));
+  #x := [10 20; 30 40]
+block
+  #test = stats/sum(table: #x)", Value::U8(100));
 
 test_mech!(set_empty_table_with_column,"
 block
