@@ -145,7 +145,7 @@ where T: Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Set Scalar : Vector
+// Set Scalar : Vector {Bool}
 #[derive(Debug)]
 pub struct SetSIxVB<T> 
 where T: Copy + Debug
@@ -165,6 +165,27 @@ where T: Copy + Debug
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Set Vector : Vector {Bool}
+#[derive(Debug)]
+pub struct SetVVB<T> {
+  pub arg: Arg<T>, pub out: Arg<T>, pub oix: Arg<bool>
+}
+
+impl<T> MechFunction for SetVVB<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    let oix_brrw = self.oix.borrow();
+    for row in 0..oix_brrw.len() {
+      if oix_brrw[row] {
+        (self.out.borrow_mut())[row] = (self.arg.borrow())[row];
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 
 // Copy Table : Table
 #[derive(Debug)]
