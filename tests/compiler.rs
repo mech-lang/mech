@@ -515,7 +515,7 @@ block
   ix = x > 5
   #ball.y{ix} := 3
 block
-  #test = #q.y{1} + #q.y{2} + #q.y{3}", Value::U8(10));
+  #test = #ball.y{1} + #ball.y{2} + #ball.y{3}", Value::U8(10));
 
 test_mech!(set_second_omit_row_subscript,"
 block
