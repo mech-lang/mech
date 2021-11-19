@@ -9,6 +9,7 @@ use rayon::prelude::*;
 use std::thread;
 
 impl MechNum<u8> for u8 {}
+impl MechNum<f32> for f32 {}
 
 // Scalar : Scalar
 binary_infix_ss!(AddSS,add);

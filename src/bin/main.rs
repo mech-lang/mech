@@ -24,7 +24,8 @@ use seahash;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
-use mech_core::{Table, Function, Change, Column, Value, ValueKind, hash_str, Transformation, Block, Core, ParMultiplyVS};
+use mech_core::*;
+use mech_core::math::MulParVS;
 
 fn main() {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
@@ -141,7 +142,7 @@ fn main() {
       block2.plan.push(Function::ParSetVS((iy.clone(), 500.0, y.clone())));
       // #ball.vy{iy | iyy} := #ball.vy * -0.80
       block2.plan.push(Function::ParOrVV(vec![iy.clone(), iyy.clone(), iy_or.clone()]));
-      block2.plan.push(ParMultiplyVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
+      block2.plan.push(MulParVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
       block2.plan.push(Function::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
     }
     _ => (),
@@ -160,7 +161,7 @@ fn main() {
       block3.plan.push(Function::ParSetVS((ix.clone(), 500.0, x.clone())));
       // #ball.vx{ix | ixx} := #ball.vx * -0.80
       block3.plan.push(Function::ParOrVV(vec![ix.clone(), ixx.clone(), ix_or.clone()]));
-      block3.plan.push(ParMultiplyVS{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
+      block3.plan.push(MulParVS::<f32>{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
       block3.plan.push(Function::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
     }
     _ => (),
@@ -169,9 +170,9 @@ fn main() {
 
   core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
 
-  core.insert_block(block1);
-  core.insert_block(block2);
-  core.insert_block(block3);
+  core.insert_block(Rc::new(RefCell::new(block1)));
+  core.insert_block(Rc::new(RefCell::new(block2)));
+  core.insert_block(Rc::new(RefCell::new(block3)));
 
   for i in 0..200000 {
     let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
