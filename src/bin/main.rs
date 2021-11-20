@@ -15,20 +15,11 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #ball = [|x y vx vy|
-            1 2 3 4
-            5 6 7 8
-            9 10 11 12]
-  #time/timer = [period: 15 tick: 0]
-  #gravity = 2
-
+  #x = []
 block
-  ix = #ball.vy > 10
-  iy = #ball.vy < 5
-  #ball.y{ix | iy} := #ball.vy * 9099
-
+  #x := [10 20; 30 40]
 block
-  #test = #ball{1,2} + #ball{3,2}"#);
+  #test = stats/sum(table: #x)"#);
 
   //println!("{:#?}", parser.parse_tree);
 
