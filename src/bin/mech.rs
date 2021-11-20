@@ -41,7 +41,7 @@ use mech::{
   Table, 
   Value, 
   ParserNode, 
-  hash_string, 
+  hash_str, 
   Program, 
   ErrorType, 
   ProgramRunner, 
@@ -111,9 +111,9 @@ use crossterm::{
 };
 
 lazy_static! {
-  static ref MECH_TEST: u64 = hash_string("mech/test");
-  static ref NAME: u64 = hash_string("name");
-  static ref RESULT: u64 = hash_string("result");
+  static ref MECH_TEST: u64 = hash_str("mech/test");
+  static ref NAME: u64 = hash_str("name");
+  static ref RESULT: u64 = hash_str("result");
 }
 
 lazy_static! {
@@ -421,7 +421,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut core_map = CORE_MAP.lock().unwrap();
                     // If a core hasn't been heard from since 1 second ago, disconnect it.
                     for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_string(&remote_core_address.to_string())));
+                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_str(&remote_core_address.to_string())));
                     }
                   }
                 });
@@ -548,7 +548,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           exit_code = this_code;
         }
         Ok(ClientMessage::StepDone) => {
-          //let output_id: u64 = hash_string("mech/output"); 
+          //let output_id: u64 = hash_str("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
           //std::process::exit(0);
         },
