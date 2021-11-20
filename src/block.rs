@@ -212,33 +212,28 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(alias))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
-        match table.borrow().kind() {
-          ValueKind::Compound(table_kind) => {
-            Err(MechError::ColumnKindMismatch(table_kind))
-          }
-          table_kind => {
-            if ix_table_brrw.cols != 1 {
-              return Err(MechError::GenericError(9237));
-            }
 
-            let ix = match ix_table_brrw.get_column_unchecked(0) {
-              Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
-              Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-              _ => {
-                return Err(MechError::GenericError(9232));
-              }
-            };
-            let arg_col = table_brrw.get_column(col)?;
-            Ok((*arg_name,arg_col.clone(),ix))
-          }
+        if ix_table_brrw.cols != 1 {
+          return Err(MechError::GenericError(9237));
         }
+
+        let ix = match ix_table_brrw.get_column_unchecked(0) {
+          Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+          Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
+          _ => {
+            return Err(MechError::GenericError(9232));
+          }
+        };
+        let arg_col = table_brrw.get_column(col)?;
+        Ok((*arg_name,arg_col.clone(),ix))
+        
       }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         match table.borrow().kind() {
           ValueKind::Compound(table_kind) => {
-            Err(MechError::ColumnKindMismatch(table_kind))
+            Err(MechError::GenericError(9238))
           }
           table_kind => {
             if ix_table_brrw.cols != 1 || 
@@ -418,6 +413,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
+              (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopyVV::<bool>{arg: arg.clone(), out: out.clone()}),
               _ => {return Err(MechError::GenericError(6382));},
             }
           }
@@ -502,21 +498,22 @@ impl Block {
               }
             }
           }
+          (TableShape::Matrix(_,_),TableShape::Matrix(_,_)) |
+          (TableShape::Matrix(_,_),TableShape::Row(_)) |
           (TableShape::Matrix(_,_),TableShape::Scalar) => {
             let src_table = self.get_table(src_id)?;
             let dest_table = self.get_table(dest_id)?;
             let src_table_brrw = src_table.borrow();
             let mut dest_table_brrw = dest_table.borrow_mut();
-            if dest_table_brrw.kind() == ValueKind::Empty {
-              dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
-              dest_table_brrw.set_kind(src_table_brrw.kind());
-              for col_ix in 1..=src_table_brrw.cols {
-                let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
-                let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
-                match (src_column,dest_column) {
-                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetVV::<u8>{arg: src.clone(), out: out.clone()});}
-                  _ => {return Err(MechError::GenericError(8102));}
-                }
+            dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+            dest_table_brrw.set_kind(src_table_brrw.kind());
+            for col_ix in 1..=src_table_brrw.cols {
+              let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+              let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+              match (src_column,dest_column) {
+                (Column::U8(src),Column::U8(out)) => {self.plan.push(SetVV::<u8>{arg: src.clone(), out: out.clone()});}
+                (Column::Bool(src),Column::Bool(out)) => {self.plan.push(SetVV::<bool>{arg: src.clone(), out: out.clone()});}
+                _ => {return Err(MechError::GenericError(8102));}
               }
             }
           }
