@@ -463,6 +463,7 @@ impl Block {
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
         let arg_shapes = self.get_arg_dims(&arguments)?;
+        println!("{:?}", arg_shapes);
         match (&arg_shapes[0], &arg_shapes[1]) {
           (TableShape::Scalar, TableShape::Row(_)) |
           (TableShape::Row(_), TableShape::Row(_)) => {
@@ -501,7 +502,26 @@ impl Block {
               }
             }
           }
-          _ => {
+          (TableShape::Matrix(_,_),TableShape::Scalar) => {
+            let src_table = self.get_table(src_id)?;
+            let dest_table = self.get_table(dest_id)?;
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            if dest_table_brrw.kind() == ValueKind::Empty {
+              dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+              dest_table_brrw.set_kind(src_table_brrw.kind());
+              for col_ix in 1..=src_table_brrw.cols {
+                let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+                let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+                match (src_column,dest_column) {
+                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetVV::<u8>{arg: src.clone(), out: out.clone()});}
+                  _ => {return Err(MechError::GenericError(8102));}
+                }
+              }
+            }
+          }
+          _ |
+          (TableShape::Column(_),TableShape::Column(_)) => {
             let arg_cols = self.get_arg_columns(&arguments)?;
             match (&arg_cols[0], &arg_cols[1]) {
               ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
@@ -517,6 +537,7 @@ impl Block {
               },
             }
           }
+          _ => return Err(MechError::GenericError(8837)),
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {

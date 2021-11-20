@@ -186,6 +186,24 @@ where T: Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Set Vector : Vector
+#[derive(Debug)]
+pub struct SetVV<T> {
+  pub arg: Arg<T>, pub out: Arg<T>
+}
+
+impl<T> MechFunction for SetVV<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    let rows = self.arg.borrow().len();
+    for row in 0..rows {
+      (self.out.borrow_mut())[row] = (self.arg.borrow())[row];
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 
 // Copy Table : Table
 #[derive(Debug)]
