@@ -40,7 +40,7 @@ impl fmt::Debug for TableId {
 
 // ## Table Shape
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug,Copy,Clone,PartialEq,Eq)]
 pub enum TableShape {
   Scalar,
   Column(usize),
@@ -347,6 +347,26 @@ impl Table {
     }
   }
 
+  pub fn len(&self) -> usize {
+    self.rows * self.cols
+  }
+
+  pub fn logical_len(&self) -> usize {
+    match self.kind() {
+      ValueKind::Bool => {
+        let mut len = 0;
+        for i in 0..self.len() {
+          match self.get_linear(i) {
+            Ok(Value::Bool(x)) => if x == true { len += 1 },
+            _ => (),
+          }
+        }
+        len
+      }
+      _ => self.len(),
+    }
+  }
+  
 }
 
 impl fmt::Debug for Table {

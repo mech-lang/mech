@@ -164,6 +164,36 @@ where T: Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Set Scalar : Vector {Bool}
+#[derive(Debug)]
+pub struct CopyTB {
+  pub arg: ArgTable, pub ix: ArgTable, pub out: OutTable, 
+}
+impl MechFunction for CopyTB
+{
+  fn solve(&mut self) {
+    let ix_brrw = self.ix.borrow();
+    let rows = ix_brrw.logical_len();
+
+    let src_brrw = self.arg.borrow();
+    let mut out_brrw = self.out.borrow_mut();
+    out_brrw.resize(rows,1);
+    let mut i = 0;
+    for j in 0..ix_brrw.len() {
+      match ix_brrw.get_linear(j) {
+        Ok(Value::Bool(false)) => continue,
+        Ok(Value::Bool(true)) => {
+          let value = src_brrw.get_linear(j).unwrap();
+          out_brrw.set_linear(i,value).unwrap();
+          i+=1;
+        }
+        _ => (),
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Set Vector : Vector {Bool}
 #[derive(Debug)]
 pub struct SetVVB<T> {

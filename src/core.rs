@@ -83,7 +83,7 @@ impl Core {
               }    
               table_brrw.set_column_alias(*column_ix,*column_alias);     
             }
-            _ => {return Err(MechError::GenericError(9233));}
+            _ => {return Err(MechError::GenericError(9239));}
           }
         }
       }
