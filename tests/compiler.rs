@@ -49,7 +49,7 @@ test_mech!(constant_basic, "block
 block
   #test = _", Value::Empty);
 
-test_mech!(constant_inline_empty, "#test = [first: 123, second: _, third: 456]",Value::U8(123));
+test_mech!(constant_inline_empty, "#test = [first: 12, second: _, third: 45]",Value::U8(12));
 
 // ## Unicode
 
@@ -397,16 +397,15 @@ block
 
 block
   #foo := [|x y|
-          true  0
-          false 0
-          true  0]
-
+          true  1
+          false 2
+          true  3]
 block
   ix = #foo.x == true
   #foo.y{ix} := 10
 
 block
-  #test = stats/sum(column: #foo.y)", Value::U8(20));
+  #test = stats/sum(column: #foo.y)", Value::U8(22));
 
 test_mech!(set_multirow_empty,"
 block
@@ -641,25 +640,15 @@ block
 
 test_mech!(append_row_inline,"
 block
-  ix = #foo.x > 50
-  #test = #foo{ix, :}
-
-block
-  ~ #z.x
-  y = #z
-  #foo += [x: 100 y: 110 z: 120]
-
-block
-  x = #ball.y
-  #z = [x: 123 y: 456]
   #foo = [|x y z|
-           5 6 7
-           8 9 10
-           11 12 13]
+           5 6 7]
 
 block
-  #ball = [|x y z|
-            1 2 3]", Value::U8(100));
+  #foo += [x: 100 y: 110 z: 120]
+  
+block
+  ix = #foo.x > 50
+  #test = #foo{ix, :}", Value::U8(100));
 
 test_mech!(append_row_expression,"
 block
@@ -704,12 +693,12 @@ block
 
 test_mech!(append_row_select_linear_range,"
 block
-  #test = stats/sum(table: #x)
-block
   #x = [10 20; 30 40;]
 block
   x = [10 20 30]
-  #x += x{1:2}", Value::U8(130));  
+  #x += x{1:2}
+block
+  #test = stats/sum(table: #x)", Value::U8(130));  
 
 test_mech!(append_row_select_linear,"
 block

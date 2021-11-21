@@ -547,6 +547,9 @@ impl Compiler {
                         Node::Expression{..} => {
                           let mut result = self.compile_node(child)?;
                           match &result[1] {
+                            Transformation::NewTable{table_id, ..} => {
+                              indices.push(TableIndex::Table(*table_id));
+                            }
                             Transformation::NumberLiteral{kind, bytes} => {
                               let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
                               if indices.len() == 2 && indices[0] == TableIndex::All {
@@ -599,6 +602,9 @@ impl Compiler {
                   Node::Expression{..} => {
                     let mut result = self.compile_node(child)?;
                     match &result[1] {
+                      Transformation::NewTable{table_id, ..} => {
+                        indices.push(TableIndex::Table(*table_id));
+                      }
                       Transformation::NumberLiteral{kind, bytes} => {
                         let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
                         if indices.len() == 2 && indices[0] == TableIndex::All {

@@ -15,9 +15,10 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #x = []
+  #x = [10 20; 30 40;]
 block
-  #x := [10 20; 30 40]
+  x = [10 20 30]
+  #x += x{1:2}
 block
   #test = stats/sum(table: #x)"#);
 
