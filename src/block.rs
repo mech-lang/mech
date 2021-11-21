@@ -465,13 +465,12 @@ impl Block {
                 return Err(MechError::GenericError(6388));},
             }
           }
-          x => {println!("{:?}",x);return Err(MechError::GenericError(6379));},
+          x => {return Err(MechError::GenericError(6379));},
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
         let arg_shapes = self.get_arg_dims(&arguments)?;
-        println!("{:?}", arg_shapes);
         match (&arg_shapes[0], &arg_shapes[1]) {
           (TableShape::Scalar, TableShape::Row(_)) |
           (TableShape::Row(_), TableShape::Row(_)) => {
@@ -1108,7 +1107,8 @@ impl Block {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::String(arg), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: 0, out: out.clone()}),
-                  _ => {return Err(MechError::GenericError(6366));},
+                  (Column::Empty, Column::Empty) => (),
+                  x => {return Err(MechError::GenericError(6366));},
                 };
                 out_column_ix += 1;
               }
