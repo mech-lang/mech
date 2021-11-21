@@ -104,10 +104,8 @@ where T: Copy + Debug
 
 // Copy Vector{Int Ix} : Vector
 #[derive(Debug)]
-pub struct CopyVI<T> 
-where T: Copy + Debug
-{
-  pub arg: Arg<T>, pub ix: Arg<u8>, pub out: Out<T>
+pub struct CopyVI<T>  {
+  pub arg: Arg<T>, pub ix: Arg<usize>, pub out: Out<T>
 }
 
 impl<T> MechFunction for CopyVI<T> 

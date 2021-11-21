@@ -209,7 +209,8 @@ impl Block {
 
         Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
       }
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(alias))  => {
+      (TableIndex::Table(ix_table_id),TableIndex::Index(_)) |
+      (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
 
@@ -226,7 +227,6 @@ impl Block {
         };
         let arg_col = table_brrw.get_column(col)?;
         Ok((*arg_name,arg_col.clone(),ix))
-        
       }
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -430,18 +430,30 @@ impl Block {
           }
           // Select a number of specific elements by numerical index or lorgical index
           (TableIndex::Table(ix_table_id), TableIndex::None) => {
-            let ix_table = self.get_table(&ix_table_id)?;
-            let ix_col = ix_table.borrow().get_column_unchecked(0);
-            
+            let (_, arg_col,arg_ix) = self.get_arg_column(&argument)?;
             let src_brrw = src_table.borrow();
-            let mut arg_col = src_brrw.get_column_unchecked(0);
-
-            let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
-
-            match (&arg_col, &ix_col, &out_col) {
-              (Column::U8(arg), Column::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-              (Column::U8(arg), Column::U8(ix), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.set_kind(arg_col.kind());
+            let out_col = out_brrw.get_column_unchecked(0);
+            match (&arg_col, &arg_ix, &out_col) {
+              (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
               _ => {return Err(MechError::GenericError(6380));},
+            }
+          }
+          (TableIndex::Table(ix_table_id), TableIndex::All) => {
+            let src_brrw = src_table.borrow();
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(1,src_brrw.cols);
+            out_brrw.set_kind(src_brrw.kind());
+            for col in 0..src_brrw.cols {
+              let (_, arg_col,arg_ix) = self.get_arg_column(&(0,*table_id,row,TableIndex::Index(col+1)))?;
+              let mut out_col = out_brrw.get_column_unchecked(col); 
+              match (&arg_col, &arg_ix, &out_col) {
+                (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                x => {return Err(MechError::GenericError(6382));},
+              }
             }
           }
           (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
@@ -453,7 +465,7 @@ impl Block {
                 return Err(MechError::GenericError(6388));},
             }
           }
-          _ => {return Err(MechError::GenericError(6379));},
+          x => {println!("{:?}",x);return Err(MechError::GenericError(6379));},
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
