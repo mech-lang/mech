@@ -49,7 +49,7 @@ impl Core {
                 match table.borrow().set(*row, *col, val.clone()) {
                   Err(_) => {
                     // Index out of bounds.
-                    return Err(MechError::GenericError(9231));
+                    return Err(MechError::GenericError(9131));
                   }
                   _ => {
                     registers.push((*table_id,*row,*col));
@@ -59,7 +59,7 @@ impl Core {
             }
             _ => {
               // Table doesn't exist
-              return Err(MechError::GenericError(9232));
+              return Err(MechError::GenericError(9132));
             }
           }
         }
@@ -83,7 +83,7 @@ impl Core {
               }    
               table_brrw.set_column_alias(*column_ix,*column_alias);     
             }
-            _ => {return Err(MechError::GenericError(9239));}
+            _ => {return Err(MechError::GenericError(9139));}
           }
         }
       }

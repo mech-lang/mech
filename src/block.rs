@@ -222,7 +222,7 @@ impl Block {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
           _ => {
-            return Err(MechError::GenericError(9232));
+            return Err(MechError::GenericError(9238));
           }
         };
         let arg_col = table_brrw.get_column(col)?;
@@ -239,7 +239,8 @@ impl Block {
             let ix = match ix_table_brrw.get_column_unchecked(0) {
               Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
               Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-              _ => {
+              Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+              x => {
                 return Err(MechError::GenericError(9232));
               }
             };
@@ -442,12 +443,11 @@ impl Block {
                 match (&arg_col, &arg_ix, &out_col) {
                   (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
                   (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                  (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                   x => {println!("{:?}",x);return Err(MechError::GenericError(6380));},
                 }
               }
             }
-
-
           }
           (TableIndex::Table(ix_table_id), TableIndex::All) => {
             let src_brrw = src_table.borrow();
