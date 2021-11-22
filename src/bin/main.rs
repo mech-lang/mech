@@ -15,9 +15,11 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  x = 10:20
-  z = 3
-  #test = x{z}"#);
+  #x = [|code|]
+block
+  #x := 10  
+block
+  #test = #x"#);
 
   //println!("{:#?}", parser.parse_tree);
 

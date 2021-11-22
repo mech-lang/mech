@@ -562,11 +562,11 @@ block
 
 test_mech!(set_empty_table_with_column,"
 block
-  #test = #x
-block
   #x = [|code|]
 block
-  #x := 10", Value::U8(10));
+  #x := 10  
+block
+  #test = #x", Value::U8(10));
 
 test_mech!(set_table_index_row_dependency,"
 block
