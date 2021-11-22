@@ -548,6 +548,16 @@ impl Block {
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
               ((_,Column::U8(arg),ColumnIndex::All), (_,Column::U8(out),ColumnIndex::Bool(oix))) =>
                 self.plan.push(SetVVB::<u8>{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+                let dest_table = self.get_table(dest_id)?;
+                let src_table = self.get_table(src_id)?;
+                let src_table_brrw = src_table.borrow();
+                let mut dest_table_brrw = dest_table.borrow_mut();
+                dest_table_brrw.resize(1,1);
+                dest_table_brrw.set_kind(ValueKind::U8);
+                let out = dest_table_brrw.get_column_unchecked(0).get_u8()?;
+                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+              }
               x => {
                 return Err(MechError::GenericError(8835));
               },
