@@ -39,6 +39,7 @@ impl fmt::Debug for Transformation {
       },
       Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
+      Transformation::TableReference{table_id, reference} => write!(f,"TableReference(table_id: {:?}, reference: {:?})",table_id, reference)?,
       _ => write!(f,"Tfm Print Not Implemented")?
     }
     Ok(())

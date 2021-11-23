@@ -174,6 +174,7 @@ impl Table {
         Column::U16(column_u16) => Ok(Value::U16(column_u16.borrow()[row])),
         Column::Bool(column_bool) => Ok(Value::Bool(column_bool.borrow()[row])),
         Column::String(column_string) => Ok(Value::String(column_string.borrow()[row].clone())),
+        Column::Ref(column_ref) => Ok(Value::Reference(column_ref.borrow()[row].clone())),
         Column::Empty => Ok(Value::Empty),
         _ => Err(MechError::GenericError(1209)),
       }
@@ -220,11 +221,13 @@ impl Table {
         (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
         (Column::Bool(column_bool), Value::Bool(value_bool)) => column_bool.borrow_mut()[row] = value_bool,
         (Column::String(column_string), Value::String(value_string)) => column_string.borrow_mut()[row] = value_string,
+        (Column::Ref(column_ref), Value::Reference(value_ref)) => column_ref.borrow_mut()[row] = value_ref,
+        (Column::Empty, Value::Empty) => (),
         (Column::Empty, Value::U8(value_u8)) => {
           //let column: ColumnV<u8> = Rc::new(RefCell::new(Vec::new()));
           //self.data[col] = Column::U8(column);
         },
-        _ => (),
+        _ => {return Err(MechError::GenericError(1219));},
       }
       Ok(())
     } else {
@@ -280,6 +283,11 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![vec![];self.rows]));
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
+        },
+        (Column::Empty, ValueKind::Reference) => {
+          let column = Rc::new(RefCell::new(vec![TableId::Local(0);self.rows]));
+          self.data[col] = Column::Ref(column);
+          self.col_kinds[col] = ValueKind::Reference;
         },
         _ => {return Err(MechError::GenericError(1212));},
       }

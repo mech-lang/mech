@@ -116,4 +116,3 @@ impl MechFunction for StatsSumColTIx {
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
-

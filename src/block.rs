@@ -317,7 +317,8 @@ impl Block {
       (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::None) => (2,1),
-      _ => {return Err(MechError::GenericError(6384));},
+      (TableIndex::Table(ix_table_id),TableIndex::All) => (2,t.cols),
+      x => {println!("{:?}",x);return Err(MechError::GenericError(6384));},
     };
     let arg_shape = match dim {
       (1,1) => TableShape::Scalar,
@@ -361,6 +362,12 @@ impl Block {
           }
         } 
       },
+      Transformation::TableReference{table_id, reference} => {
+        let mut table = Table::new(*table_id.unwrap(), 1, 1);
+        table.set_kind(ValueKind::Reference);
+        table.set(0,0,reference.clone())?;
+        self.tables.insert_table(table);
+      }
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;
       },
@@ -559,6 +566,7 @@ impl Block {
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
               }
               x => {
+                println!("{:?}", x);
                 return Err(MechError::GenericError(8835));
               },
             }
@@ -575,7 +583,7 @@ impl Block {
             match bytes.len() {
               1 => {
                 t.set_col_kind(0, ValueKind::U8);
-                t.set(0,0,Value::U8(bytes[0] as u8));
+                t.set(0,0,Value::U8(bytes[0] as u8))?;
               }
               2 => {
                 t.set_col_kind(0, ValueKind::U16);
@@ -583,7 +591,7 @@ impl Block {
                 use std::convert::TryInto;
                 let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
                 let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U16(x));
+                t.set(0,0,Value::U16(x))?;
               }
               _ => {return Err(MechError::GenericError(6376));},
             }
@@ -599,7 +607,7 @@ impl Block {
           Value::String(_) => {table_brrw.set_col_kind(0, ValueKind::String);},
           _ => (),
         }
-        table_brrw.set(0,0,value.clone());
+        table_brrw.set(0,0,value.clone())?;
       }
       Transformation::Function{name, ref arguments, out} => {
         if *name == *MATH_ADD || 
@@ -1125,8 +1133,9 @@ impl Block {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::String(arg), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: 0, out: out.clone()}),
+                  (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopySS::<TableId>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Empty, Column::Empty) => (),
-                  x => {return Err(MechError::GenericError(6366));},
+                  x => {println!("{:?}", x); return Err(MechError::GenericError(6366));},
                 };
                 out_column_ix += 1;
               }

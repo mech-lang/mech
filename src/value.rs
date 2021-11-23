@@ -7,7 +7,7 @@
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 //use crate::quantity::{Quantity, ToQuantity, QuantityMath};
 //use errors::{ErrorType};
-use crate::{hash_str, MechString};
+use crate::*;
 use std::fmt;
 
 // ## Value structs and enums
@@ -26,6 +26,7 @@ pub enum Value {
   F64(f64),
   Bool(bool),
   String(MechString),
+  Reference(TableId),
   Empty,
 }
 
@@ -43,7 +44,8 @@ impl fmt::Debug for Value {
       Value::I64(v) => write!(f,"{}",v)?, 
       Value::F32(v) => write!(f,"{}",v)?,
       Value::F64(v) => write!(f,"{}",v)?, 
-      Value::Bool(v) => write!(f,"{}",v)?, 
+      Value::Bool(v) => write!(f,"{}",v)?,
+      Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
         let s: String = v.into_iter().collect();
         write!(f,"\"{}\"",s)?

@@ -61,6 +61,7 @@ pub enum Column {
   U8(ColumnV<u8>),
   U16(ColumnV<u16>),
   U64(ColumnV<u64>),
+  Ref(ColumnV<TableId>),
   I8(ColumnV<i8>),
   Index(ColumnV<usize>),
   Bool(ColumnV<bool>),
@@ -90,6 +91,7 @@ impl Column {
       Column::Bool(col) => Column::Bool(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Index(col) => Column::Index(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::String(col) => Column::String(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Ref(col) => Column::Ref(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Reference(reference) => Column::Reference(reference.clone()),
       _ => Column::Empty,
     } 
@@ -146,6 +148,7 @@ impl Column {
       Column::String(col) => col.borrow().len(),
       Column::U16(col) => col.borrow().len(),
       Column::Index(col) => col.borrow().len(),
+      Column::Ref(col) => col.borrow().len(),
       Column::Reference((table,index)) => {
         let t = table.borrow();
         t.rows * t.cols
@@ -159,6 +162,7 @@ impl Column {
       Column::U8(col) => col.borrow().len(),
       Column::I8(col) => col.borrow().len(),
       Column::U64(col) => col.borrow().len(),
+      Column::Ref(col) => col.borrow().len(),
       Column::F32(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
       Column::String(col) => col.borrow().len(),
@@ -178,6 +182,7 @@ impl Column {
       Column::U16(col) => col.borrow_mut().resize(rows,0),
       Column::I8(col) => col.borrow_mut().resize(rows,0),
       Column::U64(col) => col.borrow_mut().resize(rows,0),
+      Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
       Column::Index(col) => col.borrow_mut().resize(rows,0),
       Column::F32(col) => col.borrow_mut().resize(rows,0.0),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
@@ -198,6 +203,7 @@ impl Column {
       Column::Bool(_) => ValueKind::Bool,
       Column::String(_) => ValueKind::String,
       Column::Index(_) => ValueKind::Index,
+      Column::Ref(_) => ValueKind::Reference,
       Column::Reference((table,index)) => table.borrow().kind(),
       Column::Empty => ValueKind::Empty,
       _ => ValueKind::Empty,
@@ -307,7 +313,7 @@ impl BoxTable {
     for row in 0..table.rows {
       for col in 0..table.cols {
         let value_string = match table.get(row,col) {
-          Ok(v) => format!("{:0.2?}", v), 
+          Ok(v) => format!("{:?}", v), 
           _ => format!(""),
         };
         let chars = value_string.chars().collect::<Vec<char>>().len();
