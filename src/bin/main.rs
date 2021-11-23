@@ -13,13 +13,7 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  parser.parse(r#"
-block
-  #x = [|code|]
-block
-  #x := 10  
-block
-  #test = #x"#);
+  parser.parse(r#"#test = [first: 12, second: _, third: 45]"#);
 
   //println!("{:#?}", parser.parse_tree);
 

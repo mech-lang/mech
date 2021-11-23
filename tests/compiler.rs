@@ -798,15 +798,15 @@ block
 
 test_mech!(whenever_simple2,"block
   #i = 2
-  #x = [400; 0; 0]
+  #x = [40; 0; 0]
  
-block
-  #test = stats/sum(column: #x)
-
 block 
   ~ #i
   i = #i
-  #x{i,:} := #x{i - 1,:} + 1", Value::U16(801));
+  #x{i,:} := #x{i - 1,:} + 1
+
+block
+  #test = stats/sum(column: #x)", Value::U8(81));
 
 test_mech!(whenever_simple,"block
   #i = 2

@@ -149,6 +149,11 @@ impl Compiler {
             src.remove(0);
             Some((table_id,indices))
           },
+          Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+            let table_id = id.clone();
+            src.remove(0);
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
           _ => None,
         }.unwrap();     
 
@@ -178,24 +183,34 @@ impl Compiler {
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
+        let mut rhs = vec![];
         if input.len() > 0 {
-          let (input_table_id, input_indices) = match &mut input[0] {
-            Transformation::NewTable{table_id,..} => {
-              Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
-            },
-            Transformation::Select{table_id,ref indices,..} => {
-              let table_id = table_id.clone();
-              let indices = indices.clone();
-              input.remove(0);
-              Some((table_id,indices))
-            },
-            _ => None,
-          }.unwrap();
+          loop { 
+            match &mut input[0] {
+              Transformation::NewTable{table_id,..} => {
+                rhs.push((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+                break;
+              },
+              Transformation::Select{table_id,ref indices,..} => {
+                let table_id = table_id.clone();
+                let indices = indices.clone();
+                input.remove(0);
+                rhs.push((table_id,indices));
+                break;
+              },
+              Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+                input.remove(0);
+                continue;
+              },
+              _ => break,
+            }
+          }
+          let (input_table_id, input_indices) = &rhs[0];
           //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
           tfms.append(&mut input);
           tfms.push(Transformation::Select{
             table_id: input_table_id.clone(), 
-            indices: input_indices, 
+            indices: input_indices.clone(), 
             out: output_table_id.unwrap()
           });
         }
@@ -213,22 +228,32 @@ impl Compiler {
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
+        let mut rhs = vec![];
         if input.len() > 0 {
-          let (input_table_id, input_indices) = match &mut input[0] {
-            Transformation::NewTable{table_id,..} => {
-              Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
-            },
-            Transformation::Select{table_id,ref indices,..} => {
-              let table_id = table_id.clone();
-              let indices = indices.clone();
-              input.remove(0);
-              Some((table_id,indices))
-            },
-            _ => None,
-          }.unwrap();
+          loop { 
+            match &mut input[0] {
+              Transformation::NewTable{table_id,..} => {
+                rhs.push((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+                break;
+              },
+              Transformation::Select{table_id,ref indices,..} => {
+                let table_id = table_id.clone();
+                let indices = indices.clone();
+                input.remove(0);
+                rhs.push((table_id,indices));
+                break;
+              },
+              Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+                input.remove(0);
+                continue;
+              },
+              _ => break,
+            }
+          }
+          let (input_table_id, input_indices) = &rhs[0];
           match input_indices[0] {
             (TableIndex::All,TableIndex::All) => {
-              tfms.push(Transformation::TableAlias{table_id: input_table_id, alias: *output_table_id.unwrap()});
+              tfms.push(Transformation::TableAlias{table_id: *input_table_id, alias: *output_table_id.unwrap()});
               tfms.append(&mut input);
             }
             _ => {
@@ -236,7 +261,7 @@ impl Compiler {
               tfms.append(&mut input);
               tfms.push(Transformation::Select{
                 table_id: input_table_id.clone(), 
-                indices: input_indices, 
+                indices: input_indices.clone(), 
                 out: output_table_id
               });
             }
@@ -263,7 +288,7 @@ impl Compiler {
             let indices = indices.clone();
             input.remove(0);
             Some(table_id)
-          },
+          },     
           _ => None,
         };
         tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
@@ -293,6 +318,11 @@ impl Compiler {
               args.push((arg, *table_id, row, column));
               result.remove(0);
             }
+            Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+              let table_id = id.clone();
+              result.remove(0);
+              args.push((arg, table_id, TableIndex::All, TableIndex::All));
+            },
             _ => (),
           }
           arg_tfms.append(&mut result);
@@ -333,12 +363,18 @@ impl Compiler {
         let table_row = Node::TableRow{children: table_row_children};
         let mut compiled_row_tfms = self.compile_node(&table_row)?;
         let mut a_tfms = vec![];
-        match &compiled_row_tfms[0] {
-          Transformation::NewTable{table_id,..} => {
-            let mut alias_tfms = aliases.iter().map(|a| a(*table_id)).collect();
-            a_tfms.append(&mut alias_tfms);
+        loop {
+          match &compiled_row_tfms[0] {
+            Transformation::NewTable{table_id,..} => {
+              let mut alias_tfms = aliases.iter().map(|a| a(*table_id)).collect();
+              a_tfms.append(&mut alias_tfms);
+              break;
+            }
+            Transformation::TableReference{..} => {
+              compiled_row_tfms.remove(0);
+            },
+            _ => break,
           }
-          _ => (),
         }
         tfms.append(&mut compiled_row_tfms);
         tfms.append(&mut a_tfms);
@@ -430,6 +466,15 @@ impl Compiler {
           let mut result = self.compile_nodes(&table_children)?;
           tfms.append(&mut result);          
         }
+        match &tfms[0] {
+          Transformation::NewTable{table_id,..} |
+          Transformation::Select{table_id, ..} => {
+            let reference_table_id = TableId::Local(hash_str(&format!("reference:{:?}", tfms[0])));
+            let value = Value::Reference(*table_id);
+            tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
+          }
+          _ => (),
+        }  
       },
       Node::TableRow{children} => {
         if children.len() > 1 {
@@ -446,6 +491,11 @@ impl Compiler {
                 let (row,col) = indices[0];
                 args.push((0,table_id.clone(),row, col));
                 result.remove(0);
+              }
+              Transformation::TableReference{table_id,..} => {
+                let table_id = table_id.clone();
+                result.remove(0);
+                args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               }
               _ => (),
             }  
@@ -483,16 +533,24 @@ impl Compiler {
         result_tfms.append(&mut result); 
 
         let mut result = self.compile_node(&children[1])?;
-        match &result[0] {
-          Transformation::NewTable{table_id,..} => {
-            args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+        loop {
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+              break;
+            }
+            Transformation::Select{table_id, indices, ..} => {
+              let (row,col) = indices[0];
+              args.push((0,table_id.clone(),row, col));
+              result.remove(0);
+              break;
+            }
+            Transformation::TableReference{table_id,..} => {
+              result.remove(0);
+              continue;
+            }
+            _ => (),
           }
-          Transformation::Select{table_id, indices, ..} => {
-            let (row,col) = indices[0];
-            args.push((0,table_id.clone(),row, col));
-            result.remove(0);
-          }
-          _ => (),
         }
         result_tfms.append(&mut result); 
 
