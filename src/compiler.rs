@@ -152,6 +152,7 @@ impl Compiler {
           Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
             let table_id = id.clone();
             src.remove(0);
+            src.remove(0);
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
           },
           _ => None,
@@ -200,6 +201,7 @@ impl Compiler {
               },
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
                 input.remove(0);
+                input.remove(0);
                 continue;
               },
               _ => break,
@@ -244,6 +246,7 @@ impl Compiler {
                 break;
               },
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+                input.remove(0);
                 input.remove(0);
                 continue;
               },
@@ -321,6 +324,7 @@ impl Compiler {
             Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
               let table_id = id.clone();
               result.remove(0);
+              result.remove(0);
               args.push((arg, table_id, TableIndex::All, TableIndex::All));
             },
             _ => (),
@@ -371,6 +375,7 @@ impl Compiler {
               break;
             }
             Transformation::TableReference{..} => {
+              compiled_row_tfms.remove(0);
               compiled_row_tfms.remove(0);
             },
             _ => break,
@@ -471,10 +476,15 @@ impl Compiler {
           Transformation::Select{table_id, ..} => {
             let reference_table_id = TableId::Local(hash_str(&format!("reference:{:?}", tfms[0])));
             let value = Value::Reference(*table_id);
+            tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
             tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
           }
           _ => (),
         }  
+      },
+      Node::TableColumn{children} => {
+        let mut result = self.compile_nodes(children)?;
+        tfms.append(&mut result);
       },
       Node::TableRow{children} => {
         if children.len() > 1 {
@@ -494,7 +504,6 @@ impl Compiler {
               }
               Transformation::TableReference{table_id,..} => {
                 let table_id = table_id.clone();
-                result.remove(0);
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               }
               _ => (),
@@ -547,6 +556,7 @@ impl Compiler {
             }
             Transformation::TableReference{table_id,..} => {
               result.remove(0);
+              result.remove(0);
               continue;
             }
             _ => (),
@@ -561,10 +571,6 @@ impl Compiler {
           arguments: vec![args[1]],
           out: (o,or,oc),
         });
-      },
-      Node::TableColumn{children} => {
-        let mut result = self.compile_nodes(children)?;
-        tfms.append(&mut result);
       },
       Node::SelectData{name, id, children} => {
         let mut indices = vec![];
