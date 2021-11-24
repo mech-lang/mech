@@ -363,10 +363,21 @@ impl Block {
         } 
       },
       Transformation::TableReference{table_id, reference} => {
-        let mut table = Table::new(*table_id.unwrap(), 1, 1);
-        table.set_kind(ValueKind::Reference);
-        table.set(0,0,reference.clone())?;
-        self.tables.insert_table(table);
+        let table = self.get_table(table_id)?;
+        let mut table_brrw = table.borrow_mut();
+        table_brrw.set_kind(ValueKind::Reference);
+        table_brrw.set(0,0,reference.clone())?;
+
+        let src_table = self.get_table(&reference.as_table_reference()?)?;
+        let src_table_brrw = src_table.borrow();
+        let src_id = src_table_brrw.id;
+        let rows = src_table_brrw.rows;
+        let cols = src_table_brrw.cols;
+
+        let dest_table = Table::new(src_id,rows,cols);
+        let dest_table_rc = Rc::new(RefCell::new(dest_table));
+        self.changes.push(Change::CopyTable{table_id: src_id, table: dest_table_rc.clone()});
+        self.plan.push(CopyT{arg: src_table.clone(), out: dest_table_rc.clone()});
       }
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;

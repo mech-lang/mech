@@ -55,6 +55,22 @@ impl Ord for Transformation {
 impl PartialOrd for Transformation {
   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
     match (self,other) {
+      (Transformation::Function{name, arguments, out},
+        Transformation::TableReference{table_id, reference}) => {
+         let (out_id,_,_) = out;
+         if *out_id == reference.as_table_reference().unwrap() {
+           return Some(Ordering::Less);
+         }
+         None
+       }
+      (Transformation::TableReference{table_id, reference},
+        Transformation::Function{name, arguments, out}) => {
+         let (out_id,_,_) = out;
+         if *out_id == reference.as_table_reference().unwrap() {
+           return Some(Ordering::Greater);
+         }
+         None
+       }
       (_,Transformation::NewTable{..}) => Some(Ordering::Greater),
       (Transformation::NewTable{..},_) => Some(Ordering::Less),
       (_,Transformation::TableAlias{..}) => Some(Ordering::Greater),

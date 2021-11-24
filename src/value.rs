@@ -30,6 +30,17 @@ pub enum Value {
   Empty,
 }
 
+impl Value {
+
+  pub fn as_table_reference(&self) -> Result<TableId,MechError> {
+    match self {
+      Value::Reference(table_id) => Ok(*table_id),
+      _ => Err(MechError::GenericError(1869)),
+    }
+  }
+
+}
+
 impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
