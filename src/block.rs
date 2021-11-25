@@ -387,14 +387,36 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::Select{table_id, indices, out} => {
-        let src_table = self.get_table(table_id)?;
-        let out_table = self.get_table(out)?;
+ 
 
-        let (row, column) = indices[0].clone();
-        let argument = (0,*table_id,row,column);
         //let arg_col = self.get_arg_column(&argument)?;
 
-        match indices[0] {
+        // Iterate through to the last index
+        let mut table_id = *table_id;
+        println!("###{:?}", table_id);
+        for (row,column) in indices.iter().take(indices.len()-1) {
+          let argument = (0,table_id,*row,*column);
+          match self.get_arg_dim(&argument)? {
+            TableShape::Scalar => {
+              let arg_col = self.get_arg_column(&argument)?;
+              match arg_col {
+                (_,Column::Ref(ref_col),_) => {
+                  table_id = ref_col.borrow()[0].clone();
+                }
+                _ => (),
+              }
+            }
+            _ => (),
+          }
+        }
+        println!("####{:?}", table_id);
+
+        let src_table = self.get_table(&table_id)?;
+        let out_table = self.get_table(out)?;
+        let (row, column) = indices.last().unwrap();
+        let argument = (0,table_id,*row,*column);
+
+        match (row,column) {
           // Select an entire table
           (TableIndex::All, TableIndex::All) => {
             match out {
@@ -404,7 +426,7 @@ impl Block {
                 for tfm in self.transformations.iter() {
                   match tfm {
                     Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
-                      if table_id2 == table_id {
+                      if table_id2 == *table_id {
                         // Remap the local column alias for the global table
                         let remapped_tfm = Change::ColumnAlias{table_id: *gid, column_ix: *column_ix, column_alias: *column_alias};
                         self.changes.push(remapped_tfm);
@@ -422,7 +444,7 @@ impl Block {
           (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(_)) => {
-            let (_, arg_col,_) = self.get_arg_column(&(0,*table_id,row,column))?;
+            let (_, arg_col,_) = self.get_arg_column(&(0,table_id,*row,*column))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
@@ -438,6 +460,7 @@ impl Block {
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out), ) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: row, out: out.clone()}),
+              (Column::Ref(arg), Column::Ref(out), ) => self.plan.push(CopySS::<TableId>{arg: arg.clone(), ix: row, out: out.clone()}),
               _ => {return Err(MechError::GenericError(6381));},
             }
           }
@@ -473,7 +496,7 @@ impl Block {
             out_brrw.resize(1,src_brrw.cols);
             out_brrw.set_kind(src_brrw.kind());
             for col in 0..src_brrw.cols {
-              let (_, arg_col,arg_ix) = self.get_arg_column(&(0,*table_id,row,TableIndex::Index(col+1)))?;
+              let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,*row,TableIndex::Index(col+1)))?;
               let mut out_col = out_brrw.get_column_unchecked(col); 
               match (&arg_col, &arg_ix, &out_col) {
                 (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
@@ -483,7 +506,7 @@ impl Block {
             }
           }
           (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
-            let (_, arg_col,arg_ix) = self.get_arg_column(&(0,*table_id,row,column))?;
+            let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,*row,*column))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -1144,7 +1167,7 @@ impl Block {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::String(arg), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: 0, out: out.clone()}),
-                  (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopySS::<TableId>{arg: arg.clone(), ix: 0, out: out.clone()}),
+                  (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Empty, Column::Empty) => (),
                   x => {println!("{:?}", x); return Err(MechError::GenericError(6366));},
                 };

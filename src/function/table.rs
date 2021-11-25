@@ -57,7 +57,7 @@ where T: Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Copy Vector : Vector
+// Copy Scalar : Scalar
 #[derive(Debug)]
 pub struct CopySS<T> {
   pub arg: Arg<T>, pub ix: usize , pub out: Out<T>
@@ -67,6 +67,19 @@ where T: Clone + Debug
 {
   fn solve(&mut self) {
     (self.out.borrow_mut())[0] = (self.arg.borrow())[self.ix].clone()
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Copy Reference
+#[derive(Debug)]
+pub struct CopySSRef {
+  pub arg: Arg<TableId>, pub ix: usize , pub out: Out<TableId>
+}
+impl MechFunction for CopySSRef 
+{
+  fn solve(&mut self) {
+    (self.out.borrow_mut())[0] = TableId::Global(*self.arg.borrow()[self.ix].unwrap())
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
