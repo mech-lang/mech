@@ -185,10 +185,29 @@ impl Block {
   }
 
   fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
-    let arg_dims = self.get_arg_dim(argument);
+
     let (arg_name, table_id, indices) = argument;
-    let (row,col) = &indices[0];
-    let table = self.get_table(table_id)?;
+
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match arg_col {
+            (_,Column::Ref(ref_col),_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            _ => {return Err(MechError::GenericError(6395));}
+          }
+        }
+        _ => {return Err(MechError::GenericError(6394));}
+      }
+    }
+
+
+    let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
     let table_brrw = table.borrow(); 
 
     match (row,col) {
@@ -405,10 +424,10 @@ impl Block {
                 (_,Column::Ref(ref_col),_) => {
                   table_id = ref_col.borrow()[0].clone();
                 }
-                _ => (),
+                _ => {return Err(MechError::GenericError(6393));}
               }
             }
-            _ => (),
+            _ => {return Err(MechError::GenericError(6392));}
           }
         }
 

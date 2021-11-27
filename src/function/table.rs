@@ -284,10 +284,23 @@ impl MechFunction for AppendRowT {
     let ocols = out_brrw.cols;
     let arows = arg_brrw.rows;
     out_brrw.resize(orows + arows, ocols);
-    for col in 0..arg_brrw.cols {
-      for row in 0..arows {
-        let value = arg_brrw.get(row,col).unwrap();
-        out_brrw.set(orows + row,col,value);
+    if arg_brrw.has_col_aliases() {
+      for col in 0..arg_brrw.cols {
+        for row in 0..arows {
+          let value = arg_brrw.get(row,col).unwrap();
+          let alias = arg_brrw.column_ix_to_alias[col];
+          match out_brrw.column_alias_to_ix.get(&alias) {
+            Some(col_ix) => {out_brrw.set(orows + row,*col_ix,value);}
+            None => (), // TODO Error
+          }
+        }
+      }
+    } else {
+      for col in 0..arg_brrw.cols {
+        for row in 0..arows {
+          let value = arg_brrw.get(row,col).unwrap();
+          out_brrw.set(orows + row,col,value);
+        }
       }
     }
   }
