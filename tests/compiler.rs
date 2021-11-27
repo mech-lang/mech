@@ -892,23 +892,18 @@ test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Va
 
 test_mech!(nesting_basic,r#"
 block
-  #test = #app{1,2}{1,2}
-
+  #app = [2 [5 7]]
+  
 block
-  #app = [2 [5 7]]"#, Value::U8(7));
+  #test = #app{2}{2}"#, Value::U8(7));
 
 
 test_mech!(nesting_triple,r#"
 block
-  #test = [#app{2,2}{1,2}{1,1}]
-
+  #app = [1 [2 [31 3]]]
+  
 block
-  x = 314
-  container = [|type text| 
-                123   [x]]
-  #app = [|direction contains| 
-           "column"  [container]
-           "row"     [container]]"#, Value::U16(314));
+  #test = #app{2}{2}{1}"#, Value::U8(31));
 
 test_mech!(nesting_deep,r#"
 block

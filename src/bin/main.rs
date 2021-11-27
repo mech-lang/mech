@@ -15,10 +15,10 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #x = [1 [2 3]]
-  
+  #test = #app{2}{2}{1}
+
 block
-  #test = #x{2}{2}"#);
+  #app = [1 [2 [12 3]]]"#);
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -45,3 +45,33 @@ block
 
   Ok(())
 }
+/*
+├Root
+│├Program(None)
+││├Section(None)
+│││├Paragraph
+││││├ParagraphText(['b', 'l', 'o', 'c', 'k'])
+│││├Block
+││││├Transformation
+│││││├Statement
+││││││├VariableDefine
+│││││││├Identifier(['y'](uly-min-oct-eas))
+│││││││├Expression
+││││││││├NumberLiteral([3])
+││││├Transformation
+│││││├Statement
+││││││├VariableDefine
+│││││││├Identifier(['x'](ska-pri-oct-osc))
+│││││││├Expression
+││││││││├AnonymousTableDefine
+│││││││││├TableRow
+││││││││││├TableColumn
+│││││││││││├Expression
+││││││││││││├NumberLiteral([10])
+││││││││││├TableColumn
+│││││││││││├Expression
+││││││││││││├AnonymousTableDefine
+│││││││││││││├TableRow
+││││││││││││││├TableColumn
+│││││││││││││││├Expression
+││││││││││││││││├NumberLiteral([3])*/

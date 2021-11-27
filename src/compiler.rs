@@ -143,7 +143,7 @@ impl Compiler {
           Transformation::NewTable{table_id,..} => {
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
           },
-          Transformation::Select{table_id,ref indices,..} => {
+          Transformation::Select{table_id,ref indices} => {
             let table_id = table_id.clone();
             let indices = indices.clone();
             src.remove(0);
@@ -159,7 +159,7 @@ impl Compiler {
         }.unwrap();     
 
         match &mut dest[0] {
-          Transformation::Select{table_id, indices, out} => {
+          Transformation::Select{table_id, indices} => {
             let dest_id = table_id.clone();
             let (dest_row, dest_col) = indices[0];
             dest.remove(0);
@@ -192,7 +192,7 @@ impl Compiler {
                 rhs.push((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
                 break;
               },
-              Transformation::Select{table_id,ref indices,..} => {
+              Transformation::Select{table_id,ref indices} => {
                 let table_id = table_id.clone();
                 let indices = indices.clone();
                 input.remove(0);
@@ -210,7 +210,7 @@ impl Compiler {
           let (input_table_id, input_indices) = &rhs[0];
           //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
           tfms.append(&mut input);
-          tfms.push(Transformation::Select{
+          tfms.push(Transformation::TableDefine{
             table_id: input_table_id.clone(), 
             indices: input_indices.clone(), 
             out: output_table_id.unwrap()
@@ -238,7 +238,7 @@ impl Compiler {
                 rhs.push((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
                 break;
               },
-              Transformation::Select{table_id,ref indices,..} => {
+              Transformation::Select{table_id,ref indices} => {
                 let table_id = table_id.clone();
                 let indices = indices.clone();
                 input.remove(0);
@@ -262,7 +262,7 @@ impl Compiler {
             _ => {
               tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
               tfms.append(&mut input);
-              tfms.push(Transformation::Select{
+              tfms.push(Transformation::TableDefine{
                 table_id: input_table_id.clone(), 
                 indices: input_indices.clone(), 
                 out: output_table_id
@@ -271,32 +271,6 @@ impl Compiler {
           }
         }
       }
-      Node::VariableDefine{children} => {
-        let variable_name = match &children[0] {
-          Node::Identifier{name,..} => {
-            let name_hash = hash_chars(name);
-            //self.strings.insert(name_hash, name.to_string());
-            name_hash
-          }
-          _ => 0, // TODO Error
-        };
-        // Compile input of the variable define
-        let mut input = self.compile_node(&children[1])?;
-        let input_table_id = match input[0] {
-          Transformation::NewTable{table_id,..} => {
-            Some(table_id)
-          }
-          Transformation::Select{table_id,ref indices,..} => {
-            let table_id = table_id.clone();
-            let indices = indices.clone();
-            input.remove(0);
-            Some(table_id)
-          },     
-          _ => None,
-        };
-        tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
-        tfms.append(&mut input);
-      },
       Node::Function{name, children} => {
         let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
         let mut arg_tfms = vec![];
@@ -316,7 +290,7 @@ impl Compiler {
             Transformation::NewTable{table_id,..} => {
               args.push((arg, *table_id, TableIndex::All, TableIndex::All));
             },
-            Transformation::Select{table_id, indices, out} => {
+            Transformation::Select{table_id, indices} => {
               let (row, column) = indices[0];
               args.push((arg, *table_id, row, column));
               result.remove(0);
@@ -449,7 +423,7 @@ impl Compiler {
               Transformation::NewTable{table_id,..} => {
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               }
-              Transformation::Select{table_id, indices, ..} => {
+              Transformation::Select{table_id, indices} => {
                 let (row,col) = indices[0];
                 args.push((0,table_id.clone(),row, col));
                 result.remove(0);
@@ -497,13 +471,14 @@ impl Compiler {
               Transformation::NewTable{table_id,..} => {
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               }
-              Transformation::Select{table_id, indices, ..} => {
+              Transformation::Select{table_id, indices} => {
                 let (row,col) = indices[0];
                 args.push((0,table_id.clone(),row, col));
                 result.remove(0);
               }
               Transformation::TableReference{table_id,..} => {
                 let table_id = table_id.clone();
+
                 args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               }
               _ => (),
@@ -532,7 +507,7 @@ impl Compiler {
             args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
             result.remove(0);
           }
-          Transformation::Select{table_id, indices, ..} => {
+          Transformation::Select{table_id, indices} => {
             let (row,col) = indices[0];
             args.push((0,table_id.clone(),row, col));
             result.remove(0);
@@ -548,7 +523,7 @@ impl Compiler {
               args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
               break;
             }
-            Transformation::Select{table_id, indices, ..} => {
+            Transformation::Select{table_id, indices} => {
               let (row,col) = indices[0];
               args.push((0,table_id.clone(),row, col));
               result.remove(0);
@@ -706,15 +681,7 @@ impl Compiler {
             indices.clear();
           }
         }
-        //all_indices.reverse();
-        let out_id = hash_str(&format!("{:?}{:?}", *id, all_indices));
-        if all_indices.len() > 1 {
-          tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
-          tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
-        } else {
-          //tfms.push(Transformation::NewTable{table_id: TableId::Local(out_id), rows: 1, columns: 1});
-          tfms.push(Transformation::Select{table_id: *id, indices: all_indices, out: TableId::Local(out_id)});
-        }
+        tfms.push(Transformation::Select{table_id: *id, indices: all_indices});
         tfms.append(&mut local_tfms);
       }
       Node::Program{children, ..} |
