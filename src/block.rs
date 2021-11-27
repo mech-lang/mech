@@ -45,7 +45,8 @@ impl Plan {
 }
 
 pub type BlockId = u64;
-pub type Argument = (u64, TableId, TableIndex, TableIndex);
+pub type ArgumentName = u64;
+pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
 pub type Out = (TableId, TableIndex, TableIndex);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -185,7 +186,8 @@ impl Block {
 
   fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
     let arg_dims = self.get_arg_dim(argument);
-    let (arg_name, table_id, row, col) = argument;
+    let (arg_name, table_id, indices) = argument;
+    let (row,col) = &indices[0];
     let table = self.get_table(table_id)?;
     let table_brrw = table.borrow(); 
 
@@ -279,7 +281,8 @@ impl Block {
   }
 
   fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<Column>,MechError> {
-    let (_,table_id,row,col) = argument;
+    let (_,table_id,indices) = argument;
+    let (row,col) = indices[0];
     let lhs_table = self.get_table(&table_id)?;
     let lhs_brrw = lhs_table.borrow();
     Ok(lhs_brrw.get_columns(&col).unwrap())
@@ -305,10 +308,10 @@ impl Block {
   }
 
   fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
-    let (_, table_id, row, column) = argument;
+    let (_, table_id, indices) = argument;
     let table = self.get_table(table_id)?;
     let t = table.borrow();
-    let dim = match (row, column) {
+    let dim = match indices[0] {
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
       (TableIndex::All,TableIndex::Index(_)) |
       (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
@@ -394,7 +397,7 @@ impl Block {
         // Iterate through to the last index
         let mut table_id = *table_id;
         for (row,column) in indices.iter().take(indices.len()-1) {
-          let argument = (0,table_id,*row,*column);
+          let argument = (0,table_id,vec![(*row,*column)]);
           match self.get_arg_dim(&argument)? {
             TableShape::Scalar => {
               let arg_col = self.get_arg_column(&argument)?;
@@ -412,7 +415,7 @@ impl Block {
         let src_table = self.get_table(&table_id)?;
         let out_table = self.get_table(out)?;
         let (row, column) = indices.last().unwrap();
-        let argument = (0,table_id,*row,*column);
+        let argument = (0,table_id,vec![(*row,*column)]);
 
         match (row,column) {
           // Select an entire table
@@ -442,7 +445,7 @@ impl Block {
           (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(_)) => {
-            let (_, arg_col,_) = self.get_arg_column(&(0,table_id,*row,*column))?;
+            let (_, arg_col,_) = self.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
@@ -494,7 +497,7 @@ impl Block {
             out_brrw.resize(1,src_brrw.cols);
             out_brrw.set_kind(src_brrw.kind());
             for col in 0..src_brrw.cols {
-              let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,*row,TableIndex::Index(col+1)))?;
+              let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,TableIndex::Index(col+1))]))?;
               let mut out_col = out_brrw.get_column_unchecked(col); 
               match (&arg_col, &arg_ix, &out_col) {
                 (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
@@ -504,7 +507,7 @@ impl Block {
             }
           }
           (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
-            let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,*row,*column))?;
+            let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -516,7 +519,7 @@ impl Block {
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
-        let arguments = vec![(0,*src_id,*src_row,*src_col),(0,*dest_id,*dest_row,*dest_col)];
+        let arguments = vec![(0,*src_id,vec![(*src_row,*src_col)]),(0,*dest_id,vec![(*dest_row,*dest_col)])];
         let arg_shapes = self.get_arg_dims(&arguments)?;
         match (&arg_shapes[0], &arg_shapes[1]) {
           (TableShape::Scalar, TableShape::Row(_)) |
@@ -947,9 +950,11 @@ impl Block {
           }                    
         } else if *name == *TABLE_APPEND {
           let arg_shape = self.get_arg_dim(&arguments[0])?;
-          let (_,_,arow_ix,_) = arguments[0];
+          let (_,_,indices) = &arguments[0];
+          let (arow_ix,_) = indices[0];
 
-          let (_,src_table_id,src_rows,src_cols) = arguments[0];
+          let (_,src_table_id,src_indices) = &arguments[0];
+          let (src_rows,src_cols) = src_indices[0];
           let (dest_table_id, _, _) = out;
         
           let src_table = self.get_table(&src_table_id)?;
@@ -990,7 +995,7 @@ impl Block {
             _ => {return Err(MechError::GenericError(6349));},
           }
         } else if *name == *STATS_SUM {
-          let (arg_name,arg_table_id,_,_) = arguments[0];
+          let (arg_name,arg_table_id,_) = arguments[0];
           let (out_table_id, _, _) = out;
           let out_table = self.get_table(out_table_id)?;
           let mut out_brrw = out_table.borrow_mut();
@@ -1054,7 +1059,7 @@ impl Block {
           let mut arg_tables = vec![];
           let mut rows = 0;
           let mut cols = 0;
-          for (_,table_id,_,_) in arguments {
+          for (_,table_id,_) in arguments {
             let table = self.get_table(table_id)?;
             arg_tables.push(table);
           }
@@ -1127,7 +1132,7 @@ impl Block {
           let mut arg_tables = vec![];
           let mut rows = 0;
           let mut cols = 0;
-          for (_,table_id,_,_) in arguments {
+          for (_,table_id,_) in arguments {
             let table = self.get_table(table_id)?;
             arg_tables.push(table);
           }

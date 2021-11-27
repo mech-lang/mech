@@ -45,7 +45,7 @@ pub use self::table::{Table, TableShape, TableId, TableIndex};
 pub use self::database::{Database, Change, Transaction};
 pub use self::transformation::Transformation;
 pub use self::function::*;
-pub use self::block::{Block,BlockId, BlockState, Register};
+pub use self::block::{Block,BlockId, BlockState, Register, Argument};
 pub use self::core::Core;
 pub use self::value::{Value, ValueKind, NumberLiteral, NumberLiteralKind};
 pub use self::error::MechError;

@@ -1,4 +1,5 @@
 use crate::*;
+use crate::block::Argument;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;
@@ -20,7 +21,7 @@ pub enum Transformation {
   Set{src_id: TableId, src_row: TableIndex, src_col: TableIndex, dest_id: TableId, dest_row: TableIndex, dest_col: TableIndex},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
-  Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
+  Function{name: u64, arguments: Vec<Argument>, out: (TableId, TableIndex, TableIndex)},
   TableDefine{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
   Select{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>},
 }
@@ -73,7 +74,7 @@ impl PartialOrd for Transformation {
         if *out_table_id == reference.as_table_reference().unwrap() {
           return Some(Ordering::Less); 
         } else {
-          for (_,arg_table_id,_,_) in arguments {
+          for (_,arg_table_id,_) in arguments {
             if arg_table_id == table_id {
               return Some(Ordering::Greater);
             }
@@ -87,7 +88,7 @@ impl PartialOrd for Transformation {
         if *out_table_id == reference.as_table_reference().unwrap() {
           return Some(Ordering::Greater); 
         } else {
-          for (_,arg_table_id,_,_) in arguments {
+          for (_,arg_table_id,_) in arguments {
             if arg_table_id == table_id {
               return Some(Ordering::Less);
             }
@@ -108,13 +109,13 @@ impl PartialOrd for Transformation {
         let (right_out_id,_,_) = out2;
         let (left_out_id,_,_) = out;
         // left function comes second because it consumes right fxn output
-        for (_,left_id,_,_) in arguments {
+        for (_,left_id,_) in arguments {
           if left_id == right_out_id {
             return Some(Ordering::Greater);
           }
         }
         // left function comes first because it is consumed by right function
-        for (_,right_id,_,_) in arguments2 {
+        for (_,right_id,_) in arguments2 {
           if right_id == left_out_id {
             return Some(Ordering::Less);
           }
