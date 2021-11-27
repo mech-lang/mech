@@ -920,15 +920,10 @@ block
 
 test_mech!(nesting_math,r#"
 block
-  #test = #app{2,2}{1,2}{1,1} * 10
-
+  #app = [1 [2 [31 3]]]
+  
 block
-  x = 314
-  container = [|type text| 
-                123   [x]]
-  #app = [|direction contains| 
-           "column"  [container]
-           "row"     [container]]"#, Value::U16(3140));
+  #test = #app{2}{2}{1} * 2"#, Value::U8(62));
 
 test_mech!(nesting_math_select_range,r#"
 block

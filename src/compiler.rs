@@ -272,7 +272,7 @@ impl Compiler {
         }
       }
       Node::Function{name, children} => {
-        let mut args: Vec<(u64, TableId, TableIndex, TableIndex)>  = vec![];
+        let mut args: Vec<Argument>  = vec![];
         let mut arg_tfms = vec![];
         for child in children {
           // get the argument identifier off the function binding. Default to 0 if there is no named arg
@@ -288,18 +288,17 @@ impl Compiler {
           };
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((arg, *table_id, TableIndex::All, TableIndex::All));
+              args.push((arg, *table_id, vec![(TableIndex::All, TableIndex::All)]));
             },
             Transformation::Select{table_id, indices} => {
-              let (row, column) = indices[0];
-              args.push((arg, *table_id, row, column));
+              args.push((arg, *table_id, indices.to_vec()));
               result.remove(0);
             }
             Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
               let table_id = id.clone();
               result.remove(0);
               result.remove(0);
-              args.push((arg, table_id, TableIndex::All, TableIndex::All));
+              args.push((arg, table_id, vec![(TableIndex::All, TableIndex::All)]));
             },
             _ => (),
           }
@@ -415,17 +414,16 @@ impl Compiler {
           _ => (),
         };
         if header_tfms.len() > 1 || table_children.len() > 1  {
-          let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
+          let mut args: Vec<Argument> = vec![];
           let mut result_tfms = vec![];
           for child in table_children {
             let mut result = self.compile_node(&child)?;
             match &result[0] {
               Transformation::NewTable{table_id,..} => {
-                args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+                args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
               }
               Transformation::Select{table_id, indices} => {
-                let (row,col) = indices[0];
-                args.push((0,table_id.clone(),row, col));
+                args.push((0,table_id.clone(),indices.to_vec()));
                 result.remove(0);
               }
               _ => (),
@@ -463,23 +461,21 @@ impl Compiler {
       Node::TableRow{children} => {
         if children.len() > 1 {
           let row_id = hash_str(&format!("horzcat:{:?}", children));
-          let mut args: Vec<(u64, TableId, TableIndex, TableIndex)> = vec![];
+          let mut args: Vec<Argument> = vec![];
           let mut result_tfms = vec![];
           for child in children {
             let mut result = self.compile_node(child)?;
             match &result[0] {
               Transformation::NewTable{table_id,..} => {
-                args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+                args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
               }
               Transformation::Select{table_id, indices} => {
-                let (row,col) = indices[0];
-                args.push((0,table_id.clone(),row, col));
+                args.push((0,table_id.clone(),indices.to_vec()));
                 result.remove(0);
               }
               Transformation::TableReference{table_id,..} => {
                 let table_id = table_id.clone();
-
-                args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+                args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
               }
               _ => (),
             }  
@@ -499,17 +495,16 @@ impl Compiler {
       },
       Node::AddRow{children} => {
         let mut result_tfms = Vec::new();
-        let mut args = Vec::new();
+        let mut args: Vec<Argument> = Vec::new();
 
         let mut result = self.compile_node(&children[0])?;
         match &result[0] {
           Transformation::NewTable{table_id,..} => {
-            args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+            args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
             result.remove(0);
           }
           Transformation::Select{table_id, indices} => {
-            let (row,col) = indices[0];
-            args.push((0,table_id.clone(),row, col));
+            args.push((0,table_id.clone(),indices.to_vec()));
             result.remove(0);
           }
           _ => (),
@@ -520,12 +515,11 @@ impl Compiler {
         loop {
           match &result[0] {
             Transformation::NewTable{table_id,..} => {
-              args.push((0,table_id.clone(),TableIndex::All, TableIndex::All));
+              args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
               break;
             }
             Transformation::Select{table_id, indices} => {
-              let (row,col) = indices[0];
-              args.push((0,table_id.clone(),row, col));
+              args.push((0,table_id.clone(),indices.to_vec()));
               result.remove(0);
               break;
             }
@@ -539,12 +533,13 @@ impl Compiler {
         }
         result_tfms.append(&mut result); 
 
-        let (_,o,or,oc) = args[0];
+        let (_,o,oi) = &args[0];
+        let (or,oc) = oi[0];
         tfms.append(&mut result_tfms);
         tfms.push(Transformation::Function{
           name: *TABLE_APPEND,
-          arguments: vec![args[1]],
-          out: (o,or,oc),
+          arguments: vec![args[1].clone()],
+          out: (*o,or,oc),
         });
       },
       Node::SelectData{name, id, children} => {
