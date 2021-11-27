@@ -123,7 +123,6 @@ impl PartialOrd for Transformation {
         None
       }
       x => {
-        println!("4. {:?}", x);
         None
       }
     }
