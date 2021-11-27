@@ -318,7 +318,7 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::None) => (2,1),
       (TableIndex::Table(ix_table_id),TableIndex::All) => (2,t.cols),
-      x => {println!("{:?}",x);return Err(MechError::GenericError(6384));},
+      x => {return Err(MechError::GenericError(6384));},
     };
     let arg_shape = match dim {
       (1,1) => TableShape::Scalar,
@@ -386,14 +386,13 @@ impl Block {
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         table.set_column_alias(*column_ix,*column_alias);
       },
-      Transformation::Select{table_id, indices, out} => {
+      Transformation::TableDefine{table_id, indices, out} => {
  
 
         //let arg_col = self.get_arg_column(&argument)?;
 
         // Iterate through to the last index
         let mut table_id = *table_id;
-        println!("###{:?}", table_id);
         for (row,column) in indices.iter().take(indices.len()-1) {
           let argument = (0,table_id,*row,*column);
           match self.get_arg_dim(&argument)? {
@@ -409,7 +408,6 @@ impl Block {
             _ => (),
           }
         }
-        println!("####{:?}", table_id);
 
         let src_table = self.get_table(&table_id)?;
         let out_table = self.get_table(out)?;
@@ -437,7 +435,7 @@ impl Block {
                 } 
                 self.plan.push(CopyT{arg: src_table.clone(), out: out_table.clone()});
               }
-              _ => {return Err(MechError::GenericError(6383));},
+              _ => (),
             }
           }
           // Select a column by row index
@@ -485,7 +483,7 @@ impl Block {
                   (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
                   (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                   (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  x => {println!("{:?}",x);return Err(MechError::GenericError(6380));},
+                  x => {return Err(MechError::GenericError(6380));},
                 }
               }
             }
@@ -600,7 +598,6 @@ impl Block {
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
               }
               x => {
-                println!("{:?}", x);
                 return Err(MechError::GenericError(8835));
               },
             }
@@ -1169,7 +1166,7 @@ impl Block {
                   (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
                   (Column::Empty, Column::Empty) => (),
-                  x => {println!("{:?}", x); return Err(MechError::GenericError(6366));},
+                  x => {return Err(MechError::GenericError(6366));},
                 };
                 out_column_ix += 1;
               }
