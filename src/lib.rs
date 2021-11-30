@@ -1331,40 +1331,42 @@ impl WasmCore {
           // RENDER AN IMAGE
           // --------------------- 
           } else if shape == *IMAGE {
-            match (parameters_table.get_string(&TableIndex::Index(1), &TableIndex::Alias(*SOURCE)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE))) {
-              (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
-                let source_hash = hash_string(&source_string);
-                match self.images.entry(source_hash) {
-                  Entry::Occupied(img_entry) => {
-                    let img = img_entry.get();
-                    let ix = img.width() as f64 / 2.0;
-                    let iy = img.height() as f64 / 2.0;
-                    context.save();
-                    context.translate(x, y);
-                    context.rotate(rotation * 3.141592654 / 180.0);
-                    context.draw_image_with_html_image_element(&img, -ix, -iy);
-                    context.restore();
-                  },
-                  Entry::Vacant(v) => {
-                    let mut img = web_sys::HtmlImageElement::new().unwrap();
-                    img.set_src(&source_string.to_owned());
-                    {
-                      let closure = Closure::wrap(Box::new(move || {
-                        unsafe {
-                          (*wasm_core).render();
-                        }
-                      }) as Box<FnMut()>);
-                      img.set_onload(Some(closure.as_ref().unchecked_ref()));
-                      v.insert(img);
-                      closure.forget();
+            for row in 1..=parameters_table.rows {
+              match (parameters_table.get_string(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
+                (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
+                  let source_hash = hash_string(&source_string);
+                  match self.images.entry(source_hash) {
+                    Entry::Occupied(img_entry) => {
+                      let img = img_entry.get();
+                      let ix = img.width() as f64 / 2.0;
+                      let iy = img.height() as f64 / 2.0;
+                      context.save();
+                      context.translate(x, y);
+                      context.rotate(rotation * 3.141592654 / 180.0);
+                      context.draw_image_with_html_image_element(&img, -ix, -iy);
+                      context.restore();
+                    },
+                    Entry::Vacant(v) => {
+                      let mut img = web_sys::HtmlImageElement::new().unwrap();
+                      img.set_src(&source_string.to_owned());
+                      {
+                        let closure = Closure::wrap(Box::new(move || {
+                          unsafe {
+                            (*wasm_core).render();
+                          }
+                        }) as Box<FnMut()>);
+                        img.set_onload(Some(closure.as_ref().unchecked_ref()));
+                        v.insert(img);
+                        closure.forget();
+                      }
                     }
                   }
                 }
+                _ => {log!("Missing source, x, y, or rotation");},
               }
-              _ => {log!("Missing source, x, y, or rotation");},
             }
           } else {
             log!("Unknown canvas element");
