@@ -118,6 +118,13 @@ impl Column {
     }
   }
 
+  pub fn get_reference(&self) -> Result<ColumnV<TableId>,MechError> {
+    match self {
+      Column::Ref(col) => Ok(col.clone()),
+      _ => {return Err(MechError::GenericError(8175));},
+    }
+  }
+
   pub fn get_u64(&self) -> Result<ColumnV<u64>,MechError> {
     match self {
       Column::U64(col) => Ok(col.clone()),

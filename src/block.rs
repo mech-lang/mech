@@ -356,11 +356,11 @@ impl Block {
     match self.state {
       BlockState::Unsatisfied => {
         self.pending_transformations.push(tfm.clone());
-        Err(MechError::GenericError(7372))
+        return Err(MechError::GenericError(7372));
       }
       _ => {
         match self.compile_tfm(tfm.clone()) {
-          Ok(()) => Ok(()),
+          Ok(()) => (),
           Err(mech_error_kind) => {
             self.unsatisfied_transformation = Some((mech_error_kind.clone(),tfm));
             self.state = BlockState::Unsatisfied;
@@ -369,6 +369,7 @@ impl Block {
         }
       }
     }
+    Ok(())
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
@@ -380,7 +381,9 @@ impl Block {
             self.tables.insert_table(table);
           }
           TableId::Global(id) => {
-            self.changes.push(Change::NewTable{table_id: *id, rows: *rows, columns: *columns});
+            let table = Table::new(*id, *rows, *columns);
+            self.global_database.borrow_mut().insert_table(table);
+            //self.changes.push(Change::NewTable{table_id: *id, rows: *rows, columns: *columns});
           }
         } 
       },
@@ -397,9 +400,9 @@ impl Block {
         let cols = src_table_brrw.cols;
 
         let dest_table = Table::new(src_id,rows,cols);
-        let dest_table_rc = Rc::new(RefCell::new(dest_table));
-        self.changes.push(Change::CopyTable{table_id: src_id, table: dest_table_rc.clone()});
-        self.plan.push(CopyT{arg: src_table.clone(), out: dest_table_rc.clone()});
+        self.global_database.borrow_mut().insert_table(dest_table);
+        let dest_table = self.get_table(&TableId::Global(src_id))?;
+        self.plan.push(CopyT{arg: src_table.clone(), out: dest_table.clone()});
       }
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;
@@ -409,8 +412,6 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::TableDefine{table_id, indices, out} => {
- 
-
         //let arg_col = self.get_arg_column(&argument)?;
 
         // Iterate through to the last index
@@ -447,9 +448,15 @@ impl Block {
                   match tfm {
                     Transformation::ColumnAlias{table_id,column_ix,column_alias} => {
                       if table_id2 == *table_id {
+                        let table = self.get_table(table_id)?;
+                        let mut table_brrw = table.borrow_mut();
                         // Remap the local column alias for the global table
                         let remapped_tfm = Change::ColumnAlias{table_id: *gid, column_ix: *column_ix, column_alias: *column_alias};
-                        self.changes.push(remapped_tfm);
+                        let rows = table_brrw.rows;
+                        if *column_ix + 1 > table_brrw.cols {
+                          table_brrw.resize(rows, column_ix + 1);
+                        }    
+                        table_brrw.set_column_alias(*column_ix,*column_alias);
                       }
                     },
                     _ => (),
@@ -1142,7 +1149,16 @@ impl Block {
                 let fxn = ConcatV::<MechString>{args: cols, out: out_c.clone()};
                 self.plan.push(fxn);
               }
-              _ => {return Err(MechError::GenericError(6361));},
+              Column::Ref(ref out_c) => {
+                let mut cols:Vec<ColumnV<TableId>> = vec![];
+                for colv in argument_columns {
+                  cols.push(colv.get_reference()?.clone());
+                }
+                let fxn = ConcatV::<TableId>{args: cols, out: out_c.clone()};
+                self.plan.push(fxn);
+              }
+              x => {
+                return Err(MechError::GenericError(6361));},
             }
             
           }

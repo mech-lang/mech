@@ -47,20 +47,14 @@ impl Core {
             Some(table) => {
               for (row,col,val) in adds {
                 match table.borrow().set(*row, *col, val.clone()) {
-                  Err(_) => {
-                    // Index out of bounds.
-                    return Err(MechError::GenericError(9131));
-                  }
-                  _ => {
+                  Ok(()) => {
                     registers.push((*table_id,*row,*col));
                   },
+                  Err(x) => {return Err(x);}
                 }
               }
             }
-            _ => {
-              // Table doesn't exist
-              return Err(MechError::GenericError(9132));
-            }
+            None => {return Err(MechError::GenericError(4219));}
           }
         }
         Change::NewTable{table_id, rows, columns} => {
@@ -121,20 +115,10 @@ impl Core {
   pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<(),MechError> {
     let block_ref_c = block_ref.clone();
     let mut block_brrw = block_ref.borrow_mut();
+    let temp_db = block_brrw.global_database.clone();
     block_brrw.global_database = self.database.clone();
+    self.database.borrow_mut().union(&mut temp_db.borrow_mut());
     let mut potentially_ready = Vec::new();
-    // Processing a transaction can lead to subsequent changes
-    // that need to be processed.
-    loop {
-      let changes = block_brrw.changes.clone();
-      block_brrw.changes.clear();
-      let mut pr_blocks = self.process_transaction(&changes)?;
-      potentially_ready.append(&mut pr_blocks);
-      block_brrw.ready();
-      if block_brrw.changes.len() == 0 {
-        break;
-      }
-    }
     // try to satisfy the block
     match block_brrw.ready() {
       true => {

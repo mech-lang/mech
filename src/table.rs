@@ -227,7 +227,9 @@ impl Table {
           //let column: ColumnV<u8> = Rc::new(RefCell::new(Vec::new()));
           //self.data[col] = Column::U8(column);
         },
-        _ => {return Err(MechError::GenericError(1219));},
+        x => {
+          return Err(MechError::GenericError(1219));
+        },
       }
       Ok(())
     } else {

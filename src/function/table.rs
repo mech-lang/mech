@@ -256,10 +256,13 @@ impl MechFunction for CopyT {
   fn solve(&mut self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
+
     out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
     for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
       out_brrw.set_col_kind(col, kind.clone());
     }
+    out_brrw.column_ix_to_alias = arg_brrw.column_ix_to_alias.clone();
+    out_brrw.column_alias_to_ix = arg_brrw.column_alias_to_ix.clone();
     for col in 0..arg_brrw.cols {
       for row in 0..arg_brrw.rows {
         let value = arg_brrw.get(row,col).unwrap();

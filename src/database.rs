@@ -43,6 +43,22 @@ impl Database {
     }
   }
 
+  pub fn union(&mut self, other: &mut Self) -> Result<(),MechError> {
+    for (id,other_table) in other.tables.drain() {
+      match self.tables.try_insert(id, other_table.clone()) {
+        Ok(_) => (),
+        Err(_) => {return Err(MechError::GenericError(4212));},
+      }
+    }
+    for (id,other_table) in other.table_alias_to_id.drain() {
+      match self.table_alias_to_id.try_insert(id, other_table.clone()) {
+        Ok(_) => (),
+        Err(_) => {return Err(MechError::GenericError(4213));},
+      }
+    }
+    Ok(())
+  }
+
   pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
       Err(_) => Err(MechError::GenericError(6333)),

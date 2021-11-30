@@ -27,7 +27,7 @@ use std::thread;
 use mech_core::*;
 use mech_core::math::MulParVS;
 
-fn main() {
+fn main() -> Result<(),MechError> {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   let mut total_time = VecDeque::new();  
   let start_ns0 = time::precise_time_ns();
@@ -40,6 +40,7 @@ fn main() {
     // #time/timer += [period: 60Hz]
     let mut time_timer = Table::new(hash_str("time/timer"),1,2);
     time_timer.set_col_kind(0,ValueKind::F32);
+    time_timer.set_col_kind(1,ValueKind::F32);
     time_timer.set(0,0,Value::F32(60.0));
     core.insert_table(time_timer.clone());
 
@@ -174,11 +175,11 @@ fn main() {
   core.insert_block(Rc::new(RefCell::new(block2)));
   core.insert_block(Rc::new(RefCell::new(block3)));
 
-  for i in 0..200000 {
+  for i in 0..20000 {
     let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
     let start_ns = time::precise_time_ns();
 
-    core.process_transaction(&txn);
+    core.process_transaction(&txn)?;
 
     let end_ns = time::precise_time_ns();
     let time = (end_ns - start_ns) as f32;
@@ -193,4 +194,5 @@ fn main() {
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f32;
   println!("{:0.4?} s", time / 1e9);
+  Ok(())
 }
