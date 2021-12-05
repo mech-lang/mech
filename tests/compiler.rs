@@ -282,12 +282,11 @@ block
 
 test_mech!(range_and_cat,r#"
 block
-  #test = stats/sum(table: #ball)
-
-block
   x = 1:4
   y = 1:4
-  #ball = [x y]"#, Value::U8(20));
+  #ball = [x y]
+block
+  #test = stats/sum(table: #ball)"#, Value::U8(20));
 
 // ## Subscripts
 
@@ -913,10 +912,10 @@ block
   #ball = [x: 10 y: 10]
 
 block
-  ball = [shape: "circle" parameters: [cx: 123 cy: 456]]
-  line = [shape: "line" parameters: [x1: #ball.x, x2: #ball.y]]
-  canvas = [contains: [|shape parameters| ball; line]]
-  #app/main = [contains: [canvas]]"#, Value::U16(579));
+  ball = [2 [123 456]]
+  line = [1 [10, 10]]
+  canvas = [ball; line]
+  #app/main = [[canvas]]"#, Value::U8(123));
 
 test_mech!(nesting_math,r#"
 block
@@ -963,16 +962,16 @@ block
 
 test_mech!(nesting_second_col2,r#"
 block
-  #q = [_ _]
+  #q = [0 []]
 
 block
-  #test = #q{2}{2}
+  #app = [1 [7 8]]"
 
 block
-  #q{2} := #app2{2}
+  #q{2} := #app{2}
 
 block
-  #app2 = [1 [7 8]]"#, Value::U8(8));
+  #test = #q{2}{2}"#, Value::U8(8));
 
 test_mech!(nesting_chained_dot_indexing,r#"
 block
@@ -1052,10 +1051,9 @@ block
 
 test_mech!(function_inside_anonymous_table,r#"
 block
-  #test = #mech/test{2} == #mech/test{3}
-  
+  #mech/test = ["foo", 3, stats/sum(column: 1:2)]
 block
-  #mech/test = ["foo", 3, stats/sum(column: 1:2)]"#, Value::Bool(true));
+  #test = #mech/test{2} == #mech/test{3}"#, Value::Bool(true));
 
 // ## Errors
 

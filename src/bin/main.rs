@@ -15,11 +15,15 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #bots = [|name position|]
+  #foo = [|x y z|
+           5 6 7]
+
 block
-  #bots += [position: 3 name: 4]
+  #foo += [x: 100 y: 110 z: 120]
+  
 block
-  #test = #bots.position ^ #bots.name"#);
+  ix = #foo.x > 50
+  #test = #foo{ix, :}"#);
 
   //println!("{:#?}", parser.parse_tree);
 

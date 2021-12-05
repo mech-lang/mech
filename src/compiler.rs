@@ -356,6 +356,16 @@ impl Compiler {
         }
         tfms.append(&mut compiled_row_tfms);
         tfms.append(&mut a_tfms);
+        match &tfms[0] {
+          Transformation::NewTable{table_id,..} |
+          Transformation::Select{table_id, ..} => {
+            let reference_table_id = TableId::Local(hash_str(&format!("reference:{:?}", tfms[0])));
+            let value = Value::Reference(*table_id);
+            tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+            tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
+          }
+          _ => (),
+        }  
       }
       Node::EmptyTable{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
@@ -459,39 +469,34 @@ impl Compiler {
         tfms.append(&mut result);
       },
       Node::TableRow{children} => {
-        if children.len() > 1 {
-          let row_id = hash_str(&format!("horzcat:{:?}", children));
-          let mut args: Vec<Argument> = vec![];
-          let mut result_tfms = vec![];
-          for child in children {
-            let mut result = self.compile_node(child)?;
-            match &result[0] {
-              Transformation::NewTable{table_id,..} => {
-                args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
-              }
-              Transformation::Select{table_id, indices} => {
-                args.push((0,table_id.clone(),indices.to_vec()));
-                result.remove(0);
-              }
-              Transformation::TableReference{table_id,..} => {
-                let table_id = table_id.clone();
-                args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
-              }
-              _ => (),
-            }  
-            result_tfms.append(&mut result);       
-          }
-          tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: args.len()});
-          tfms.append(&mut result_tfms);
-          tfms.push(Transformation::Function{
-            name: *TABLE_HORIZONTAL__CONCATENATE,
-            arguments: args,
-            out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
-          });
-        } else {
-          let mut result = self.compile_nodes(children)?;
-          tfms.append(&mut result);            
+        let row_id = hash_str(&format!("horzcat:{:?}", children));
+        let mut args: Vec<Argument> = vec![];
+        let mut result_tfms = vec![];
+        for child in children {
+          let mut result = self.compile_node(child)?;
+          match &result[0] {
+            Transformation::NewTable{table_id,..} => {
+              args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+            }
+            Transformation::Select{table_id, indices} => {
+              args.push((0,table_id.clone(),indices.to_vec()));
+              result.remove(0);
+            }
+            Transformation::TableReference{table_id,..} => {
+              let table_id = table_id.clone();
+              args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+            }
+            _ => (),
+          }  
+          result_tfms.append(&mut result);       
         }
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: args.len()});
+        tfms.append(&mut result_tfms);
+        tfms.push(Transformation::Function{
+          name: *TABLE_HORIZONTAL__CONCATENATE,
+          arguments: args,
+          out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
+        });
       },
       Node::AddRow{children} => {
         let mut result_tfms = Vec::new();
