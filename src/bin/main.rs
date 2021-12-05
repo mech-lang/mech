@@ -15,15 +15,8 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #foo = [|x y z|
-           5 6 7]
-
-block
-  #foo += [x: 100 y: 110 z: 120]
-  
-block
-  ix = #foo.x > 50
-  #test = #foo{ix, :}"#);
+  x = ["a"; "b"; "c"; "d"]
+  y = [type: 1 class: "table" result: x]"#);
 
   //println!("{:#?}", parser.parse_tree);
 

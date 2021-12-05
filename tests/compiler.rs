@@ -909,10 +909,7 @@ block
   #test = stats/sum(row: #app/main{1}{1}{2}{1,:})
 
 block
-  #ball = [x: 10 y: 10]
-
-block
-  ball = [2 [123 456]]
+  ball = [2 [123 123]]
   line = [1 [10, 10]]
   canvas = [ball; line]
   #app/main = [[canvas]]"#, Value::U8(123));
