@@ -44,18 +44,50 @@ where T: Clone + Debug
 // Copy Vector : Vector
 #[derive(Debug)]
 pub struct CopyVV<T> 
-where T: Copy + Debug
+where T: Clone + Debug
 {
   pub arg: Arg<T>, pub out: Out<T>
 }
 impl<T> MechFunction for CopyVV<T> 
-where T: Copy + Debug
+where T: Clone + Debug
 {
   fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = *arg); 
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = arg.clone()); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+// Copy Scalar : Vector
+#[derive(Debug)]
+pub struct CopySV<T> 
+where T: Clone + Debug
+{
+  pub arg: Arg<T>, pub ix: usize, pub out: Out<T>
+}
+impl<T> MechFunction for CopySV<T> 
+where T: Clone + Debug
+{
+  fn solve(&mut self) {
+    let arg = self.arg.borrow()[self.ix].clone();
+    self.out.borrow_mut().iter_mut().for_each(|out| *out = arg.clone()); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Copy Reference
+#[derive(Debug)]
+pub struct CopySVRef {
+  pub arg: Arg<TableId>, pub ix: usize , pub out: Out<TableId>
+}
+impl MechFunction for CopySVRef 
+{
+  fn solve(&mut self) {
+    let id = TableId::Global(*self.arg.borrow()[self.ix].unwrap());
+    self.out.borrow_mut().iter_mut().for_each(|out| *out = id.clone()); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 
 // Copy Scalar : Scalar
 #[derive(Debug)]

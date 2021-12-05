@@ -1221,16 +1221,31 @@ impl Block {
 
                 o.set_col_kind(out_column_ix, arg_col.kind());
                 let mut out_col = o.get_column_unchecked(out_column_ix);
-              
-                match (&arg_col, &arg_ix, &out_col) {
-                  (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::Empty, _, Column::Empty) => (),
-                  x => {return Err(MechError::GenericError(6366));},
-                };
-                out_column_ix += 1;
+                match out_col.len() {
+                  1 => {
+                    match (&arg_col, &arg_ix, &out_col) {
+                      (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Empty, _, Column::Empty) => (),
+                      x => {return Err(MechError::GenericError(6366));},
+                    };
+                    out_column_ix += 1;
+                  }
+                  _ => {
+                    match (&arg_col, &arg_ix, &out_col) {
+                      (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySV::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => self.plan.push(CopySV::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => self.plan.push(CopySV::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => self.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                      (Column::Empty, _, Column::Empty) => (),
+                      x => {return Err(MechError::GenericError(6368));},
+                    };
+                    out_column_ix += 1;
+                  }
+                }
+
               }
               TableShape::Column(_) => {
                 let (_, arg_col,arg_ix) = self.get_arg_column(&argument)?;
@@ -1239,7 +1254,10 @@ impl Block {
                 let fxn = match (&arg_col, &out_col) {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
                   (Column::U64(arg), Column::U64(out)) => self.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
-                  _ => {return Err(MechError::MissingFunction(*name));},
+                  (Column::String(arg), Column::String(out)) => self.plan.push(CopyVV::<MechString>{arg: arg.clone(), out: out.clone()}),
+                  _ => {
+                    return Err(MechError::GenericError(6367));
+                  },
                 };
                 out_column_ix += 1;
               }
@@ -1256,7 +1274,7 @@ impl Block {
                     (Column::Empty, _, Column::Empty) => (),
                     x => {
                       println!("{:?}",x);
-                      return Err(MechError::GenericError(6366));},
+                      return Err(MechError::GenericError(6368));},
                   };
                   out_column_ix += 1;
                 }
