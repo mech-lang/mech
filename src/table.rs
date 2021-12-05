@@ -72,6 +72,7 @@ impl TableIndex {
       TableIndex::All => 0,
     }
   }
+
 }
 
 impl fmt::Debug for TableIndex {

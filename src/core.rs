@@ -20,7 +20,6 @@ pub struct Core {
   unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
   errors: HashMap<MechError,Vec<BlockRef>>,
-  potentially_ready: Vec<BlockRef>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
@@ -32,7 +31,6 @@ impl Core {
       unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
       errors: HashMap::new(),
-      potentially_ready: Vec::new(),
       schedules: HashMap::new(),
     }
   }
@@ -117,15 +115,30 @@ impl Core {
     let mut block_brrw = block_ref.borrow_mut();
     let temp_db = block_brrw.global_database.clone();
     block_brrw.global_database = self.database.clone();
-    self.database.borrow_mut().union(&mut temp_db.borrow_mut());
-    let mut potentially_ready = Vec::new();
+
+    // Merge databases
+    let mut temp_db_brrw = temp_db.borrow();
+    match self.database.try_borrow_mut() {
+      Ok(ref mut database_brrw) => {
+        database_brrw.union(&mut temp_db_brrw);
+      }
+      Err(_) => ()
+    }
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
         block_brrw.gen_id();
+        let block_output = block_brrw.output.clone();
         self.blocks.push(block_ref_c.clone());
-        for pr_block in potentially_ready {
-          self.insert_block(pr_block);
+        for table_id in block_output {
+          match self.errors.remove(&MechError::MissingTable(table_id)) {
+            Some(mut ublocks) => {
+              for ublock in ublocks {
+                self.insert_block(ublock);
+              }
+            }
+            None => (),
+          }
         }
         Ok(())
       }

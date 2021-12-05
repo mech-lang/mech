@@ -43,14 +43,16 @@ impl Database {
     }
   }
 
-  pub fn union(&mut self, other: &mut Self) -> Result<(),MechError> {
-    for (id,other_table) in other.tables.drain() {
+  pub fn union(&mut self, other: &Self) -> Result<(),MechError> {
+    let mut other_tables = other.tables.clone();
+    for (id,other_table) in other_tables.drain() {
       match self.tables.try_insert(id, other_table.clone()) {
         Ok(_) => (),
         Err(_) => {return Err(MechError::GenericError(4212));},
       }
     }
-    for (id,other_table) in other.table_alias_to_id.drain() {
+    let mut other_table_aliases = other.table_alias_to_id.clone();
+    for (id,other_table) in other_table_aliases.drain() {
       match self.table_alias_to_id.try_insert(id, other_table.clone()) {
         Ok(_) => (),
         Err(_) => {return Err(MechError::GenericError(4213));},

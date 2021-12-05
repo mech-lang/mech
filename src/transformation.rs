@@ -58,12 +58,6 @@ impl Ord for Transformation {
 impl PartialOrd for Transformation {
   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
     match (self,other) {
-      /*(Transformation::TableReference{table_id, reference},_) => {
-        return Some(Ordering::Greater);
-      }
-      (_,Transformation::TableReference{table_id, reference}) => {
-        return Some(Ordering::Less);
-      }*/
       (Transformation::TableReference{..},
        Transformation::TableReference{..}) => {
         Some(Ordering::Less)
@@ -96,6 +90,8 @@ impl PartialOrd for Transformation {
         }
         return Some(Ordering::Greater); 
       }
+      (Transformation::TableReference{..},Transformation::ColumnAlias{..}) => Some(Ordering::Greater),
+      (Transformation::ColumnAlias{..},Transformation::TableReference{..}) => Some(Ordering::Less),
       (_,Transformation::NewTable{..}) => Some(Ordering::Greater),
       (Transformation::NewTable{..},_) => Some(Ordering::Less),
       (_,Transformation::TableAlias{..}) => Some(Ordering::Greater),
