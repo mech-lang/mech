@@ -74,6 +74,23 @@ where T: Clone + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+
+// Copy Vector : Vector Ref
+#[derive(Debug)]
+pub struct CopyVVRef {
+  pub arg: Arg<TableId>, pub out: Out<TableId>
+}
+impl MechFunction for CopyVVRef {
+  fn solve(&mut self) {
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| {
+      let id = TableId::Global(*arg.unwrap());
+      *out = id;
+    }); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
 // Copy Reference
 #[derive(Debug)]
 pub struct CopySVRef {

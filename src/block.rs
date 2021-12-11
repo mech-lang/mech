@@ -147,8 +147,7 @@ impl Block {
   }
 
   pub fn gen_id(&mut self) -> u64 {
-    let encoded: Vec<u8> = bincode::serialize(&self.transformations).unwrap();
-    self.id = hash_bytes(&encoded);
+    self.id = hash_str(&format!("{:?}",self.transformations));
     self.id
   }
 
@@ -643,6 +642,16 @@ impl Block {
                 let out = dest_table_brrw.get_column_unchecked(0).get_u8()?;
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
               }
+              //((0, U8(RefCell { value: [4] }), Index(0)), (0, Empty, Index(0)))
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+                let dest_table = self.get_table(dest_id)?;
+                let src_table = self.get_table(src_id)?;
+                let src_table_brrw = src_table.borrow();
+                let mut dest_table_brrw = dest_table.borrow_mut();
+                dest_table_brrw.set_col_kind(1,ValueKind::U8);
+                let out = dest_table_brrw.get_column_unchecked(0).get_u8()?;
+                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+              }
               x => {
                 return Err(MechError::GenericError(8835));
               },
@@ -1093,7 +1102,7 @@ impl Block {
           if arg_name == *COLUMN {
             match arg_column {
               Column::Bool(col) => self.plan.push(SetAllCol{col: col.clone(), out: out_col.clone()}),
-              _ => {return Err(MechError::GenericError(6395));},
+              _ => {return Err(MechError::GenericError(6595));},
             }
           }          
         } else if *name == *TABLE_VERTICAL__CONCATENATE {
@@ -1261,20 +1270,35 @@ impl Block {
                 };
                 out_column_ix += 1;
               }
-              TableShape::Row(cols) => {
+              TableShape::Row(_) => {
                 for (_, arg_col,arg_ix) in self.get_whole_table_arg_cols(&argument)? {
                   o.set_col_kind(out_column_ix, arg_col.kind());
                   let mut out_col = o.get_column_unchecked(out_column_ix);
                   match (&arg_col, &arg_ix, &out_col) {
                     (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
                     (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                    (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
                     (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => self.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                     (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => self.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                    (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
                     (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => self.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
                     (Column::Empty, _, Column::Empty) => (),
                     x => {
-                      println!("{:?}",x);
-                      return Err(MechError::GenericError(6368));},
+                      return Err(MechError::GenericError(6369));},
+                  };
+                  out_column_ix += 1;
+                }
+              }
+              TableShape::Matrix(_,_) => {
+                for (_, arg_col,arg_ix) in self.get_whole_table_arg_cols(&argument)? {
+                  o.set_col_kind(out_column_ix, arg_col.kind());
+                  let mut out_col = o.get_column_unchecked(out_column_ix);
+                  match (&arg_col, &arg_ix, &out_col) {
+                    (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                    (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
+                    (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => self.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
+                    x => {
+                      return Err(MechError::GenericError(6379));},
                   };
                   out_column_ix += 1;
                 }

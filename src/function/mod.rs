@@ -1,4 +1,4 @@
-use crate::{Column, ColumnV, humanize, ValueKind, MechString, Table, TableId, TableIndex, Value, Register, NumberLiteralKind};
+use crate::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
@@ -70,8 +70,8 @@ impl MechFunction for Function {
       Function::ExponentSSU8((lhs, rhs, out)) => { (out.borrow_mut())[0] = (lhs.borrow())[0].pow((rhs.borrow())[0] as u32); }
 
       Function::AddSSIPF32((lhs, rhs)) => { ((lhs.borrow_mut())[0]) += (*rhs.borrow())[0] }
-      Function::AddVVIPF32((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
-      Function::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += rhs); }
+      Function::AddVVIPF32((lhs, rhs)) => { lhs.borrow_mut().iter_mut().zip(&(*rhs.borrow())).for_each(|(lhs, rhs)| *lhs += *rhs); }
+      Function::ParAddVVIPF32(args) => { args[0].borrow_mut().par_iter_mut().zip(&(*args[1].borrow())).for_each(|(lhs, rhs)| *lhs += *rhs); }
       Function::ParAddVSIPF32(args) => { 
         let rhs = args[1].borrow()[0];
         args[0].borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
