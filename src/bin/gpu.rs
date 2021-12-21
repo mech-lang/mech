@@ -190,7 +190,7 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
 }
 
 fn main() {
-    #[cfg(not(target_arch = "wasm32"))]
+    /*#[cfg(not(target_arch = "wasm32"))]
     {
         env_logger::init();
         pollster::block_on(run());
@@ -200,40 +200,42 @@ fn main() {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         console_log::init().expect("could not initialize logger");
         wasm_bindgen_futures::spawn_local(run());
-    }
-    let mut x: Vec<f64> = vec![1.0;1_000_000];
-    let mut y = vec![1.0;1_000_000];
-    let mut vx = vec![1.0;1_000_000];
-    let mut vy = vec![1.0;1_000_000];
-    let n = 1000;
+    }*/
+    let nn = 1_000_000;
+    let mut x: Vec<f64> = vec![1.0;nn];
+    let mut y = vec![1.0;nn];
+    let mut vx = vec![1.0;nn];
+    let mut vy = vec![1.0;nn];
+    let n = 10000;
     let start_ns0 = time::precise_time_ns();
     for _ in 0..n as usize {
-      for (((ref mut x,ref mut y), ref mut vx), ref mut vy) in &mut x.iter_mut().zip(&mut y).zip(&mut vx).zip(&mut vy) {
-        **x += **vx;
-        **y += **vy;
-        **vy += 1.0;
-        if **x > 500.0 {
-          **x = 500.0;
-          **vx *= -0.8;
-        } else 
-        if **x < 0.0 {
-          **x = 0.0;
-          **vx *= -0.8;
-        }
-        if **y > 500.0 {
-          **y = 500.0;
-          **vy *= -0.8;
-        } else 
-        if **y < 0.0 {
-          **y = 0.0;
-          **vy *= -0.8;
-        }
-
-      }
+        x.par_iter_mut().zip(y.par_iter_mut()).zip(vx.par_iter_mut()).zip(vy.par_iter_mut()).for_each(|(((x,y),vx),vy)| {
+            *x += *vx;
+            *y += *vy;
+            *vy += 1.0;
+            if *x > 500.0 {
+                *x = 500.0;
+                *vx *= -0.8;
+            } 
+            if *x < 0.0 {
+                *x = 0.0;
+                *vx *= -0.8;
+            }
+            if *y > 500.0 {
+                *y = 500.0;
+                *vy *= -0.8;
+            }
+            if *y < 0.0 {
+                *y = 0.0;
+                *vy *= -0.8;
+            }
+        });
     }
     let end_ns0 = time::precise_time_ns();
     let time = (end_ns0 - start_ns0) as f64;
     println!("{:0.2?}Hz", 1.0 / ((time / 1_000_000_000.0) / n as f64));    
+    println!("{:?}", x[0]);
+    println!("{:?}", x[nn-1]);
 }
 
 /*
