@@ -115,14 +115,13 @@ impl fmt::Debug for Database {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut db_drawing = BoxPrinter::new();
-    
     db_drawing.add_header("tables");
     for table in self.tables.values() {
       db_drawing.add_line(format!("{:?}", table.borrow()));
     }
-    db_drawing.add_header("table alias -> table id");
+    db_drawing.add_header("table alias → table id");
     for (alias,id) in self.table_alias_to_id.iter() {
-      db_drawing.add_line(format!("{} -> {:?}", humanize(alias), id));
+      db_drawing.add_line(format!("{} → {:?}", humanize(alias), id));
     }
     write!(f,"{:?}",db_drawing)?;
     Ok(())
