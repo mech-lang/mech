@@ -430,11 +430,8 @@ impl Block {
         let src_id = src_table_brrw.id;
         let rows = src_table_brrw.rows;
         let cols = src_table_brrw.cols;
-
         let dest_table = Table::new(src_id,rows,cols);
         self.global_database.borrow_mut().insert_table(dest_table);
-        let dest_table = self.get_table(&TableId::Global(src_id))?;
-        self.plan.push(CopyT{arg: src_table.clone(), out: dest_table.clone()});
       }
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;
@@ -492,7 +489,7 @@ impl Block {
             match (&arg_col, &out_col) {
               (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
               (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopyVV::<bool>{arg: arg.clone(), out: out.clone()}),
-              _ => {return Err(MechError::GenericError(6382));},
+              _ => {return Err(MechError::GenericError(6398));},
             }
           }
           // Select a specific element by numberical index
@@ -1184,7 +1181,8 @@ impl Block {
                 self.plan.push(fxn);
               }
               x => {
-                return Err(MechError::GenericError(6361));},
+                return Err(MechError::GenericError(6361));
+              },
             }
             
           }
