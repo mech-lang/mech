@@ -58,68 +58,49 @@ impl Ord for Transformation {
 impl PartialOrd for Transformation {
   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
     match (self,other) {
+      (Transformation::Set{..},_) => {
+        return Some(Ordering::Greater);
+      }
+      (_,Transformation::Set{..}) => {
+        return Some(Ordering::Less);
+      }
+      (Transformation::TableDefine{..},_) => {
+        return Some(Ordering::Greater);
+      }
+      (_,Transformation::TableDefine{..}) => {
+        return Some(Ordering::Less);
+      }
+      (Transformation::Function{..},_) => {
+        return Some(Ordering::Greater);
+      }
+      (_,Transformation::Function{..}) => {
+        return Some(Ordering::Less);
+      }
       (Transformation::TableReference{..},
        Transformation::TableReference{..}) => {
         Some(Ordering::Less)
       }
-      (Transformation::Function{name, arguments, out},
-       Transformation::TableReference{table_id, reference}) => {
-        let (out_table_id,_,_) = out;
-        if *out_table_id == reference.as_table_reference().unwrap() {
-          return Some(Ordering::Less); 
-        } else {
-          for (_,arg_table_id,_) in arguments {
-            if arg_table_id == table_id {
-              return Some(Ordering::Greater);
-            }
-          }
+      
+      (Transformation::NewTable{table_id,..},Transformation::NewTable{table_id: table_id2, ..}) => {
+        if table_id.unwrap() > table_id2.unwrap() {
+          Some(Ordering::Greater)
+        } else { 
+          Some(Ordering::Less)
         }
-        return Some(Ordering::Less); 
-      }
-      (Transformation::TableReference{table_id, reference},
-       Transformation::Function{name, arguments, out}) => {
-        let (out_table_id,_,_) = out;
-        if *out_table_id == reference.as_table_reference().unwrap() {
-          return Some(Ordering::Greater); 
-        } else {
-          for (_,arg_table_id,_) in arguments {
-            if arg_table_id == table_id {
-              return Some(Ordering::Less);
-            }
-          }
-        }
-        return Some(Ordering::Greater); 
-      }
+      },
       (Transformation::TableReference{..},Transformation::ColumnAlias{..}) => Some(Ordering::Greater),
       (Transformation::ColumnAlias{..},Transformation::TableReference{..}) => Some(Ordering::Less),
       (_,Transformation::NewTable{..}) => Some(Ordering::Greater),
       (Transformation::NewTable{..},_) => Some(Ordering::Less),
+      (_,Transformation::Identifier{..}) => Some(Ordering::Greater),
+      (Transformation::Identifier{..},_) => Some(Ordering::Less),
       (_,Transformation::TableAlias{..}) => Some(Ordering::Greater),
       (Transformation::TableAlias{..},_) => Some(Ordering::Less),
       (_,Transformation::NumberLiteral{..}) => Some(Ordering::Greater),
       (Transformation::NumberLiteral{..},_) => Some(Ordering::Less),
       (Transformation::Set{src_id,..},_) => Some(Ordering::Greater),
       (_,Transformation::Set{src_id,..}) => Some(Ordering::Less),
-      (Transformation::Function{name, arguments, out},
-       Transformation::Function{name: name2, arguments: arguments2, out: out2}) => {
-        let (right_out_id,_,_) = out2;
-        let (left_out_id,_,_) = out;
-        // left function comes second because it consumes right fxn output
-        for (_,left_id,_) in arguments {
-          if left_id == right_out_id {
-            return Some(Ordering::Greater);
-          }
-        }
-        // left function comes first because it is consumed by right function
-        for (_,right_id,_) in arguments2 {
-          if right_id == left_out_id {
-            return Some(Ordering::Less);
-          }
-        }
-        // fxns are unrelated
-        None
-      }
-      x => {
+            x => {
         None
       }
     }
