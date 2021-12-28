@@ -312,7 +312,7 @@ impl Block {
     let row_index = match row {
       TableIndex::All => ColumnIndex::All,
       TableIndex::None => ColumnIndex::None,
-      TableIndex::Index(ix) => ColumnIndex::Index(ix),
+      TableIndex::Index(ix) => ColumnIndex::Index(ix - 1),
       TableIndex::Alias(alias) => {
         return Err(MechError::GenericError(9257));
       },
@@ -365,6 +365,7 @@ impl Block {
       (TableIndex::Index(_),TableIndex::None) |
       (TableIndex::Index(_),TableIndex::Index(_)) |
       (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
+      (TableIndex::Index(_),TableIndex::All) => (1,t.cols),
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
