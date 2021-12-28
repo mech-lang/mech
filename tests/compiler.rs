@@ -904,15 +904,14 @@ block
 block
   #test = #app{2}{2}{1}"#, Value::U8(31));
 
-test_mech!(nesting_deep,r#"
+test_mech!(nesting_concat,r#"
 block
-  #test = stats/sum(row: #app/main{1}{1}{2}{1,:})
-
+  ball = [1 [2 3]]
+  line = [4 [5 6]]
+  #out = [ball; line]
+  
 block
-  ball = [2 [123 123]]
-  line = [1 [10, 10]]
-  canvas = [ball; line]
-  #app/main = [[canvas]]"#, Value::U8(123));
+  #test = #out{2,2}{2} + #out{1,2}{1}"#, Value::U8(8));
 
 test_mech!(nesting_math,r#"
 block
@@ -923,18 +922,10 @@ block
 
 test_mech!(nesting_math_select_range,r#"
 block
-  x = #app{2,2}{1,2}{:,1} * 10
-  y = x{2,1}
-  z = x{3,1}
-  #test = y + z
-
+  #app = [1 [2 [31 3]]]
+  
 block
-  x = 1:10
-  container = [|type text| 
-                123   [x]]
-  #app = [|direction contains| 
-           "column"  [container]
-           "row"     [container]]"#, Value::U8(50));
+  #test = stats/sum(row: #app{2}{2}{1,:})"#, Value::U8(34));
 
 test_mech!(nesting_inline_table,r#"
 block

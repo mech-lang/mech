@@ -73,6 +73,7 @@ impl Compiler {
       let mut tfms = self.compile_node(&b)?;
       let tfms_before = tfms.clone();
       tfms.sort();
+      tfms.dedup();
       for tfm in tfms {
         block.add_tfm(tfm);
       }
@@ -153,6 +154,7 @@ impl Compiler {
             let table_id = id.clone();
             src.remove(0);
             src.remove(0);
+            src.remove(0);
             Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
           },
           _ => None,
@@ -175,12 +177,12 @@ impl Compiler {
       Node::TableDefine{children} => {
         let mut output = self.compile_node(&children[0])?;
         // Get the output table id
-        let output_table_id = match output[0] {
-          Transformation::NewTable{table_id,..} => {
-            Some(table_id)
+        let output_table_id = match &output[0] {
+          Transformation::NewTable{table_id, ..} => {
+            Some(table_id.clone())
           },
           _ => None,
-        };
+        }.unwrap();
 
         tfms.append(&mut output);
         let mut input = self.compile_node(&children[1])?;
@@ -202,18 +204,19 @@ impl Compiler {
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
                 input.remove(0);
                 input.remove(0);
+                input.remove(0);
                 continue;
               },
               _ => break,
             }
           }
           let (input_table_id, input_indices) = &rhs[0];
-          //tfms.push(Transformation::TableAlias{table_id: input_table_id.unwrap(), alias: variable_name});
+          tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
           tfms.append(&mut input);
           tfms.push(Transformation::TableDefine{
             table_id: input_table_id.clone(), 
             indices: input_indices.clone(), 
-            out: output_table_id.unwrap()
+            out: output_table_id
           });
         }
       }
@@ -246,6 +249,7 @@ impl Compiler {
                 break;
               },
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+                input.remove(0);
                 input.remove(0);
                 input.remove(0);
                 continue;
@@ -296,6 +300,7 @@ impl Compiler {
             }
             Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
               let table_id = id.clone();
+              result.remove(0);
               result.remove(0);
               result.remove(0);
               args.push((arg, table_id, vec![(TableIndex::All, TableIndex::All)]));
@@ -350,6 +355,7 @@ impl Compiler {
             Transformation::TableReference{..} => {
               compiled_row_tfms.remove(0);
               compiled_row_tfms.remove(0);
+              compiled_row_tfms.remove(0);
             },
             _ => break,
           }
@@ -360,8 +366,11 @@ impl Compiler {
           Transformation::NewTable{table_id,..} |
           Transformation::Select{table_id, ..} => {
             let reference_table_id = TableId::Local(hash_str(&format!("reference:{:?}", tfms[0])));
-            let value = Value::Reference(*table_id);
+            let value = Value::Reference(table_id.clone());
+            let out = TableId::Global(*table_id.unwrap());
+            let in_t = table_id.clone();
             tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+            tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
             tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
           }
           _ => (),
@@ -457,8 +466,11 @@ impl Compiler {
           Transformation::NewTable{table_id,..} |
           Transformation::Select{table_id, ..} => {
             let reference_table_id = TableId::Local(hash_str(&format!("reference:{:?}", tfms[0])));
-            let value = Value::Reference(*table_id);
+            let value = Value::Reference(table_id.clone());
+            let out = TableId::Global(*table_id.unwrap());
+            let in_t = table_id.clone();
             tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+            tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
             tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
           }
           _ => (),
@@ -529,6 +541,7 @@ impl Compiler {
               break;
             }
             Transformation::TableReference{table_id,..} => {
+              result.remove(0);
               result.remove(0);
               result.remove(0);
               continue;

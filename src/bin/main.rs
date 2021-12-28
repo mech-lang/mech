@@ -15,8 +15,12 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  x = ["a"; "b"; "c"; "d"]
-  y = [type: 1 class: "table" result: x]"#);
+  ball = [1 [2 3]]
+  line = [4 [5 6]]
+  #out = [ball; line]
+  
+block
+  #test = #out{1,2}{2}"#);
 
   //println!("{:#?}", parser.parse_tree);
 
@@ -44,32 +48,32 @@ block
   Ok(())
 }
 /*
-├Root
-│├Program(None)
-││├Section(None)
-│││├Paragraph
-││││├ParagraphText(['b', 'l', 'o', 'c', 'k'])
-│││├Block
 ││││├Transformation
 │││││├Statement
 ││││││├VariableDefine
-│││││││├Identifier(['y'](uly-min-oct-eas))
-│││││││├Expression
-││││││││├NumberLiteral([3])
-││││├Transformation
-│││││├Statement
-││││││├VariableDefine
-│││││││├Identifier(['x'](ska-pri-oct-osc))
+│││││││├Identifier(['t', 'e', 's', 't'](tst-don-hit-vid))
 │││││││├Expression
 ││││││││├AnonymousTableDefine
 │││││││││├TableRow
 ││││││││││├TableColumn
-│││││││││││├Expression
-││││││││││││├NumberLiteral([10])
+│││││││││││├SelectData(['b', 'a', 'l', 'l'] Local(pas-nor-one-olf)))
+││││││││││││├Null
+│││││││││├TableRow
 ││││││││││├TableColumn
-│││││││││││├Expression
-││││││││││││├AnonymousTableDefine
-│││││││││││││├TableRow
-││││││││││││││├TableColumn
-│││││││││││││││├Expression
-││││││││││││││││├NumberLiteral([3])*/
+│││││││││││├SelectData(['l', 'i', 'n', 'e'] Local(cup-pey-som-rom)))
+││││││││││││├Null
+
+││││├Transformation
+│││││├Statement
+││││││├TableDefine
+│││││││├Table(#['t', 'e', 's', 't'](0x3fa3332bea97e4))
+│││││││├Expression
+││││││││├AnonymousTableDefine
+│││││││││├TableRow
+││││││││││├TableColumn
+│││││││││││├SelectData(['b', 'a', 'l', 'l'] Local(pas-nor-one-olf)))
+││││││││││││├Null
+│││││││││├TableRow
+││││││││││├TableColumn
+│││││││││││├SelectData(['l', 'i', 'n', 'e'] Local(cup-pey-som-rom)))
+││││││││││││├Null*/
