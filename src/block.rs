@@ -195,8 +195,14 @@ impl Block {
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
-          match arg_col {
-            (_,Column::Ref(ref_col),_) => {
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
               table_id = ref_col.borrow()[0].clone();
             }
             _ => {return Err(MechError::GenericError(6395));}
@@ -205,7 +211,6 @@ impl Block {
         _ => {return Err(MechError::GenericError(6394));}
       }
     }
-
 
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
@@ -1225,7 +1230,6 @@ impl Block {
             match shape {
               TableShape::Scalar => {
                 let (_, arg_col,arg_ix) = self.get_arg_column(&argument)?;
-
                 o.set_col_kind(out_column_ix, arg_col.kind());
                 let mut out_col = o.get_column_unchecked(out_column_ix);
                 match out_col.len() {
