@@ -948,14 +948,11 @@ block
 
 test_mech!(nesting_second_col2,r#"
 block
-  #q = [0 []]
-
+  #app2 = [1 [7 8]]
 block
-  #app = [1 [7 8]]"
-
+  #q = [_ _]
 block
-  #q{2} := #app{2}
-
+  #q{2} := #app2{2}
 block
   #test = #q{2}{2}"#, Value::U8(8));
 
