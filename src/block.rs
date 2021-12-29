@@ -306,7 +306,32 @@ impl Block {
 
   fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
     let (arg_name,table_id,indices) = argument;
-    let (row,col) = indices[0];
+
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            _ => {return Err(MechError::GenericError(6395));}
+          }
+        }
+        _ => {return Err(MechError::GenericError(6394));}
+      }
+    }
+
+    let (row,col) = &indices.last().unwrap();
+
     let lhs_table = self.get_table(&table_id)?;
     let lhs_brrw = lhs_table.borrow();
     let row_index = match row {
@@ -356,9 +381,37 @@ impl Block {
 
   fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
     let (_, table_id, indices) = argument;
-    let table = self.get_table(table_id)?;
+
+
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            _ => {return Err(MechError::GenericError(6695));}
+          }
+        }
+        _ => {return Err(MechError::GenericError(6694));}
+      }
+    }
+
+
+
+    let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
     let t = table.borrow();
-    let dim = match indices[0] {
+    let dim = match (row,col) {
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
       (TableIndex::All,TableIndex::Index(_)) |
       (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
@@ -1196,9 +1249,7 @@ impl Block {
           // Get all of the tables
           let mut rows = 0;
           let mut cols = 0;
-
           let arg_shapes = self.get_arg_dims(&arguments)?;
-
           // Each table should have the same number of rows or be scalar
           let arg_dims: Vec<(usize,usize)> = arg_shapes.iter().map(|shape| match shape {
             TableShape::Scalar => (1,1),
@@ -1226,7 +1277,6 @@ impl Block {
           let mut o = out_table.borrow_mut();
           o.resize(*max_rows,cols);
           let mut out_column_ix = 0;
-
           for (argument, shape) in arguments.iter().zip(arg_shapes) {
             match shape {
               TableShape::Scalar => {
