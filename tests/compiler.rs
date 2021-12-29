@@ -922,10 +922,11 @@ block
 
 test_mech!(nesting_math_select_range,r#"
 block
-  #app = [1 [2 [31 3]]]
+  #app = [1 [2 [3 4 5]]]
   
 block
-  #test = stats/sum(row: #app{2}{2}{1,:})"#, Value::U8(34));
+  x = #app{2}{2}{1,:}
+  #test = stats/sum(row: x)"#, Value::U8(12));
 
 test_mech!(nesting_inline_table,r#"
 block
@@ -937,16 +938,13 @@ block
 
 test_mech!(nesting_second_col,r#"
 block
-  #q = [_ _]
-
+  #app2 = [1 [7 8]]
 block
-  #test = #q{2}{1}
-
+  #q = [_ _]
 block
   #q{2} := #app2{2}
-
 block
-  #app2 = [1 [7 8]]"#, Value::U8(7));
+  #test = #q{2}{1}"#, Value::U8(7));
 
 test_mech!(nesting_second_col2,r#"
 block
