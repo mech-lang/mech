@@ -705,8 +705,18 @@ impl Block {
                 let src_table_brrw = src_table.borrow();
                 let mut dest_table_brrw = dest_table.borrow_mut();
                 dest_table_brrw.set_col_kind(1,ValueKind::U8);
-                let out = dest_table_brrw.get_column_unchecked(0).get_u8()?;
+                let out = dest_table_brrw.get_column_unchecked(1).get_u8()?;
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+              }
+              ((_,Column::Ref(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+                let dest_table = self.get_table(dest_id)?;
+                let src_table = self.get_table(src_id)?;
+                let src_table_brrw = src_table.borrow();
+                let mut dest_table_brrw = dest_table.borrow_mut();
+                dest_table_brrw.set_col_kind(1,ValueKind::Reference);
+                let out = dest_table_brrw.get_column_unchecked(1).get_reference()?;
+                
+                self.plan.push(SetSIxSIx::<TableId>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
               }
               x => {
                 return Err(MechError::GenericError(8835));
