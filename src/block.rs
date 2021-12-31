@@ -248,8 +248,9 @@ impl Block {
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-          _ => {
-            return Err(MechError::GenericError(9238));
+          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          x => {
+            return Err(MechError::GenericError(9239));
           }
         };
         let arg_col = table_brrw.get_column(col)?;
@@ -695,7 +696,6 @@ impl Block {
                 let out = dest_table_brrw.get_column_unchecked(0).get_u8()?;
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
               }
-              //((0, U8(RefCell { value: [4] }), Index(0)), (0, Empty, Index(0)))
               ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
                 let dest_table = self.get_table(dest_id)?;
                 let src_table = self.get_table(src_id)?;
