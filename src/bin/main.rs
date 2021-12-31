@@ -15,11 +15,10 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  #y = [1; 2; 3]
-  #x = [true; false; true]
-  
+  #i = [x: 9]
 block
-  #z = #y{#x}"#);
+  y = #i < 6
+  #i.x{y} := 1"#);
 
   //println!("{:#?}", parser.parse_tree);
 

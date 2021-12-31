@@ -263,11 +263,6 @@ block
 block
   #test = #x{1} + #x{2} + #x{3}", Value::U8(9));
 
-test_mech!(math_negation_double_negative,"
-block
-  y = -13
-  #test = -y", Value::I8(13));
-
 test_mech!(math_parenthetical_expression_constants,"
 block
   #test = (1 + 2) * 3", Value::U8(9));
@@ -786,87 +781,6 @@ block
   x = [1;2;3;4]
   #test = stats/sum(column: x{#y})", Value::U8(6));
 
-// ## Whenever
-
-test_mech!(whenever_column,"block
-  #time/timer = [tick: 0]
-
-block
-  ~ #time/timer.tick
-  #test = 3", Value::U8(3));
-
-test_mech!(whenever_simple2,"block
-  #i = 2
-  #x = [40; 0; 0]
- 
-block 
-  ~ #i
-  i = #i
-  #x{i,:} := #x{i - 1,:} + 1
-
-block
-  #test = stats/sum(column: #x)", Value::U8(81));
-
-test_mech!(whenever_simple,"block
-  #i = 2
-  #test = 10
-
-block 
-  ~ #i
-  #test := 20", Value::U8(20));
-
-
-test_mech!(whenever_equality,"block
-  #test = #q * 3
-  ~ #q == 10
-
-block
-  #q = 10", Value::U8(30));
-
-test_mech!(whenever_inequality,"block
-  #test := #q * 3
-  ~ #q < 20
-
-block
-  #test = 10
-  #q = 10", Value::U8(30));
-
-test_mech!(whenever_recursive,r#"
-block
-  ~ #html/event/keydown.key == "ArrowUp"
-  #explorer.y := #explorer.y - 1"
-
-block
-  #explorer = [x: 10, y: 10]"
-
-block
-  ~ #explorer.x
-  #html/event/keydown = [key: "ArrowUp"]
-
-block
-  ~ #explorer
-  #test = #explorer.y"#, Value::U8(9));
-
-test_mech!(whenever_default_values,r#"
-block
-  #robot = [|name position|]
-
-block
-  #robot += [name: "R2D2"]
-
-block
-  ~ #robot.name
-  #robot.position{~} := 10
-
-block
-  #robot{1,2} := 20
-
-block
-  #robot += [name: "C3PO"]
-
-block
-  #test = stats/sum(column: #robot.position)"#, Value::U8(30));
-
 // ## Strings
 
 test_mech!(string_basic,r#"
@@ -1150,18 +1064,6 @@ test_mech!(comment_line, r#"
 block
   -- This is a comment
   #test = 123"#, Value::U8(123));
-
-// ## Recursion
-
-test_mech!(recursive_blocks, r#"
-block
-  #test = #i
-
-block
-  #i = [x: 2]
-
-block
-  #i.x{#i <= 6} := #i.x + 1"#, Value::U8(7));
 
 // ## Table split
 
