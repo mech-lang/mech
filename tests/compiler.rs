@@ -1167,22 +1167,22 @@ block
 
 test_mech!(table_split, r#"
 block
-  #test = #z{1}{1} + #z{2}{1} + #z{3}{1}
+  x = [7 8;9 6]
+  #q >- x
 block
-  x = [7;8;9]
-  y >- x
-  #z = y"#, Value::U8(24));
+  x = #q{1}{1,:}
+  y = #q{2}{1,:}
+  #test = stats/sum(row: [x y])"#, Value::U8(30));
 
 test_mech!(table_split_global, r#"
 block
-  #test = #name-tag{1}{2} + #name-tag{2}{2}
-
-Messages
-  #messages = [|name content|
-                1    "One"
-                2    "Two"]
+  z = [7 8;9 6]
+  q >- z
+  #x = q
 block
-  #name-tag >- [type: "div" content: #messages.name]"#, Value::U8(3));
+  x = #x{1}{1,:}
+  y = #x{2}{1,:}
+  #test = stats/sum(row: [x y])"#, Value::U8(30));
 
 // ## Boolean values
 

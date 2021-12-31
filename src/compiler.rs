@@ -20,6 +20,7 @@ use std::mem;
 
 lazy_static! {
   static ref TABLE_APPEND: u64 = hash_str("table/append");
+  static ref TABLE_SPLIT: u64 = hash_str("table/split");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
 }
@@ -560,6 +561,44 @@ impl Compiler {
           out: (*o,or,oc),
         });
       },
+      Node::SplitData{children} => {
+        let mut result_tfms = Vec::new();
+        let mut args: Vec<Argument> = Vec::new();
+        let mut out = self.compile_node(&children[0])?;
+        println!("{:?}", out);
+        let mut out_id = TableId::Local(0);
+        match &out[0] {
+          Transformation::NewTable{table_id,..} => {
+            out_id = *table_id;
+            result_tfms.append(&mut out); 
+          }
+          Transformation::Identifier{name, id} => {
+            out_id = TableId::Local(*id);
+            result_tfms.append(&mut out); 
+            result_tfms.push(Transformation::NewTable{table_id: out_id, rows: 1, columns: 1}); 
+          }
+          _ => (),
+        }
+        let mut result = self.compile_node(&children[1])?;
+        match &result[0] {
+          Transformation::NewTable{table_id,..} => {
+            args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+            result.remove(0);
+          }
+          Transformation::Select{table_id, indices} => {
+            args.push((0,table_id.clone(),indices.to_vec()));
+            result.remove(0);
+          }
+          _ => (),
+        }
+        result_tfms.append(&mut result); 
+        tfms.append(&mut result_tfms);
+        tfms.push(Transformation::Function{
+          name: *TABLE_SPLIT,
+          arguments: vec![args[0].clone()],
+          out: (out_id,TableIndex::All,TableIndex::All),
+        });
+      }
       Node::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
