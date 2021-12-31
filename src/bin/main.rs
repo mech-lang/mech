@@ -15,13 +15,11 @@ fn main() -> Result<(),MechError> {
 
   parser.parse(r#"
 block
-  z = [7 8;9 6]
-  q >- z
-  #x = q
+  #y = [1; 2; 3]
+  #x = [true; false; true]
+  
 block
-  x = #x{1}{1,:}
-  y = #x{2}{1,:}
-  #test = stats/sum(row: [x y])"#);
+  #z = #y{#x}"#);
 
   //println!("{:#?}", parser.parse_tree);
 

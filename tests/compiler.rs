@@ -1188,10 +1188,10 @@ block
 
 test_mech!(boolean_anonymous_table, r#"
 block
-  #y = [1 2 3]
+  #y = [1; 2; 3]
 
 block
-  #x = [true false true]
+  #x = [true; false; true]
   
 block
   #z = #y{#x}
