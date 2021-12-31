@@ -74,6 +74,7 @@ lazy_static! {
   static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
   static ref MATH_NEGATE: u64 = hash_str("math/negate");
   static ref TABLE_RANGE: u64 = hash_str("table/range");
+  static ref TABLE_SPLIT: u64 = hash_str("table/split");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
   static ref TABLE_APPEND: u64 = hash_str("table/append");
@@ -1171,8 +1172,56 @@ impl Block {
               _ => {return Err(MechError::GenericError(6595));},
             }
           }          
-        } else if *name == *TABLE_VERTICAL__CONCATENATE {
+        } else if *name == *TABLE_SPLIT {
+          let arg_shapes = self.get_arg_dims(&arguments)?;
+          let arg_cols = self.get_whole_table_arg_cols(&arguments[0])?;
 
+          let (out_table_id, _, _) = out;
+          let out_table = self.get_table(out_table_id)?;
+          let mut out_brrw = out_table.borrow_mut();
+          out_brrw.set_col_kind(0,ValueKind::Reference);
+          match arg_shapes[0] {
+            TableShape::Matrix(rows,cols) => {
+              out_brrw.resize(rows,1);
+              // Initialize table
+              for row in 0..rows {
+                let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+                let mut dest_table = Table::new(split_id,1,cols);
+                for (col,arg_col) in arg_cols.iter().enumerate() {
+                  match arg_col {
+                    (_,Column::U8(_),_) => {
+                      dest_table.set_col_kind(col,ValueKind::U8);
+                    }
+                    _ => {return Err(MechError::GenericError(6095));},
+                  }
+                }
+                self.global_database.borrow_mut().insert_table(dest_table);
+                out_brrw.set(row,0,Value::Reference(TableId::Global(split_id)));
+              }
+              // Write functions
+              for (col_ix,arg_col) in arg_cols.iter().enumerate() {
+                match arg_col {
+                  (_,Column::U8(src_col),ColumnIndex::All) => {
+                    for row in 0..rows {
+                      // get the destination table
+                      let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+                      let dest_table = self.get_table(&TableId::Global(split_id))?;
+                      let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
+                      match dest_col {
+                        Column::U8(dest_col) => {
+                          self.plan.push(SetSIxSIx::<u8>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0});
+                        }
+                        _ => {return Err(MechError::GenericError(6097));},
+                      }
+                    }
+                  }
+                  _ => {return Err(MechError::GenericError(5995));},
+                }
+              }
+            }
+            _ => (),
+          }     
+        } else if *name == *TABLE_VERTICAL__CONCATENATE {
           // Get all of the tables
           let mut arg_tables = vec![];
           let mut rows = 0;
@@ -1327,7 +1376,8 @@ impl Block {
                   (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
                   (Column::U64(arg), Column::U64(out)) => self.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
                   (Column::String(arg), Column::String(out)) => self.plan.push(CopyVV::<MechString>{arg: arg.clone(), out: out.clone()}),
-                  _ => {
+                  (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
+                  x => {
                     return Err(MechError::GenericError(6367));
                   },
                 };
