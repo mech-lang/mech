@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.0.6";
+  let version = "0.1";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
