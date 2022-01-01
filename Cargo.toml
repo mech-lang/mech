@@ -16,7 +16,7 @@ gitlab = { repository = "mech-lang/utilities", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
 
 serde = {version = "1.0.123", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.123"
