@@ -34,13 +34,10 @@ nalgebra = "0.27.1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.7"
 futures = "0.3.15"
-#ndarray = {version = "0.15.3", features = ["rayon"]}
 map_in_place = "*"
-wgpu = "0.9.0"
 pollster = "0.2.4"
 env_logger = "0.9.0"
 bytemuck = "1.7.2"
-#arrayfire = "3.8.0"
 bincode = "1.3.3"
 num = "0.4.0"
 
