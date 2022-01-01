@@ -14,11 +14,16 @@ fn main() -> Result<(),MechError> {
   let mut core = Core::new();
 
   parser.parse(r#"
-block
-  #i = [x: 9]
-block
-  y = #i < 6
-  #i.x{y} := 1"#);
+Define the environment
+  #ball = [x: 15 y: 9 vx: 18 vy: 9]
+  #time/timer = [period: 10]
+  #gravity = 10
+
+Now update the block positions
+  x = #ball.x + #ball.vx
+  y = #ball.y + #ball.vy
+  dt = #time/timer.period
+  #test = x + y * dt"#);
 
   //println!("{:#?}", parser.parse_tree);
 

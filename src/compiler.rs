@@ -311,7 +311,7 @@ impl Compiler {
           arg_tfms.append(&mut result);
         }
         let name_hash = hash_chars(name);
-        let id = hash_str(&format!("{:?}{:?}", name, arg_tfms));
+        let id = hash_str(&format!("{:?}{:?}", name, args));
         tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         tfms.append(&mut arg_tfms);
         tfms.push(Transformation::Function{

@@ -208,14 +208,14 @@ block
 test_mech!(partial_bouncing_ball,"# Bouncing Balls
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
-  #time/timer = [period: 1000]
+  #time/timer = [period: 10]
   #gravity = 10
 
 Now update the block positions
   x = #ball.x + #ball.vx
   y = #ball.y + #ball.vy
   dt = #time/timer.period
-  #test = x + y * dt", Value::U32(18033));
+  #test = x + y * dt", Value::U8(213));
 
 test_mech!(math_add_columns,"
 block
