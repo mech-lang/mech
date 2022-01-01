@@ -19,27 +19,13 @@ use std::cell::RefCell;
 use std::fmt;
 
 mod database;
-//mod runtime;
 mod table;
 mod transformation;
-//mod operations;
-//mod quantity;
 mod error;
 mod core;
 mod block;
 mod value;
 mod function;
-//mod index;
-/*
-pub use self::database::{Database, Store, Transaction, Change};
-pub use self::block::{Block, BlockState, Transformation, Register, format_register};
-pub use self::index::{IndexRepeater, IndexIterator, TableIterator, ValueIterator, ConstantIterator};
-pub use self::table::{Table, TableId, TableIndex};
-pub use self::core::Core;
-pub use self::quantities::{Quantity, QuantityMath, ToQuantity};
-pub use self::errors::{Error, ErrorType};
-pub use self::value::{Value, ValueMethods, ValueType, NumberLiteral, NumberLiteralKind};
-pub use self::operations::{MechFunction, Argument};*/
 
 pub use self::table::*;
 pub use self::database::*;
