@@ -31,9 +31,9 @@ use wasm_bindgen::JsCast;
 use hashbrown::hash_set::HashSet;
 use alloc::vec::Vec;
 use core::fmt;
-use mech_syntax::formatter::Formatter;
-use mech_syntax::compiler::{Compiler, Node, Program, Section, Element};
-use mech_core::{Register, format_register, hash_string, ValueType, humanize, Block, ValueMethods, TableId, ErrorType, Transaction, BlockState, Change, TableIndex, Value, Table, Quantity, ToQuantity, NumberLiteralKind, QuantityMath};
+//use mech_syntax::formatter::Formatter;
+use mech_syntax::compiler::{Compiler};
+use mech_core::{Register, hash_str, humanize, Block, TableId, Transaction, BlockState, Change, Value, Table, NumberLiteralKind};
 use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{math_cos, math_sin, math_floor, math_round};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
@@ -47,102 +47,102 @@ macro_rules! log {
 }
 
 lazy_static! {
-  static ref HTML_APP: u64 = hash_string("html/app");
-  static ref DIV: u64 = hash_string("div");
-  static ref A: u64 = hash_string("a");
-  static ref IMG: u64 = hash_string("img");
-  static ref SRC: u64 = hash_string("src");
-  static ref CONTAINS: u64 = hash_string("contains");
-  static ref ROOT: u64 = hash_string("root");
-  static ref TYPE: u64 = hash_string("type");
-  static ref HREF: u64 = hash_string("href");
-  static ref BUTTON: u64 = hash_string("button");
-  static ref SLIDER: u64 = hash_string("slider");
-  static ref MIN: u64 = hash_string("min");
-  static ref MAX: u64 = hash_string("max");
-  static ref VALUE: u64 = hash_string("value");
-  static ref CANVAS: u64 = hash_string("canvas");
-  static ref PARAMETERS: u64 = hash_string("parameters");
-  static ref HEIGHT: u64 = hash_string("height");
-  static ref WIDTH: u64 = hash_string("width");
-  static ref SHAPE: u64 = hash_string("shape");
-  static ref CIRCLE: u64 = hash_string("circle");
-  static ref RECTANGLE: u64 = hash_string("rectangle");
-  static ref LINE: u64 = hash_string("line");
-  static ref PATH: u64 = hash_string("path");
-  static ref START__POINT: u64 = hash_string("start-point");
-  static ref LINE__WIDTH: u64 = hash_string("line-width");
-  static ref START__ANGLE: u64 = hash_string("start-angle");
-  static ref END__ANGLE: u64 = hash_string("end-angle");
-  static ref QUADRATIC: u64 = hash_string("quadratic");
-  static ref CONTROL__POINT: u64 = hash_string("control-point");
-  static ref CONTROL__POINTS: u64 = hash_string("control-points");
-  static ref END__POINT: u64 = hash_string("end-point");
-  static ref X1: u64 = hash_string("x1");
-  static ref X2: u64 = hash_string("x2");
-  static ref Y1: u64 = hash_string("y1");
-  static ref Y2: u64 = hash_string("y2");
-  static ref RADIUS: u64 = hash_string("radius");
-  static ref STROKE: u64 = hash_string("stroke");
-  static ref FILL: u64 = hash_string("fill");
-  static ref CENTER__X: u64 = hash_string("center-x");
-  static ref CENTER__Y: u64 = hash_string("center-y");
-  static ref IMAGE: u64 = hash_string("image");
-  static ref X: u64 = hash_string("x");
-  static ref Y: u64 = hash_string("y");
-  static ref ROTATE: u64 = hash_string("rotate");
-  static ref TRANSLATE: u64 = hash_string("translate");
-  static ref SOURCE: u64 = hash_string("source");
-  static ref TIME_TIMER: u64 = hash_string("time/timer");
-  static ref PERIOD: u64 = hash_string("period");
-  static ref TICKS: u64 = hash_string("ticks");
-  static ref HTML_EVENT_POINTER__MOVE: u64 = hash_string("html/event/pointer-move");
-  static ref HTML_EVENT_POINTER__DOWN: u64 = hash_string("html/event/pointer-down");
-  static ref HTML_EVENT_POINTER__UP: u64 = hash_string("html/event/pointer-up");
-  static ref HTML_EVENT_KEY__DOWN: u64 = hash_string("html/event/key-down");
-  static ref HTML_EVENT_KEY__UP: u64 = hash_string("html/event/key-up");
-  static ref TARGET: u64 = hash_string("target");
-  static ref KEY: u64 = hash_string("key");
-  static ref EVENT__ID: u64 = hash_string("event-id");
-  static ref ARC: u64 = hash_string("arc");
-  static ref ELLIPSE: u64 = hash_string("ellipse");
-  static ref MAJOR__AXIS: u64 = hash_string("major-axis");
-  static ref MINOR__AXIS: u64 = hash_string("minor-axis");
-  static ref STARTING__ANGLE: u64 = hash_string("starting-angle");
-  static ref ENDING__ANGLE: u64 = hash_string("ending-angle");
-  static ref TEXT: u64 = hash_string("text");
-  static ref FONT: u64 = hash_string("font");
-  static ref SIZE: u64 = hash_string("size");
-  static ref FACE: u64 = hash_string("face");
-  static ref STYLE: u64 = hash_string("style");
-  static ref WEIGHT: u64 = hash_string("weight");
-  static ref BOLD: u64 = hash_string("bold");
-  static ref NORMAL: u64 = hash_string("normal");
-  static ref ITALIC: u64 = hash_string("italic");
-  static ref FAMILY: u64 = hash_string("family");
-  static ref DIRECTION: u64 = hash_string("direction");
-  static ref ALIGNMENT: u64 = hash_string("alignment");
-  static ref START: u64 = hash_string("start");
-  static ref END: u64 = hash_string("end");
-  static ref LEFT: u64 = hash_string("left");
-  static ref RIGHT: u64 = hash_string("right");
-  static ref CENTER: u64 = hash_string("center");
-  static ref BEZIER: u64 = hash_string("bezier");
-  static ref HTML_LOCATION: u64 = hash_string("html/location");
-  static ref HASH: u64 = hash_string("hash");
-  static ref HOST: u64 = hash_string("host");
-  static ref HOST__NAME: u64 = hash_string("host-name");
-  static ref ORIGIN: u64 = hash_string("origin");
-  static ref PATH__NAME: u64 = hash_string("path-name");
-  static ref PORT: u64 = hash_string("port");
-  static ref PROTOCOL: u64 = hash_string("protocol");
-  static ref SEARCH: u64 = hash_string("search");
+  static ref HTML_APP: u64 = hash_str("html/app");
+  static ref DIV: u64 = hash_str("div");
+  static ref A: u64 = hash_str("a");
+  static ref IMG: u64 = hash_str("img");
+  static ref SRC: u64 = hash_str("src");
+  static ref CONTAINS: u64 = hash_str("contains");
+  static ref ROOT: u64 = hash_str("root");
+  static ref TYPE: u64 = hash_str("type");
+  static ref HREF: u64 = hash_str("href");
+  static ref BUTTON: u64 = hash_str("button");
+  static ref SLIDER: u64 = hash_str("slider");
+  static ref MIN: u64 = hash_str("min");
+  static ref MAX: u64 = hash_str("max");
+  static ref VALUE: u64 = hash_str("value");
+  static ref CANVAS: u64 = hash_str("canvas");
+  static ref PARAMETERS: u64 = hash_str("parameters");
+  static ref HEIGHT: u64 = hash_str("height");
+  static ref WIDTH: u64 = hash_str("width");
+  static ref SHAPE: u64 = hash_str("shape");
+  static ref CIRCLE: u64 = hash_str("circle");
+  static ref RECTANGLE: u64 = hash_str("rectangle");
+  static ref LINE: u64 = hash_str("line");
+  static ref PATH: u64 = hash_str("path");
+  static ref START__POINT: u64 = hash_str("start-point");
+  static ref LINE__WIDTH: u64 = hash_str("line-width");
+  static ref START__ANGLE: u64 = hash_str("start-angle");
+  static ref END__ANGLE: u64 = hash_str("end-angle");
+  static ref QUADRATIC: u64 = hash_str("quadratic");
+  static ref CONTROL__POINT: u64 = hash_str("control-point");
+  static ref CONTROL__POINTS: u64 = hash_str("control-points");
+  static ref END__POINT: u64 = hash_str("end-point");
+  static ref X1: u64 = hash_str("x1");
+  static ref X2: u64 = hash_str("x2");
+  static ref Y1: u64 = hash_str("y1");
+  static ref Y2: u64 = hash_str("y2");
+  static ref RADIUS: u64 = hash_str("radius");
+  static ref STROKE: u64 = hash_str("stroke");
+  static ref FILL: u64 = hash_str("fill");
+  static ref CENTER__X: u64 = hash_str("center-x");
+  static ref CENTER__Y: u64 = hash_str("center-y");
+  static ref IMAGE: u64 = hash_str("image");
+  static ref X: u64 = hash_str("x");
+  static ref Y: u64 = hash_str("y");
+  static ref ROTATE: u64 = hash_str("rotate");
+  static ref TRANSLATE: u64 = hash_str("translate");
+  static ref SOURCE: u64 = hash_str("source");
+  static ref TIME_TIMER: u64 = hash_str("time/timer");
+  static ref PERIOD: u64 = hash_str("period");
+  static ref TICKS: u64 = hash_str("ticks");
+  static ref HTML_EVENT_POINTER__MOVE: u64 = hash_str("html/event/pointer-move");
+  static ref HTML_EVENT_POINTER__DOWN: u64 = hash_str("html/event/pointer-down");
+  static ref HTML_EVENT_POINTER__UP: u64 = hash_str("html/event/pointer-up");
+  static ref HTML_EVENT_KEY__DOWN: u64 = hash_str("html/event/key-down");
+  static ref HTML_EVENT_KEY__UP: u64 = hash_str("html/event/key-up");
+  static ref TARGET: u64 = hash_str("target");
+  static ref KEY: u64 = hash_str("key");
+  static ref EVENT__ID: u64 = hash_str("event-id");
+  static ref ARC: u64 = hash_str("arc");
+  static ref ELLIPSE: u64 = hash_str("ellipse");
+  static ref MAJOR__AXIS: u64 = hash_str("major-axis");
+  static ref MINOR__AXIS: u64 = hash_str("minor-axis");
+  static ref STARTING__ANGLE: u64 = hash_str("starting-angle");
+  static ref ENDING__ANGLE: u64 = hash_str("ending-angle");
+  static ref TEXT: u64 = hash_str("text");
+  static ref FONT: u64 = hash_str("font");
+  static ref SIZE: u64 = hash_str("size");
+  static ref FACE: u64 = hash_str("face");
+  static ref STYLE: u64 = hash_str("style");
+  static ref WEIGHT: u64 = hash_str("weight");
+  static ref BOLD: u64 = hash_str("bold");
+  static ref NORMAL: u64 = hash_str("normal");
+  static ref ITALIC: u64 = hash_str("italic");
+  static ref FAMILY: u64 = hash_str("family");
+  static ref DIRECTION: u64 = hash_str("direction");
+  static ref ALIGNMENT: u64 = hash_str("alignment");
+  static ref START: u64 = hash_str("start");
+  static ref END: u64 = hash_str("end");
+  static ref LEFT: u64 = hash_str("left");
+  static ref RIGHT: u64 = hash_str("right");
+  static ref CENTER: u64 = hash_str("center");
+  static ref BEZIER: u64 = hash_str("bezier");
+  static ref HTML_LOCATION: u64 = hash_str("html/location");
+  static ref HASH: u64 = hash_str("hash");
+  static ref HOST: u64 = hash_str("host");
+  static ref HOST__NAME: u64 = hash_str("host-name");
+  static ref ORIGIN: u64 = hash_str("origin");
+  static ref PATH__NAME: u64 = hash_str("path-name");
+  static ref PORT: u64 = hash_str("port");
+  static ref PROTOCOL: u64 = hash_str("protocol");
+  static ref SEARCH: u64 = hash_str("search");
 }
 
 #[wasm_bindgen]
 pub struct WasmCore {
   core: mech_core::Core,
-  programs: Vec<Program>,
+  //programs: Vec<Program>,
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
   canvases: HashSet<u64>,
@@ -161,6 +161,7 @@ pub struct WasmCore {
 #[wasm_bindgen]
 impl WasmCore {
 
+  /*
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
     let mut mech = mech_core::Core::new(capacity, recursion_limit);
     mech.load_standard_library();
@@ -236,9 +237,10 @@ impl WasmCore {
       window: web_sys::window().unwrap(),
       document: web_sys::window().unwrap().document().unwrap(),
     }
-  }
+  }*/
   
   pub fn connect_remote_core(&mut self, address: String) -> Result<(), JsValue> {
+    /*
     let ws = WebSocket::new(&address)?;
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
    
@@ -359,14 +361,15 @@ impl WasmCore {
     }
 
     // Todo, make sef.websocket into a vector of websockets.
-    self.websocket = Some(ws);
+    self.websocket = Some(ws);*/
     Ok(())
   }
 
   pub fn add_timers(&mut self) {
+    /*
     let window = web_sys::window().expect("no global `window` exists");
    
-    match self.core.get_table(hash_string("time/timer")) {
+    match self.core.get_table(hash_str("time/timer")) {
       Some(timers_table) => {
         for row in 1..=timers_table.rows {
           match self.timers.entry(row) {
@@ -387,7 +390,7 @@ impl WasmCore {
               let closure = || { 
                 Closure::wrap(Box::new(move || {
                   unsafe{
-                    let table = (*wasm_core).core.get_table(hash_string("time/timer")).unwrap();
+                    let table = (*wasm_core).core.get_table(hash_str("time/timer")).unwrap();
                     let (ticks, _) = table.get_u64(&TableIndex::Index(1), &TableIndex::Alias(*TICKS)).unwrap();
                     (*wasm_core).changes.push(Change::Set{
                       table_id: *TIME_TIMER, values: vec![
@@ -414,7 +417,7 @@ impl WasmCore {
         }
       }
       _ => (),
-    }    
+    }    */
   }
 
   pub fn load_compressed_blocks(&mut self, encoded_miniblocks: String) {
@@ -424,6 +427,7 @@ impl WasmCore {
   }
 
   pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
+    /*
     let miniblocks: Vec<MiniBlock> = bincode::deserialize(&serialized_miniblocks).unwrap();
     let mut blocks: Vec<Block> = Vec::new() ;
     for miniblock in miniblocks {
@@ -449,10 +453,11 @@ impl WasmCore {
     self.add_timers();
     self.add_applications();
     self.render();
-    log!("Loaded {} blocks.", len);
+    log!("Loaded {} blocks.", len);*/
   }
 
   pub fn process_transaction(&mut self) {
+    /*
     let txn = Transaction{changes: self.changes.clone()};
     self.core.process_transaction(&txn);
     match &self.websocket {
@@ -481,9 +486,11 @@ impl WasmCore {
       _ => (),
     }
     self.changes.clear();
+    */
   }
 
   pub fn init(&mut self) -> Result<(), JsValue> {
+    /*
     let wasm_core = self as *mut WasmCore;
 
     {
@@ -508,7 +515,7 @@ impl WasmCore {
             });           
             (*wasm_core).process_transaction();
             (*wasm_core).render();
-            //let table = (*wasm_core).core.get_table(hash_string("balls"));
+            //let table = (*wasm_core).core.get_table(hash_str("balls"));
             //log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
@@ -562,7 +569,7 @@ impl WasmCore {
             });           
             (*wasm_core).process_transaction();
             (*wasm_core).render();
-            //let table = (*wasm_core).core.get_table(hash_string("clicked"));
+            //let table = (*wasm_core).core.get_table(hash_str("clicked"));
             //log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
@@ -640,11 +647,12 @@ impl WasmCore {
     Change::InternString{string: search}];
     self.changes.append(&mut changes);
     self.process_transaction();
-
+    */
     Ok(())
   }
 
   pub fn add_applications(&mut self) -> Result<(), JsValue> {
+    /*
     let wasm_core = self as *mut WasmCore;
     let table = self.core.get_table(*HTML_APP);
     match table {
@@ -673,7 +681,7 @@ impl WasmCore {
         }
       }
       _ => {log!("No #html/app in the core");}, // TODO Alert the user no app was found
-    }
+    } */
     Ok(())
   }
 
@@ -683,7 +691,7 @@ impl WasmCore {
     Ok(())
   }
 
-  fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
+  /*fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
     let mut div = self.document.create_element("div")?;
     match value.value_type() {
       ValueType::String => {
@@ -704,12 +712,13 @@ impl WasmCore {
       _ => (), // TODO Unhandled Boolean and Empty
     }
     Ok(div)
-  }
+  }*/
 
-  fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
+  /*fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
+    
     let wasm_core = self as *mut WasmCore;
     let mut container: web_sys::Element = self.document.create_element("div")?;
-    let element_id = hash_string(&format!("div-{:?}", table.id));
+    let element_id = hash_str(&format!("div-{:?}", table.id));
     container.set_id(&format!("{:?}",element_id));
     container.set_attribute("table-id", &format!("{}", table.id))?;
     // First check to see if the table has a "type" column. If it doesn't, just render the table
@@ -725,7 +734,7 @@ impl WasmCore {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some((contents,_)) => {
-                  let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
                   container.append_child(&rendered)?;
@@ -740,12 +749,12 @@ impl WasmCore {
               match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
                 (Some((href,_)), Some((contents,_))) => {
-                  let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
                   let mut link: web_sys::Element = self.document.create_element("a")?;
                   let href_string = &self.core.get_string(&href).unwrap();
-                  let element_id = hash_string(&format!("a-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("a-{:?}-{:?}", table.id, row));
                   link.set_attribute("href",href_string)?;
                   link.set_id(&format!("{:?}",element_id));
                   link.append_child(&rendered)?;
@@ -764,7 +773,7 @@ impl WasmCore {
                 Some((src,_)) => {
                   let mut img: web_sys::Element = self.document.create_element("img")?;
                   let src_string = &self.core.get_string(&src).unwrap();
-                  let element_id = hash_string(&format!("img-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
                   img.set_attribute("src",src_string)?;
                   img.set_id(&format!("{:?}",element_id));
                   container.append_child(&img)?;
@@ -778,11 +787,11 @@ impl WasmCore {
               // Get contents
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some((contents,_)) => {
-                  let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
                   let rendered = self.render_value(contents)?;
                   rendered.set_id(&format!("{:?}",element_id));
                   let mut button: web_sys::Element = self.document.create_element("button")?;
-                  let element_id = hash_string(&format!("button-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("button-{:?}-{:?}", table.id, row));
                   button.set_id(&format!("{:?}",element_id));
                   button.append_child(&rendered)?;
                   container.append_child(&button)?;
@@ -797,7 +806,7 @@ impl WasmCore {
               match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                 Some(contents) => {
                   let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
-                  let element_id = hash_string(&format!("canvas-{:?}-{:?}", table.id, row));
+                  let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
                   canvas.set_id(&format!("{:?}",element_id));
                   self.canvases.insert(element_id);
                   // Is there a parameters field?
@@ -857,7 +866,7 @@ impl WasmCore {
                         .dyn_into::<web_sys::HtmlInputElement>()
                         .map_err(|_| ())
                         .unwrap();
-                      let element_id = hash_string(&format!("slider-{:?}-{:?}", table.id, row));
+                      let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
                       slider.set_attribute("type","range");
                       slider.set_attribute("min", &format!("{}", min_value));
                       slider.set_attribute("max", &format!("{}", max_value));
@@ -913,7 +922,7 @@ impl WasmCore {
       // Make a div for each row
       for row in 1..=table.rows {
         let mut row_div = self.document.create_element("div")?;
-        let element_id = hash_string(&format!("div-{:?}-{:?}", table.id, row));
+        let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
         row_div.set_id(&format!("{:?}",element_id));
         // Make an internal div for each cell 
         for column in 1..=table.columns {
@@ -921,7 +930,7 @@ impl WasmCore {
           match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
             Some((contents,_)) => {
               let mut cell_div = self.document.create_element("div")?;
-              let element_id = hash_string(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
+              let element_id = hash_str(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
               let rendered = self.render_value(contents)?;
               rendered.set_id(&format!("{:?}",element_id));
               row_div.append_child(&rendered)?;
@@ -933,7 +942,7 @@ impl WasmCore {
       }
     }
     Ok(container)
-  }
+  }*/
 
   pub fn render_canvases(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
@@ -956,7 +965,7 @@ impl WasmCore {
 
 
   pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-
+    /*
     let wasm_core = self as *mut WasmCore;
     let context = canvas
         .get_context("2d")
@@ -1337,7 +1346,7 @@ impl WasmCore {
                       parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
                       parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
                 (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
-                  let source_hash = hash_string(&source_string);
+                  let source_hash = hash_str(&source_string);
                   match self.images.entry(source_hash) {
                     Entry::Occupied(img_entry) => {
                       let img = img_entry.get();
@@ -1374,8 +1383,8 @@ impl WasmCore {
         },
         _ => {log!("Missing shape or parameters table");}
       }
-    }
+    }*/ 
     Ok(())
-  } 
+  }
 
 }
