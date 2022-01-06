@@ -16,11 +16,10 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType, Argument};
-use mech_core::{Value, ValueMethods, ValueIterator, TableIndex};
+use mech_core::{Core, humanize, Register, Transaction, Change, Argument};
 use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId};
-use mech_core::hash_string;
+use mech_core::hash_str;
 use mech_syntax::compiler::Compiler;
 use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration, MechSocket};
 use crossbeam_channel::Sender;
@@ -39,11 +38,11 @@ use std::net::{SocketAddr, UdpSocket};
 use time;
 
 lazy_static! {
-  static ref MECH_CODE: u64 = hash_string("mech/code");
-  static ref MECH_REGISTRY: u64 = hash_string("mech/registry");
-  static ref NAME: u64 = hash_string("name");
-  static ref VERSION: u64 = hash_string("version");
-  static ref URL: u64 = hash_string("url");
+  static ref MECH_CODE: u64 = hash_str("mech/code");
+  static ref MECH_REGISTRY: u64 = hash_str("mech/registry");
+  static ref NAME: u64 = hash_str("name");
+  static ref VERSION: u64 = hash_str("version");
+  static ref URL: u64 = hash_str("url");
 }
 
 
@@ -79,7 +78,7 @@ pub struct Program {
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
-  pub errors: HashSet<Error>,
+  //pub errors: HashSet<Error>,
   programs: u64,
   loaded_machines: HashSet<u64>,
   pub listeners: HashMap<Register,HashSet<u64>>,
@@ -87,11 +86,11 @@ pub struct Program {
 
 impl Program {
   pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
-    let mut mech = Core::new(capacity, recursion_limit);
-    mech.load_standard_library();
-    let mech_code = hash_string("mech/code");
-    let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
-    mech.process_transaction(&txn);
+    let mut mech = Core::new();
+    //`   `mech.load_standard_library();
+    let mech_code = hash_str("mech/code");
+    //let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
+    //mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
       capacity,
@@ -105,13 +104,14 @@ impl Program {
       input_map: HashMap::new(),
       incoming,
       outgoing,
-      errors: HashSet::new(),
+      //errors: HashSet::new(),
       programs: 0,
       listeners: HashMap::new(),
     }
   }
 
   pub fn trigger_machines(&mut self) {
+    /*
     let database = self.mech.runtime.database.borrow();
     for register in &self.mech.runtime.aggregate_changed_this_round {
       match self.machines.get_mut(&register.hash()) {
@@ -122,10 +122,11 @@ impl Program {
         },
         _ => (), // TODO Warn user that the machine is not loaded!
       }
-    }
+    }*/
   }
 
   pub fn compile_program(&mut self, input: String) {
+    /*
     let mut compiler = Compiler::new();
     let programs = compiler.compile_string(input.clone());
     for p in programs {
@@ -135,10 +136,11 @@ impl Program {
     let mech_code = *MECH_CODE;
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
-    //self.outgoing.send(RunLoopMessage::Transaction(txn));
+    //self.outgoing.send(RunLoopMessage::Transaction(txn));*/
   }
 
   pub fn compile_fragment(&mut self, input: String) {
+    /*
     let mut compiler = Compiler::new();
     let programs = compiler.compile_string(input.clone());
     for p in programs {
@@ -153,6 +155,7 @@ impl Program {
     self.programs += 1;
     //let txn = Transaction::from_change(Change::Set{table: mech_code, row: TableIndex::Index(self.programs), column: TableIndex::Index(1), value: Value::from_str(&input.clone())});
     //self.outgoing.send(RunLoopMessage::Transaction(txn));
+    */
   }
 
   pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
@@ -185,28 +188,29 @@ impl Program {
           response
         }
       };
-
+      
+      /*
       let mut registry_compiler = Compiler::new();
       let programs = registry_compiler.compile_string(registry_file);
       let mut registry_core = Core::new(100,100);
       registry_core.load_standard_library();
       for p in programs {
         registry_core.register_blocks(p.blocks);
-      }
-      registry_core.step();
+      }*/
+      //registry_core.step();
 
       // Convert the machine listing into a hash map
-      let registry_table = registry_core.get_table(*MECH_REGISTRY).unwrap();
+      /*let registry_table = registry_core.get_table(*MECH_REGISTRY).unwrap();
       for row in 0..registry_table.rows {
         let row_index = TableIndex::Index(row+1);
         let (name,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*NAME)).unwrap();
         let (version,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*VERSION)).unwrap();
         let (url,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*URL)).unwrap();
         self.machine_repository.insert(name.to_string(), (version.to_string(), url.to_string()));
-      }
+      }*/
     }
     // Do it for the mech core
-    for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {
+    /*for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {
       let fun_name = self.mech.runtime.database.borrow().store.strings.get(&fun_name_id).unwrap().clone();
       let m: Vec<_> = fun_name.split('/').collect();
       let m = m[0];
@@ -264,22 +268,23 @@ impl Program {
                 }
               },
               Err(_) => {
-                /*self.errors.insert(
+                self.errors.insert(
                   Error { 
                     block_id: 0,
                     step_text: "".to_string(), // TODO Add better text
                     error_type: ErrorType::MissingFunction(*name),
                   }
-                );*/
+                );
               }
             }
           };
         },
         _ => (),
       }
-    }
+    }*/
 
     // Dedupe needed ids
+    /*
     let registers = self.mech.runtime.needed_registers.difference(&self.mech.runtime.defined_registers);
     let mut needed_tables = HashSet::new();
     for register in registers {
@@ -293,7 +298,7 @@ impl Program {
       let database = self.mech.runtime.database.borrow();
       let needed_table_name = database.store.strings.get(&needed_table_id).unwrap().clone();
       let m: Vec<_> = needed_table_name.split('/').collect();
-      let needed_machine_id = hash_string(&m[0]);
+      let needed_machine_id = hash_str(&m[0]);
       match self.loaded_machines.contains(&needed_machine_id) {
         false => {
           self.loaded_machines.insert(needed_machine_id);
@@ -341,13 +346,14 @@ impl Program {
         }
         _ => (),
       }
-    }
-    for program in &machine_init_code {
+      
+    }*/
+    /*for program in &machine_init_code {
       self.compile_program(program.to_string());
       self.trigger_machines();
-    }
-    self.mech.step();
-    self.trigger_machines();
+    }*/
+    //self.mech.step();
+    //self.trigger_machines();
 
     /*
     // Do it for the the other core
@@ -385,8 +391,8 @@ impl Program {
     Ok(())
   }
 
-  pub fn clear(&mut self) {
-    //self.mech.clear();
-  }
+  /*pub fn clear(&mut self) {
+    self.mech.clear();
+  }*/
 
 }

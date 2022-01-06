@@ -1,9 +1,9 @@
-use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType};
+use mech_core::{Core, humanize, Register, Transaction, Change};
 use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId, TableIndex};
-use mech_core::hash_string;
+use mech_core::hash_str;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{maximize_block, RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
+use mech_utilities::{RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
@@ -196,7 +196,7 @@ impl ProgramRunner {
 
     // Start start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
-
+      /*
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
       let program_channel_udpsocket = program.outgoing.clone();
@@ -222,7 +222,7 @@ impl ProgramRunner {
                       program_channel_udpsocket.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address));
                     }
                     Ok(SocketMessage::Listening(register)) => {
-                      program_channel_udpsocket.send(RunLoopMessage::Listening((hash_string(&src.to_string()), register)));
+                      program_channel_udpsocket.send(RunLoopMessage::Listening((hash_str(&src.to_string()), register)));
                     }
                     Ok(SocketMessage::Ping) => {
                       println!("Got a ping from: {:?}", src);
@@ -253,10 +253,10 @@ impl ProgramRunner {
       //program.download_dependencies(Some(client_outgoing.clone()));
 
       // Step cores
-      program.mech.step();
+      /*program.mech.step();
       for core in program.cores.values_mut() {
         core.step();
-      }
+      }*/
 
       // Send the ready to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Ready);
@@ -264,6 +264,7 @@ impl ProgramRunner {
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
+            /*
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);   
@@ -320,8 +321,10 @@ impl ProgramRunner {
             let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
             client_outgoing.send(ClientMessage::StepDone);
+            */
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
+            /*
             match program.mech.runtime.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
@@ -357,18 +360,19 @@ impl ProgramRunner {
                         websocket.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
                       }
                       _ => (),
-                    }                    
+                    } 
                   }
                   None => (),
                 }
               }, 
               false => (),
             }
+            */
           },
           (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_id)), _) => {
             match &self.socket {
               Some(ref socket) => {
-                let socket_address = hash_string(&socket.local_addr().unwrap().to_string());
+                let socket_address = hash_str(&socket.local_addr().unwrap().to_string());
                 if remote_core_id != socket_address {
                   match program.remote_cores.get(&remote_core_id) {
                     None => {
@@ -402,12 +406,12 @@ impl ProgramRunner {
               Some(ref socket) => {
                 let socket_address = socket.local_addr().unwrap().to_string();
                 if remote_core_address != socket_address {
-                  match program.remote_cores.get(&hash_string(&remote_core_address)) {
+                  match program.remote_cores.get(&hash_str(&remote_core_address)) {
                     None => {
                       // We've got a new remote core. Let's ask it what it needs from us
                       // and tell it about all the other cores in our network.
-                      program.remote_cores.insert(hash_string(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
-                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address)))));
+                      program.remote_cores.insert(hash_str(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
+                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_str(&remote_core_address)))));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
                       let compressed_message = compress_to_vec(&message,6);                    
                       let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
@@ -426,11 +430,11 @@ impl ProgramRunner {
                       }
                     } 
                     Some(_) => {
-                      for register in &program.mech.runtime.needed_registers {
+                      /*for register in &program.mech.runtime.needed_registers {
                         let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
                         let compressed_message = compress_to_vec(&message,6);                    
                         let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
-                      }
+                      }*/
                     }
                   }
                 }
@@ -440,18 +444,18 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream))), _) => {
             let remote_core_address = ws_stream.peer_addr().unwrap();
-            let remote_core_id = hash_string(&remote_core_address.to_string());
+            let remote_core_id = hash_str(&remote_core_address.to_string());
             let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
             // Tell the remote websocket what this core is listening for
-            for register in &program.mech.runtime.needed_registers {
+            /*for register in &program.mech.runtime.needed_registers {
               let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
               let compressed_message = compress_to_vec(&message,6);
               ws_outgoing.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
-            }
+            }*/
             // Store the websocket sender
             program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
-            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address.to_string())))));
+            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_str(&remote_core_address.to_string())))));
             thread::spawn(move || {
               for message in ws_incoming.incoming_messages() {
                 let message = message.unwrap();
@@ -487,6 +491,7 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
+            /*
             // Load the program
             match code {
               MechCode::String(code) => {
@@ -524,13 +529,13 @@ impl ProgramRunner {
               let error_string = format_errors(&program);
               client_outgoing.send(ClientMessage::String(error_string));
               client_outgoing.send(ClientMessage::Exit(1));
-            }
+            }*/
             client_outgoing.send(ClientMessage::StepDone);
           }
           (Ok(RunLoopMessage::EchoCode(code)), _) => {
-            
+            /*
             // Reset #ans
-            program.mech.clear_table(hash_string("ans"));
+            program.mech.clear_table(hash_str("ans"));
 
             // Compile and run code
             let mut compiler = Compiler::new();
@@ -539,16 +544,16 @@ impl ProgramRunner {
             program.download_dependencies(Some(client_outgoing.clone()));
 
             // Get the result
-            let echo_table = program.mech.get_table(hash_string("ans"));
-            //program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: TableIndex::All, column: TableIndex::All }); 
+            let echo_table = program.mech.get_table(hash_str("ans"));
+            //program.listeners.insert(Register{table_id: TableId::Global(hash_str("ans")), row: TableIndex::All, column: TableIndex::All }); 
 
             // Send it
-            //client_outgoing.send(ClientMessage::Table(echo_table));
+            //client_outgoing.send(ClientMessage::Table(echo_table));*/
             client_outgoing.send(ClientMessage::StepDone);
           } 
           (Ok(RunLoopMessage::Clear), _) => {
-            program.clear();
-            client_outgoing.send(ClientMessage::Clear);
+            /*program.clear();
+            client_outgoing.send(ClientMessage::Clear);*/
           },
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
@@ -559,10 +564,10 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             //println!("{:?}", program.mech.runtime);
-            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
+            //client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
           (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
-            let mut blocks: Vec<Block> = Vec::new();
+            /*let mut blocks: Vec<Block> = Vec::new();
             for miniblock in miniblocks {
               let mut block = Block::new(100);
               for tfms in miniblock.transformations {
@@ -571,7 +576,7 @@ impl ProgramRunner {
               blocks.push(block);
             }
             program.mech.register_blocks(blocks);
-            program.mech.step();
+            program.mech.step();*/
             client_outgoing.send(ClientMessage::StepDone);
           }
           (Ok(RunLoopMessage::Stop), _) => { 
@@ -579,8 +584,8 @@ impl ProgramRunner {
             break 'runloop;
           },
           (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
-            client_outgoing.send(table_msg);
+            //let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
+            //client_outgoing.send(table_msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -612,7 +617,7 @@ impl ProgramRunner {
       }
       /*if let Some(channel) = persistence_channel {
         channel.send(PersisterMessage::Stop);
-      }*/
+      }*/*/
     }).unwrap();
 
     RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming }
@@ -627,7 +632,7 @@ impl ProgramRunner {
 
 fn format_errors(program: &Program) -> String {
   let mut formatted_errors = "".to_string();
-  if program.errors.len() > 0 {
+  /*if program.errors.len() > 0 {
     let plural = if program.errors.len() == 1 {
       ""
     } else {
@@ -660,6 +665,6 @@ fn format_errors(program: &Program) -> String {
       formatted_errors = format!("{} {} {}\n",formatted_errors, ">".bright_red(), error.step_text);
       formatted_errors = format!("{}\n{}",formatted_errors, "------------------------------------------------------\n\n".truecolor(246,192,78));
     }
-  }
+  }*/
   formatted_errors
 }
