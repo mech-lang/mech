@@ -28,37 +28,7 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{
-  Core, 
-  Change,
-  Transaction,
-  TableIndex,
-  ValueMethods,
-  MiniBlock, 
-  Block, 
-  Transformation, 
-  Compiler, 
-  Table, 
-  Value, 
-  ParserNode, 
-  hash_str, 
-  Program, 
-  ErrorType, 
-  ProgramRunner, 
-  RunLoop, 
-  RunLoopMessage, 
-  ClientMessage, 
-  Parser,
-  MechCode,
-  SocketMessage,
-  compile_code,
-  read_mech_files,
-  ReplCommand,
-  parse_repl_command,
-  minify_blocks,
-  MechSocket,
-};
-use mech::QuantityMath;
+use mech::*;
 
 use std::thread::{self, JoinHandle};
 
@@ -267,6 +237,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // TEST
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
+    /*
     println!("{}", "[Testing]".bright_green());
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
@@ -299,15 +270,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               for i in 1..=test_results.rows as usize {
                 tests_count += 1;
                 
-                let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
+                /*let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
                   Some((string,_)) => {
                     string.to_string()
                   }
                   _ => "".to_string()
-                };
+                };*/
       
-                let (test_result,_) = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
-                let test_result_string = match test_result.as_bool() {
+                //let test_result = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
+                /*let test_result_string = match test_result.as_bool() {
                   Some(false) => {
                     passed_all_tests = false;
                     tests_failed += 1;
@@ -326,7 +297,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     format!("{}", "failed".red())
                   },
                 };
-                println!("\t{0: <30} {1: <5}", test_name, test_result_string);
+                println!("\t{0: <30} {1: <5}", test_name, test_result_string);*/
               }
 
               if passed_all_tests {
@@ -365,7 +336,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
       };
       io::stdout().flush().unwrap();
-    }
+    }*/
     None
   // ------------------------------------------------
   // RUN
@@ -643,7 +614,7 @@ clear   - reset the current core
   //ClientHandler::new("Mech REPL", None, None, None, cores);
   let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
   let thread_receiver = mech_client.incoming.clone();
-  
+  /*
   // Break out receiver into its own thread
   let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
     let mut q = 0;
@@ -715,7 +686,7 @@ clear   - reset the current core
       };
       io::stdout().flush().unwrap();
     }
-  });
+  });*/
 
 
   'REPL: loop {

@@ -9,12 +9,10 @@ extern crate mech_utilities;
 
 mod repl;
 
-pub use mech_core::{Core, TableIndex, ValueMethods, Change, Transaction, Transformation, hash_str, Block, Table, Value, Error, ErrorType};
-pub use mech_core::QuantityMath;
-pub use mech_syntax::compiler::Compiler;
-pub use mech_syntax::parser::{Parser, Node as ParserNode};
-pub use mech_program::{Program, ProgramRunner, RunLoop, ClientMessage};
-pub use mech_utilities::{RunLoopMessage, MiniBlock, MiniProgram, MechCode, SocketMessage, MechSocket};
+pub use mech_core::*;
+pub use mech_syntax::*;
+pub use mech_program::*;
+pub use mech_utilities::*;
 pub use self::repl::{ReplCommand, parse_repl_command};
 
 extern crate colored;
@@ -113,10 +111,10 @@ pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniProgram> {
   for c in code {
     match c {
       MechCode::String(c) => {
-        let mut compiler = Compiler::new();
-        let programs = compiler.compile_string(c);
-        let mut mp = programs.iter().map(|p| minify_program(p)).collect::<Vec<MiniProgram>>();
-        miniprograms.append(&mut mp);
+        //let mut compiler = Compiler::new();
+        //let programs = compiler.compile_string(c);
+        //let mut mp = programs.iter().map(|p| minify_program(p)).collect::<Vec<MiniProgram>>();
+        //miniprograms.append(&mut mp);
       },
       MechCode::MiniBlocks(miniblocks) => {
         miniprograms.push(MiniProgram{title: None, blocks: miniblocks});
@@ -133,7 +131,7 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
   let mut miniblocks = Vec::new();
   for block in blocks {
     let mut miniblock = MiniBlock::new();
-    miniblock.transformations = block.transformations.clone();
+    /*miniblock.transformations = block.transformations.clone();
     miniblock.plan = block.plan.clone();
     for (k,v) in block.store.strings.iter() {
       miniblock.strings.push((k.clone(), v.clone()));
@@ -143,18 +141,19 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
     }
     for error in &block.errors {
       miniblock.errors.push(error.clone());
-    }
+    }*/
     miniblock.id = block.id;
     miniblocks.push(miniblock);
   }
   miniblocks
 }
 
+/*
 pub fn minify_program(program: &mech_syntax::compiler::Program) -> MiniProgram {
   let mut miniblocks = Vec::new();
   for block in &program.blocks {
     let mut miniblock = MiniBlock::new();
-    miniblock.transformations = block.transformations.clone();
+    /*miniblock.transformations = block.transformations.clone();
     miniblock.plan = block.plan.clone();
     for (k,v) in block.store.strings.iter() {
       miniblock.strings.push((k.clone(), v.clone()));
@@ -164,9 +163,9 @@ pub fn minify_program(program: &mech_syntax::compiler::Program) -> MiniProgram {
     }
     for error in &block.errors {
       miniblock.errors.push(error.clone());
-    }
+    }*/
     miniblock.id = block.id;
     miniblocks.push(miniblock);
   }
   MiniProgram{title: program.title.clone(), blocks: miniblocks}
-}
+}*/
