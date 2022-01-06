@@ -65,12 +65,6 @@ impl Core {
             None => (),
           }
         }
-        Change::CopyTable{table_id,table} => {
-          match self.database.borrow_mut().tables.try_insert(*table_id, table.clone()) {
-            Ok(x) => (),
-            Err(_) => {return Err(MechError::GenericError(4214));},
-          }
-        }
         Change::ColumnAlias{table_id, column_ix, column_alias} => {
           match self.database.borrow_mut().get_table_by_id(table_id) {
             Some(table) => {

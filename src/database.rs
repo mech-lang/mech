@@ -6,12 +6,11 @@ use std::fmt;
 
 type FunctionName = u64;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Change {
   Set((FunctionName, Vec<(usize, usize, Value)>)),
   NewTable{table_id: u64, rows: usize, columns: usize},
   ColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
-  CopyTable{table_id: u64, table: Rc<RefCell<Table>>},
 }
 
 impl fmt::Debug for Change {
@@ -21,7 +20,6 @@ impl fmt::Debug for Change {
       Change::Set((function_name,args)) => write!(f,"Set({},{:#?})",function_name,args)?,
       Change::NewTable{table_id,rows,columns} => write!(f,"NewTable({},{:?},{:?})",humanize(table_id),rows,columns)?,
       Change::ColumnAlias{table_id,column_ix,column_alias} => write!(f,"ColumnAlias({},{:?},{})",humanize(table_id),column_ix,humanize(column_alias))?,
-      Change::CopyTable{table_id,..} => write!(f,"CopyTable(table: {:?})",humanize(table_id))?,
     }
     Ok(())
   }
