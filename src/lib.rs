@@ -11,7 +11,7 @@ extern crate core as rust_core;
 use rust_core::fmt;
 use std::sync::Arc;
 use hashbrown::HashMap;
-use mech_core::{Block, Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
+use mech_core::{Block, Table, Value, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
 use crossbeam_channel::Sender;
 
 // ## Client Message
@@ -85,7 +85,6 @@ pub struct MiniBlock {
   pub transformations: Vec<(String, Vec<Transformation>)>,
   pub plan: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
-  pub errors: Vec<Error>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
 }
 
@@ -96,7 +95,6 @@ impl MiniBlock {
       transformations: Vec::with_capacity(1),
       plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
-      errors: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
     }
   }
@@ -108,10 +106,11 @@ pub struct MiniProgram {
   pub blocks: Vec<MiniBlock>,
 }
 
+/*
 pub fn maximize_block(miniblock: &MiniBlock) -> Block {
-  let mut block = Block::new(100);
+  let mut block = Block::new();
   for tfms in &miniblock.transformations {
-    block.register_transformations(tfms.clone());
+    block.add_tfm(tfms.clone());
   }
   for error in &miniblock.errors {
     block.errors.insert(error.clone());
@@ -126,7 +125,7 @@ pub fn maximize_block(miniblock: &MiniBlock) -> Block {
   }
   block.id = miniblock.id;
   block
-}
+}*/
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
