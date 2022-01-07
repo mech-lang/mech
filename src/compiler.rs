@@ -67,6 +67,15 @@ impl Compiler {
     Compiler{}
   }
 
+  pub fn compile_text(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
+    let mut parser = Parser::new();
+    parser.parse(code);
+    let mut ast = Ast::new();
+    ast.build_syntax_tree(&parser.parse_tree);
+    let mut compiler = Compiler::new();
+    compiler.compile_blocks(&vec![ast.syntax_tree.clone()])
+  }
+
   pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Result<Vec<Block>,MechError> {
     let mut blocks = Vec::new();
     for b in get_blocks(nodes) {
