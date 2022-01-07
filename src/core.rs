@@ -104,6 +104,13 @@ impl Core {
     }
   }
 
+  pub fn insert_blocks(&mut self, mut blocks: Vec<Block>) -> Result<(),MechError> {
+    for block in blocks {
+      self.insert_block(Rc::new(RefCell::new(block.clone())))?;
+    }
+    Ok(())
+  }
+
   pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<(),MechError> {
     let block_ref_c = block_ref.clone();
     let mut block_brrw = block_ref.borrow_mut();
