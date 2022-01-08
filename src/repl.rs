@@ -1,5 +1,6 @@
-use mech_syntax::parser::{Parser, Node as ParserNode};
+use mech_syntax::*;
 
+/*
 #[macro_use]
 use nom::{
   IResult,
@@ -10,7 +11,7 @@ use nom::{
   multi::{many1, many0},
   bytes::complete::{tag},
   character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
-};
+};*/
 
 
 #[derive(Debug, Clone)]
@@ -26,11 +27,12 @@ pub enum ReplCommand {
   Table(u64),
   Code(String),
   EchoCode(String),
-  ParsedCode(ParserNode),
+  //ParsedCode(ParserNode),
   Empty,
   Error,
 }
 
+/*
 fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   // Try parsing mech code
   let mut parser = Parser::new();
@@ -98,4 +100,4 @@ fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, command) = alt((command, mech_code))(input)?;
   Ok((input, command))
-}
+}*/

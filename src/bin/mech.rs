@@ -203,7 +203,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-
     let index = warp::get()
                 .and(warp::path::end())
                 .and(warp::fs::dir("./notebook/"));
@@ -492,7 +491,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /*(Ok(ClientMessage::Table(table))) => {
           if !repl {
             match table {
               Some(table) => {
@@ -504,7 +503,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           } else {
             break 'receive_loop;
           }
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -689,8 +688,8 @@ clear   - reset the current core
   });*/
 
 
-  'REPL: loop {
-     
+  /*'REPL: loop {
+    
     io::stdout().flush().unwrap();
     // Print a prompt
     print!("{}", ">: ".truecolor(246,192,78));
@@ -752,7 +751,7 @@ clear   - reset the current core
       }, 
     }
    
-  }
+  }*/
 
   Ok(())
 }

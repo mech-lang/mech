@@ -13,7 +13,7 @@ pub use mech_core::*;
 pub use mech_syntax::*;
 pub use mech_program::*;
 pub use mech_utilities::*;
-pub use self::repl::{ReplCommand, parse_repl_command};
+//pub use self::repl::{ReplCommand, parse_repl_command};
 
 extern crate colored;
 use colored::*;
@@ -27,7 +27,7 @@ use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
 
-extern crate nom;
+//extern crate nom;
 
 pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
 
