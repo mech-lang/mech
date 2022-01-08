@@ -16,12 +16,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Core, humanize, Register, Transaction, Change, Argument};
-use mech_core::{Block, BlockState};
-use mech_core::{Table, TableId};
-use mech_core::hash_str;
+use mech_core::*;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechCode, Machine, MachineRegistrar, MachineDeclaration, MechSocket};
+use mech_utilities::*;
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 use hashbrown::{HashSet, HashMap};
@@ -74,7 +71,7 @@ pub struct Program {
   pub input_map: HashMap<Register,HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
   pub machines: HashMap<u64, Box<dyn Machine>>,
-  pub machine_repository: HashMap<String, (String, String)>,
+  pub machine_repository: HashMap<MechString, (MechString, MechString)>,
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
@@ -158,8 +155,10 @@ impl Program {
     */
   }
 
-  pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),Box<std::error::Error>> {
+  pub fn download_dependencies(&mut self, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<(),MechError> {
+    // Create teh machines directory. If it's already there this does nothing.    
     create_dir("machines");
+    // If the machine repository is not populated, we need to fill it by loading the registry
     if self.machine_repository.len() == 0 {
 
       let mut registry_file = match std::fs::File::open("machines/registry.mec") {
@@ -167,47 +166,61 @@ impl Program {
           // Loading machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".bright_cyan())));}
-            None => (),
+            None => {return Err(MechError::GenericError(7285))},
           }
           let mut contents = String::new();
-          file.read_to_string(&mut contents).unwrap();
+          match file.read_to_string(&mut contents) {
+            Err(_) => {return Err(MechError::GenericError(7291))},
+            _ => (),
+          }
           contents
         }
         Err(_) => {
           // Download machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry.", "[Downloading]".bright_cyan())));}
-            None => (),
+            None => {return Err(MechError::GenericError(7286))},
           }
           // Download registry
           let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/registry.mec";
-          let mut response = reqwest::get(registry_url)?.text()?;
+          let mut response_text = match reqwest::get(registry_url) {
+            Ok(mut response) => {
+              match response.text() {
+                Ok(text) => text,
+                Err(_) => {return Err(MechError::GenericError(7288))},
+              }
+            }
+            Err(_) => {return Err(MechError::GenericError(7287))},
+          };
           // Save registry
-          let mut dest = File::create("machines/registry.mec")?;
-          dest.write_all(response.as_bytes()).expect("write failed");
-          response
+          let mut dest = match File::create("machines/registry.mec") {
+            Ok(dest) => dest,
+            Err(_) => {return Err(MechError::GenericError(7289))},
+          };
+          match dest.write_all(response_text.as_bytes()) {
+            Ok(dest) => dest,
+            Err(_) => {return Err(MechError::GenericError(7290))},            
+          }
+          response_text
         }
       };
       
-      /*
+      // Compile machine registry
       let mut registry_compiler = Compiler::new();
-      let programs = registry_compiler.compile_string(registry_file);
-      let mut registry_core = Core::new(100,100);
-      registry_core.load_standard_library();
-      for p in programs {
-        registry_core.register_blocks(p.blocks);
-      }*/
-      //registry_core.step();
+      let blocks = registry_compiler.compile_text(&registry_file)?;
+      let mut registry_core = Core::new();
+      registry_core.insert_blocks(blocks);
 
       // Convert the machine listing into a hash map
-      /*let registry_table = registry_core.get_table(*MECH_REGISTRY).unwrap();
-      for row in 0..registry_table.rows {
+      let registry_table = registry_core.get_table("mech/registry")?;
+      let registry_table_brrw = registry_table.borrow();
+      for row in 0..registry_table_brrw.rows {
         let row_index = TableIndex::Index(row+1);
-        let (name,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*NAME)).unwrap();
-        let (version,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*VERSION)).unwrap();
-        let (url,_) = registry_table.get_string(&row_index, &TableIndex::Alias(*URL)).unwrap();
-        self.machine_repository.insert(name.to_string(), (version.to_string(), url.to_string()));
-      }*/
+        let name = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*NAME))?.as_string().unwrap();
+        let version = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*VERSION))?.as_string().unwrap();
+        let url = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*URL))?.as_string().unwrap();
+        self.machine_repository.insert(name, (version, url));
+      }
     }
     // Do it for the mech core
     /*for (fun_name_id, fun) in self.mech.runtime.functions.iter_mut() {

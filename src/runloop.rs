@@ -61,7 +61,7 @@ pub enum ClientMessage {
   Exit(i32),
   Time(usize),
   NewBlocks(usize),
-  Table(Option<Table>),
+  //Table(Option<Table>),
   Transaction(Transaction),
   String(String),
   //Block(Block),
@@ -126,9 +126,6 @@ pub struct ProgramRunner {
 impl ProgramRunner {
 
   pub fn new(name:&str, capacity: usize) -> ProgramRunner {
-    // Start a new program
-    //let mut program = Program::new(name, capacity);
-
     // Start a persister
     /*
     let persist_name = format!("{}.mdb", name);
@@ -194,14 +191,13 @@ impl ProgramRunner {
       None => None,
     };
 
-    // Start start a channel receiving thread    
+    // Start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
-      /*
+      
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
       let program_channel_udpsocket = program.outgoing.clone();
       let program_channel_udpsocket = program.outgoing.clone();
-
 
       match &self.socket {
         Some(ref socket) => {
@@ -250,8 +246,8 @@ impl ProgramRunner {
         None => (),
       }
 
-      //program.download_dependencies(Some(client_outgoing.clone()));
-
+      program.download_dependencies(Some(client_outgoing.clone()));
+      
       // Step cores
       /*program.mech.step();
       for core in program.cores.values_mut() {
@@ -617,7 +613,7 @@ impl ProgramRunner {
       }
       /*if let Some(channel) = persistence_channel {
         channel.send(PersisterMessage::Stop);
-      }*/*/
+      }*/
     }).unwrap();
 
     RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming }

@@ -48,7 +48,7 @@ pub use self::program::{Program};
 pub use self::runloop::{ProgramRunner, RunLoop, ClientMessage};
 pub use self::persister::{Persister};
 
-pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
+pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<dyn std::error::Error>> {
   create_dir("machines");
 
   let machine_file_path = format!("machines/{}",machine_name);
