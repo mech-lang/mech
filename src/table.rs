@@ -167,6 +167,20 @@ impl Table {
     }
   }
 
+  pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
+    match (row, &self.get_column(&col)?) {
+      (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
+      (TableIndex::Index(row),Column::F32(column_f32)) => Ok(Value::F32(column_f32.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U8(column_u8)) => Ok(Value::U8(column_u8.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U16(column_u16)) => Ok(Value::U16(column_u16.borrow()[row-1])),
+      (TableIndex::Index(row),Column::Bool(column_bool)) => Ok(Value::Bool(column_bool.borrow()[row-1])),
+      (TableIndex::Index(row),Column::String(column_string)) => Ok(Value::String(column_string.borrow()[row-1].clone())),
+      (TableIndex::Index(row),Column::Ref(column_ref)) => Ok(Value::Reference(column_ref.borrow()[row-1].clone())),
+      (_,Column::Empty) => Ok(Value::Empty),
+      _ => Err(MechError::GenericError(1299)),
+    }
+  }
+
   pub fn get(&self, row: usize, col: usize) -> Result<Value,MechError> {
     if col < self.cols && row < self.rows {
       match &self.data[col] {
@@ -292,7 +306,7 @@ impl Table {
           self.data[col] = Column::Ref(column);
           self.col_kinds[col] = ValueKind::Reference;
         },
-        _ => {return Err(MechError::GenericError(1212));},
+        _ => {return Err(MechError::GenericError(1229));},
       }
       Ok(())
     } else {

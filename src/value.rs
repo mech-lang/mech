@@ -39,6 +39,13 @@ impl Value {
     }
   }
 
+  pub fn as_string(&self) -> Result<MechString,MechError> {
+    match self {
+      Value::String(string) => Ok(string.clone()),
+      _ => Err(MechError::GenericError(1870)),
+    }
+  }
+
 }
 
 impl fmt::Debug for Value {

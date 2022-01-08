@@ -90,17 +90,17 @@ impl Core {
     self.database.borrow_mut().insert_table(table)
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Option<Rc<RefCell<Table>>> {
+  pub fn get_table(&mut self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
-      Some(table) => Some(table.clone()),
-      None => None,
+      Some(table) => Ok(table.clone()),
+      None => Err(MechError::GenericError(2951)),
     }
   }
 
-  pub fn get_table_by_id(&mut self, table_id: u64) -> Option<Rc<RefCell<Table>>> {
+  pub fn get_table_by_id(&mut self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
-      Some(table) => Some(table.clone()),
-      None => None,
+      Some(table) => Ok(table.clone()),
+      None => Err(MechError::GenericError(2952)),
     }
   }
 
