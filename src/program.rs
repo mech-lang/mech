@@ -207,7 +207,7 @@ impl Program {
       
       // Compile machine registry
       let mut registry_compiler = Compiler::new();
-      let blocks = registry_compiler.compile_text(&registry_file)?;
+      let blocks = registry_compiler.compile_str(&registry_file)?;
       let mut registry_core = Core::new();
       registry_core.insert_blocks(blocks);
 

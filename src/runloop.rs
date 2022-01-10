@@ -385,7 +385,7 @@ impl ProgramRunner {
                             let len = socket.send_to(&compressed_message, core_address.clone()).unwrap();
                           }
                           MechSocket::WebSocket(_) => {
-                            // TODO
+                            // TODO send disconnect message to websockets
                           }
                           _ => (),
                         }
@@ -487,7 +487,8 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
-            /*
+            println!("GOT SOME CODE:\n{:?}",code);
+            
             // Load the program
             match code {
               MechCode::String(code) => {
@@ -497,7 +498,7 @@ impl ProgramRunner {
                   program.mech.register_blocks(p.blocks); 
                 }
               },
-              MechCode::MiniBlocks(miniblocks) => {
+              /*MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
                 for miniblock in miniblocks {
                   blocks.push(maximize_block(&miniblock));
@@ -512,8 +513,9 @@ impl ProgramRunner {
                   }
                   program.mech.register_blocks(blocks);
                 }
-              }
+              }*/
             }
+            /*
             // Start the program
             program.trigger_machines();
             program.download_dependencies(Some(client_outgoing.clone()));
