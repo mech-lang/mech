@@ -67,7 +67,7 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_text(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
+  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
     let mut parser = Parser::new();
     parser.parse(code);
     let mut ast = Ast::new();
