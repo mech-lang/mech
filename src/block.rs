@@ -24,10 +24,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use hashbrown::HashMap;
 use std::fmt;
+use serde::Serialize;
 
 #[derive(Clone)]
 pub struct Plan{
-  pub plan: Vec<Rc<RefCell<MechFunction>>>
+  pub plan: Vec<Rc<RefCell<dyn MechFunction>>>
 }
 
 impl Plan {
@@ -102,7 +103,7 @@ pub struct Block {
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pending_transformations: Vec<Transformation>,
-  transformations: Vec<Transformation>,
+  pub transformations: Vec<Transformation>,
   pub output: Vec<TableId>,
 }
 
