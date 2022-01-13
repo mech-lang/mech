@@ -3,7 +3,7 @@ use mech_core::{Block, BlockState};
 use mech_core::{Table, TableId, TableIndex};
 use mech_core::hash_str;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
+use mech_utilities::*;
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
@@ -486,34 +486,23 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
-          (Ok(RunLoopMessage::Code(code)), _) => {
-            println!("GOT SOME CODE:\n{:?}",code);
-            
+          (Ok(RunLoopMessage::Code(code)), _) => {          
             // Load the program
             match code {
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
-                let programs = compiler.compile_string(code);
-                for p in programs {
-                  program.mech.register_blocks(p.blocks); 
+                let blocks = compiler.compile_str(&code);
+                for b in blocks {
+                  program.mech.insert_blocks(b); 
                 }
               },
-              /*MechCode::MiniBlocks(miniblocks) => {
+              MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
                 for miniblock in miniblocks {
                   blocks.push(maximize_block(&miniblock));
                 }
-                program.mech.register_blocks(blocks);
+                program.mech.insert_blocks(blocks);
               }
-              MechCode::MiniPrograms(miniprograms) => {
-                for p in miniprograms {
-                  let mut blocks: Vec<Block> = Vec::new();
-                  for miniblock in p.blocks {
-                    blocks.push(maximize_block(&miniblock));
-                  }
-                  program.mech.register_blocks(blocks);
-                }
-              }*/
             }
             /*
             // Start the program
