@@ -33,16 +33,7 @@ Now update the block positions
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
 
-  for block in blocks {
-    match core.insert_block(Rc::new(RefCell::new(block.clone()))) {
-      Ok(()) => (),
-      Err(mech_error) => println!("ERROR: {:?}", mech_error),
-    }
-  }
-  
-  /*for t in blocks {
-    println!("{:#?}", t);
-  }*/
+  core.insert_blocks(blocks)?;
 
   println!("{:#?}", core);
 
@@ -50,33 +41,3 @@ Now update the block positions
 
   Ok(())
 }
-/*
-││││├Transformation
-│││││├Statement
-││││││├VariableDefine
-│││││││├Identifier(['t', 'e', 's', 't'](tst-don-hit-vid))
-│││││││├Expression
-││││││││├AnonymousTableDefine
-│││││││││├TableRow
-││││││││││├TableColumn
-│││││││││││├SelectData(['b', 'a', 'l', 'l'] Local(pas-nor-one-olf)))
-││││││││││││├Null
-│││││││││├TableRow
-││││││││││├TableColumn
-│││││││││││├SelectData(['l', 'i', 'n', 'e'] Local(cup-pey-som-rom)))
-││││││││││││├Null
-
-││││├Transformation
-│││││├Statement
-││││││├TableDefine
-│││││││├Table(#['t', 'e', 's', 't'](0x3fa3332bea97e4))
-│││││││├Expression
-││││││││├AnonymousTableDefine
-│││││││││├TableRow
-││││││││││├TableColumn
-│││││││││││├SelectData(['b', 'a', 'l', 'l'] Local(pas-nor-one-olf)))
-││││││││││││├Null
-│││││││││├TableRow
-││││││││││├TableColumn
-│││││││││││├SelectData(['l', 'i', 'n', 'e'] Local(cup-pey-som-rom)))
-││││││││││││├Null*/
