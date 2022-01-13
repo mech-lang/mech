@@ -10,10 +10,10 @@ extern crate mech_utilities;
 mod repl;
 
 pub use mech_core::*;
-pub use mech_syntax::*;
+pub use mech_syntax::compiler::*;
 pub use mech_program::*;
 pub use mech_utilities::*;
-//pub use self::repl::{ReplCommand, parse_repl_command};
+pub use self::repl::*;
 
 extern crate colored;
 use colored::*;
@@ -44,7 +44,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
                 println!("{} {}", "[Loading]".bright_green(), name);
                 let mut reader = BufReader::new(file);
                 match bincode::deserialize_from(&mut reader) {
-                  Ok(miniprograms) => {code.push(MechCode::MiniPrograms(miniprograms));},
+                  Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
                     println!("{} Failed to load {}", "[Error]".bright_red(), name);
                   },
@@ -105,38 +105,31 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniProgram> {
-  print!("{}", "[Compiling] ".bright_green());
-  let mut miniprograms = vec![];
+pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniBlock> {
+  println!("{}", "[Compiling] ".bright_green());
+  let mut miniblocks = vec![];
   for c in code {
     match c {
       MechCode::String(c) => {
-        //let mut compiler = Compiler::new();
-        //let programs = compiler.compile_string(c);
-        //let mut mp = programs.iter().map(|p| minify_program(p)).collect::<Vec<MiniProgram>>();
-        //miniprograms.append(&mut mp);
+        let mut compiler = Compiler::new();
+        let blocks = compiler.compile_str(&c);
+        let mut mb = blocks.iter().flat_map(|p| minify_blocks(p)).collect::<Vec<MiniBlock>>();
+        miniblocks.append(&mut mb);
       },
-      MechCode::MiniBlocks(miniblocks) => {
-        miniprograms.push(MiniProgram{title: None, blocks: miniblocks});
+      MechCode::MiniBlocks(mut mb) => {
+        miniblocks.append(&mut mb);
       },
-      MechCode::MiniPrograms(mut p) => {
-        miniprograms.append(&mut p);
-      }
     }
   }
-  miniprograms
+  miniblocks
 }
 
 pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
   let mut miniblocks = Vec::new();
   for block in blocks {
     let mut miniblock = MiniBlock::new();
-    /*miniblock.transformations = block.transformations.clone();
-    miniblock.plan = block.plan.clone();
-    for (k,v) in block.store.strings.iter() {
-      miniblock.strings.push((k.clone(), v.clone()));
-    }
-    for (k,v) in block.store.number_literals.iter() {
+    miniblock.transformations = block.transformations.clone();
+    /*for (k,v) in block.store.number_literals.iter() {
       miniblock.number_literals.push((k.clone(), v.clone()));
     }
     for error in &block.errors {
@@ -147,25 +140,3 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
   }
   miniblocks
 }
-
-/*
-pub fn minify_program(program: &mech_syntax::compiler::Program) -> MiniProgram {
-  let mut miniblocks = Vec::new();
-  for block in &program.blocks {
-    let mut miniblock = MiniBlock::new();
-    /*miniblock.transformations = block.transformations.clone();
-    miniblock.plan = block.plan.clone();
-    for (k,v) in block.store.strings.iter() {
-      miniblock.strings.push((k.clone(), v.clone()));
-    }
-    for (k,v) in block.store.number_literals.iter() {
-      miniblock.number_literals.push((k.clone(), v.clone()));
-    }
-    for error in &block.errors {
-      miniblock.errors.push(error.clone());
-    }*/
-    miniblock.id = block.id;
-    miniblocks.push(miniblock);
-  }
-  MiniProgram{title: program.title.clone(), blocks: miniblocks}
-}*/

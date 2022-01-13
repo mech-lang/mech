@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.1";
+  let version = "0.1.0";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
@@ -215,8 +215,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(move |addr: Option<SocketAddr>| {
                   println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
                   let code = read_mech_files(&mech_paths).unwrap();
-                  let programs = compile_code(code);
-                  let miniblocks = programs.iter().flat_map(|ref p| p.blocks.clone()).collect::<Vec<MiniBlock>>();
+                  let miniblocks = compile_code(code);
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
                   let compressed_miniblocks = compress_to_vec(&serialized_miniblocks,6);
                   encode(compressed_miniblocks)
@@ -349,21 +348,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port: String = matches.value_of("port").unwrap_or("0").to_string();
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
     let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
-    
+
     let mut code: Vec<MechCode> = read_mech_files(&mech_paths)?;
     if input_arguments.len() > 0 {
-      let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
-      let inargs_code = format!("block
-  #system/input-arguments += [{}]", arg_string);
+      let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));
+      let inargs_code = format!("#system/input-arguments += [{}]", arg_string);
       code.push(MechCode::String(inargs_code));
     }
-    let programs = compile_code(code);
-
+    let blocks = compile_code(code);
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech Runner", 1000);
     let mech_client = runner.run();
     
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let mech_client_name = mech_client.name.clone();
@@ -374,7 +371,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match mech_socket_address {
       Some(mech_socket_address) => {
         println!("{} Core socket started at: {}", formatted_name, mech_socket_address.clone());
-        thread::spawn(move || {
+        thread::Builder::new().name("Core socket".to_string()).spawn(move || {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
           'socket_loop: loop {
@@ -384,7 +381,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
                 let mut buf = [0; 16_383];
                 // Heartbeat thread periodically checks to see how long it's been since we've last heard from each remote core
-                thread::spawn(move || {
+                thread::Builder::new().name("Heartbeat".to_string()).spawn(move || {
                   loop {
                     thread::sleep(Duration::from_millis(500));
                     let now = SystemTime::now();
@@ -396,7 +393,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   }
                 });
                 // TCP socket thread for websocket connections
-                thread::spawn(move || {
+                thread::Builder::new().name("TCP Socket".to_string()).spawn(move || {
                   let server = Server::bind(websocket_address.clone()).unwrap();
                   println!("{} {} Websocket server started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), websocket_address);
                   for request in server.filter_map(Result::ok) {
@@ -434,7 +431,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   }
                 }
               }
-              // Maestro port is bound, start a remote core
+              // Maestro port is already bound, start a remote core
               Err(_) => {
                 let socket = UdpSocket::bind(format!("{}:{}",address,port)).unwrap();
                 let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
@@ -491,19 +488,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        /*(Ok(ClientMessage::Table(table))) => {
-          if !repl {
-            match table {
-              Some(table) => {
-                //println!("{:?}", table);
-              }
-              None => (), //println!("{} Table not found", formatted_name),
-            }
-            std::process::exit(0);
-          } else {
-            break 'receive_loop;
-          }
-        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -518,6 +502,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           exit_code = this_code;
         }
         Ok(ClientMessage::StepDone) => {
+          println!("StepDone");
+          if repl {
+            break 'receive_loop;
+          }
           //let output_id: u64 = hash_str("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
           //std::process::exit(0);
@@ -528,7 +516,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           std::process::exit(1);
         }
         q => {
-          //println!("else: {:?}", q);
+          println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -613,7 +601,7 @@ clear   - reset the current core
   //ClientHandler::new("Mech REPL", None, None, None, cores);
   let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
   let thread_receiver = mech_client.incoming.clone();
-  /*
+
   // Break out receiver into its own thread
   let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
     let mut q = 0;
@@ -637,7 +625,7 @@ clear   - reset the current core
           println!("{} {}", formatted_name, message);
           print!("{}", ">: ".truecolor(246,192,78));
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /*(Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
@@ -668,11 +656,12 @@ clear   - reset the current core
             }
             None => println!("{} Table not found", formatted_name),
           }
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
         (Ok(ClientMessage::Done)) => {
+          println!("Done");
           // Do nothing
         },
         (Err(x)) => {
@@ -680,15 +669,15 @@ clear   - reset the current core
           break 'receive_loop;
         }
         q => {
-          //println!("else: {:?}", q);
+          println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
     }
-  });*/
+  });
 
 
-  /*'REPL: loop {
+  'REPL: loop {
     
     io::stdout().flush().unwrap();
     // Print a prompt
@@ -713,22 +702,29 @@ clear   - reset the current core
             println!("{}",help_message);
           },
           ReplCommand::Quit => {
+            println!("Quit");
             break 'REPL;
           },
           ReplCommand::Table(id) => {
+            println!("Table {:?}", id);
             //mech_client.send(RunLoopMessage::Table(id));
           },
           ReplCommand::Clear => {
+            println!("Clear");
             mech_client.send(RunLoopMessage::Clear);
           },
           ReplCommand::PrintCore(core_id) => {
+            println!("PrintCore {:?}", core_id);
             mech_client.send(RunLoopMessage::PrintCore(core_id));
           },
-          ReplCommand::PrintRuntime => {
-            mech_client.send(RunLoopMessage::PrintRuntime);
+          ReplCommand::Pause => {
+            println!("Pause");
+            mech_client.send(RunLoopMessage::Pause);
           },
-          ReplCommand::Pause => {mech_client.send(RunLoopMessage::Pause);},
-          ReplCommand::Resume => {mech_client.send(RunLoopMessage::Resume);},
+          ReplCommand::Resume => {
+            println!("Resume");
+            mech_client.send(RunLoopMessage::Resume);
+          },
           ReplCommand::Empty => {
             println!("Empty");
           },
@@ -736,9 +732,11 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
+            println!("Code {:?}", code);
             mech_client.send(RunLoopMessage::Code(MechCode::String(code)));
           },
           ReplCommand::EchoCode(code) => {
+            println!("EchoCode {:?}", code);
             mech_client.send(RunLoopMessage::EchoCode(code));
           },
           _ => {
@@ -751,7 +749,7 @@ clear   - reset the current core
       }, 
     }
    
-  }*/
+  }
 
   Ok(())
 }

@@ -1,6 +1,5 @@
 use mech_syntax::*;
 
-/*
 #[macro_use]
 use nom::{
   IResult,
@@ -11,7 +10,7 @@ use nom::{
   multi::{many1, many0},
   bytes::complete::{tag},
   character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
-};*/
+};
 
 
 #[derive(Debug, Clone)]
@@ -22,7 +21,6 @@ pub enum ReplCommand {
   Resume,
   Stop,
   PrintCore(Option<u64>),
-  PrintRuntime,
   Clear,
   Table(u64),
   Code(String),
@@ -32,9 +30,8 @@ pub enum ReplCommand {
   Error,
 }
 
-/*
 fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  // Try parsing mech code
+  /*// Try parsing mech code
   let mut parser = Parser::new();
   match parser.parse_fragment(input) {
     Ok(_) => Ok((input, ReplCommand::Code(input.to_string()))),
@@ -47,17 +44,13 @@ fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
         Err(_) => Ok((input, ReplCommand::Error)),
       }
     }
-  }
+  }*/
+  Ok((input,ReplCommand::Empty))
 }
 
 fn clear(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag("clear")(input)?;
   Ok((input, ReplCommand::Clear))
-}
-
-fn runtime(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  let (input, _) = tag("runtime")(input)?;
-  Ok((input, ReplCommand::PrintRuntime))
 }
 
 fn core(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
@@ -93,11 +86,11 @@ fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 
 fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((quit, help, pause, resume, core, runtime, clear))(input)?;
+  let (input, command) = alt((quit, help, pause, resume, core, clear))(input)?;
   Ok((input, command))
 }
 
 pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, command) = alt((command, mech_code))(input)?;
   Ok((input, command))
-}*/
+}
