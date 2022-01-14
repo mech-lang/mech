@@ -33,6 +33,7 @@ pub enum Node {
   Insert { children: Vec<Node> },
   VariableDefine { children: Vec<Node> },
   TableDefine { children: Vec<Node> },
+  TableSelect { children: Vec<Node> },
   AddRow { children: Vec<Node> },
   Column { children: Vec<Node> },
   IdentifierOrConstant { children: Vec<Node> },
@@ -218,6 +219,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::StringInterpolation{children} => {print!("StringInterpolation\n"); Some(children)},
     Node::VariableDefine{children} => {print!("VariableDefine\n"); Some(children)},
     Node::TableDefine{children} => {print!("TableDefine\n"); Some(children)},
+    Node::TableSelect{children} => {print!("TableSelect\n"); Some(children)},
     Node::AddRow{children} => {print!("AddRow\n"); Some(children)},
     Node::Column{children} => {print!("Column\n"); Some(children)},
     Node::Binding{children} => {print!("Binding\n"); Some(children)},
@@ -908,6 +910,11 @@ fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::TableDefine{children: vec![table, expression]}))
 }
 
+fn table_select(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::TableSelect{children: vec![expression]}))
+}
+
 fn split_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = tag(">-")(input)?;
   Ok((input, Node::Null))
@@ -955,7 +962,7 @@ fn until_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn statement(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment, table_select))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 

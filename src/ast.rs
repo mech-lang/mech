@@ -45,6 +45,7 @@ pub enum Node {
   Range,
   VariableDefine {children: Vec<Node> },
   TableDefine {children: Vec<Node> },
+  TableSelect {children: Vec<Node> },
   AnonymousTableDefine {children: Vec<Node> },
   EmptyTable {children: Vec<Node> },
   AnonymousMatrixDefine {children: Vec<Node> },
@@ -116,6 +117,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Binding{children} => {write!(f,"Binding\n").ok(); Some(children)},
     Node::FunctionBinding{children} => {write!(f,"FunctionBinding\n").ok(); Some(children)},
     Node::TableDefine{children} => {write!(f,"TableDefine\n").ok(); Some(children)},
+    Node::TableSelect{children} => {write!(f,"TableSelect\n").ok(); Some(children)},
     Node::AnonymousTableDefine{children} => {write!(f,"AnonymousTableDefine\n").ok(); Some(children)},
     Node::EmptyTable{children} => {write!(f,"EmptyTable\n").ok(); Some(children)},
     Node::InlineTable{children} => {write!(f,"InlineTable\n").ok(); Some(children)},
@@ -530,6 +532,24 @@ impl Ast {
         }
         compiled.push(Node::TableDefine{children});
       },
+      parser::Node::TableSelect{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            Node::SelectData{..} => {
+              children.push(Node::Expression{
+                children: vec![Node::AnonymousTableDefine{
+                  children: vec![Node::TableRow{
+                    children: vec![Node::TableColumn{
+                      children: vec![node]}]}]}]});
+            },
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::TableSelect{children});
+      },      
       parser::Node::AddRow{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();

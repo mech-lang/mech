@@ -229,6 +229,53 @@ impl Compiler {
           });
         }
       }
+      Node::TableSelect{children} => {
+        let output_table_id = TableId::Local(hash_str(&format!("{:?}", children)));
+
+        let mut input = self.compile_node(&children[0])?;
+        let mut rhs = vec![];
+        if input.len() > 0 {
+          loop { 
+            match &mut input[0] {
+              Transformation::NewTable{table_id,..} => {
+                rhs.push((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
+                break;
+              },
+              Transformation::Select{table_id,ref indices} => {
+                let table_id = table_id.clone();
+                let indices = indices.clone();
+                input.remove(0);
+                rhs.push((table_id,indices));
+                break;
+              },
+              Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+                input.remove(0);
+                input.remove(0);
+                input.remove(0);
+                continue;
+              },
+              _ => break,
+            }
+          }
+          let (input_table_id, input_indices) = &rhs[0];
+          
+          match input_indices[0] {
+            (TableIndex::All,TableIndex::All) => {
+              tfms.push(Transformation::TableAlias{table_id: *input_table_id, alias: *output_table_id.unwrap()});
+              tfms.append(&mut input);
+            }
+            _ => {
+              tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
+              tfms.append(&mut input);
+              tfms.push(Transformation::TableDefine{
+                table_id: input_table_id.clone(), 
+                indices: input_indices.clone(), 
+                out: output_table_id
+              });
+            }
+          }
+        }
+      }
       Node::VariableDefine{children} => {
         let mut output = self.compile_node(&children[0])?;
         // Get the output table id
