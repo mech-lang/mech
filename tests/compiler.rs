@@ -2,8 +2,6 @@
 extern crate mech_syntax;
 extern crate mech_core;
 
-use mech_syntax::parser::Parser;
-use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,16 +11,11 @@ macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
     #[test]
     fn $func() {
-      let mut parser = Parser::new();
-      let mut ast = Ast::new();
       let mut compiler = Compiler::new();
       let mut core = Core::new();
 
       let input = String::from($input);
-      parser.parse(&input);
-
-      ast.build_syntax_tree(&parser.parse_tree);
-      let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
+      let blocks = compiler.compile_str(&input).unwrap();
       
       for block in blocks {
         core.insert_block(Rc::new(RefCell::new(block)));

@@ -3,6 +3,7 @@
 // ## Prelude
 
 use crate::lexer::Token;
+use mech_core::MechError;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -347,96 +348,28 @@ pub fn spacer(width: usize) {
   print!("├");
 }
 
-// ## Parser
 
-#[derive(Clone)]
-pub struct Parser {
-  pub tokens: Vec<Token>,
-  pub parse_tree: Node,
-  pub unparsed: String,
-  pub text: String,
-}
 
-impl Parser {
+pub fn parse(text: &str) -> Result<Node,MechError> {
 
-  pub fn new() -> Parser {
-    Parser {
-      text: String::from(""),
-      tokens: Vec::new(),
-      unparsed: String::from(""),
-      parse_tree: Node::Root{ children: Vec::new()  },
-    }
-  }
+  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
 
-  pub fn add_tokens(&mut self, tokens: &mut Vec<Token>) {
-    self.tokens.append(tokens);
-  }
-
-  pub fn parse(&mut self, text: &str) {
-
-    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-
-    let parse_tree = parse_mech(graphemes);
-    match parse_tree {
-      Ok((rest, tree)) => {
-        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
-        self.parse_tree = tree;
-      },
-      Err(q) => match q {
-        nom::Err::Error(qq) =>  {
-          //println!("{}", nom::error::convert_error(text, qq));
-        }
-        _ => (),
+  let parse_tree = parse_mech(graphemes);
+  match parse_tree {
+    Ok((rest, tree)) => {
+      let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
+      if unparsed != "" {
+        Err(MechError::GenericError(5424))
+      } else { 
+        Ok(tree)
       }
-      _ => (),
-    }
-  }
-
-  pub fn parse_block(&mut self, text: &str) {
-    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-    let parse_tree = parse_block(graphemes);
-    match parse_tree {
-      Ok((rest, tree)) => {
-        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
-        self.parse_tree = tree;
-      },
-      _ => (),
-    }
-  }
-
-  pub fn parse_fragment(&mut self, text: &str) -> Result<(),()> {
-    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-    let parse_tree = parse_fragment(graphemes);
-    match parse_tree {
-      Ok((rest, tree)) => {
-        self.unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
-        self.parse_tree = tree;
-        Ok(())
-      },
-      Err(x) => Err(()),
+    },
+    Err(q) => {
+      Err(MechError::GenericError(5423))
     }
   }
 }
 
-impl fmt::Debug for Parser {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-    write!(f, "┌───────────────────────────────────────┐\n").unwrap();
-    write!(f, "│ Parser\n").unwrap();
-    write!(f, "│ Length: {:?}\n", self.tokens.len()).unwrap();
-    write!(f, "├───────────────────────────────────────┤\n").unwrap();
-    for (ix, token) in self.tokens.iter().enumerate() {
-      let c1 = " "; //if self.position == ix + 1 { ">" } else { " " };
-      let c2 = " "; //if self.last_match == ix + 1 { ">" } else { " " };
-      write!(f, "│ {:}{:} {:?}\n", c1, c2, token).unwrap();
-    }
-    write!(f, "├───────────────────────────────────────┤\n").unwrap();
-    write!(f, "{:?}", self.parse_tree);
-    write!(f, "└───────────────────────────────────────┘\n").unwrap();
-    Ok(())
-  }
-}
 
 pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
   let tag = tag.to_string();
