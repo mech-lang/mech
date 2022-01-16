@@ -29,11 +29,11 @@ use std::io::prelude::*;
 
 //extern crate nom;
 
-pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
+pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechError> {
 
   let mut code: Vec<MechCode> = Vec::new();
 
-  let read_file_to_code = |path: &Path| -> Vec<MechCode> {
+  let read_file_to_code = |path: &Path| -> Result<Vec<MechCode>, MechError> {
     let mut code: Vec<MechCode> = Vec::new();
     match (path.to_str(), path.extension())  {
       (Some(name), Some(extension)) => {
@@ -46,12 +46,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
                 match bincode::deserialize_from(&mut reader) {
                   Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
-                    println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                    return Err(MechError::GenericError(7492));
                   },
                 }
               }
               Err(err) => {
-                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                return Err(MechError::GenericError(7493));
               },
             };
           }
@@ -64,16 +64,16 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                return Err(MechError::GenericError(7494));
               },
             };
           }
-          _ => (),
+          _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {println!("{} Failed to load {:?}", "[Error]".bright_red(), path);},
+      _ => {return Err(MechError::GenericError(7496));},
     }
-    code
+    Ok(code)
   };
 
   for path_str in mech_paths {
@@ -81,39 +81,46 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
       println!("{} {}", "[Downloading]".bright_green(), path.display());
-      let program = reqwest::blocking::get(path.to_str().unwrap())?.text()?;
-      code.push(MechCode::String(program));
+      match reqwest::blocking::get(path.to_str().unwrap()) {
+        Ok(response) => {
+          match response.text() {
+            Ok(text) => code.push(MechCode::String(text)),
+            _ => {return Err(MechError::GenericError(7497));},
+          }
+        }
+        _ => {return Err(MechError::GenericError(7498));},
+      }
     } else {
       // Compile a directory of mech files
       if path.is_dir() {
         for entry in path.read_dir().expect("read_dir call failed") {
           if let Ok(entry) = entry {
             let path = entry.path();
-            let mut new_code = read_file_to_code(&path);
+            let mut new_code = read_file_to_code(&path)?;
             code.append(&mut new_code);
           }
         }
       } else if path.is_file() {
         // Compile a single file
-        let mut new_code = read_file_to_code(&path);
+        let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        println!("{} Failed to open {:?}", "[Error]".bright_red(), path);
+        return Err(MechError::GenericError(7499));
       }
     };
   }
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniBlock> {
+pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
   println!("{}", "[Compiling] ".bright_green());
   let mut miniblocks = vec![];
   for c in code {
     match c {
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
-        let blocks = compiler.compile_str(&c);
-        let mut mb = blocks.iter().flat_map(|p| minify_blocks(p)).collect::<Vec<MiniBlock>>();
+        let blocks = compiler.compile_str(&c)?;
+        let mut mb = minify_blocks(&blocks);
         miniblocks.append(&mut mb);
       },
       MechCode::MiniBlocks(mut mb) => {
@@ -121,7 +128,7 @@ pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniBlock> {
       },
     }
   }
-  miniblocks
+  Ok(miniblocks)
 }
 
 pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
