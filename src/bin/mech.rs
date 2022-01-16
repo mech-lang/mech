@@ -349,17 +349,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
     let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
 
-    let mut code: Vec<MechCode> = read_mech_files(&mech_paths)?;
+    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error]));
+        std::process::exit(1);
+      }
+    };
+
+
     if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));
       let inargs_code = format!("#system/input-arguments += [{}]", arg_string);
       code.push(MechCode::String(inargs_code));
     }
-    let blocks = compile_code(code);
+    let blocks = match compile_code(code) {
+      Ok(blocks) => blocks,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error]));
+        std::process::exit(1);
+      }
+    };
+
     println!("{}", "[Running]".bright_green());
+
     let runner = ProgramRunner::new("Mech Runner", 1000);
     let mech_client = runner.run();
-    
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
@@ -527,7 +542,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let code = read_mech_files(&mech_paths)?;
+    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error]));
+        std::process::exit(1);
+      }
+    };
     let programs = compile_code(code);
 
     let output_name = match matches.value_of("output_name") {
