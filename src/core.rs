@@ -19,7 +19,7 @@ pub struct Core {
   blocks: Vec<BlockRef>,
   unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
-  errors: HashMap<MechError,Vec<BlockRef>>,
+  pub errors: HashMap<MechError,Vec<BlockRef>>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
