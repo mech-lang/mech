@@ -1399,7 +1399,7 @@ pub fn program(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn parse_mech(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, program) = many1(alt((program, fragment)))(input)?;
+  let (input, program) = many1(alt((fragment, program)))(input)?;
   Ok((input, Node::Root { children: program }))
 }
 
