@@ -136,6 +136,11 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
   for block in blocks {
     let mut miniblock = MiniBlock::new();
     miniblock.transformations = block.transformations.clone();
+    match &block.unsatisfied_transformation {
+      Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
+      _ => (),
+    }
+    miniblock.transformations.append(&mut block.pending_transformations.clone());
     /*for (k,v) in block.store.number_literals.iter() {
       miniblock.number_literals.push((k.clone(), v.clone()));
     }
