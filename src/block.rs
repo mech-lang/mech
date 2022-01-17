@@ -102,7 +102,7 @@ pub struct Block {
   pub changes: Transaction,
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
-  pending_transformations: Vec<Transformation>,
+  pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
   pub output: Vec<TableId>,
 }
