@@ -31,22 +31,13 @@ pub enum ReplCommand {
 }
 
 fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  // Try parsing mech code
+  // Try parsing mech code fragment
   let mut compiler = compiler::Compiler::new();
-  match compiler.compile_str(input) {
+  match compiler.compile_fragment(input) {
     Ok(compiled) => {
       Ok((input, ReplCommand::Code(input.to_string())))
     },
-    Err(_) => {
-      // Try parsing it as an anonymous statement
-      let command = format!("#ans = {}", input.trim());
-      match compiler.compile_str(input) { 
-        Ok(compiled) => {
-          Ok((input, ReplCommand::EchoCode(command.to_string())))
-        }
-        Err(_) => Ok((input, ReplCommand::Error)),
-      }
-    }
+    Err(_) => Ok((input, ReplCommand::Error)),
   }
 }
 
