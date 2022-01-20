@@ -372,6 +372,28 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
   }
 }
 
+pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
+
+  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+
+  let parse_tree = parse_mech_fragment(graphemes);
+  match parse_tree {
+    Ok((rest, tree)) => {
+      let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
+      if unparsed != "" {
+        println!("{:?}", unparsed);
+        Err(MechError::GenericError(5434))
+      } else { 
+        Ok(tree)
+      }
+    },
+    Err(q) => {
+      Err(MechError::GenericError(5433))
+    }
+  }
+}
+
+
 
 pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
   let tag = tag.to_string();
@@ -1416,7 +1438,7 @@ pub fn parse_block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::Block { children:  transformations }))
 }
 
-pub fn parse_fragment(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+pub fn parse_mech_fragment(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, statement) = statement(input)?;
   Ok((input, Node::Fragment { children:  vec![statement] }))
 }
