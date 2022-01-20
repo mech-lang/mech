@@ -5,7 +5,7 @@
 use mech_core::*;
 
 use crate::ast::{Ast, Node};
-use crate::parser::parse;
+use crate::parser::{parse, parse_fragment};
 use crate::lexer::Token;
 //use super::formatter::Formatter;
 
@@ -69,6 +69,14 @@ impl Compiler {
 
   pub fn compile_str(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
     let parse_tree = parse(code)?;
+    let mut ast = Ast::new();
+    ast.build_syntax_tree(&parse_tree);
+    let mut compiler = Compiler::new();
+    compiler.compile_blocks(&vec![ast.syntax_tree.clone()])
+  }
+
+  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
+    let parse_tree = parse_fragment(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
     let mut compiler = Compiler::new();
