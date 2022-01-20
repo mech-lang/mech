@@ -1399,8 +1399,8 @@ pub fn program(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn parse_mech(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, program) = many1(alt((fragment, program)))(input)?;
-  Ok((input, Node::Root { children: program }))
+  let (input, mech) = alt((program,fragment))(input)?;
+  Ok((input, Node::Root { children: vec![mech] }))
 }
 
 fn raw_transformation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
