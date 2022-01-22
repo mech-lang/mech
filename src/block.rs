@@ -148,12 +148,12 @@ impl Block {
     }
   }
 
-  pub fn gen_id(&mut self) -> u64 {
+  pub fn gen_id(&mut self) -> BlockId {
     self.id = hash_str(&format!("{:?}",self.transformations));
     self.id
   }
 
-  pub fn id(&self) -> u64 {
+  pub fn id(&self) -> BlockId {
     self.id
   }
 
@@ -1415,7 +1415,6 @@ impl Block {
                 }
               }
               x => {
-                println!("{:?}", x);
                 return Err(MechError::GenericError(6364));
               },
             }

@@ -16,7 +16,7 @@ pub type BlockRef = Rc<RefCell<Block>>;
 
 #[derive(Clone, Debug)]
 pub struct Core {
-  blocks: Vec<BlockRef>,
+  pub blocks: HashMap<BlockId,BlockRef>,
   unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
@@ -27,7 +27,7 @@ impl Core {
 
   pub fn new() -> Core {
     Core {
-      blocks: Vec::new(),
+      blocks: HashMap::new(),
       unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
       errors: HashMap::new(),
@@ -104,14 +104,16 @@ impl Core {
     }
   }
 
-  pub fn insert_blocks(&mut self, mut blocks: Vec<Block>) -> Result<(),MechError> {
+  pub fn insert_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
+    let mut block_ids = vec![];
     for block in blocks {
-      self.insert_block(Rc::new(RefCell::new(block.clone())))?;
+      let block_id = self.insert_block(Rc::new(RefCell::new(block.clone())))?;
+      block_ids.push(block_id);
     }
-    Ok(())
+    Ok(block_ids)
   }
 
-  pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<(),MechError> {
+  pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<BlockId,MechError> {
     let block_ref_c = block_ref.clone();
     let mut block_brrw = block_ref.borrow_mut();
     let temp_db = block_brrw.global_database.clone();
@@ -128,9 +130,9 @@ impl Core {
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
-        block_brrw.gen_id();
+        let id = block_brrw.gen_id();
         let block_output = block_brrw.output.clone();
-        self.blocks.push(block_ref_c.clone());
+        self.blocks.insert(id,block_ref_c.clone());
         for table_id in block_output {
           match self.errors.remove(&MechError::MissingTable(table_id)) {
             Some(mut ublocks) => {
@@ -141,7 +143,7 @@ impl Core {
             None => (),
           }
         }
-        Ok(())
+        Ok(id)
       }
       false => {
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
@@ -153,6 +155,7 @@ impl Core {
   }
 
   pub fn step(&mut self, register: &(u64,usize,usize)) {
+    /*
     match &mut self.schedules.get(register) {
       Some(schedule) => {
         for blocks in schedule.iter() {
@@ -163,6 +166,6 @@ impl Core {
       }
       _ => (),
     }
-
+    */
   }
 }
