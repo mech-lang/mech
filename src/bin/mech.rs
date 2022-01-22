@@ -357,12 +357,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
     };
 
-
-    if input_arguments.len() > 0 {
+    /*if input_arguments.len() > 0 {
       let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));
       let inargs_code = format!("#system/input-arguments += [{}]", arg_string);
       code.push(MechCode::String(inargs_code));
-    }
+    }*/
+    
     let blocks = match compile_code(code) {
       Ok(blocks) => blocks,
       Err(mech_error) => {
