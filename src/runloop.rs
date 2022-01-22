@@ -483,21 +483,36 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           } 
-          (Ok(RunLoopMessage::Code(code)), _) => {          
+          (Ok(RunLoopMessage::Code(code)), _) => {
             // Load the program
             match code {
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
-                let blocks = compiler.compile_str(&code);
-                for b in blocks {
-                  program.mech.insert_blocks(b); 
+                match compiler.compile_str(&code) {
+                  Ok(blocks) => {
+                    match program.mech.insert_blocks(blocks) {
+                      Ok(new_block_ids) => {
+                        let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
+                        let out_id = match block.transformations.last() {
+                          Some(Transformation::Function{name,arguments,out}) => {
+                            let (out_id,_,_) = out;
+                            *out_id
+                          } 
+                          _ => TableId::Local(0),
+                        };
+                        let out_table = block.get_table(&out_id).unwrap();
+                        println!("{:?}", out_table);
+                      }
+                      Err(mech_error) => println!("{:?}", mech_error),
+                    } 
+                    
+                  }
+                  Err(mech_error) => println!("{:?}", mech_error),
                 }
               },
               MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
-                for miniblock in miniblocks {
-                  blocks.push(maximize_block(&miniblock));
-                }
+                let blocks = miniblocks.iter().map(|b| maximize_block(&b)).collect();
                 program.mech.insert_blocks(blocks);
               }
             }
@@ -509,11 +524,11 @@ impl ProgramRunner {
             for error in &program.mech.runtime.errors {
               program.errors.insert(error.clone());
             }*/
-            println!("{:?}", program.mech.errors);
             if program.mech.errors.len() > 0 {
+              println!("Errors found: {:?}", program.mech.errors.len());
               //let error_string = format_errors();
               //client_outgoing.send(ClientMessage::String(error_string));
-              client_outgoing.send(ClientMessage::Exit(1));
+              //client_outgoing.send(ClientMessage::Exit(1));
             }
             client_outgoing.send(ClientMessage::StepDone);
           }
