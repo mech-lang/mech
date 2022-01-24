@@ -104,6 +104,7 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
+  pub strings: HashMap<u64,MechString>,
   pub output: Vec<TableId>,
 }
 
@@ -119,6 +120,7 @@ impl Block {
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
+      strings: HashMap::new(),
       output: Vec::new(),
     }
   }
@@ -463,6 +465,9 @@ impl Block {
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
     match &tfm {
+      Transformation::Identifier{name, id} => {
+        self.strings.insert(*id, name.to_vec());
+      }
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
           TableId::Local(id) => {
