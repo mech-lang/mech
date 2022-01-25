@@ -381,7 +381,6 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        println!("{:?}", unparsed);
         Err(MechError::GenericError(5434))
       } else { 
         Ok(tree)
@@ -1421,7 +1420,7 @@ pub fn program(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn parse_mech(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, mech) = alt((program,fragment))(input)?;
+  let (input, mech) = alt((program,statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
 
@@ -1440,5 +1439,5 @@ pub fn parse_block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 pub fn parse_mech_fragment(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, statement) = statement(input)?;
-  Ok((input, Node::Fragment { children:  vec![statement] }))
+  Ok((input, Node::Root { children:  vec![statement] }))
 }

@@ -12,11 +12,7 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  let parse_tree = parser::parse(r#"
-block
-  #x = [99 98 97]
-block 
-  #x{2} + 3"#)?;
+  let parse_tree = parser::parse(r#"#test = 1 + 1"#)?;
 
   println!("{:#?}", parse_tree);
 
