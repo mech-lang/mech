@@ -238,7 +238,7 @@ impl Ast {
     self.depth += 1;
     match node {
       parser::Node::Root{children} => self.syntax_tree = Node::Root{children: self.compile_nodes(children)},
-      parser::Node::Fragment{children} => compiled.push(Node::Fragment{children: self.compile_nodes(children)}),
+      parser::Node::Fragment{children} => self.syntax_tree = Node::Root{children: self.compile_nodes(children)},
       parser::Node::Program{children} => {
         let result = self.compile_nodes(children);
         let mut children = vec![];
