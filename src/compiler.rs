@@ -96,7 +96,11 @@ impl Compiler {
       }
       blocks.push(block);
     }
-    Ok(blocks)
+    if blocks.len() > 0 {
+      Ok(blocks)
+    } else {
+      Err(MechError::GenericError(8492))
+    }
   }
 
   pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Result<Vec<Transformation>,MechError> {
