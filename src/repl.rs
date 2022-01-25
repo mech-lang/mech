@@ -1,4 +1,6 @@
 use mech_syntax::*;
+use mech_utilities::*;
+use crate::minify_blocks;
 
 #[macro_use]
 use nom::{
@@ -23,7 +25,7 @@ pub enum ReplCommand {
   PrintCore(Option<u64>),
   Clear,
   Table(u64),
-  Code(String),
+  Code(MechCode),
   EchoCode(String),
   //ParsedCode(ParserNode),
   Empty,
@@ -34,8 +36,9 @@ fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   // Try parsing mech code fragment
   let mut compiler = compiler::Compiler::new();
   match compiler.compile_fragment(input) {
-    Ok(compiled) => {
-      Ok((input, ReplCommand::Code(input.to_string())))
+    Ok(blocks) => {
+      let mut mb = minify_blocks(&blocks);
+      Ok((input, ReplCommand::Code(MechCode::MiniBlocks(mb))))
     },
     Err(_) => Ok((input, ReplCommand::Error)),
   }

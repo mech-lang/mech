@@ -682,7 +682,7 @@ clear   - reset the current core
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
         (Ok(ClientMessage::Done)) => {
-          println!("Done");
+          print!("{}", ">: ".truecolor(246,192,78));
           // Do nothing
         },
         (Err(x)) => {
@@ -690,7 +690,7 @@ clear   - reset the current core
           break 'receive_loop;
         }
         q => {
-          println!("else: {:?}", q);
+          //println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -702,7 +702,7 @@ clear   - reset the current core
     
     io::stdout().flush().unwrap();
     // Print a prompt
-    print!("{}", ">: ".truecolor(246,192,78));
+    //print!("{}", ">: ".truecolor(246,192,78));
     io::stdout().flush().unwrap();
     let mut input = String::new();
 
@@ -753,8 +753,8 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            println!("Code {:?}", code);
-            mech_client.send(RunLoopMessage::Code(MechCode::String(code)));
+            //println!("Code {:?}", code);
+            mech_client.send(RunLoopMessage::Code(code));
           },
           ReplCommand::EchoCode(code) => {
             println!("EchoCode {:?}", code);
