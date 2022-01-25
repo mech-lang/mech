@@ -485,37 +485,41 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             // Load the program
-            match code {
+            let blocks = match code {
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
                 match compiler.compile_str(&code) {
-                  Ok(blocks) => {
-                    match program.mech.insert_blocks(blocks) {
-                      Ok(new_block_ids) => {
-                        let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
-                        let out_id = match block.transformations.last() {
-                          Some(Transformation::Function{name,arguments,out}) => {
-                            let (out_id,_,_) = out;
-                            *out_id
-                          } 
-                          _ => TableId::Local(0),
-                        };
-                        let out_table = block.get_table(&out_id).unwrap();
-                        println!("{:?}", out_table);
-                      }
-                      Err(mech_error) => println!("{:?}", mech_error),
-                    } 
-                    
-                  }
-                  Err(mech_error) => println!("{:?}", mech_error),
+                  Ok(blocks) => blocks,
+                  Err(_) => {continue 'runloop;}
                 }
               },
               MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
-                let blocks = miniblocks.iter().map(|b| maximize_block(&b)).collect();
-                program.mech.insert_blocks(blocks);
+                miniblocks.iter().map(|b| maximize_block(&b)).collect()
               }
-            }
+            };
+            let new_block_ids = match program.mech.insert_blocks(blocks) {
+              Ok(new_block_ids) => new_block_ids,
+              Err(_) => {continue 'runloop;}
+            };
+
+            let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
+            let out_id = match block.transformations.last() {
+              Some(Transformation::Function{name,arguments,out}) => {
+                let (out_id,_,_) = out;
+                *out_id
+              } 
+              Some(Transformation::TableDefine{table_id,indices,out}) => {
+                *out
+              } 
+              _ => TableId::Local(0),
+            };
+            let out_table = block.get_table(&out_id).unwrap();
+            println!("{:?}", out_table.borrow());
+
+
+
+
             /*
             // Start the program
             program.trigger_machines();
