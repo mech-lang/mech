@@ -114,3 +114,21 @@ impl MechFunction for NotS
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+
+pub fn logic_not(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+  let arg_dims = block.get_arg_dims(&arguments)?;
+  match &arg_dims[0] {
+    TableShape::Column(rows) => {
+      let mut argument_columns = block.get_arg_columns(arguments)?;
+      let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
+      match (&argument_columns[0], &out_column) {
+        ((_,Column::Bool(arg),_), Column::Bool(out)) => {
+          block.plan.push(NotV{arg: arg.clone(), out: out.clone() });
+        }
+        _ => {return Err(MechError::GenericError(1964));},
+      }
+    }
+    _ => {return Err(MechError::GenericError(1965));},
+  }
+  Ok(())
+}

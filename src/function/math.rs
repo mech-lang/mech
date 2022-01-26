@@ -230,3 +230,31 @@ macro_rules! binary_infix_par_sv {
     }
   )
 }
+
+pub fn math_negate(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+  let arg_dims = block.get_arg_dims(&arguments)?;
+  match &arg_dims[0] {
+    TableShape::Column(rows) => {
+      let mut argument_columns = block.get_arg_columns(arguments)?;
+      let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
+      match (&argument_columns[0], &out_column) {
+        ((_,Column::I8(arg),_), Column::I8(out)) => {
+          block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
+        }
+        _ => {return Err(MechError::GenericError(1961));},
+      }
+    }
+    TableShape::Scalar => {
+      let mut argument_columns = block.get_arg_columns(arguments)?;
+      let out_column = block.get_out_column(out, 1, ValueKind::I8)?;
+      match (&argument_columns[0], &out_column) {
+        ((_,Column::I8(arg),_), Column::I8(out)) => {
+          block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
+        }
+        _ => {return Err(MechError::GenericError(1962));},
+      }
+    }
+    _ => {return Err(MechError::GenericError(1963));},
+  }
+  Ok(())
+}

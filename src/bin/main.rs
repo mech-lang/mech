@@ -31,7 +31,7 @@ fn main() -> Result<(),MechError> {
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   let mut total_time = VecDeque::new();  
   let start_ns0 = time::precise_time_ns();
-  let n = 1e7 as usize;
+  let n = 1e6 as usize;
 
   // Create a core
   let mut core = Core::new();

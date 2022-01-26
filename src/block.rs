@@ -911,47 +911,10 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6345));},
           }
-        } else if *name == *MATH_NEGATE {
-          let arg_dims = self.get_arg_dims(&arguments)?;
-          match &arg_dims[0] {
-            TableShape::Column(rows) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, *rows, ValueKind::I8)?;
-              match (&argument_columns[0], &out_column) {
-                ((_,Column::I8(arg),_), Column::I8(out)) => {
-                  self.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
-                }
-                _ => {return Err(MechError::GenericError(1961));},
-              }
-            }
-            TableShape::Scalar => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, 1, ValueKind::I8)?;
-              match (&argument_columns[0], &out_column) {
-                ((_,Column::I8(arg),_), Column::I8(out)) => {
-                  self.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
-                }
-                _ => {return Err(MechError::GenericError(1962));},
-              }
-            }
-            _ => {return Err(MechError::GenericError(1963));},
-          }
-        } else if *name == *LOGIC_NOT {
-          let arg_dims = self.get_arg_dims(&arguments)?;
-          match &arg_dims[0] {
-            TableShape::Column(rows) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
-              match (&argument_columns[0], &out_column) {
-                ((_,Column::Bool(arg),_), Column::Bool(out)) => {
-                  self.plan.push(NotV{arg: arg.clone(), out: out.clone() });
-                }
-                _ => {return Err(MechError::GenericError(1964));},
-              }
-            }
-            _ => {return Err(MechError::GenericError(1965));},
-          }
-        } else if *name == *LOGIC_AND ||
+        } 
+        else if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
+        else if *name == *LOGIC_NOT { logic_not(self,&arguments,&out)?; } 
+        else if *name == *LOGIC_AND ||
                   *name == *LOGIC_OR ||
                   *name == *LOGIC_XOR 
         {
@@ -983,134 +946,21 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(1341));},
           }
-        } else if *name == *COMPARE_GREATER__THAN ||
-                  *name == *COMPARE_GREATER__THAN__EQUAL ||
-                  *name == *COMPARE_LESS__THAN__EQUAL ||
-                  *name == *COMPARE_EQUAL ||
-                  *name == *COMPARE_NOT__EQUAL ||
-                  *name == *COMPARE_LESS__THAN 
-        {
-          let arg_dims = self.get_arg_dims(&arguments)?;
-          match (&arg_dims[0],&arg_dims[1]) {
-            (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else {return Err(MechError::GenericError(1241));}
-                }
-                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
-                  else {return Err(MechError::GenericError(1242));}
-                }
-                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualSS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
-                  else {return Err(MechError::GenericError(1243));}
-                }
-                _ => {return Err(MechError::GenericError(1240));},
-              }
-            }
-            (TableShape::Column(rows), TableShape::Scalar) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, *rows, ValueKind::Bool)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                }
-                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
-                }
-                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVS::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }                
-                }
-                _ => {return Err(MechError::GenericError(1252));},
-              }
-            }
-            (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
-              if lhs_rows != rhs_rows {
-                return Err(MechError::GenericError(6523));
-              }
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_GREATER__THAN { self.plan.push(GreaterThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN { self.plan.push(LessThanVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_GREATER__THAN__EQUAL { self.plan.push(GreaterThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_LESS__THAN__EQUAL { self.plan.push(LessThanEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                }
-                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                }
-                ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-                  if *name == *COMPARE_EQUAL { self.plan.push(EqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                  else if *name == *COMPARE_NOT__EQUAL { self.plan.push(NotEqualVV::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
-                }
-                _ => {return Err(MechError::GenericError(1242));},
-              }
-            }
-            x => {return Err(MechError::GenericError(6348));},
-          }                    
-        } else if *name == *TABLE_APPEND {
-          let arg_shape = self.get_arg_dim(&arguments[0])?;
-          let (_,_,indices) = &arguments[0];
-          let (arow_ix,_) = indices[0];
-
-          let (_,src_table_id,src_indices) = &arguments[0];
-          let (src_rows,src_cols) = src_indices[0];
-          let (dest_table_id, _, _) = out;
-        
-          let src_table = self.get_table(&src_table_id)?;
-          let dest_table = self.get_table(dest_table_id)?;
-
-          {
-            let mut src_table_brrw = src_table.borrow_mut();
-            let mut dest_table_brrw = dest_table.borrow_mut();
-            match dest_table_brrw.kind() {
-              ValueKind::Empty => {
-                dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
-                dest_table_brrw.set_kind(src_table_brrw.kind());
-                dest_table_brrw.rows = 0;
-              },
-              x => {
-              }
-            }
-          }
-          
-          let dest_shape = {dest_table.borrow().shape()};
-          match (arg_shape,arow_ix,dest_shape) {
-            (TableShape::Scalar,TableIndex::Index(ix),TableShape::Column(_)) => {
-              self.plan.push(AppendRowSV{arg: src_table.clone(), ix: ix-1, out: dest_table.clone()});
-            }
-            x => {
-              self.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
-            },
-          }
-        } else if *name == *TABLE_RANGE { table_range(self,&arguments,&out)?; } 
+        }
+        else if *name == *COMPARE_EQUAL { compare_equal(self,&arguments,&out)?; } 
+        else if *name == *COMPARE_NOT__EQUAL { compare_not__equal(self,&arguments,&out)?; } 
+        else if *name == *COMPARE_LESS__THAN { compare_less__than(self,&arguments,&out)?; } 
+        else if *name == *COMPARE_LESS__THAN__EQUAL { compare_less__than__equal(self,&arguments,&out)?; } 
+        else if *name == *COMPARE_GREATER__THAN { compare_greater__than(self,&arguments,&out)?; } 
+        else if *name == *COMPARE_GREATER__THAN__EQUAL { compare_greater__than__equal(self,&arguments,&out)?; } 
         else if *name == *STATS_SUM { stats_sum(self,&arguments,&out)?; } 
         else if *name == *SET_ANY { set_any(self,&arguments,&out)?; } 
         else if *name == *SET_ALL { set_all(self,&arguments,&out)?; } 
         else if *name == *TABLE_SPLIT { table_split(self,&arguments,&out)?;}
         else if *name == *TABLE_VERTICAL__CONCATENATE { table_vertical__concatenate(self,&arguments,&out)?; } 
         else if *name == *TABLE_HORIZONTAL__CONCATENATE { table_horizontal__concatenate(self,&arguments,&out)?; }       
+        else if *name == *TABLE_APPEND { table_append(self,&arguments,&out)?; } 
+        else if *name == *TABLE_RANGE { table_range(self,&arguments,&out)?; }
         else {
           return Err(MechError::MissingFunction(*name));
         }

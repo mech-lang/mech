@@ -653,3 +653,42 @@ pub fn table_range(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId,
   }
   Ok(())
 }
+
+pub fn table_append(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+
+  let arg_shape = block.get_arg_dim(&arguments[0])?;
+  let (_,_,indices) = &arguments[0];
+  let (arow_ix,_) = indices[0];
+
+  let (_,src_table_id,src_indices) = &arguments[0];
+  let (src_rows,src_cols) = src_indices[0];
+  let (dest_table_id, _, _) = out;
+
+  let src_table = block.get_table(&src_table_id)?;
+  let dest_table = block.get_table(dest_table_id)?;
+
+  {
+    let mut src_table_brrw = src_table.borrow_mut();
+    let mut dest_table_brrw = dest_table.borrow_mut();
+    match dest_table_brrw.kind() {
+      ValueKind::Empty => {
+        dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+        dest_table_brrw.set_kind(src_table_brrw.kind());
+        dest_table_brrw.rows = 0;
+      },
+      x => {
+      }
+    }
+  }
+
+  let dest_shape = {dest_table.borrow().shape()};
+  match (arg_shape,arow_ix,dest_shape) {
+    (TableShape::Scalar,TableIndex::Index(ix),TableShape::Column(_)) => {
+      block.plan.push(AppendRowSV{arg: src_table.clone(), ix: ix-1, out: dest_table.clone()});
+    }
+    x => {
+      block.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
+    },
+  }
+  Ok(())
+}
