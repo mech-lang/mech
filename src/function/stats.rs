@@ -7,6 +7,12 @@ use num_traits::*;
 use rayon::prelude::*;
 use std::thread;
 
+lazy_static! {
+  static ref COLUMN: u64 = hash_str("column");
+  static ref ROW: u64 = hash_str("row");
+  static ref TABLE: u64 = hash_str("table");
+}
+
 // stats/sum(column: x)
 #[derive(Debug)]
 pub struct StatsSumCol<T> {
@@ -115,4 +121,39 @@ impl MechFunction for StatsSumColTIx {
     (*self.out.borrow_mut())[0] = sum;
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+pub fn stats_sum(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+
+  let (arg_name,arg_table_id,_) = arguments[0];
+  let (out_table_id, _, _) = out;
+  let out_table = block.get_table(out_table_id)?;
+  let mut out_brrw = out_table.borrow_mut();
+  out_brrw.set_kind(ValueKind::U8);
+  if arg_name == *COLUMN {
+    let arg = block.get_arg_columns(arguments)?[0].clone();
+    let out_table = block.get_table(out_table_id)?;
+    out_brrw.resize(1,1);
+    let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+    match arg {
+      (_,Column::U8(col),ColumnIndex::Index(_)) => block.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
+      (_,Column::U8(col),ColumnIndex::All) => block.plan.push(StatsSumCol::<u8>{col: col.clone(), out: out_col.clone()}),
+      (_,Column::U8(col),ColumnIndex::Bool(ix_col)) => block.plan.push(StatsSumColVIx{col: col.clone(), ix: ix_col.clone(), out: out_col.clone()}),
+      (_,Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_) => block.plan.push(StatsSumColTIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
+      x => {return Err(MechError::GenericError(6351));},
+    }
+  } else if arg_name == *ROW { 
+    let arg_table = block.get_table(&arg_table_id)?;
+    out_brrw.resize(arg_table.borrow().rows,1);
+    let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+    block.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()})
+  } else if arg_name == *TABLE {
+    let arg_table = block.get_table(&arg_table_id)?;
+    out_brrw.resize(1,1);
+    let out_col = out_brrw.get_column_unchecked(0).get_u8().unwrap();
+    block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})
+  } else {
+    return Err(MechError::GenericError(6352));
+  }
+  Ok(())
 }
