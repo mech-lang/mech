@@ -7,6 +7,13 @@ use num_traits::*;
 use rayon::prelude::*;
 use std::thread;
 
+lazy_static! {
+  pub static ref LOGIC_AND: u64 = hash_str("logic/and");  
+  pub static ref LOGIC_OR: u64 = hash_str("logic/or");
+  pub static ref LOGIC_NOT: u64 = hash_str("logic/not");  
+  pub static ref LOGIC_XOR: u64 = hash_str("logic/xor");    
+}
+
 // And Vector : Vector
 #[derive(Debug)]
 pub struct AndVV {
@@ -115,58 +122,66 @@ impl MechFunction for NotS
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-pub fn logic_not(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-  let arg_dims = block.get_arg_dims(&arguments)?;
-  match &arg_dims[0] {
-    TableShape::Column(rows) => {
-      let mut argument_columns = block.get_arg_columns(arguments)?;
-      let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
-      match (&argument_columns[0], &out_column) {
-        ((_,Column::Bool(arg),_), Column::Bool(out)) => {
-          block.plan.push(NotV{arg: arg.clone(), out: out.clone() });
+pub struct LogicNot {}
+
+impl MechFunctionCompiler for LogicNot {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    let arg_dims = block.get_arg_dims(&arguments)?;
+    match &arg_dims[0] {
+      TableShape::Column(rows) => {
+        let mut argument_columns = block.get_arg_columns(arguments)?;
+        let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
+        match (&argument_columns[0], &out_column) {
+          ((_,Column::Bool(arg),_), Column::Bool(out)) => {
+            block.plan.push(NotV{arg: arg.clone(), out: out.clone() });
+          }
+          _ => {return Err(MechError::GenericError(1964));},
         }
-        _ => {return Err(MechError::GenericError(1964));},
       }
+      _ => {return Err(MechError::GenericError(1965));},
     }
-    _ => {return Err(MechError::GenericError(1965));},
+    Ok(())
   }
-  Ok(())
 }
 
 logic_compiler!(logic_and,AndSS,AndSS,AndVV);
 logic_compiler!(logic_or,OrSS,OrSS,OrVV);
 logic_compiler!(logic_xor,XorSS,XorSS,XorVV);
 
-
 #[macro_export]
 macro_rules! logic_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
-    pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-      let arg_dims = block.get_arg_dims(&arguments)?;
-      match (&arg_dims[0],&arg_dims[1]) {
-        (TableShape::Scalar, TableShape::Scalar) => {
-          let mut argument_columns = block.get_arg_columns(arguments)?;
-          let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
-          match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op1{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+
+    pub struct $func_name {}
+
+    impl MechFunctionCompiler for $func_name {
+      fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+        let arg_dims = block.get_arg_dims(&arguments)?;
+        match (&arg_dims[0],&arg_dims[1]) {
+          (TableShape::Scalar, TableShape::Scalar) => {
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
+            match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
+                block.plan.push($op1{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+              }
+              _ => {return Err(MechError::GenericError(1340));},
             }
-            _ => {return Err(MechError::GenericError(1340));},
           }
-        }
-        (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
-          let mut argument_columns = block.get_arg_columns(arguments)?;
-          let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
-          match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+          (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
+            match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
+                block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+              }
+              _ => {return Err(MechError::GenericError(1342));},
             }
-            _ => {return Err(MechError::GenericError(1342));},
           }
+          _ => {return Err(MechError::GenericError(1341));},
         }
-        _ => {return Err(MechError::GenericError(1341));},
+        Ok(())
       }
-      Ok(())
     }
   )
 }

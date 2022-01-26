@@ -63,36 +63,6 @@ pub enum BlockState {
 
 // ## Block
 
-lazy_static! {
-  static ref COLUMN: u64 = hash_str("column");
-  static ref ROW: u64 = hash_str("row");
-  static ref TABLE: u64 = hash_str("table");
-  static ref STATS_SUM: u64 = hash_str("stats/sum");
-  static ref MATH_ADD: u64 = hash_str("math/add");
-  static ref MATH_DIVIDE: u64 = hash_str("math/divide");
-  static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
-  static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");
-  static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
-  static ref MATH_NEGATE: u64 = hash_str("math/negate");
-  static ref TABLE_RANGE: u64 = hash_str("table/range");
-  static ref TABLE_SPLIT: u64 = hash_str("table/split");
-  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
-  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
-  static ref TABLE_APPEND: u64 = hash_str("table/append");
-  static ref LOGIC_AND: u64 = hash_str("logic/and");  
-  static ref LOGIC_OR: u64 = hash_str("logic/or");
-  static ref LOGIC_NOT: u64 = hash_str("logic/not");  
-  static ref LOGIC_XOR: u64 = hash_str("logic/xor");    
-  static ref COMPARE_GREATER__THAN: u64 = hash_str("compare/greater-than");
-  static ref COMPARE_LESS__THAN: u64 = hash_str("compare/less-than");
-  static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_str("compare/greater-than-equal");
-  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_str("compare/less-than-equal");
-  static ref COMPARE_EQUAL: u64 = hash_str("compare/equal");
-  static ref COMPARE_NOT__EQUAL: u64 = hash_str("compare/not-equal");
-  static ref SET_ANY: u64 = hash_str("set/any");
-  static ref SET_ALL: u64 = hash_str("set/all");  
-}
-
 #[derive(Clone)]
 pub struct Block {
   pub id: BlockId,
@@ -767,54 +737,19 @@ impl Block {
         table_brrw.set(0,0,value.clone())?;
       }
       Transformation::Function{name, ref arguments, out} => {
-        println!("------------------{:?}", tfm);
-
-
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
             let mut fxns = functions.borrow_mut();
             match fxns.get(*name) {
               Some(fxn) => {
-                println!("GOT TEH EADDDD");
                 fxn.compile(self,&arguments,&out)?;
                 return Ok(());
               }
-              None => (),// {return Err(MechError::MissingFunction(*name));}
+              None => {return Err(MechError::MissingFunction(*name));}
             }
           }
-          None => (),// {return Err(MechError::GenericError(2352));},
-        }
-
-        println!("WOOOOOOOOOOOOOOOOOOOOOOOOO");
-
-
-        //if *name == *MATH_ADD { math_add(self,&arguments,&out)?; }
-        //else if *name == *MATH_SUBTRACT { math_sub(self,&arguments,&out)?; } 
-        //else if *name == *MATH_MULTIPLY { math_mul(self,&arguments,&out)?; } 
-        //else if *name == *MATH_DIVIDE { math_div(self,&arguments,&out)?; } 
-        //else if *name == *MATH_EXPONENT { math_exp(self,&arguments,&out)?; } 
-        if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_NOT { logic_not(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_AND { logic_and(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_OR { logic_or(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_XOR { logic_xor(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_EQUAL { compare_equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_NOT__EQUAL { compare_not__equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_LESS__THAN { compare_less__than(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_LESS__THAN__EQUAL { compare_less__than__equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_GREATER__THAN { compare_greater__than(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_GREATER__THAN__EQUAL { compare_greater__than__equal(self,&arguments,&out)?; } 
-        else if *name == *STATS_SUM { stats_sum(self,&arguments,&out)?; } 
-        else if *name == *SET_ANY { set_any(self,&arguments,&out)?; } 
-        else if *name == *SET_ALL { set_all(self,&arguments,&out)?; } 
-        else if *name == *TABLE_SPLIT { table_split(self,&arguments,&out)?;}
-        else if *name == *TABLE_VERTICAL__CONCATENATE { table_vertical__concatenate(self,&arguments,&out)?; } 
-        else if *name == *TABLE_HORIZONTAL__CONCATENATE { table_horizontal__concatenate(self,&arguments,&out)?; }       
-        else if *name == *TABLE_APPEND { table_append(self,&arguments,&out)?; } 
-        else if *name == *TABLE_RANGE { table_range(self,&arguments,&out)?; }
-        else {
-          return Err(MechError::MissingFunction(*name));
+          None => {return Err(MechError::GenericError(2352));},
         }
       } 
       _ => {},

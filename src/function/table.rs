@@ -7,6 +7,14 @@ use num_traits::*;
 use rayon::prelude::*;
 use std::thread;
 
+lazy_static! {
+  pub static ref TABLE_RANGE: u64 = hash_str("table/range");
+  pub static ref TABLE_SPLIT: u64 = hash_str("table/split");
+  pub static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
+  pub static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
+  pub static ref TABLE_APPEND: u64 = hash_str("table/append"); 
+}
+
 // Concat Vectors
 #[derive(Debug)]
 pub struct ConcatV<T> 
@@ -377,318 +385,335 @@ impl MechFunction for AppendRowSV {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+pub struct TableVerticalConcatenate{}
+impl MechFunctionCompiler for TableVerticalConcatenate {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
 
-pub fn table_vertical__concatenate(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-
-  // Get all of the tables
-  let mut arg_tables = vec![];
-  let mut rows = 0;
-  let mut cols = 0;
-  for (_,table_id,_) in arguments {
-    let table = block.get_table(table_id)?;
-    arg_tables.push(table);
-  }
-
-  // Each table should have the same number of columns
-  let cols = arg_tables[0].borrow().cols;
-  let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
-  if consistent_cols == false {
-    return Err(MechError::GenericError(1243));
-  }
-  
-  // Check to make sure column types are consistent
-  let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
-  let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
-  if consistent_cols == false {
-    return Err(MechError::GenericError(1244));
-  }
-
-  // Add up the rows
-  let rows = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().rows);
-  
-  // Resize out table to match dimensions 
-  let (out_table_id, _, _) = out;
-  let out_table = block.get_table(out_table_id)?;
-  let mut out_brrw = out_table.borrow_mut();
-  out_brrw.resize(rows,cols);
-
-  // Set out column kind and push a concat function
-  for (ix, kind) in (0..cols).zip(col_kinds.clone()) {
-    out_brrw.set_col_kind(ix, kind);
-    let out_col = out_brrw.get_column_unchecked(ix).clone();
-    let mut argument_columns = vec![];       
-    for table in &arg_tables {
-      let table_brrw = table.borrow();
-      let column = table_brrw.get_column(&TableIndex::Index(ix+1))?;
-      argument_columns.push(column.clone());
+    // Get all of the tables
+    let mut arg_tables = vec![];
+    let mut rows = 0;
+    let mut cols = 0;
+    for (_,table_id,_) in arguments {
+      let table = block.get_table(table_id)?;
+      arg_tables.push(table);
     }
 
-    match out_col {
-      Column::U8(ref out_c) => {
-        let mut u8_cols:Vec<ColumnV<u8>> = vec![];
-        for colv in argument_columns {
-          u8_cols.push(colv.get_u8()?.clone());
-        }
-        let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
-        block.plan.push(fxn);
-      }
-      Column::Bool(ref out_c) => {
-        let mut bool_cols:Vec<ColumnV<bool>> = vec![];
-        for colv in argument_columns {
-          bool_cols.push(colv.get_bool()?.clone());
-        }
-        let fxn = ConcatV::<bool>{args: bool_cols, out: out_c.clone()};
-        block.plan.push(fxn);
-      }
-      Column::String(ref out_c) => {
-        let mut cols:Vec<ColumnV<MechString>> = vec![];
-        for colv in argument_columns {
-          cols.push(colv.get_string()?.clone());
-        }
-        let fxn = ConcatV::<MechString>{args: cols, out: out_c.clone()};
-        block.plan.push(fxn);
-      }
-      Column::Ref(ref out_c) => {
-        let mut cols:Vec<ColumnV<TableId>> = vec![];
-        for colv in argument_columns {
-          cols.push(colv.get_reference()?.clone());
-        }
-        let fxn = ConcatV::<TableId>{args: cols, out: out_c.clone()};
-        block.plan.push(fxn);
-      }
-      x => {
-        return Err(MechError::GenericError(6361));
-      },
+    // Each table should have the same number of columns
+    let cols = arg_tables[0].borrow().cols;
+    let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
+    if consistent_cols == false {
+      return Err(MechError::GenericError(1243));
     }
+    
+    // Check to make sure column types are consistent
+    let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
+    let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
+    if consistent_cols == false {
+      return Err(MechError::GenericError(1244));
+    }
+
+    // Add up the rows
+    let rows = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().rows);
+    
+    // Resize out table to match dimensions 
+    let (out_table_id, _, _) = out;
+    let out_table = block.get_table(out_table_id)?;
+    let mut out_brrw = out_table.borrow_mut();
+    out_brrw.resize(rows,cols);
+
+    // Set out column kind and push a concat function
+    for (ix, kind) in (0..cols).zip(col_kinds.clone()) {
+      out_brrw.set_col_kind(ix, kind);
+      let out_col = out_brrw.get_column_unchecked(ix).clone();
+      let mut argument_columns = vec![];       
+      for table in &arg_tables {
+        let table_brrw = table.borrow();
+        let column = table_brrw.get_column(&TableIndex::Index(ix+1))?;
+        argument_columns.push(column.clone());
+      }
+
+      match out_col {
+        Column::U8(ref out_c) => {
+          let mut u8_cols:Vec<ColumnV<u8>> = vec![];
+          for colv in argument_columns {
+            u8_cols.push(colv.get_u8()?.clone());
+          }
+          let fxn = ConcatV::<u8>{args: u8_cols, out: out_c.clone()};
+          block.plan.push(fxn);
+        }
+        Column::Bool(ref out_c) => {
+          let mut bool_cols:Vec<ColumnV<bool>> = vec![];
+          for colv in argument_columns {
+            bool_cols.push(colv.get_bool()?.clone());
+          }
+          let fxn = ConcatV::<bool>{args: bool_cols, out: out_c.clone()};
+          block.plan.push(fxn);
+        }
+        Column::String(ref out_c) => {
+          let mut cols:Vec<ColumnV<MechString>> = vec![];
+          for colv in argument_columns {
+            cols.push(colv.get_string()?.clone());
+          }
+          let fxn = ConcatV::<MechString>{args: cols, out: out_c.clone()};
+          block.plan.push(fxn);
+        }
+        Column::Ref(ref out_c) => {
+          let mut cols:Vec<ColumnV<TableId>> = vec![];
+          for colv in argument_columns {
+            cols.push(colv.get_reference()?.clone());
+          }
+          let fxn = ConcatV::<TableId>{args: cols, out: out_c.clone()};
+          block.plan.push(fxn);
+        }
+        x => {
+          return Err(MechError::GenericError(6361));
+        },
+      }
+    }
+    Ok(())
   }
-  Ok(())
 }
 
-pub fn table_horizontal__concatenate(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+pub struct TableHorizontalConcatenate{}
+impl MechFunctionCompiler for TableHorizontalConcatenate {
 
-  // Get all of the tables
-  let mut rows = 0;
-  let mut cols = 0;
-  let arg_shapes = block.get_arg_dims(&arguments)?;
-  // Each table should have the same number of rows or be scalar
-  let arg_dims: Vec<(usize,usize)> = arg_shapes.iter().map(|shape| match shape {
-    TableShape::Scalar => (1,1),
-    TableShape::Column(rows) => (*rows,1),
-    TableShape::Row(cols) => (1,*cols),
-    TableShape::Matrix(rows,cols) => (*rows,*cols),
-    _ => (0,0),
-  }).collect();
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
 
-  let max_rows = arg_dims.iter().map(|(rows,_)| rows).max().unwrap();
+    // Get all of the tables
+    let mut rows = 0;
+    let mut cols = 0;
+    let arg_shapes = block.get_arg_dims(&arguments)?;
+    // Each table should have the same number of rows or be scalar
+    let arg_dims: Vec<(usize,usize)> = arg_shapes.iter().map(|shape| match shape {
+      TableShape::Scalar => (1,1),
+      TableShape::Column(rows) => (*rows,1),
+      TableShape::Row(cols) => (1,*cols),
+      TableShape::Matrix(rows,cols) => (*rows,*cols),
+      _ => (0,0),
+    }).collect();
 
-  let consistent_rows = arg_dims.iter().all(|(rows,_)| {
-    max_rows == rows || *rows == 1
-  });
+    let max_rows = arg_dims.iter().map(|(rows,_)| rows).max().unwrap();
 
-  if consistent_rows == false {
-    return Err(MechError::GenericError(1245));
-  }
+    let consistent_rows = arg_dims.iter().all(|(rows,_)| {
+      max_rows == rows || *rows == 1
+    });
 
-  // Add up the columns
-  let cols = arg_dims.iter().fold(0, |acc, (_,cols)| acc + cols);
+    if consistent_rows == false {
+      return Err(MechError::GenericError(1245));
+    }
 
-  let (out_table_id, _, _) = out;
-  let out_table = block.get_table(out_table_id)?.clone();
-  let mut o = out_table.borrow_mut();
-  o.resize(*max_rows,cols);
-  let mut out_column_ix = 0;
-  for (argument, shape) in arguments.iter().zip(arg_shapes) {
-    match shape {
-      TableShape::Scalar => {
-        let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
-        o.set_col_kind(out_column_ix, arg_col.kind());
-        let mut out_col = o.get_column_unchecked(out_column_ix);
-        match out_col.len() {
-          1 => {
+    // Add up the columns
+    let cols = arg_dims.iter().fold(0, |acc, (_,cols)| acc + cols);
+
+    let (out_table_id, _, _) = out;
+    let out_table = block.get_table(out_table_id)?.clone();
+    let mut o = out_table.borrow_mut();
+    o.resize(*max_rows,cols);
+    let mut out_column_ix = 0;
+    for (argument, shape) in arguments.iter().zip(arg_shapes) {
+      match shape {
+        TableShape::Scalar => {
+          let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
+          o.set_col_kind(out_column_ix, arg_col.kind());
+          let mut out_col = o.get_column_unchecked(out_column_ix);
+          match out_col.len() {
+            1 => {
+              match (&arg_col, &arg_ix, &out_col) {
+                (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Empty, _, Column::Empty) => (),
+                x => {return Err(MechError::GenericError(6366));},
+              };
+              out_column_ix += 1;
+            }
+            _ => {
+              match (&arg_col, &arg_ix, &out_col) {
+                (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySV::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySV::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySV::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Empty, _, Column::Empty) => (),
+                x => {return Err(MechError::GenericError(6368));},
+              };
+              out_column_ix += 1;
+            }
+          }
+
+        }
+        TableShape::Column(_) => {
+          let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
+          o.set_col_kind(out_column_ix, arg_col.kind());
+          let mut out_col = o.get_column_unchecked(out_column_ix);
+          let fxn = match (&arg_col, arg_ix, &out_col) {
+            (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
+            (Column::U64(arg), ColumnIndex::All, Column::U64(out)) => block.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
+            (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV::<MechString>{arg: arg.clone(), out: out.clone()}),
+            (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
+            (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+            x => {
+              return Err(MechError::GenericError(6367));
+            },
+          };
+          out_column_ix += 1;
+        }
+        TableShape::Row(_) => {
+          for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
+            o.set_col_kind(out_column_ix, arg_col.kind());
+            let mut out_col = o.get_column_unchecked(out_column_ix);
             match (&arg_col, &arg_ix, &out_col) {
+              (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
               (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+              (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
               (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
               (Column::Empty, _, Column::Empty) => (),
-              x => {return Err(MechError::GenericError(6366));},
+              x => {
+                return Err(MechError::GenericError(6369));},
             };
             out_column_ix += 1;
           }
-          _ => {
+        }
+        TableShape::Matrix(_,_) => {
+          for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
+            o.set_col_kind(out_column_ix, arg_col.kind());
+            let mut out_col = o.get_column_unchecked(out_column_ix);
             match (&arg_col, &arg_ix, &out_col) {
-              (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySV::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-              (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySV::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-              (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySV::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-              (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
-              (Column::Empty, _, Column::Empty) => (),
-              x => {return Err(MechError::GenericError(6368));},
+              (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
+              (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
+              x => {
+                return Err(MechError::GenericError(6379));},
             };
             out_column_ix += 1;
           }
         }
-
+        x => {
+          return Err(MechError::GenericError(6364));
+        },
       }
-      TableShape::Column(_) => {
-        let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
-        o.set_col_kind(out_column_ix, arg_col.kind());
-        let mut out_col = o.get_column_unchecked(out_column_ix);
-        let fxn = match (&arg_col, arg_ix, &out_col) {
-          (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
-          (Column::U64(arg), ColumnIndex::All, Column::U64(out)) => block.plan.push(CopyVV::<u64>{arg: arg.clone(), out: out.clone()}),
-          (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV::<MechString>{arg: arg.clone(), out: out.clone()}),
-          (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
-          (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-          x => {
-            return Err(MechError::GenericError(6367));
-          },
-        };
-        out_column_ix += 1;
-      }
-      TableShape::Row(_) => {
-        for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-          o.set_col_kind(out_column_ix, arg_col.kind());
-          let mut out_col = o.get_column_unchecked(out_column_ix);
-          match (&arg_col, &arg_ix, &out_col) {
-            (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-            (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-            (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
-            (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-            (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-            (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
-            (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
-            (Column::Empty, _, Column::Empty) => (),
-            x => {
-              return Err(MechError::GenericError(6369));},
-          };
-          out_column_ix += 1;
-        }
-      }
-      TableShape::Matrix(_,_) => {
-        for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-          o.set_col_kind(out_column_ix, arg_col.kind());
-          let mut out_col = o.get_column_unchecked(out_column_ix);
-          match (&arg_col, &arg_ix, &out_col) {
-            (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-            (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
-            (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
-            x => {
-              return Err(MechError::GenericError(6379));},
-          };
-          out_column_ix += 1;
-        }
-      }
-      x => {
-        return Err(MechError::GenericError(6364));
-      },
     }
+    Ok(())
   }
-  Ok(())
 }
 
-pub fn table_split(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+pub struct TableSplit{}
+impl MechFunctionCompiler for TableSplit {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
 
-  let arg_shapes = block.get_arg_dims(&arguments)?;
-  let arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
+    let arg_shapes = block.get_arg_dims(&arguments)?;
+    let arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
 
-  let (out_table_id, _, _) = out;
-  let out_table = block.get_table(out_table_id)?;
-  let mut out_brrw = out_table.borrow_mut();
-  out_brrw.set_col_kind(0,ValueKind::Reference);
-  match arg_shapes[0] {
-    TableShape::Matrix(rows,cols) => {
-      out_brrw.resize(rows,1);
-      // Initialize table
-      for row in 0..rows {
-        let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
-        let mut dest_table = Table::new(split_id,1,cols);
-        for (col,arg_col) in arg_cols.iter().enumerate() {
-          match arg_col {
-            (_,Column::U8(_),_) => {
-              dest_table.set_col_kind(col,ValueKind::U8);
+    let (out_table_id, _, _) = out;
+    let out_table = block.get_table(out_table_id)?;
+    let mut out_brrw = out_table.borrow_mut();
+    out_brrw.set_col_kind(0,ValueKind::Reference);
+    match arg_shapes[0] {
+      TableShape::Matrix(rows,cols) => {
+        out_brrw.resize(rows,1);
+        // Initialize table
+        for row in 0..rows {
+          let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+          let mut dest_table = Table::new(split_id,1,cols);
+          for (col,arg_col) in arg_cols.iter().enumerate() {
+            match arg_col {
+              (_,Column::U8(_),_) => {
+                dest_table.set_col_kind(col,ValueKind::U8);
+              }
+              _ => {return Err(MechError::GenericError(6095));},
             }
-            _ => {return Err(MechError::GenericError(6095));},
           }
+          block.global_database.borrow_mut().insert_table(dest_table);
+          out_brrw.set(row,0,Value::Reference(TableId::Global(split_id)));
         }
-        block.global_database.borrow_mut().insert_table(dest_table);
-        out_brrw.set(row,0,Value::Reference(TableId::Global(split_id)));
-      }
-      // Write functions
-      for (col_ix,arg_col) in arg_cols.iter().enumerate() {
-        match arg_col {
-          (_,Column::U8(src_col),ColumnIndex::All) => {
-            for row in 0..rows {
-              // get the destination table
-              let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
-              let dest_table = block.get_table(&TableId::Global(split_id))?;
-              let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
-              match dest_col {
-                Column::U8(dest_col) => {
-                  block.plan.push(SetSIxSIx::<u8>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0});
+        // Write functions
+        for (col_ix,arg_col) in arg_cols.iter().enumerate() {
+          match arg_col {
+            (_,Column::U8(src_col),ColumnIndex::All) => {
+              for row in 0..rows {
+                // get the destination table
+                let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+                let dest_table = block.get_table(&TableId::Global(split_id))?;
+                let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
+                match dest_col {
+                  Column::U8(dest_col) => {
+                    block.plan.push(SetSIxSIx::<u8>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0});
+                  }
+                  _ => {return Err(MechError::GenericError(6097));},
                 }
-                _ => {return Err(MechError::GenericError(6097));},
               }
             }
+            _ => {return Err(MechError::GenericError(5995));},
           }
-          _ => {return Err(MechError::GenericError(5995));},
+        }
+      }
+      _ => (),
+    }     
+    Ok(())
+  }
+}
+
+pub struct TableRange{}
+impl MechFunctionCompiler for TableRange {
+
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+
+    let mut argument_columns = block.get_arg_columns(arguments)?;
+    let (out_table_id, _, _) = out;
+    let out_table = block.get_table(out_table_id)?;
+    match (&argument_columns[0], &argument_columns[1]) {
+      ((_,Column::U8(start),_), (_,Column::U8(end),_)) => {  
+        let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
+        block.plan.push(fxn);
+      }
+      _ => {return Err(MechError::GenericError(6349));},
+    }
+    Ok(())
+  }
+}
+
+pub struct TableAppend{}
+impl MechFunctionCompiler for TableAppend {
+
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+
+    let arg_shape = block.get_arg_dim(&arguments[0])?;
+    let (_,_,indices) = &arguments[0];
+    let (arow_ix,_) = indices[0];
+
+    let (_,src_table_id,src_indices) = &arguments[0];
+    let (src_rows,src_cols) = src_indices[0];
+    let (dest_table_id, _, _) = out;
+
+    let src_table = block.get_table(&src_table_id)?;
+    let dest_table = block.get_table(dest_table_id)?;
+
+    {
+      let mut src_table_brrw = src_table.borrow_mut();
+      let mut dest_table_brrw = dest_table.borrow_mut();
+      match dest_table_brrw.kind() {
+        ValueKind::Empty => {
+          dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+          dest_table_brrw.set_kind(src_table_brrw.kind());
+          dest_table_brrw.rows = 0;
+        },
+        x => {
         }
       }
     }
-    _ => (),
-  }     
-  Ok(())
-}
 
-pub fn table_range(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-
-  let mut argument_columns = block.get_arg_columns(arguments)?;
-  let (out_table_id, _, _) = out;
-  let out_table = block.get_table(out_table_id)?;
-  match (&argument_columns[0], &argument_columns[1]) {
-    ((_,Column::U8(start),_), (_,Column::U8(end),_)) => {  
-      let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
-      block.plan.push(fxn);
-    }
-    _ => {return Err(MechError::GenericError(6349));},
-  }
-  Ok(())
-}
-
-pub fn table_append(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-
-  let arg_shape = block.get_arg_dim(&arguments[0])?;
-  let (_,_,indices) = &arguments[0];
-  let (arow_ix,_) = indices[0];
-
-  let (_,src_table_id,src_indices) = &arguments[0];
-  let (src_rows,src_cols) = src_indices[0];
-  let (dest_table_id, _, _) = out;
-
-  let src_table = block.get_table(&src_table_id)?;
-  let dest_table = block.get_table(dest_table_id)?;
-
-  {
-    let mut src_table_brrw = src_table.borrow_mut();
-    let mut dest_table_brrw = dest_table.borrow_mut();
-    match dest_table_brrw.kind() {
-      ValueKind::Empty => {
-        dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
-        dest_table_brrw.set_kind(src_table_brrw.kind());
-        dest_table_brrw.rows = 0;
-      },
-      x => {
+    let dest_shape = {dest_table.borrow().shape()};
+    match (arg_shape,arow_ix,dest_shape) {
+      (TableShape::Scalar,TableIndex::Index(ix),TableShape::Column(_)) => {
+        block.plan.push(AppendRowSV{arg: src_table.clone(), ix: ix-1, out: dest_table.clone()});
       }
+      x => {
+        block.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
+      },
     }
+    Ok(())
   }
-
-  let dest_shape = {dest_table.borrow().shape()};
-  match (arg_shape,arow_ix,dest_shape) {
-    (TableShape::Scalar,TableIndex::Index(ix),TableShape::Column(_)) => {
-      block.plan.push(AppendRowSV{arg: src_table.clone(), ix: ix-1, out: dest_table.clone()});
-    }
-    x => {
-      block.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
-    },
-  }
-  Ok(())
 }

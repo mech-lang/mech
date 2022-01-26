@@ -23,36 +23,6 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-lazy_static! {
-  static ref COLUMN: u64 = hash_str("column");
-  static ref ROW: u64 = hash_str("row");
-  static ref TABLE: u64 = hash_str("table");
-  static ref STATS_SUM: u64 = hash_str("stats/sum");
-  static ref MATH_ADD: u64 = hash_str("math/add");
-  static ref MATH_DIVIDE: u64 = hash_str("math/divide");
-  static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
-  static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");
-  static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
-  static ref MATH_NEGATE: u64 = hash_str("math/negate");
-  static ref TABLE_RANGE: u64 = hash_str("table/range");
-  static ref TABLE_SPLIT: u64 = hash_str("table/split");
-  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
-  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
-  static ref TABLE_APPEND: u64 = hash_str("table/append");
-  static ref LOGIC_AND: u64 = hash_str("logic/and");  
-  static ref LOGIC_OR: u64 = hash_str("logic/or");
-  static ref LOGIC_NOT: u64 = hash_str("logic/not");  
-  static ref LOGIC_XOR: u64 = hash_str("logic/xor");    
-  static ref COMPARE_GREATER__THAN: u64 = hash_str("compare/greater-than");
-  static ref COMPARE_LESS__THAN: u64 = hash_str("compare/less-than");
-  static ref COMPARE_GREATER__THAN__EQUAL: u64 = hash_str("compare/greater-than-equal");
-  static ref COMPARE_LESS__THAN__EQUAL: u64 = hash_str("compare/less-than-equal");
-  static ref COMPARE_EQUAL: u64 = hash_str("compare/equal");
-  static ref COMPARE_NOT__EQUAL: u64 = hash_str("compare/not-equal");
-  static ref SET_ANY: u64 = hash_str("set/any");
-  static ref SET_ALL: u64 = hash_str("set/all");  
-}
-
 pub type BlockRef = Rc<RefCell<Block>>;
 
 pub struct Functions{
@@ -84,43 +54,40 @@ pub struct Core {
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
 }
 
-/*
-if *name == *MATH_ADD { math_add(self,&arguments,&out)?; }
-        else if *name == *MATH_SUBTRACT { math_sub(self,&arguments,&out)?; } 
-        else if *name == *MATH_MULTIPLY { math_mul(self,&arguments,&out)?; } 
-        else if *name == *MATH_DIVIDE { math_div(self,&arguments,&out)?; } 
-        else if *name == *MATH_EXPONENT { math_exp(self,&arguments,&out)?; } 
-        else if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_NOT { logic_not(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_AND { logic_and(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_OR { logic_or(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_XOR { logic_xor(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_EQUAL { compare_equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_NOT__EQUAL { compare_not__equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_LESS__THAN { compare_less__than(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_LESS__THAN__EQUAL { compare_less__than__equal(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_GREATER__THAN { compare_greater__than(self,&arguments,&out)?; } 
-        else if *name == *COMPARE_GREATER__THAN__EQUAL { compare_greater__than__equal(self,&arguments,&out)?; } 
-        else if *name == *STATS_SUM { stats_sum(self,&arguments,&out)?; } 
-        else if *name == *SET_ANY { set_any(self,&arguments,&out)?; } 
-        else if *name == *SET_ALL { set_all(self,&arguments,&out)?; } 
-        else if *name == *TABLE_SPLIT { table_split(self,&arguments,&out)?;}
-        else if *name == *TABLE_VERTICAL__CONCATENATE { table_vertical__concatenate(self,&arguments,&out)?; } 
-        else if *name == *TABLE_HORIZONTAL__CONCATENATE { table_horizontal__concatenate(self,&arguments,&out)?; }       
-        else if *name == *TABLE_APPEND { table_append(self,&arguments,&out)?; } 
-        else if *name == *TABLE_RANGE { table_range(self,&arguments,&out)?; }
-        */
-
 impl Core {
 
   pub fn new() -> Core {
 
     let mut functions = Functions::new();
-    functions.insert(*MATH_ADD, math_add{});
-    functions.insert(*MATH_SUBTRACT, math_sub{});
-    functions.insert(*MATH_MULTIPLY, math_mul{});
-    functions.insert(*MATH_DIVIDE, math_div{});
-    functions.insert(*MATH_EXPONENT, math_exp{});
+    functions.insert(*MATH_ADD, MathAdd{});
+    functions.insert(*MATH_SUBTRACT, MathSub{});
+    functions.insert(*MATH_MULTIPLY, MathMul{});
+    functions.insert(*MATH_DIVIDE, MathDiv{});
+    functions.insert(*MATH_EXPONENT, MathExp{});
+    functions.insert(*MATH_NEGATE, MathNegate{});
+
+    functions.insert(*LOGIC_NOT, LogicNot{});
+    functions.insert(*LOGIC_AND, logic_and{});
+    functions.insert(*LOGIC_OR, logic_or{});
+    functions.insert(*LOGIC_XOR, logic_xor{});
+
+    functions.insert(*COMPARE_GREATER__THAN, compare_greater__than{});
+    functions.insert(*COMPARE_LESS__THAN, compare_less__than{});
+    functions.insert(*COMPARE_GREATER__THAN__EQUAL, compare_greater__than__equal{});
+    functions.insert(*COMPARE_LESS__THAN__EQUAL, compare_less__than__equal{});
+    functions.insert(*COMPARE_EQUAL, compare_equal{});
+    functions.insert(*COMPARE_NOT__EQUAL, compare_not__equal{});
+
+    functions.insert(*TABLE_APPEND, TableAppend{});
+    functions.insert(*TABLE_RANGE, TableRange{});
+    functions.insert(*TABLE_SPLIT, TableSplit{});
+    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, TableHorizontalConcatenate{});
+    functions.insert(*TABLE_VERTICAL__CONCATENATE, TableVerticalConcatenate{});
+
+    functions.insert(*STATS_SUM, StatsSum{});
+
+    functions.insert(*SET_ANY, SetAny{});
+    functions.insert(*SET_ALL, SetAll{});
 
     Core {
       blocks: HashMap::new(),

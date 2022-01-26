@@ -8,6 +8,15 @@ use std::ops::*;
 use rayon::prelude::*;
 use std::thread;
 
+lazy_static! {
+  pub static ref MATH_ADD: u64 = hash_str("math/add");
+  pub static ref MATH_DIVIDE: u64 = hash_str("math/divide");
+  pub static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
+  pub static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");
+  pub static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
+  pub static ref MATH_NEGATE: u64 = hash_str("math/negate");
+}
+
 impl MechNumArithmetic<u8> for u8 {}
 impl MechNumArithmetic<f32> for f32 {}
 
@@ -231,39 +240,44 @@ macro_rules! binary_infix_par_sv {
   )
 }
 
-pub fn math_negate(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-  let arg_dims = block.get_arg_dims(&arguments)?;
-  match &arg_dims[0] {
-    TableShape::Column(rows) => {
-      let mut argument_columns = block.get_arg_columns(arguments)?;
-      let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
-      match (&argument_columns[0], &out_column) {
-        ((_,Column::I8(arg),_), Column::I8(out)) => {
-          block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
+pub struct MathNegate{}
+
+impl MechFunctionCompiler for MathNegate {
+
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    let arg_dims = block.get_arg_dims(&arguments)?;
+    match &arg_dims[0] {
+      TableShape::Column(rows) => {
+        let mut argument_columns = block.get_arg_columns(arguments)?;
+        let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
+        match (&argument_columns[0], &out_column) {
+          ((_,Column::I8(arg),_), Column::I8(out)) => {
+            block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
+          }
+          _ => {return Err(MechError::GenericError(1961));},
         }
-        _ => {return Err(MechError::GenericError(1961));},
       }
-    }
-    TableShape::Scalar => {
-      let mut argument_columns = block.get_arg_columns(arguments)?;
-      let out_column = block.get_out_column(out, 1, ValueKind::I8)?;
-      match (&argument_columns[0], &out_column) {
-        ((_,Column::I8(arg),_), Column::I8(out)) => {
-          block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
+      TableShape::Scalar => {
+        let mut argument_columns = block.get_arg_columns(arguments)?;
+        let out_column = block.get_out_column(out, 1, ValueKind::I8)?;
+        match (&argument_columns[0], &out_column) {
+          ((_,Column::I8(arg),_), Column::I8(out)) => {
+            block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
+          }
+          _ => {return Err(MechError::GenericError(1962));},
         }
-        _ => {return Err(MechError::GenericError(1962));},
       }
+      _ => {return Err(MechError::GenericError(1963));},
     }
-    _ => {return Err(MechError::GenericError(1963));},
+    Ok(())
   }
-  Ok(())
 }
 
-math_compiler!(math_add,AddSS,AddSV,AddVS,AddVV);
-math_compiler!(math_sub,SubSS,SubSV,SubVS,SubVV);
-math_compiler!(math_mul,MulSS,MulSV,MulVS,MulVV);
-math_compiler!(math_div,DivSS,DivSV,DivVS,DivVV);
-math_compiler!(math_exp,ExpSS,ExpSV,ExpVS,ExpVV);
+math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
+math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
+math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
+math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
+math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 #[macro_export]
 macro_rules! math_compiler {
@@ -335,7 +349,7 @@ macro_rules! math_compiler {
                 (Column::U8(lhs), (_,Column::U8(rhs),_), Column::U8(out)) => {
                   block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
                 }
-                _ => {return Err(MechError::GenericError(6343));},
+                _ => {return Err(MechError::GenericError(6340));},
               }
             }
           }
@@ -355,14 +369,14 @@ macro_rules! math_compiler {
                 (Column::U8(rhs), (_,Column::U8(lhs),_), Column::U8(out)) => {
                   block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
                 }
-                _ => {return Err(MechError::GenericError(6343));},
+                _ => {return Err(MechError::GenericError(6341));},
               }
             }
           }            
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
             
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError::GenericError(6343));
+              return Err(MechError::GenericError(6342));
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -384,7 +398,7 @@ macro_rules! math_compiler {
               }
             }
           }
-          _ => {return Err(MechError::GenericError(6345));},
+          _ => {return Err(MechError::GenericError(6344));},
         }
         Ok(())
       }
