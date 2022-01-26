@@ -8,8 +8,8 @@ use std::ops::*;
 use rayon::prelude::*;
 use std::thread;
 
-impl MechNum<u8> for u8 {}
-impl MechNum<f32> for f32 {}
+impl MechNumArithmetic<u8> for u8 {}
+impl MechNumArithmetic<f32> for f32 {}
 
 // Scalar : Scalar
 binary_infix_ss!(AddSS,add);
@@ -104,7 +104,7 @@ macro_rules! binary_infix_sv {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug
+    where T: MechNumArithmetic<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[0];
@@ -123,7 +123,7 @@ macro_rules! binary_infix_vs {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug
+    where T: MechNumArithmetic<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let rhs = self.rhs.borrow()[0];
@@ -143,7 +143,7 @@ macro_rules! binary_infix_vv {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug
+    where T: MechNumArithmetic<T> + Copy + Debug
     {
       fn solve(&mut self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
@@ -162,7 +162,7 @@ macro_rules! binary_infix_par_vv {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug + Send + Sync
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
       fn solve(&mut self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
@@ -181,7 +181,7 @@ macro_rules! binary_infix_par_vs {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug + Send + Sync
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
       fn solve(&mut self) {
         let rhs = self.rhs.borrow()[0];
@@ -200,7 +200,7 @@ macro_rules! binary_infix_ss {
       pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug
+    where T: MechNumArithmetic<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[self.lix];
@@ -220,7 +220,7 @@ macro_rules! binary_infix_par_sv {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: MechNum<T> + Copy + Debug
+    where T: MechNumArithmetic<T> + Copy + Debug
     {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[0];
@@ -259,131 +259,135 @@ pub fn math_negate(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId,
   Ok(())
 }
 
-
-math_infix!(math_add,AddSS,AddSV,AddVS,AddVV);
-math_infix!(math_sub,SubSS,SubSV,SubVS,SubVV);
-math_infix!(math_mul,MulSS,MulSV,MulVS,MulVV);
-math_infix!(math_div,DivSS,DivSV,DivVS,DivVV);
-math_infix!(math_exp,ExpSS,ExpSV,ExpVS,ExpVV);
+math_compiler!(math_add,AddSS,AddSV,AddVS,AddVV);
+math_compiler!(math_sub,SubSS,SubSV,SubVS,SubVV);
+math_compiler!(math_mul,MulSS,MulSV,MulVS,MulVV);
+math_compiler!(math_div,DivSS,DivSV,DivVS,DivVV);
+math_compiler!(math_exp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 #[macro_export]
-macro_rules! math_infix {
+macro_rules! math_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
-    pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-      let arg_shapes = block.get_arg_dims(&arguments)?;
-      // Now decide on the correct tfm based on the shape
-      match (&arg_shapes[0],&arg_shapes[1]) {
-        (TableShape::Scalar, TableShape::Scalar) => {
-          let mut argument_scalars = block.get_arg_columns(arguments)?;
-          let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
-          match (&argument_scalars[0], &argument_scalars[1], &out_column) {
-            ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix)), Column::U8(out)) => {
-              block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()})
-            }
-            _ => {return Err(MechError::GenericError(1236));},
-          }
-        }
-        (TableShape::Scalar, TableShape::Column(rows)) => {
-          let mut argument_columns = block.get_arg_columns(arguments)?;
-          let mut out_column = block.get_out_column(out, *rows, ValueKind::U8)?;
-          match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
-              block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
-            }
-            _ => {return Err(MechError::GenericError(1237));},
-          }
-        }   
-        (TableShape::Column(rows), TableShape::Scalar) => {
-          let mut argument_columns = block.get_arg_columns(arguments)?;
-          let mut out_column = block.get_out_column(out, *rows, ValueKind::U8)?;
-          match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
-              block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
-            }
-            _ => {return Err(MechError::GenericError(1238));},
-          }
-        }                      
-        (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
-          if lhs_rows != rhs_rows {
-            return Err(MechError::GenericError(6401));
-          }
-          let mut argument_columns = block.get_arg_columns(arguments)?;
-          let out_column = block.get_out_column(out, *lhs_rows, ValueKind::U8)?;
-          match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
-              block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
-            }
-            _ => {return Err(MechError::GenericError(1239));},
-          }
-        }
-        (TableShape::Row(cols), TableShape::Scalar) => {
-          let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
-          let rhs_column = block.get_arg_column(&arguments[1])?;
 
-          let (out_table_id, _, _) = out;
-          let out_table = block.get_table(out_table_id)?;
-          let mut out_brrw = out_table.borrow_mut();
-          out_brrw.resize(1,*cols);
+    pub struct $func_name {}
 
-          for (col_ix,(_,lhs_column,_)) in lhs_columns.iter().enumerate() {
-            out_brrw.set_col_kind(col_ix, ValueKind::U8);
-            let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-            match (lhs_column,&rhs_column,out_col) {
-              (Column::U8(lhs), (_,Column::U8(rhs),_), Column::U8(out)) => {
-                block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+    impl MechFunctionCompiler for $func_name {
+      fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+        let arg_shapes = block.get_arg_dims(&arguments)?;
+        // Now decide on the correct tfm based on the shape
+        match (&arg_shapes[0],&arg_shapes[1]) {
+          (TableShape::Scalar, TableShape::Scalar) => {
+            let mut argument_scalars = block.get_arg_columns(arguments)?;
+            let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
+            match (&argument_scalars[0], &argument_scalars[1], &out_column) {
+              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix)), Column::U8(out)) => {
+                block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()})
               }
-              _ => {return Err(MechError::GenericError(6343));},
+              _ => {return Err(MechError::GenericError(1236));},
             }
           }
-        }
-        (TableShape::Scalar, TableShape::Row(cols)) => {
-          let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
-          let lhs_column = block.get_arg_column(&arguments[0])?;
-
-          let (out_table_id, _, _) = out;
-          let out_table = block.get_table(out_table_id)?;
-          let mut out_brrw = out_table.borrow_mut();
-          out_brrw.resize(1,*cols);
-
-          for (col_ix,(_,rhs_column,_)) in rhs_columns.iter().enumerate() {
-            out_brrw.set_col_kind(col_ix, ValueKind::U8);
-            let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-            match (rhs_column,&lhs_column,out_col) {
-              (Column::U8(rhs), (_,Column::U8(lhs),_), Column::U8(out)) => {
+          (TableShape::Scalar, TableShape::Column(rows)) => {
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let mut out_column = block.get_out_column(out, *rows, ValueKind::U8)?;
+            match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
                 block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
               }
-              _ => {return Err(MechError::GenericError(6343));},
+              _ => {return Err(MechError::GenericError(1237));},
             }
-          }
-        }            
-        (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
-          
-          if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-            return Err(MechError::GenericError(6343));
-          }
-
-          let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
-          let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
-
-          let (out_table_id, _, _) = out;
-          let out_table = block.get_table(out_table_id)?;
-          let mut out_brrw = out_table.borrow_mut();
-          out_brrw.resize(*lhs_rows,*lhs_cols);
-
-          for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
-            out_brrw.set_col_kind(col_ix, ValueKind::U8);
-            let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-            match (lhs_rhs,out_col) {
-              (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)),Column::U8(out)) => {
+          }   
+          (TableShape::Column(rows), TableShape::Scalar) => {
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let mut out_column = block.get_out_column(out, *rows, ValueKind::U8)?;
+            match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
+                block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+              }
+              _ => {return Err(MechError::GenericError(1238));},
+            }
+          }                      
+          (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+            if lhs_rows != rhs_rows {
+              return Err(MechError::GenericError(6401));
+            }
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let out_column = block.get_out_column(out, *lhs_rows, ValueKind::U8)?;
+            match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
                 block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
               }
-              _ => {return Err(MechError::GenericError(6343));},
+              _ => {return Err(MechError::GenericError(1239));},
             }
           }
+          (TableShape::Row(cols), TableShape::Scalar) => {
+            let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
+            let rhs_column = block.get_arg_column(&arguments[1])?;
+
+            let (out_table_id, _, _) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(1,*cols);
+
+            for (col_ix,(_,lhs_column,_)) in lhs_columns.iter().enumerate() {
+              out_brrw.set_col_kind(col_ix, ValueKind::U8);
+              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+              match (lhs_column,&rhs_column,out_col) {
+                (Column::U8(lhs), (_,Column::U8(rhs),_), Column::U8(out)) => {
+                  block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                }
+                _ => {return Err(MechError::GenericError(6343));},
+              }
+            }
+          }
+          (TableShape::Scalar, TableShape::Row(cols)) => {
+            let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
+            let lhs_column = block.get_arg_column(&arguments[0])?;
+
+            let (out_table_id, _, _) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(1,*cols);
+
+            for (col_ix,(_,rhs_column,_)) in rhs_columns.iter().enumerate() {
+              out_brrw.set_col_kind(col_ix, ValueKind::U8);
+              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+              match (rhs_column,&lhs_column,out_col) {
+                (Column::U8(rhs), (_,Column::U8(lhs),_), Column::U8(out)) => {
+                  block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                }
+                _ => {return Err(MechError::GenericError(6343));},
+              }
+            }
+          }            
+          (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
+            
+            if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
+              return Err(MechError::GenericError(6343));
+            }
+
+            let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
+            let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
+
+            let (out_table_id, _, _) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(*lhs_rows,*lhs_cols);
+
+            for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+              out_brrw.set_col_kind(col_ix, ValueKind::U8);
+              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+              match (lhs_rhs,out_col) {
+                (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)),Column::U8(out)) => {
+                  block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                }
+                _ => {return Err(MechError::GenericError(6343));},
+              }
+            }
+          }
+          _ => {return Err(MechError::GenericError(6345));},
         }
-        _ => {return Err(MechError::GenericError(6345));},
+        Ok(())
       }
-      Ok(())
     }
   )
 }

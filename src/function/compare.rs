@@ -301,13 +301,13 @@ where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-compare_infix!(compare_greater__than,GreaterSS,GreaterVS,GreaterVV);
-compare_infix!(compare_less__than,LessSS,LessVS,LessVV);
-compare_infix!(compare_greater__than__equal,GreaterEqualSS,GreaterEqualVS,GreaterEqualVV);
-compare_infix!(compare_less__than__equal,LessEqualSS,LessEqualVS,LessEqualVV);
+compare_compiler!(compare_greater__than,GreaterSS,GreaterVS,GreaterVV);
+compare_compiler!(compare_less__than,LessSS,LessVS,LessVV);
+compare_compiler!(compare_greater__than__equal,GreaterEqualSS,GreaterEqualVS,GreaterEqualVV);
+compare_compiler!(compare_less__than__equal,LessEqualSS,LessEqualVS,LessEqualVV);
 
 #[macro_export]
-macro_rules! compare_infix {
+macro_rules! compare_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
     pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
       let arg_dims = block.get_arg_dims(&arguments)?;
@@ -316,9 +316,7 @@ macro_rules! compare_infix {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
             _ => {return Err(MechError::GenericError(1240));},
           }
         }
@@ -326,9 +324,7 @@ macro_rules! compare_infix {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
             _ => {return Err(MechError::GenericError(1252));},
           }
         }
@@ -339,9 +335,7 @@ macro_rules! compare_infix {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
             _ => {return Err(MechError::GenericError(1242));},
           }
         }
@@ -352,11 +346,11 @@ macro_rules! compare_infix {
   )
 }
 
-compare_infix_eq!(compare_equal,EqualSS,EqualVS,EqualVV);
-compare_infix_eq!(compare_not__equal,NotEqualSS,NotEqualVS,NotEqualVV);
+compare_eq_compiler!(compare_equal,EqualSS,EqualVS,EqualVV);
+compare_eq_compiler!(compare_not__equal,NotEqualSS,NotEqualVS,NotEqualVV);
 
 #[macro_export]
-macro_rules! compare_infix_eq {
+macro_rules! compare_eq_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
     pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
       let arg_dims = block.get_arg_dims(&arguments)?;
@@ -365,15 +359,9 @@ macro_rules! compare_infix_eq {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
-            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op1::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
-            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op1::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
             _ => {return Err(MechError::GenericError(1240));},
           }
         }
@@ -381,15 +369,9 @@ macro_rules! compare_infix_eq {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) 
-            }
-            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op2::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) 
-            }
-            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op2::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) 
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
             _ => {return Err(MechError::GenericError(1252));},
           }
         }
@@ -400,15 +382,9 @@ macro_rules! compare_infix_eq {
           let mut argument_columns = block.get_arg_columns(arguments)?;
           let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
           match (&argument_columns[0], &argument_columns[1], &out_column) {
-            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
-            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op3::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
-            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {
-              block.plan.push($op3::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})
-            }
+            ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+            ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
             _ => {return Err(MechError::GenericError(1242));},
           }
         }

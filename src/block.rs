@@ -97,9 +97,10 @@ lazy_static! {
 pub struct Block {
   pub id: BlockId,
   pub state: BlockState,
-  tables: Database,
+  pub tables: Database,
   pub plan: Plan,
   pub changes: Transaction,
+  pub functions: Option<Rc<RefCell<core::Functions>>>,
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
@@ -116,6 +117,7 @@ impl Block {
       tables: Database::new(),
       plan: Plan::new(),
       changes: Vec::new(),
+      functions: None,
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
@@ -765,12 +767,34 @@ impl Block {
         table_brrw.set(0,0,value.clone())?;
       }
       Transformation::Function{name, ref arguments, out} => {
-        if *name == *MATH_ADD { math_add(self,&arguments,&out)?; }
-        else if *name == *MATH_SUBTRACT { math_sub(self,&arguments,&out)?; } 
-        else if *name == *MATH_MULTIPLY { math_mul(self,&arguments,&out)?; } 
-        else if *name == *MATH_DIVIDE { math_div(self,&arguments,&out)?; } 
-        else if *name == *MATH_EXPONENT { math_exp(self,&arguments,&out)?; } 
-        else if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
+        println!("------------------{:?}", tfm);
+
+
+        let fxns = self.functions.clone();
+        match &fxns {
+          Some(functions) => {
+            let mut fxns = functions.borrow_mut();
+            match fxns.get(*name) {
+              Some(fxn) => {
+                println!("GOT TEH EADDDD");
+                fxn.compile(self,&arguments,&out)?;
+                return Ok(());
+              }
+              None => (),// {return Err(MechError::MissingFunction(*name));}
+            }
+          }
+          None => (),// {return Err(MechError::GenericError(2352));},
+        }
+
+        println!("WOOOOOOOOOOOOOOOOOOOOOOOOO");
+
+
+        //if *name == *MATH_ADD { math_add(self,&arguments,&out)?; }
+        //else if *name == *MATH_SUBTRACT { math_sub(self,&arguments,&out)?; } 
+        //else if *name == *MATH_MULTIPLY { math_mul(self,&arguments,&out)?; } 
+        //else if *name == *MATH_DIVIDE { math_div(self,&arguments,&out)?; } 
+        //else if *name == *MATH_EXPONENT { math_exp(self,&arguments,&out)?; } 
+        if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
         else if *name == *LOGIC_NOT { logic_not(self,&arguments,&out)?; } 
         else if *name == *LOGIC_AND { logic_and(self,&arguments,&out)?; } 
         else if *name == *LOGIC_OR { logic_or(self,&arguments,&out)?; } 

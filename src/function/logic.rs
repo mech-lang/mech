@@ -133,13 +133,13 @@ pub fn logic_not(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, T
   Ok(())
 }
 
-logic_infix!(logic_and,AndSS,AndSS,AndVV);
-logic_infix!(logic_or,OrSS,OrSS,OrVV);
-logic_infix!(logic_xor,XorSS,XorSS,XorVV);
+logic_compiler!(logic_and,AndSS,AndSS,AndVV);
+logic_compiler!(logic_or,OrSS,OrSS,OrVV);
+logic_compiler!(logic_xor,XorSS,XorSS,XorVV);
 
 
 #[macro_export]
-macro_rules! logic_infix {
+macro_rules! logic_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
     pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
       let arg_dims = block.get_arg_dims(&arguments)?;

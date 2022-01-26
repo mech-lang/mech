@@ -29,7 +29,11 @@ pub type Out<T> = ColumnV<T>;
 pub type ArgTable = Rc<RefCell<Table>>;
 pub type OutTable = Rc<RefCell<Table>>;
 
-pub trait MechNum<T>: Add<Output = T> + Sub<Output = T> + Div<Output = T> + Mul<Output = T> + num_traits::Pow<T, Output = T> + Sized {}
+pub trait MechNumArithmetic<T>: Add<Output = T> + Sub<Output = T> + Div<Output = T> + Mul<Output = T> + num_traits::Pow<T, Output = T> + Sized {}
+
+pub trait MechFunctionCompiler {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError>;
+}
 
 pub trait MechFunction {
   fn solve(&mut self);
