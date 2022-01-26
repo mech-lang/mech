@@ -914,39 +914,9 @@ impl Block {
         } 
         else if *name == *MATH_NEGATE { math_negate(self,&arguments,&out)?; } 
         else if *name == *LOGIC_NOT { logic_not(self,&arguments,&out)?; } 
-        else if *name == *LOGIC_AND ||
-                  *name == *LOGIC_OR ||
-                  *name == *LOGIC_XOR 
-        {
-          let arg_dims = self.get_arg_dims(&arguments)?;
-          match (&arg_dims[0],&arg_dims[1]) {
-            (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                  if *name == *LOGIC_AND { self.plan.push(AndVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
-                  else if *name == *LOGIC_OR { self.plan.push(OrVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
-                  else if *name == *LOGIC_XOR { self.plan.push(XorVV{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
-                }
-                _ => {return Err(MechError::GenericError(1342));},
-              }
-            }
-            (TableShape::Scalar, TableShape::Scalar) => {
-              let mut argument_columns = self.get_arg_columns(arguments)?;
-              let out_column = self.get_out_column(out, 1, ValueKind::Bool)?;
-              match (&argument_columns[0], &argument_columns[1], &out_column) {
-                ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                  if *name == *LOGIC_AND { self.plan.push(AndSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }); }
-                  else if *name == *LOGIC_OR { self.plan.push(OrSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
-                  else if *name == *LOGIC_XOR { self.plan.push(XorSS{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) } 
-                }
-                _ => {return Err(MechError::GenericError(1340));},
-              }
-            }
-            _ => {return Err(MechError::GenericError(1341));},
-          }
-        }
+        else if *name == *LOGIC_AND { logic_and(self,&arguments,&out)?; } 
+        else if *name == *LOGIC_OR { logic_or(self,&arguments,&out)?; } 
+        else if *name == *LOGIC_XOR { logic_xor(self,&arguments,&out)?; } 
         else if *name == *COMPARE_EQUAL { compare_equal(self,&arguments,&out)?; } 
         else if *name == *COMPARE_NOT__EQUAL { compare_not__equal(self,&arguments,&out)?; } 
         else if *name == *COMPARE_LESS__THAN { compare_less__than(self,&arguments,&out)?; } 

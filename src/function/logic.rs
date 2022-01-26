@@ -132,3 +132,41 @@ pub fn logic_not(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, T
   }
   Ok(())
 }
+
+logic_infix!(logic_and,AndSS,AndSS,AndVV);
+logic_infix!(logic_or,OrSS,OrSS,OrVV);
+logic_infix!(logic_xor,XorSS,XorSS,XorVV);
+
+
+#[macro_export]
+macro_rules! logic_infix {
+  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
+    pub fn $func_name(block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+      let arg_dims = block.get_arg_dims(&arguments)?;
+      match (&arg_dims[0],&arg_dims[1]) {
+        (TableShape::Scalar, TableShape::Scalar) => {
+          let mut argument_columns = block.get_arg_columns(arguments)?;
+          let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
+          match (&argument_columns[0], &argument_columns[1], &out_column) {
+            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
+              block.plan.push($op1{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+            }
+            _ => {return Err(MechError::GenericError(1340));},
+          }
+        }
+        (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
+          let mut argument_columns = block.get_arg_columns(arguments)?;
+          let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
+          match (&argument_columns[0], &argument_columns[1], &out_column) {
+            ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
+              block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+            }
+            _ => {return Err(MechError::GenericError(1342));},
+          }
+        }
+        _ => {return Err(MechError::GenericError(1341));},
+      }
+      Ok(())
+    }
+  )
+}
