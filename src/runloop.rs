@@ -512,6 +512,9 @@ impl ProgramRunner {
               Some(Transformation::TableDefine{table_id,indices,out}) => {
                 *out
               } 
+              Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
+                *dest_id
+              } 
               _ => TableId::Local(0),
             };
             let out_table = block.get_table(&out_id).unwrap();
