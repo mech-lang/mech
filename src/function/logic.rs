@@ -14,85 +14,99 @@ lazy_static! {
   pub static ref LOGIC_XOR: u64 = hash_str("logic/xor");    
 }
 
-// And Vector : Vector
-#[derive(Debug)]
-pub struct AndVV {
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+logic_infix_ss!(AndSS,&&);
+logic_infix_ss!(OrSS,||);
+logic_infix_ss!(XorSS,^);
+
+logic_infix_vv!(AndVV,&&);
+logic_infix_vv!(OrVV,||);
+logic_infix_vv!(XorVV,^);
+
+logic_infix_vs!(AndVS,&&);
+logic_infix_vs!(OrVS,||);
+logic_infix_vs!(XorVS,^);
+
+logic_infix_sv!(AndSV,&&);
+logic_infix_sv!(OrSV,||);
+logic_infix_sv!(XorSV,^);
+
+logic_compiler!(logic_and,AndSS,AndVS,AndSV,AndVV);
+logic_compiler!(logic_or,OrSS,OrVS,OrSV,OrVV);
+logic_compiler!(logic_xor,XorSS,XorVS,XorSV,XorVV);
+
+// Scalar : Scalars
+#[macro_export]
+macro_rules! logic_infix_ss {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name
+    {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+    impl MechFunction for $func_name 
+    {
+      fn solve(&mut self) {
+        (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] $op (self.rhs.borrow())[0];
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
 
-impl MechFunction for AndVV {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs && *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+// Vector : Vector
+#[macro_export]
+macro_rules! logic_infix_vv {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
 
-// And Scalar : Scalar
-#[derive(Debug)]
-pub struct AndSS
-{
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
-}
-impl MechFunction for AndSS 
-{
-  fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] && (self.rhs.borrow())[0];
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+// Vector : Scalar
+#[macro_export]
+macro_rules! logic_infix_vs {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        let rhs = self.rhs.borrow()[0];
+        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs $op rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
 
-// Or Vector : Vector
-#[derive(Debug)]
-pub struct OrVV {
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
-}
+// Scalar : Vector
+#[macro_export]
+macro_rules! logic_infix_sv {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
 
-impl MechFunction for OrVV {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs || *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-// Or Scalar : Scalar
-#[derive(Debug)]
-pub struct OrSS
-{
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
-}
-impl MechFunction for OrSS 
-{
-  fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] || (self.rhs.borrow())[0];
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-// Xor Vector : Vector
-#[derive(Debug)]
-pub struct XorVV {
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
-}
-
-impl MechFunction for XorVV {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs ^ *rhs); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-// Xor Scalar : Scalar
-#[derive(Debug)]
-pub struct XorSS
-{
-  pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
-}
-impl MechFunction for XorSS 
-{
-  fn solve(&mut self) {
-    (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] ^ (self.rhs.borrow())[0];
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        let lhs = self.lhs.borrow()[0];
+        self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs $op *rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
 
 // Not Vector
@@ -144,13 +158,9 @@ impl MechFunctionCompiler for LogicNot {
   }
 }
 
-logic_compiler!(logic_and,AndSS,AndSS,AndVV);
-logic_compiler!(logic_or,OrSS,OrSS,OrVV);
-logic_compiler!(logic_xor,XorSS,XorSS,XorVV);
-
 #[macro_export]
 macro_rules! logic_compiler {
-  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt) => (
+  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
 
     pub struct $func_name {}
 
@@ -173,7 +183,7 @@ macro_rules! logic_compiler {
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
-                block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
+                block.plan.push($op4{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
               }
               _ => {return Err(MechError::GenericError(1342));},
             }
