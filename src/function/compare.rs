@@ -206,12 +206,12 @@ macro_rules! compare_infix_par_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send _ Sync
+    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send _ Sync
+    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       fn solve(&mut self) {
         let lhs = &self.lhs.borrow()[0];

@@ -66,12 +66,17 @@ binary_infix_par_vv!(DivParVV,div);
 binary_infix_par_vv!(ExpParVV,pow);
 
 // Parallel Scalar : Vector
-binary_infix_par_vv!(AddParSV,add);
-binary_infix_par_vv!(SubParSV,sub);
-binary_infix_par_vv!(MulParSV,mul);
-binary_infix_par_vv!(DivParSV,div);
-binary_infix_par_vv!(ExpParSV,pow);
+binary_infix_par_sv!(AddParSV,add);
+binary_infix_par_sv!(SubParSV,sub);
+binary_infix_par_sv!(MulParSV,mul);
+binary_infix_par_sv!(DivParSV,div);
+binary_infix_par_sv!(ExpParSV,pow);
 
+math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
+math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
+math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
+math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
+math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 // Negate Vector
 #[derive(Debug)]
@@ -275,12 +280,6 @@ impl MechFunctionCompiler for MathNegate {
     Ok(())
   }
 }
-
-math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
-math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
-math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
-math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
-math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 #[macro_export]
 macro_rules! math_compiler {

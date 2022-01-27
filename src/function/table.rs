@@ -302,7 +302,6 @@ where T: Copy + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
 // Copy Table : Table
 #[derive(Debug)]
 pub struct CopyT {
