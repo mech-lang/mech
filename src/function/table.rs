@@ -656,6 +656,31 @@ impl MechFunctionCompiler for TableSplit {
   }
 }
 
+
+// Copy Vector{Int Ix} : Vector
+#[derive(Debug)]
+pub struct Range  {
+  pub start: Arg<u8>, pub end: Arg<u8>, pub out: OutTable
+}
+
+impl MechFunction for Range
+{
+  fn solve(&mut self) {
+    let start_value = self.start.borrow()[0];
+    let end_value = self.end.borrow()[0];
+    let delta = end_value - start_value + 1;
+    let mut out_brrw = self.out.borrow_mut();
+    out_brrw.resize(delta as usize,1);
+    out_brrw.set_col_kind(0,ValueKind::U8);
+    let mut value = start_value;
+    for row in 0..out_brrw.rows {
+      out_brrw.set(row,0,Value::U8(value));
+      value += 1;
+    } 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 pub struct TableRange{}
 impl MechFunctionCompiler for TableRange {
 
@@ -666,7 +691,7 @@ impl MechFunctionCompiler for TableRange {
     let out_table = block.get_table(out_table_id)?;
     match (&argument_columns[0], &argument_columns[1]) {
       ((_,Column::U8(start),_), (_,Column::U8(end),_)) => {  
-        let fxn = Function::RangeU8((start.clone(),end.clone(),out_table.clone()));
+        let fxn = Range{start: start.clone(), end: end.clone(), out: out_table.clone()};
         block.plan.push(fxn);
       }
       _ => {return Err(MechError::GenericError(6349));},
