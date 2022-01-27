@@ -49,8 +49,6 @@ pub enum Function {
   ParCSGreaterThanVS((Arg<f32>,f32,f32)),
   ParSetVS((Arg<bool>,f32,Out<f32>)),
   ParSetVV((Arg<bool>,Arg<f32>,Out<f32>)),
-  ParCopyVV((Arg<f32>,Out<f32>)),
-  ParCopyVVU8((Arg<u8>,Out<u8>)),
   Null,
 }
 
@@ -71,7 +69,6 @@ impl MechFunction for Function {
           *lhs = *swap;
         }); 
       }
-
       // SET
       Function::ParSetVS((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
@@ -84,7 +81,6 @@ impl MechFunction for Function {
           *out = *x
         });          
       }
-      Function::ParCopyVV((rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*rhs.borrow())).for_each(|(out,x)| *out = *x); }
       x => println!("Not Implemented: {:?}", x),
     }
   }

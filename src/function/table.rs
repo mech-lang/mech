@@ -65,6 +65,22 @@ where T: Clone + Debug
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Parallel Copy Vector : Vector
+#[derive(Debug)]
+pub struct ParCopyVV<T> 
+where T: Clone + Debug + Sync + Send
+{
+  pub arg: Arg<T>, pub out: Out<T>
+}
+impl<T> MechFunction for ParCopyVV<T> 
+where T: Clone + Debug + Sync + Send
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = arg.clone()); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Copy Scalar : Vector
 #[derive(Debug)]
 pub struct CopySV<T> 
