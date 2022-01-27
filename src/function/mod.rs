@@ -46,9 +46,6 @@ pub enum Function {
   AddVVIPF32((Out<f32>, Arg<f32>)),
   ParAddVVIPF32(Vec<ColumnV<f32>>),  
   ParAddVSIPF32(Vec<ColumnV<f32>>),
-  ParOrVV(Vec<ColumnV<bool>>),
-  ParLessThanVS((Arg<f32>,f32,Out<bool>)),
-  ParGreaterThanVS((Arg<f32>,f32,Out<bool>)),
   ParCSGreaterThanVS((Arg<f32>,f32,f32)),
   ParSetVS((Arg<bool>,f32,Out<f32>)),
   ParSetVV((Arg<bool>,Arg<f32>,Out<f32>)),
@@ -69,16 +66,12 @@ impl MechFunction for Function {
         args[0].borrow_mut().par_iter_mut().for_each(|lhs| *lhs += rhs); 
       }
       // COMPARE
-      Function::ParGreaterThanVS((lhs, rhs, out)) => { out.borrow_mut().par_iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs > *rhs); }
-      Function::ParLessThanVS((lhs, rhs, out)) => { out.borrow_mut().iter_mut().zip(&(*lhs.borrow())).for_each(|(out, lhs)| *out = *lhs < *rhs); }
       Function::ParCSGreaterThanVS((lhs, rhs, swap)) => { 
         lhs.borrow_mut().par_iter_mut().for_each(|lhs| if *lhs > *rhs {
           *lhs = *swap;
         }); 
       }
 
-      // LOGIC
-      Function::ParOrVV(args) => { args[2].borrow_mut().par_iter_mut().zip(&(*args[0].borrow())).zip(&(*args[1].borrow())).for_each(|((out, lhs),rhs)| *out = *lhs || *rhs); }
       // SET
       Function::ParSetVS((ix, rhs, out)) => {
         out.borrow_mut().par_iter_mut().zip(&(*ix.borrow())).for_each(|(out,ix)| {
