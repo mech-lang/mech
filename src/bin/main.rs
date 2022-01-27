@@ -75,7 +75,7 @@ fn main() -> Result<(),MechError> {
   // Table
   let (x,y,vx,vy) = {
     match core.get_table_by_id(hash_str("balls")) {
-      Some(balls_rc) => {
+      Ok(balls_rc) => {
         let balls = balls_rc.borrow();
         (balls.get_column_unchecked(0),
         balls.get_column_unchecked(1),
@@ -88,7 +88,7 @@ fn main() -> Result<(),MechError> {
 
   let g = {
     match core.get_table_by_id(hash_str("gravity")) {
-      Some(gravity_rc) => {
+      Ok(gravity_rc) => {
         let gravity = gravity_rc.borrow();
         gravity.get_column_unchecked(0)
       }
@@ -98,7 +98,7 @@ fn main() -> Result<(),MechError> {
 
   let c1 = {
     match core.get_table_by_id(hash_str("-0.8")) {
-      Some(const1_rc) => {
+      Ok(const1_rc) => {
         let const1 = const1_rc.borrow();
         const1.get_column_unchecked(0)
       }
