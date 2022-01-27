@@ -12,13 +12,7 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  Function,
-  math::*,
-  compare::*,
-  stats::*,
   table::*,
-  set::*,
-  logic::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;

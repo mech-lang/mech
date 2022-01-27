@@ -290,12 +290,25 @@ impl<T> MechFunction for SetVVB<T>
 where T: Copy + Debug
 {
   fn solve(&mut self) {
-    let oix_brrw = self.oix.borrow();
-    for row in 0..oix_brrw.len() {
-      if oix_brrw[row] {
-        (self.out.borrow_mut())[row] = (self.arg.borrow())[row];
-      }
-    }
+    self.out.borrow_mut().iter_mut().zip(self.oix.borrow().iter()).zip(self.arg.borrow().iter()).for_each(|((out,oix),x)| if *oix == true {
+      *out = *x
+    });
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
+pub struct ParSetVVB<T> {
+  pub arg: Arg<T>, pub out: Arg<T>, pub oix: Arg<bool>
+}
+
+impl<T> MechFunction for ParSetVVB<T> 
+where T: Copy + Debug + Sync + Send
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).zip(self.arg.borrow().par_iter()).for_each(|((out,oix),x)| if *oix == true {
+      *out = *x
+    });
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -310,10 +323,52 @@ impl<T> MechFunction for SetVV<T>
 where T: Copy + Debug
 {
   fn solve(&mut self) {
-    let rows = self.arg.borrow().len();
-    for row in 0..rows {
-      (self.out.borrow_mut())[row] = (self.arg.borrow())[row];
-    }
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = *arg); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
+pub struct ParSetVV<T> {
+  pub arg: Arg<T>, pub out: Arg<T>
+}
+
+impl<T> MechFunction for ParSetVV<T> 
+where T: Copy + Debug + Sync + Send
+{
+  fn solve(&mut self) {
+    self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = *arg); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
+pub struct SetVS<T> {
+  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>
+}
+
+impl<T> MechFunction for SetVS<T> 
+where T: Copy + Debug
+{
+  fn solve(&mut self) {
+    let arg = self.arg.borrow()[self.ix];
+    self.out.borrow_mut().iter_mut().for_each(|out| *out = arg); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
+#[derive(Debug)]
+pub struct ParSetVS<T> {
+  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>
+}
+
+impl<T> MechFunction for ParSetVS<T> 
+where T: Copy + Debug + Sync + Send
+{
+  fn solve(&mut self) {
+    let arg = self.arg.borrow()[self.ix];
+    self.out.borrow_mut().par_iter_mut().for_each(|out| *out = arg); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }

@@ -10,7 +10,6 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  Function,
   math::*,
   compare::*,
   stats::*,
