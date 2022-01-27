@@ -18,7 +18,10 @@ lazy_static! {
 }
 
 impl MechNumArithmetic<u8> for u8 {}
+impl MechNumArithmetic<u16> for u16 {}
+impl MechNumArithmetic<u32> for u32 {}
 impl MechNumArithmetic<f32> for f32 {}
+impl MechNumArithmetic<f64> for f64 {}
 
 // Scalar : Scalar
 binary_infix_ss!(AddSS,add);
