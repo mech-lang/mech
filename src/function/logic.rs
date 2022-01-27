@@ -22,13 +22,25 @@ logic_infix_vv!(AndVV,&&);
 logic_infix_vv!(OrVV,||);
 logic_infix_vv!(XorVV,^);
 
+logic_infix_par_vv!(ParAndVV,&&);
+logic_infix_par_vv!(ParOrVV,||);
+logic_infix_par_vv!(ParXorVV,^);
+
 logic_infix_vs!(AndVS,&&);
 logic_infix_vs!(OrVS,||);
 logic_infix_vs!(XorVS,^);
 
+logic_infix_par_vs!(ParAndVS,&&);
+logic_infix_par_vs!(ParOrVS,||);
+logic_infix_par_vs!(ParXorVS,^);
+
 logic_infix_sv!(AndSV,&&);
 logic_infix_sv!(OrSV,||);
 logic_infix_sv!(XorSV,^);
+
+logic_infix_par_sv!(ParAndSV,&&);
+logic_infix_par_sv!(ParOrSV,||);
+logic_infix_par_sv!(ParXorSV,^);
 
 logic_compiler!(logic_and,AndSS,AndVS,AndSV,AndVV);
 logic_compiler!(logic_or,OrSS,OrVS,OrSV,OrVV);
@@ -71,6 +83,22 @@ macro_rules! logic_infix_vv {
   )
 }
 
+#[macro_export]
+macro_rules! logic_infix_par_vv {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
 // Vector : Scalar
 #[macro_export]
 macro_rules! logic_infix_vs {
@@ -90,6 +118,24 @@ macro_rules! logic_infix_vs {
   )
 }
 
+#[macro_export]
+macro_rules! logic_infix_par_vs {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        let rhs = self.rhs.borrow()[0];
+        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).for_each(|(out, lhs)| *out = *lhs $op rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
 // Scalar : Vector
 #[macro_export]
 macro_rules! logic_infix_sv {
@@ -103,6 +149,24 @@ macro_rules! logic_infix_sv {
       fn solve(&mut self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs $op *rhs); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! logic_infix_par_sv {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name {
+      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+    }
+
+    impl MechFunction for $func_name {
+      fn solve(&mut self) {
+        let lhs = self.lhs.borrow()[0];
+        self.out.borrow_mut().par_iter_mut().zip(self.rhs.borrow().par_iter()).for_each(|(out, rhs)| *out = lhs $op *rhs); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
