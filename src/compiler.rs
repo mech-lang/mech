@@ -632,7 +632,6 @@ impl Compiler {
         let mut result_tfms = Vec::new();
         let mut args: Vec<Argument> = Vec::new();
         let mut out = self.compile_node(&children[0])?;
-        println!("{:?}", out);
         let mut out_id = TableId::Local(0);
         match &out[0] {
           Transformation::NewTable{table_id,..} => {
