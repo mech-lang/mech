@@ -211,6 +211,7 @@ impl Core {
       }
       false => {
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+        println!("{:?}", mech_error);
         let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());
         Err(MechError::GenericError(8963))

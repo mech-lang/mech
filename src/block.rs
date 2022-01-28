@@ -19,6 +19,8 @@ use std::rc::Rc;
 use hashbrown::HashMap;
 use std::fmt;
 use serde::Serialize;
+use std::mem::transmute;
+use std::convert::TryInto;
 
 #[derive(Clone)]
 pub struct Plan{
@@ -696,6 +698,7 @@ impl Block {
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
+        let mut bytes = bytes.clone();
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
@@ -703,16 +706,25 @@ impl Block {
           NumberLiteralKind::Decimal => {
             match bytes.len() {
               1 => {
-                t.set_col_kind(0, ValueKind::U8);
+                t.set_col_kind(0, ValueKind::U8)?;
                 t.set(0,0,Value::U8(bytes[0] as u8))?;
               }
               2 => {
-                t.set_col_kind(0, ValueKind::U16);
-                use std::mem::transmute;
-                use std::convert::TryInto;
+                t.set_col_kind(0, ValueKind::U16)?;
                 let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-                let x = u16::from_ne_bytes(int_bytes.try_into().unwrap());
+                let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U16(x))?;
+              }
+              3 | 4 => {
+                t.set_col_kind(0, ValueKind::U32)?;
+                if bytes.len() < 4 {
+                  bytes.insert(0,0);
+                }
+                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
+                let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
+                println!("{:?}", x);
+                t.set(0,0,Value::U32(x))?;
+                println!("{:?}",t);
               }
               _ => {return Err(MechError::GenericError(6376));},
             }

@@ -171,8 +171,17 @@ impl Table {
     match (row, &self.get_column(&col)?) {
       (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
       (TableIndex::Index(row),Column::F32(column_f32)) => Ok(Value::F32(column_f32.borrow()[row-1])),
+      (TableIndex::Index(row),Column::F64(column_f64)) => Ok(Value::F64(column_f64.borrow()[row-1])),
       (TableIndex::Index(row),Column::U8(column_u8)) => Ok(Value::U8(column_u8.borrow()[row-1])),
       (TableIndex::Index(row),Column::U16(column_u16)) => Ok(Value::U16(column_u16.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U32(column_u32)) => Ok(Value::U32(column_u32.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U64(column_u64)) => Ok(Value::U64(column_u64.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U128(column_u128)) => Ok(Value::U128(column_u128.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I8(column_i8)) => Ok(Value::I8(column_i8.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I16(column_i16)) => Ok(Value::I16(column_i16.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I32(column_i32)) => Ok(Value::I32(column_i32.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I64(column_i64)) => Ok(Value::I64(column_i64.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I128(column_i128)) => Ok(Value::I128(column_i128.borrow()[row-1])),
       (TableIndex::Index(row),Column::Bool(column_bool)) => Ok(Value::Bool(column_bool.borrow()[row-1])),
       (TableIndex::Index(row),Column::String(column_string)) => Ok(Value::String(column_string.borrow()[row-1].clone())),
       (TableIndex::Index(row),Column::Ref(column_ref)) => Ok(Value::Reference(column_ref.borrow()[row-1].clone())),
@@ -185,8 +194,17 @@ impl Table {
     if col < self.cols && row < self.rows {
       match &self.data[col] {
         Column::F32(column_f32) => Ok(Value::F32(column_f32.borrow()[row])),
+        Column::F64(column_f64) => Ok(Value::F64(column_f64.borrow()[row])),
         Column::U8(column_u8) => Ok(Value::U8(column_u8.borrow()[row])),
         Column::U16(column_u16) => Ok(Value::U16(column_u16.borrow()[row])),
+        Column::U32(column_u32) => Ok(Value::U32(column_u32.borrow()[row])),
+        Column::U64(column_u64) => Ok(Value::U64(column_u64.borrow()[row])),
+        Column::U128(column_u128) => Ok(Value::U128(column_u128.borrow()[row])),
+        Column::I8(column_i8) => Ok(Value::I8(column_i8.borrow()[row])),
+        Column::I16(column_i16) => Ok(Value::I16(column_i16.borrow()[row])),
+        Column::I32(column_i32) => Ok(Value::I32(column_i32.borrow()[row])),
+        Column::I64(column_i64) => Ok(Value::I64(column_i64.borrow()[row])),
+        Column::I128(column_i128) => Ok(Value::I128(column_i128.borrow()[row])),
         Column::Bool(column_bool) => Ok(Value::Bool(column_bool.borrow()[row])),
         Column::String(column_string) => Ok(Value::String(column_string.borrow()[row].clone())),
         Column::Ref(column_ref) => Ok(Value::Reference(column_ref.borrow()[row].clone())),
@@ -232,16 +250,21 @@ impl Table {
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::F64(column_f64), Value::F64(value_f64)) => column_f64.borrow_mut()[row] = value_f64,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
         (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
+        (Column::U32(column_u32), Value::U32(value_u32)) => column_u32.borrow_mut()[row] = value_u32,
+        (Column::U64(column_u64), Value::U64(value_u64)) => column_u64.borrow_mut()[row] = value_u64,
+        (Column::U128(column_u128), Value::U128(value_u128)) => column_u128.borrow_mut()[row] = value_u128,
+        (Column::I8(column_i8), Value::I8(value_i8)) => column_i8.borrow_mut()[row] = value_i8,
+        (Column::I16(column_i16), Value::I16(value_i16)) => column_i16.borrow_mut()[row] = value_i16,
+        (Column::I32(column_i32), Value::I32(value_i32)) => column_i32.borrow_mut()[row] = value_i32,
+        (Column::I64(column_i64), Value::I64(value_i64)) => column_i64.borrow_mut()[row] = value_i64,
+        (Column::I128(column_i128), Value::I128(value_i128)) => column_i128.borrow_mut()[row] = value_i128,
         (Column::Bool(column_bool), Value::Bool(value_bool)) => column_bool.borrow_mut()[row] = value_bool,
         (Column::String(column_string), Value::String(value_string)) => column_string.borrow_mut()[row] = value_string,
         (Column::Ref(column_ref), Value::Reference(value_ref)) => column_ref.borrow_mut()[row] = value_ref,
         (Column::Empty, Value::Empty) => (),
-        (Column::Empty, Value::U8(value_u8)) => {
-          //let column: ColumnV<u8> = Rc::new(RefCell::new(Vec::new()));
-          //self.data[col] = Column::U8(column);
-        },
         x => {
           return Err(MechError::GenericError(1219));
         },
@@ -281,15 +304,55 @@ impl Table {
           self.data[col] = Column::U16(column);
           self.col_kinds[col] = ValueKind::U16;
         },
-        (Column::Empty, ValueKind::F32) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::F32(column);
-          self.col_kinds[col] = ValueKind::F32;
+        (Column::Empty, ValueKind::U32) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U32(column);
+          self.col_kinds[col] = ValueKind::U32;
         },
         (Column::Empty, ValueKind::U64) => {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U64(column);
           self.col_kinds[col] = ValueKind::U64;
+        },
+        (Column::Empty, ValueKind::U128) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U128(column);
+          self.col_kinds[col] = ValueKind::U128;
+        },
+        (Column::Empty, ValueKind::I8) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I8(column);
+          self.col_kinds[col] = ValueKind::I8;
+        },
+        (Column::Empty, ValueKind::I16) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I16(column);
+          self.col_kinds[col] = ValueKind::I16;
+        },
+        (Column::Empty, ValueKind::I32) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I32(column);
+          self.col_kinds[col] = ValueKind::I32;
+        },
+        (Column::Empty, ValueKind::I64) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I64(column);
+          self.col_kinds[col] = ValueKind::I64;
+        },
+        (Column::Empty, ValueKind::I128) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I128(column);
+          self.col_kinds[col] = ValueKind::I128;
+        },
+        (Column::Empty, ValueKind::F32) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+          self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::Empty, ValueKind::F64) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F64(column);
+          self.col_kinds[col] = ValueKind::F64;
         },
         (Column::Empty, ValueKind::Bool) => {
           let column = Rc::new(RefCell::new(vec![false;self.rows]));
