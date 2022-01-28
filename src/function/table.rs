@@ -384,9 +384,6 @@ impl MechFunction for CopyT {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
 
-    println!("{:?}", arg_brrw);
-    println!("{:?}", out_brrw);
-
     out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
     for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
       out_brrw.set_col_kind(col, kind.clone());
