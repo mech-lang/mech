@@ -20,6 +20,13 @@ lazy_static! {
 impl MechNumArithmetic<u8> for u8 {}
 impl MechNumArithmetic<u16> for u16 {}
 impl MechNumArithmetic<u32> for u32 {}
+impl MechNumArithmetic<u64> for u64 {}
+impl MechNumArithmetic<u128> for u128 {}
+impl MechNumArithmetic<i8> for i8 {}
+impl MechNumArithmetic<i16> for i16 {}
+impl MechNumArithmetic<i32> for i32 {}
+impl MechNumArithmetic<i64> for i64 {}
+impl MechNumArithmetic<i128> for i128 {}
 impl MechNumArithmetic<f32> for f32 {}
 impl MechNumArithmetic<f64> for f64 {}
 
@@ -28,55 +35,55 @@ binary_infix_ss!(AddSS,add);
 binary_infix_ss!(SubSS,sub);
 binary_infix_ss!(MulSS,mul);
 binary_infix_ss!(DivSS,div);
-binary_infix_ss!(ExpSS,pow);
+//binary_infix_ss!(ExpSS,pow);
 
 // Scalar : Vector
 binary_infix_sv!(AddSV,add);
 binary_infix_sv!(SubSV,sub);
 binary_infix_sv!(MulSV,mul);
 binary_infix_sv!(DivSV,div);
-binary_infix_sv!(ExpSV,pow);
+//binary_infix_sv!(ExpSV,pow);
 
 // Vector : Scalar
 binary_infix_vs!(AddVS,add);
 binary_infix_vs!(SubVS,sub);
 binary_infix_vs!(MulVS,mul);
 binary_infix_vs!(DivVS,div);
-binary_infix_vs!(ExpVS,pow);
+//binary_infix_vs!(ExpVS,pow);
 
 // Vector : Vector
 binary_infix_vv!(AddVV,add);
 binary_infix_vv!(SubVV,sub);
 binary_infix_vv!(MulVV,mul);
 binary_infix_vv!(DivVV,div);
-binary_infix_vv!(ExpVV,pow);
+//binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
 binary_infix_par_vs!(AddParVS,add);
 binary_infix_par_vs!(SubParVS,sub);
 binary_infix_par_vs!(MulParVS,mul);
 binary_infix_par_vs!(DivParVS,div);
-binary_infix_par_vs!(ExpParVS,pow);
+//binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
 binary_infix_par_vv!(AddParVV,add);
 binary_infix_par_vv!(SubParVV,sub);
 binary_infix_par_vv!(MulParVV,mul);
 binary_infix_par_vv!(DivParVV,div);
-binary_infix_par_vv!(ExpParVV,pow);
+//binary_infix_par_vv!(ExpParVV,pow);
 
 // Parallel Scalar : Vector
 binary_infix_par_sv!(AddParSV,add);
 binary_infix_par_sv!(SubParSV,sub);
 binary_infix_par_sv!(MulParSV,mul);
 binary_infix_par_sv!(DivParSV,div);
-binary_infix_par_sv!(ExpParSV,pow);
+//binary_infix_par_sv!(ExpParSV,pow);
 
 math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
 math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
 math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
 math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
-math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
+//math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 // Negate Vector
 #[derive(Debug)]
@@ -309,6 +316,13 @@ macro_rules! math_compiler {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2::<u16>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2::<u32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::U64(out)) => { block.plan.push($op2::<u64>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::U128(out)) => { block.plan.push($op2::<u128>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::I8(out)) => { block.plan.push($op2::<i8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::I16(out)) => { block.plan.push($op2::<i16>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::I32(out)) => { block.plan.push($op2::<i32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::I64(out)) => { block.plan.push($op2::<i64>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::I128(out)) => { block.plan.push($op2::<i128>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               _ => {return Err(MechError::GenericError(1237));},
             }
           }   

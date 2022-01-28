@@ -62,7 +62,7 @@ impl Core {
     functions.insert(*MATH_SUBTRACT, MathSub{});
     functions.insert(*MATH_MULTIPLY, MathMul{});
     functions.insert(*MATH_DIVIDE, MathDiv{});
-    functions.insert(*MATH_EXPONENT, MathExp{});
+    //functions.insert(*MATH_EXPONENT, MathExp{});
     functions.insert(*MATH_NEGATE, MathNegate{});
 
     functions.insert(*LOGIC_NOT, LogicNot{});
