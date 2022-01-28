@@ -306,9 +306,9 @@ macro_rules! math_compiler {
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let mut out_column = block.get_out_column(out, *rows, ValueKind::U8)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
-              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => {
-                block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
-              }
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2::<u16>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2::<u32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               _ => {return Err(MechError::GenericError(1237));},
             }
           }   
