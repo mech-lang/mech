@@ -722,9 +722,16 @@ impl Block {
                 }
                 let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
                 let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
-                println!("{:?}", x);
                 t.set(0,0,Value::U32(x))?;
-                println!("{:?}",t);
+              }
+              5 | 6 | 7 | 8 => {
+                t.set_col_kind(0, ValueKind::U64)?;
+                while bytes.len() < 8 {
+                  bytes.insert(0,0);
+                }
+                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
+                let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
+                t.set(0,0,Value::U64(x))?;
               }
               _ => {return Err(MechError::GenericError(6376));},
             }
