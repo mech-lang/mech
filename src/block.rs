@@ -724,7 +724,7 @@ impl Block {
                 let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U32(x))?;
               }
-              5 | 6 | 7 | 8 => {
+              5..=8 => {
                 t.set_col_kind(0, ValueKind::U64)?;
                 while bytes.len() < 8 {
                   bytes.insert(0,0);
@@ -732,6 +732,15 @@ impl Block {
                 let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
                 let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U64(x))?;
+              }
+              9..=16 => {
+                t.set_col_kind(0, ValueKind::U128)?;
+                while bytes.len() < 16 {
+                  bytes.insert(0,0);
+                }
+                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u128>());
+                let x = u128::from_be_bytes(int_bytes.try_into().unwrap());
+                t.set(0,0,Value::U128(x))?;
               }
               _ => {return Err(MechError::GenericError(6376));},
             }
