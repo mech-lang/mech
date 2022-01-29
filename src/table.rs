@@ -294,6 +294,7 @@ impl Table {
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
       match (&mut self.data[col], kind) {
+        (Column::U8(_), ValueKind::U8) => (),
         (Column::Empty, ValueKind::U8) => {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::U8(column);
@@ -369,7 +370,9 @@ impl Table {
           self.data[col] = Column::Ref(column);
           self.col_kinds[col] = ValueKind::Reference;
         },
-        _ => {return Err(MechError::GenericError(1229));},
+        x => {
+          return Err(MechError::GenericError(1229));
+        },
       }
       Ok(())
     } else {

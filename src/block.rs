@@ -703,6 +703,20 @@ impl Block {
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
         match kind {
+          NumberLiteralKind::U16 => {
+            match bytes.len() {
+              1..=2 => {
+                t.set_kind(ValueKind::U16)?;
+                while bytes.len() < 2 {
+                  bytes.insert(0,0);
+                }
+                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+                let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
+                t.set(0,0,Value::U16(x))?;
+              }
+              _ => {return Err(MechError::GenericError(6377));},
+            }
+          }
           NumberLiteralKind::Decimal => {
             match bytes.len() {
               1 => {
@@ -710,13 +724,13 @@ impl Block {
                 t.set(0,0,Value::U8(bytes[0] as u8))?;
               }
               2 => {
-                t.set_col_kind(0, ValueKind::U16)?;
+                t.set_kind(ValueKind::U16)?;
                 let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
                 let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
                 t.set(0,0,Value::U16(x))?;
               }
               3 | 4 => {
-                t.set_col_kind(0, ValueKind::U32)?;
+                t.set_kind(ValueKind::U32)?;
                 if bytes.len() < 4 {
                   bytes.insert(0,0);
                 }
@@ -725,7 +739,7 @@ impl Block {
                 t.set(0,0,Value::U32(x))?;
               }
               5..=8 => {
-                t.set_col_kind(0, ValueKind::U64)?;
+                t.set_kind(ValueKind::U64)?;
                 while bytes.len() < 8 {
                   bytes.insert(0,0);
                 }
@@ -734,7 +748,7 @@ impl Block {
                 t.set(0,0,Value::U64(x))?;
               }
               9..=16 => {
-                t.set_col_kind(0, ValueKind::U128)?;
+                t.set_kind(ValueKind::U128)?;
                 while bytes.len() < 16 {
                   bytes.insert(0,0);
                 }

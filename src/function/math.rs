@@ -301,12 +301,22 @@ macro_rules! math_compiler {
         match (&arg_shapes[0],&arg_shapes[1]) {
           (TableShape::Scalar, TableShape::Scalar) => {
             let mut argument_scalars = block.get_arg_columns(arguments)?;
-            let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
-            match (&argument_scalars[0], &argument_scalars[1], &out_column) {
-              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix)), Column::U8(out)) => {
-                block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()})
-              }
-              _ => {return Err(MechError::GenericError(1236));},
+            match (&argument_scalars[0], &argument_scalars[1]) {
+              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
+                if let Column::U8(out) = out_column {
+                  block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                }
+              },
+              ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::U16)?;
+                if let Column::U16(out) = out_column {
+                  block.plan.push($op1::<u16>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                }
+              },
+              _ => {
+                return Err(MechError::GenericError(1236));
+              },
             }
           }
           (TableShape::Scalar, TableShape::Column(rows)) => {
