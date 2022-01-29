@@ -14,7 +14,7 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
-  multi::{many1, many0},
+  multi::{many1, many0, separated_list1},
 };
 
 use unicode_segmentation::*;
@@ -363,6 +363,7 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
+        println!("{:?}", unparsed);
         Err(MechError::GenericError(5424))
       } else { 
         Ok(tree)
@@ -766,9 +767,9 @@ fn data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn kind_annotation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_angle(input)?;
-  let (input, kind_id) = identifier(input)?;
+  let (input, kind_id) = separated_list1(tag(","),identifier)(input)?;
   let (input, _) = right_angle(input)?;
-  Ok((input, Node::KindAnnotation{children: vec![kind_id]}))
+  Ok((input, Node::KindAnnotation{children: kind_id}))
 }
 
 // ### Tables
@@ -940,10 +941,15 @@ fn variable_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let mut children = vec![];
   let (input, table) = table(input)?;
+  children.push(table);
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  if let Some(kind_id) = kind_id { children.push(kind_id); }
   let (input, _) = tuple((space, equal, space))(input)?;
   let (input, expression) = expression(input)?;
-  Ok((input, Node::TableDefine{children: vec![table, expression]}))
+  children.push(expression);
+  Ok((input, Node::TableDefine{children}))
 }
 
 fn table_select(input: Vec<&str>) -> IResult<Vec<&str>, Node> {

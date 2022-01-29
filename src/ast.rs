@@ -58,6 +58,7 @@ pub enum Node {
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
   Comment {children: Vec<Node> },
+  KindAnnotation {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Transformation{ children: Vec<Node> },
   Identifier{ name: Vec<char>, id: u64 },
@@ -135,6 +136,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
     Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
     Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
+    Node::KindAnnotation{children} => {write!(f,"KindAnnotation\n").ok(); Some(children)},
     Node::Whenever{children} => {write!(f,"Whenever\n").ok(); Some(children)},
     Node::WheneverIndex{children} => {write!(f,"WheneverIndex\n").ok(); Some(children)},
     Node::Wait{children} => {write!(f,"Wait\n").ok(); Some(children)},
@@ -836,6 +838,10 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
+      parser::Node::KindAnnotation{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::KindAnnotation{children: result});
+      },
       parser::Node::DecimalLiteral{chars} => {
         let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         let mut dec_number: u128 = 0;
@@ -929,7 +935,6 @@ impl Ast {
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
       parser::Node::BooleanLiteral{children} |
-      parser::Node::KindAnnotation{children} |
       parser::Node::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
