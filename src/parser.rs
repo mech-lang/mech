@@ -150,6 +150,7 @@ pub enum Node {
   BinaryLiteral{chars: Vec<char>},
   RationalNumber{children: Vec<Node>},
   Token{token: Token, chars: Vec<char>},
+  KindAnnotation{children: Vec<Node>},
   Add,
   Subtract,
   Multiply,
@@ -306,6 +307,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::StateTransition{children} => {print!("StateTransition\n"); Some(children)},
     Node::Value{children} => {print!("Value\n"); Some(children)},
+    Node::KindAnnotation{children} => {print!("KindAnnotation\n"); Some(children)},
     Node::BooleanLiteral{children} => {print!("BooleanLiteral\n"); Some(children)},
     Node::Add => {print!("Add\n",); None},
     Node::Subtract => {print!("Subtract\n",); None},
@@ -658,8 +660,14 @@ fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal))(input)?;
-  Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
+  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  let mut children = vec![number_variant];
+  match kind_id {
+    Some(kind_id) => children.push(kind_id),
+    _ => (),
+  }
+  Ok((input, Node::NumberLiteral{children}))
 }
 
 fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -694,7 +702,7 @@ fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn value(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, decimal_literal, string))(input)?;
+  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, number_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
 
@@ -754,6 +762,13 @@ fn data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let mut data = vec![source];
   data.append(&mut indices);
   Ok((input, Node::Data{children: data}))
+}
+
+fn kind_annotation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = left_angle(input)?;
+  let (input, kind_id) = identifier(input)?;
+  let (input, _) = right_angle(input)?;
+  Ok((input, Node::KindAnnotation{children: vec![kind_id]}))
 }
 
 // ### Tables

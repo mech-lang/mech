@@ -10,7 +10,11 @@ use crate::lexer::Token;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
-use mech_core::{hash_chars, humanize, NumberLiteralKind, TableId};
+use mech_core::{hash_chars, hash_str, humanize, NumberLiteralKind, TableId};
+
+lazy_static! {
+  pub static ref U16: u64 = hash_str("u16");
+}
 
 // ## AST Nodes
 
@@ -808,7 +812,18 @@ impl Ast {
         compiled.push(string);
       },
       parser::Node::NumberLiteral{children} => {
-        let result = self.compile_nodes(children);
+        let mut result = self.compile_nodes(children);
+        // There's a type annotation
+        if result.len() > 1 {
+          match (&result[0], &result[1]) {
+            (Node::NumberLiteral{kind,bytes}, Node::Identifier{name, id}) => {
+              if *id == *U16 {
+                result[0] = Node::NumberLiteral{kind: NumberLiteralKind::U16, bytes: bytes.clone()};
+              }
+            }
+            _ => (),
+          }
+        }
         compiled.push(result[0].clone());
       },
       parser::Node::True => {
@@ -914,6 +929,7 @@ impl Ast {
       parser::Node::Repeat{children} |
       parser::Node::Alphanumeric{children} |
       parser::Node::BooleanLiteral{children} |
+      parser::Node::KindAnnotation{children} |
       parser::Node::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
