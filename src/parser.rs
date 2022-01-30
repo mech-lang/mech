@@ -606,7 +606,6 @@ fn paragraph_starter(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 fn identifier(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(space)(input)?;
   let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
-  let (input, _) = many0(space)(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
   Ok((input, Node::Identifier{children: id}))
@@ -816,9 +815,13 @@ fn table_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn attribute(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let mut children = vec![];
   let (input, identifier) = identifier(input)?;
+  children.push(identifier);
+  let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
-  Ok((input, Node::Attribute{children: vec![identifier]}))
+  if let Some(kind) = kind { children.push(kind); }
+  Ok((input, Node::Attribute{children}))
 }
 
 fn table_header(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
