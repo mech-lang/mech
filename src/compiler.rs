@@ -473,29 +473,46 @@ impl Compiler {
         header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: columns});
         tfms.append(&mut header_tfms);
       }
+      Node::KindAnnotation{children} => {
+        let mut result = self.compile_nodes(&children)?;
+        for (ix,tfm) in result.iter().enumerate() {
+          match tfm {
+            Transformation::Identifier{name,id} => {
+              let alias_tfm = Transformation::ColumnKind{table_id: TableId::Local(0), column_ix: ix.clone(), kind: id.clone()};
+              tfms.push(alias_tfm);
+            }
+            _ => (),
+          }
+        }        
+      }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
         let mut column_aliases = Vec::new();
+        let mut column_kinds = Vec::new();
         let mut body_tfms = Vec::new();
-        let mut columns = 1;
+        let mut columns = 0;
         match table_children.first() {
           Some(Node::TableHeader{children}) => {
             let mut result = self.compile_nodes(&children)?;
-            columns = result.len();
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: columns, column_alias: id.clone()};
+                  header_tfms.push(tfm.clone());
                   column_aliases.push(alias_tfm);
+                  columns += 1;
+                }
+                Transformation::ColumnKind{table_id,column_ix,kind} => {
+                  let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: columns - 1, kind: *kind};
+                  column_kinds.push(kind_tfm);
                 }
                 _ => (),
               }
             }
-
-            header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
+            header_tfms.append(&mut column_kinds);
             table_children.remove(0);
           }
           _ => (),
