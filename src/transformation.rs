@@ -17,7 +17,7 @@ pub enum Transformation {
   NewTable{table_id: TableId, rows: usize, columns: usize },
   Constant{table_id: TableId, value: Value},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
-  ColumnKind{table_id: TableId, column_ix: usize, kind: ValueKind},
+  ColumnKind{table_id: TableId, column_ix: usize, kind: u64},
   Set{src_id: TableId, src_row: TableIndex, src_col: TableIndex, dest_id: TableId, dest_row: TableIndex, dest_col: TableIndex},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
@@ -41,7 +41,7 @@ impl fmt::Debug for Transformation {
       },
       Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
-      Transformation::ColumnKind{table_id, column_ix, kind} => write!(f,"ColumnKind(table_id: {:?}, column_ix: {}, kind: {:?})",table_id,column_ix,kind)?,
+      Transformation::ColumnKind{table_id, column_ix, kind} => write!(f,"ColumnKind(table_id: {:?}, column_ix: {}, kind: {})",table_id,column_ix,humanize(kind))?,
       Transformation::TableReference{table_id, reference} => write!(f,"TableReference(table_id: {:?}, reference: {:?})",table_id, reference)?,
       Transformation::TableDefine{table_id, indices, out} => write!(f,"TableDefine(table_id: {:?}, indices: {:?}, out: {:?})",table_id, indices, out)?,
       _ => write!(f,"Tfm Print Not Implemented")?

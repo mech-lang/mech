@@ -22,6 +22,13 @@ use serde::Serialize;
 use std::mem::transmute;
 use std::convert::TryInto;
 
+lazy_static! {
+  pub static ref U8: u64 = hash_str("u8");
+  pub static ref U16: u64 = hash_str("u16");
+  pub static ref U32: u64 = hash_str("u32");
+  pub static ref U64: u64 = hash_str("u64");
+}
+
 #[derive(Clone)]
 pub struct Plan{
   pub plan: Vec<Rc<RefCell<dyn MechFunction>>>
@@ -467,6 +474,14 @@ impl Block {
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;
       },
+      Transformation::ColumnKind{table_id, column_ix, kind} => {
+        let table = self.get_table(table_id)?;
+        let mut table_brrw = table.borrow_mut();
+        if *kind == *U8 { table_brrw.set_kind(ValueKind::U8); }
+        else if *kind == *U16 { table_brrw.set_kind(ValueKind::U16); }
+        else if *kind == *U32 { table_brrw.set_kind(ValueKind::U32); }
+        else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
+      }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if *column_ix > table.cols - 1  {
