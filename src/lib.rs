@@ -104,6 +104,19 @@ impl Column {
     }
   }
 
+  pub fn get_u16(&self) -> Result<ColumnV<u16>,MechError> {
+    match self {
+      Column::U16(col) => Ok(col.clone()),
+      Column::U8(col) => {
+        let out_col = col.borrow().iter().map(|x| *x as u16).collect();
+        Ok(Rc::new(RefCell::new(out_col)))
+      }
+      x => {
+        return Err(MechError::GenericError(8182));
+      },
+    }
+  }
+
   pub fn get_bool(&self) -> Result<ColumnV<bool>,MechError> {
     match self {
       Column::Bool(col) => Ok(col.clone()),
