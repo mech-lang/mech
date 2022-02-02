@@ -391,6 +391,7 @@ impl Compiler {
         let columns = children.len();
         let mut table_row_children = vec![];
         let mut aliases = vec![];
+        let mut kinds = vec![];
         // Compile bindings
         for (ix, binding) in children.iter().enumerate() {
           match binding {
@@ -406,6 +407,18 @@ impl Compiler {
                 _ => (),
               }
               table_row_children.push(children[1].clone());
+              if children.len() == 3 {
+                let mut kind = self.compile_node(&children[2])?;
+                match &kind[0] {
+                  Transformation::ColumnKind{table_id,column_ix,kind} => {
+                    let column_ix = ix.clone();
+                    let kind = kind.clone();
+                    let kind_tfm = move |x| Transformation::ColumnKind{table_id: x, column_ix, kind};
+                    kinds.push(kind_tfm);
+                  }
+                  _ => (),
+                }                
+              }
             }
             _ => (),
           }
@@ -417,7 +430,9 @@ impl Compiler {
           match &compiled_row_tfms[0] {
             Transformation::NewTable{table_id,..} => {
               let mut alias_tfms = aliases.iter().map(|a| a(*table_id)).collect();
+              let mut kind_tfms = kinds.iter().map(|a| a(*table_id)).collect();
               a_tfms.append(&mut alias_tfms);
+              a_tfms.append(&mut kind_tfms);
               break;
             }
             Transformation::TableReference{..} => {
