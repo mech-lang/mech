@@ -11,7 +11,7 @@ use std::thread;
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Transformation {
   Identifier{ name: Vec<char>, id: u64 },
-  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8>},
+  NumberLiteral{kind: u64, bytes: Vec<u8>},
   TableAlias{table_id: TableId, alias: u64},
   TableReference{table_id: TableId, reference: Value},
   NewTable{table_id: TableId, rows: usize, columns: usize },
@@ -32,7 +32,7 @@ impl fmt::Debug for Transformation {
     match &self {
       Transformation::NewTable{table_id, rows, columns} =>  write!(f,"NewTable(table_id: {:?}, rows: {} cols: {})",table_id,rows,columns)?,
       Transformation::Identifier{name,id} => write!(f,"Identifier(name: {:?}, id: {})",name,humanize(id))?,
-      Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",kind,bytes)?,
+      Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",humanize(kind),bytes)?,
       Transformation::TableAlias{table_id,alias} => write!(f,"TableAlias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
       Transformation::Select{table_id,indices} => write!(f,"Select(table_id: {:#?}, indices: {:#?})",table_id,indices)?,
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => write!(f,"Set(src_id: {:?}, src_indices: ({:?},{:?}),\n    dest_id: {:?}, dest_indices: ({:?},{:?}))",src_id,src_row,src_col,dest_id,dest_row,dest_col)?,

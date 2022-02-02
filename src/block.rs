@@ -168,6 +168,7 @@ impl Block {
 
     let (arg_name, table_id, indices) = argument;
 
+    // This part handles multi-dimensional indexing e.g. {1,2}{3,4}{5,6}
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
       let argument = (0,table_id,vec![(*row,*column)]);
@@ -191,10 +192,12 @@ impl Block {
       }
     }
 
+    // get the table
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
     let table_brrw = table.borrow(); 
 
+    // Get the column and row
     match (row,col) {
       (_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
@@ -717,8 +720,7 @@ impl Block {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
-        match kind {
-          NumberLiteralKind::U16 => {
+        if *kind == *U16 {
             match bytes.len() {
               1..=2 => {
                 t.set_kind(ValueKind::U16)?;
@@ -731,50 +733,49 @@ impl Block {
               }
               _ => {return Err(MechError::GenericError(6377));},
             }
-          }
-          NumberLiteralKind::Decimal => {
-            match bytes.len() {
-              1 => {
-                t.set_col_kind(0, ValueKind::U8)?;
-                t.set(0,0,Value::U8(bytes[0] as u8))?;
-              }
-              2 => {
-                t.set_kind(ValueKind::U16)?;
-                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-                let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U16(x))?;
-              }
-              3 | 4 => {
-                t.set_kind(ValueKind::U32)?;
-                if bytes.len() < 4 {
-                  bytes.insert(0,0);
-                }
-                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
-                let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U32(x))?;
-              }
-              5..=8 => {
-                t.set_kind(ValueKind::U64)?;
-                while bytes.len() < 8 {
-                  bytes.insert(0,0);
-                }
-                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
-                let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U64(x))?;
-              }
-              9..=16 => {
-                t.set_kind(ValueKind::U128)?;
-                while bytes.len() < 16 {
-                  bytes.insert(0,0);
-                }
-                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u128>());
-                let x = u128::from_be_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U128(x))?;
-              }
-              _ => {return Err(MechError::GenericError(6376));},
+        } else if *kind == 0 {
+          match bytes.len() {
+            1 => {
+              t.set_col_kind(0, ValueKind::U8)?;
+              t.set(0,0,Value::U8(bytes[0] as u8))?;
             }
+            2 => {
+              t.set_kind(ValueKind::U16)?;
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U16(x))?;
+            }
+            3 | 4 => {
+              t.set_kind(ValueKind::U32)?;
+              if bytes.len() < 4 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
+              let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U32(x))?;
+            }
+            5..=8 => {
+              t.set_kind(ValueKind::U64)?;
+              while bytes.len() < 8 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
+              let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U64(x))?;
+            }
+            9..=16 => {
+              t.set_kind(ValueKind::U128)?;
+              while bytes.len() < 16 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u128>());
+              let x = u128::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U128(x))?;
+            }
+            _ => {return Err(MechError::GenericError(6376));},
           }
-          _ => {return Err(MechError::GenericError(6375));},
+        } else {
+          return Err(MechError::GenericError(6996));
         }
       },
       Transformation::Constant{table_id, value} => {

@@ -102,20 +102,9 @@ pub enum ValueKind {
   Empty
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub enum NumberLiteralKind {
-  Decimal,
-  Hexadecimal,
-  Octal,
-  Binary,
-  U8,U16,U32,U64,U128,
-  I8,I16,I32,I64,I128,
-  F32,F64
-}
-
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NumberLiteral {
-  pub kind: NumberLiteralKind,
+  pub kind: u64,
   pub bytes: Vec<u8>,
 }
 
