@@ -314,7 +314,15 @@ macro_rules! math_compiler {
                   block.plan.push($op1::<u16>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
                 }
               },
-              _ => {
+              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::U16)?;
+                if let Column::U16(out) = out_column {
+                  let arg_16 = lhs.borrow().iter().map(|a| *a as u16).collect();
+                  block.plan.push($op1::<u16>{lhs: Rc::new(RefCell::new(arg_16)), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                }
+              },
+              x => {
+                println!("{:?}", x);
                 return Err(MechError::GenericError(1236));
               },
             }
