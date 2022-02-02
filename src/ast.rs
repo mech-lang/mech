@@ -10,7 +10,7 @@ use crate::lexer::Token;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
-use mech_core::{hash_chars, hash_str, humanize, NumberLiteralKind, TableId};
+use mech_core::*;
 
 lazy_static! {
   pub static ref U16: u64 = hash_str("u16");
@@ -84,7 +84,7 @@ pub enum Node {
   Empty,
   True,
   False,
-  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8> },
+  NumberLiteral{kind: u64, bytes: Vec<u8> },
   RationalNumber{children: Vec<Node> },
   // Markdown
   SectionTitle{ text: Vec<char> },
@@ -818,9 +818,11 @@ impl Ast {
         // There's a type annotation
         if result.len() > 1 {
           match (&result[0], &result[1]) {
-            (Node::NumberLiteral{kind,bytes}, Node::Identifier{name, id}) => {
-              if *id == *U16 {
-                result[0] = Node::NumberLiteral{kind: NumberLiteralKind::U16, bytes: bytes.clone()};
+            (Node::NumberLiteral{kind,bytes}, Node::KindAnnotation{children}) => {
+              if let Node::Identifier{name, id} = &children[0] {
+                if *id == *U16 {
+                  result[0] = Node::NumberLiteral{kind: *id, bytes: bytes.clone()};
+                }
               }
             }
             _ => (),
@@ -856,19 +858,19 @@ impl Ast {
         while bytes.len() > 1 && bytes[0] == 0 {
           bytes.remove(0);
         }
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: bytes.to_vec()});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: bytes.to_vec()});
       },
       parser::Node::BinaryLiteral{chars} => {
         let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Binary, bytes: bin_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: bin_bytes});
       }
       parser::Node::OctalLiteral{chars} => {
         let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Octal, bytes: oct_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: oct_bytes});
       },
       parser::Node::HexadecimalLiteral{chars} => {
         let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: hex_bytes});
       },
       parser::Node::True => compiled.push(Node::True),
       parser::Node::False => compiled.push(Node::False),
