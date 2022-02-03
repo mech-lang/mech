@@ -126,6 +126,8 @@ test_mech!(math_add,"#test = 1 + 1", Value::U8(2));
 
 test_mech!(math_add_u16,"#test = 10<u16> + 400<u16>", Value::U16(410));
 
+test_mech!(math_add_u8_u16,"#test = 10<u8> + 400<u16>", Value::U16(410));
+
 test_mech!(math_subtract,"#test = 3 - 1", Value::U8(2));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::U8(4));
