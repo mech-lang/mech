@@ -820,9 +820,7 @@ impl Ast {
           match (&result[0], &result[1]) {
             (Node::NumberLiteral{kind,bytes}, Node::KindAnnotation{children}) => {
               if let Node::Identifier{name, id} = &children[0] {
-                if *id == *U16 {
-                  result[0] = Node::NumberLiteral{kind: *id, bytes: bytes.clone()};
-                }
+                result[0] = Node::NumberLiteral{kind: *id, bytes: bytes.clone()};
               }
             }
             _ => (),
