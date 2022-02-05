@@ -84,9 +84,9 @@ test_mech!(table_define_empty_table, "
 block
   #bots = [|name position|]
 block
-  #bots += [position: 3 name: 4]
+  #bots += [position: 4 name: 2]
 block
-  #test = #bots.position ^ #bots.name", Value::U8(81));
+  #test = #bots.position / #bots.name", Value::U8(2));
 
 test_mech!(table_define_program, "# A Working Program
 
@@ -133,8 +133,6 @@ test_mech!(math_subtract,"#test = 3 - 1", Value::U8(2));
 test_mech!(math_multiply,"#test = 2 * 2", Value::U8(4));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::U8(2));
-
-test_mech!(math_exponent,"#test = 3 ^ 4", Value::U8(81));
 
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::U8(19));
 
