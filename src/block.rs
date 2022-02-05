@@ -735,6 +735,14 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6377));},
           }
+        } else if *kind == *U8 {
+          match bytes.len() {
+            1 => {
+              t.set_kind(ValueKind::U8)?;
+              t.set(0,0,Value::U8(bytes[0]))?;
+            }
+            _ => {return Err(MechError::GenericError(6383));},
+          }
         } else if *kind == *KM {
           match bytes.len() {
             1..=2 => {
@@ -803,6 +811,7 @@ impl Block {
             _ => {return Err(MechError::GenericError(6376));},
           }
         } else {
+          println!("{:?}", kind);
           return Err(MechError::GenericError(6996));
         }
       },
