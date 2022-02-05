@@ -27,6 +27,8 @@ lazy_static! {
   pub static ref U16: u64 = hash_str("u16");
   pub static ref U32: u64 = hash_str("u32");
   pub static ref U64: u64 = hash_str("u64");
+  pub static ref M: u64 = hash_str("m");
+  pub static ref KM: u64 = hash_str("km");
 }
 
 #[derive(Clone)]
@@ -721,18 +723,44 @@ impl Block {
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
         if *kind == *U16 {
-            match bytes.len() {
-              1..=2 => {
-                t.set_kind(ValueKind::U16)?;
-                while bytes.len() < 2 {
-                  bytes.insert(0,0);
-                }
-                let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-                let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-                t.set(0,0,Value::U16(x))?;
+          match bytes.len() {
+            1..=2 => {
+              t.set_kind(ValueKind::U16)?;
+              while bytes.len() < 2 {
+                bytes.insert(0,0);
               }
-              _ => {return Err(MechError::GenericError(6377));},
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U16(x))?;
             }
+            _ => {return Err(MechError::GenericError(6377));},
+          }
+        } else if *kind == *KM {
+          match bytes.len() {
+            1..=2 => {
+              t.set_kind(ValueKind::U16)?;
+              while bytes.len() < 2 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U16(x * 1000))?;
+            }
+            _ => {return Err(MechError::GenericError(6387));},
+          }
+        } else if *kind == *M {
+          match bytes.len() {
+            1..=2 => {
+              t.set_kind(ValueKind::U16)?;
+              while bytes.len() < 2 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
+              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::U16(x))?;
+            }
+            _ => {return Err(MechError::GenericError(6388));},
+          }
         } else if *kind == 0 {
           match bytes.len() {
             1 => {
