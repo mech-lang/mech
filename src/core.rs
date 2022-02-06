@@ -82,6 +82,7 @@ impl Core {
     functions.insert(*TABLE_SPLIT, TableSplit{});
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, TableHorizontalConcatenate{});
     functions.insert(*TABLE_VERTICAL__CONCATENATE, TableVerticalConcatenate{});
+    functions.insert(*TABLE_SIZE, TableSize{});
 
     functions.insert(*STATS_SUM, StatsSum{});
 

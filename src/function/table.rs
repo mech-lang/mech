@@ -12,7 +12,9 @@ lazy_static! {
   pub static ref TABLE_SPLIT: u64 = hash_str("table/split");
   pub static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   pub static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
-  pub static ref TABLE_APPEND: u64 = hash_str("table/append"); 
+  pub static ref TABLE_APPEND: u64 = hash_str("table/append");
+  pub static ref TABLE_SIZE: u64 = hash_str("table/size");
+  pub static ref TABLE: u64 = hash_str("table");
 }
 
 // Concat Vectors
@@ -556,7 +558,6 @@ pub struct TableHorizontalConcatenate{}
 impl MechFunctionCompiler for TableHorizontalConcatenate {
 
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-
     // Get all of the tables
     let mut rows = 0;
     let mut cols = 0;
@@ -824,6 +825,48 @@ impl MechFunctionCompiler for TableAppend {
       x => {
         block.plan.push(AppendRowT{arg: src_table.clone(), out: dest_table.clone()});
       },
+    }
+    Ok(())
+  }
+}
+
+
+#[derive(Debug)]
+pub struct Size  {
+  pub arg: ArgTable, pub out: OutTable
+}
+
+impl MechFunction for Size
+{
+  fn solve(&mut self) {
+    let arg_brrw = self.arg.borrow();
+    let rows = arg_brrw.rows;
+    let cols = arg_brrw.cols;
+    let mut out_brrw = self.out.borrow_mut();
+    out_brrw.set(0,0,Value::U64(rows as u64));
+    out_brrw.set(0,1,Value::U64(cols as u64));
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
+pub struct TableSize{}
+
+impl MechFunctionCompiler for TableSize {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    let (arg_name,arg_table_id,_) = arguments[0];
+    if arg_name == *TABLE {
+      let (out_table_id, _, _) = out;
+      let arg_table = block.get_table(&arg_table_id)?;
+      let out_table = block.get_table(out_table_id)?;
+      {
+        let mut out_brrw = out_table.borrow_mut();
+        out_brrw.resize(1,2);
+        out_brrw.set_kind(ValueKind::U64);
+      }
+      block.plan.push(Size{arg: arg_table.clone(), out: out_table.clone()});
+    } else {
+      return Err(MechError::GenericError(7352));
     }
     Ok(())
   }

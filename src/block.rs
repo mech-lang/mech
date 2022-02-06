@@ -395,6 +395,7 @@ impl Block {
     let t = table.borrow();
     let dim = match (row,col) {
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+      (TableIndex::All, TableIndex::None) => (t.rows*t.cols,1),
       (TableIndex::All,TableIndex::Index(_)) |
       (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
       (TableIndex::Index(_),TableIndex::None) |
