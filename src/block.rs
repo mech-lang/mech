@@ -23,6 +23,7 @@ use std::mem::transmute;
 use std::convert::TryInto;
 
 lazy_static! {
+  pub static ref F32: u64 = hash_str("f32");
   pub static ref U8: u64 = hash_str("u8");
   pub static ref U16: u64 = hash_str("u16");
   pub static ref U32: u64 = hash_str("u32");
@@ -742,6 +743,19 @@ impl Block {
               t.set(0,0,Value::U8(bytes[0]))?;
             }
             _ => {return Err(MechError::GenericError(6383));},
+          }
+        } else if *kind == *F32 {
+          match bytes.len() {
+            1..=4 => {
+              t.set_kind(ValueKind::F32)?;
+              while bytes.len() < 4 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
+              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set(0,0,Value::F32(x))?;
+            }
+            _ => {return Err(MechError::GenericError(6377));},
           }
         } else if *kind == *KM {
           match bytes.len() {

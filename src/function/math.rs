@@ -321,6 +321,12 @@ macro_rules! math_compiler {
                   block.plan.push($op1::<u16>{lhs: Rc::new(RefCell::new(arg_16)), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
                 }
               },
+              ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
+                if let Column::F32(out) = out_column {
+                  block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                }
+              },
               x => {
                 println!("{:?}", x);
                 return Err(MechError::GenericError(1236));
