@@ -104,6 +104,17 @@ block
 block
   #test = #x.x + #x.y + #x.z", Value::U8(6));
 
+test_mech!(table_size, "
+block
+  #x = [1 2
+        3 4
+        5 6]
+block
+  #y = table/size(table: #x)
+
+block
+  #test = #y{1} + #y{2}", Value::U64(5));
+
 // ## Select
 
 test_mech!(select_table,"  
