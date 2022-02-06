@@ -609,23 +609,6 @@ impl Ast {
         }
         compiled.push(Node::String{text: word});
       },
-      parser::Node::FloatingPoint{children} => {
-        let result = self.compile_nodes(children);
-        let str_result = Vec::new();
-        /*for node in result {
-          match node {
-            Node::Token{token: Token::Period, byte} => (),
-            Node::Token{token, chars} => {
-              for c in chars {
-                let digit = byte_to_digit(c).unwrap();
-                str_result.push(digit);
-              }
-            },
-            _ => (),
-          }
-        }*/
-        compiled.push(Node::String{text: str_result});
-      },
       // String-like nodes
       parser::Node::ParagraphText{children} => {
         let mut result = self.compile_nodes(children);

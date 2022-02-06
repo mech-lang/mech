@@ -40,7 +40,6 @@ pub enum Node {
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   DigitOrComma {children: Vec<Node> },
-  FloatingPoint {children: Vec<Node> },
   MathExpression { children: Vec<Node> },
   SelectExpression { children: Vec<Node> },
   FilterExpression { children: Vec<Node> },
@@ -144,6 +143,7 @@ pub enum Node {
   Value{children: Vec<Node>},
   BooleanLiteral{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
+  FloatLiteral{chars: Vec<char>},
   DecimalLiteral{chars: Vec<char>},
   HexadecimalLiteral{chars: Vec<char>},
   OctalLiteral{chars: Vec<char>},
@@ -199,7 +199,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::DigitOrComma{children} => {print!("DigitOrComma\n"); Some(children)},
-    Node::FloatingPoint{children} => {print!("FloatingPoint\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Emoji{children} => {print!("Emoji\n"); Some(children)},
@@ -299,6 +298,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::NumberLiteral{children} => {print!("NumberLiteral\n"); Some(children)},
+    Node::FloatLiteral{chars} => {print!("FloatLiteral({:?})\n", chars); None},
     Node::DecimalLiteral{chars} => {print!("DecimalLiteral({:?})\n", chars); None},
     Node::HexadecimalLiteral{chars} => {print!("HexadecimalLiteral({:?})\n", chars); None},
     Node::OctalLiteral{chars} => {print!("OctalLiteral({:?})\n", chars); None},
@@ -551,6 +551,11 @@ fn digit1(input: Vec<&str>) -> IResult<Vec<&str>, Vec<&str>> {
   Ok(result)
 }
 
+fn digit0(input: Vec<&str>) -> IResult<Vec<&str>, Vec<&str>> {
+  let result = many0(digit)(input)?;
+  Ok(result)
+}
+
 fn bin_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
   let result = alt((ascii_tag("1"),ascii_tag("0")))(input)?;
   Ok(result)
@@ -662,7 +667,7 @@ fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, number_variant) = alt((decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
+  let (input, number_variant) = alt((float_literal, decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
   let (input, kind_id) = opt(kind_annotation)(input)?;
   let mut children = vec![number_variant];
   match kind_id {
@@ -677,6 +682,17 @@ fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = tag("/")(input)?;
   let (input, denominator) = alt((quantity, number_literal))(input)?;
   Ok((input, Node::Null))
+}
+
+fn float_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, whole) = digit0(input)?;
+  let (input, _) = ascii_tag(".")(input)?;
+  let (input, fraction) = digit1(input)?;
+  let mut whole: Vec<char> = whole.iter().flat_map(|c| c.chars()).collect();
+  let mut fraction = fraction.iter().flat_map(|c| c.chars()).collect();
+  whole.push('.');
+  whole.append(&mut fraction);
+  Ok((input, Node::FloatLiteral{chars: whole}))
 }
 
 fn decimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
