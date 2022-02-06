@@ -825,6 +825,12 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::KindAnnotation{children: result});
       },
+      parser::Node::FloatLiteral{chars} => {
+        let string = chars.iter().cloned().collect::<String>();
+        let float = string.parse::<f32>().unwrap();
+        let bytes = float.to_be_bytes();
+        compiled.push(Node::NumberLiteral{kind: hash_str("f32"), bytes: bytes.to_vec()});
+      }
       parser::Node::DecimalLiteral{chars} => {
         let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         let mut dec_number: u128 = 0;

@@ -12,7 +12,7 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  let parse_tree = parser::parse(r#"#test = 10<u8> + 400<u16>"#)?;
+  let parse_tree = parser::parse(r#"#test = 123.456 + 456.123"#)?;
 
   println!("{:#?}", parse_tree);
 

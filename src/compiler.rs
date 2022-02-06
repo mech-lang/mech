@@ -140,14 +140,6 @@ impl Compiler {
       },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
-        /*let kind = match bytes_vec.len() {
-          1 => NumberLiteralKind::U8,
-          2 => NumberLiteralKind::U16,
-          3..=4 => NumberLiteralKind::U32,
-          5..=8 => NumberLiteralKind::U64,
-          9..=16 => NumberLiteralKind::U128,
-          _ => NumberLiteralKind::U128, // TODO Error
-        };*/
         let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes_vec)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
