@@ -69,6 +69,7 @@ pub enum ColumnIndex {
   Index(usize),
   IndexCol(ColumnV<usize>),
   Bool(ColumnV<bool>),
+  ReshapeColumn,
   None,
 }
 

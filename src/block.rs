@@ -321,6 +321,7 @@ impl Block {
     let lhs_table = self.get_table(&table_id)?;
     let lhs_brrw = lhs_table.borrow();
     let row_index = match row {
+      TableIndex::ReshapeColumn => ColumnIndex::ReshapeColumn,
       TableIndex::All => ColumnIndex::All,
       TableIndex::None => ColumnIndex::None,
       TableIndex::Index(ix) => ColumnIndex::Index(ix - 1),
@@ -389,11 +390,12 @@ impl Block {
         _ => {return Err(MechError::GenericError(6694));}
       }
     }
-
+    
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
     let t = table.borrow();
     let dim = match (row,col) {
+      (TableIndex::ReshapeColumn, TableIndex::All) => (t.rows*t.cols,1),
       (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
       (TableIndex::All, TableIndex::None) => (t.rows*t.cols,1),
       (TableIndex::All,TableIndex::Index(_)) |

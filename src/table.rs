@@ -56,6 +56,7 @@ pub enum TableIndex {
   Index(usize),
   Alias(u64),
   Table(TableId),
+  ReshapeColumn,
   All,
   None,
 }
@@ -68,6 +69,7 @@ impl TableIndex {
         alias.clone() as usize
       },
       TableIndex::Table(table_id) => *table_id.unwrap() as usize,
+      TableIndex::ReshapeColumn |
       TableIndex::None |
       TableIndex::All => 0,
     }
@@ -82,6 +84,7 @@ impl fmt::Debug for TableIndex {
       &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
       &TableIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
       &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &TableIndex::ReshapeColumn => write!(f, "IxReshapeColumn"),
       &TableIndex::All => write!(f, "IxAll"),
       &TableIndex::None => write!(f, "IxNone"),
     }
@@ -415,6 +418,7 @@ impl Table {
           Err(MechError::GenericError(2823))
         }
       }
+      TableIndex::ReshapeColumn |
       TableIndex::Table(_) |
       TableIndex::None => Err(MechError::GenericError(2824)), 
     }
