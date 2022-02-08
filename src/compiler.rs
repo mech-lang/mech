@@ -148,6 +148,8 @@ impl Compiler {
         //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
       }
+      // dest := src
+      // dest{ix} := src
       Node::SetData{children} => {
 
         let mut src = self.compile_node(&children[1])?;
@@ -583,6 +585,7 @@ impl Compiler {
               args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
             }
             Transformation::Select{table_id, indices} => {
+              println!("!!!!!!!!!!!!!!!{:?}",indices);
               args.push((0,table_id.clone(),indices.to_vec()));
               result.remove(0);
             }
@@ -695,6 +698,10 @@ impl Compiler {
         let mut local_tfms = vec![];
         for child in children {
           match child {
+            Node::ReshapeColumn => {
+              indices.push(TableIndex::ReshapeColumn);
+              indices.push(TableIndex::All);
+            }
             Node::DotIndex{children} => {
               for child in children {
                 match child {

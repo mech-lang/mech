@@ -84,6 +84,7 @@ pub enum Node {
   Empty,
   True,
   False,
+  ReshapeColumn,
   NumberLiteral{kind: u64, bytes: Vec<u8> },
   RationalNumber{children: Vec<Node> },
   // Markdown
@@ -171,6 +172,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::False => {write!(f,"False\n").ok(); None},
     Node::Null => {write!(f,"Null\n").ok(); None},
     Node::Add => {write!(f,"Add\n").ok(); None},
+    Node::ReshapeColumn => {write!(f,"ReshapeColumn\n").ok(); None},
     Node::Subtract => {write!(f,"Subtract\n").ok(); None},
     Node::Multiply => {write!(f,"Multiply\n").ok(); None},
     Node::Divide => {write!(f,"Divide\n").ok(); None},
@@ -290,7 +292,6 @@ impl Ast {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 1];
               }
-              //select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{children} => {
@@ -302,9 +303,10 @@ impl Ast {
               select_data_children.push(Node::DotIndex{children: reversed});
             },
             Node::SubscriptIndex{..} => {
-              /*let mut reversed = children.clone();
-              reversed.reverse();*/
               select_data_children.push(node.clone());
+            }
+            Node::ReshapeColumn => {
+              select_data_children.push(Node::ReshapeColumn);
             }
             _ => (),
           }
@@ -568,6 +570,7 @@ impl Ast {
         compiled.push(Node::AddRow{children});
       },
       parser::Node::Index{children} => compiled.append(&mut self.compile_nodes(children)),
+      parser::Node::ReshapeColumn => compiled.push(Node::ReshapeColumn),
       parser::Node::DotIndex{children} => compiled.push(Node::DotIndex{children: self.compile_nodes(children)}),
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);

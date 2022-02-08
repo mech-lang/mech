@@ -151,6 +151,7 @@ pub enum Node {
   RationalNumber{children: Vec<Node>},
   Token{token: Token, chars: Vec<char>},
   KindAnnotation{children: Vec<Node>},
+  ReshapeColumn,
   Add,
   Subtract,
   Multiply,
@@ -325,6 +326,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Xor => {print!("Xor\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
+    Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
@@ -769,8 +771,15 @@ fn dot_index(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
+fn reshape_column(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Node::ReshapeColumn))
+}
+
 fn index(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, index) = alt((dot_index, subscript_index))(input)?;
+  let (input, index) = alt((dot_index, reshape_column, subscript_index))(input)?;
   Ok((input, Node::Index{children: vec![index]}))
 }
 
