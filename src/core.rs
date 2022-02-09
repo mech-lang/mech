@@ -50,7 +50,7 @@ pub struct Core {
   database: Rc<RefCell<Database>>,
   functions: Rc<RefCell<Functions>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
-  pub schedules: HashMap<(u64,usize,usize),Vec<Vec<usize>>>,
+  pub schedules: HashMap<(u64,usize,usize),Vec<Vec<BlockRef>>>,
 }
 
 impl Core {
@@ -221,18 +221,16 @@ impl Core {
   }
 
   pub fn step(&mut self, register: &(u64,usize,usize)) {
-    /*
     match &mut self.schedules.get(register) {
       Some(schedule) => {
         for blocks in schedule.iter() {
-          for block_ix in blocks {
-            self.blocks[*block_ix].borrow_mut().solve();
+          for block in blocks {
+            block.borrow_mut().solve();
           }
         }
       }
       _ => (),
     }
-    */
   }
 }
 
