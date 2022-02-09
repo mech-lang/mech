@@ -585,7 +585,6 @@ impl Compiler {
               args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
             }
             Transformation::Select{table_id, indices} => {
-              println!("!!!!!!!!!!!!!!!{:?}",indices);
               args.push((0,table_id.clone(),indices.to_vec()));
               result.remove(0);
             }
