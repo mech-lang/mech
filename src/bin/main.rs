@@ -25,9 +25,10 @@ use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
 use mech_core::*;
-use mech_core::math::MulParVS;
+use mech_core::function::*;
 
 fn main() -> Result<(),MechError> {
+ 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   let mut total_time = VecDeque::new();  
   let start_ns0 = time::precise_time_ns();
@@ -55,6 +56,18 @@ fn main() -> Result<(),MechError> {
     const1.set_col_kind(0,ValueKind::F32);
     const1.set(0,0,Value::F32(-0.8));
     core.insert_table(const1.clone());
+
+    // 500
+    let mut const2 = Table::new(hash_str("500.0"),1,1);
+    const2.set_col_kind(0,ValueKind::F32);
+    const2.set(0,0,Value::F32(500.0));
+    core.insert_table(const2.clone());
+
+    // 0
+    let mut const3 = Table::new(hash_str("0.0"),1,1);
+    const3.set_col_kind(0,ValueKind::F32);
+    const3.set(0,0,Value::F32(0.0));
+    core.insert_table(const3.clone());
 
     // Create balls
     // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
@@ -105,6 +118,26 @@ fn main() -> Result<(),MechError> {
       _ => std::process::exit(1),
     }
   };
+
+  let c500 = {
+    match core.get_table_by_id(hash_str("500.0")) {
+      Ok(const1_rc) => {
+        let const1 = const1_rc.borrow();
+        const1.get_column_unchecked(0)
+      }
+      _ => std::process::exit(1),
+    }
+  };
+
+  let c0 = {
+    match core.get_table_by_id(hash_str("0.0")) {
+      Ok(const1_rc) => {
+        let const1 = const1_rc.borrow();
+        const1.get_column_unchecked(0)
+      }
+      _ => std::process::exit(1),
+    }
+  };
   
   // Temp Vars
   let mut vy2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
@@ -121,11 +154,11 @@ fn main() -> Result<(),MechError> {
   match (&x,&vx,&y,&vy,&g) {
     (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
       // #ball.x := #ball.x + #ball.vx
-      block1.plan.push(Function::ParAddVVIPF32(vec![x.clone(), vx.clone()]));
+      block1.plan.push(math::ParAddVVIP::<f32>{out: x.clone(), arg: vx.clone()});
       // #ball.y := #ball.y + #ball.vy    
-      block1.plan.push(Function::ParAddVVIPF32(vec![y.clone(), vy.clone()]));
+      block1.plan.push(math::ParAddVVIP::<f32>{out: y.clone(), arg: vy.clone()});
       // #ball.vy := #ball.vy + #gravity
-      block1.plan.push(Function::ParAddVSIPF32(vec![vy.clone(), g.clone()]));
+      block1.plan.push(math::ParAddVSIP::<f32>{out: vy.clone(), arg: g.clone()});
     }
     _ => (),
   }
@@ -133,47 +166,52 @@ fn main() -> Result<(),MechError> {
 
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
-  match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy) {
-    (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy)) => {
+  match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy,&c500,&c0) {
+    (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy),Column::F32(m500),Column::F32(m0)) => {
       // iy = #ball.y > #boundary.height
-      block2.plan.push(Function::ParGreaterThanVS((y.clone(), 500.0, iy.clone())));
+      block2.plan.push(compare::ParGreaterVS::<f32>{lhs: y.clone(), rhs: m500.clone(), out: iy.clone()});
       // iyy = #ball.y < 0
-      block2.plan.push(Function::ParLessThanVS((y.clone(), 0.0, iyy.clone())));
+      block2.plan.push(compare::ParLessVS::<f32>{lhs: y.clone(), rhs: m0.clone(), out: iyy.clone()});
       // #ball.y{iy} := #boundary.height
-      block2.plan.push(Function::ParSetVS((iy.clone(), 500.0, y.clone())));
+      block2.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out:  y.clone(), oix: iy.clone()});
       // #ball.vy{iy | iyy} := #ball.vy * -0.80
-      block2.plan.push(Function::ParOrVV(vec![iy.clone(), iyy.clone(), iy_or.clone()]));
-      block2.plan.push(MulParVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
-      block2.plan.push(Function::ParSetVV((iy_or.clone(), vy2.clone(), vy.clone())));
+      block2.plan.push(logic::ParOrVV{lhs: iy.clone(), rhs: iyy.clone(), out: iy_or.clone()});
+      block2.plan.push(math::ParMulVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
+      block2.plan.push(table::ParSetVVB::<f32>{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
     }
     _ => (),
   }
   block2.gen_id();
-
+ 
   // Keep the balls within the boundary width
   let mut block3 = Block::new();
-  match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2) {
-    (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2)) => {
+  match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2,&c500,&c0) {
+    (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2),Column::F32(m500),Column::F32(m0)) => {
       // ix = #ball.x > #boundary.width
-      block3.plan.push(Function::ParGreaterThanVS((x.clone(), 500.0, ix.clone())));
+      block3.plan.push(compare::ParGreaterVS::<f32>{lhs: x.clone(), rhs: m500.clone(), out: ix.clone()});
       // ixx = #ball.x < 0
-      block3.plan.push(Function::ParLessThanVS((x.clone(), 0.0, ixx.clone())));
+      block3.plan.push(compare::ParLessVS::<f32>{lhs: x.clone(), rhs: m0.clone(), out: ixx.clone()});
       // #ball.x{ix} := #boundary.width
-      block3.plan.push(Function::ParSetVS((ix.clone(), 500.0, x.clone())));
+      block3.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out: x.clone(), oix: ix.clone()});
       // #ball.vx{ix | ixx} := #ball.vx * -0.80
-      block3.plan.push(Function::ParOrVV(vec![ix.clone(), ixx.clone(), ix_or.clone()]));
-      block3.plan.push(MulParVS::<f32>{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
-      block3.plan.push(Function::ParSetVV((ix_or.clone(), vx2.clone(), vx.clone())));
+      block3.plan.push(logic::ParOrVV{lhs: ix.clone(), rhs: ixx.clone(), out: ix_or.clone()});
+      block3.plan.push(math::ParMulVS::<f32>{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
+      block3.plan.push(table::ParSetVVB::<f32>{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
     }
     _ => (),
   }
   block3.gen_id();
 
-  core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![0],vec![1, 2]]);
+  let block1_ref = Rc::new(RefCell::new(block1));
+  core.insert_block(block1_ref.clone());
 
-  core.insert_block(Rc::new(RefCell::new(block1)));
-  core.insert_block(Rc::new(RefCell::new(block2)));
-  core.insert_block(Rc::new(RefCell::new(block3)));
+  let block2_ref = Rc::new(RefCell::new(block2));
+  core.insert_block(block2_ref.clone());
+
+  let block3_ref = Rc::new(RefCell::new(block3));
+  core.insert_block(block3_ref.clone());
+
+  core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![block1_ref.clone()],vec![block2_ref.clone(), block3_ref.clone()]]);
 
   for i in 0..20000 {
     let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];

@@ -59,24 +59,30 @@ binary_infix_vv!(DivVV,div);
 //binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
-binary_infix_par_vs!(AddParVS,add);
-binary_infix_par_vs!(SubParVS,sub);
-binary_infix_par_vs!(MulParVS,mul);
-binary_infix_par_vs!(DivParVS,div);
+binary_infix_par_vs!(ParAddVS,add);
+binary_infix_par_vs!(ParSubVS,sub);
+binary_infix_par_vs!(ParMulVS,mul);
+binary_infix_par_vs!(ParDivVS,div);
 //binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
-binary_infix_par_vv!(AddParVV,add);
-binary_infix_par_vv!(SubParVV,sub);
-binary_infix_par_vv!(MulParVV,mul);
-binary_infix_par_vv!(DivParVV,div);
+binary_infix_par_vv!(ParAddVV,add);
+binary_infix_par_vv!(ParSubVV,sub);
+binary_infix_par_vv!(ParMulVV,mul);
+binary_infix_par_vv!(ParDivVV,div);
 //binary_infix_par_vv!(ExpParVV,pow);
 
+// Parallel Vector : Vector In Place
+binary_infix_par_vvip!(ParAddVVIP,add);
+
+// Parallel Vector : Scalar In Place
+binary_infix_par_vsip!(ParAddVSIP,add);
+
 // Parallel Scalar : Vector
-binary_infix_par_sv!(AddParSV,add);
-binary_infix_par_sv!(SubParSV,sub);
-binary_infix_par_sv!(MulParSV,mul);
-binary_infix_par_sv!(DivParSV,div);
+binary_infix_par_sv!(ParAddSV,add);
+binary_infix_par_sv!(ParSubSV,sub);
+binary_infix_par_sv!(ParMulSV,mul);
+binary_infix_par_sv!(ParDivSV,div);
 //binary_infix_par_sv!(ExpParSV,pow);
 
 math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
@@ -197,6 +203,25 @@ macro_rules! binary_infix_par_vv {
 }
 
 #[macro_export]
+macro_rules! binary_infix_par_vvip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&mut self) {
+        self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = (*out).$op(*arg)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
 macro_rules! binary_infix_par_vs {
   ($func_name:ident, $op:tt) => (
 
@@ -210,6 +235,26 @@ macro_rules! binary_infix_par_vs {
       fn solve(&mut self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = (*lhs).$op(rhs));
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_par_vsip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: Arg<T>, pub out: Out<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&mut self) {
+        let arg = self.arg.borrow()[0];
+        self.out.borrow_mut().par_iter_mut().for_each(|out| *out = (*out).$op(arg));
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }

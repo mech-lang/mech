@@ -25,7 +25,7 @@ mod error;
 mod core;
 mod block;
 mod value;
-mod function;
+pub mod function;
 
 pub use self::table::*;
 pub use self::database::*;

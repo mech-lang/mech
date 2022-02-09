@@ -375,6 +375,21 @@ where T: Copy + Debug + Sync + Send
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
+pub struct ParSetVSB<T> {
+  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>, pub oix: Arg<bool>
+}
+
+impl<T> MechFunction for ParSetVSB<T> 
+where T: Copy + Debug + Sync + Send
+{
+  fn solve(&mut self) {
+    let arg = self.arg.borrow()[self.ix];
+    self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).for_each(|(out, oix)| if *oix {*out = arg}); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Copy Table : Table
 #[derive(Debug)]
 pub struct CopyT {
@@ -648,7 +663,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             } 
             _ => {
               for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-                println!("{:?} {:?}", arg_col, arg_ix);
+                //println!("{:?} {:?}", arg_col, arg_ix);
               }
             }
           }
