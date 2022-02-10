@@ -16,7 +16,7 @@ use crate::function::{
 };
 use std::cell::RefCell;
 use std::rc::Rc;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::fmt;
 use serde::Serialize;
 use std::mem::transmute;
@@ -82,7 +82,7 @@ pub struct Block {
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
   pub strings: HashMap<u64,MechString>,
-  pub output: Vec<TableId>,
+  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
 }
 
 impl Block {
@@ -99,7 +99,7 @@ impl Block {
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
       strings: HashMap::new(),
-      output: Vec::new(),
+      output: HashSet::new(),
     }
   }
 
@@ -461,8 +461,7 @@ impl Block {
           TableId::Global(id) => {
             let table = Table::new(*id, *rows, *columns);
             self.global_database.borrow_mut().insert_table(table);
-            self.output.push(*table_id);
-            //self.changes.push(Change::NewTable{table_id: *id, rows: *rows, columns: *columns});
+            self.output.insert((*table_id,TableIndex::All,TableIndex::All));
           }
         } 
       },
@@ -498,6 +497,7 @@ impl Block {
           table.resize(rows,*column_ix + 1);
         }
         table.set_column_alias(*column_ix,*column_alias);
+        self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
       },
       Transformation::TableDefine{table_id, indices, out} => {
         //let arg_col = self.get_arg_column(&argument)?;
@@ -883,6 +883,8 @@ impl fmt::Debug for Block {
     let mut block_drawing = BoxPrinter::new();
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_header("output");
+    block_drawing.add_line(format!("{:#?}", &self.output));
     block_drawing.add_header("transformations");
     block_drawing.add_line(format!("{:#?}", &self.transformations));
     block_drawing.add_header("unsatisfied transformations");

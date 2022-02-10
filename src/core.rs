@@ -198,7 +198,7 @@ impl Core {
         let id = block_brrw.gen_id();
         let block_output = block_brrw.output.clone();
         self.blocks.insert(id,block_ref_c.clone());
-        for table_id in block_output {
+        for (table_id,_,_) in block_output {
           match self.errors.remove(&MechError::MissingTable(table_id)) {
             Some(mut ublocks) => {
               for ublock in ublocks {
