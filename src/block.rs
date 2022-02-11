@@ -82,6 +82,7 @@ pub struct Block {
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
   pub strings: HashMap<u64,MechString>,
+  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
 }
 
@@ -99,6 +100,7 @@ impl Block {
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
       strings: HashMap::new(),
+      input: HashSet::new(),
       output: HashSet::new(),
     }
   }
@@ -843,12 +845,24 @@ impl Block {
         table_brrw.set(0,0,value.clone())?;
       }
       Transformation::Function{name, ref arguments, out} => {
+        // A list of all the functions that are
+        // loaded onto this core.
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
             let mut fxns = functions.borrow_mut();
             match fxns.get(*name) {
               Some(fxn) => {
+                // Add the input arguments as block input
+                for (_,table_id,indices) in arguments {
+                  if let TableId::Global(_) = table_id {
+                    self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+                  }
+                }
+                // A function knows how to compile itself
+                // based on what arguments are passed.
+                // Not all arguments are valid, in which
+                // case and error is returned.
                 fxn.compile(self,&arguments,&out)?;
                 return Ok(());
               }
@@ -883,6 +897,8 @@ impl fmt::Debug for Block {
     let mut block_drawing = BoxPrinter::new();
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_header("input");
+    block_drawing.add_line(format!("{:#?}", &self.input));
     block_drawing.add_header("output");
     block_drawing.add_line(format!("{:#?}", &self.output));
     block_drawing.add_header("transformations");
