@@ -493,6 +493,7 @@ impl Block {
         else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));}
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if *column_ix > table.cols - 1  {
           let rows = table.rows;
@@ -502,6 +503,7 @@ impl Block {
         self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
       },
       Transformation::TableDefine{table_id, indices, out} => {
+        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::All));}
         //let arg_col = self.get_arg_column(&argument)?;
 
         // Iterate through to the last index
