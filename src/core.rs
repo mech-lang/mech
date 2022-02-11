@@ -50,6 +50,8 @@ pub struct Core {
   database: Rc<RefCell<Database>>,
   functions: Rc<RefCell<Functions>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
+  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<BlockRef>>>,
 }
 
@@ -96,6 +98,8 @@ impl Core {
       functions: Rc::new(RefCell::new(functions)),
       errors: HashMap::new(),
       schedules: HashMap::new(),
+      input: HashSet::new(),
+      output: HashSet::new(),
     }
   }
 
@@ -192,6 +196,10 @@ impl Core {
       }
       Err(_) => ()
     }
+    // Merge input and output
+    self.input.union(&mut block_brrw.input);
+    self.output.union(&mut block_brrw.output);
+
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
@@ -237,7 +245,22 @@ impl Core {
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"{:?}",self.blocks)?;
+    let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_header("input");
+    box_drawing.add_line(format!("{:#?}", &self.input));
+    box_drawing.add_header("output");
+    box_drawing.add_line(format!("{:#?}", &self.output));
+    box_drawing.add_header("errors");
+    box_drawing.add_line(format!("{:#?}", &self.errors));
+    box_drawing.add_header("blocks");
+    box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_header("unsatisfied blocks");
+    box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|v|v.borrow().id).collect::<Vec<BlockId>>()));    
+    box_drawing.add_header("functions");
+    box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_header("database");
+    box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
+    write!(f,"{:?}",box_drawing)?;
     Ok(())
   }
 }
