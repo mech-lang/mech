@@ -8,7 +8,7 @@ type FunctionName = u64;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Change {
-  Set((FunctionName, Vec<(usize, usize, Value)>)),
+  Set((FunctionName, Vec<(TableIndex, TableIndex, Value)>)),
   NewTable{table_id: u64, rows: usize, columns: usize},
   ColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
 }
