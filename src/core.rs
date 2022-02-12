@@ -52,6 +52,7 @@ pub struct Core {
   pub errors: HashMap<MechError,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub input_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
   pub schedules: HashMap<(u64,usize,usize),Vec<Vec<BlockRef>>>,
 }
 
@@ -100,6 +101,7 @@ impl Core {
       schedules: HashMap::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      input_to_block: HashMap::new(),
     }
   }
 
@@ -196,14 +198,20 @@ impl Core {
       }
       Err(_) => ()
     }
-    // Merge input and output
-    self.input.union(&mut block_brrw.input);
-    self.output.union(&mut block_brrw.output);
 
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
         let id = block_brrw.gen_id();
+
+        // Map input tables to blocks
+
+
+        // Merge input and output
+        self.input = self.input.union(&mut block_brrw.input).cloned().collect();
+        self.output = self.output.union(&mut block_brrw.output).cloned().collect();
+
+        // Try to satisfy other blocks
         let block_output = block_brrw.output.clone();
         self.blocks.insert(id,block_ref_c.clone());
         for (table_id,_,_) in block_output {
@@ -226,6 +234,12 @@ impl Core {
         Err(MechError::GenericError(8963))
       },
     }
+  }
+
+  pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
+    for (in_table_id,_,_) in &self.input {
+    }
+    Ok(())
   }
 
   pub fn step(&mut self, register: &(u64,usize,usize)) {
