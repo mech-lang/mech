@@ -14,10 +14,10 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #x = [1 2; 3 4]
+  #x = [1 2 3];
 
 block
-  #y = #x{:}"#)?;
+  #y = #x"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -27,7 +27,11 @@ block
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
 
+  println!("{:#?}", blocks);
+
   core.insert_blocks(blocks)?;
+
+  core.schedule_blocks()?;
 
   println!("{:#?}", core);
 
