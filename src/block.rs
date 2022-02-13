@@ -880,14 +880,14 @@ impl Block {
     Ok(())
   }
 
-  pub fn solve(&mut self) -> bool {
+  pub fn solve(&mut self) -> Result<(),MechError> {
     if self.state == BlockState::Ready {
       for ref mut fxn in &mut self.plan.plan.iter() {
         fxn.borrow_mut().solve();
       }
-      true
+      Ok(())
     } else {
-      false
+      Err(MechError::GenericError(9876))
     }
   }
 
