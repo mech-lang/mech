@@ -25,6 +25,7 @@ mod error;
 mod core;
 mod block;
 mod value;
+mod schedule;
 pub mod function;
 
 pub use self::table::*;
@@ -34,6 +35,7 @@ pub use self::function::*;
 pub use self::block::*;
 pub use self::core::Core;
 pub use self::value::*;
+pub use self::schedule::*;
 pub use self::error::MechError;
 
 pub type MechString = Vec<char>;

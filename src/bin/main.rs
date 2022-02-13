@@ -211,17 +211,15 @@ fn main() -> Result<(),MechError> {
   let block3_ref = Rc::new(RefCell::new(block3));
   core.insert_block(block3_ref.clone());
 
-  core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![block1_ref.clone()],vec![block2_ref.clone(), block3_ref.clone()]]);
-
   for i in 0..20000 {
-    let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
+    let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::F32(i as f32))]))];
+    
     let start_ns = time::precise_time_ns();
-
     core.process_transaction(&txn)?;
-
     let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f32;
-    total_time.push_back(time);
+
+    let cycle_duration = (end_ns - start_ns) as f32;
+    total_time.push_back(cycle_duration);
     if total_time.len() > 1000 {
       total_time.pop_front();
     }

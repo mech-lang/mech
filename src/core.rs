@@ -52,9 +52,7 @@ pub struct Core {
   pub errors: HashMap<MechError,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub input_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  pub output_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  pub schedules: HashMap<(u64,TableIndex,TableIndex),Vec<Vec<BlockRef>>>,
+  pub schedule: Schedule,
 }
 
 impl Core {
@@ -99,11 +97,9 @@ impl Core {
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
       errors: HashMap::new(),
-      schedules: HashMap::new(),
+      schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
-      input_to_block: HashMap::new(),
-      output_to_block: HashMap::new(),
     }
   }
 
@@ -118,7 +114,7 @@ impl Core {
               for (row,col,val) in adds {
                 match table.borrow().set(row.unwrap(), col.unwrap(), val.clone()) {
                   Ok(()) => {
-                    registers.push((*table_id,*row,*col));
+                    registers.push((TableId::Global(*table_id),*row,*col));
                   },
                   Err(x) => {return Err(x);}
                 }
@@ -152,8 +148,8 @@ impl Core {
         }
       }
     }
-    for register in registers {
-      self.step(&register);
+    for register in &registers {
+      self.step(register);
     }
     Ok(block_refs)
   }
@@ -206,21 +202,11 @@ impl Core {
       true => {
         let id = block_brrw.gen_id();
 
-        // Map input tables to blocks
-        for (table_id,row,col) in &block_brrw.input {
-          let (_,_,ref mut dependent_blocks) = self.input_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-          dependent_blocks.push(block_ref.clone());
-        }
-
-        // Map output tables to blocks
-        for (table_id,row,col) in &block_brrw.output {
-          let (_,_,ref mut dependent_blocks) = self.output_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-          dependent_blocks.push(block_ref.clone());
-        }
-
         // Merge input and output
         self.input = self.input.union(&mut block_brrw.input).cloned().collect();
         self.output = self.output.union(&mut block_brrw.output).cloned().collect();
+
+        self.schedule.add_block(block_ref.clone());
 
         // Try to satisfy other blocks
         let block_output = block_brrw.output.clone();
@@ -247,30 +233,13 @@ impl Core {
     }
   }
 
+
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    /*
-    for ((table_id,row,col)) in self.input.iter() {
-      let mut schedule: Vec<BlockRef> = vec![];
-      if let Some((_,_,dependent_blocks)) = self.input_to_block.get(table_id) {
-        let mut dependent_blocks = dependent_blocks.clone();
-        schedule.append(&mut dependent_blocks);
-      }
-      self.schedules.insert((*table_id.unwrap(),*row,*col),vec![schedule]);
-    }*/
-    Ok(())
+    self.schedule.schedule_blocks()
   }
 
-  pub fn step(&mut self, register: &(u64,TableIndex,TableIndex)) {
-    match &mut self.schedules.get(register) {
-      Some(schedule) => {
-        for blocks in schedule.iter() {
-          for block in blocks {
-            block.borrow_mut().solve();
-          }
-        }
-      }
-      _ => (),
-    }
+  pub fn step(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+    self.schedule.run_schedule(register)
   }
 }
 
@@ -279,13 +248,9 @@ impl fmt::Debug for Core {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
     box_drawing.add_header("input");
-    box_drawing.add_line(format!("{:?}", &self.input_to_block.iter().map(|(k,(_,_,dep_blocks))| {
-      format!("{:?} -> {:?}", humanize(&k.unwrap()), dep_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:?}", &self.input));
     box_drawing.add_header("output");
-    box_drawing.add_line(format!("{:#?}", &self.output_to_block.iter().map(|(k,(_,_,dep_blocks))| {
-      format!("{:?} <- {:?}", humanize(&k.unwrap()), dep_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:?}", &self.output));
     box_drawing.add_header("errors");
     box_drawing.add_line(format!("{:#?}", &self.errors));
     box_drawing.add_header("blocks");
@@ -296,6 +261,8 @@ impl fmt::Debug for Core {
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     box_drawing.add_header("database");
     box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
+    box_drawing.add_header("schedule");
+    box_drawing.add_line(format!("{:#?}", &self.schedule));
     write!(f,"{:?}",box_drawing)?;
     Ok(())
   }
