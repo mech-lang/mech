@@ -114,7 +114,7 @@ impl Core {
               for (row,col,val) in adds {
                 match table.borrow().set(row.unwrap(), col.unwrap(), val.clone()) {
                   Ok(()) => {
-                    registers.push((TableId::Global(*table_id),*row,*col));
+                    registers.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },
                   Err(x) => {return Err(x);}
                 }
