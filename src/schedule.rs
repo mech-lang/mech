@@ -42,7 +42,6 @@ impl Schedule {
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_block.iter_mut() {
           if output_table_id == input_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
-              println!("{:?}>=={:?}==>>{:?}", pblock, input_table_id, humanize(&block_brrw.id));
               pblock.insert_block(&mut graph);
             }
           }
@@ -129,8 +128,10 @@ impl Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"{:?}",humanize(&self.block.borrow().id))?;
-    write!(f,"{:?}",&self.children)?;
+    write!(f,"[{}]",humanize(&self.block.borrow().id))?;
+    for child in &self.children {
+      write!(f,"--->{:?}",&child.borrow())?;
+    }
     Ok(())
   }
 }
@@ -172,7 +173,7 @@ impl BlockGraph {
 impl fmt::Debug for BlockGraph {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"[{:?}]",self.root.borrow())?;
+    write!(f,"{:?}",self.root.borrow())?;
     Ok(())
   }
 }
