@@ -5,11 +5,10 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct Schedule {
-  pub input_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<Rc<RefCell<Node>>>>,
-  pub output_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<Rc<RefCell<Node>>>>,
-  pub schedules: HashMap<(TableId,TableIndex,TableIndex),Rc<RefCell<Node>>>, // Block Graph is list of blocks that will trigger in order when the given register is set
-
-  unscheduled_blocks: Vec<Rc<RefCell<Node>>>,
+  pub input_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub output_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub schedules: HashMap<(TableId,TableIndex,TableIndex),BlockGraph>, // Block Graph is list of blocks that will trigger in order when the given register is set
+  unscheduled_blocks: Vec<BlockRef>,
 }
 
 impl Schedule {
@@ -25,26 +24,35 @@ impl Schedule {
 
   pub fn add_block(&mut self, block_ref: BlockRef) -> Result<(),MechError> {
 
-    self.unscheduled_blocks.push(Rc::new(RefCell::new(Node::new(block_ref))));
+    self.unscheduled_blocks.push(block_ref);
 
     Ok(())
   }
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    for block_node in &self.unscheduled_blocks {
+    for block_ref in &self.unscheduled_blocks {
+      let mut graph = BlockGraph::new(block_ref.clone());
       let block_brrw = block_ref.borrow();
+
       // Map input tables to blocks
-      for (table_id,row,col) in &block_brrw.input {
-        let (_,_,ref mut dependent_blocks) = self.input_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-        dependent_blocks.push(Node::new(block_ref.clone()));
-        let bg_node = Rc::new(RefCell::new(Node::new(block_ref.clone())));
-        self.schedules.insert((*table_id,*row,*col),BlockGraph::new(bg_node));
+      for (input_table_id,row,col) in &block_brrw.input {
+        let ref mut dependent_blocks = self.input_to_block.entry((*input_table_id,*row,*col)).or_insert(vec![]);
+        dependent_blocks.push(graph.clone());
+        self.schedules.insert((*input_table_id,*row,*col),graph.clone());
+        for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_block.iter_mut() {
+          if output_table_id == input_table_id {
+            for ref mut pblock in producing_blocks.iter_mut() {
+              println!("{:?}>=={:?}==>>{:?}", pblock, input_table_id, humanize(&block_brrw.id));
+              pblock.insert_block(&mut graph);
+            }
+          }
+        }
       }
 
       // Map output tables to blocks
       for (table_id,row,col) in &block_brrw.output {
-        let (_,_,ref mut dependent_blocks) = self.output_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-        dependent_blocks.push(Node::new(block_ref.clone()));
+        let ref mut dependent_blocks = self.output_to_block.entry((*table_id,*row,*col)).or_insert(vec![]);
+        dependent_blocks.push(graph.clone());
       }
 
     }
@@ -70,13 +78,9 @@ impl fmt::Debug for Schedule {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
     box_drawing.add_header("input");
-    box_drawing.add_line(format!("{:?}", &self.input_to_block.iter().map(|(table_id,(row,col,dependent_blocks))| {
-      ((*table_id,*row,*col),dependent_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<((TableId,TableIndex,TableIndex),Vec<String>)>>()));
+    box_drawing.add_line(format!("{:#?}", &self.input_to_block));
     box_drawing.add_header("output");
-    box_drawing.add_line(format!("{:?}", &self.output_to_block.iter().map(|(table_id,(row,col,dependent_blocks))| {
-      ((*table_id,*row,*col),dependent_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<((TableId,TableIndex,TableIndex),Vec<String>)>>()));
+    box_drawing.add_line(format!("{:#?}", &self.output_to_block));
     box_drawing.add_header("schedules");
     box_drawing.add_line(format!("{:#?}", &self.schedules));
     box_drawing.add_header("unscheduled blocks");
@@ -88,10 +92,10 @@ impl fmt::Debug for Schedule {
 
 
 #[derive(Clone)]
-struct Node {
+pub struct Node {
   block: BlockRef,
-  parents: Vec<Node>,
-  children: Vec<Node>,
+  parents: Vec<Rc<RefCell<Node>>>,
+  children: Vec<Rc<RefCell<Node>>>,
 }
 
 impl Node {
@@ -104,10 +108,18 @@ impl Node {
     }
   }
 
+  pub fn add_child(&mut self, child: Rc<RefCell<Node>>) {
+    self.children.push(child);
+  }
+
+  pub fn add_parent(&mut self, parent: Rc<RefCell<Node>>) {
+    self.parents.push(parent);
+  }
+
   pub fn solve(&mut self) -> Result<(),MechError> {
     self.block.borrow_mut().solve()?;
     for ref mut child in &mut self.children {
-      child.solve()?;
+      child.borrow_mut().solve()?;
     }
     Ok(())
   }
@@ -117,35 +129,50 @@ impl Node {
 impl fmt::Debug for Node {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let mut box_drawing = BoxPrinter::new();
-    box_drawing.add_line(format!("{:?}", humanize(&self.block.borrow().id)));
-    write!(f,"{:?}",box_drawing)?;
+    write!(f,"{:?}",humanize(&self.block.borrow().id))?;
+    write!(f,"{:?}",&self.children)?;
     Ok(())
   }
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone)]
 pub struct BlockGraph {
-  root: Node,
+  pub root: Rc<RefCell<Node>>,
 }
-
 
 impl BlockGraph {
 
   pub fn new(block: BlockRef) -> BlockGraph {
-    let node = Node::new(block);
+    let node = Rc::new(RefCell::new(Node::new(block)));
     BlockGraph {
       root: node,
     }
   }
 
-  pub fn insert_block(&mut self, block: BlockRef) -> Result<(),MechError> {
+  pub fn insert_block(&mut self, block: &mut BlockGraph) -> Result<(),MechError> {
+    {
+      let mut root_block = self.root.borrow_mut();
+      let rc = block.root.clone();
+      root_block.add_child(rc);
+    }
+    {
+      let mut child_block = block.root.borrow_mut();
+      child_block.add_parent(self.root.clone());
+    }
     Ok(())
   }
 
   pub fn solve(&mut self) -> Result<(),MechError> {
-    self.root.solve()
+    self.root.borrow_mut().solve()
   }
 
 
+}
+
+impl fmt::Debug for BlockGraph {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"[{:?}]",self.root.borrow())?;
+    Ok(())
+  }
 }
