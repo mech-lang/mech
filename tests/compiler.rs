@@ -1,11 +1,16 @@
 #[macro_use]
 extern crate mech_syntax;
 extern crate mech_core;
-
+#[macro_use]
+extern crate lazy_static;
 use mech_syntax::compiler::Compiler;
 use std::cell::RefCell;
 use std::rc::Rc;
-use mech_core::{hash_str, Core, TableIndex, Value};
+use mech_core::{hash_str, Core, TableIndex, Value, Change};
+
+lazy_static! {
+  static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))]))];
+}
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -20,6 +25,34 @@ macro_rules! test_mech {
       for block in blocks {
         core.insert_block(Rc::new(RefCell::new(block)));
       }
+
+      let test: Value = $test;
+      let actual = core.get_table("test").unwrap().borrow().get(0, 0);
+      match actual {
+        Ok(value) => {
+          assert_eq!(value, test);
+        },
+        Err(_) => assert_eq!(0,1),
+      }
+    }
+  )
+}
+
+macro_rules! test_mech_txn {
+  ($func:ident, $input:tt, $txn:tt, $test:expr) => (
+    #[test]
+    fn $func() {
+      let mut compiler = Compiler::new();
+      let mut core = Core::new();
+
+      let input = String::from($input);
+      let blocks = compiler.compile_str(&input).unwrap();
+      
+      core.insert_blocks(blocks);
+      
+      core.schedule_blocks();
+
+      core.process_transaction(&$txn);
 
       let test: Value = $test;
       let actual = core.get_table("test").unwrap().borrow().get(0, 0);
@@ -1124,3 +1157,14 @@ block
   x = true
   y = false
   #test = x & y"#, Value::Bool(false));
+
+test_mech_txn!(scheduler_base_linear,r#"
+block
+  #x = [1 2 3]
+block
+  #y = #x + 10
+block  
+  #z = #y + 2
+block
+  #test = #z{1}"#, TXN, Value::U8(21));
+  
