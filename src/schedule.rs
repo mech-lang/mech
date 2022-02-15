@@ -5,10 +5,11 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct Schedule {
-  pub input_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  pub output_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  unscheduled_blocks: Vec<BlockRef>,
-  pub schedules: HashMap<(TableId,TableIndex,TableIndex),BlockGraph>, // Block Graph is list of blocks that will trigger in order when the given register is set
+  pub input_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<Rc<RefCell<Node>>>>,
+  pub output_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<Rc<RefCell<Node>>>>,
+  pub schedules: HashMap<(TableId,TableIndex,TableIndex),Rc<RefCell<Node>>>, // Block Graph is list of blocks that will trigger in order when the given register is set
+
+  unscheduled_blocks: Vec<Rc<RefCell<Node>>>,
 }
 
 impl Schedule {
@@ -24,28 +25,30 @@ impl Schedule {
 
   pub fn add_block(&mut self, block_ref: BlockRef) -> Result<(),MechError> {
 
-    self.unscheduled_blocks.push(block_ref);
+    self.unscheduled_blocks.push(Rc::new(RefCell::new(Node::new(block_ref))));
 
     Ok(())
   }
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    for block_ref in &self.unscheduled_blocks {
+    for block_node in &self.unscheduled_blocks {
       let block_brrw = block_ref.borrow();
       // Map input tables to blocks
       for (table_id,row,col) in &block_brrw.input {
         let (_,_,ref mut dependent_blocks) = self.input_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-        dependent_blocks.push(block_ref.clone());
-        self.schedules.insert((*table_id,*row,*col),BlockGraph::new(block_ref.clone()));
+        dependent_blocks.push(Node::new(block_ref.clone()));
+        let bg_node = Rc::new(RefCell::new(Node::new(block_ref.clone())));
+        self.schedules.insert((*table_id,*row,*col),BlockGraph::new(bg_node));
       }
 
       // Map output tables to blocks
       for (table_id,row,col) in &block_brrw.output {
         let (_,_,ref mut dependent_blocks) = self.output_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-        dependent_blocks.push(block_ref.clone());
+        dependent_blocks.push(Node::new(block_ref.clone()));
       }
 
     }
+    self.unscheduled_blocks.clear();
     Ok(())
   }
 
