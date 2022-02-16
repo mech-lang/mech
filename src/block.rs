@@ -623,6 +623,7 @@ impl Block {
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
         let arguments = vec![(0,*src_id,vec![(*src_row,*src_col)]),(0,*dest_id,vec![(*dest_row,*dest_col)])];
         let arg_shapes = self.get_arg_dims(&arguments)?;
         match (&arg_shapes[0], &arg_shapes[1]) {
