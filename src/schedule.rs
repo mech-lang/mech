@@ -5,9 +5,9 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct Schedule {
-  pub trigger_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub input_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub output_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub trigger_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub input_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub output_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub schedules: HashMap<(TableId,TableIndex,TableIndex),BlockGraph>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
@@ -16,9 +16,9 @@ impl Schedule {
 
   pub fn new() -> Schedule {
     Schedule {
-      trigger_to_block: HashMap::new(),
-      input_to_block: HashMap::new(),
-      output_to_block: HashMap::new(),
+      trigger_to_blocks: HashMap::new(),
+      input_to_blocks: HashMap::new(),
+      output_to_blocks: HashMap::new(),
       schedules: HashMap::new(),
       unscheduled_blocks: Vec::new(),
     }
@@ -37,18 +37,12 @@ impl Schedule {
       let block_brrw = block_ref.borrow();
 
       // Map trigger registers to blocks
-      for (table_id,row,col) in &block_brrw.triggers {
-        let ref mut dependent_blocks = self.trigger_to_block.entry((*table_id,*row,*col)).or_insert(vec![]);
+      for (trigger_table_id,row,col) in &block_brrw.triggers {
+        let ref mut dependent_blocks = self.trigger_to_blocks.entry((*trigger_table_id,*row,*col)).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
-      }
-
-      // Map input registers to blocks
-      for (input_table_id,row,col) in &block_brrw.input {
-        let ref mut dependent_blocks = self.input_to_block.entry((*input_table_id,*row,*col)).or_insert(vec![]);
-        dependent_blocks.push(graph.clone());
-        self.schedules.insert((*input_table_id,*row,*col),graph.clone());
-        for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_block.iter_mut() {
-          if output_table_id == input_table_id {
+        self.schedules.insert((*trigger_table_id,*row,*col),graph.clone());
+        for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
+          if output_table_id == trigger_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
               pblock.insert_block(&mut graph);
             }
@@ -56,9 +50,15 @@ impl Schedule {
         }
       }
 
+      // Map input registers to blocks
+      for (input_table_id,row,col) in &block_brrw.input {
+        let ref mut dependent_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
+        dependent_blocks.push(graph.clone());
+      }
+
       // Map output registers to blocks
-      for (table_id,row,col) in &block_brrw.output {
-        let ref mut dependent_blocks = self.output_to_block.entry((*table_id,*row,*col)).or_insert(vec![]);
+      for (output_table_id,row,col) in &block_brrw.output {
+        let ref mut dependent_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
       }
 
@@ -85,11 +85,11 @@ impl fmt::Debug for Schedule {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
     box_drawing.add_header("triggers");
-    box_drawing.add_line(format!("{:#?}", &self.input_to_block));
+    box_drawing.add_line(format!("{:#?}", &self.trigger_to_blocks));
     box_drawing.add_header("input");
-    box_drawing.add_line(format!("{:#?}", &self.input_to_block));
+    box_drawing.add_line(format!("{:#?}", &self.input_to_blocks));
     box_drawing.add_header("output");
-    box_drawing.add_line(format!("{:#?}", &self.output_to_block));
+    box_drawing.add_line(format!("{:#?}", &self.output_to_blocks));
     box_drawing.add_header("schedules");
     box_drawing.add_line(format!("{:#?}", &self.schedules));
     if self.unscheduled_blocks.len() > 0 {
