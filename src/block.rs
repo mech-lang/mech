@@ -34,7 +34,7 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct Plan{
-  pub plan: Vec<Rc<RefCell<dyn MechFunction>>>
+  plan: Vec<Rc<RefCell<dyn MechFunction>>>
 }
 
 impl Plan {
@@ -49,6 +49,22 @@ impl Plan {
     self.plan.push(Rc::new(RefCell::new(fxn)));
   }
   
+}
+
+
+impl fmt::Debug for Plan {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut plan = BoxPrinter::new();
+    let mut ix = 1;
+    for step in &self.plan {
+      plan.add_title("🦿",&format!("Step {}", ix));
+      plan.add_line(format!("{}",&step.borrow().to_string()));
+      ix += 1;
+    }
+    write!(f,"{:?}",plan)?;
+    Ok(())
+  }
 }
 
 pub type BlockId = u64;
@@ -937,14 +953,7 @@ impl fmt::Debug for Block {
     block_drawing.add_title("📅","tables");
     block_drawing.add_line(format!("{:?}", &self.tables));
     block_drawing.add_title("🧭","plan");
-    let mut plan = BoxPrinter::new();
-    let mut ix = 1;
-    for step in &self.plan.plan {
-      plan.add_title("🦿",&format!("Step {}", ix));
-      plan.add_line(format!("{}",&step.borrow().to_string()));
-      ix += 1;
-    }
-    block_drawing.add_line(format!("{}", &plan.print()));
+    block_drawing.add_line(format!("{:?}", &self.plan));
     if self.changes.len() > 0 {
       block_drawing.add_title("🛆", "changes");
       block_drawing.add_line(format!("{:#?}", &self.changes));

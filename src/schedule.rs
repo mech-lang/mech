@@ -8,7 +8,7 @@ pub struct Schedule {
   pub trigger_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub input_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub output_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub schedules: HashMap<(TableId,TableIndex,TableIndex),BlockGraph>, // Block Graph is list of blocks that will trigger in order when the given register is set
+  pub schedules: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
 
@@ -40,7 +40,9 @@ impl Schedule {
       for (trigger_table_id,row,col) in &block_brrw.triggers {
         let ref mut dependent_blocks = self.trigger_to_blocks.entry((*trigger_table_id,*row,*col)).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
-        self.schedules.insert((*trigger_table_id,*row,*col),graph.clone());
+        let ref mut dependent_blocks = self.schedules.entry((*trigger_table_id,*row,*col)).or_insert(vec![]);
+        dependent_blocks.push(graph.clone());
+
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
           if output_table_id == trigger_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
@@ -69,8 +71,10 @@ impl Schedule {
 
   pub fn run_schedule(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
     match self.schedules.get_mut(register) {
-      Some(ref mut block_graph) => {
-        block_graph.solve();
+      Some(ref mut block_graphs) => {
+        for ref mut block_graph in block_graphs.iter_mut() {
+          block_graph.solve();
+        }
         return Ok(())
       }
       None => {
