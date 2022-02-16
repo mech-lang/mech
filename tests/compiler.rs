@@ -11,11 +11,11 @@ use mech_core::{hash_str, Core, TableIndex, Value, Change};
 lazy_static! {
   static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))]))];
   static ref TXN2: Vec<Change> = vec![
-    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))])),
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
   ];
   static ref TXN3: Vec<Change> = vec![
-    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))]))
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))])),
   ];
 }
 
@@ -1181,22 +1181,32 @@ block
 
 test_mech_txn!(temporal_whenever_basic_no_trigger,r#"
 block
-  #time/timer = [period: 12, ticks: 0]
+  #time/timer = [period: 16, ticks: 0]
 
 block 
-  #x = 10
+  #x = [x: 1 y: 2]
+  #y = 3
 
 block
   ~ #time/timer.ticks
-  #test = #x * 2"#, TXN2, Value::U8(20));
+  #q = #x.y
+  #x.x := #x.x + #y
+  
+block
+  #test = #x.x"#, TXN2, Value::U8(4));
 
 test_mech_txn!(temporal_whenever_basic_with_trigger,r#"
 block
-  #time/timer = [period: 12, ticks: 0]
+  #time/timer = [period: 16, ticks: 0]
 
 block 
-  #x = 10
+  #x = [x: 1 y: 2]
+  #y = 3
 
 block
   ~ #time/timer.ticks
-  #test = #x * 2"#, TXN3, Value::U8(18));
+  #q = #x.y
+  #x.x := #x.x + #y
+  
+block
+  #test = #x.x"#, TXN3, Value::U8(7));
