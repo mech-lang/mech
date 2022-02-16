@@ -10,6 +10,13 @@ use mech_core::{hash_str, Core, TableIndex, Value, Change};
 
 lazy_static! {
   static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))]))];
+  static ref TXN2: Vec<Change> = vec![
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))])),
+  ];
+  static ref TXN3: Vec<Change> = vec![
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))]))
+  ];
 }
 
 macro_rules! test_mech {
@@ -1158,6 +1165,8 @@ block
   y = false
   #test = x & y"#, Value::Bool(false));
 
+// ## Scheduler
+
 test_mech_txn!(scheduler_base_linear,r#"
 block
   #x = [1 2 3]
@@ -1168,3 +1177,26 @@ block
 block
   #test = #z{1}"#, TXN, Value::U8(21));
   
+// ## Temporal Operators
+
+test_mech_txn!(temporal_whenever_basic_no_trigger,r#"
+block
+  #time/timer = [period: 12, ticks: 0]
+
+block 
+  #x = 10
+
+block
+  ~ #time/timer.ticks
+  #test = #x * 2"#, TXN2, Value::U8(20));
+
+test_mech_txn!(temporal_whenever_basic_with_trigger,r#"
+block
+  #time/timer = [period: 12, ticks: 0]
+
+block 
+  #x = 10
+
+block
+  ~ #time/timer.ticks
+  #test = #x * 2"#, TXN3, Value::U8(18));
