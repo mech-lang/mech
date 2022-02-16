@@ -5,6 +5,7 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct Schedule {
+  pub trigger_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub input_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub output_to_block: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub schedules: HashMap<(TableId,TableIndex,TableIndex),BlockGraph>, // Block Graph is list of blocks that will trigger in order when the given register is set
@@ -15,6 +16,7 @@ impl Schedule {
 
   pub fn new() -> Schedule {
     Schedule {
+      trigger_to_block: HashMap::new(),
       input_to_block: HashMap::new(),
       output_to_block: HashMap::new(),
       schedules: HashMap::new(),
@@ -34,7 +36,13 @@ impl Schedule {
       let mut graph = BlockGraph::new(block_ref.clone());
       let block_brrw = block_ref.borrow();
 
-      // Map input tables to blocks
+      // Map trigger registers to blocks
+      for (table_id,row,col) in &block_brrw.triggers {
+        let ref mut dependent_blocks = self.trigger_to_block.entry((*table_id,*row,*col)).or_insert(vec![]);
+        dependent_blocks.push(graph.clone());
+      }
+
+      // Map input registers to blocks
       for (input_table_id,row,col) in &block_brrw.input {
         let ref mut dependent_blocks = self.input_to_block.entry((*input_table_id,*row,*col)).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
@@ -48,7 +56,7 @@ impl Schedule {
         }
       }
 
-      // Map output tables to blocks
+      // Map output registers to blocks
       for (table_id,row,col) in &block_brrw.output {
         let ref mut dependent_blocks = self.output_to_block.entry((*table_id,*row,*col)).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
@@ -76,14 +84,18 @@ impl fmt::Debug for Schedule {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_header("triggers");
+    box_drawing.add_line(format!("{:#?}", &self.input_to_block));
     box_drawing.add_header("input");
     box_drawing.add_line(format!("{:#?}", &self.input_to_block));
     box_drawing.add_header("output");
     box_drawing.add_line(format!("{:#?}", &self.output_to_block));
     box_drawing.add_header("schedules");
     box_drawing.add_line(format!("{:#?}", &self.schedules));
-    box_drawing.add_header("unscheduled blocks");
-    box_drawing.add_line(format!("{:#?}", &self.unscheduled_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>()));
+    if self.unscheduled_blocks.len() > 0 {
+      box_drawing.add_header("unscheduled blocks");
+      box_drawing.add_line(format!("{:#?}", &self.unscheduled_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>()));
+    }
     write!(f,"{:?}",box_drawing)?;
     Ok(())
   }

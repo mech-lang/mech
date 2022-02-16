@@ -247,22 +247,27 @@ impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
-    box_drawing.add_header("input");
-    box_drawing.add_line(format!("{:?}", &self.input));
-    box_drawing.add_header("output");
-    box_drawing.add_line(format!("{:?}", &self.output));
-    box_drawing.add_header("errors");
-    box_drawing.add_line(format!("{:#?}", &self.errors));
-    box_drawing.add_header("blocks");
+    box_drawing.add_title("🤖","CORE");
+    if self.errors.len() > 0 {
+      box_drawing.add_title("🐛","errors");
+      box_drawing.add_line(format!("{:#?}", &self.errors));
+    }
+    box_drawing.add_title("📭","input");
+    box_drawing.add_line(format!("{:#?}", &self.input));
+    box_drawing.add_title("📬","output");
+    box_drawing.add_line(format!("{:#?}", &self.output));
+    box_drawing.add_title("🧊","blocks");
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
-    box_drawing.add_header("unsatisfied blocks");
-    box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|v|v.borrow().id).collect::<Vec<BlockId>>()));    
-    box_drawing.add_header("functions");
+    if self.unsatisfied_blocks.len() > 0 {
+      box_drawing.add_title("😞","unsatisfied blocks");
+      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|v|v.borrow().id).collect::<Vec<BlockId>>()));    
+    }
+    box_drawing.add_title("💻","functions");
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
-    box_drawing.add_header("database");
-    box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
-    box_drawing.add_header("schedule");
+    box_drawing.add_title("⏲️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
+    box_drawing.add_title("💾","database");
+    box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
     write!(f,"{:?}",box_drawing)?;
     Ok(())
   }

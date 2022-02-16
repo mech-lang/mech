@@ -117,9 +117,11 @@ impl fmt::Debug for Database {
     for table in self.tables.values() {
       db_drawing.add_line(format!("{:?}", table.borrow()));
     }
-    db_drawing.add_header("table alias → table id");
-    for (alias,id) in self.table_alias_to_id.iter() {
-      db_drawing.add_line(format!("{} → {:?}", humanize(alias), id));
+    if self.table_alias_to_id.len() > 0 {
+      db_drawing.add_header("table alias → table id");
+      for (alias,id) in self.table_alias_to_id.iter() {
+        db_drawing.add_line(format!("{} → {:?}", humanize(alias), id));
+      }
     }
     write!(f,"{:?}",db_drawing)?;
     Ok(())

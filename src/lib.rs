@@ -342,6 +342,7 @@ pub struct BoxPrinter {
 
 #[derive(Debug)]
 pub enum LineKind {
+  Title((String,String)),
   String(String),
   Table(BoxTable),
   Separator,
@@ -397,13 +398,26 @@ impl BoxPrinter {
 
   pub fn add_line(&mut self, lines: String) {
     for line in lines.lines() {
-      let chars = line.chars().collect::<Vec<char>>().len();
+      let chars = line.chars().count();
       if chars > self.width {
         self.width = chars;
       }
       self.lines.push(LineKind::String(line.to_string()));
     }
     self.render_box();
+  }
+
+  pub fn add_title(&mut self, icon: &str, lines: &str) {
+    self.lines.push(LineKind::Separator);
+    for line in lines.lines() {
+      let chars = line.chars().count() + 3;
+      if chars > self.width {
+        self.width = chars;
+      }
+      self.lines.push(LineKind::Title((icon.to_string(),line.to_string())));
+    }
+    self.render_box();
+    self.lines.push(LineKind::Separator);
   }
 
   pub fn add_header(&mut self, text: &str) {
@@ -464,7 +478,7 @@ impl BoxPrinter {
             let mut boxed_line = "│".to_string();
             for col in 0..table.cols {
               let cell = &table.strings[col][row];
-              let chars = cell.chars().collect::<Vec<char>>().len();
+              let chars = cell.chars().count();
               boxed_line += &cell; 
               boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
               boxed_line += &"│".to_string();
@@ -481,9 +495,18 @@ impl BoxPrinter {
           bottom += &"┘\n".to_string();
         }
         LineKind::String(line) => {
-          let chars = line.chars().collect::<Vec<char>>().len();
+          let chars = line.chars().count();
           if self.width >= chars {
             let boxed_line = "│".to_string() + &line + &BoxPrinter::format_repeated_char(" ", self.width - chars) + &"│\n".to_string();
+            middle += &boxed_line;
+          } else {
+            println!("Line too long: {:?}", line);
+          }
+        }
+        LineKind::Title((icon,line)) => {
+          let chars = line.chars().count() + 3;
+          if self.width >= chars {
+            let boxed_line = "│".to_string() + &icon + " " + &line + &BoxPrinter::format_repeated_char(" ", self.width - chars) + &"│\n".to_string();
             middle += &boxed_line;
           } else {
             println!("Line too long: {:?}", line);
@@ -515,4 +538,3 @@ impl fmt::Debug for BoxPrinter {
     Ok(())
   }
 }
-

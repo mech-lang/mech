@@ -143,7 +143,17 @@ where T: Clone + Debug
   fn solve(&mut self) {
     (self.out.borrow_mut())[0] = (self.arg.borrow())[self.ix].clone()
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { 
+    let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_header("CopySS");
+    box_drawing.add_header("arg");
+    box_drawing.add_line(format!("{:?}", &self.arg.borrow()));
+    box_drawing.add_header("ix");
+    box_drawing.add_line(format!("{:?}", &self.ix));
+    box_drawing.add_header("out");
+    box_drawing.add_line(format!("{:?}", &self.out.borrow()));
+    box_drawing.print()
+  }
 }
 
 // Copy Reference
@@ -414,7 +424,15 @@ impl MechFunction for CopyT {
       }
     }
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { 
+    let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_header("CopyT");
+    box_drawing.add_header("arg");
+    box_drawing.add_line(format!("{:#?}", &self.arg.borrow()));
+    box_drawing.add_header("out");
+    box_drawing.add_line(format!("{:#?}", &self.out.borrow()));
+    box_drawing.print()
+  }
 }
 
 // AppendRow Table : Table

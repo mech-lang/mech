@@ -82,6 +82,7 @@ pub struct Block {
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
   pub strings: HashMap<u64,MechString>,
+  pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
 }
@@ -100,6 +101,7 @@ impl Block {
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
       strings: HashMap::new(),
+      triggers: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
     }
@@ -493,7 +495,10 @@ impl Block {
         else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));}
+        if let TableId::Global(_) = table_id { 
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+        }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if *column_ix > table.cols - 1  {
           let rows = table.rows;
@@ -503,9 +508,10 @@ impl Block {
         self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
       },
       Transformation::TableDefine{table_id, indices, out} => {
-        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::All));}
-        //let arg_col = self.get_arg_column(&argument)?;
-
+        if let TableId::Global(_) = table_id { 
+          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        }
         // Iterate through to the last index
         let mut table_id = *table_id;
         for (row,column) in indices.iter().take(indices.len()-1) {
@@ -846,6 +852,10 @@ impl Block {
         }
         table_brrw.set(0,0,value.clone())?;
       }
+      Transformation::Whenever{table_id, indices} => {
+        self.triggers.clear();
+        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+      }
       Transformation::Function{name, ref arguments, out} => {
         // A list of all the functions that are
         // loaded onto this core.
@@ -859,6 +869,7 @@ impl Block {
                 for (_,table_id,indices) in arguments {
                   if let TableId::Global(_) = table_id {
                     self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+                    self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
                   }
                 }
                 // A function knows how to compile itself
@@ -897,26 +908,46 @@ impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut block_drawing = BoxPrinter::new();
+    block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
-    block_drawing.add_header("input");
-    block_drawing.add_line(format!("{:#?}", &self.input));
-    block_drawing.add_header("output");
-    block_drawing.add_line(format!("{:#?}", &self.output));
-    block_drawing.add_header("transformations");
-    block_drawing.add_line(format!("{:#?}", &self.transformations));
-    block_drawing.add_header("unsatisfied transformations");
-    block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformation));
-    block_drawing.add_header("pending transformations");
-    block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
-    block_drawing.add_header("tables");
-    block_drawing.add_line(format!("{:?}", &self.tables));
-    block_drawing.add_header("plan");
-    for step in &self.plan.plan {
-      block_drawing.add_line(format!("{}", &step.borrow().to_string()));
+    if self.triggers.len() > 0 {
+      block_drawing.add_title("🔫","triggers");
+      block_drawing.add_line(format!("{:#?}", &self.triggers));
     }
-    block_drawing.add_header("changes");
-    block_drawing.add_line(format!("{:#?}", &self.changes));
+    if self.input.len() > 0 {
+      block_drawing.add_title("📭","input");
+      block_drawing.add_line(format!("{:#?}", &self.input));
+    }
+    if self.output.len() > 0 {
+      block_drawing.add_title("📬","output");
+      block_drawing.add_line(format!("{:#?}", &self.output));
+    }
+    block_drawing.add_title("🪄","transformations");
+    block_drawing.add_line(format!("{:#?}", &self.transformations));
+    if let Some(ut) = &self.unsatisfied_transformation {
+      block_drawing.add_title("😔","unsatisfied transformations");
+      block_drawing.add_line(format!("{:#?}", &ut));
+    }
+    if self.pending_transformations.len() > 0 {
+      block_drawing.add_title("⏳","pending transformations");
+      block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
+    }
+    block_drawing.add_title("📅","tables");
+    block_drawing.add_line(format!("{:?}", &self.tables));
+    block_drawing.add_title("🧭","plan");
+    let mut plan = BoxPrinter::new();
+    let mut ix = 1;
+    for step in &self.plan.plan {
+      plan.add_title("🦿",&format!("Step {}", ix));
+      plan.add_line(format!("{}",&step.borrow().to_string()));
+      ix += 1;
+    }
+    block_drawing.add_line(format!("{}", &plan.print()));
+    if self.changes.len() > 0 {
+      block_drawing.add_title("🛆", "changes");
+      block_drawing.add_line(format!("{:#?}", &self.changes));
+    }
     write!(f,"{:?}",block_drawing)?;
     Ok(())
   }
