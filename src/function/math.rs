@@ -319,12 +319,15 @@ impl MechFunctionCompiler for MathNegate {
       }
       TableShape::Scalar => {
         let mut argument_columns = block.get_arg_columns(arguments)?;
-        let out_column = block.get_out_column(out, 1, ValueKind::I8)?;
+        let (_,col,_) = &argument_columns[0];
+        let out_column = block.get_out_column(out, 1, col.kind())?;
         match (&argument_columns[0], &out_column) {
-          ((_,Column::I8(arg),_), Column::I8(out)) => {
-            block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() });
-          }
-          _ => {return Err(MechError::GenericError(1962));},
+          ((_,Column::I8(arg),_), Column::I8(out)) => block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::F32(arg),_), Column::F32(out)) => block.plan.push(NegateS::<f32>{arg: arg.clone(), out: out.clone() }),
+          x => {
+            println!("{:?}", x);
+            return Err(MechError::GenericError(1962));
+          },
         }
       }
       _ => {return Err(MechError::GenericError(1963));},
