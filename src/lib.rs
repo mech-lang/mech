@@ -560,10 +560,35 @@ impl BoxPrinter {
           }
           middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
           middle += "┤\n";
-          for row in 0..table.rows {
+          // Print at most 10 rows
+          for row in (0..table.rows).take(10) {
             let mut boxed_line = "│".to_string();
             for col in 0..table.cols {
               let cell = &table.strings[col][row];
+              let chars = cell.chars().count();
+              boxed_line += &cell; 
+              boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
+              boxed_line += "│";
+            }
+            boxed_line += &"\n".to_string();
+            middle += &boxed_line;
+          }
+          if table.rows > 10 {
+            // Print ...
+            if table.rows > 11 {
+              let mut boxed_line = "│".to_string();
+              for col in 0..table.cols {
+                boxed_line += "..."; 
+                boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - 3);
+                boxed_line += "│";
+              }
+              boxed_line += &"\n".to_string();
+              middle += &boxed_line;
+            }
+            // Print last row
+            let mut boxed_line = "│".to_string();
+            for col in 0..table.cols {
+              let cell = &table.strings[col][table.rows - 1];
               let chars = cell.chars().count();
               boxed_line += &cell; 
               boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
