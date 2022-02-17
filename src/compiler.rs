@@ -145,8 +145,8 @@ impl Compiler {
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
       },
       Node::Table{name, id} => {
-        //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
+        tfms.push(Transformation::Identifier{name: name.clone(), id: *id});
       }
       // dest := src
       // dest{ix} := src
@@ -386,6 +386,7 @@ impl Compiler {
         let mut table_row_children = vec![];
         let mut aliases = vec![];
         let mut kinds = vec![];
+        let mut identifiers = vec![];
         // Compile bindings
         for (ix, binding) in children.iter().enumerate() {
           match binding {
@@ -396,6 +397,7 @@ impl Compiler {
                   let column_alias = id.clone();
                   let column_ix = ix.clone();
                   let alias_tfm = move |x| Transformation::ColumnAlias{table_id: x, column_ix, column_alias};
+                  identifiers.push(identifier[0].clone());
                   aliases.push(alias_tfm);
                 }
                 _ => (),
@@ -452,6 +454,7 @@ impl Compiler {
           }
           _ => (),
         }  
+        tfms.append(&mut identifiers);
       }
       Node::EmptyTable{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
