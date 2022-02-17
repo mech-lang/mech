@@ -554,6 +554,14 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           let fxn = ConcatV::<u16>{args: u16_cols, out: out_c.clone()};
           block.plan.push(fxn);
         }
+        Column::F32(ref out_c) => {
+          let mut f32_cols:Vec<ColumnV<f32>> = vec![];
+          for colv in argument_columns {
+            f32_cols.push(colv.get_f32()?.clone());
+          }
+          let fxn = ConcatV::<f32>{args: f32_cols, out: out_c.clone()};
+          block.plan.push(fxn);
+        }
         Column::Bool(ref out_c) => {
           let mut bool_cols:Vec<ColumnV<bool>> = vec![];
           for colv in argument_columns {
@@ -637,6 +645,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 },
                 (Column::U16(arg), ColumnIndex::Index(ix), Column::U16(out)) => block.plan.push(CopySS::<u16>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Empty, _, Column::Empty) => (),

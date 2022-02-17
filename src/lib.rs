@@ -114,11 +114,18 @@ impl Column {
         let out_col = col.borrow().iter().map(|x| *x as u16).collect();
         Ok(Rc::new(RefCell::new(out_col)))
       }
-      x => {
-        return Err(MechError::GenericError(8182));
-      },
+      x => {return Err(MechError::GenericError(8182));},
     }
   }
+
+  
+  pub fn get_f32(&self) -> Result<ColumnV<f32>,MechError> {
+    match self {
+      Column::F32(col) => Ok(col.clone()),
+      x => {return Err(MechError::GenericError(8189));},
+    }
+  }
+
 
   pub fn get_bool(&self) -> Result<ColumnV<bool>,MechError> {
     match self {

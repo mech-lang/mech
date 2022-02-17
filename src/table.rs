@@ -352,6 +352,7 @@ impl Table {
           self.data[col] = Column::I128(column);
           self.col_kinds[col] = ValueKind::I128;
         },
+        (Column::F32(_), ValueKind::F32) => (),
         (Column::Empty, ValueKind::F32) => {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
@@ -378,6 +379,7 @@ impl Table {
           self.col_kinds[col] = ValueKind::Reference;
         },
         x => {
+          println!("{:?}", x);
           return Err(MechError::GenericError(1229));
         },
       }
