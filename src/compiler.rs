@@ -834,15 +834,17 @@ impl Compiler {
         }
         tfms.push(Transformation::Select{table_id: *id, indices: all_indices});
         tfms.append(&mut local_tfms);
+        tfms.push(Transformation::Identifier{name: name.clone(), id: *id.unwrap()});
       }
       Node::Whenever{children} => {
-        let result = self.compile_nodes(children)?;
+        let mut result = self.compile_nodes(children)?;
         match &result[0] {
           Transformation::Select{table_id, indices} => {
             tfms.push(Transformation::Whenever{table_id:*table_id, indices: indices.to_vec()});
           }
           _ => (),
         }
+        tfms.append(&mut result);
       }
       Node::Program{children, ..} |
       Node::Section{children, ..} |
