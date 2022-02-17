@@ -516,6 +516,7 @@ impl Block {
         if let TableId::Global(_) = table_id { 
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
           self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
         }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if *column_ix > table.cols - 1  {
@@ -523,7 +524,6 @@ impl Block {
           table.resize(rows,*column_ix + 1);
         }
         table.set_column_alias(*column_ix,*column_alias);
-        self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
       },
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
@@ -930,17 +930,38 @@ impl fmt::Debug for Block {
     block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_title("⚙️",&format!("triggers ({})",self.triggers.len()));
     if self.triggers.len() > 0 {
-      block_drawing.add_title("⚙️","triggers");
-      block_drawing.add_line(format!("{:#?}", &self.triggers));
+      for (table,row,col) in &self.triggers {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
     }
+    block_drawing.add_title("📭",&format!("input ({})",self.input.len()));
     if self.input.len() > 0 {
-      block_drawing.add_title("📭","input");
-      block_drawing.add_line(format!("{:#?}", &self.input));
+      for (table,row,col) in &self.input {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
     }
+    block_drawing.add_title("📬",&format!("output ({})",self.output.len()));
     if self.output.len() > 0 {
-      block_drawing.add_title("📬","output");
-      block_drawing.add_line(format!("{:#?}", &self.output));
+      for (table,row,col) in &self.output {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
     }
     block_drawing.add_title("🪄","transformations");
     block_drawing.add_line(format!("{:#?}", &self.transformations));

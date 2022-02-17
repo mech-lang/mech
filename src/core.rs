@@ -53,6 +53,7 @@ pub struct Core {
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
   pub schedule: Schedule,
+  pub dictionary: StringDictionary,
 }
 
 impl Core {
@@ -100,6 +101,7 @@ impl Core {
       schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
   }
 
@@ -253,9 +255,13 @@ impl fmt::Debug for Core {
       box_drawing.add_line(format!("{:#?}", &self.errors));
     }
     box_drawing.add_title("📭","input");
-    box_drawing.add_line(format!("{:#?}", &self.input));
+    for (table,row,col) in &self.input {
+      box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
+    }
     box_drawing.add_title("📬","output");
-    box_drawing.add_line(format!("{:#?}", &self.output));
+    for (table,row,col) in &self.output {
+      box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
+    }
     box_drawing.add_title("🧊","blocks");
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     if self.unsatisfied_blocks.len() > 0 {
