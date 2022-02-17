@@ -380,6 +380,7 @@ impl Compiler {
           arguments: args,
           out: (TableId::Local(id), TableIndex::All, TableIndex::All),
         });
+        tfms.push(Transformation::Identifier{name: name.clone(), id: name_hash});
       },
       Node::InlineTable{children} => {
         let columns = children.len();
