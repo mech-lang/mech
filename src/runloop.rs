@@ -490,7 +490,10 @@ impl ProgramRunner {
                 let mut compiler = Compiler::new(); 
                 match compiler.compile_str(&code) {
                   Ok(blocks) => blocks,
-                  Err(_) => {continue 'runloop;}
+                  Err(x) => {
+                    println!("aaa {:?}", x);
+                    continue 'runloop;
+                  }
                 }
               },
               MechCode::MiniBlocks(miniblocks) => {
@@ -500,9 +503,13 @@ impl ProgramRunner {
             };
             let new_block_ids = match program.mech.insert_blocks(blocks) {
               Ok(new_block_ids) => new_block_ids,
-              Err(_) => {continue 'runloop;}
+              Err(x) => {
+                println!("{:?}", program.mech);
+                println!("bbb {:?}", x);
+                continue 'runloop;
+              }
             };
-
+            
             let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
             let out_id = match block.transformations.last() {
               Some(Transformation::Function{name,arguments,out}) => {
@@ -515,14 +522,14 @@ impl ProgramRunner {
               Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
                 *dest_id
               } 
+              Some(Transformation::TableAlias{table_id, alias}) => {
+                *table_id
+              } 
               _ => TableId::Local(0),
             };
             let out_table = block.get_table(&out_id).unwrap();
             println!("{:?}", out_table.borrow());
-
-
-
-
+            
             /*
             // Start the program
             program.trigger_machines();
@@ -539,25 +546,6 @@ impl ProgramRunner {
             }
             client_outgoing.send(ClientMessage::StepDone);
           }
-          (Ok(RunLoopMessage::EchoCode(code)), _) => {
-            /*
-            // Reset #ans
-            program.mech.clear_table(hash_str("ans"));
-
-            // Compile and run code
-            let mut compiler = Compiler::new();
-            compiler.compile_string(code);
-            program.mech.register_blocks(compiler.blocks);
-            program.download_dependencies(Some(client_outgoing.clone()));
-
-            // Get the result
-            let echo_table = program.mech.get_table(hash_str("ans"));
-            //program.listeners.insert(Register{table_id: TableId::Global(hash_str("ans")), row: TableIndex::All, column: TableIndex::All }); 
-
-            // Send it
-            //client_outgoing.send(ClientMessage::Table(echo_table));*/
-            client_outgoing.send(ClientMessage::StepDone);
-          } 
           (Ok(RunLoopMessage::Clear), _) => {
             /*program.clear();
             client_outgoing.send(ClientMessage::Clear);*/
