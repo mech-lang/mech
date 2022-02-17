@@ -236,7 +236,10 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              _ => {return Err(MechError::GenericError(1240));},
+              x => {
+                println!("{:?}",x);
+                return Err(MechError::GenericError(1241));
+              },
             }
           }
           (TableShape::Column(rows), TableShape::Scalar) => {

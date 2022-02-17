@@ -97,7 +97,7 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
-  pub strings: HashMap<u64,MechString>,
+  pub strings: StringDictionary,
   pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -116,7 +116,7 @@ impl Block {
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
-      strings: HashMap::new(),
+      strings: Rc::new(RefCell::new(HashMap::new())),
       triggers: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
@@ -470,16 +470,18 @@ impl Block {
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
     match &tfm {
       Transformation::Identifier{name, id} => {
-        self.strings.insert(*id, name.to_vec());
+        self.strings.borrow_mut().insert(*id, name.to_vec());
       }
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
           TableId::Local(id) => {
-            let table = Table::new(*id, *rows, *columns);
+            let mut table = Table::new(*id, *rows, *columns);
+            table.dictionary = self.strings.clone();
             self.tables.insert_table(table);
           }
           TableId::Global(id) => {
-            let table = Table::new(*id, *rows, *columns);
+            let mut table = Table::new(*id, *rows, *columns);
+            table.dictionary = self.strings.clone();
             self.global_database.borrow_mut().insert_table(table);
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
           }
@@ -703,10 +705,11 @@ impl Block {
           (TableShape::Column(_),TableShape::Column(_)) => {
             let arg_cols = self.get_arg_columns(&arguments)?;
             match (&arg_cols[0], &arg_cols[1]) {
+              ((_,Column::U8(arg),ColumnIndex::All),(_,Column::U8(out),ColumnIndex::All)) => {
+                self.plan.push(SetVV::<u8>{arg: arg.clone(), out: out.clone()});
+              }
               ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
                 self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
-              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
-                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
               ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
                 self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
               ((_,Column::U8(arg),ColumnIndex::All), (_,Column::U8(out),ColumnIndex::Bool(oix))) =>
@@ -741,6 +744,7 @@ impl Block {
                 self.plan.push(SetSIxSIx::<TableId>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
               }
               x => {
+                println!("{:?}", x);
                 return Err(MechError::GenericError(8835));
               },
             }
@@ -929,7 +933,7 @@ impl fmt::Debug for Block {
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
     if self.triggers.len() > 0 {
-      block_drawing.add_title("🔫","triggers");
+      block_drawing.add_title("⚙️","triggers");
       block_drawing.add_line(format!("{:#?}", &self.triggers));
     }
     if self.input.len() > 0 {
@@ -950,14 +954,14 @@ impl fmt::Debug for Block {
       block_drawing.add_title("⏳","pending transformations");
       block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
     }
-    block_drawing.add_title("📅","tables");
-    block_drawing.add_line(format!("{:?}", &self.tables));
-    block_drawing.add_title("🧭","plan");
+    block_drawing.add_title("🗺️","plan");
     block_drawing.add_line(format!("{:?}", &self.plan));
     if self.changes.len() > 0 {
       block_drawing.add_title("🛆", "changes");
       block_drawing.add_line(format!("{:#?}", &self.changes));
     }
+    block_drawing.add_title("📅","tables");
+    block_drawing.add_line(format!("{:?}", &self.tables));
     write!(f,"{:?}",block_drawing)?;
     Ok(())
   }

@@ -264,7 +264,7 @@ impl fmt::Debug for Core {
     }
     box_drawing.add_title("💻","functions");
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
-    box_drawing.add_title("⏲️","schedule");
+    box_drawing.add_title("🗓️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
     box_drawing.add_title("💾","database");
     box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
