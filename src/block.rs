@@ -634,10 +634,15 @@ impl Block {
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               x => {
-                return Err(MechError::GenericError(6388));},
+                println!("{:?}", x);
+                return Err(MechError::GenericError(6388));
+              },
             }
           }
-          x => {return Err(MechError::GenericError(6379));},
+          x => {
+            println!("{:?}", x);
+            return Err(MechError::GenericError(6379));
+          },
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
@@ -894,9 +899,8 @@ impl Block {
                 // A function knows how to compile itself
                 // based on what arguments are passed.
                 // Not all arguments are valid, in which
-                // case and error is returned.
+                // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
-                return Ok(());
               }
               None => {return Err(MechError::MissingFunction(*name));}
             }

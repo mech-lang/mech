@@ -371,7 +371,7 @@ impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
     let table_name: String = if let Some(string) = table.dictionary.borrow().get(&table.id) {
-      format!(" {}", string.iter().cloned().collect::<String>())
+      format!(" #{}", string.iter().cloned().collect::<String>())
     } else {
       format!(" {}", humanize(&table.id))
     };
@@ -513,6 +513,8 @@ impl BoxPrinter {
               diff -= 1; 
             }
           }
+
+          // Print table header
           middle += "│";
           middle += &table.title;
           middle += &BoxPrinter::format_repeated_char(" ", self.width - table.title.chars().count());
