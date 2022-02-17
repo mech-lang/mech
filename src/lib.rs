@@ -372,7 +372,7 @@ impl BoxTable {
     let mut strings: Vec<Vec<String>> = vec![vec!["".to_string(); table.rows]; table.cols];
     let mut column_widths = vec![0; table.cols];
     let mut column_aliases = Vec::new();
-
+    let mut column_kinds = Vec::new();
 
     for (col,alias) in table.column_ix_to_alias.iter().enumerate() {
       if let Some(alias_string) = table.dictionary.borrow().get(alias) {
@@ -385,6 +385,15 @@ impl BoxTable {
       } else {
         column_aliases.push(format!(" {}", humanize(alias)));   
       }
+    }
+
+    for (col,kind) in table.col_kinds.iter().enumerate() {
+      let kind_string = format!("{:?}", kind);
+      let chars = kind_string.len();
+      if chars > column_widths[col] {
+        column_widths[col] = chars;
+      }
+      column_kinds.push(kind_string);   
     }
 
     for row in 0..table.rows {
@@ -406,7 +415,7 @@ impl BoxTable {
       rows: table.rows,
       cols: table.cols,
       column_aliases,
-      column_kinds: vec![],
+      column_kinds,
       strings,
       column_widths,
     }
@@ -522,6 +531,28 @@ impl BoxPrinter {
             boxed_line += &"\n".to_string();
             middle += &boxed_line;
           }
+
+          if table.column_kinds.len() > 0 {
+            middle += "├";
+            for col in 0..table.cols-1 {
+              middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
+              middle += "┼";
+            }
+            middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
+            middle += "┤\n";
+            let mut boxed_line = "│".to_string();
+            for col in 0..table.cols {
+              let cell = &table.column_kinds[col];
+              let chars = cell.chars().count();
+              boxed_line += &cell; 
+              boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
+              boxed_line += "│";
+            }
+            boxed_line += &"\n".to_string();
+            middle += &boxed_line;
+          }
+
+
           middle += "├";
           for col in 0..table.cols-1 {
             middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
