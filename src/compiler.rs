@@ -151,7 +151,6 @@ impl Compiler {
       // dest := src
       // dest{ix} := src
       Node::SetData{children} => {
-
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?;
 
@@ -174,7 +173,6 @@ impl Compiler {
           },
           _ => None,
         }.unwrap();     
-
         match &mut dest[0] {
           Transformation::Select{table_id, indices} => {
             let dest_id = table_id.clone();
@@ -340,10 +338,10 @@ impl Compiler {
       Node::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
         let mut arg_tfms = vec![];
+        let mut identifiers = vec![];
         for child in children {
           // get the argument identifier off the function binding. Default to 0 if there is no named arg
           let mut result = self.compile_node(&child)?;
-
           let arg: u64 = match &result[0] {
             Transformation::Identifier{name, id} => {
               let arg_id = id.clone();
@@ -369,9 +367,12 @@ impl Compiler {
             },
             _ => (),
           }
+          let mut string_identifiers = result.drain_filter(|x| if let Transformation::Identifier{..} = x {true} else {false}).collect::<Vec<Transformation>>();
+          identifiers.append(&mut string_identifiers);
           arg_tfms.append(&mut result);
         }
         let name_hash = hash_chars(name);
+        identifiers.push(Transformation::Identifier{name: name.clone(), id: name_hash});
         let id = hash_str(&format!("{:?}{:?}", name, args));
         tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         tfms.append(&mut arg_tfms);
@@ -380,7 +381,7 @@ impl Compiler {
           arguments: args,
           out: (TableId::Local(id), TableIndex::All, TableIndex::All),
         });
-        tfms.push(Transformation::Identifier{name: name.clone(), id: name_hash});
+        tfms.append(&mut identifiers);
       },
       Node::InlineTable{children} => {
         let columns = children.len();
