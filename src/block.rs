@@ -34,7 +34,7 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct Plan{
-  pub plan: Vec<Rc<RefCell<dyn MechFunction>>>
+  plan: Vec<Rc<RefCell<dyn MechFunction>>>
 }
 
 impl Plan {
@@ -49,6 +49,22 @@ impl Plan {
     self.plan.push(Rc::new(RefCell::new(fxn)));
   }
   
+}
+
+
+impl fmt::Debug for Plan {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut plan = BoxPrinter::new();
+    let mut ix = 1;
+    for step in &self.plan {
+      plan.add_title("🦿",&format!("Step {}", ix));
+      plan.add_line(format!("{}",&step.borrow().to_string()));
+      ix += 1;
+    }
+    write!(f,"{:?}",plan)?;
+    Ok(())
+  }
 }
 
 pub type BlockId = u64;
@@ -81,7 +97,8 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
-  pub strings: HashMap<u64,MechString>,
+  pub strings: StringDictionary,
+  pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
 }
@@ -99,7 +116,8 @@ impl Block {
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
       transformations: Vec::new(),
-      strings: HashMap::new(),
+      strings: Rc::new(RefCell::new(HashMap::new())),
+      triggers: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
     }
@@ -452,16 +470,18 @@ impl Block {
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
     match &tfm {
       Transformation::Identifier{name, id} => {
-        self.strings.insert(*id, name.to_vec());
+        self.strings.borrow_mut().insert(*id, name.to_vec());
       }
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
           TableId::Local(id) => {
-            let table = Table::new(*id, *rows, *columns);
+            let mut table = Table::new(*id, *rows, *columns);
+            table.dictionary = self.strings.clone();
             self.tables.insert_table(table);
           }
           TableId::Global(id) => {
-            let table = Table::new(*id, *rows, *columns);
+            let mut table = Table::new(*id, *rows, *columns);
+            table.dictionary = self.strings.clone();
             self.global_database.borrow_mut().insert_table(table);
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
           }
@@ -493,19 +513,23 @@ impl Block {
         else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));}
+        if let TableId::Global(_) = table_id { 
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+        }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if *column_ix > table.cols - 1  {
           let rows = table.rows;
           table.resize(rows,*column_ix + 1);
         }
         table.set_column_alias(*column_ix,*column_alias);
-        self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
       },
       Transformation::TableDefine{table_id, indices, out} => {
-        if let TableId::Global(_) = table_id { self.input.insert((*table_id,TableIndex::All,TableIndex::All));}
-        //let arg_col = self.get_arg_column(&argument)?;
-
+        if let TableId::Global(_) = table_id { 
+          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        }
         // Iterate through to the last index
         let mut table_id = *table_id;
         for (row,column) in indices.iter().take(indices.len()-1) {
@@ -610,13 +634,19 @@ impl Block {
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               x => {
-                return Err(MechError::GenericError(6388));},
+                println!("{:?}", x);
+                return Err(MechError::GenericError(6388));
+              },
             }
           }
-          x => {return Err(MechError::GenericError(6379));},
+          x => {
+            println!("{:?}", x);
+            return Err(MechError::GenericError(6379));
+          },
         }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
         let arguments = vec![(0,*src_id,vec![(*src_row,*src_col)]),(0,*dest_id,vec![(*dest_row,*dest_col)])];
         let arg_shapes = self.get_arg_dims(&arguments)?;
         match (&arg_shapes[0], &arg_shapes[1]) {
@@ -680,14 +710,13 @@ impl Block {
           (TableShape::Column(_),TableShape::Column(_)) => {
             let arg_cols = self.get_arg_columns(&arguments)?;
             match (&arg_cols[0], &arg_cols[1]) {
-              ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => 
-                self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
-              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
-                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
-              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) =>
-                self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
-              ((_,Column::U8(arg),ColumnIndex::All), (_,Column::U8(out),ColumnIndex::Bool(oix))) =>
-                self.plan.push(SetVVB::<u8>{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U8(arg),ColumnIndex::All),(_,Column::U8(out),ColumnIndex::All)) => self.plan.push(SetVV::<u8>{arg: arg.clone(), out: out.clone()}),
+              ((_,Column::F32(arg),ColumnIndex::All),(_,Column::F32(out),ColumnIndex::All)) => self.plan.push(SetVV::<f32>{arg: arg.clone(), out: out.clone()}),
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => self.plan.push(SetSIxVB::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => self.plan.push(SetSIxVB::<f32>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::U8(out),ColumnIndex::Index(oix))) => self.plan.push(SetSIxSIx::<u8>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+              ((_,Column::U8(arg),ColumnIndex::All), (_,Column::U8(out),ColumnIndex::Bool(oix))) => self.plan.push(SetVVB::<u8>{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+              ((_,Column::F32(arg),ColumnIndex::All), (_,Column::F32(out),ColumnIndex::Bool(oix))) => self.plan.push(SetVVB::<f32>{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
               ((_,Column::U8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
                 let dest_table = self.get_table(dest_id)?;
                 let src_table = self.get_table(src_id)?;
@@ -718,6 +747,7 @@ impl Block {
                 self.plan.push(SetSIxSIx::<TableId>{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
               }
               x => {
+                println!("{:?}", x);
                 return Err(MechError::GenericError(8835));
               },
             }
@@ -846,6 +876,10 @@ impl Block {
         }
         table_brrw.set(0,0,value.clone())?;
       }
+      Transformation::Whenever{table_id, indices} => {
+        self.triggers.clear();
+        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+      }
       Transformation::Function{name, ref arguments, out} => {
         // A list of all the functions that are
         // loaded onto this core.
@@ -859,14 +893,14 @@ impl Block {
                 for (_,table_id,indices) in arguments {
                   if let TableId::Global(_) = table_id {
                     self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+                    self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
                   }
                 }
                 // A function knows how to compile itself
                 // based on what arguments are passed.
                 // Not all arguments are valid, in which
-                // case and error is returned.
+                // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
-                return Ok(());
               }
               None => {return Err(MechError::MissingFunction(*name));}
             }
@@ -880,14 +914,14 @@ impl Block {
     Ok(())
   }
 
-  pub fn solve(&mut self) -> bool {
+  pub fn solve(&mut self) -> Result<(),MechError> {
     if self.state == BlockState::Ready {
       for ref mut fxn in &mut self.plan.plan.iter() {
         fxn.borrow_mut().solve();
       }
-      true
+      Ok(())
     } else {
-      false
+      Err(MechError::GenericError(9876))
     }
   }
 
@@ -897,26 +931,60 @@ impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut block_drawing = BoxPrinter::new();
+    block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
-    block_drawing.add_header("input");
-    block_drawing.add_line(format!("{:#?}", &self.input));
-    block_drawing.add_header("output");
-    block_drawing.add_line(format!("{:#?}", &self.output));
-    block_drawing.add_header("transformations");
-    block_drawing.add_line(format!("{:#?}", &self.transformations));
-    block_drawing.add_header("unsatisfied transformations");
-    block_drawing.add_line(format!("{:#?}", &self.unsatisfied_transformation));
-    block_drawing.add_header("pending transformations");
-    block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
-    block_drawing.add_header("tables");
-    block_drawing.add_line(format!("{:?}", &self.tables));
-    block_drawing.add_header("plan");
-    for step in &self.plan.plan {
-      block_drawing.add_line(format!("{}", &step.borrow().to_string()));
+    block_drawing.add_title("⚙️",&format!("triggers ({})",self.triggers.len()));
+    if self.triggers.len() > 0 {
+      for (table,row,col) in &self.triggers {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
     }
-    block_drawing.add_header("changes");
-    block_drawing.add_line(format!("{:#?}", &self.changes));
+    block_drawing.add_title("📭",&format!("input ({})",self.input.len()));
+    if self.input.len() > 0 {
+      for (table,row,col) in &self.input {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
+    }
+    block_drawing.add_title("📬",&format!("output ({})",self.output.len()));
+    if self.output.len() > 0 {
+      for (table,row,col) in &self.output {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
+    }
+    block_drawing.add_title("🪄","transformations");
+    block_drawing.add_line(format!("{:#?}", &self.transformations));
+    if let Some(ut) = &self.unsatisfied_transformation {
+      block_drawing.add_title("😔","unsatisfied transformations");
+      block_drawing.add_line(format!("{:#?}", &ut));
+    }
+    if self.pending_transformations.len() > 0 {
+      block_drawing.add_title("⏳","pending transformations");
+      block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
+    }
+    block_drawing.add_title("🗺️","plan");
+    block_drawing.add_line(format!("{:?}", &self.plan));
+    if self.changes.len() > 0 {
+      block_drawing.add_title("🛆", "changes");
+      block_drawing.add_line(format!("{:#?}", &self.changes));
+    }
+    block_drawing.add_title("📅","tables");
+    block_drawing.add_line(format!("{:?}", &self.tables));
     write!(f,"{:?}",block_drawing)?;
     Ok(())
   }

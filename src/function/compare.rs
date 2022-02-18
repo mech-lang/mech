@@ -79,12 +79,12 @@ macro_rules! compare_infix_ss {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Clone + Debug + std::cmp::PartialOrd
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Clone + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Clone + Debug + std::cmp::PartialOrd
     {
       fn solve(&mut self) {
         (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] $op (self.rhs.borrow())[0];
@@ -100,12 +100,12 @@ macro_rules! compare_infix_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       fn solve(&mut self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
@@ -120,12 +120,12 @@ macro_rules! compare_infix_par_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
+    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
+    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       fn solve(&mut self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
@@ -142,12 +142,12 @@ macro_rules! compare_infix_vs {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       fn solve(&mut self) {
         let rhs = &self.rhs.borrow()[0];
@@ -185,12 +185,12 @@ macro_rules! compare_infix_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd
+    where T: PartialEq + Debug + std::cmp::PartialOrd
     {
       fn solve(&mut self) {
         let lhs = &self.lhs.borrow()[0];
@@ -206,12 +206,12 @@ macro_rules! compare_infix_par_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
+    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
     }
     impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Eq + Debug + std::cmp::PartialOrd + Send + Sync
+    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
       fn solve(&mut self) {
         let lhs = &self.lhs.borrow()[0];
@@ -236,7 +236,10 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              _ => {return Err(MechError::GenericError(1240));},
+              x => {
+                println!("{:?}",x);
+                return Err(MechError::GenericError(1241));
+              },
             }
           }
           (TableShape::Column(rows), TableShape::Scalar) => {
@@ -244,7 +247,8 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              _ => {return Err(MechError::GenericError(1252));},
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op2::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              _ => {return Err(MechError::GenericError(1253));},
             }
           }
           (TableShape::Scalar,TableShape::Column(rows)) => {

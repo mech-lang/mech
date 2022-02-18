@@ -51,7 +51,7 @@ fn main() -> Result<(),MechError> {
     gravity.set(0,0,Value::F32(1.0));
     core.insert_table(gravity.clone());
 
-    // -0.8
+    // -80%
     let mut const1 = Table::new(hash_str("-0.8"),1,1);
     const1.set_col_kind(0,ValueKind::F32);
     const1.set(0,0,Value::F32(-0.8));
@@ -151,6 +151,11 @@ fn main() -> Result<(),MechError> {
 
   // Update the block positions on each tick of the timer  
   let mut block1 = Block::new();
+  block1.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block1")), rows: 1, columns: 1});
+  block1.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
+  block1.input.insert((TableId::Global(hash_str("gravity")),TableIndex::All,TableIndex::All));
+  block1.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block1.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&x,&vx,&y,&vy,&g) {
     (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
       // #ball.x := #ball.x + #ball.vx
@@ -162,10 +167,13 @@ fn main() -> Result<(),MechError> {
     }
     _ => (),
   }
-  block1.gen_id();
 
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
+  block2.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block2")), rows: 1, columns: 1});
+  block2.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
+  block2.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block2.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy,&c500,&c0) {
     (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy),Column::F32(m500),Column::F32(m0)) => {
       // iy = #ball.y > #boundary.height
@@ -174,17 +182,20 @@ fn main() -> Result<(),MechError> {
       block2.plan.push(compare::ParLessVS::<f32>{lhs: y.clone(), rhs: m0.clone(), out: iyy.clone()});
       // #ball.y{iy} := #boundary.height
       block2.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out:  y.clone(), oix: iy.clone()});
-      // #ball.vy{iy | iyy} := #ball.vy * -0.80
+      // #ball.vy{iy | iyy} := #ball.vy * -80%
       block2.plan.push(logic::ParOrVV{lhs: iy.clone(), rhs: iyy.clone(), out: iy_or.clone()});
       block2.plan.push(math::ParMulVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
       block2.plan.push(table::ParSetVVB::<f32>{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
     }
     _ => (),
   }
-  block2.gen_id();
  
   // Keep the balls within the boundary width
   let mut block3 = Block::new();
+  block3.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block3")), rows: 1, columns: 1});
+  block3.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
+  block3.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block3.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2,&c500,&c0) {
     (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2),Column::F32(m500),Column::F32(m0)) => {
       // ix = #ball.x > #boundary.width
@@ -193,35 +204,39 @@ fn main() -> Result<(),MechError> {
       block3.plan.push(compare::ParLessVS::<f32>{lhs: x.clone(), rhs: m0.clone(), out: ixx.clone()});
       // #ball.x{ix} := #boundary.width
       block3.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out: x.clone(), oix: ix.clone()});
-      // #ball.vx{ix | ixx} := #ball.vx * -0.80
+      // #ball.vx{ix | ixx} := #ball.vx * -80%
       block3.plan.push(logic::ParOrVV{lhs: ix.clone(), rhs: ixx.clone(), out: ix_or.clone()});
       block3.plan.push(math::ParMulVS::<f32>{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
       block3.plan.push(table::ParSetVVB::<f32>{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
     }
     _ => (),
   }
-  block3.gen_id();
 
+  //println!("{:?}", block1);
   let block1_ref = Rc::new(RefCell::new(block1));
   core.insert_block(block1_ref.clone());
 
+  //println!("{:?}", block2);
   let block2_ref = Rc::new(RefCell::new(block2));
   core.insert_block(block2_ref.clone());
 
+  //println!("{:?}", block3);
   let block3_ref = Rc::new(RefCell::new(block3));
   core.insert_block(block3_ref.clone());
 
-  core.schedules.insert((hash_str("time/timer"), 0, 1),vec![vec![block1_ref.clone()],vec![block2_ref.clone(), block3_ref.clone()]]);
+  core.schedule_blocks();
+
+  //println!("{:?}", core);
 
   for i in 0..20000 {
-    let txn = vec![Change::Set((hash_str("time/timer"), vec![(0, 1, Value::F32(i as f32))]))];
+    let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::F32(i as f32))]))];
+    
     let start_ns = time::precise_time_ns();
-
     core.process_transaction(&txn)?;
-
     let end_ns = time::precise_time_ns();
-    let time = (end_ns - start_ns) as f32;
-    total_time.push_back(time);
+
+    let cycle_duration = (end_ns - start_ns) as f32;
+    total_time.push_back(cycle_duration);
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
@@ -232,5 +247,7 @@ fn main() -> Result<(),MechError> {
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f32;
   println!("{:0.4?} s", time / 1e9);
+  println!("{:?}", core);
+
   Ok(())
 }

@@ -37,24 +37,26 @@ impl Functions {
   pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn function::MechFunctionCompiler>> {
     self.functions.get(&key)
   }
-  pub fn insert<S: MechFunctionCompiler + 'static>(&mut self, key: u64, mut fxn: S) {
-    self.functions.insert(key,Box::new(fxn));
+  pub fn insert(&mut self, key: u64, mut fxn: Box<dyn MechFunctionCompiler>) {
+    self.functions.insert(key,fxn);
+  }
+
+  pub fn extend(&mut self, other: HashMap<u64,Box<dyn MechFunctionCompiler>>) {
+    self.functions.extend(other); 
   }
   
 }
 
-#[derive(Clone)]
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: Vec<BlockRef>,
+  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
-  functions: Rc<RefCell<Functions>>,
+  pub functions: Rc<RefCell<Functions>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub input_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  pub output_to_block: HashMap<TableId,(TableIndex,TableIndex,Vec<BlockRef>)>,
-  pub schedules: HashMap<(u64,TableIndex,TableIndex),Vec<Vec<BlockRef>>>,
+  pub schedule: Schedule,
+  pub dictionary: StringDictionary,
 }
 
 impl Core {
@@ -62,48 +64,47 @@ impl Core {
   pub fn new() -> Core {
 
     let mut functions = Functions::new();
-    functions.insert(*MATH_ADD, MathAdd{});
-    functions.insert(*MATH_SUBTRACT, MathSub{});
-    functions.insert(*MATH_MULTIPLY, MathMul{});
-    functions.insert(*MATH_DIVIDE, MathDiv{});
+    functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
+    functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
+    functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     //functions.insert(*MATH_EXPONENT, MathExp{});
-    functions.insert(*MATH_NEGATE, MathNegate{});
+    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
-    functions.insert(*LOGIC_NOT, LogicNot{});
-    functions.insert(*LOGIC_AND, logic_and{});
-    functions.insert(*LOGIC_OR, logic_or{});
-    functions.insert(*LOGIC_XOR, logic_xor{});
+    functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
+    functions.insert(*LOGIC_AND, Box::new(logic_and{}));
+    functions.insert(*LOGIC_OR, Box::new(logic_or{}));
+    functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));
 
-    functions.insert(*COMPARE_GREATER__THAN, compare_greater__than{});
-    functions.insert(*COMPARE_LESS__THAN, compare_less__than{});
-    functions.insert(*COMPARE_GREATER__THAN__EQUAL, compare_greater__than__equal{});
-    functions.insert(*COMPARE_LESS__THAN__EQUAL, compare_less__than__equal{});
-    functions.insert(*COMPARE_EQUAL, compare_equal{});
-    functions.insert(*COMPARE_NOT__EQUAL, compare_not__equal{});
+    functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
+    functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
+    functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(compare_greater__than__equal{}));
+    functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(compare_less__than__equal{}));
+    functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
+    functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));
 
-    functions.insert(*TABLE_APPEND, TableAppend{});
-    functions.insert(*TABLE_RANGE, TableRange{});
-    functions.insert(*TABLE_SPLIT, TableSplit{});
-    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, TableHorizontalConcatenate{});
-    functions.insert(*TABLE_VERTICAL__CONCATENATE, TableVerticalConcatenate{});
-    functions.insert(*TABLE_SIZE, TableSize{});
+    functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
+    functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
+    functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
+    functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
+    functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
 
-    functions.insert(*STATS_SUM, StatsSum{});
+    functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
-    functions.insert(*SET_ANY, SetAny{});
-    functions.insert(*SET_ALL, SetAll{});
+    functions.insert(*SET_ANY, Box::new(SetAny{}));
+    functions.insert(*SET_ALL, Box::new(SetAll{}));
 
     Core {
       blocks: HashMap::new(),
-      unsatisfied_blocks: Vec::new(),
+      unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
       errors: HashMap::new(),
-      schedules: HashMap::new(),
+      schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
-      input_to_block: HashMap::new(),
-      output_to_block: HashMap::new(),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
   }
 
@@ -118,7 +119,7 @@ impl Core {
               for (row,col,val) in adds {
                 match table.borrow().set(row.unwrap(), col.unwrap(), val.clone()) {
                   Ok(()) => {
-                    registers.push((*table_id,*row,*col));
+                    registers.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },
                   Err(x) => {return Err(x);}
                 }
@@ -152,8 +153,8 @@ impl Core {
         }
       }
     }
-    for register in registers {
-      self.step(&register);
+    for register in &registers {
+      self.step(register);
     }
     Ok(block_refs)
   }
@@ -201,26 +202,21 @@ impl Core {
       Err(_) => ()
     }
 
+    // Merge dictionaries
+    for (k,v) in block_brrw.strings.borrow().iter() {
+      self.dictionary.borrow_mut().insert(*k,v.to_vec());
+    }
+
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
         let id = block_brrw.gen_id();
 
-        // Map input tables to blocks
-        for (table_id,row,col) in &block_brrw.input {
-          let (_,_,ref mut dependent_blocks) = self.input_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-          dependent_blocks.push(block_ref.clone());
-        }
-
-        // Map output tables to blocks
-        for (table_id,row,col) in &block_brrw.output {
-          let (_,_,ref mut dependent_blocks) = self.output_to_block.entry(*table_id).or_insert((*row,*col,vec![]));
-          dependent_blocks.push(block_ref.clone());
-        }
-
         // Merge input and output
         self.input = self.input.union(&mut block_brrw.input).cloned().collect();
         self.output = self.output.union(&mut block_brrw.output).cloned().collect();
+
+        self.schedule.add_block(block_ref.clone());
 
         // Try to satisfy other blocks
         let block_output = block_brrw.output.clone();
@@ -247,30 +243,13 @@ impl Core {
     }
   }
 
+
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    /*
-    for ((table_id,row,col)) in self.input.iter() {
-      let mut schedule: Vec<BlockRef> = vec![];
-      if let Some((_,_,dependent_blocks)) = self.input_to_block.get(table_id) {
-        let mut dependent_blocks = dependent_blocks.clone();
-        schedule.append(&mut dependent_blocks);
-      }
-      self.schedules.insert((*table_id.unwrap(),*row,*col),vec![schedule]);
-    }*/
-    Ok(())
+    self.schedule.schedule_blocks()
   }
 
-  pub fn step(&mut self, register: &(u64,TableIndex,TableIndex)) {
-    match &mut self.schedules.get(register) {
-      Some(schedule) => {
-        for blocks in schedule.iter() {
-          for block in blocks {
-            block.borrow_mut().solve();
-          }
-        }
-      }
-      _ => (),
-    }
+  pub fn step(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+    self.schedule.run_schedule(register)
   }
 }
 
@@ -278,23 +257,30 @@ impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut box_drawing = BoxPrinter::new();
-    box_drawing.add_header("input");
-    box_drawing.add_line(format!("{:?}", &self.input_to_block.iter().map(|(k,(_,_,dep_blocks))| {
-      format!("{:?} -> {:?}", humanize(&k.unwrap()), dep_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<String>>()));
-    box_drawing.add_header("output");
-    box_drawing.add_line(format!("{:#?}", &self.output_to_block.iter().map(|(k,(_,_,dep_blocks))| {
-      format!("{:?} <- {:?}", humanize(&k.unwrap()), dep_blocks.iter().map(|b| humanize(&b.borrow().id)).collect::<Vec<String>>())
-    }).collect::<Vec<String>>()));
-    box_drawing.add_header("errors");
-    box_drawing.add_line(format!("{:#?}", &self.errors));
-    box_drawing.add_header("blocks");
+    box_drawing.add_title("🤖","CORE");
+    if self.errors.len() > 0 {
+      box_drawing.add_title("🐛","errors");
+      box_drawing.add_line(format!("{:#?}", &self.errors));
+    }
+    box_drawing.add_title("📭","input");
+    for (table,row,col) in &self.input {
+      box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
+    }
+    box_drawing.add_title("📬","output");
+    for (table,row,col) in &self.output {
+      box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
+    }
+    box_drawing.add_title("🧊","blocks");
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
-    box_drawing.add_header("unsatisfied blocks");
-    box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|v|v.borrow().id).collect::<Vec<BlockId>>()));    
-    box_drawing.add_header("functions");
+    if self.unsatisfied_blocks.len() > 0 {
+      box_drawing.add_title("😞","unsatisfied blocks");
+      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|(k,v)|v.borrow().id).collect::<Vec<BlockId>>()));    
+    }
+    box_drawing.add_title("💻","functions");
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
-    box_drawing.add_header("database");
+    box_drawing.add_title("🗓️","schedule");
+    box_drawing.add_line(format!("{:#?}", &self.schedule));
+    box_drawing.add_title("💾","database");
     box_drawing.add_line(format!("{:#?}", &self.database.borrow()));
     write!(f,"{:?}",box_drawing)?;
     Ok(())

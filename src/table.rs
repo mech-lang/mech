@@ -93,15 +93,18 @@ impl fmt::Debug for TableIndex {
 
 // ## Table
 
+pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
+
 #[derive(Clone)]
 pub struct Table {
-  pub id: u64,
-  pub rows: usize,
-  pub cols: usize,
-  pub col_kinds: Vec<ValueKind>,
-  pub column_ix_to_alias: Vec<u64>,
+  pub id: u64,                           
+  pub rows: usize,                       
+  pub cols: usize,                       
+  pub col_kinds: Vec<ValueKind>,                 
+  pub column_ix_to_alias: Vec<u64>,  
   pub column_alias_to_ix: HashMap<u64,usize>,
   pub data: Vec<Column>,
+  pub dictionary: StringDictionary,
 }
 
 
@@ -115,6 +118,7 @@ impl Table {
       column_alias_to_ix: HashMap::new(),
       data: Vec::with_capacity(cols),
       col_kinds: Vec::with_capacity(cols),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
     };
     for col in 0..cols {
       table.data.push(Column::Empty);
@@ -348,6 +352,7 @@ impl Table {
           self.data[col] = Column::I128(column);
           self.col_kinds[col] = ValueKind::I128;
         },
+        (Column::F32(_), ValueKind::F32) => (),
         (Column::Empty, ValueKind::F32) => {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
@@ -374,6 +379,7 @@ impl Table {
           self.col_kinds[col] = ValueKind::Reference;
         },
         x => {
+          println!("{:?}", x);
           return Err(MechError::GenericError(1229));
         },
       }
@@ -468,15 +474,6 @@ impl fmt::Debug for Table {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut table_drawing = BoxPrinter::new();
-    table_drawing.add_line(format!("{} ({} x {})", humanize(&self.id),self.rows,self.cols));
-    let mut header = "".to_string();
-    for (ix, alias) in self.column_ix_to_alias.iter().enumerate() {
-      header += &format!(" {}", humanize(alias)); 
-    }
-    if header != "" {
-      table_drawing.add_separator();  
-    }
-    table_drawing.add_line(header);
     table_drawing.add_table(self);
     write!(f,"{:?}",table_drawing)?;
     Ok(())
