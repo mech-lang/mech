@@ -1,7 +1,7 @@
 use mech_syntax::parser;
 use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
-use mech_core::{Core,MechError};
+use mech_core::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -14,10 +14,20 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #x = [1 2 3];
+  #ball = [|x y vx vy|
+            1 2 3 4
+            5 6 7 8
+            9 10 11 12]
+  #time/timer = [period: 15 tick: 0]
+  #gravity = 2
 
 block
-  #y = #x"#)?;
+  x = #ball.vy > 10
+  y = #ball.vy < 5
+  #ball.y{x | y} := #ball.vy * 2
+
+block
+  #test = #ball{1,2} + #ball{3,2}"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -27,11 +37,24 @@ block
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
 
-  println!("{:#?}", blocks);
-
   core.insert_blocks(blocks)?;
 
   core.schedule_blocks()?;
+
+  let ticks = 2;
+ // println!("{:#?}", core.get_table("balls").unwrap().borrow());
+
+  /*for i in 1..=ticks {
+    let txn = vec![
+      Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(i))])),
+    ];
+    core.process_transaction(&txn)?;
+    println!("{:#?}", core.get_table("balls").unwrap().borrow());
+  }
+  println!("{:#?}", core.get_table("test").unwrap().borrow());*/
+
+
+  println!("{:#?}", core.blocks);
 
   println!("{:#?}", core);
 
