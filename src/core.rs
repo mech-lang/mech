@@ -37,18 +37,21 @@ impl Functions {
   pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn function::MechFunctionCompiler>> {
     self.functions.get(&key)
   }
-  pub fn insert<S: MechFunctionCompiler + 'static>(&mut self, key: u64, mut fxn: S) {
-    self.functions.insert(key,Box::new(fxn));
+  pub fn insert(&mut self, key: u64, mut fxn: Box<dyn MechFunctionCompiler>) {
+    self.functions.insert(key,fxn);
+  }
+
+  pub fn extend(&mut self, other: HashMap<u64,Box<dyn MechFunctionCompiler>>) {
+    self.functions.extend(other); 
   }
   
 }
 
-#[derive(Clone)]
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: Vec<BlockRef>,
+  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
-  functions: Rc<RefCell<Functions>>,
+  pub functions: Rc<RefCell<Functions>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -61,40 +64,40 @@ impl Core {
   pub fn new() -> Core {
 
     let mut functions = Functions::new();
-    functions.insert(*MATH_ADD, MathAdd{});
-    functions.insert(*MATH_SUBTRACT, MathSub{});
-    functions.insert(*MATH_MULTIPLY, MathMul{});
-    functions.insert(*MATH_DIVIDE, MathDiv{});
+    functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
+    functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
+    functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     //functions.insert(*MATH_EXPONENT, MathExp{});
-    functions.insert(*MATH_NEGATE, MathNegate{});
+    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
-    functions.insert(*LOGIC_NOT, LogicNot{});
-    functions.insert(*LOGIC_AND, logic_and{});
-    functions.insert(*LOGIC_OR, logic_or{});
-    functions.insert(*LOGIC_XOR, logic_xor{});
+    functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
+    functions.insert(*LOGIC_AND, Box::new(logic_and{}));
+    functions.insert(*LOGIC_OR, Box::new(logic_or{}));
+    functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));
 
-    functions.insert(*COMPARE_GREATER__THAN, compare_greater__than{});
-    functions.insert(*COMPARE_LESS__THAN, compare_less__than{});
-    functions.insert(*COMPARE_GREATER__THAN__EQUAL, compare_greater__than__equal{});
-    functions.insert(*COMPARE_LESS__THAN__EQUAL, compare_less__than__equal{});
-    functions.insert(*COMPARE_EQUAL, compare_equal{});
-    functions.insert(*COMPARE_NOT__EQUAL, compare_not__equal{});
+    functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
+    functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
+    functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(compare_greater__than__equal{}));
+    functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(compare_less__than__equal{}));
+    functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
+    functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));
 
-    functions.insert(*TABLE_APPEND, TableAppend{});
-    functions.insert(*TABLE_RANGE, TableRange{});
-    functions.insert(*TABLE_SPLIT, TableSplit{});
-    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, TableHorizontalConcatenate{});
-    functions.insert(*TABLE_VERTICAL__CONCATENATE, TableVerticalConcatenate{});
-    functions.insert(*TABLE_SIZE, TableSize{});
+    functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
+    functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
+    functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
+    functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
+    functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
 
-    functions.insert(*STATS_SUM, StatsSum{});
+    functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
-    functions.insert(*SET_ANY, SetAny{});
-    functions.insert(*SET_ALL, SetAll{});
+    functions.insert(*SET_ANY, Box::new(SetAny{}));
+    functions.insert(*SET_ALL, Box::new(SetAll{}));
 
     Core {
       blocks: HashMap::new(),
-      unsatisfied_blocks: Vec::new(),
+      unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
       errors: HashMap::new(),
@@ -199,6 +202,11 @@ impl Core {
       Err(_) => ()
     }
 
+    // Merge dictionaries
+    for (k,v) in block_brrw.strings.borrow().iter() {
+      self.dictionary.borrow_mut().insert(*k,v.to_vec());
+    }
+
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
@@ -266,7 +274,7 @@ impl fmt::Debug for Core {
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     if self.unsatisfied_blocks.len() > 0 {
       box_drawing.add_title("😞","unsatisfied blocks");
-      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|v|v.borrow().id).collect::<Vec<BlockId>>()));    
+      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|(k,v)|v.borrow().id).collect::<Vec<BlockId>>()));    
     }
     box_drawing.add_title("💻","functions");
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
