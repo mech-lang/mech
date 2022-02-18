@@ -397,8 +397,6 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   }
 }
 
-
-
 pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
   let tag = tag.to_string();
   move |mut input: Vec<&str>| {
@@ -476,7 +474,6 @@ leaf!{ampersand, "&", Token::Ampersand}
 leaf!{semicolon, ";", Token::Semicolon}
 leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
-
 
 // ## The Basics
 fn emoji_grapheme(mut input: Vec<&str>) -> IResult<Vec<&str>, &str> {
