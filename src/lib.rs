@@ -73,7 +73,6 @@ pub enum RunLoopMessage {
   GetTable(u64),
   Transaction(Transaction),
   Code(MechCode),
-  EchoCode(String),
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
   RemoteCoreDisconnect(u64),
@@ -135,6 +134,28 @@ macro_rules! export_machine {
     #[no_mangle]
     pub static $name: $crate::MachineDeclaration =
       $crate::MachineDeclaration {
+        register: $register,
+      };
+  };
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Copy, Clone)]
+pub struct MechFunctionDeclaration {
+  pub register: unsafe extern "C" fn(&mut dyn MechFunctionRegistrar),
+}
+
+pub trait MechFunctionRegistrar {
+  fn register_mech_function(&mut self, function_id: u64, mech_function_compiler: Box<dyn MechFunctionCompiler>);
+}
+
+#[macro_export]
+macro_rules! export_mech_function {
+  ($name:ident, $register:expr) => {
+    #[doc(hidden)]
+    #[no_mangle]
+    pub static $name: $crate::MechFunctionDeclaration =
+      $crate::MechFunctionDeclaration {
         register: $register,
       };
   };
