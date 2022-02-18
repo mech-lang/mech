@@ -247,13 +247,13 @@ impl Table {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
       let col = ix % self.cols;
-      self.set(row,col, val)
+      self.set_raw(row,col, val)
     } else {
       Err(MechError::GenericError(1214))
     }
   }
 
-  pub fn set(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
+  pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,

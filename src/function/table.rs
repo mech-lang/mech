@@ -420,7 +420,7 @@ impl MechFunction for CopyT {
     for col in 0..arg_brrw.cols {
       for row in 0..arg_brrw.rows {
         let value = arg_brrw.get(row,col).unwrap();
-        out_brrw.set(row,col,value);
+        out_brrw.set_raw(row,col,value);
       }
     }
   }
@@ -455,7 +455,7 @@ impl MechFunction for AppendRowT {
           let value = arg_brrw.get(row,col).unwrap();
           let alias = arg_brrw.column_ix_to_alias[col];
           match out_brrw.column_alias_to_ix.get(&alias) {
-            Some(col_ix) => {out_brrw.set(orows + row,*col_ix,value);}
+            Some(col_ix) => {out_brrw.set_raw(orows + row,*col_ix,value);}
             None => (), // TODO Error
           }
         }
@@ -464,7 +464,7 @@ impl MechFunction for AppendRowT {
       for col in 0..arg_brrw.cols {
         for row in 0..arows {
           let value = arg_brrw.get(row,col).unwrap();
-          out_brrw.set(orows + row,col,value);
+          out_brrw.set_raw(orows + row,col,value);
         }
       }
     }
@@ -485,7 +485,7 @@ impl MechFunction for AppendRowSV {
     let orows = out_brrw.rows;
     out_brrw.resize(orows + 1, 1);
     let value = arg_brrw.get_linear(self.ix).unwrap();
-    out_brrw.set(orows,0,value);
+    out_brrw.set_raw(orows,0,value);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -768,7 +768,7 @@ impl MechFunctionCompiler for TableSplit {
             }
           }
           block.global_database.borrow_mut().insert_table(dest_table);
-          out_brrw.set(row,0,Value::Reference(TableId::Global(split_id)));
+          out_brrw.set_raw(row,0,Value::Reference(TableId::Global(split_id)));
         }
         // Write functions
         for (col_ix,arg_col) in arg_cols.iter().enumerate() {
@@ -815,7 +815,7 @@ impl MechFunction for Range
     out_brrw.set_col_kind(0,ValueKind::U8);
     let mut value = start_value;
     for row in 0..out_brrw.rows {
-      out_brrw.set(row,0,Value::U8(value));
+      out_brrw.set_raw(row,0,Value::U8(value));
       value += 1;
     } 
   }
@@ -897,8 +897,8 @@ impl MechFunction for Size
     let rows = arg_brrw.rows;
     let cols = arg_brrw.cols;
     let mut out_brrw = self.out.borrow_mut();
-    out_brrw.set(0,0,Value::U64(rows as u64));
-    out_brrw.set(0,1,Value::U64(cols as u64));
+    out_brrw.set_raw(0,0,Value::U64(rows as u64));
+    out_brrw.set_raw(0,1,Value::U64(cols as u64));
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }

@@ -117,7 +117,7 @@ impl Core {
           match self.database.borrow().get_table_by_id(table_id) {
             Some(table) => {
               for (row,col,val) in adds {
-                match table.borrow().set(row.unwrap(), col.unwrap(), val.clone()) {
+                match table.borrow().set_raw(row.unwrap(), col.unwrap(), val.clone()) {
                   Ok(()) => {
                     registers.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },

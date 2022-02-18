@@ -42,31 +42,31 @@ fn main() -> Result<(),MechError> {
     let mut time_timer = Table::new(hash_str("time/timer"),1,2);
     time_timer.set_col_kind(0,ValueKind::F32);
     time_timer.set_col_kind(1,ValueKind::F32);
-    time_timer.set(0,0,Value::F32(60.0));
+    time_timer.set_raw(0,0,Value::F32(60.0));
     core.insert_table(time_timer.clone());
 
     // #gravity = 1
     let mut gravity = Table::new(hash_str("gravity"),1,1);
     gravity.set_col_kind(0,ValueKind::F32);
-    gravity.set(0,0,Value::F32(1.0));
+    gravity.set_raw(0,0,Value::F32(1.0));
     core.insert_table(gravity.clone());
 
     // -80%
     let mut const1 = Table::new(hash_str("-0.8"),1,1);
     const1.set_col_kind(0,ValueKind::F32);
-    const1.set(0,0,Value::F32(-0.8));
+    const1.set_raw(0,0,Value::F32(-0.8));
     core.insert_table(const1.clone());
 
     // 500
     let mut const2 = Table::new(hash_str("500.0"),1,1);
     const2.set_col_kind(0,ValueKind::F32);
-    const2.set(0,0,Value::F32(500.0));
+    const2.set_raw(0,0,Value::F32(500.0));
     core.insert_table(const2.clone());
 
     // 0
     let mut const3 = Table::new(hash_str("0.0"),1,1);
     const3.set_col_kind(0,ValueKind::F32);
-    const3.set(0,0,Value::F32(0.0));
+    const3.set_raw(0,0,Value::F32(0.0));
     core.insert_table(const3.clone());
 
     // Create balls
@@ -77,10 +77,10 @@ fn main() -> Result<(),MechError> {
     balls.set_col_kind(2,ValueKind::F32);
     balls.set_col_kind(3,ValueKind::F32);
     for i in 0..n {
-      balls.set(i,0,Value::F32(i as f32));
-      balls.set(i,1,Value::F32(i as f32));
-      balls.set(i,2,Value::F32(3.0));
-      balls.set(i,3,Value::F32(4.0));
+      balls.set_raw(i,0,Value::F32(i as f32));
+      balls.set_raw(i,1,Value::F32(i as f32));
+      balls.set_raw(i,2,Value::F32(3.0));
+      balls.set_raw(i,3,Value::F32(4.0));
     }
     core.insert_table(balls.clone());
   }

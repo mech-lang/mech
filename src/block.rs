@@ -491,7 +491,7 @@ impl Block {
         let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
         table_brrw.set_kind(ValueKind::Reference);
-        table_brrw.set(0,0,reference.clone())?;
+        table_brrw.set_raw(0,0,reference.clone())?;
 
         let src_table = self.get_table(&reference.as_table_reference()?)?;
         let src_table_brrw = src_table.borrow();
@@ -769,7 +769,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
               let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U16(x))?;
+              t.set_raw(0,0,Value::U16(x))?;
             }
             _ => {return Err(MechError::GenericError(6377));},
           }
@@ -777,7 +777,7 @@ impl Block {
           match bytes.len() {
             1 => {
               t.set_kind(ValueKind::U8)?;
-              t.set(0,0,Value::U8(bytes[0]))?;
+              t.set_raw(0,0,Value::U8(bytes[0]))?;
             }
             _ => {return Err(MechError::GenericError(6383));},
           }
@@ -790,7 +790,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
               let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::F32(x))?;
+              t.set_raw(0,0,Value::F32(x))?;
             }
             _ => {return Err(MechError::GenericError(6377));},
           }
@@ -803,7 +803,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
               let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U16(x * 1000))?;
+              t.set_raw(0,0,Value::U16(x * 1000))?;
             }
             _ => {return Err(MechError::GenericError(6387));},
           }
@@ -816,7 +816,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
               let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U16(x))?;
+              t.set_raw(0,0,Value::U16(x))?;
             }
             _ => {return Err(MechError::GenericError(6388));},
           }
@@ -824,13 +824,13 @@ impl Block {
           match bytes.len() {
             1 => {
               t.set_col_kind(0, ValueKind::U8)?;
-              t.set(0,0,Value::U8(bytes[0] as u8))?;
+              t.set_raw(0,0,Value::U8(bytes[0] as u8))?;
             }
             2 => {
               t.set_kind(ValueKind::U16)?;
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
               let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U16(x))?;
+              t.set_raw(0,0,Value::U16(x))?;
             }
             3 | 4 => {
               t.set_kind(ValueKind::U32)?;
@@ -839,7 +839,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
               let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U32(x))?;
+              t.set_raw(0,0,Value::U32(x))?;
             }
             5..=8 => {
               t.set_kind(ValueKind::U64)?;
@@ -848,7 +848,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
               let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U64(x))?;
+              t.set_raw(0,0,Value::U64(x))?;
             }
             9..=16 => {
               t.set_kind(ValueKind::U128)?;
@@ -857,7 +857,7 @@ impl Block {
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u128>());
               let x = u128::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set(0,0,Value::U128(x))?;
+              t.set_raw(0,0,Value::U128(x))?;
             }
             _ => {return Err(MechError::GenericError(6376));},
           }
@@ -874,7 +874,7 @@ impl Block {
           Value::String(_) => {table_brrw.set_col_kind(0, ValueKind::String);},
           _ => (),
         }
-        table_brrw.set(0,0,value.clone())?;
+        table_brrw.set_raw(0,0,value.clone())?;
       }
       Transformation::Whenever{table_id, indices} => {
         self.triggers.clear();
