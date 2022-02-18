@@ -166,7 +166,7 @@ impl Core {
   pub fn get_table(&mut self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
-      None => Err(MechError::GenericError(2951)),
+      None => Err(MechError::GenericError(9999)),
     }
   }
 
