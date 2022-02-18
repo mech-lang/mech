@@ -33,9 +33,14 @@ use alloc::vec::Vec;
 use core::fmt;
 //use mech_syntax::formatter::Formatter;
 use mech_syntax::compiler::{Compiler};
-use mech_core::{Register, hash_str, humanize, Block, TableId, Transaction, BlockState, Change, Value, Table, NumberLiteralKind};
+use mech_core::*;
 use mech_utilities::{SocketMessage, MiniBlock};
-use mech_math::{math_cos, math_sin, math_floor, math_round};
+use mech_math::{
+  math_sin, 
+  //math_cos, 
+  //math_floor,
+  //math_round,
+};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 use std::sync::Arc;
 
