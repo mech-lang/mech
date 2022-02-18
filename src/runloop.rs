@@ -491,7 +491,7 @@ impl ProgramRunner {
                 match compiler.compile_str(&code) {
                   Ok(blocks) => blocks,
                   Err(x) => {
-                    println!("aaa {:?}", x);
+                    println!("!!!{:?}", x);
                     continue 'runloop;
                   }
                 }
@@ -501,15 +501,31 @@ impl ProgramRunner {
                 miniblocks.iter().map(|b| maximize_block(&b)).collect()
               }
             };
-            let new_block_ids = match program.mech.insert_blocks(blocks) {
-              Ok(new_block_ids) => new_block_ids,
+            let mut new_block_ids = vec![];
+            match program.mech.insert_blocks(blocks) {
+              Ok(mut nbi) => new_block_ids.append(&mut nbi),
               Err(x) => {
-                println!("{:?}", program.mech);
-                println!("bbb {:?}", x);
-                continue 'runloop;
+                let resolved_errors: Vec<MechError> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+                for error in &resolved_errors {
+                  match program.mech.errors.remove(error) {
+                    Some(mut ublocks) => {
+                      for ublock in ublocks {
+                        if let Ok(nbi) = program.mech.insert_block(ublock) {
+                          new_block_ids.push(nbi);
+                        }
+                      }
+                    }
+                    None => (),
+                  }
+                }
+                // If there's still errors after downloading dependencies...
+                if program.mech.errors.len() > 0 {
+                  println!("@@@{:?}", program.mech.errors);
+                  continue 'runloop;
+                }
               }
             };
-            
+
             let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
             let out_id = match block.transformations.last() {
               Some(Transformation::Function{name,arguments,out}) => {
@@ -527,13 +543,11 @@ impl ProgramRunner {
               } 
               _ => TableId::Local(0),
             };
+
             let out_table = block.get_table(&out_id).unwrap();
             println!("{:?}", out_table.borrow());
-            
+
             /*
-            // Start the program
-            program.trigger_machines();
-            program.download_dependencies(Some(client_outgoing.clone()));
             // React to errors
             for error in &program.mech.runtime.errors {
               program.errors.insert(error.clone());
