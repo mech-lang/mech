@@ -756,10 +756,6 @@ clear   - reset the current core
             //println!("Code {:?}", code);
             mech_client.send(RunLoopMessage::Code(code));
           },
-          ReplCommand::EchoCode(code) => {
-            println!("EchoCode {:?}", code);
-            mech_client.send(RunLoopMessage::EchoCode(code));
-          },
           _ => {
             println!("something else: {}", help_message);
           }

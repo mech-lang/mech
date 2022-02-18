@@ -26,7 +26,6 @@ pub enum ReplCommand {
   Clear,
   Table(u64),
   Code(MechCode),
-  EchoCode(String),
   //ParsedCode(ParserNode),
   Empty,
   Error,
