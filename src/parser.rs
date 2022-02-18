@@ -14,7 +14,7 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
-  multi::{many1, many0},
+  multi::{many1, many0, separated_list1},
 };
 
 use unicode_segmentation::*;
@@ -40,7 +40,6 @@ pub enum Node {
   Table { children: Vec<Node> },
   Number { children: Vec<Node> },
   DigitOrComma {children: Vec<Node> },
-  FloatingPoint {children: Vec<Node> },
   MathExpression { children: Vec<Node> },
   SelectExpression { children: Vec<Node> },
   FilterExpression { children: Vec<Node> },
@@ -144,12 +143,15 @@ pub enum Node {
   Value{children: Vec<Node>},
   BooleanLiteral{children: Vec<Node>},
   NumberLiteral{children: Vec<Node>},
+  FloatLiteral{chars: Vec<char>},
   DecimalLiteral{chars: Vec<char>},
   HexadecimalLiteral{chars: Vec<char>},
   OctalLiteral{chars: Vec<char>},
   BinaryLiteral{chars: Vec<char>},
   RationalNumber{children: Vec<Node>},
   Token{token: Token, chars: Vec<char>},
+  KindAnnotation{children: Vec<Node>},
+  ReshapeColumn,
   Add,
   Subtract,
   Multiply,
@@ -198,7 +200,6 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Table{children} => {print!("Table\n"); Some(children)},
     Node::Number{children} => {print!("Number\n"); Some(children)},
     Node::DigitOrComma{children} => {print!("DigitOrComma\n"); Some(children)},
-    Node::FloatingPoint{children} => {print!("FloatingPoint\n"); Some(children)},
     Node::Alphanumeric{children} => {print!("Alphanumeric\n"); Some(children)},
     Node::Word{children} => {print!("Word\n"); Some(children)},
     Node::Emoji{children} => {print!("Emoji\n"); Some(children)},
@@ -298,6 +299,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Symbol{children} => {print!("Symbol\n"); Some(children)},
     Node::Quantity{children} => {print!("Quantity\n"); Some(children)},
     Node::NumberLiteral{children} => {print!("NumberLiteral\n"); Some(children)},
+    Node::FloatLiteral{chars} => {print!("FloatLiteral({:?})\n", chars); None},
     Node::DecimalLiteral{chars} => {print!("DecimalLiteral({:?})\n", chars); None},
     Node::HexadecimalLiteral{chars} => {print!("HexadecimalLiteral({:?})\n", chars); None},
     Node::OctalLiteral{chars} => {print!("OctalLiteral({:?})\n", chars); None},
@@ -306,6 +308,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::StateMachine{children} => {print!("StateMachine\n"); Some(children)},
     Node::StateTransition{children} => {print!("StateTransition\n"); Some(children)},
     Node::Value{children} => {print!("Value\n"); Some(children)},
+    Node::KindAnnotation{children} => {print!("KindAnnotation\n"); Some(children)},
     Node::BooleanLiteral{children} => {print!("BooleanLiteral\n"); Some(children)},
     Node::Add => {print!("Add\n",); None},
     Node::Subtract => {print!("Subtract\n",); None},
@@ -323,6 +326,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Xor => {print!("Xor\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
+    Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
@@ -361,6 +365,7 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
+        println!("{:?}", unparsed);
         Err(MechError::GenericError(5424))
       } else { 
         Ok(tree)
@@ -391,8 +396,6 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
     }
   }
 }
-
-
 
 pub fn tag(tag: &str) -> impl Fn(Vec<&str>) -> IResult<Vec<&str>, Vec<&str>>  {
   let tag = tag.to_string();
@@ -472,7 +475,6 @@ leaf!{semicolon, ";", Token::Semicolon}
 leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
 
-
 // ## The Basics
 fn emoji_grapheme(mut input: Vec<&str>) -> IResult<Vec<&str>, &str> {
   if input.len() >= 1 {
@@ -548,6 +550,11 @@ fn digit1(input: Vec<&str>) -> IResult<Vec<&str>, Vec<&str>> {
   Ok(result)
 }
 
+fn digit0(input: Vec<&str>) -> IResult<Vec<&str>, Vec<&str>> {
+  let result = many0(digit)(input)?;
+  Ok(result)
+}
+
 fn bin_digit(input: Vec<&str>) -> IResult<Vec<&str>, &str> {
   let result = alt((ascii_tag("1"),ascii_tag("0")))(input)?;
   Ok(result)
@@ -601,6 +608,7 @@ fn paragraph_starter(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn identifier(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = many0(space)(input)?;
   let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
@@ -658,8 +666,14 @@ fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal))(input)?;
-  Ok((input, Node::NumberLiteral{children: vec![number_variant]}))
+  let (input, number_variant) = alt((float_literal, decimal_literal, hexadecimal_literal, octal_literal, binary_literal))(input)?;
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  let mut children = vec![number_variant];
+  match kind_id {
+    Some(kind_id) => children.push(kind_id),
+    _ => (),
+  }
+  Ok((input, Node::NumberLiteral{children}))
 }
 
 fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -667,6 +681,17 @@ fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = tag("/")(input)?;
   let (input, denominator) = alt((quantity, number_literal))(input)?;
   Ok((input, Node::Null))
+}
+
+fn float_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, whole) = digit0(input)?;
+  let (input, _) = ascii_tag(".")(input)?;
+  let (input, fraction) = digit1(input)?;
+  let mut whole: Vec<char> = whole.iter().flat_map(|c| c.chars()).collect();
+  let mut fraction = fraction.iter().flat_map(|c| c.chars()).collect();
+  whole.push('.');
+  whole.append(&mut fraction);
+  Ok((input, Node::FloatLiteral{chars: whole}))
 }
 
 fn decimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -694,7 +719,7 @@ fn binary_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn value(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, decimal_literal, string))(input)?;
+  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, number_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
 
@@ -743,8 +768,15 @@ fn dot_index(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
+fn reshape_column(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Node::ReshapeColumn))
+}
+
 fn index(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, index) = alt((dot_index, subscript_index))(input)?;
+  let (input, index) = alt((dot_index, reshape_column, subscript_index))(input)?;
   Ok((input, Node::Index{children: vec![index]}))
 }
 
@@ -756,6 +788,13 @@ fn data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::Data{children: data}))
 }
 
+fn kind_annotation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, _) = left_angle(input)?;
+  let (input, kind_id) = separated_list1(tag(","),identifier)(input)?;
+  let (input, _) = right_angle(input)?;
+  Ok((input, Node::KindAnnotation{children: kind_id}))
+}
+
 // ### Tables
 
 fn table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -765,13 +804,18 @@ fn table(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
+  let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = tuple((colon, many0(space)))(input)?;
   let (input, bound) = alt((empty, expression, identifier, value))(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  Ok((input, Node::Binding{children: vec![binding_id, bound]}))
+  children.push(binding_id);
+  children.push(bound);
+  if let Some(kind) = kind { children.push(kind); }
+  Ok((input, Node::Binding{children}))
 }
 
 fn function_binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -798,9 +842,13 @@ fn table_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn attribute(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let mut children = vec![];
   let (input, identifier) = identifier(input)?;
+  children.push(identifier);
+  let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
-  Ok((input, Node::Attribute{children: vec![identifier]}))
+  if let Some(kind) = kind { children.push(kind); }
+  Ok((input, Node::Attribute{children}))
 }
 
 fn table_header(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -925,10 +973,15 @@ fn variable_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let mut children = vec![];
   let (input, table) = table(input)?;
+  children.push(table);
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  if let Some(kind_id) = kind_id { children.push(kind_id); }
   let (input, _) = tuple((space, equal, space))(input)?;
   let (input, expression) = expression(input)?;
-  Ok((input, Node::TableDefine{children: vec![table, expression]}))
+  children.push(expression);
+  Ok((input, Node::TableDefine{children}))
 }
 
 fn table_select(input: Vec<&str>) -> IResult<Vec<&str>, Node> {

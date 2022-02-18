@@ -10,7 +10,11 @@ use crate::lexer::Token;
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
-use mech_core::{hash_chars, humanize, NumberLiteralKind, TableId};
+use mech_core::*;
+
+lazy_static! {
+  pub static ref U16: u64 = hash_str("u16");
+}
 
 // ## AST Nodes
 
@@ -54,6 +58,7 @@ pub enum Node {
   Attribute {children: Vec<Node> },
   TableRow {children: Vec<Node> },
   Comment {children: Vec<Node> },
+  KindAnnotation {children: Vec<Node> },
   AddRow {children: Vec<Node> },
   Transformation{ children: Vec<Node> },
   Identifier{ name: Vec<char>, id: u64 },
@@ -79,7 +84,8 @@ pub enum Node {
   Empty,
   True,
   False,
-  NumberLiteral{kind: NumberLiteralKind, bytes: Vec<u8> },
+  ReshapeColumn,
+  NumberLiteral{kind: u64, bytes: Vec<u8> },
   RationalNumber{children: Vec<Node> },
   // Markdown
   SectionTitle{ text: Vec<char> },
@@ -131,6 +137,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
     Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
     Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
+    Node::KindAnnotation{children} => {write!(f,"KindAnnotation\n").ok(); Some(children)},
     Node::Whenever{children} => {write!(f,"Whenever\n").ok(); Some(children)},
     Node::WheneverIndex{children} => {write!(f,"WheneverIndex\n").ok(); Some(children)},
     Node::Wait{children} => {write!(f,"Wait\n").ok(); Some(children)},
@@ -165,6 +172,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::False => {write!(f,"False\n").ok(); None},
     Node::Null => {write!(f,"Null\n").ok(); None},
     Node::Add => {write!(f,"Add\n").ok(); None},
+    Node::ReshapeColumn => {write!(f,"ReshapeColumn\n").ok(); None},
     Node::Subtract => {write!(f,"Subtract\n").ok(); None},
     Node::Multiply => {write!(f,"Multiply\n").ok(); None},
     Node::Divide => {write!(f,"Divide\n").ok(); None},
@@ -284,7 +292,6 @@ impl Ast {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 1];
               }
-              //select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{children} => {
@@ -296,9 +303,10 @@ impl Ast {
               select_data_children.push(Node::DotIndex{children: reversed});
             },
             Node::SubscriptIndex{..} => {
-              /*let mut reversed = children.clone();
-              reversed.reverse();*/
               select_data_children.push(node.clone());
+            }
+            Node::ReshapeColumn => {
+              select_data_children.push(Node::ReshapeColumn);
             }
             _ => (),
           }
@@ -562,6 +570,7 @@ impl Ast {
         compiled.push(Node::AddRow{children});
       },
       parser::Node::Index{children} => compiled.append(&mut self.compile_nodes(children)),
+      parser::Node::ReshapeColumn => compiled.push(Node::ReshapeColumn),
       parser::Node::DotIndex{children} => compiled.push(Node::DotIndex{children: self.compile_nodes(children)}),
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
@@ -602,23 +611,6 @@ impl Ast {
           }
         }
         compiled.push(Node::String{text: word});
-      },
-      parser::Node::FloatingPoint{children} => {
-        let result = self.compile_nodes(children);
-        let str_result = Vec::new();
-        /*for node in result {
-          match node {
-            Node::Token{token: Token::Period, byte} => (),
-            Node::Token{token, chars} => {
-              for c in chars {
-                let digit = byte_to_digit(c).unwrap();
-                str_result.push(digit);
-              }
-            },
-            _ => (),
-          }
-        }*/
-        compiled.push(Node::String{text: str_result});
       },
       // String-like nodes
       parser::Node::ParagraphText{children} => {
@@ -808,7 +800,18 @@ impl Ast {
         compiled.push(string);
       },
       parser::Node::NumberLiteral{children} => {
-        let result = self.compile_nodes(children);
+        let mut result = self.compile_nodes(children);
+        // There's a type annotation
+        if result.len() > 1 {
+          match (&result[0], &result[1]) {
+            (Node::NumberLiteral{kind,bytes}, Node::KindAnnotation{children}) => {
+              if let Node::Identifier{name, id} = &children[0] {
+                result[0] = Node::NumberLiteral{kind: *id, bytes: bytes.clone()};
+              }
+            }
+            _ => (),
+          }
+        }
         compiled.push(result[0].clone());
       },
       parser::Node::True => {
@@ -821,6 +824,16 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::RationalNumber{children: result});
       },
+      parser::Node::KindAnnotation{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::KindAnnotation{children: result});
+      },
+      parser::Node::FloatLiteral{chars} => {
+        let string = chars.iter().cloned().collect::<String>();
+        let float = string.parse::<f32>().unwrap();
+        let bytes = float.to_be_bytes();
+        compiled.push(Node::NumberLiteral{kind: hash_str("f32"), bytes: bytes.to_vec()});
+      }
       parser::Node::DecimalLiteral{chars} => {
         let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         let mut dec_number: u128 = 0;
@@ -835,19 +848,19 @@ impl Ast {
         while bytes.len() > 1 && bytes[0] == 0 {
           bytes.remove(0);
         }
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Decimal, bytes: bytes.to_vec()});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: bytes.to_vec()});
       },
       parser::Node::BinaryLiteral{chars} => {
         let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Binary, bytes: bin_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: bin_bytes});
       }
       parser::Node::OctalLiteral{chars} => {
         let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Octal, bytes: oct_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: oct_bytes});
       },
       parser::Node::HexadecimalLiteral{chars} => {
         let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: NumberLiteralKind::Hexadecimal, bytes: hex_bytes});
+        compiled.push(Node::NumberLiteral{kind: 0, bytes: hex_bytes});
       },
       parser::Node::True => compiled.push(Node::True),
       parser::Node::False => compiled.push(Node::False),

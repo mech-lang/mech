@@ -140,24 +140,17 @@ impl Compiler {
       },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
-        /*let kind = match bytes_vec.len() {
-          1 => NumberLiteralKind::U8,
-          2 => NumberLiteralKind::U16,
-          3..=4 => NumberLiteralKind::U32,
-          5..=8 => NumberLiteralKind::U64,
-          9..=16 => NumberLiteralKind::U128,
-          _ => NumberLiteralKind::U128, // TODO Error
-        };*/
         let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes_vec)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
       },
       Node::Table{name, id} => {
-        //self.strings.insert(*id, name.to_string());
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
+        tfms.push(Transformation::Identifier{name: name.clone(), id: *id});
       }
+      // dest := src
+      // dest{ix} := src
       Node::SetData{children} => {
-
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?;
 
@@ -180,7 +173,6 @@ impl Compiler {
           },
           _ => None,
         }.unwrap();     
-
         match &mut dest[0] {
           Transformation::Select{table_id, indices} => {
             let dest_id = table_id.clone();
@@ -346,10 +338,10 @@ impl Compiler {
       Node::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
         let mut arg_tfms = vec![];
+        let mut identifiers = vec![];
         for child in children {
           // get the argument identifier off the function binding. Default to 0 if there is no named arg
           let mut result = self.compile_node(&child)?;
-
           let arg: u64 = match &result[0] {
             Transformation::Identifier{name, id} => {
               let arg_id = id.clone();
@@ -375,9 +367,12 @@ impl Compiler {
             },
             _ => (),
           }
+          let mut string_identifiers = result.drain_filter(|x| if let Transformation::Identifier{..} = x {true} else {false}).collect::<Vec<Transformation>>();
+          identifiers.append(&mut string_identifiers);
           arg_tfms.append(&mut result);
         }
         let name_hash = hash_chars(name);
+        identifiers.push(Transformation::Identifier{name: name.clone(), id: name_hash});
         let id = hash_str(&format!("{:?}{:?}", name, args));
         tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
         tfms.append(&mut arg_tfms);
@@ -386,11 +381,14 @@ impl Compiler {
           arguments: args,
           out: (TableId::Local(id), TableIndex::All, TableIndex::All),
         });
+        tfms.append(&mut identifiers);
       },
       Node::InlineTable{children} => {
         let columns = children.len();
         let mut table_row_children = vec![];
         let mut aliases = vec![];
+        let mut kinds = vec![];
+        let mut identifiers = vec![];
         // Compile bindings
         for (ix, binding) in children.iter().enumerate() {
           match binding {
@@ -401,11 +399,24 @@ impl Compiler {
                   let column_alias = id.clone();
                   let column_ix = ix.clone();
                   let alias_tfm = move |x| Transformation::ColumnAlias{table_id: x, column_ix, column_alias};
+                  identifiers.push(identifier[0].clone());
                   aliases.push(alias_tfm);
                 }
                 _ => (),
               }
               table_row_children.push(children[1].clone());
+              if children.len() == 3 {
+                let mut kind = self.compile_node(&children[2])?;
+                match &kind[0] {
+                  Transformation::ColumnKind{table_id,column_ix,kind} => {
+                    let column_ix = ix.clone();
+                    let kind = kind.clone();
+                    let kind_tfm = move |x| Transformation::ColumnKind{table_id: x, column_ix, kind};
+                    kinds.push(kind_tfm);
+                  }
+                  _ => (),
+                }                
+              }
             }
             _ => (),
           }
@@ -417,7 +428,9 @@ impl Compiler {
           match &compiled_row_tfms[0] {
             Transformation::NewTable{table_id,..} => {
               let mut alias_tfms = aliases.iter().map(|a| a(*table_id)).collect();
+              let mut kind_tfms = kinds.iter().map(|a| a(*table_id)).collect();
               a_tfms.append(&mut alias_tfms);
+              a_tfms.append(&mut kind_tfms);
               break;
             }
             Transformation::TableReference{..} => {
@@ -443,6 +456,7 @@ impl Compiler {
           }
           _ => (),
         }  
+        tfms.append(&mut identifiers);
       }
       Node::EmptyTable{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
@@ -473,29 +487,46 @@ impl Compiler {
         header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: columns});
         tfms.append(&mut header_tfms);
       }
+      Node::KindAnnotation{children} => {
+        let mut result = self.compile_nodes(&children)?;
+        for (ix,tfm) in result.iter().enumerate() {
+          match tfm {
+            Transformation::Identifier{name,id} => {
+              let alias_tfm = Transformation::ColumnKind{table_id: TableId::Local(0), column_ix: ix.clone(), kind: id.clone()};
+              tfms.push(alias_tfm);
+            }
+            _ => (),
+          }
+        }        
+      }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
         let mut column_aliases = Vec::new();
+        let mut column_kinds = Vec::new();
         let mut body_tfms = Vec::new();
-        let mut columns = 1;
+        let mut columns = 0;
         match table_children.first() {
           Some(Node::TableHeader{children}) => {
             let mut result = self.compile_nodes(&children)?;
-            columns = result.len();
             for (ix,tfm) in result.iter().enumerate() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: columns, column_alias: id.clone()};
+                  header_tfms.push(tfm.clone());
                   column_aliases.push(alias_tfm);
+                  columns += 1;
+                }
+                Transformation::ColumnKind{table_id,column_ix,kind} => {
+                  let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: columns - 1, kind: *kind};
+                  column_kinds.push(kind_tfm);
                 }
                 _ => (),
               }
             }
-
-            header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
+            header_tfms.append(&mut column_kinds);
             table_children.remove(0);
           }
           _ => (),
@@ -671,6 +702,10 @@ impl Compiler {
         let mut local_tfms = vec![];
         for child in children {
           match child {
+            Node::ReshapeColumn => {
+              indices.push(TableIndex::ReshapeColumn);
+              indices.push(TableIndex::All);
+            }
             Node::DotIndex{children} => {
               for child in children {
                 match child {
@@ -801,6 +836,17 @@ impl Compiler {
         }
         tfms.push(Transformation::Select{table_id: *id, indices: all_indices});
         tfms.append(&mut local_tfms);
+        tfms.push(Transformation::Identifier{name: name.clone(), id: *id.unwrap()});
+      }
+      Node::Whenever{children} => {
+        let mut result = self.compile_nodes(children)?;
+        match &result[0] {
+          Transformation::Select{table_id, indices} => {
+            tfms.push(Transformation::Whenever{table_id:*table_id, indices: indices.to_vec()});
+          }
+          _ => (),
+        }
+        tfms.append(&mut result);
       }
       Node::Program{children, ..} |
       Node::Section{children, ..} |

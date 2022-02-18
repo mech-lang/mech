@@ -1,11 +1,27 @@
 #[macro_use]
 extern crate mech_syntax;
 extern crate mech_core;
-
+#[macro_use]
+extern crate lazy_static;
 use mech_syntax::compiler::Compiler;
 use std::cell::RefCell;
 use std::rc::Rc;
-use mech_core::{hash_str, Core, TableIndex, Value};
+use mech_core::{hash_str, Core, TableIndex, Value, Change};
+
+lazy_static! {
+  static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))]))];
+  static ref TXN2: Vec<Change> = vec![
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
+  ];
+  static ref TXN3: Vec<Change> = vec![
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))])),
+  ];
+  static ref TXN4: Vec<Change> = vec![
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(2))])),
+  ];
+}
 
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
@@ -20,6 +36,34 @@ macro_rules! test_mech {
       for block in blocks {
         core.insert_block(Rc::new(RefCell::new(block)));
       }
+
+      let test: Value = $test;
+      let actual = core.get_table("test").unwrap().borrow().get(0, 0);
+      match actual {
+        Ok(value) => {
+          assert_eq!(value, test);
+        },
+        Err(_) => assert_eq!(0,1),
+      }
+    }
+  )
+}
+
+macro_rules! test_mech_txn {
+  ($func:ident, $input:tt, $txn:tt, $test:expr) => (
+    #[test]
+    fn $func() {
+      let mut compiler = Compiler::new();
+      let mut core = Core::new();
+
+      let input = String::from($input);
+      let blocks = compiler.compile_str(&input).unwrap();
+      
+      core.insert_blocks(blocks);
+      
+      core.schedule_blocks();
+
+      core.process_transaction(&$txn);
 
       let test: Value = $test;
       let actual = core.get_table("test").unwrap().borrow().get(0, 0);
@@ -84,9 +128,9 @@ test_mech!(table_define_empty_table, "
 block
   #bots = [|name position|]
 block
-  #bots += [position: 3 name: 4]
+  #bots += [position: 4 name: 2]
 block
-  #test = #bots.position ^ #bots.name", Value::U8(81));
+  #test = #bots.position / #bots.name", Value::U8(2));
 
 test_mech!(table_define_program, "# A Working Program
 
@@ -103,6 +147,17 @@ block
   ]
 block
   #test = #x.x + #x.y + #x.z", Value::U8(6));
+
+test_mech!(table_size, "
+block
+  #x = [1 2
+        3 4
+        5 6]
+block
+  #y = table/size(table: #x)
+
+block
+  #test = #y{1} + #y{2}", Value::U64(5));
 
 // ## Select
 
@@ -124,13 +179,19 @@ test_mech!(math_constant,"#test = 10", Value::U8(10));
 
 test_mech!(math_add,"#test = 1 + 1", Value::U8(2));
 
+test_mech!(math_add_u16,"#test = 10<u16> + 400<u16>", Value::U16(410));
+
+//test_mech!(math_add_u8_u16,"#test = 10<u8> + 400<u16>", Value::U16(410));
+
+test_mech!(math_add_f32,"#test = 123.456 + 456.123", Value::F32(579.579));
+
+test_mech!(math_add_m_km,"#test = 400<m> + 1<km>", Value::U16(1400));
+
 test_mech!(math_subtract,"#test = 3 - 1", Value::U8(2));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::U8(4));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::U8(2));
-
-test_mech!(math_exponent,"#test = 3 ^ 4", Value::U8(81));
 
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::U8(19));
 
@@ -1107,3 +1168,71 @@ block
   x = true
   y = false
   #test = x & y"#, Value::Bool(false));
+
+// ## Scheduler
+
+test_mech_txn!(scheduler_base_linear,r#"
+block
+  #x = [1 2 3]
+block
+  #y = #x + 10
+block  
+  #z = #y + 2
+block
+  #test = #z{1}"#, TXN, Value::U8(21));
+  
+// ## Temporal Operators
+
+test_mech_txn!(temporal_whenever_basic_no_trigger,r#"
+block
+  #time/timer = [period: 16, ticks: 0]
+
+block 
+  #x = [x: 1 y: 2]
+  #y = 3
+
+block
+  ~ #time/timer.ticks
+  #q = #x.y
+  #x.x := #x.x + #y
+  
+block
+  #test = #x.x"#, TXN2, Value::U8(4));
+
+test_mech_txn!(temporal_whenever_basic_with_trigger,r#"
+block
+  #time/timer = [period: 16, ticks: 0]
+
+block 
+  #x = [x: 1 y: 2]
+  #y = 3
+
+block
+  ~ #time/timer.ticks
+  #q = #x.y
+  #x.x := #x.x + #y
+  
+block
+  #test = #x.x"#, TXN3, Value::U8(7));
+
+test_mech_txn!(temporal_whenever_blocks,r#"
+block
+  #time/timer = [period: 1000, ticks: 0]
+  #balls = [|x y vx vy|
+             1.0 1.0 1.0  1.0
+             50.0 80.0 2.0  10.0]
+  #gravity = 1.0
+
+block
+  ~ #time/timer.ticks
+  #balls.x := #balls.x + #balls.vx
+  #balls.y := #balls.y + #balls.vy
+  #balls.vy := #balls.vy + #gravity
+  
+Keep the balls within the boundary height
+  ~ #balls.y
+  iy = #balls.y > 100.0
+  #balls.y{iy} := 100.0
+  #balls.vy{iy} := #balls.vy * -0.80
+block  
+  #test = #balls.y{2} + #balls.vy{2}"#, TXN4, Value::F32(81.8));
