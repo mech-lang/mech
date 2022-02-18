@@ -149,16 +149,16 @@ pub struct WasmCore {
   core: mech_core::Core,
   //programs: Vec<Program>,
   changes: Vec<Change>,
-  images: HashMap<u64, web_sys::HtmlImageElement>,
+  //images: HashMap<u64, web_sys::HtmlImageElement>,*/
   canvases: HashSet<u64>,
-  nodes: HashMap<u64, Vec<u64>>,
+  /*nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
   inline_views: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashSet<Register>,
+  remote_tables: HashSet<Register>,*/
   event_id: u32,
-  timers: HashMap<usize,Closure<dyn FnMut()>>,
-  applications: HashSet<u64>,
+  /*timers: HashMap<usize,Closure<dyn FnMut()>>,
+  applications: HashSet<u64>,*/
   window: web_sys::Window,
   document: web_sys::Document,
 }
@@ -166,9 +166,10 @@ pub struct WasmCore {
 #[wasm_bindgen]
 impl WasmCore {
 
-  /*
+  
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
-    let mut mech = mech_core::Core::new(capacity, recursion_limit);
+    let mut mech = mech_core::Core::new();
+    /*
     mech.load_standard_library();
     mech.runtime.load_library_function("math/sin",Some(math_sin));
 
@@ -224,25 +225,25 @@ impl WasmCore {
 
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
-
+*/
     WasmCore {
       core: mech,
-      programs: Vec::new(),
+      //programs: Vec::new(),
       changes: Vec::new(),
-      images: HashMap::new(),
+      //images: HashMap::new(),*/
       canvases: HashSet::new(),
-      nodes: HashMap::new(),
+      /*nodes: HashMap::new(),
       views: HashSet::new(),
       inline_views: HashSet::new(),
       websocket: None,
-      remote_tables: HashSet::new(),
+      remote_tables: HashSet::new(),*/
       event_id: 0,
-      timers: HashMap::new(),
-      applications: HashSet::new(),
+      //timers: HashMap::new(),
+      //applications: HashSet::new(),
       window: web_sys::window().unwrap(),
       document: web_sys::window().unwrap().document().unwrap(),
     }
-  }*/
+  }
   
   pub fn connect_remote_core(&mut self, address: String) -> Result<(), JsValue> {
     /*
@@ -495,29 +496,28 @@ impl WasmCore {
   }
 
   pub fn init(&mut self) -> Result<(), JsValue> {
-    /*
+    
     let wasm_core = self as *mut WasmCore;
 
+    // Set up some callbacks for events.
     {
       let key_closure = |table_id| { 
         Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
           let key = event.key();
           // TODO Make this safe
           unsafe {
-            (*wasm_core).changes.push(Change::Set{
-              table_id: table_id, 
-              values: vec![(TableIndex::Index(1), 
-              TableIndex::Alias(*KEY),
-              Value::from_string(&key.to_string()))],
-            });    
-            (*wasm_core).event_id += 1;
+            (*wasm_core).changes.push(Change::Set((
+              table_id, vec![
+                (TableIndex::Index(1), 
+                TableIndex::Alias(*KEY),
+                Value::from_string(&key))])));    
+           (*wasm_core).event_id += 1;
             let eid = (*wasm_core).event_id;
-            (*wasm_core).changes.push(Change::Set{
-              table_id: table_id, values: vec![
-              (TableIndex::Index(1), 
-              TableIndex::Alias(*EVENT__ID),
-              Value::from_u32(eid))],
-            });           
+            (*wasm_core).changes.push(Change::Set((
+              table_id, vec![
+                (TableIndex::Index(1), 
+                TableIndex::Alias(*EVENT__ID),
+                Value::U32(eid))])));
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //let table = (*wasm_core).core.get_table(hash_str("balls"));
@@ -532,6 +532,7 @@ impl WasmCore {
       keydown_callback.forget();
       keyup_callback.forget();
     }
+    
     {
       let pointer_closure = |table_id| { 
         Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
@@ -545,19 +546,16 @@ impl WasmCore {
           //log!("event: {:?} {:?}", x, y);
           // TODO Make this safe
           unsafe {
-
-            (*wasm_core).changes.push(Change::Set{
-              table_id: table_id, values: vec![
-              (TableIndex::Index(1), 
-              TableIndex::Alias(*X),
-              Value::from_i32(x as i32))],
-            });
-            (*wasm_core).changes.push(Change::Set{
-              table_id: table_id, values: vec![
-              (TableIndex::Index(1), 
-              TableIndex::Alias(*Y),
-              Value::from_i32(y as i32))],
-            });              
+            (*wasm_core).changes.push(Change::Set((
+              table_id, vec![(
+                TableIndex::Index(1), 
+                TableIndex::Alias(*X),
+                Value::I32(x as i32))])));    
+            (*wasm_core).changes.push(Change::Set((
+              table_id, vec![(
+                TableIndex::Index(1), 
+                TableIndex::Alias(*Y),
+                Value::I32(y as i32))])));              
             /*(*wasm_core).changes.push(Change::Set{
               table_id: table_id, values: vec![
               (TableIndex::Index(1), 
@@ -566,12 +564,11 @@ impl WasmCore {
             });*/            
             (*wasm_core).event_id += 1;
             let eid = (*wasm_core).event_id;
-            (*wasm_core).changes.push(Change::Set{
-              table_id: table_id, values: vec![
-              (TableIndex::Index(1), 
-              TableIndex::Alias(*EVENT__ID),
-              Value::from_u32(eid))],
-            });           
+            (*wasm_core).changes.push(Change::Set((
+              table_id, vec![(
+                TableIndex::Index(1), 
+                TableIndex::Alias(*EVENT__ID),
+                Value::U32(eid))])));  
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //let table = (*wasm_core).core.get_table(hash_str("clicked"));
@@ -598,13 +595,13 @@ impl WasmCore {
           if hash.len() > 1 {
             hash = hash[1..].to_string();
           }
-          (*wasm_core).changes.push(Change::Set{
-            table_id: *HTML_LOCATION, values: vec![
-            (TableIndex::Index(1), 
-            TableIndex::Alias(*HASH),
-            Value::from_string(&hash))],
-          });
-          (*wasm_core).changes.push(Change::InternString{string: hash});
+
+          (*wasm_core).changes.push(Change::Set((
+            *HTML_LOCATION, vec![(
+              TableIndex::Index(1), 
+              TableIndex::Alias(*HASH),
+              Value::from_string(&hash))])));    
+          //(*wasm_core).changes.push(Change::InternString{string: hash});
           (*wasm_core).process_transaction();
           (*wasm_core).render();
         }
@@ -629,8 +626,8 @@ impl WasmCore {
     if search.len() > 1 {
       search = search[1..].to_string();
     }
-    let mut changes = vec![Change::Set{
-      table_id: *HTML_LOCATION, values: vec![
+    let mut changes = vec![Change::Set((
+      *HTML_LOCATION, vec![
       (TableIndex::Index(1), TableIndex::Alias(*HASH), Value::from_string(&hash)),
       (TableIndex::Index(1), TableIndex::Alias(*HOST), Value::from_string(&host)),
       (TableIndex::Index(1), TableIndex::Alias(*HOST__NAME), Value::from_string(&hostname)),
@@ -640,8 +637,8 @@ impl WasmCore {
       (TableIndex::Index(1), TableIndex::Alias(*PORT), Value::from_string(&port)),
       (TableIndex::Index(1), TableIndex::Alias(*PROTOCOL), Value::from_string(&protocol)),
       (TableIndex::Index(1), TableIndex::Alias(*SEARCH), Value::from_string(&search))]
-    }, 
-    Change::InternString{string: hash}, 
+    )), 
+    /*Change::InternString{string: hash}, 
     Change::InternString{string: host}, 
     Change::InternString{string: hostname}, 
     Change::InternString{string: href}, 
@@ -649,10 +646,11 @@ impl WasmCore {
     Change::InternString{string: pathname}, 
     Change::InternString{string: port}, 
     Change::InternString{string: protocol}, 
-    Change::InternString{string: search}];
+    Change::InternString{string: search}*/
+    ];
     self.changes.append(&mut changes);
     self.process_transaction();
-    */
+    
     Ok(())
   }
 
