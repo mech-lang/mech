@@ -116,8 +116,9 @@ impl Core {
         Change::Set((table_id, adds)) => {
           match self.database.borrow().get_table_by_id(table_id) {
             Some(table) => {
+              let table_brrw = table.borrow();
               for (row,col,val) in adds {
-                match table.borrow().set_raw(row.unwrap(), col.unwrap(), val.clone()) {
+                match table_brrw.set(row, col, val.clone()) {
                   Ok(()) => {
                     registers.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },
@@ -204,7 +205,7 @@ impl Core {
 
     // Merge dictionaries
     for (k,v) in block_brrw.strings.borrow().iter() {
-      self.dictionary.borrow_mut().insert(*k,v.to_vec());
+      self.dictionary.borrow_mut().insert(*k,v.clone());
     }
 
     // try to satisfy the block

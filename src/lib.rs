@@ -38,11 +38,50 @@ pub use self::value::*;
 pub use self::schedule::*;
 pub use self::error::MechError;
 
-pub type MechString = Vec<char>;
+#[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct MechString {
+  chars: Vec<char>,
+}
 
-pub fn hash_mechstring(mechstring: MechString) -> u64 {
-  let string = mechstring.iter().collect::<String>();
-  hash_str(&string)
+impl MechString {
+
+  pub fn new() -> MechString {
+    MechString {
+      chars: vec![],
+    }
+  }
+
+  pub fn from_string(string: String) -> MechString {
+    MechString {
+      chars: string.chars().collect::<Vec<char>>()
+    }
+  }
+
+  pub fn from_chars(chars: &Vec<char>) -> MechString {
+    MechString {
+      chars: chars.clone(),
+    }
+  }
+
+  pub fn len(&self) -> usize {
+    self.chars.iter().count()
+  }
+
+  pub fn to_string(&self) -> String {
+    self.chars.iter().collect::<String>()
+  }
+
+  pub fn hash(&self) -> u64 {
+    hash_chars(&self.chars)
+  }
+}
+
+impl fmt::Debug for MechString {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"{}",self.to_string())?;
+    Ok(())
+  }
 }
 
 pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
@@ -242,7 +281,7 @@ impl Column {
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
       Column::Index(col) => col.borrow_mut().resize(rows,0),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
-      Column::String(col) => col.borrow_mut().resize(rows,vec![]),
+      Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
       Column::Reference(_) |
       Column::Empty => {return Err(MechError::GenericError(7143));}
     }
@@ -375,8 +414,8 @@ pub struct BoxTable {
 impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
-    let table_name: String = if let Some(string) = table.dictionary.borrow().get(&table.id) {
-      format!("#{}", string.iter().cloned().collect::<String>())
+    let table_name: String = if let Some(mstring) = table.dictionary.borrow().get(&table.id) {
+      format!("#{}", mstring.to_string())
     } else {
       format!("{}", humanize(&table.id))
     };
@@ -392,7 +431,7 @@ impl BoxTable {
         if chars > column_widths[col] {
           column_widths[col] = chars;
         }
-        let alias = format!("{}", alias_string.iter().cloned().collect::<String>());
+        let alias = format!("{}", alias_string.to_string());
         column_aliases.push(alias);   
       } else {
         let alias = format!("{}", humanize(alias));

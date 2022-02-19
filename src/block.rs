@@ -470,7 +470,7 @@ impl Block {
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
     match &tfm {
       Transformation::Identifier{name, id} => {
-        self.strings.borrow_mut().insert(*id, name.to_vec());
+        self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
       }
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
@@ -938,7 +938,7 @@ impl fmt::Debug for Block {
     if self.triggers.len() > 0 {
       for (table,row,col) in &self.triggers {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+          self.strings.borrow().get(table_id).unwrap().to_string()
         } else {
           format!("{:?}",table)
         };
@@ -949,7 +949,7 @@ impl fmt::Debug for Block {
     if self.input.len() > 0 {
       for (table,row,col) in &self.input {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+          self.strings.borrow().get(table_id).unwrap().to_string()
         } else {
           format!("{:?}",table)
         };
@@ -960,7 +960,7 @@ impl fmt::Debug for Block {
     if self.output.len() > 0 {
       for (table,row,col) in &self.output {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().iter().cloned().collect::<String>()
+          self.strings.borrow().get(table_id).unwrap().to_string()
         } else {
           format!("{:?}",table)
         };

@@ -273,7 +273,7 @@ impl Table {
     }
   }
 
-  pub fn set(&mut self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
+  pub fn set(&self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
     let row_ix = match row {
       TableIndex::Index(0) => {return Err(MechError::GenericError(7495))},
       TableIndex::Index(ix) => ix - 1,
@@ -409,7 +409,7 @@ impl Table {
           self.col_kinds[col] = ValueKind::Bool;
         },
         (Column::Empty, ValueKind::String) => {
-          let column = Rc::new(RefCell::new(vec![vec![];self.rows]));
+          let column = Rc::new(RefCell::new(vec![MechString::new();self.rows]));
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
         },

@@ -49,7 +49,11 @@ impl Value {
   }
 
   pub fn from_string(string: &String) -> Value {
-    Value::String(string.chars().collect::<Vec<char>>())
+    Value::String(MechString::from_string(string.clone()))
+  }
+
+  pub fn from_str(string: &str) -> Value {
+    Value::String(MechString::from_string(string.to_string()))
   }
 
 }
@@ -73,8 +77,7 @@ impl fmt::Debug for Value {
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
-        let s: String = v.into_iter().collect();
-        write!(f,"\"{}\"",s)?
+        write!(f,"\"{}\"",v.to_string())?
       }, 
       Value::Empty => write!(f,"_")?,
     }
