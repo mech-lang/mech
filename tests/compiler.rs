@@ -38,7 +38,7 @@ macro_rules! test_mech {
       }
 
       let test: Value = $test;
-      let actual = core.get_table("test").unwrap().borrow().get(0, 0);
+      let actual = core.get_table("test").unwrap().borrow().get_raw(0, 0);
       match actual {
         Ok(value) => {
           assert_eq!(value, test);
@@ -66,7 +66,7 @@ macro_rules! test_mech_txn {
       core.process_transaction(&$txn);
 
       let test: Value = $test;
-      let actual = core.get_table("test").unwrap().borrow().get(0, 0);
+      let actual = core.get_table("test").unwrap().borrow().get_raw(0, 0);
       match actual {
         Ok(value) => {
           assert_eq!(value, test);
