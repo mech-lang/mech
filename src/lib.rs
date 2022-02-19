@@ -16,14 +16,6 @@ lazy_static! {
   static ref TABLE: u64 = hash_str("table");
 }
 
-impl MechFunction for MathSinRadCol {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.col.borrow().iter()).for_each(|(out, rhs)| *out = sinf(*rhs)); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-
 #[derive(Debug)]
 pub struct MathSinRadCol {
   pub col: function::Arg<f32>, pub out: function::Out<f32>
