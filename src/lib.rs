@@ -371,9 +371,9 @@ impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
     let table_name: String = if let Some(string) = table.dictionary.borrow().get(&table.id) {
-      format!(" #{}", string.iter().cloned().collect::<String>())
+      format!("#{}", string.iter().cloned().collect::<String>())
     } else {
-      format!(" {}", humanize(&table.id))
+      format!("{}", humanize(&table.id))
     };
     let title = format!("{} ({} x {})", table_name,table.rows,table.cols);
     let mut strings: Vec<Vec<String>> = vec![vec!["".to_string(); table.rows]; table.cols];
@@ -387,10 +387,15 @@ impl BoxTable {
         if chars > column_widths[col] {
           column_widths[col] = chars;
         }
-        let alias = format!(" {}", alias_string.iter().cloned().collect::<String>());
+        let alias = format!("{}", alias_string.iter().cloned().collect::<String>());
         column_aliases.push(alias);   
       } else {
-        column_aliases.push(format!(" {}", humanize(alias)));   
+        let alias = format!("{}", humanize(alias));
+        let chars = alias.len();
+        if chars > column_widths[col] {
+          column_widths[col] = chars;
+        }
+        column_aliases.push(alias);   
       }
     }
 
@@ -492,7 +497,10 @@ impl BoxPrinter {
     let top = "\n╭".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"╮\n".to_string();
     let mut middle = "".to_string();
     let mut bottom = "╰".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"╯\n".to_string();
+    
+
     for line in &self.lines {
+
       match line {
         LineKind::Separator => {
           let boxed_line = "├".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"┤\n".to_string();
@@ -519,7 +527,6 @@ impl BoxPrinter {
           middle += &table.title;
           middle += &BoxPrinter::format_repeated_char(" ", self.width - table.title.chars().count());
           middle += "│\n";
-
 
           if table.column_aliases.len() > 0 {
             middle += "├";
