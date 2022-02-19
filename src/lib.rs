@@ -712,28 +712,28 @@ impl WasmCore {
     // First check to see if the table has a "type" column. If it doesn't, just render the table
     match table.column_alias_to_ix.contains_key(&*TYPE) {
       true => {
-      /*for row in 1..=table.rows {
-        match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
-          Some((kind,_)) => {
-            // ---------------------
-            // RENDER A DIV
-            // ---------------------
-            let raw_kind = kind.as_raw();
-            if raw_kind == *DIV {
-              // Get contents
-              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                Some((contents,_)) => {
-                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                  let rendered = self.render_value(contents)?;
-                  rendered.set_id(&format!("{:?}",element_id));
-                  container.append_child(&rendered)?;
+        for row in 1..=table.rows {
+          match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
+            Ok(Value::String(kind)) => {
+              // ---------------------
+              // RENDER A DIV
+              // ---------------------
+              if hash_mechstring(kind) == *DIV {
+                // Get contents
+                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                  Ok(contents) => {
+                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
+                    let rendered = self.render_value(contents)?;
+                    rendered.set_id(&format!("{:?}",element_id));
+                    container.append_child(&rendered)?;
+                  }
+                  _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
                 }
-                _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
               }
-            // ---------------------
-            // RENDER A LINK
-            // ---------------------
-            } else if raw_kind == *A {
+              // ---------------------
+              // RENDER A LINK
+              // ---------------------
+              /*else if raw_kind == *A {
               // Get contents
               match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
@@ -753,158 +753,160 @@ impl WasmCore {
                 (Some(_), None) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
                 _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
               }
-            // ---------------------
-            // RENDER AN IMG
-            // ---------------------
-            } else if raw_kind == *IMG {
-              // Get contents
-              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
-                Some((src,_)) => {
-                  let mut img: web_sys::Element = self.document.create_element("img")?;
-                  let src_string = &self.core.get_string(&src).unwrap();
-                  let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
-                  img.set_attribute("src",src_string)?;
-                  img.set_id(&format!("{:?}",element_id));
-                  container.append_child(&img)?;
-                }
-                _ => {log!("No \"src\" on type 'img'");}, // TODO Alert there are no contents
-              }
-            // ---------------------
-            // RENDER A BUTTON
-            // ---------------------
-            } else if raw_kind == *BUTTON {
-              // Get contents
-              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                Some((contents,_)) => {
-                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                  let rendered = self.render_value(contents)?;
-                  rendered.set_id(&format!("{:?}",element_id));
-                  let mut button: web_sys::Element = self.document.create_element("button")?;
-                  let element_id = hash_str(&format!("button-{:?}-{:?}", table.id, row));
-                  button.set_id(&format!("{:?}",element_id));
-                  button.append_child(&rendered)?;
-                  container.append_child(&button)?;
-                }
-                _ => {log!("No \"contains\" on type 'button'");}, // TODO Alert there are no contents
-              }
-            // ---------------------
-            // RENDER A CANVAS
-            // ---------------------
-            } else if raw_kind == *CANVAS {
-              // Get contents
-              match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                Some(contents) => {
-                  let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
-                  let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
-                  canvas.set_id(&format!("{:?}",element_id));
-                  self.canvases.insert(element_id);
-                  // Is there a parameters field?
-                  match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
-                    Some((parameters_table_id,_)) => {
-                      match parameters_table_id.as_reference() {
-                        Some(parameters_table_id) => {
-                          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                          match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
-                            Some(height) => {
-                              canvas.set_attribute("height", &format!("{}",height));
-                            }
-                            _ => (),
-                          }
-                          match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
-                            Some(width) => {
-                              canvas.set_attribute("width", &format!("{}",width));
-                            }
-                            _ => (),
-                          }
-                        }
-                        _ => {log!("Parameter field on canvas must be a table reference");}, // TODO Alert user the parameters field needs to be a table
-                      }
-                      let table = self.core.get_table(*HTML_APP);
-                    }
-                    _ => (), // Do nothing, the parameters field is optional
+              // ---------------------
+              // RENDER AN IMG
+              // ---------------------
+              } else if raw_kind == *IMG {
+                // Get contents
+                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
+                  Some((src,_)) => {
+                    let mut img: web_sys::Element = self.document.create_element("img")?;
+                    let src_string = &self.core.get_string(&src).unwrap();
+                    let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
+                    img.set_attribute("src",src_string)?;
+                    img.set_id(&format!("{:?}",element_id));
+                    container.append_child(&img)?;
                   }
-                  // Add the contents
-                  match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                    Some((contains_table_id,_)) => {
-                      match contains_table_id.as_reference() {
-                        Some(contains_table_id) => {
-                          canvas.set_attribute("elements", &format!("{}",contains_table_id));
-                        },
-                        _ => {log!("Contains must be a table");},
-                      }
-                    }
-                    _ => (),
-                  }
-                  container.append_child(&canvas)?;
+                  _ => {log!("No \"src\" on type 'img'");}, // TODO Alert there are no contents
                 }
-                _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
-              }
-            // ---------------------
-            // RENDER A SLIDER
-            // ---------------------
-            } else if raw_kind == *SLIDER {
-              // Get contents
-              match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
-                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
-                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-                (Some((min,_)), Some((max,_)), Some((value,_))) => {
-                  match (min.as_f64(), max.as_f64(), value.as_f64()) {
-                    (Some(min_value), Some(max_value), Some(value_value)) => {
-                      let mut slider: web_sys::Element = self.document.create_element("input")?;
-                      let mut slider: web_sys::HtmlInputElement = slider
-                        .dyn_into::<web_sys::HtmlInputElement>()
-                        .map_err(|_| ())
-                        .unwrap();
-                      let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
-                      slider.set_attribute("type","range");
-                      slider.set_attribute("min", &format!("{}", min_value));
-                      slider.set_attribute("max", &format!("{}", max_value));
-                      slider.set_attribute("value", &format!("{}", value_value));
-                      slider.set_attribute("row", &format!("{}", row));
-                      slider.set_attribute("table", &format!("{}", table.id));
-                      slider.set_id(&format!("{:?}",element_id));
-                      // Changes to the slider update its own table
-                      {
-                        let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-                          match event.target() {
-                            Some(target) => {
-                              let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                              let slider_value = slider.value().parse::<i32>().unwrap();
-                              let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
-
-                              let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
-                              let change = Change::Set{
-                                table_id: table_id, values: vec![ 
-                                  (TableIndex::Index(row),
-                                   TableIndex::Alias(*VALUE),
-                                   Value::from_i32(slider_value)),
-                                ]
-                              };
-                              // TODO Make this safe
-                              unsafe {
-                                let table = (*wasm_core).core.get_table(table_id).unwrap();
-                                (*wasm_core).changes.push(change);
-                                (*wasm_core).process_transaction();
-                                (*wasm_core).render();
+              // ---------------------
+              // RENDER A BUTTON
+              // ---------------------
+              } else if raw_kind == *BUTTON {
+                // Get contents
+                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                  Some((contents,_)) => {
+                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
+                    let rendered = self.render_value(contents)?;
+                    rendered.set_id(&format!("{:?}",element_id));
+                    let mut button: web_sys::Element = self.document.create_element("button")?;
+                    let element_id = hash_str(&format!("button-{:?}-{:?}", table.id, row));
+                    button.set_id(&format!("{:?}",element_id));
+                    button.append_child(&rendered)?;
+                    container.append_child(&button)?;
+                  }
+                  _ => {log!("No \"contains\" on type 'button'");}, // TODO Alert there are no contents
+                }
+              // ---------------------
+              // RENDER A CANVAS
+              // ---------------------
+              } else if raw_kind == *CANVAS {
+                // Get contents
+                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                  Some(contents) => {
+                    let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
+                    let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
+                    canvas.set_id(&format!("{:?}",element_id));
+                    self.canvases.insert(element_id);
+                    // Is there a parameters field?
+                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
+                      Some((parameters_table_id,_)) => {
+                        match parameters_table_id.as_reference() {
+                          Some(parameters_table_id) => {
+                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+                            match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
+                              Some(height) => {
+                                canvas.set_attribute("height", &format!("{}",height));
                               }
-                            },
-                            _ => (),
+                              _ => (),
+                            }
+                            match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
+                              Some(width) => {
+                                canvas.set_attribute("width", &format!("{}",width));
+                              }
+                              _ => (),
+                            }
                           }
-                        }) as Box<dyn FnMut(_)>);
-                        slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
-                        closure.forget();
+                          _ => {log!("Parameter field on canvas must be a table reference");}, // TODO Alert user the parameters field needs to be a table
+                        }
+                        let table = self.core.get_table(*HTML_APP);
                       }
-                      container.append_child(&slider)?;
-                    },
-                    _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
+                      _ => (), // Do nothing, the parameters field is optional
+                    }
+                    // Add the contents
+                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                      Some((contains_table_id,_)) => {
+                        match contains_table_id.as_reference() {
+                          Some(contains_table_id) => {
+                            canvas.set_attribute("elements", &format!("{}",contains_table_id));
+                          },
+                          _ => {log!("Contains must be a table");},
+                        }
+                      }
+                      _ => (),
+                    }
+                    container.append_child(&canvas)?;
                   }
+                  _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
                 }
-                _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
-              }
+              // ---------------------
+              // RENDER A SLIDER
+              // ---------------------
+              } else if raw_kind == *SLIDER {
+                // Get contents
+                match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
+                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
+                  (Some((min,_)), Some((max,_)), Some((value,_))) => {
+                    match (min.as_f64(), max.as_f64(), value.as_f64()) {
+                      (Some(min_value), Some(max_value), Some(value_value)) => {
+                        let mut slider: web_sys::Element = self.document.create_element("input")?;
+                        let mut slider: web_sys::HtmlInputElement = slider
+                          .dyn_into::<web_sys::HtmlInputElement>()
+                          .map_err(|_| ())
+                          .unwrap();
+                        let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
+                        slider.set_attribute("type","range");
+                        slider.set_attribute("min", &format!("{}", min_value));
+                        slider.set_attribute("max", &format!("{}", max_value));
+                        slider.set_attribute("value", &format!("{}", value_value));
+                        slider.set_attribute("row", &format!("{}", row));
+                        slider.set_attribute("table", &format!("{}", table.id));
+                        slider.set_id(&format!("{:?}",element_id));
+                        // Changes to the slider update its own table
+                        {
+                          let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+                            match event.target() {
+                              Some(target) => {
+                                let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
+                                let slider_value = slider.value().parse::<i32>().unwrap();
+                                let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
+
+                                let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
+                                let change = Change::Set{
+                                  table_id: table_id, values: vec![ 
+                                    (TableIndex::Index(row),
+                                    TableIndex::Alias(*VALUE),
+                                    Value::from_i32(slider_value)),
+                                  ]
+                                };
+                                // TODO Make this safe
+                                unsafe {
+                                  let table = (*wasm_core).core.get_table(table_id).unwrap();
+                                  (*wasm_core).changes.push(change);
+                                  (*wasm_core).process_transaction();
+                                  (*wasm_core).render();
+                                }
+                              },
+                              _ => (),
+                            }
+                          }) as Box<dyn FnMut(_)>);
+                          slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+                          closure.forget();
+                        }
+                        container.append_child(&slider)?;
+                      },
+                      _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
+                    }
+                  }
+                  _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
+                }
+              }*/
             }
+            x => log!("54894 {:?}",x),
+            Err(x) => log!("32134 {:?}",x), // TODO Alert there is no type
           }
-          None => {log!("No type on table");}, // TODO Alert there is no type
-        }*/
+        }
       }
       // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
       false => {
