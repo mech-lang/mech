@@ -715,10 +715,11 @@ impl WasmCore {
         for row in 1..=table.rows {
           match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
             Ok(Value::String(kind)) => {
+              let raw_kind = hash_mechstring(kind);
               // ---------------------
               // RENDER A DIV
               // ---------------------
-              if hash_mechstring(kind) == *DIV {
+              if raw_kind == *DIV {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                   Ok(contents) => {
@@ -733,30 +734,31 @@ impl WasmCore {
               // ---------------------
               // RENDER A LINK
               // ---------------------
-              /*else if raw_kind == *A {
-              // Get contents
-              match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
-                     table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-                (Some((href,_)), Some((contents,_))) => {
-                  let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                  let rendered = self.render_value(contents)?;
-                  rendered.set_id(&format!("{:?}",element_id));
-                  let mut link: web_sys::Element = self.document.create_element("a")?;
-                  let href_string = &self.core.get_string(&href).unwrap();
-                  let element_id = hash_str(&format!("a-{:?}-{:?}", table.id, row));
-                  link.set_attribute("href",href_string)?;
-                  link.set_id(&format!("{:?}",element_id));
-                  link.append_child(&rendered)?;
-                  container.append_child(&link)?;
+              else if raw_kind == *A {
+                // Get contents
+                match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
+                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
+                  (Ok(Value::String(href_string)), Ok(contents)) => {
+                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
+                    let rendered = self.render_value(contents)?;
+                    rendered.set_id(&format!("{:?}",element_id));
+                    let mut link: web_sys::Element = self.document.create_element("a")?;
+                    link.set_attribute("href",&href_string.iter().collect::<String>())?;
+                    let element_id = hash_mechstring(href_string);
+                    link.set_id(&format!("{:?}",element_id));
+                    link.append_child(&rendered)?;
+                    container.append_child(&link)?;
+                  }
+                  (Err(_), Ok(_)) => {log!("No \"href\" on type 'a'");}, // TODO Alert there are no href
+                  (Ok(_), Err(_)) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
+                  _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
                 }
-                (None, Some(_)) => {log!("No \"href\" on type 'a'");}, // TODO Alert there are no href
-                (Some(_), None) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
-                _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
               }
+              /*} 
               // ---------------------
               // RENDER AN IMG
               // ---------------------
-              } else if raw_kind == *IMG {
+              else if raw_kind == *IMG {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
                   Some((src,_)) => {
