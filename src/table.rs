@@ -253,6 +253,23 @@ impl Table {
     }
   }
 
+  pub fn set(&mut self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
+    let row_ix = match row {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7495))},
+      TableIndex::Index(ix) => ix - 1,
+      _ => 0,
+    };
+    let col_ix = match col {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7123))},
+      TableIndex::Index(ix) => ix - 1,
+      TableIndex::Alias(alias) => {
+        *self.column_alias_to_ix.get(alias).unwrap()
+      }
+      _ => 0,
+    };
+    self.set_raw(row_ix,col_ix,val)
+  }
+
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
