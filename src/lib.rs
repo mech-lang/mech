@@ -727,7 +727,7 @@ impl WasmCore {
                     rendered.set_id(&format!("{:?}",element_id));
                     container.append_child(&rendered)?;
                   }
-                  _ => {log!("No \"contains\" on type 'div'");}, // TODO Alert there are no contents
+                  x => {log!("4733 {:?}",x);},
                 }
               }
               // ---------------------
