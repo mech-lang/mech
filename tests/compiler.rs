@@ -9,17 +9,17 @@ use std::rc::Rc;
 use mech_core::{hash_str, Core, TableIndex, Value, Change};
 
 lazy_static! {
-  static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(0), Value::U8(9))]))];
+  static ref TXN: Vec<Change> = vec![Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::U8(9))]))];
   static ref TXN2: Vec<Change> = vec![
-    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U8(9))])),
   ];
   static ref TXN3: Vec<Change> = vec![
-    Change::Set((hash_str("x"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(9))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))])),
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U8(9))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U8(1))])),
   ];
   static ref TXN4: Vec<Change> = vec![
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(1))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(2))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U8(1))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U8(2))])),
   ];
 }
 
@@ -852,21 +852,21 @@ block
 
 test_mech!(string_basic,r#"
 block
-  #test = "Hello World""#, Value::String("Hello World".chars().collect()));
+  #test = "Hello World""#, Value::from_str("Hello World"));
 
 test_mech!(string_table,r#"
 block
-  #test = ["Hello" "World"]"#, Value::String("Hello".chars().collect()));
+  #test = ["Hello" "World"]"#, Value::from_str("Hello"));
 
 test_mech!(string_backslash,r#"
 block
-  #test = ["Hi\n"]"#, Value::String("Hi\\n".chars().collect()));
+  #test = ["Hi\n"]"#, Value::from_str("Hi\\n"));
 
 test_mech!(string_empty,r#"
 block
-  #test = ["" "World"]"#, Value::String("".chars().collect()));
+  #test = ["" "World"]"#, Value::from_str(""));
 
-test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::String("h1".chars().collect()));
+test_mech!(string_named_attributes, r#"#test = [type: "h1" text: "An App"]"#, Value::from_str("h1"));
 
 // ## Nesting
 

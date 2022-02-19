@@ -136,7 +136,7 @@ impl Compiler {
       Node::String{text} => {
         let table_id = TableId::Local(hash_str(&format!("string: {:?}", text)));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
-        tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(text.to_vec())});
+        tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(MechString::from_chars(text))});
       },
       Node::NumberLiteral{kind, bytes} => {
         let bytes_vec = bytes.to_vec();
