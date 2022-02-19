@@ -30,6 +30,8 @@ lazy_static! {
   pub static ref U64: u64 = hash_str("u64");
   pub static ref M: u64 = hash_str("m");
   pub static ref KM: u64 = hash_str("km");
+  pub static ref HEX: u64 = hash_str("hex");
+  pub static ref DEC: u64 = hash_str("dec");
 }
 
 #[derive(Clone)]
@@ -43,14 +45,11 @@ impl Plan {
       plan: Vec::new(),
     }
   }
-  
   pub fn push<S: MechFunction + 'static>(&mut self, mut fxn: S) {
     fxn.solve();
     self.plan.push(Rc::new(RefCell::new(fxn)));
   }
-  
 }
-
 
 impl fmt::Debug for Plan {
   #[inline]
@@ -820,7 +819,7 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6388));},
           }
-        } else if *kind == 0 {
+        } else if *kind == *DEC {
           match bytes.len() {
             1 => {
               t.set_col_kind(0, ValueKind::U8)?;
@@ -861,6 +860,17 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6376));},
           }
+        } else if *kind == *HEX {
+          let mut x: u128 = 0;
+          t.set_kind(ValueKind::U128)?;
+          while bytes.len() < 16 {
+            bytes.insert(0,0);
+          }
+          for half_byte in bytes {
+            x = x << 4;
+            x = x | half_byte as u128;
+          }
+          t.set_raw(0,0,Value::U128(x))?;
         } else {
           println!("{:?}", kind);
           return Err(MechError::GenericError(6996));
