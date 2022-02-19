@@ -157,8 +157,8 @@ pub struct WasmCore {
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashSet<Register>,*/
   event_id: u32,
-  /*timers: HashMap<usize,Closure<dyn FnMut()>>,
-  applications: HashSet<u64>,*/
+  //timers: HashMap<usize,Closure<dyn FnMut()>>,
+  apps: HashSet<u64>,
   window: web_sys::Window,
   document: web_sys::Document,
 }
@@ -239,7 +239,7 @@ impl WasmCore {
       remote_tables: HashSet::new(),*/
       event_id: 0,
       //timers: HashMap::new(),
-      //applications: HashSet::new(),
+      apps: HashSet::new(),
       window: web_sys::window().unwrap(),
       document: web_sys::window().unwrap().document().unwrap(),
     }
@@ -278,7 +278,7 @@ impl WasmCore {
               unsafe {
                 let txn = Transaction{changes: vec![Change::Table{table_id,data}]};
                 (*wasm_core).core.process_transaction(&txn);
-                (*wasm_core).add_applications();
+                (*wasm_core).add_apps();
                 (*wasm_core).render();
               }
             }
@@ -288,7 +288,7 @@ impl WasmCore {
                 Ok(SocketMessage::Transaction(txn)) => {
                   unsafe {
                     (*wasm_core).core.process_transaction(&txn);
-                    (*wasm_core).add_applications();
+                    (*wasm_core).add_apps();
                     (*wasm_core).render();
                   }
                 }
@@ -432,41 +432,31 @@ impl WasmCore {
     self.load_blocks(serialized_miniblocks);
   }
 
-  pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) {
-    /*
-    let miniblocks: Vec<MiniBlock> = bincode::deserialize(&serialized_miniblocks).unwrap();
-    let mut blocks: Vec<Block> = Vec::new() ;
-    for miniblock in miniblocks {
-      let mut block = Block::new(100);
-      let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-      for (key, value) in miniblock.strings {
-        store.strings.insert(key, value.to_string());
+  pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) -> Result<(),JsValue> {
+    let miniblocks: Vec<MiniBlock> = match bincode::deserialize(&serialized_miniblocks) {
+      Ok(miniblocks) => miniblocks,
+      Err(x) => {
+        return Err(JsValue::from_str("5239"));
       }
-      for (key, value) in miniblock.number_literals {
-        store.number_literals.insert(key, value);
-      }
-      for tfms in miniblock.transformations {
-        block.register_transformations(tfms);
-      }
-      
-      block.plan = miniblock.plan.clone();
-      block.gen_id();
-      blocks.push(block);
-    }
+    };
+    let mut blocks: Vec<Block> = Vec::new();
+    let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
     let len = blocks.len();
-    self.core.register_blocks(blocks);
-    self.core.step();
-    self.add_timers();
-    self.add_applications();
-    self.render();
-    log!("Loaded {} blocks.", len);*/
+    self.core.insert_blocks(blocks);
+
+    println!("{:?}", self.core.blocks);
+
+    //self.add_timers();
+    self.add_apps();
+    //self.render();
+    log!("Loaded {} blocks.", len);
+    Ok(())
   }
 
   pub fn process_transaction(&mut self) {
-    /*
-    let txn = Transaction{changes: self.changes.clone()};
-    self.core.process_transaction(&txn);
-    match &self.websocket {
+    
+    self.core.process_transaction(&self.changes);
+    /*match &self.websocket {
       Some(ws) => {
         for changed_register in &self.core.runtime.aggregate_changed_this_round {
           match (self.remote_tables.get(&changed_register),self.core.get_table(*changed_register.table_id.unwrap())) {
@@ -490,13 +480,11 @@ impl WasmCore {
         }       
       }
       _ => (),
-    }
+    }*/
     self.changes.clear();
-    */
   }
 
   pub fn init(&mut self) -> Result<(), JsValue> {
-    
     let wasm_core = self as *mut WasmCore;
 
     // Set up some callbacks for events.
@@ -654,22 +642,24 @@ impl WasmCore {
     Ok(())
   }
 
-  pub fn add_applications(&mut self) -> Result<(), JsValue> {
-    /*
+  pub fn add_apps(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let table = self.core.get_table(*HTML_APP);
+    let table = self.core.get_table("html/app");
     match table {
-      Some(app_table) => {
-        for row in 1..=app_table.rows as usize {
-          match (app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
-                 app_table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-            (Some((root_id,_)), Some((contents,_))) => {
-              match self.applications.contains(&root_id) {
-                true => continue,
+      Ok(app_table) => {        
+
+        let app_table_brrw = app_table.borrow();
+        for row in 1..=app_table_brrw.rows as usize {
+          match (app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
+                 app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
+            (Ok(Value::String(root_id)), Ok(contents)) => {
+              let root_string = root_id.iter().collect::<String>();
+              let root_string_id = hash_str(&root_string);
+              match self.apps.contains(&root_string_id) {
+                true => continue, // app already added
                 false => {
-                  self.applications.insert(root_id.clone());
-                  let root_string_id = &self.core.get_string(&root_id).unwrap();
-                  match self.document.get_element_by_id(&root_string_id) {
+                  self.apps.insert(root_string_id.clone());
+                  match self.document.get_element_by_id(&root_string) {
                     Some(drawing_area) => {
                       let app = self.render_value(contents)?;
                       drawing_area.append_child(&app)?;
@@ -680,11 +670,11 @@ impl WasmCore {
               }
             }
             _ => {log!("No root or contents column in #html/app");}, // TODO Alert user there is no root and or contents column in app_table
-          }        
+          }  
         }
       }
       _ => {log!("No #html/app in the core");}, // TODO Alert the user no app was found
-    } */
+    }
     Ok(())
   }
 
@@ -694,39 +684,35 @@ impl WasmCore {
     Ok(())
   }
 
-  /*fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
+  fn render_value(&mut self, value: Value) -> Result<web_sys::Element, JsValue> {
     let mut div = self.document.create_element("div")?;
-    match value.value_type() {
-      ValueType::String => {
-        let str_hash = value.as_string().unwrap();
-        let contents_string = self.core.get_string(&str_hash).unwrap();
+    match value {
+      Value::String(chars) => {
+        let contents_string = chars.iter().collect::<String>();
         div.set_inner_html(&contents_string);
       },
-      ValueType::Quantity => {
-        let quantity = value.as_f64().unwrap();
-        div.set_inner_html(&format!("{:?}", quantity));
-      }
-      ValueType::Reference => {
-        let reference = value.as_reference().unwrap();
-        let table = self.core.get_table(reference).unwrap();
-        let rendered_ref = self.make_element(&table)?;
+      Value::U16(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U8(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::Reference(table_id) => {
+        let table = self.core.get_table_by_id(*table_id.unwrap()).unwrap();
+        let rendered_ref = self.make_element(&table.borrow())?;
         div.append_child(&rendered_ref)?;
       }
       _ => (), // TODO Unhandled Boolean and Empty
     }
     Ok(div)
-  }*/
+  }
 
-  /*fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
-    
+  fn make_element(&mut self, table: &Table) -> Result<web_sys::Element, JsValue> {
     let wasm_core = self as *mut WasmCore;
     let mut container: web_sys::Element = self.document.create_element("div")?;
     let element_id = hash_str(&format!("div-{:?}", table.id));
     container.set_id(&format!("{:?}",element_id));
     container.set_attribute("table-id", &format!("{}", table.id))?;
     // First check to see if the table has a "type" column. If it doesn't, just render the table
-    if table.has_column_alias(*TYPE) == true {
-      for row in 1..=table.rows {
+    match table.column_alias_to_ix.contains_key(&*TYPE) {
+      true => {
+      /*for row in 1..=table.rows {
         match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
           Some((kind,_)) => {
             // ---------------------
@@ -918,34 +904,35 @@ impl WasmCore {
             }
           }
           None => {log!("No type on table");}, // TODO Alert there is no type
-        }
+        }*/
       }
-    // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
-    } else {
-      // Make a div for each row
-      for row in 1..=table.rows {
-        let mut row_div = self.document.create_element("div")?;
-        let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-        row_div.set_id(&format!("{:?}",element_id));
-        // Make an internal div for each cell 
-        for column in 1..=table.columns {
-          // Get contents
-          match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
-            Some((contents,_)) => {
-              let mut cell_div = self.document.create_element("div")?;
-              let element_id = hash_str(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
-              let rendered = self.render_value(contents)?;
-              rendered.set_id(&format!("{:?}",element_id));
-              row_div.append_child(&rendered)?;
-            }
-            _ => {log!("Cell not found");} // TODO Alert there are no contents
-          }          
+      // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
+      false => {
+        // Make a div for each row
+        for row in 1..=table.rows {
+          let mut row_div = self.document.create_element("div")?;
+          let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
+          row_div.set_id(&format!("{:?}",element_id));
+          // Make an internal div for each cell 
+          for column in 1..=table.cols {
+            // Get contents
+            match table.get(&TableIndex::Index(row), &TableIndex::Index(column)) {
+              Ok(contents) => {
+                let mut cell_div = self.document.create_element("div")?;
+                let element_id = hash_str(&format!("div-{:?}-{:?}-{:?}", table.id, row, column));
+                let rendered = self.render_value(contents)?;
+                rendered.set_id(&format!("{:?}",element_id));
+                row_div.append_child(&rendered)?;
+              }
+              _ => {log!("Cell not found");} // TODO Alert there are no contents
+            }          
+          }
+          container.append_child(&row_div)?;
         }
-        container.append_child(&row_div)?;
       }
     }
     Ok(container)
-  }*/
+  }
 
   pub fn render_canvases(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
