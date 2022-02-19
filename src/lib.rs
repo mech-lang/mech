@@ -770,10 +770,10 @@ impl WasmCore {
               // ---------------------
               // RENDER A BUTTON
               // ---------------------
-              /*else if raw_kind == *BUTTON {
+              else if raw_kind == *BUTTON {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Some((contents,_)) => {
+                  Ok(contents) => {
                     let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
                     let rendered = self.render_value(contents)?;
                     rendered.set_id(&format!("{:?}",element_id));
@@ -783,15 +783,16 @@ impl WasmCore {
                     button.append_child(&rendered)?;
                     container.append_child(&button)?;
                   }
-                  _ => {log!("No \"contains\" on type 'button'");}, // TODO Alert there are no contents
+                  x => {log!("4736 {:?}", x);},
                 }
+              }
               // ---------------------
               // RENDER A CANVAS
               // ---------------------
-              } else if raw_kind == *CANVAS {
+              /*else if raw_kind == *CANVAS {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Some(contents) => {
+                  Ok(contents) => {
                     let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
                     let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
                     canvas.set_id(&format!("{:?}",element_id));
@@ -837,10 +838,11 @@ impl WasmCore {
                   }
                   _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
                 }
+              }*/
               // ---------------------
               // RENDER A SLIDER
               // ---------------------
-              } else if raw_kind == *SLIDER {
+              else if raw_kind == *SLIDER {
                 // Get contents
                 match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
                       table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
@@ -861,6 +863,7 @@ impl WasmCore {
                         slider.set_attribute("row", &format!("{}", row));
                         slider.set_attribute("table", &format!("{}", table.id));
                         slider.set_id(&format!("{:?}",element_id));
+/*
                         // Changes to the slider update its own table
                         {
                           let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
@@ -892,17 +895,17 @@ impl WasmCore {
                           slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
                           closure.forget();
                         }
-                        container.append_child(&slider)?;
-                      },
-                      _ => {log!("Slider values are not quantities");}, // TODO fields aren't the right type
+                        container.append_child(&slider)?;*/
+                      }
+                      x => {log!("4738 {:?}", x);},
                     }
                   }
-                  _ => {log!("No \"min\" \"max\" \"value\" on type 'slider'");}, // TODO Alert there are no min max value
+                  x => {log!("4739 {:?}", x);},
                 }
-              }*/
+              }
             }
-            x => log!("54894 {:?}",x),
-            Err(x) => log!("32134 {:?}",x), // TODO Alert there is no type
+            x => log!("4740 {:?}",x),
+            Err(x) => log!("4741 {:?}",x),
           }
         }
       }
