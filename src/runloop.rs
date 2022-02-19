@@ -498,7 +498,7 @@ impl ProgramRunner {
               },
               MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
-                miniblocks.iter().map(|b| maximize_block(&b)).collect()
+                miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect()
               }
             };
             let mut new_block_ids = vec![];
