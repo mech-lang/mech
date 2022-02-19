@@ -448,7 +448,7 @@ impl WasmCore {
 
     //self.add_timers();
     self.add_apps();
-    //self.render();
+    self.render();
     log!("Loaded {} blocks.", len);
     Ok(())
   }
@@ -784,58 +784,6 @@ impl WasmCore {
                 }
               }
               // ---------------------
-              // RENDER A CANVAS
-              // ---------------------
-              /*else if raw_kind == *CANVAS {
-                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Ok(contents) => {
-                    let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
-                    let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
-                    canvas.set_id(&format!("{:?}",element_id));
-                    self.canvases.insert(element_id);
-                    // Is there a parameters field?
-                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
-                      Some((parameters_table_id,_)) => {
-                        match parameters_table_id.as_reference() {
-                          Some(parameters_table_id) => {
-                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                            match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
-                              Some(height) => {
-                                canvas.set_attribute("height", &format!("{}",height));
-                              }
-                              _ => (),
-                            }
-                            match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
-                              Some(width) => {
-                                canvas.set_attribute("width", &format!("{}",width));
-                              }
-                              _ => (),
-                            }
-                          }
-                          _ => {log!("Parameter field on canvas must be a table reference");}, // TODO Alert user the parameters field needs to be a table
-                        }
-                        let table = self.core.get_table(*HTML_APP);
-                      }
-                      _ => (), // Do nothing, the parameters field is optional
-                    }
-                    // Add the contents
-                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                      Some((contains_table_id,_)) => {
-                        match contains_table_id.as_reference() {
-                          Some(contains_table_id) => {
-                            canvas.set_attribute("elements", &format!("{}",contains_table_id));
-                          },
-                          _ => {log!("Contains must be a table");},
-                        }
-                      }
-                      _ => (),
-                    }
-                    container.append_child(&canvas)?;
-                  }
-                  _ => {log!("No \"contains\" on type 'canvas'");}, // TODO Alert there are no contents
-                }
-              }*/
-              // ---------------------
               // RENDER A SLIDER
               // ---------------------
               else if raw_kind == *SLIDER {
@@ -890,9 +838,51 @@ impl WasmCore {
                   x => {log!("4739 {:?}", x);},
                 }
               }
+              // ---------------------
+              // RENDER A CANVAS
+              // ---------------------
+              else if raw_kind == *CANVAS {
+                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                  Ok(contents) => {
+                    let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
+                    let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
+                    canvas.set_id(&format!("{:?}",element_id));
+                    self.canvases.insert(element_id);
+                    // Is there a parameters field?
+                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
+                      Ok(Value::Reference(parameters_table_id)) => {
+                        let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
+                        let parameters_table_brrw = parameters_table.borrow();
+                        match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)),
+                        parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH))) {
+                          (Ok(Value::F32(height)),Ok(Value::F32(width))) => {
+                            canvas.set_attribute("height", &format!("{}",height));
+                            canvas.set_attribute("width", &format!("{}",width));
+                          }
+                          x => {log!("4740 {:?}", x);},
+                        }
+                        let table = self.core.get_table_by_id(*HTML_APP);
+                      }
+                      x => {log!("4741 {:?}", x);},
+                    }
+                    // Add the contents
+                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+                      Ok(Value::Reference(contains_table_id)) => {
+                        canvas.set_attribute("elements", &format!("{}",contains_table_id.unwrap()));
+                      }
+                      x => {log!("4742 {:?}", x);},
+                    }
+                    container.append_child(&canvas)?;
+                  }
+                  x => {log!("4743 {:?}", x);},
+                }
+              }
+              else {
+                log!("4744 {:?}", raw_kind);
+              }
             }
-            x => log!("4740 {:?}",x),
-            Err(x) => log!("4741 {:?}",x),
+            x => log!("4745 {:?}",x),
+            Err(x) => log!("4746 {:?}",x),
           }
         }
       }
@@ -914,7 +904,7 @@ impl WasmCore {
                 rendered.set_id(&format!("{:?}",element_id));
                 row_div.append_child(&rendered)?;
               }
-              _ => {log!("Cell not found");} // TODO Alert there are no contents
+              x => log!("4747 {:?}",x),
             }          
           }
           container.append_child(&row_div)?;
@@ -945,7 +935,7 @@ impl WasmCore {
 
 
   pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-    /*
+  
     let wasm_core = self as *mut WasmCore;
     let context = canvas
         .get_context("2d")
@@ -953,32 +943,15 @@ impl WasmCore {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-
+  
     // Define a function to make this a lot easier
     let get_stroke_string = |parameters_table: &Table, row: usize, alias: u64| { 
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
-        Some((stroke_id,_)) => {
-          match stroke_id.as_number_literal() {
-            Some(stroke_number_literal_id) => {
-              match unsafe{ (*wasm_core).core.get_number_literal(stroke_number_literal_id) } {
-                Some(number_literal) => {
-                  let mut color_string: String = "#".to_string();
-                  for byte in number_literal {
-                    color_string = format!("{}{:02x}", color_string, byte);
-                  }
-                  color_string
-                }
-                None => {
-                  log!("NONE");
-                  "#000000".to_string()
-                }
-              }
-            },
-            _ => {
-              log!("Color must be a three byte hexadecimal number literal. Defaulting to 0x000000");
-              "#000000".to_string()
-            },
-          }
+        Ok(Value::U128(stroke)) => {
+          let mut color_string: String = "#".to_string();
+          color_string = format!("{}{:02x}", color_string, stroke);
+          log!("{:?}", color_string);
+          color_string
         }
         _ => "#000000".to_string(),
       }
@@ -986,30 +959,15 @@ impl WasmCore {
     
     let get_line_width = |parameters_table: &Table, row: usize| {
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
-        Some((line_width,_)) => {
-          match line_width.as_f64() {
-            Some(line_width) => line_width,
-            _ => {
-              log!("Line width must be a quantity. Defaulting to 1");
-              1.0
-            }
-          }
-        }
+        Ok(Value::F32(line_width)) => line_width,
         _ => 1.0
       }
     };
 
     let get_property = |parameters_table: &Table, row: usize, alias: u64| {
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
-        Some((property,_)) => {
-          match property.value_type() {
-            ValueType::Quantity => format!("{:?}", property.as_f64().unwrap()),
-            ValueType::String => {
-              parameters_table.get_string_from_hash(property).unwrap().clone()
-            }
-            _ => "".to_string(),
-          }
-        }
+        Ok(Value::F32(property)) => format!("{:?}", property),
+        Ok(Value::String(property)) => property.to_string(),
         _ => "".to_string()
       }
     };
@@ -1017,46 +975,47 @@ impl WasmCore {
     // Get the elements table for this canvas
     let elements_table_id_string = canvas.get_attribute("elements").unwrap();
     let elements_table_id: u64 = elements_table_id_string.parse::<u64>().unwrap();
-    let elements_table = self.core.get_table(elements_table_id).unwrap();
+    let elements_table = self.core.get_table_by_id(elements_table_id).unwrap();
+    let elements_table_brrw = elements_table.borrow();
     let context = Rc::new(context);
     context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for row in 1..=elements_table.rows as usize {
-      match (elements_table.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
-             elements_table.get_reference(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (Some((shape,_)), Some(parameters_table_id)) => {
-          let shape = shape.as_raw();
-          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
+    for row in 1..=elements_table_brrw.rows as usize {
+      match (elements_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
+      elements_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+        (Ok(Value::String(shape)), Ok(Value::Reference(parameters_table_id))) => {
+          let shape = shape.hash();
+          let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
+          let parameters_table_brrw = parameters_table.borrow();
           // ---------------------
           // RENDER A CIRCLE
           // ---------------------
           if shape == *CIRCLE {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
-                (Some(cx), Some(cy), Some(radius)) => {
-                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table,row, *FILL);
-                  let line_width = get_line_width(&parameters_table,row);
+            for row in 1..=parameters_table_brrw.rows {
+              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(radius))) => {
+                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+                  let line_width = get_line_width(&parameters_table_brrw,row);
                   context.save();
                   context.begin_path();
-                  context.arc(cx, cy, radius, 0.0, 2.0 * 3.141592654);
+                  context.arc(cx.into(), cy.into(), radius.into(), 0.0, 2.0 * 3.141592654);
                   context.set_fill_style(&JsValue::from_str(&fill));
                   context.fill();
                   context.set_stroke_style(&JsValue::from_str(&stroke));
-                  context.set_line_width(line_width);    
+                  context.set_line_width(line_width.into());    
                   context.stroke();                
                   context.restore();
                 }
-                _ => {
-                  log!("Missing center-x, center-y, or radius");
-                },
+                x => {log!("5854 {:?}", x);},
               }        
             }
+          }
           // ---------------------
           // RENDER AN ELLIPSE
           // --------------------- 
-          } else if shape == *ELLIPSE {
+          /*else if shape == *ELLIPSE {
             for row in 1..=parameters_table.rows {
               match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
@@ -1357,13 +1316,14 @@ impl WasmCore {
                 _ => {log!("Missing source, x, y, or rotation");},
               }
             }
-          } else {
-            log!("Unknown canvas element");
+          }*/ 
+          else {
+            log!("5854");
           }
         },
-        _ => {log!("Missing shape or parameters table");}
+        x => {log!("5854 {:?}", x);},
       }
-    }*/ 
+    }
     Ok(())
   }
 
