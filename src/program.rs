@@ -236,9 +236,9 @@ impl Program {
       let registry_table_brrw = registry_table.borrow();
       for row in 0..registry_table_brrw.rows {
         let row_index = TableIndex::Index(row+1);
-        let name = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*NAME))?.as_string().unwrap().iter().collect::<String>();
-        let version = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*VERSION))?.as_string().unwrap().iter().collect::<String>();
-        let url = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*URL))?.as_string().unwrap().iter().collect::<String>();
+        let name = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*NAME))?.as_string().unwrap().to_string();
+        let version = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*VERSION))?.as_string().unwrap().to_string();
+        let url = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*URL))?.as_string().unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }
@@ -248,7 +248,7 @@ impl Program {
       for (error,eblocks) in &self.mech.errors {
         match error {
           MechError::MissingFunction(fxn_id) => {
-            let fun_name = self.mech.dictionary.borrow().get(&fxn_id).unwrap().iter().collect::<String>();
+            let fun_name = self.mech.dictionary.borrow().get(&fxn_id).unwrap().to_string();
             let m: Vec<_> = fun_name.split('/').collect();
             let m = m[0];
             let underscore_name = m.replace("-","_");
