@@ -95,15 +95,18 @@ impl MiniBlock {
       number_literals: Vec::with_capacity(1),
     }
   }
+
+  pub fn maximize_block(miniblock: &MiniBlock) -> Block {
+    let mut block = Block::new();
+    for tfms in &miniblock.transformations {
+      block.add_tfm(tfms.clone());
+    }
+    block
+  }
+ 
+
 }
 
-pub fn maximize_block(miniblock: &MiniBlock) -> Block {
-  let mut block = Block::new();
-  for tfms in &miniblock.transformations {
-    block.add_tfm(tfms.clone());
-  }
-  block
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
@@ -139,7 +142,6 @@ macro_rules! export_machine {
   };
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone)]
 pub struct MechFunctionDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MechFunctionRegistrar),
