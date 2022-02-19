@@ -94,13 +94,21 @@ lazy_static! {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
+  let text_logo = r#"
+  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
+  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
+  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
+  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
+  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
+  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
+
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
   let version = "0.1.0";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
-    .about("Mech's compiler and REPL. Also contains various other helpful tools! Default values for options are in parentheses.")
+    .about(&*format!("{}", text_logo))
     .subcommand(SubCommand::with_name("serve")
       .about("Starts a Mech HTTP and websocket server")
       .arg(Arg::with_name("mech_serve_file_paths")
@@ -577,13 +585,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     None
   };
 
-let text_logo = r#"
-  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
-  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
-  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
-  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
-  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
-  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
     let help_message = r#"
 Available commands are: 
 
