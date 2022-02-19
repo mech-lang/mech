@@ -14,6 +14,10 @@ use mech_core::*;
 
 lazy_static! {
   pub static ref U16: u64 = hash_str("u16");
+  pub static ref HEX: u64 = hash_str("hex");
+  pub static ref OCT: u64 = hash_str("oct");
+  pub static ref DEC: u64 = hash_str("dec");
+  pub static ref BIN: u64 = hash_str("bin");
 }
 
 // ## AST Nodes
@@ -848,19 +852,19 @@ impl Ast {
         while bytes.len() > 1 && bytes[0] == 0 {
           bytes.remove(0);
         }
-        compiled.push(Node::NumberLiteral{kind: 0, bytes: bytes.to_vec()});
+        compiled.push(Node::NumberLiteral{kind: *DEC, bytes: bytes.to_vec()});
       },
       parser::Node::BinaryLiteral{chars} => {
         let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: 0, bytes: bin_bytes});
+        compiled.push(Node::NumberLiteral{kind: *BIN, bytes: bin_bytes});
       }
       parser::Node::OctalLiteral{chars} => {
         let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: 0, bytes: oct_bytes});
+        compiled.push(Node::NumberLiteral{kind: *OCT, bytes: oct_bytes});
       },
       parser::Node::HexadecimalLiteral{chars} => {
         let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: 0, bytes: hex_bytes});
+        compiled.push(Node::NumberLiteral{kind: *HEX, bytes: hex_bytes});
       },
       parser::Node::True => compiled.push(Node::True),
       parser::Node::False => compiled.push(Node::False),

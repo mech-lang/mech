@@ -88,6 +88,8 @@ block
 
 test_mech!(constant_inline_empty, "#test = [first: 12, second: _, third: 45]",Value::U8(12));
 
+test_mech!(constant_hex, "#test = 0xABC123",Value::U128(11256099));
+
 // ## Unicode
 
 test_mech!(unicode, "
