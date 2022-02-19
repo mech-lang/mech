@@ -215,6 +215,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(move |addr: Option<SocketAddr>| {
                   println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
                   let code = read_mech_files(&mech_paths).unwrap();
+                  // TODO Handle error situations
                   let miniblocks = compile_code(code).unwrap();
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
                   let compressed_miniblocks = compress_to_vec(&serialized_miniblocks,6);
