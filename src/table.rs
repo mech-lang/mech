@@ -207,7 +207,10 @@ impl Table {
       TableIndex::Index(0) => {return Err(MechError::GenericError(7124))},
       TableIndex::Index(ix) => ix - 1,
       TableIndex::Alias(alias) => {
-        *self.column_alias_to_ix.get(alias).unwrap()
+        match self.column_alias_to_ix.get(alias) {
+          Some(ix) => *ix,
+          None => {return Err(MechError::GenericError(2384))}
+        }
       }
       _ => 0,
     };
@@ -280,7 +283,10 @@ impl Table {
       TableIndex::Index(0) => {return Err(MechError::GenericError(7123))},
       TableIndex::Index(ix) => ix - 1,
       TableIndex::Alias(alias) => {
-        *self.column_alias_to_ix.get(alias).unwrap()
+        match self.column_alias_to_ix.get(alias) {
+          Some(ix) => *ix,
+          None => {return Err(MechError::GenericError(2384))}
+        }
       }
       _ => 0,
     };
