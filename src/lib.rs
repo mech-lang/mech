@@ -856,7 +856,6 @@ impl WasmCore {
                     slider.set_attribute("row", &format!("{}", row));
                     slider.set_attribute("table", &format!("{}", table.id));
                     slider.set_id(&format!("{:?}",element_id));
-/*
                     // Changes to the slider update its own table
                     {
                       let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
@@ -867,16 +866,14 @@ impl WasmCore {
                             let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
 
                             let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
-                            let change = Change::Set{
-                              table_id: table_id, values: vec![ 
+                            let change = Change::Set((
+                               table_id, vec![ 
                                 (TableIndex::Index(row),
                                 TableIndex::Alias(*VALUE),
-                                Value::from_i32(slider_value)),
-                              ]
-                            };
+                                Value::F32(slider_value as f32))]));
                             // TODO Make this safe
                             unsafe {
-                              let table = (*wasm_core).core.get_table(table_id).unwrap();
+                              let table = (*wasm_core).core.get_table_by_id(table_id).unwrap();
                               (*wasm_core).changes.push(change);
                               (*wasm_core).process_transaction();
                               (*wasm_core).render();
@@ -887,7 +884,7 @@ impl WasmCore {
                       }) as Box<dyn FnMut(_)>);
                       slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
                       closure.forget();
-                    }*/
+                    }
                     container.append_child(&slider)?;
                   }
                   x => {log!("4739 {:?}", x);},
