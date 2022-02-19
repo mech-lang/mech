@@ -652,14 +652,13 @@ impl WasmCore {
         for row in 1..=app_table_brrw.rows as usize {
           match (app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
                  app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-            (Ok(Value::String(root_id)), Ok(contents)) => {
-              let root_string = root_id.iter().collect::<String>();
-              let root_string_id = hash_str(&root_string);
-              match self.apps.contains(&root_string_id) {
+            (Ok(Value::String(root)), Ok(contents)) => {
+              let root_id = root.hash();
+              match self.apps.contains(&root_id) {
                 true => continue, // app already added
                 false => {
-                  self.apps.insert(root_string_id.clone());
-                  match self.document.get_element_by_id(&root_string) {
+                  self.apps.insert(root_id.clone());
+                  match self.document.get_element_by_id(&root.to_string()) {
                     Some(drawing_area) => {
                       let app = self.render_value(contents)?;
                       drawing_area.append_child(&app)?;
@@ -688,7 +687,7 @@ impl WasmCore {
     let mut div = self.document.create_element("div")?;
     match value {
       Value::String(chars) => {
-        let contents_string = chars.iter().collect::<String>();
+        let contents_string = chars.to_string();
         div.set_inner_html(&contents_string);
       },
       Value::U16(x) => div.set_inner_html(&format!("{:?}", x)),
@@ -715,7 +714,7 @@ impl WasmCore {
         for row in 1..=table.rows {
           match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
             Ok(Value::String(kind)) => {
-              let raw_kind = hash_mechstring(kind);
+              let raw_kind = kind.hash();
               // ---------------------
               // RENDER A DIV
               // ---------------------
@@ -738,30 +737,27 @@ impl WasmCore {
                 // Get contents
                 match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
                       table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-                  (Ok(Value::String(href_string)), Ok(contents)) => {
+                  (Ok(Value::String(href)), Ok(contents)) => {
                     let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
                     let rendered = self.render_value(contents)?;
                     rendered.set_id(&format!("{:?}",element_id));
                     let mut link: web_sys::Element = self.document.create_element("a")?;
-                    link.set_attribute("href",&href_string.iter().collect::<String>())?;
-                    let element_id = hash_mechstring(href_string);
+                    link.set_attribute("href",&href.to_string())?;
+                    let element_id = href.hash();
                     link.set_id(&format!("{:?}",element_id));
                     link.append_child(&rendered)?;
                     container.append_child(&link)?;
                   }
-                  (Err(_), Ok(_)) => {log!("No \"href\" on type 'a'");}, // TODO Alert there are no href
-                  (Ok(_), Err(_)) => {log!("No \"contains\" on type 'a'");}, // TODO Alert there are no contents
-                  _ => {log!("No \"contains\" or \"href\" on type 'a'");}, // TODO Alert both
+                  x => {log!("4734 {:?}", x);},
                 }
               }
-              /*} 
               // ---------------------
               // RENDER AN IMG
               // ---------------------
-              else if raw_kind == *IMG {
+              /*else if raw_kind == *IMG {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
-                  Some((src,_)) => {
+                  Some(Value::String(src)) => {
                     let mut img: web_sys::Element = self.document.create_element("img")?;
                     let src_string = &self.core.get_string(&src).unwrap();
                     let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
@@ -769,12 +765,13 @@ impl WasmCore {
                     img.set_id(&format!("{:?}",element_id));
                     container.append_child(&img)?;
                   }
-                  _ => {log!("No \"src\" on type 'img'");}, // TODO Alert there are no contents
+                  x => {log!("4735 {:?}", x);},
                 }
+              }*/
               // ---------------------
               // RENDER A BUTTON
               // ---------------------
-              } else if raw_kind == *BUTTON {
+              /*else if raw_kind == *BUTTON {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                   Some((contents,_)) => {
