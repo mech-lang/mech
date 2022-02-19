@@ -113,7 +113,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
 }
 
 pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
-  println!("{}", "[Compiling] ".bright_green());
+  print!("{}", "[Compiling] ".bright_green());
   let mut miniblocks = vec![];
   for c in code {
     match c {
@@ -128,6 +128,7 @@ pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
       },
     }
   }
+  println!("Compiled {} blocks.", miniblocks.len());
   Ok(miniblocks)
 }
 
