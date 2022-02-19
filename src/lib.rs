@@ -754,20 +754,19 @@ impl WasmCore {
               // ---------------------
               // RENDER AN IMG
               // ---------------------
-              /*else if raw_kind == *IMG {
+              else if raw_kind == *IMG {
                 // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
-                  Some(Value::String(src)) => {
+                  Ok(Value::String(src)) => {
                     let mut img: web_sys::Element = self.document.create_element("img")?;
-                    let src_string = &self.core.get_string(&src).unwrap();
                     let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
-                    img.set_attribute("src",src_string)?;
+                    img.set_attribute("src", &src.to_string())?;
                     img.set_id(&format!("{:?}",element_id));
                     container.append_child(&img)?;
                   }
                   x => {log!("4735 {:?}", x);},
                 }
-              }*/
+              }
               // ---------------------
               // RENDER A BUTTON
               // ---------------------
