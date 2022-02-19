@@ -405,7 +405,7 @@ impl BoxTable {
 
     for row in 0..table.rows {
       for col in 0..table.cols {
-        let value_string = match table.get(row,col) {
+        let value_string = match table.get_raw(row,col) {
           Ok(v) => format!("{:?}", v), 
           _ => format!(""),
         };

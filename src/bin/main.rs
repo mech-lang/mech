@@ -229,7 +229,7 @@ fn main() -> Result<(),MechError> {
   //println!("{:?}", core);
 
   for i in 0..20000 {
-    let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::F32(i as f32))]))];
+    let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(i as f32))]))];
     
     let start_ns = time::precise_time_ns();
     core.process_transaction(&txn)?;

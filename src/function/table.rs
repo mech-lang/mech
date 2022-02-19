@@ -419,7 +419,7 @@ impl MechFunction for CopyT {
     out_brrw.column_alias_to_ix = arg_brrw.column_alias_to_ix.clone();
     for col in 0..arg_brrw.cols {
       for row in 0..arg_brrw.rows {
-        let value = arg_brrw.get(row,col).unwrap();
+        let value = arg_brrw.get_raw(row,col).unwrap();
         out_brrw.set_raw(row,col,value);
       }
     }
@@ -452,7 +452,7 @@ impl MechFunction for AppendRowT {
     if arg_brrw.has_col_aliases() {
       for col in 0..arg_brrw.cols {
         for row in 0..arows {
-          let value = arg_brrw.get(row,col).unwrap();
+          let value = arg_brrw.get_raw(row,col).unwrap();
           let alias = arg_brrw.column_ix_to_alias[col];
           match out_brrw.column_alias_to_ix.get(&alias) {
             Some(col_ix) => {out_brrw.set_raw(orows + row,*col_ix,value);}
@@ -463,7 +463,7 @@ impl MechFunction for AppendRowT {
     } else {
       for col in 0..arg_brrw.cols {
         for row in 0..arows {
-          let value = arg_brrw.get(row,col).unwrap();
+          let value = arg_brrw.get_raw(row,col).unwrap();
           out_brrw.set_raw(orows + row,col,value);
         }
       }

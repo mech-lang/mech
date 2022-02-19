@@ -48,6 +48,10 @@ impl Value {
     }
   }
 
+  pub fn from_string(string: &String) -> Value {
+    Value::String(string.chars().collect::<Vec<char>>())
+  }
+
 }
 
 impl fmt::Debug for Value {

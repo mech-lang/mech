@@ -197,7 +197,24 @@ impl Table {
     }
   }
 
-  pub fn get(&self, row: usize, col: usize) -> Result<Value,MechError> {
+  pub fn get(&self, row: &TableIndex, col: &TableIndex) -> Result<Value,MechError> {
+    let row_ix = match row {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7497))},
+      TableIndex::Index(ix) => ix - 1,
+      _ => 0,
+    };
+    let col_ix = match col {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7124))},
+      TableIndex::Index(ix) => ix - 1,
+      TableIndex::Alias(alias) => {
+        *self.column_alias_to_ix.get(alias).unwrap()
+      }
+      _ => 0,
+    };
+    self.get_raw(row_ix,col_ix)
+  }
+
+  pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
     if col < self.cols && row < self.rows {
       match &self.data[col] {
         Column::F32(column_f32) => Ok(Value::F32(column_f32.borrow()[row])),
@@ -237,7 +254,7 @@ impl Table {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
       let col = ix % self.cols;
-      self.get(row,col)
+      self.get_raw(row,col)
     } else {
       Err(MechError::GenericError(1213))
     }

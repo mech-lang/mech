@@ -66,7 +66,7 @@ impl MechFunction for StatsSumRow {
     for row in 0..table_brrw.rows {
       let mut sum = 0;
       for col in 0..table_brrw.cols {
-        match table_brrw.get(row,col) {
+        match table_brrw.get_raw(row,col) {
           Ok(Value::U8(val)) => {
             sum += val
           },
