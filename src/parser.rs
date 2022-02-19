@@ -808,9 +808,11 @@ fn binding(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
-  let (input, _) = tuple((colon, many0(space)))(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, bound) = alt((empty, expression, identifier, value))(input)?;
-  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = opt(comma)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   children.push(binding_id);
   children.push(bound);

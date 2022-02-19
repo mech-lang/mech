@@ -113,6 +113,19 @@ block
 block
   #test = #x.x + #x.y + #x.z"#, Value::U8(6));
 
+test_mech!(table_inline_multirow_nested, r#"
+block
+  #x = [
+    root: "mech-root"
+    contains: [
+      type: "a",
+      href: "foo.bar",
+      contains: 10
+    ]
+  ]
+block
+  #test = #x.contains.contains"#, Value::U8(10));
+
 test_mech!(table_anonymous_table_trailing_whitespace, "
 block
   #test = [|d|
