@@ -40,6 +40,11 @@ pub use self::error::MechError;
 
 pub type MechString = Vec<char>;
 
+pub fn hash_mechstring(mechstring: MechString) -> u64 {
+  let string = mechstring.iter().collect::<String>();
+  hash_str(&string)
+}
+
 pub type ColumnV<T> = Rc<RefCell<Vec<T>>>;
 pub type Reference = Rc<RefCell<Table>>;
 
