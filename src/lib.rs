@@ -734,7 +734,6 @@ impl WasmCore {
               // RENDER A LINK
               // ---------------------
               else if raw_kind == *A {
-                // Get contents
                 match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
                       table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
                   (Ok(Value::String(href)), Ok(contents)) => {
@@ -755,7 +754,6 @@ impl WasmCore {
               // RENDER AN IMG
               // ---------------------
               else if raw_kind == *IMG {
-                // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
                   Ok(Value::String(src)) => {
                     let mut img: web_sys::Element = self.document.create_element("img")?;
@@ -771,7 +769,6 @@ impl WasmCore {
               // RENDER A BUTTON
               // ---------------------
               else if raw_kind == *BUTTON {
-                // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                   Ok(contents) => {
                     let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
@@ -790,7 +787,6 @@ impl WasmCore {
               // RENDER A CANVAS
               // ---------------------
               /*else if raw_kind == *CANVAS {
-                // Get contents
                 match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
                   Ok(contents) => {
                     let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
@@ -843,62 +839,56 @@ impl WasmCore {
               // RENDER A SLIDER
               // ---------------------
               else if raw_kind == *SLIDER {
-                // Get contents
                 match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
                       table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
                       table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-                  (Some((min,_)), Some((max,_)), Some((value,_))) => {
-                    match (min.as_f64(), max.as_f64(), value.as_f64()) {
-                      (Some(min_value), Some(max_value), Some(value_value)) => {
-                        let mut slider: web_sys::Element = self.document.create_element("input")?;
-                        let mut slider: web_sys::HtmlInputElement = slider
-                          .dyn_into::<web_sys::HtmlInputElement>()
-                          .map_err(|_| ())
-                          .unwrap();
-                        let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
-                        slider.set_attribute("type","range");
-                        slider.set_attribute("min", &format!("{}", min_value));
-                        slider.set_attribute("max", &format!("{}", max_value));
-                        slider.set_attribute("value", &format!("{}", value_value));
-                        slider.set_attribute("row", &format!("{}", row));
-                        slider.set_attribute("table", &format!("{}", table.id));
-                        slider.set_id(&format!("{:?}",element_id));
+                  (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::F32(value))) => {
+                    let mut slider: web_sys::Element = self.document.create_element("input")?;
+                    let mut slider: web_sys::HtmlInputElement = slider
+                      .dyn_into::<web_sys::HtmlInputElement>()
+                      .map_err(|_| ())
+                      .unwrap();
+                    let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
+                    slider.set_attribute("type","range");
+                    slider.set_attribute("min", &format!("{}", min));
+                    slider.set_attribute("max", &format!("{}", max));
+                    slider.set_attribute("value", &format!("{}", value));
+                    slider.set_attribute("row", &format!("{}", row));
+                    slider.set_attribute("table", &format!("{}", table.id));
+                    slider.set_id(&format!("{:?}",element_id));
 /*
-                        // Changes to the slider update its own table
-                        {
-                          let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-                            match event.target() {
-                              Some(target) => {
-                                let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                                let slider_value = slider.value().parse::<i32>().unwrap();
-                                let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
+                    // Changes to the slider update its own table
+                    {
+                      let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+                        match event.target() {
+                          Some(target) => {
+                            let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
+                            let slider_value = slider.value().parse::<i32>().unwrap();
+                            let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
 
-                                let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
-                                let change = Change::Set{
-                                  table_id: table_id, values: vec![ 
-                                    (TableIndex::Index(row),
-                                    TableIndex::Alias(*VALUE),
-                                    Value::from_i32(slider_value)),
-                                  ]
-                                };
-                                // TODO Make this safe
-                                unsafe {
-                                  let table = (*wasm_core).core.get_table(table_id).unwrap();
-                                  (*wasm_core).changes.push(change);
-                                  (*wasm_core).process_transaction();
-                                  (*wasm_core).render();
-                                }
-                              },
-                              _ => (),
+                            let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
+                            let change = Change::Set{
+                              table_id: table_id, values: vec![ 
+                                (TableIndex::Index(row),
+                                TableIndex::Alias(*VALUE),
+                                Value::from_i32(slider_value)),
+                              ]
+                            };
+                            // TODO Make this safe
+                            unsafe {
+                              let table = (*wasm_core).core.get_table(table_id).unwrap();
+                              (*wasm_core).changes.push(change);
+                              (*wasm_core).process_transaction();
+                              (*wasm_core).render();
                             }
-                          }) as Box<dyn FnMut(_)>);
-                          slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
-                          closure.forget();
+                          },
+                          _ => (),
                         }
-                        container.append_child(&slider)?;*/
-                      }
-                      x => {log!("4738 {:?}", x);},
-                    }
+                      }) as Box<dyn FnMut(_)>);
+                      slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+                      closure.forget();
+                    }*/
+                    container.append_child(&slider)?;
                   }
                   x => {log!("4739 {:?}", x);},
                 }
