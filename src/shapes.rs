@@ -140,3 +140,40 @@ pub fn render_rectangle(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canva
   Ok(())
 }
 
+pub fn render_text(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>, wasm_core: *mut WasmCore) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  for row in 1..=parameters_table_brrw.rows {
+    match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y))) {
+      (Ok(Value::String(text_value)), Ok(Value::F32(x)), Ok(Value::F32(y))) => {
+        let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+        let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+        let line_width = get_line_width(&parameters_table_brrw,row);
+        let text = get_property(&parameters_table_brrw, row, *TEXT);
+
+        context.save();
+        context.set_fill_style(&JsValue::from_str(&fill));
+        context.set_line_width(line_width);
+        match parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*FONT)) {
+          Ok(Value::Reference(font_table_id)) => {
+            let font_table = unsafe{(*wasm_core).core.get_table_by_id(*font_table_id.unwrap()).unwrap()};
+            let font_table_brrw = font_table.borrow();
+            let size = get_property(&font_table_brrw, row, *SIZE);
+            let face = match &*get_property(&font_table_brrw, row, *FACE) {
+              "" => "sans-serif".to_string(),
+              x => x.to_string(),
+            };
+            let font_string = format!("{}px {}", size, face);
+            context.set_font(&*font_string);
+          }
+          _ => (),
+        }
+        context.fill_text(&text,x.into(),y.into());
+        context.restore();
+      }
+      x => {log!("5858 {:?}", x);},
+    }
+  }
+  Ok(())
+}

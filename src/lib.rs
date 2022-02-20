@@ -995,16 +995,8 @@ impl WasmCore {
           if shape == *CIRCLE { render_circle(parameters_table,&context)?; }
           else if shape == *ELLIPSE { render_ellipse(parameters_table,&context)?; }
           else if shape == *ARC { render_arc(parameters_table,&context)?; }
-          else if shape == *RECTANGLE { render_rectangle(parameters_table,&context)?; }
-          // ---------------------
-          // RENDER TEXT
-          // ---------------------    
-          else if shape == *TEXT {
-
-          }
-          // ---------------------
-          // RENDER A PATH
-          // ---------------------    
+          else if shape == *RECTANGLE { render_rectangle(parameters_table,&context)?; } 
+          else if shape == *TEXT { render_text(parameters_table,&context,wasm_core)?; }
           else if shape == *PATH {
           let parameters_table_brrw = parameters_table.borrow();
            context.save();
