@@ -124,3 +124,30 @@ pub fn connect_remote_core(&mut self, address: String) -> Result<(), JsValue> {
     self.websocket = Some(ws);*/
     Ok(())
   }*/
+
+
+      /*match &self.websocket {
+      Some(ws) => {
+        for changed_register in &self.core.runtime.aggregate_changed_this_round {
+          match (self.remote_tables.get(&changed_register),self.core.get_table(*changed_register.table_id.unwrap())) {
+            (Some(listeners),Some(table)) => {
+              let mut changes = vec![];
+              let mut values = vec![];
+              for i in 1..=table.rows {
+                for j in 1..=table.columns {
+                  let (value, _) = table.get_unchecked(i,j);
+                  values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                }
+              }
+              changes.push(Change::Set{table_id: table.id, values});                  
+              let txn = Transaction{changes};
+              let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+              // Send the transaction over the websocket to the remote core
+              ws.send_with_u8_array(&message);
+            }
+            _ => (),
+          }
+        }       
+      }
+      _ => (),
+    }*/
