@@ -259,3 +259,79 @@ pub fn render_arc_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canvas
   }
   Ok(())
 }  
+
+pub fn render_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>, wasm_core: *mut WasmCore) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  context.save();
+  let rotate = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE)) {
+    Ok(Value::F32(rotate)) => rotate,
+    _ => 0.0,
+  };
+  let (tx,ty) = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*TRANSLATE)) {
+    Ok(Value::Reference(TableId::Global(translate_table_id))) => {
+      let translate_table = unsafe{(*wasm_core).core.get_table_by_id(translate_table_id).unwrap()};
+      let translate_table_brrw = translate_table.borrow();
+      match (translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+              translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+        (Ok(Value::F32(tx)),Ok(Value::F32(ty))) => (tx,ty),
+        _ => (0.0,0.0),
+      }
+    },
+    _ => (0.0,0.0),
+  };
+  context.translate(tx.into(),ty.into());
+  context.rotate(rotate as f64 * PI / 180.0);
+  context.begin_path();
+  
+  match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
+          parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+    (Ok(Value::Reference(start_point_id)), Ok(Value::Reference(TableId::Global(contains_table_id)))) => {
+      let start_point_table = unsafe{(*wasm_core).core.get_table_by_id(*start_point_id.unwrap()).unwrap()};
+      let start_point_table_brrw = start_point_table.borrow();
+      match (start_point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+              start_point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+          (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
+            context.move_to(x.into(), y.into());
+          // Get the contained shapes
+          let contains_table = unsafe{(*wasm_core).core.get_table_by_id(contains_table_id).unwrap()};
+          let contains_table_brrw = contains_table.borrow();
+          for i in 1..=contains_table_brrw.rows {
+            match (contains_table_brrw.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
+                    contains_table_brrw.get(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
+              (Ok(Value::String(shape)),Ok(Value::Reference(TableId::Global(parameters_table_id)))) => {
+                let shape = shape.hash();
+                let parameters_table = unsafe{(*wasm_core).core.get_table_by_id(parameters_table_id).unwrap()};
+                // Render a path element
+                if shape == *LINE { render_line(parameters_table,&context)?; }
+                else if shape == *QUADRATIC { render_quadratic(parameters_table,&context,wasm_core)?; }
+                else if shape == *BEZIER { render_bezier(parameters_table,&context,wasm_core)?; }
+                else if shape == *ARC { render_arc_path(parameters_table,&context,wasm_core)?; }
+              }
+              x => {log!("5864 {:?}", x);},
+            }
+          }
+        }
+        x => {log!("5865 {:?}", x);},
+      }
+      let stroke = get_stroke_string(&parameters_table_brrw,1, *STROKE);
+      let line_width = get_line_width(&parameters_table_brrw,1);
+
+      // Only set the stroke if it's included as a field
+      match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
+        Ok(_) => {
+          let fill = get_stroke_string(&parameters_table_brrw,1, *FILL);
+          context.set_fill_style(&JsValue::from_str(&fill));
+          context.fill();
+        }
+        _ => (),
+      }
+      context.set_stroke_style(&JsValue::from_str(&stroke));
+      context.set_line_width(line_width);
+      context.stroke();
+    }
+    x => {log!("5866 {:?}", x);},
+  }
+  //context.close_path();
+  context.restore();
+  Ok(())
+}
