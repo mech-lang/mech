@@ -323,9 +323,6 @@ impl WasmCore {
     let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
     let len = blocks.len();
     self.core.insert_blocks(blocks);
-
-    println!("{:?}", self.core.blocks);
-
     //self.add_timers();
     self.add_apps();
     self.render();
