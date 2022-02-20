@@ -220,6 +220,7 @@ impl Table {
   pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
     if col < self.cols && row < self.rows {
       match &self.data[col] {
+        Column::Time(column_f32) => Ok(Value::Time(column_f32.borrow()[row])),
         Column::F32(column_f32) => Ok(Value::F32(column_f32.borrow()[row])),
         Column::F64(column_f64) => Ok(Value::F64(column_f64.borrow()[row])),
         Column::U8(column_u8) => Ok(Value::U8(column_u8.borrow()[row])),
@@ -236,7 +237,10 @@ impl Table {
         Column::String(column_string) => Ok(Value::String(column_string.borrow()[row].clone())),
         Column::Ref(column_ref) => Ok(Value::Reference(column_ref.borrow()[row].clone())),
         Column::Empty => Ok(Value::Empty),
-        _ => Err(MechError::GenericError(1209)),
+        x => {
+          println!("{:?}", x);
+          Err(MechError::GenericError(1209))
+        },
       }
     } else {
       Err(MechError::GenericError(1211))
@@ -294,9 +298,13 @@ impl Table {
   }
 
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
+    println!("{:?} {:?} {:?} {:?}", self, row, col, val);
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
-        (Column::F32(column_f32), Value::F32(value_f32)) => column_f32.borrow_mut()[row] = value_f32,
+        (Column::Time(column_f32), Value::Time(value_f32)) |
+        (Column::F32(column_f32), Value::F32(value_f32)) => {
+          column_f32.borrow_mut()[row] = value_f32;
+        },
         (Column::F64(column_f64), Value::F64(value_f64)) => column_f64.borrow_mut()[row] = value_f64,
         (Column::U8(column_u8), Value::U8(value_u8)) => column_u8.borrow_mut()[row] = value_u8,
         (Column::U16(column_u16), Value::U16(value_u16)) => column_u16.borrow_mut()[row] = value_u16,
@@ -313,6 +321,7 @@ impl Table {
         (Column::Ref(column_ref), Value::Reference(value_ref)) => column_ref.borrow_mut()[row] = value_ref,
         (Column::Empty, Value::Empty) => (),
         x => {
+          println!("???{:?}", x);
           return Err(MechError::GenericError(1219));
         },
       }
@@ -397,6 +406,12 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::Time(_), ValueKind::Time) => (),
+        (Column::Empty, ValueKind::Time) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::Time(column);
+          self.col_kinds[col] = ValueKind::Time;
         },
         (Column::Empty, ValueKind::F64) => {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));

@@ -28,6 +28,9 @@ lazy_static! {
   pub static ref U16: u64 = hash_str("u16");
   pub static ref U32: u64 = hash_str("u32");
   pub static ref U64: u64 = hash_str("u64");
+  pub static ref HZ: u64 = hash_str("hz");
+  pub static ref MS: u64 = hash_str("ms");
+  pub static ref S: u64 = hash_str("s");
   pub static ref M: u64 = hash_str("m");
   pub static ref KM: u64 = hash_str("km");
   pub static ref HEX: u64 = hash_str("hex");
@@ -772,7 +775,8 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6377));},
           }
-        } else if *kind == *U8 {
+        } 
+        else if *kind == *U8 {
           match bytes.len() {
             1 => {
               t.set_kind(ValueKind::U8)?;
@@ -780,20 +784,64 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6383));},
           }
-        } else if *kind == *F32 {
+        } 
+        else if *kind == *U32 {
           match bytes.len() {
             1..=4 => {
-              t.set_kind(ValueKind::F32)?;
+              t.set_kind(ValueKind::U32)?;
+              while bytes.len() < 4 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
+              let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set_raw(0,0,Value::U32(x))?;
+            }
+            _ => {return Err(MechError::GenericError(6385));},
+          }
+        } 
+        else if *kind == *U64 {
+          match bytes.len() {
+            1..=8 => {
+              t.set_kind(ValueKind::U64)?;
+              while bytes.len() < 8 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
+              let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set_raw(0,0,Value::U64(x))?;
+            }
+            _ => {return Err(MechError::GenericError(6386));},
+          }
+        } 
+        else if *kind == *MS {
+          match bytes.len() {
+            1..=4 => {
+              t.set_kind(ValueKind::Time)?;
               while bytes.len() < 4 {
                 bytes.insert(0,0);
               }
               let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
               let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::F32(x))?;
+              t.set_raw(0,0,Value::Time(x))?;
             }
             _ => {return Err(MechError::GenericError(6377));},
           }
-        } else if *kind == *KM {
+        } 
+        else if *kind == *S {
+          match bytes.len() {
+            1..=4 => {
+              t.set_kind(ValueKind::Time)?;
+              while bytes.len() < 4 {
+                bytes.insert(0,0);
+              }
+              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
+              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
+              t.set_raw(0,0,Value::Time(x * 1000.0))?;
+            }
+            _ => {return Err(MechError::GenericError(6877));},
+          }
+        } 
+        else if *kind == *KM {
           match bytes.len() {
             1..=2 => {
               t.set_kind(ValueKind::U16)?;
@@ -806,7 +854,8 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6387));},
           }
-        } else if *kind == *M {
+        } 
+        else if *kind == *M {
           match bytes.len() {
             1..=2 => {
               t.set_kind(ValueKind::U16)?;
@@ -819,7 +868,8 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6388));},
           }
-        } else if *kind == *DEC {
+        } 
+        else if *kind == *DEC {
           match bytes.len() {
             1 => {
               t.set_col_kind(0, ValueKind::U8)?;
@@ -860,7 +910,8 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6376));},
           }
-        } else if *kind == *HEX {
+        } 
+        else if *kind == *HEX {
           let mut x: u128 = 0;
           t.set_kind(ValueKind::U128)?;
           while bytes.len() < 16 {
@@ -871,7 +922,8 @@ impl Block {
             x = x | half_byte as u128;
           }
           t.set_raw(0,0,Value::U128(x))?;
-        } else {
+        } 
+        else {
           println!("{:?}", kind);
           return Err(MechError::GenericError(6996));
         }

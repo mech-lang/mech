@@ -368,11 +368,13 @@ macro_rules! math_compiler {
                   block.plan.push($op1::<u64>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
                 }
               },
+              ((_,Column::Time(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
+                let mut out_column = block.get_out_column(out, 1, ValueKind::Time)?;
+                if let Column::Time(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+              }
               ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
-                if let Column::F32(out) = out_column {
-                  block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
-                }
+                if let Column::F32(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
               },
               x => {
                 println!("{:?}", x);
