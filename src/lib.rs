@@ -998,31 +998,7 @@ impl WasmCore {
           // ---------------------
           // RENDER AN ELLIPSE
           // --------------------- 
-          else if shape == *ELLIPSE {
-            let parameters_table_brrw = parameters_table.borrow();
-            for row in 1..=parameters_table_brrw.rows {
-              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
-                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(maja)), Ok(Value::F32(mina))) => {
-                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
-                  let line_width = get_line_width(&parameters_table_brrw,row);
-                  context.save();
-                  context.begin_path();
-                  context.ellipse(cx.into(), cy.into(), maja.into(), mina.into(), 0.0, 0.0, 2.0 * PI);
-                  context.set_fill_style(&JsValue::from_str(&fill));
-                  context.fill();
-                  context.set_stroke_style(&JsValue::from_str(&stroke));
-                  context.set_line_width(line_width.into());    
-                  context.stroke();                
-                  context.restore();
-                }
-                x => {log!("5855 {:?}", x);},
-              }   
-            }     
-          } 
+          else if shape == *ELLIPSE { render_ellipse(parameters_table,&context)?; }
           // ---------------------
           // RENDER AN ARC
           // --------------------- 
