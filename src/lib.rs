@@ -1038,23 +1038,14 @@ impl WasmCore {
                         (Ok(Value::String(shape)),Ok(Value::Reference(TableId::Global(parameters_table_id)))) => {
                           let shape = shape.hash();
                           let parameters_table = self.core.get_table_by_id(parameters_table_id).unwrap();
-                          let parameters_table_brrw = parameters_table.borrow();
-                          // -------------------
-                          // PATH LINE
-                          // -------------------
-                          if shape == *LINE {
-                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                              (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
-                                context.line_to(x.into(), y.into());
-                              }
-                              x => {log!("5858 {:?}", x);},
-                            }
-                          }
+                          // Render a path element
+                          if shape == *LINE { render_line(parameters_table,&context)?; }
                           // -------------------
                           // PATH QUADRATIC
                           // -------------------
                           else if shape == *QUADRATIC {
+                            let start_point_table_brrw = start_point_table.borrow();
+                            let parameters_table_brrw = parameters_table.borrow();
                             match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
                                    parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
                               (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
@@ -1079,6 +1070,8 @@ impl WasmCore {
                           // PATH BEZIER
                           // -------------------
                           else if shape == *BEZIER {
+                            let start_point_table_brrw = start_point_table.borrow();
+                            let parameters_table_brrw = parameters_table.borrow();
                             match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINTS)),
                                    parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
                               (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
@@ -1105,6 +1098,8 @@ impl WasmCore {
                           // PATH ARC
                           // -------------------
                           else if shape == *ARC {
+                            let start_point_table_brrw = start_point_table.borrow();
+                            let parameters_table_brrw = parameters_table.borrow();
                             match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
                                    parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
                                    parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*STARTING__ANGLE)),

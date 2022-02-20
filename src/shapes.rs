@@ -177,3 +177,17 @@ pub fn render_text(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
   }
   Ok(())
 }
+
+pub fn render_line(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  for row in 1..=parameters_table_brrw.rows {
+    match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y))) {
+      (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
+        context.line_to(x.into(), y.into());
+      }
+      x => {log!("5859 {:?}", x);},
+    }
+  }
+  Ok(())
+}
