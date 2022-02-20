@@ -45,10 +45,14 @@ use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 use std::sync::Arc;
 
 mod shapes;
+mod elements;
+mod websocket;
 
 static PI: f64 = 3.141592654;
 
 pub use self::shapes::*;
+pub use self::elements::*;
+pub use self::websocket::*;
 
 #[macro_export]
 macro_rules! log {
@@ -158,8 +162,6 @@ pub struct WasmCore {
   images: HashMap<u64, web_sys::HtmlImageElement>,
   canvases: HashSet<u64>,
   /*nodes: HashMap<u64, Vec<u64>>,
-  views: HashSet<u64>,
-  inline_views: HashSet<u64>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashSet<Register>,*/
   event_id: u32,
@@ -239,8 +241,6 @@ impl WasmCore {
       images: HashMap::new(),
       canvases: HashSet::new(),
       /*nodes: HashMap::new(),
-      views: HashSet::new(),
-      inline_views: HashSet::new(),
       websocket: None,
       remote_tables: HashSet::new(),*/
       event_id: 0,
@@ -592,168 +592,13 @@ impl WasmCore {
           match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
             Ok(Value::String(kind)) => {
               let raw_kind = kind.hash();
-              // ---------------------
-              // RENDER A DIV
-              // ---------------------
-              if raw_kind == *DIV {
-                // Get contents
-                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Ok(contents) => {
-                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                    let rendered = self.render_value(contents)?;
-                    rendered.set_id(&format!("{:?}",element_id));
-                    container.append_child(&rendered)?;
-                  }
-                  x => {log!("4733 {:?}",x);},
-                }
-              }
-              // ---------------------
-              // RENDER A LINK
-              // ---------------------
-              else if raw_kind == *A {
-                match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*HREF)),
-                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-                  (Ok(Value::String(href)), Ok(contents)) => {
-                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                    let rendered = self.render_value(contents)?;
-                    rendered.set_id(&format!("{:?}",element_id));
-                    let mut link: web_sys::Element = self.document.create_element("a")?;
-                    link.set_attribute("href",&href.to_string())?;
-                    let element_id = href.hash();
-                    link.set_id(&format!("{:?}",element_id));
-                    link.append_child(&rendered)?;
-                    container.append_child(&link)?;
-                  }
-                  x => {log!("4734 {:?}", x);},
-                }
-              }
-              // ---------------------
-              // RENDER AN IMG
-              // ---------------------
-              else if raw_kind == *IMG {
-                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*SRC)) {
-                  Ok(Value::String(src)) => {
-                    let mut img: web_sys::Element = self.document.create_element("img")?;
-                    let element_id = hash_str(&format!("img-{:?}-{:?}", table.id, row));
-                    img.set_attribute("src", &src.to_string())?;
-                    img.set_id(&format!("{:?}",element_id));
-                    container.append_child(&img)?;
-                  }
-                  x => {log!("4735 {:?}", x);},
-                }
-              }
-              // ---------------------
-              // RENDER A BUTTON
-              // ---------------------
-              else if raw_kind == *BUTTON {
-                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Ok(contents) => {
-                    let element_id = hash_str(&format!("div-{:?}-{:?}", table.id, row));
-                    let rendered = self.render_value(contents)?;
-                    rendered.set_id(&format!("{:?}",element_id));
-                    let mut button: web_sys::Element = self.document.create_element("button")?;
-                    let element_id = hash_str(&format!("button-{:?}-{:?}", table.id, row));
-                    button.set_id(&format!("{:?}",element_id));
-                    button.append_child(&rendered)?;
-                    container.append_child(&button)?;
-                  }
-                  x => {log!("4736 {:?}", x);},
-                }
-              }
-              // ---------------------
-              // RENDER A SLIDER
-              // ---------------------
-              else if raw_kind == *SLIDER {
-                match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
-                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
-                      table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-                  (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::F32(value))) => {
-                    let mut slider: web_sys::Element = self.document.create_element("input")?;
-                    let mut slider: web_sys::HtmlInputElement = slider
-                      .dyn_into::<web_sys::HtmlInputElement>()
-                      .map_err(|_| ())
-                      .unwrap();
-                    let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
-                    slider.set_attribute("type","range");
-                    slider.set_attribute("min", &format!("{}", min));
-                    slider.set_attribute("max", &format!("{}", max));
-                    slider.set_attribute("value", &format!("{}", value));
-                    slider.set_attribute("row", &format!("{}", row));
-                    slider.set_attribute("table", &format!("{}", table.id));
-                    slider.set_id(&format!("{:?}",element_id));
-                    // Changes to the slider update its own table
-                    {
-                      let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-                        match event.target() {
-                          Some(target) => {
-                            let slider = target.dyn_ref::<web_sys::HtmlInputElement>().unwrap();
-                            let slider_value = slider.value().parse::<i32>().unwrap();
-                            let table_id = slider.get_attribute("table").unwrap().parse::<u64>().unwrap();
-
-                            let row = slider.get_attribute("row").unwrap().parse::<usize>().unwrap();
-                            let change = Change::Set((
-                               table_id, vec![ 
-                                (TableIndex::Index(row),
-                                TableIndex::Alias(*VALUE),
-                                Value::F32(slider_value as f32))]));
-                            // TODO Make this safe
-                            unsafe {
-                              let table = (*wasm_core).core.get_table_by_id(table_id).unwrap();
-                              (*wasm_core).changes.push(change);
-                              (*wasm_core).process_transaction();
-                              (*wasm_core).render();
-                            }
-                          },
-                          _ => (),
-                        }
-                      }) as Box<dyn FnMut(_)>);
-                      slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
-                      closure.forget();
-                    }
-                    container.append_child(&slider)?;
-                  }
-                  x => {log!("4739 {:?}", x);},
-                }
-              }
-              // ---------------------
-              // RENDER A CANVAS
-              // ---------------------
-              else if raw_kind == *CANVAS {
-                match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                  Ok(contents) => {
-                    let mut canvas: web_sys::Element = self.document.create_element("canvas")?;
-                    let element_id = hash_str(&format!("canvas-{:?}-{:?}", table.id, row));
-                    canvas.set_id(&format!("{:?}",element_id));
-                    self.canvases.insert(element_id);
-                    // Is there a parameters field?
-                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)) {
-                      Ok(Value::Reference(parameters_table_id)) => {
-                        let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
-                        let parameters_table_brrw = parameters_table.borrow();
-                        match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)),
-                        parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH))) {
-                          (Ok(Value::F32(height)),Ok(Value::F32(width))) => {
-                            canvas.set_attribute("height", &format!("{}",height));
-                            canvas.set_attribute("width", &format!("{}",width));
-                          }
-                          x => {log!("4740 {:?}", x);},
-                        }
-                        let table = self.core.get_table_by_id(*HTML_APP);
-                      }
-                      x => {log!("4741 {:?}", x);},
-                    }
-                    // Add the contents
-                    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-                      Ok(Value::Reference(contains_table_id)) => {
-                        canvas.set_attribute("elements", &format!("{}",contains_table_id.unwrap()));
-                      }
-                      x => {log!("4742 {:?}", x);},
-                    }
-                    container.append_child(&canvas)?;
-                  }
-                  x => {log!("4743 {:?}", x);},
-                }
-              }
+              // Render an HTML element
+              if raw_kind == *DIV { render_div(table,&mut container,wasm_core)?; }
+              else if raw_kind == *A { render_link(table,&mut container,wasm_core)?; }
+              else if raw_kind == *IMG { render_img(table,&mut container,wasm_core)?; }
+              else if raw_kind == *BUTTON { render_button(table,&mut container,wasm_core)?; }
+              else if raw_kind == *SLIDER { render_slider(table,&mut container,wasm_core)?; }
+              else if raw_kind == *CANVAS { render_canvas(table,&mut container,wasm_core)?; }
               else {
                 log!("4744 {:?}", raw_kind);
               }
