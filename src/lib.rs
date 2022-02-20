@@ -289,9 +289,8 @@ impl WasmCore {
                             )));           
                             (*wasm_core).process_transaction();
                             (*wasm_core).render();
-                            //let table = (*wasm_core).core.get_table_by_name("mouth").unwrap();
-                            //log!("{:?}", table);
-                            //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(4)).unwrap());
+                            let table = (*wasm_core).core.get_table("time/timer").unwrap();
+                            log!("{:?}", table);
                           }
                           x => {log!("6868 {:?}", x);},
                         }
@@ -341,33 +340,8 @@ impl WasmCore {
   }
 
   pub fn process_transaction(&mut self) {
-    
     self.core.process_transaction(&self.changes);
-    /*match &self.websocket {
-      Some(ws) => {
-        for changed_register in &self.core.runtime.aggregate_changed_this_round {
-          match (self.remote_tables.get(&changed_register),self.core.get_table(*changed_register.table_id.unwrap())) {
-            (Some(listeners),Some(table)) => {
-              let mut changes = vec![];
-              let mut values = vec![];
-              for i in 1..=table.rows {
-                for j in 1..=table.columns {
-                  let (value, _) = table.get_unchecked(i,j);
-                  values.push((TableIndex::Index(i), TableIndex::Index(j), value));
-                }
-              }
-              changes.push(Change::Set{table_id: table.id, values});                  
-              let txn = Transaction{changes};
-              let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-              // Send the transaction over the websocket to the remote core
-              ws.send_with_u8_array(&message);
-            }
-            _ => (),
-          }
-        }       
-      }
-      _ => (),
-    }*/
+    // TODO Send changes to remote cores via websocket
     self.changes.clear();
   }
 
@@ -550,16 +524,16 @@ impl WasmCore {
                       let app = self.render_value(contents)?;
                       drawing_area.append_child(&app)?;
                     }
-                    _ => {log!("No drawing area found.");},
+                    x => log!("4845 {:?}",x),
                   }
                 }
               }
             }
-            _ => {log!("No root or contents column in #html/app");}, // TODO Alert user there is no root and or contents column in app_table
+            x => log!("4846 {:?}",x),
           }  
         }
       }
-      _ => {log!("No #html/app in the core");}, // TODO Alert the user no app was found
+      x => log!("4847 {:?}",x),
     }
     Ok(())
   }
@@ -577,14 +551,24 @@ impl WasmCore {
         let contents_string = chars.to_string();
         div.set_inner_html(&contents_string);
       },
+      Value::F32(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::F64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U128(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U32(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U16(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U8(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I128(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I32(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I16(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I8(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::Reference(TableId::Global(table_id)) => {
         let table = self.core.get_table_by_id(table_id).unwrap();
         let rendered_ref = self.make_element(&table.borrow())?;
         div.append_child(&rendered_ref)?;
       }
-      _ => (), // TODO Unhandled Boolean and Empty
+      x => log!("4745 {:?}",x),
     }
     Ok(div)
   }
