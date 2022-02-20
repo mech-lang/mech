@@ -218,3 +218,29 @@ pub fn render_quadratic(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canva
   }
   Ok(())
 }
+
+pub fn render_bezier(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>, wasm_core: *mut WasmCore) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINTS)),
+        parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+    (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
+      let control__point_table = unsafe{(*wasm_core).core.get_table_by_id(control__point_table_id).unwrap()};
+      let end__point_table = unsafe{(*wasm_core).core.get_table_by_id(end__point_table_id).unwrap()};
+      let control__point_table_brrw = control__point_table.borrow();
+      let end__point_table_brrw = end__point_table.borrow();
+      match (control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+            control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+            control__point_table_brrw.get(&TableIndex::Index(2), &TableIndex::Alias(*X)),
+            control__point_table_brrw.get(&TableIndex::Index(2), &TableIndex::Alias(*Y)),
+            end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+            end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+        (Ok(Value::F32(cx1)),Ok(Value::F32(cy1)),Ok(Value::F32(cx2)),Ok(Value::F32(cy2)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
+          context.bezier_curve_to(cx1.into(), cy1.into(), cx2.into(), cy2.into(), ex.into(), ey.into());
+        }
+        x => {log!("5861 {:?}", x);},
+      }
+    }
+    x => {log!("5862 {:?}", x);},
+  }
+  Ok(())
+  }
