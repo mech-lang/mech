@@ -44,6 +44,12 @@ use mech_math::{
 use web_sys::{ErrorEvent, MessageEvent, WebSocket, FileReader};
 use std::sync::Arc;
 
+mod shapes;
+
+static PI: f64 = 3.141592654;
+
+pub use self::shapes::*;
+
 #[macro_export]
 macro_rules! log {
   ( $( $t:tt )* ) => {
@@ -692,8 +698,8 @@ impl WasmCore {
       },
       Value::U16(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U8(x) => div.set_inner_html(&format!("{:?}", x)),
-      Value::Reference(table_id) => {
-        let table = self.core.get_table_by_id(*table_id.unwrap()).unwrap();
+      Value::Reference(TableId::Global(table_id)) => {
+        let table = self.core.get_table_by_id(table_id).unwrap();
         let rendered_ref = self.make_element(&table.borrow())?;
         div.append_child(&rendered_ref)?;
       }
@@ -957,10 +963,10 @@ impl WasmCore {
       }
     };
     
-    let get_line_width = |parameters_table: &Table, row: usize| {
+    let get_line_width = |parameters_table: &Table, row: usize| -> f64 {
       match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
-        Ok(Value::F32(line_width)) => line_width,
-        _ => 1.0
+        Ok(Value::F32(line_width)) => line_width as f64,
+        _ => 1.0,
       }
     };
 
@@ -985,22 +991,27 @@ impl WasmCore {
         (Ok(Value::String(shape)), Ok(Value::Reference(parameters_table_id))) => {
           let shape = shape.hash();
           let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
-          let parameters_table_brrw = parameters_table.borrow();
           // ---------------------
           // RENDER A CIRCLE
           // ---------------------
-          if shape == *CIRCLE {
+          if shape == *CIRCLE { render_circle(parameters_table,&context)?; }
+          // ---------------------
+          // RENDER AN ELLIPSE
+          // --------------------- 
+          else if shape == *ELLIPSE {
+            let parameters_table_brrw = parameters_table.borrow();
             for row in 1..=parameters_table_brrw.rows {
               match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
-                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(radius))) => {
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
+                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(maja)), Ok(Value::F32(mina))) => {
                   let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
                   let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
                   let line_width = get_line_width(&parameters_table_brrw,row);
                   context.save();
                   context.begin_path();
-                  context.arc(cx.into(), cy.into(), radius.into(), 0.0, 2.0 * 3.141592654);
+                  context.ellipse(cx.into(), cy.into(), maja.into(), mina.into(), 0.0, 0.0, 2.0 * PI);
                   context.set_fill_style(&JsValue::from_str(&fill));
                   context.fill();
                   context.set_stroke_style(&JsValue::from_str(&stroke));
@@ -1008,117 +1019,90 @@ impl WasmCore {
                   context.stroke();                
                   context.restore();
                 }
-                x => {log!("5854 {:?}", x);},
+                x => {log!("5855 {:?}", x);},
+              }   
+            }     
+          } 
+          // ---------------------
+          // RENDER AN ARC
+          // --------------------- 
+          else if shape == *ARC {
+            let parameters_table_brrw = parameters_table.borrow();
+            for row in 1..=parameters_table_brrw.rows {
+              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
+                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(sa)), Ok(Value::F32(ea)), Ok(Value::F32(radius))) => {
+                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+                  let line_width = get_line_width(&parameters_table_brrw,row);
+                  context.save();
+                  context.begin_path();
+                  context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
+                  context.set_fill_style(&JsValue::from_str(&fill));
+                  context.fill();
+                  context.set_stroke_style(&JsValue::from_str(&stroke));
+                  context.set_line_width(line_width);    
+                  context.stroke();                
+                  context.restore();
+                }
+                x => {log!("5856 {:?}", x);},
+
               }        
             }
           }
           // ---------------------
-          // RENDER AN ELLIPSE
-          // --------------------- 
-          /*else if shape == *ELLIPSE {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MAJOR__AXIS)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*MINOR__AXIS))) {
-                (Some(cx), Some(cy), Some(maja), Some(mina)) => {
-                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table,row, *FILL);
-                  let line_width = get_line_width(&parameters_table,row);
-                  let pi = 3.141592654;
-                  context.save();
-                  context.begin_path();
-                  context.ellipse(cx, cy, maja, mina, 0.0, 0.0, 2.0 * pi);
-                  context.set_fill_style(&JsValue::from_str(&fill));
-                  context.fill();
-                  context.set_stroke_style(&JsValue::from_str(&stroke));
-                  context.set_line_width(line_width);    
-                  context.stroke();                
-                  context.restore();
-                }
-                _ => {
-                  log!("Missing center-x, center-y, or radius");
-                },
-              }   
-            }     
-          // ---------------------
-          // RENDER AN ARC
-          // --------------------- 
-          } else if shape == *ARC {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
-                     parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
-                (Some(cx), Some(cy), Some(sa), Some(ea), Some(radius)) => {
-                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table,row, *FILL);
-                  let line_width = get_line_width(&parameters_table,row);
-                  let pi = 3.141592654;
-                  context.save();
-                  context.begin_path();
-                  context.arc(cx, cy, radius, sa * pi / 180.0, ea * pi / 180.0);
-                  context.set_fill_style(&JsValue::from_str(&fill));
-                  context.fill();
-                  context.set_stroke_style(&JsValue::from_str(&stroke));
-                  context.set_line_width(line_width);    
-                  context.stroke();                
-                  context.restore();
-                }
-                _ => {
-                  log!("Missing center-x, center-y, or radius");
-                },
-              }        
-            }
-          // ---------------------
           // RENDER A RECTANGLE
           // ---------------------    
-          } else if shape == *RECTANGLE {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
-                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
-                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*WIDTH)),
-                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*HEIGHT))) {
-                (Some(x), Some(y), Some(width), Some(height)) => {
-                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table,row, *FILL);
-                  let line_width = get_line_width(&parameters_table,row);
+          else if shape == *RECTANGLE {
+            let parameters_table_brrw = parameters_table.borrow();
+            for row in 1..=parameters_table_brrw.rows {
+              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                    parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+                    parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*WIDTH)),
+                    parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*HEIGHT))) {
+                (Ok(Value::F32(x)), Ok(Value::F32(y)), Ok(Value::F32(width)), Ok(Value::F32(height))) => {
+                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+                  let line_width = get_line_width(&parameters_table_brrw,row);
                   context.save();
                   context.set_fill_style(&JsValue::from_str(&fill));
-                  context.fill_rect(x,y,width,height);
+                  context.fill_rect(x.into(),y.into(),width.into(),height.into());
                   context.set_stroke_style(&JsValue::from_str(&stroke));
                   context.set_line_width(line_width);
-                  context.stroke_rect(x,y,width,height);
+                  context.stroke_rect(x.into(),y.into(),width.into(),height.into());
                   context.restore();
                 }
-                _ => {
-                  log!("Missing x, y, width, height");
-                },
+                x => {log!("5857 {:?}", x);},
               }
-              }
+            }
+          }
           // ---------------------
           // RENDER TEXT
           // ---------------------    
-          } else if shape == *TEXT {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
-                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
-                    parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y))) {
-                (Some((text_value,_)), Some(x), Some(y)) => {
-                  let stroke = get_stroke_string(&parameters_table,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table,row, *FILL);
-                  let line_width = get_line_width(&parameters_table,row);
-                  let text = get_property(&parameters_table, row, *TEXT);
+          else if shape == *TEXT {
+            let parameters_table_brrw = parameters_table.borrow();
+            for row in 1..=parameters_table_brrw.rows {
+              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+                    parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                    parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y))) {
+                (Ok(Value::String(text_value)), Ok(Value::F32(x)), Ok(Value::F32(y))) => {
+                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+                  let line_width = get_line_width(&parameters_table_brrw,row);
+                  let text = get_property(&parameters_table_brrw, row, *TEXT);
 
                   context.save();
                   context.set_fill_style(&JsValue::from_str(&fill));
                   context.set_line_width(line_width);
-                  match parameters_table.get_reference(&TableIndex::Index(row), &TableIndex::Alias(*FONT)) {
-                    Some(font_table_id) => {
-                      let font_table = self.core.get_table(font_table_id).unwrap();
-                      let size = get_property(&font_table, row, *SIZE);
-                      let face = match &*get_property(&font_table, row, *FACE) {
+                  match parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*FONT)) {
+                    Ok(Value::Reference(font_table_id)) => {
+                      let font_table = self.core.get_table_by_id(*font_table_id.unwrap()).unwrap();
+                      let font_table_brrw = font_table.borrow();
+                      let size = get_property(&font_table_brrw, row, *SIZE);
+                      let face = match &*get_property(&font_table_brrw, row, *FACE) {
                         "" => "sans-serif".to_string(),
                         x => x.to_string(),
                       };
@@ -1127,139 +1111,149 @@ impl WasmCore {
                     }
                     _ => (),
                   }
-                  context.fill_text(&text,x,y);
+                  context.fill_text(&text,x.into(),y.into());
                   context.restore();
                 }
-                _ => {
-                  log!("Missing x, y, text");
-                },
+                x => {log!("5858 {:?}", x);},
               }
             }
+          }
           // ---------------------
           // RENDER A PATH
           // ---------------------    
-          } else if shape == *PATH {
-            context.save();
-            let rotate = match parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE)) {
-              Some(rotate) => rotate,
-              None => 0.0,
+          else if shape == *PATH {
+          let parameters_table_brrw = parameters_table.borrow();
+           context.save();
+            let rotate = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE)) {
+              Ok(Value::F32(rotate)) => rotate,
+              _ => 0.0,
             };
-            let (tx,ty) = match parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*TRANSLATE)) {
-              Some(translate_table_id) => {
-                let translate_table = self.core.get_table(translate_table_id).unwrap();
-                match (translate_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                       translate_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                  (Some(tx),Some(ty)) => (tx,ty),
+            let (tx,ty) = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*TRANSLATE)) {
+              Ok(Value::Reference(TableId::Global(translate_table_id))) => {
+                let translate_table = self.core.get_table_by_id(translate_table_id).unwrap();
+                let translate_table_brrw = translate_table.borrow();
+                match (translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                       translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                  (Ok(Value::F32(tx)),Ok(Value::F32(ty))) => (tx,ty),
                   _ => (0.0,0.0),
                 }
               },
-              None => (0.0,0.0),
+              _ => (0.0,0.0),
             };
-            context.translate(tx,ty);
-            context.rotate(rotate * 3.141592654 / 180.0);
+            context.translate(tx.into(),ty.into());
+            context.rotate(rotate as f64 * PI / 180.0);
             context.begin_path();
-            match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
-                   parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
-              (Some(start_point_id), Some(contains_table_id)) => {
-                let start_point_table = self.core.get_table(start_point_id).unwrap();
-                match (start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                        start_point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                  (Some(x), Some(y)) => {
-                    context.move_to(x, y);
+            
+            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
+                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTAINS))) {
+              (Ok(Value::Reference(start_point_id)), Ok(Value::Reference(TableId::Global(contains_table_id)))) => {
+                let start_point_table = self.core.get_table_by_id(*start_point_id.unwrap()).unwrap();
+                let start_point_table_brrw = start_point_table.borrow();
+                match (start_point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                       start_point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                    (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
+                      context.move_to(x.into(), y.into());
                     // Get the contained shapes
-                    let contains_table = self.core.get_table(contains_table_id).unwrap();
-                    for i in 1..=contains_table.rows {
-                      match (contains_table.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
-                              contains_table.get_reference(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
-                        (Some((shape,_)),Some(parameters_table_id)) => {
-                          let shape = shape.as_raw();
+                    let contains_table = self.core.get_table_by_id(contains_table_id).unwrap();
+                    let contains_table_brrw = contains_table.borrow();
+                    for i in 1..=contains_table_brrw.rows {
+                      match (contains_table_brrw.get(&TableIndex::Index(i), &TableIndex::Alias(*SHAPE)),
+                             contains_table_brrw.get(&TableIndex::Index(i), &TableIndex::Alias(*PARAMETERS))) {
+                        (Ok(Value::String(shape)),Ok(Value::Reference(TableId::Global(parameters_table_id)))) => {
+                          let shape = shape.hash();
+                          let parameters_table = self.core.get_table_by_id(parameters_table_id).unwrap();
+                          let parameters_table_brrw = parameters_table.borrow();
                           // -------------------
                           // PATH LINE
                           // -------------------
                           if shape == *LINE {
-                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                    parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                              (Some(x), Some(y)) => {
-                                context.line_to(x, y);
+                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                              (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
+                                context.line_to(x.into(), y.into());
                               }
-                              _ => (), // Expected x and y fields
+                              x => {log!("5858 {:?}", x);},
                             }
+                          }
                           // -------------------
                           // PATH QUADRATIC
                           // -------------------
-                          } else if shape == *QUADRATIC {
-                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                            match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
-                                    parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
-                              (Some(control__point_table_id), Some(end__point_table_id)) => {
-                                let control__point_table = self.core.get_table(control__point_table_id).unwrap();
-                                let end__point_table = self.core.get_table(end__point_table_id).unwrap();
-                                match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                        control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                                        end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                        end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                  (Some(cx), Some(cy), Some(ex), Some(ey)) => {
-                                    context.quadratic_curve_to(cx, cy, ex, ey);
+                          else if shape == *QUADRATIC {
+                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                              (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
+                                let control__point_table = self.core.get_table_by_id(control__point_table_id).unwrap();
+                                let end__point_table = self.core.get_table_by_id(end__point_table_id).unwrap();
+                                let control__point_table_brrw = control__point_table.borrow();
+                                let end__point_table_brrw = end__point_table.borrow();
+                                match (control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                       control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                  (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
+                                          context.quadratic_curve_to(cx.into(), cy.into(), ex.into(), ey.into());
                                   }
-                                  _ => (), // Expected x and y fields
+                                  x => {log!("5858 {:?}", x);},
                                 }
                               }
-                              _ => (), // Expected control-point and end-point fields
+                              x => {log!("5858 {:?}", x);},
                             }
-                        // -------------------
-                        // PATH BEZIER
-                        // -------------------
-                        } else if shape == *BEZIER {
-                          let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                          match (parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINTS)),
-                                  parameters_table.get_reference(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
-                            (Some(control__point_table_id), Some(end__point_table_id)) => {
-                              let control__point_table = self.core.get_table(control__point_table_id).unwrap();
-                              let end__point_table = self.core.get_table(end__point_table_id).unwrap();
-                              match (control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                      control__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                                      control__point_table.get_f64(&TableIndex::Index(2), &TableIndex::Alias(*X)),
-                                      control__point_table.get_f64(&TableIndex::Index(2), &TableIndex::Alias(*Y)),
-                                      end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                      end__point_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                (Some(cx1), Some(cy1), Some(cx2), Some(cy2), Some(ex), Some(ey)) => {
-                                  context.bezier_curve_to(cx1, cy1, cx2, cy2, ex, ey);
+                          }
+                          // -------------------
+                          // PATH BEZIER
+                          // -------------------
+                          else if shape == *BEZIER {
+                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINTS)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
+                              (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
+                                let control__point_table = self.core.get_table_by_id(control__point_table_id).unwrap();
+                                let end__point_table = self.core.get_table_by_id(end__point_table_id).unwrap();
+                                let control__point_table_brrw = control__point_table.borrow();
+                                let end__point_table_brrw = end__point_table.borrow();
+                                match (control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                       control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
+                                       control__point_table_brrw.get(&TableIndex::Index(2), &TableIndex::Alias(*X)),
+                                       control__point_table_brrw.get(&TableIndex::Index(2), &TableIndex::Alias(*Y)),
+                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                                  (Ok(Value::F32(cx1)),Ok(Value::F32(cy1)),Ok(Value::F32(cx2)),Ok(Value::F32(cy2)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
+                                    context.bezier_curve_to(cx1.into(), cy1.into(), cx2.into(), cy2.into(), ex.into(), ey.into());
+                                  }
+                                  x => {log!("5858 {:?}", x);},
                                 }
-                                _ => (), // Expected x and y fields
                               }
+                              x => {log!("5858 {:?}", x);},
                             }
-                            _ => (), // Expected control-point and end-point fields
                           }
                           // -------------------
                           // PATH ARC
                           // -------------------
-                          } else if shape == *ARC {
-                            let parameters_table = self.core.get_table(parameters_table_id).unwrap();
-                            match (parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
-                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
-                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*STARTING__ANGLE)),
-                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*ENDING__ANGLE)),
-                                   parameters_table.get_f64(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
-                              (Some(cx), Some(cy), Some(sa), Some(ea), Some(radius)) => {
-                                let pi = 3.141592654;
-                                context.arc(cx, cy, radius, sa * pi / 180.0, ea * pi / 180.0);
+                          else if shape == *ARC {
+                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*STARTING__ANGLE)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ENDING__ANGLE)),
+                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
+                              (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(sa)),Ok(Value::F32(ea)),Ok(Value::F32(radius))) => {
+                                context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
                               }
-                              _ => (), // Expected control-point and end-point fields
+                              x => {log!("5858 {:?}", x);},
                             }
                           }
                         }
-                        _ => log!("Expected shape and parameters"), // TODO Expected shape and parameters fields
+                        x => {log!("5858 {:?}", x);},
                       }
                     }
                   }
-                  _ => (), // TODO Expected x and y not fields
+                  x => {log!("5858 {:?}", x);},
                 }
-                let stroke = get_stroke_string(&parameters_table,1, *STROKE);
-                let line_width = get_line_width(&parameters_table,1);
-                match parameters_table.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
-                  Some(_) => {
-                    let fill = get_stroke_string(&parameters_table,1, *FILL);
+                let stroke = get_stroke_string(&parameters_table_brrw,1, *STROKE);
+                let line_width = get_line_width(&parameters_table_brrw,1);
+
+                // Only set the stroke if it's included as a field
+                match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL))  {
+                  Ok(_) => {
+                    let fill = get_stroke_string(&parameters_table_brrw,1, *FILL);
                     context.set_fill_style(&JsValue::from_str(&fill));
                     context.fill();
                   }
@@ -1269,21 +1263,20 @@ impl WasmCore {
                 context.set_line_width(line_width);
                 context.stroke();
               }
-              (Some(_), None) => log!("Contains is not a reference"),
-              (None, Some(_)) => log!("Start-point is not a reference"),
-              (None, None) => log!("Start-point and Contains are not references"),
+              x => {log!("5858 {:?}", x);},
             }
             //context.close_path();
             context.restore();
+          }
           // ---------------------
           // RENDER AN IMAGE
           // --------------------- 
-          } else if shape == *IMAGE {
-            for row in 1..=parameters_table.rows {
-              match (parameters_table.get_string(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*X)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
-                      parameters_table.get_f64(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
+          /*else if shape == *IMAGE {
+            for row in 1..=parameters_table_brrw.rows {
+              match (parameters_table_brrw.get_string(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
+                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
                 (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
                   let source_hash = hash_str(&source_string);
                   match self.images.entry(source_hash) {
@@ -1313,10 +1306,10 @@ impl WasmCore {
                     }
                   }
                 }
-                _ => {log!("Missing source, x, y, or rotation");},
+                x => {log!("5858 {:?}", x);},
               }
             }
-          }*/ 
+          }*/
           else {
             log!("5854");
           }
