@@ -1041,23 +1041,7 @@ impl WasmCore {
                           if shape == *LINE { render_line(parameters_table,&context)?; }
                           else if shape == *QUADRATIC { render_quadratic(parameters_table,&context,wasm_core)?; }
                           else if shape == *BEZIER { render_bezier(parameters_table,&context,wasm_core)?; }
-                          // -------------------
-                          // PATH ARC
-                          // -------------------
-                          else if shape == *ARC {
-                            let start_point_table_brrw = start_point_table.borrow();
-                            let parameters_table_brrw = parameters_table.borrow();
-                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__X)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CENTER__Y)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*STARTING__ANGLE)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ENDING__ANGLE)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
-                              (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(sa)),Ok(Value::F32(ea)),Ok(Value::F32(radius))) => {
-                                context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
-                              }
-                              x => {log!("5863 {:?}", x);},
-                            }
-                          }
+                          else if shape == *ARC { render_arc_path(parameters_table,&context,wasm_core)?; }
                         }
                         x => {log!("5864 {:?}", x);},
                       }
