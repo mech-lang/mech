@@ -675,33 +675,6 @@ impl WasmCore {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
-  
-    // Define a function to make this a lot easier
-    let get_stroke_string = |parameters_table: &Table, row: usize, alias: u64| { 
-      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
-        Ok(Value::U128(stroke)) => {
-          let mut color_string: String = "#".to_string();
-          color_string = format!("{}{:02x}", color_string, stroke);
-          color_string
-        }
-        _ => "#000000".to_string(),
-      }
-    };
-    
-    let get_line_width = |parameters_table: &Table, row: usize| -> f64 {
-      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
-        Ok(Value::F32(line_width)) => line_width as f64,
-        _ => 1.0,
-      }
-    };
-
-    let get_property = |parameters_table: &Table, row: usize, alias: u64| {
-      match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
-        Ok(Value::F32(property)) => format!("{:?}", property),
-        Ok(Value::String(property)) => property.to_string(),
-        _ => "".to_string()
-      }
-    };
 
     // Get the elements table for this canvas
     let elements_table_id_string = canvas.get_attribute("elements").unwrap();
