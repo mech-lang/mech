@@ -991,44 +991,10 @@ impl WasmCore {
         (Ok(Value::String(shape)), Ok(Value::Reference(parameters_table_id))) => {
           let shape = shape.hash();
           let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
-          // ---------------------
-          // RENDER A CIRCLE
-          // ---------------------
+          // Render a shape
           if shape == *CIRCLE { render_circle(parameters_table,&context)?; }
-          // ---------------------
-          // RENDER AN ELLIPSE
-          // --------------------- 
           else if shape == *ELLIPSE { render_ellipse(parameters_table,&context)?; }
-          // ---------------------
-          // RENDER AN ARC
-          // --------------------- 
-          else if shape == *ARC {
-            let parameters_table_brrw = parameters_table.borrow();
-            for row in 1..=parameters_table_brrw.rows {
-              match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
-                     parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
-                (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(sa)), Ok(Value::F32(ea)), Ok(Value::F32(radius))) => {
-                  let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
-                  let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
-                  let line_width = get_line_width(&parameters_table_brrw,row);
-                  context.save();
-                  context.begin_path();
-                  context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
-                  context.set_fill_style(&JsValue::from_str(&fill));
-                  context.fill();
-                  context.set_stroke_style(&JsValue::from_str(&stroke));
-                  context.set_line_width(line_width);    
-                  context.stroke();                
-                  context.restore();
-                }
-                x => {log!("5856 {:?}", x);},
-
-              }        
-            }
-          }
+          else if shape == *ARC { render_arc(parameters_table,&context)?; }
           // ---------------------
           // RENDER A RECTANGLE
           // ---------------------    

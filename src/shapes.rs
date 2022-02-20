@@ -86,3 +86,31 @@ pub fn render_ellipse(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasR
   }     
   Ok(())
 }
+
+pub fn render_arc(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  for row in 1..=parameters_table_brrw.rows {
+    match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__X)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CENTER__Y)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*STARTING__ANGLE)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ENDING__ANGLE)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*RADIUS))) {
+      (Ok(Value::F32(cx)), Ok(Value::F32(cy)), Ok(Value::F32(sa)), Ok(Value::F32(ea)), Ok(Value::F32(radius))) => {
+        let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+        let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+        let line_width = get_line_width(&parameters_table_brrw,row);
+        context.save();
+        context.begin_path();
+        context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
+        context.set_fill_style(&JsValue::from_str(&fill));
+        context.fill();
+        context.set_stroke_style(&JsValue::from_str(&stroke));
+        context.set_line_width(line_width);    
+        context.stroke();                
+        context.restore();
+      }
+      x => {log!("5856 {:?}", x);},
+    }        
+  }
+  Ok(())
+}
