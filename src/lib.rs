@@ -165,7 +165,7 @@ pub struct WasmCore {
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashSet<Register>,*/
   event_id: u32,
-  //timers: HashMap<usize,Closure<dyn FnMut()>>,
+  timers: HashMap<usize,Closure<dyn FnMut()>>,
   apps: HashSet<u64>,
   window: web_sys::Window,
   document: web_sys::Document,
@@ -244,66 +244,76 @@ impl WasmCore {
       websocket: None,
       remote_tables: HashSet::new(),*/
       event_id: 0,
-      //timers: HashMap::new(),
+      timers: HashMap::new(),
       apps: HashSet::new(),
       window: web_sys::window().unwrap(),
       document: web_sys::window().unwrap().document().unwrap(),
     }
   }
   
-  pub fn add_timers(&mut self) {
-    /*
-    let window = web_sys::window().expect("no global `window` exists");
+  pub fn add_timers(&mut self) -> Result<(),JsValue> {
    
-    match self.core.get_table(hash_str("time/timer")) {
-      Some(timers_table) => {
-        for row in 1..=timers_table.rows {
+    let window = web_sys::window().expect("no global `window` exists");
+    
+    match self.core.get_table("time/timer") {
+      Ok(timers_table) => {
+        let timers_table_brrw = timers_table.borrow();
+        for row in 1..=timers_table_brrw.rows {
           match self.timers.entry(row) {
             Entry::Occupied(timer) => {
-       
+              // TODO Do something here to alert that the timer was already added
             },
             Entry::Vacant(v) => {
-              self.changes.push(Change::Set{
-                table_id: *TIME_TIMER, values: vec![
+              self.changes.push(Change::Set((
+                *TIME_TIMER, vec![
                 (TableIndex::Index(1), 
                 TableIndex::Alias(*TICKS),
-                Value::from_u64(0))],
-              });             
+                Value::U64(0))],
+              )));             
               self.process_transaction();
-              let (period, _) = timers_table.get_u64(&TableIndex::Index(row), &TableIndex::Alias(*PERIOD)).unwrap();
-
-              let wasm_core = self as *mut WasmCore;
-              let closure = || { 
-                Closure::wrap(Box::new(move || {
-                  unsafe{
-                    let table = (*wasm_core).core.get_table(hash_str("time/timer")).unwrap();
-                    let (ticks, _) = table.get_u64(&TableIndex::Index(1), &TableIndex::Alias(*TICKS)).unwrap();
-                    (*wasm_core).changes.push(Change::Set{
-                      table_id: *TIME_TIMER, values: vec![
-                      (TableIndex::Index(row), 
-                      TableIndex::Alias(*TICKS),
-                      Value::from_u64(ticks+1))],
-                    });           
-                    (*wasm_core).process_transaction();
-                    (*wasm_core).render();
-                    //let table = (*wasm_core).core.get_table_by_name("mouth").unwrap();
-                    //log!("{:?}", table);
-                    //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(4)).unwrap());
-                  }
-                }) as Box<dyn FnMut()>)
-              };
-              let timer_callback = closure();
-              let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
-                timer_callback.as_ref().unchecked_ref(),
-                period as i32
-              ).unwrap();
-              self.timers.insert(row,timer_callback);
+              match timers_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PERIOD)) {
+                Ok(Value::I32(period)) => {
+                  let wasm_core = self as *mut WasmCore;
+                  let closure = || { 
+                    Closure::wrap(Box::new(move || {
+                      unsafe{
+                        let timer_table = (*wasm_core).core.get_table("time/timer").unwrap();
+                        let timer_table_brrw = timer_table.borrow();
+                        match timer_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*TICKS)) {
+                          Ok(Value::U64(ticks)) => {
+                            (*wasm_core).changes.push(Change::Set((
+                              *TIME_TIMER, vec![
+                              (TableIndex::Index(row), 
+                              TableIndex::Alias(*TICKS),
+                              Value::U64(ticks+1))],
+                            )));           
+                            (*wasm_core).process_transaction();
+                            (*wasm_core).render();
+                            //let table = (*wasm_core).core.get_table_by_name("mouth").unwrap();
+                            //log!("{:?}", table);
+                            //log!("{:?}", table.get_f32(&TableIndex::Index(1),&TableIndex::Index(4)).unwrap());
+                          }
+                          x => {log!("6868 {:?}", x);},
+                        }
+                      }
+                    }) as Box<dyn FnMut()>)
+                  };
+                  let timer_callback = closure();
+                  let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
+                    timer_callback.as_ref().unchecked_ref(),
+                    period
+                  ).unwrap();
+                  self.timers.insert(row,timer_callback);
+                }
+                x => {log!("6868 {:?}", x);},
+              }
             }
           }
         }
       }
-      _ => (),
-    }    */
+      x => {log!("6868 {:?}", x);},
+    }   
+    Ok(())
   }
 
   pub fn load_compressed_blocks(&mut self, encoded_miniblocks: String) {
