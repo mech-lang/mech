@@ -209,10 +209,10 @@ pub fn render_quadratic(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canva
           (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
             context.quadratic_curve_to(cx.into(), cy.into(), ex.into(), ey.into());
           }
-          x => {log!("5660 {:?}", x);},
+          x => {log!("5860 {:?}", x);},
         }
       }
-      x => {log!("5860 {:?}", x);},
+      x => {log!("5861 {:?}", x);},
     }
   }
   Ok(())
@@ -236,10 +236,10 @@ pub fn render_bezier(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRe
         (Ok(Value::F32(cx1)),Ok(Value::F32(cy1)),Ok(Value::F32(cx2)),Ok(Value::F32(cy2)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
           context.bezier_curve_to(cx1.into(), cy1.into(), cx2.into(), cy2.into(), ex.into(), ey.into());
         }
-        x => {log!("5861 {:?}", x);},
+        x => {log!("5862 {:?}", x);},
       }
     }
-    x => {log!("5862 {:?}", x);},
+    x => {log!("5863 {:?}", x);},
   }
   Ok(())
 }
@@ -254,7 +254,7 @@ pub fn render_arc_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canvas
     (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(sa)),Ok(Value::F32(ea)),Ok(Value::F32(radius))) => {
       context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
     }
-    x => {log!("5863 {:?}", x);},
+    x => {log!("5864 {:?}", x);},
   }
   Ok(())
 }  
@@ -306,11 +306,11 @@ pub fn render_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
                 else if shape == *BEZIER { render_bezier(parameters_table,&context,wasm_core)?; }
                 else if shape == *ARC { render_arc_path(parameters_table,&context,wasm_core)?; }
               }
-              x => {log!("5864 {:?}", x);},
+              x => {log!("5865 {:?}", x);},
             }
           }
         }
-        x => {log!("5865 {:?}", x);},
+        x => {log!("5866 {:?}", x);},
       }
       let stroke = get_stroke_string(&parameters_table_brrw,1, *STROKE);
       let line_width = get_line_width(&parameters_table_brrw,1);
@@ -328,9 +328,51 @@ pub fn render_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
       context.set_line_width(line_width);
       context.stroke();
     }
-    x => {log!("5866 {:?}", x);},
+    x => {log!("5867 {:?}", x);},
   }
   //context.close_path();
   context.restore();
+  Ok(())
+}
+
+pub fn render_image(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>, wasm_core: *mut WasmCore) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  for row in 1..=parameters_table_brrw.rows {
+    match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
+      (Ok(Value::String(source)), Ok(Value::F32(x)), Ok(Value::F32(y)), Ok(Value::F32(rotation))) => {
+        let source_hash = source.hash();
+        match unsafe{(*wasm_core).images.entry(source_hash)} {
+          Entry::Occupied(img_entry) => {
+            let img = img_entry.get();
+            let ix = img.width() as f64 / 2.0;
+            let iy = img.height() as f64 / 2.0;
+            context.save();
+            context.translate(x.into(), y.into());
+            context.rotate(rotation as f64 * PI / 180.0);
+            context.draw_image_with_html_image_element(&img, -ix as f64, -iy as f64);
+            context.restore();
+          },
+          Entry::Vacant(v) => {
+            let mut img = web_sys::HtmlImageElement::new().unwrap();
+            img.set_src(&source.to_string());
+            {
+              let closure = Closure::wrap(Box::new(move || {
+                unsafe {
+                  (*wasm_core).render();
+                }
+              }) as Box<FnMut()>);
+              img.set_onload(Some(closure.as_ref().unchecked_ref()));
+              v.insert(img);
+              closure.forget();
+            }
+          }
+        }
+      }
+      x => {log!("5868 {:?}", x);},
+    }
+  }
   Ok(())
 }

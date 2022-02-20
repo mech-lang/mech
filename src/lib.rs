@@ -155,7 +155,7 @@ pub struct WasmCore {
   core: mech_core::Core,
   //programs: Vec<Program>,
   changes: Vec<Change>,
-  //images: HashMap<u64, web_sys::HtmlImageElement>,*/
+  images: HashMap<u64, web_sys::HtmlImageElement>,
   canvases: HashSet<u64>,
   /*nodes: HashMap<u64, Vec<u64>>,
   views: HashSet<u64>,
@@ -236,7 +236,7 @@ impl WasmCore {
       core: mech,
       //programs: Vec::new(),
       changes: Vec::new(),
-      //images: HashMap::new(),*/
+      images: HashMap::new(),
       canvases: HashSet::new(),
       /*nodes: HashMap::new(),
       views: HashSet::new(),
@@ -868,53 +868,12 @@ impl WasmCore {
           else if shape == *RECTANGLE { render_rectangle(parameters_table,&context)?; } 
           else if shape == *TEXT { render_text(parameters_table,&context,wasm_core)?; }
           else if shape == *PATH { render_path(parameters_table,&context,wasm_core)?; }
-          // ---------------------
-          // RENDER AN IMAGE
-          // --------------------- 
-          /*else if shape == *IMAGE {
-            for row in 1..=parameters_table_brrw.rows {
-              match (parameters_table_brrw.get_string(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
-                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
-                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
-                      parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
-                (Some((source_string,_)), Some(x), Some(y), Some(rotation)) => {
-                  let source_hash = hash_str(&source_string);
-                  match self.images.entry(source_hash) {
-                    Entry::Occupied(img_entry) => {
-                      let img = img_entry.get();
-                      let ix = img.width() as f64 / 2.0;
-                      let iy = img.height() as f64 / 2.0;
-                      context.save();
-                      context.translate(x, y);
-                      context.rotate(rotation * 3.141592654 / 180.0);
-                      context.draw_image_with_html_image_element(&img, -ix, -iy);
-                      context.restore();
-                    },
-                    Entry::Vacant(v) => {
-                      let mut img = web_sys::HtmlImageElement::new().unwrap();
-                      img.set_src(&source_string.to_owned());
-                      {
-                        let closure = Closure::wrap(Box::new(move || {
-                          unsafe {
-                            (*wasm_core).render();
-                          }
-                        }) as Box<FnMut()>);
-                        img.set_onload(Some(closure.as_ref().unchecked_ref()));
-                        v.insert(img);
-                        closure.forget();
-                      }
-                    }
-                  }
-                }
-                x => {log!("12312321321 {:?}", x);},
-              }
-            }
-          }*/
+          else if shape == *IMAGE { render_image(parameters_table,&context,wasm_core)?; }
           else {
-            log!("5854");
+            log!("5869");
           }
         },
-        x => {log!("5854 {:?}", x);},
+        x => {log!("5870 {:?}", x);},
       }
     }
     Ok(())
