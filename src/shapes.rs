@@ -114,3 +114,29 @@ pub fn render_arc(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRende
   }
   Ok(())
 }
+
+pub fn render_rectangle(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRenderingContext2d>) -> Result<(),JsValue> {
+  let parameters_table_brrw = parameters_table.borrow();
+  for row in 1..=parameters_table_brrw.rows {
+    match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*WIDTH)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*HEIGHT))) {
+      (Ok(Value::F32(x)), Ok(Value::F32(y)), Ok(Value::F32(width)), Ok(Value::F32(height))) => {
+        let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+        let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+        let line_width = get_line_width(&parameters_table_brrw,row);
+        context.save();
+        context.set_fill_style(&JsValue::from_str(&fill));
+        context.fill_rect(x.into(),y.into(),width.into(),height.into());
+        context.set_stroke_style(&JsValue::from_str(&stroke));
+        context.set_line_width(line_width);
+        context.stroke_rect(x.into(),y.into(),width.into(),height.into());
+        context.restore();
+      }
+      x => {log!("5857 {:?}", x);},
+    }
+  }
+  Ok(())
+}
+
