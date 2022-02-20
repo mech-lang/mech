@@ -704,6 +704,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => block.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopySS::<u8>{arg: arg.clone(), ix: 0, out: out.clone()}),
+              (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: 0, out: out.clone()}),
               (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
               (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: 0, out: out.clone()}),
               (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),

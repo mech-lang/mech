@@ -285,7 +285,7 @@ impl Table {
       TableIndex::Alias(alias) => {
         match self.column_alias_to_ix.get(alias) {
           Some(ix) => *ix,
-          None => {return Err(MechError::GenericError(2384))}
+          None => {return Err(MechError::GenericError(2389))}
         }
       }
       _ => 0,
