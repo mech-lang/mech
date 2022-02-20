@@ -956,7 +956,6 @@ impl WasmCore {
         Ok(Value::U128(stroke)) => {
           let mut color_string: String = "#".to_string();
           color_string = format!("{}{:02x}", color_string, stroke);
-          log!("{:?}", color_string);
           color_string
         }
         _ => "#000000".to_string(),
@@ -1040,32 +1039,7 @@ impl WasmCore {
                           let parameters_table = self.core.get_table_by_id(parameters_table_id).unwrap();
                           // Render a path element
                           if shape == *LINE { render_line(parameters_table,&context)?; }
-                          // -------------------
-                          // PATH QUADRATIC
-                          // -------------------
-                          else if shape == *QUADRATIC {
-                            let start_point_table_brrw = start_point_table.borrow();
-                            let parameters_table_brrw = parameters_table.borrow();
-                            match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*CONTROL__POINT)),
-                                   parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*END__POINT))) {
-                              (Ok(Value::Reference(TableId::Global(control__point_table_id))),Ok(Value::Reference(TableId::Global(end__point_table_id)))) => {
-                                let control__point_table = self.core.get_table_by_id(control__point_table_id).unwrap();
-                                let end__point_table = self.core.get_table_by_id(end__point_table_id).unwrap();
-                                let control__point_table_brrw = control__point_table.borrow();
-                                let end__point_table_brrw = end__point_table.borrow();
-                                match (control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                       control__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y)),
-                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
-                                       end__point_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
-                                  (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
-                                          context.quadratic_curve_to(cx.into(), cy.into(), ex.into(), ey.into());
-                                  }
-                                  x => {log!("5858 {:?}", x);},
-                                }
-                              }
-                              x => {log!("5858 {:?}", x);},
-                            }
-                          }
+                          else if shape == *QUADRATIC { render_quadratic(parameters_table,&context,wasm_core)?; }
                           // -------------------
                           // PATH BEZIER
                           // -------------------
@@ -1088,10 +1062,10 @@ impl WasmCore {
                                   (Ok(Value::F32(cx1)),Ok(Value::F32(cy1)),Ok(Value::F32(cx2)),Ok(Value::F32(cy2)),Ok(Value::F32(ex)),Ok(Value::F32(ey))) => {
                                     context.bezier_curve_to(cx1.into(), cy1.into(), cx2.into(), cy2.into(), ex.into(), ey.into());
                                   }
-                                  x => {log!("5858 {:?}", x);},
+                                  x => {log!("5861 {:?}", x);},
                                 }
                               }
-                              x => {log!("5858 {:?}", x);},
+                              x => {log!("5862 {:?}", x);},
                             }
                           }
                           // -------------------
@@ -1108,15 +1082,15 @@ impl WasmCore {
                               (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(sa)),Ok(Value::F32(ea)),Ok(Value::F32(radius))) => {
                                 context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
                               }
-                              x => {log!("5858 {:?}", x);},
+                              x => {log!("5863 {:?}", x);},
                             }
                           }
                         }
-                        x => {log!("5858 {:?}", x);},
+                        x => {log!("5864 {:?}", x);},
                       }
                     }
                   }
-                  x => {log!("5858 {:?}", x);},
+                  x => {log!("5865 {:?}", x);},
                 }
                 let stroke = get_stroke_string(&parameters_table_brrw,1, *STROKE);
                 let line_width = get_line_width(&parameters_table_brrw,1);
@@ -1134,7 +1108,7 @@ impl WasmCore {
                 context.set_line_width(line_width);
                 context.stroke();
               }
-              x => {log!("5858 {:?}", x);},
+              x => {log!("5866 {:?}", x);},
             }
             //context.close_path();
             context.restore();
@@ -1177,7 +1151,7 @@ impl WasmCore {
                     }
                   }
                 }
-                x => {log!("5858 {:?}", x);},
+                x => {log!("5862 {:?}", x);},
               }
             }
           }*/
