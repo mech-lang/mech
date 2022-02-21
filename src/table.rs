@@ -299,7 +299,6 @@ impl Table {
   }
 
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
-    println!("{:?} {:?} {:?} {:?}", self, row, col, val);
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::Length(c), Value::Length(v)) |
@@ -472,7 +471,6 @@ impl Table {
         Err(MechError::GenericError(2825))
       }
       TableIndex::Index(ix) => {
-        println!("{:?}", ix);
         if *ix <= self.cols { 
           Ok(self.data[*ix-1].clone())
         } else {

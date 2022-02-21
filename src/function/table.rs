@@ -633,6 +633,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             _ => {
               for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
                 //println!("{:?} {:?}", arg_col, arg_ix);
+                return Err(MechError::GenericError(6967));
               }
             }
           }
