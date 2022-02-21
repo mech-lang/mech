@@ -500,6 +500,7 @@ impl Compiler {
         }        
       }
       Node::AnonymousTableDefine{children} => {
+        println!("ATD");
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
@@ -550,6 +551,7 @@ impl Compiler {
           }
           header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: 1});
           body_tfms.append(&mut result_tfms);
+          println!("$$$$$${:?}", args);
           body_tfms.push(Transformation::Function{
             name: *TABLE_VERTICAL__CONCATENATE,
             arguments: args,
@@ -558,8 +560,11 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
+          println!("DOWNHEREE!!!!");
           let mut result = self.compile_nodes(&table_children)?;
           tfms.append(&mut result);          
+          println!("{:?}", tfms);
+          println!("===============================");
         }
         match &tfms[0] {
           Transformation::NewTable{table_id,..} |
@@ -743,7 +748,10 @@ impl Compiler {
                               indices.push(TableIndex::Table(*table_id));
                             }
                             Transformation::NumberLiteral{kind, bytes} => {
-                              let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+                              let mut value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+                              println!("!!!!!!!!!!!2 {:?}", value);
+                              println!("!!!!!!!!!!!2 {:?}", value.as_f32());
+                              println!("!!!!!!!!!!!2 {:?}", value.as_u64());
                               if indices.len() == 2 && indices[0] == TableIndex::All {
                                 indices[0] = TableIndex::Index(value.as_usize());
                               } else {
@@ -798,7 +806,10 @@ impl Compiler {
                         indices.push(TableIndex::Table(*table_id));
                       }
                       Transformation::NumberLiteral{kind, bytes} => {
-                        let value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+                        let mut value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
+                        println!("!!!!!!!!!!! {:?}", value);
+                        println!("!!!!!!!!!!!2 {:?}", value.as_f32());
+                        println!("!!!!!!!!!!!2 {:?}", value.as_u64());
                         if indices.len() == 2 && indices[0] == TableIndex::All {
                           indices[0] = TableIndex::Index(value.as_usize());
                         } else {

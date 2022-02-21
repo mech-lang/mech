@@ -293,7 +293,7 @@ block
             3 4
             5 6]
 block
-  #test = #ball.x + #ball.y", Value::F32(3.0));
+  #test = stats/sum(column: #ball.x + #ball.y)", Value::F32(21.0));
 
 test_mech!(math_add_matrices,"
 block
