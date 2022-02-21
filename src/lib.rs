@@ -5,6 +5,7 @@
 #![feature(drain_filter)]
 #![feature(get_mut_unchecked)]
 #![allow(dead_code)]
+#![allow(warnings)]
 
 extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;

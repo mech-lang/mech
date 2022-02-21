@@ -12,7 +12,12 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  let parse_tree = parser::parse(r#"#test = 400<m> + 1<km>"#)?;
+  let parse_tree = parser::parse(r#"
+block
+  #app = [2 [5 7]]
+  
+block
+  #test = #app{2}{2}"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -31,10 +36,10 @@ fn main() -> Result<(),MechError> {
 
   /*for i in 1..=ticks {
     let txn = vec![
-      Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(0), TableIndex::Index(1), Value::U8(i))])),
+      Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(i as u64))])),
     ];
     core.process_transaction(&txn)?;
-    println!("{:#?}", core.get_table("balls").unwrap().borrow());
+    println!("{:#?}", core.get_table("ball").unwrap().borrow());
   }
   println!("{:#?}", core.get_table("test").unwrap().borrow());*/
 
@@ -43,8 +48,12 @@ fn main() -> Result<(),MechError> {
 
   println!("{:#?}", core);
 
-  println!("Answer:");
-  println!("{:#?}", core.get_table("test").unwrap().borrow());
+  
+  if let Ok(table) = core.get_table("test") {
+    println!("Answer:");
+    println!("{:#?}", table.borrow());
+  }
+  
 
   Ok(())
 }

@@ -767,6 +767,27 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(21.0)); 
   
+
+test_mech!(append_arbitrary_types_x,"
+block
+  #x = [|x y z|]
+
+block
+  #x += [y: 10, x: 99<u64>]
+
+block
+  #test = #x.x", Value::U64(99)); 
+    
+test_mech!(append_arbitrary_types_y,"
+block
+  #x = [|x y z|]
+
+block
+  #x += [y: 10, x: 99<u64>]
+
+block
+  #test = #x.y", Value::F32(10.0)); 
+
 // ## Logic
 
 test_mech!(logic_and,"
