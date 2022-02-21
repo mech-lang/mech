@@ -299,6 +299,7 @@ impl Table {
   }
 
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
+    println!("{:?} {:?} {:?} {:?}", self, row, col, val);
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::Length(c), Value::Length(v)) |

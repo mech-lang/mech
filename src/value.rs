@@ -76,6 +76,29 @@ impl Value {
     Value::String(MechString::from_string(string.to_string()))
   }
 
+  pub fn kind(&self) -> ValueKind {
+    match &self {
+      Value::U8(_) => ValueKind::U8,
+      Value::U16(_) => ValueKind::U16,
+      Value::U32(_) => ValueKind::U32,
+      Value::U64(_) => ValueKind::U64,
+      Value::U128(_) => ValueKind::U128,
+      Value::I8(_) => ValueKind::I8,
+      Value::I16(_) => ValueKind::I16,
+      Value::I32(_) => ValueKind::I32,
+      Value::I64(_) => ValueKind::I64,
+      Value::I128(_) => ValueKind::I128,
+      Value::Time(_) => ValueKind::Time,
+      Value::Length(_) => ValueKind::Length,
+      Value::F32(_) => ValueKind::F32,
+      Value::F64(_) => ValueKind::F64,
+      Value::Bool(_) => ValueKind::Bool,
+      Value::Reference(_) => ValueKind::Reference,
+      Value::String(_) => ValueKind::String,
+      Value::Empty => ValueKind::Empty,
+    }
+  }
+  
 }
 
 impl fmt::Debug for Value {

@@ -1,5 +1,7 @@
 #![feature(get_mut_unchecked)]
 #![feature(concat_idents)]
+#![allow(warnings)]
+
 
 extern crate core as rust_core;
 extern crate hashbrown;
@@ -170,7 +172,10 @@ impl Column {
   pub fn get_f32(&self) -> Result<ColumnV<f32>,MechError> {
     match self {
       Column::F32(col) => Ok(col.clone()),
-      x => {return Err(MechError::GenericError(8189));},
+      x => {
+        println!("{:?}", x);
+        return Err(MechError::GenericError(8189));
+      },
     }
   }
 
@@ -562,7 +567,7 @@ impl BoxPrinter {
           middle += &boxed_line;
         }
         LineKind::Table(table) => {
-          if table.rows == 0 || table.cols == 0 {
+          if table.cols == 0 {
             continue;
           }
           let mut column_widths = table.column_widths.clone();

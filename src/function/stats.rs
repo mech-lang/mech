@@ -132,11 +132,11 @@ impl MechFunctionCompiler for StatsSum {
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
-    out_brrw.set_kind(ValueKind::F32);
     if arg_name == *COLUMN {
       let arg = block.get_arg_columns(arguments)?[0].clone();
       let out_table = block.get_table(out_table_id)?;
       out_brrw.resize(1,1);
+      out_brrw.set_kind(ValueKind::F32);
       let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
       match arg {
         (_,Column::F32(col),ColumnIndex::Index(_)) => block.plan.push(StatsSumCol::<f32>{col: col.clone(), out: out_col.clone()}),
@@ -148,11 +148,13 @@ impl MechFunctionCompiler for StatsSum {
     } else if arg_name == *ROW { 
       let arg_table = block.get_table(&arg_table_id)?;
       out_brrw.resize(arg_table.borrow().rows,1);
+      out_brrw.set_kind(ValueKind::F32);
       let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
       block.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()})
     } else if arg_name == *TABLE {
       let arg_table = block.get_table(&arg_table_id)?;
       out_brrw.resize(1,1);
+      out_brrw.set_kind(ValueKind::F32);
       let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
       block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})
     } else {

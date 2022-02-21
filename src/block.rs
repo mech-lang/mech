@@ -257,7 +257,6 @@ impl Block {
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
           Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
           Column::F32(ix_col) => {
-            println!("!!!!!!!!!!!!!!{:?}",ix_col.borrow()[0] as usize - 1);
             ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
           },
           x => {
@@ -280,7 +279,6 @@ impl Block {
               Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
               Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
               Column::F32(ix_col) => {
-                println!("!!!!!!!!!!!!!!{:?}",ix_col.borrow()[0] as usize - 1);
                 ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
               },
               x => {
@@ -383,7 +381,8 @@ impl Block {
     let (out_table_id, _, _) = out;
     let table = self.get_table(out_table_id)?;
     let mut t = table.borrow_mut();
-    let cols = t.cols;
+    let cols = if t.cols == 0 { 1 } else { t.cols };
+    let rows = if rows == 0 { 1 } else { rows };
     t.resize(rows,cols);
     t.set_col_kind(0, col_kind);
     let column = t.get_column_unchecked(0);
@@ -480,6 +479,7 @@ impl Block {
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
+    println!("{:?}", tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
@@ -487,12 +487,12 @@ impl Block {
       Transformation::NewTable{table_id, rows, columns} => {
         match table_id {
           TableId::Local(id) => {
-            let mut table = Table::new(*id, 1, 1);
+            let mut table = Table::new(*id, 0, 0);
             table.dictionary = self.strings.clone();
             self.tables.insert_table(table);
           }
           TableId::Global(id) => {
-            let mut table = Table::new(*id, 1, 1);
+            let mut table = Table::new(*id, 0, 0);
             table.dictionary = self.strings.clone();
             self.global_database.borrow_mut().insert_table(table);
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
@@ -502,6 +502,7 @@ impl Block {
       Transformation::TableReference{table_id, reference} => {
         let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
+        table_brrw.resize(1,1);
         table_brrw.set_kind(ValueKind::Reference);
         table_brrw.set_raw(0,0,reference.clone())?;
 
@@ -524,6 +525,10 @@ impl Block {
         else if *kind == *U32 { table_brrw.set_kind(ValueKind::U32); }
         else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
         else if *kind == *F32 { table_brrw.set_kind(ValueKind::F32); }
+        else if *kind == *M { table_brrw.set_kind(ValueKind::Length); }
+        else if *kind == *KM { table_brrw.set_kind(ValueKind::Length); }
+        else if *kind == *S { table_brrw.set_kind(ValueKind::Time); }
+        else if *kind == *MS { table_brrw.set_kind(ValueKind::Time); }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
@@ -532,7 +537,7 @@ impl Block {
           self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
         }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
-        if *column_ix > table.cols - 1  {
+        if table.cols == 0 || *column_ix > (table.cols - 1)  {
           let rows = table.rows;
           table.resize(rows,*column_ix + 1);
         }
@@ -807,6 +812,7 @@ impl Block {
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
+        t.resize(1,1);
         if *kind == *U8 {
           t.set_kind(ValueKind::U8)?;
           t.set_raw(0,0,Value::U8(num.as_u8()))?;
@@ -892,6 +898,7 @@ impl Block {
       Transformation::Constant{table_id, value} => {
         let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
+        table_brrw.resize(1,1);
         match &value {
           Value::Bool(_) => {table_brrw.set_col_kind(0, ValueKind::Bool);},
           Value::String(_) => {table_brrw.set_col_kind(0, ValueKind::String);},

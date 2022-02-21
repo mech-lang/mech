@@ -410,6 +410,7 @@ impl MechFunction for CopyT {
   fn solve(&mut self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
+
     out_brrw.resize(arg_brrw.rows, arg_brrw.cols);
     for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
       out_brrw.set_col_kind(col, kind.clone());
@@ -432,61 +433,6 @@ impl MechFunction for CopyT {
     box_drawing.add_line(format!("{:#?}", &self.out.borrow()));
     box_drawing.print()
   }
-}
-
-// AppendRow Table : Table
-#[derive(Debug)]
-pub struct AppendRowT {
-  pub arg: ArgTable, pub out: OutTable
-}
-
-impl MechFunction for AppendRowT {
-  fn solve(&mut self) {
-    let mut out_brrw = self.out.borrow_mut();
-    let arg_brrw = self.arg.borrow();
-    let orows = out_brrw.rows;
-    let ocols = out_brrw.cols;
-    let arows = arg_brrw.rows;
-    out_brrw.resize(orows + arows, ocols);
-    if arg_brrw.has_col_aliases() {
-      for col in 0..arg_brrw.cols {
-        for row in 0..arows {
-          let value = arg_brrw.get_raw(row,col).unwrap();
-          let alias = arg_brrw.column_ix_to_alias[col];
-          match out_brrw.column_alias_to_ix.get(&alias) {
-            Some(col_ix) => {out_brrw.set_raw(orows + row,*col_ix,value);}
-            None => (), // TODO Error
-          }
-        }
-      }
-    } else {
-      for col in 0..arg_brrw.cols {
-        for row in 0..arows {
-          let value = arg_brrw.get_raw(row,col).unwrap();
-          out_brrw.set_raw(orows + row,col,value);
-        }
-      }
-    }
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-// AppendRow Table : Table
-#[derive(Debug)]
-pub struct AppendRowSV {
-  pub arg: ArgTable, pub ix: usize,  pub out: OutTable
-}
-
-impl MechFunction for AppendRowSV {
-  fn solve(&mut self) {
-    let mut out_brrw = self.out.borrow_mut();
-    let arg_brrw = self.arg.borrow();
-    let orows = out_brrw.rows;
-    out_brrw.resize(orows + 1, 1);
-    let value = arg_brrw.get_linear(self.ix).unwrap();
-    out_brrw.set_raw(orows,0,value);
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 pub struct TableVerticalConcatenate{}
@@ -752,6 +698,7 @@ impl MechFunctionCompiler for TableSplit {
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
+    out_brrw.resize(1,1);
     out_brrw.set_col_kind(0,ValueKind::Reference);
     match arg_shapes[0] {
       TableShape::Matrix(rows,cols) => {
@@ -838,6 +785,64 @@ impl MechFunctionCompiler for TableRange {
   }
 }
 
+// AppendRow Table : Table
+#[derive(Debug)]
+pub struct AppendRowT {
+  pub arg: ArgTable, pub out: OutTable
+}
+
+impl MechFunction for AppendRowT {
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let arg_brrw = self.arg.borrow();
+    let orows = out_brrw.rows;
+    let ocols = if out_brrw.cols == 0 {1} else {out_brrw.cols};
+    let arows = arg_brrw.rows;
+    out_brrw.resize(orows + arows, ocols);
+    if arg_brrw.has_col_aliases() {
+      for (alias,ix) in arg_brrw.column_alias_to_ix.iter() {
+        for row in 0..arows {
+          let value = arg_brrw.get_raw(row,*ix).unwrap();
+          let col_ix = match out_brrw.column_alias_to_ix.get(&alias) {
+            Some(col_ix) => *col_ix,
+            _ => 0,
+          };
+          out_brrw.set_col_kind(col_ix,value.kind());
+          out_brrw.set_raw(orows + row,col_ix,value);
+        }
+      }
+    } else {
+      for col in 0..arg_brrw.cols {
+        for row in 0..arows {
+          let value = arg_brrw.get_raw(row,col).unwrap();
+          out_brrw.set_col_kind(col,value.kind());
+          out_brrw.set_raw(orows + row,col,value);
+        }
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// AppendRow Table : Table
+#[derive(Debug)]
+pub struct AppendRowSV {
+  pub arg: ArgTable, pub ix: usize,  pub out: OutTable
+}
+
+impl MechFunction for AppendRowSV {
+  fn solve(&mut self) {
+    let mut out_brrw = self.out.borrow_mut();
+    let arg_brrw = self.arg.borrow();
+    let orows = out_brrw.rows;
+    out_brrw.resize(orows + 1, 1);
+    let value = arg_brrw.get_linear(self.ix).unwrap();
+    out_brrw.set_col_kind(0,value.kind());
+    out_brrw.set_raw(orows,0,value);
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 pub struct TableAppend{}
 impl MechFunctionCompiler for TableAppend {
 
@@ -853,20 +858,6 @@ impl MechFunctionCompiler for TableAppend {
 
     let src_table = block.get_table(&src_table_id)?;
     let dest_table = block.get_table(dest_table_id)?;
-
-    {
-      let mut src_table_brrw = src_table.borrow_mut();
-      let mut dest_table_brrw = dest_table.borrow_mut();
-      match dest_table_brrw.kind() {
-        ValueKind::Empty => {
-          dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
-          dest_table_brrw.set_kind(src_table_brrw.kind());
-          dest_table_brrw.rows = 0;
-        },
-        x => {
-        }
-      }
-    }
 
     let dest_shape = {dest_table.borrow().shape()};
     match (arg_shape,arow_ix,dest_shape) {

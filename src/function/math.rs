@@ -348,6 +348,7 @@ macro_rules! math_compiler {
         match (&arg_shapes[0],&arg_shapes[1]) {
           (TableShape::Scalar, TableShape::Scalar) => {
             let mut argument_scalars = block.get_arg_columns(arguments)?;
+            resize_one(block,out);
             match (&argument_scalars[0], &argument_scalars[1]) {
               ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
@@ -407,7 +408,6 @@ macro_rules! math_compiler {
           (TableShape::Column(rows), TableShape::Scalar) => {
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
-
             let out_column = block.get_out_column(out, *rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }

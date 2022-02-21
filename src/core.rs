@@ -130,7 +130,7 @@ impl Core {
           }
         }
         Change::NewTable{table_id, rows, columns} => {
-          let table = Table::new(*table_id,1,1);
+          let table = Table::new(*table_id,0,0);
           self.database.borrow_mut().insert_table(table)?;
           match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
             Some(mut ublocks) => {

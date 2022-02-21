@@ -30,3 +30,11 @@ pub trait MechFunction {
   fn solve(&mut self);
   fn to_string(&self) -> String;
 }
+
+pub fn resize_one(block: &mut Block, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+  let (out_table_id,_,_) = out;
+  let out_table = block.get_table(out_table_id)?;
+  let mut out_brrw = out_table.borrow_mut();
+  out_brrw.resize(1,1);
+  Ok(())
+}

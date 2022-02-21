@@ -232,6 +232,7 @@ macro_rules! compare_compiler {
         let arg_dims = block.get_arg_dims(&arguments)?;
         match (&arg_dims[0],&arg_dims[1]) {
           (TableShape::Scalar, TableShape::Scalar) => {
+            resize_one(block,out);
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
@@ -291,6 +292,7 @@ macro_rules! compare_eq_compiler {
         let arg_dims = block.get_arg_dims(&arguments)?;
         match (&arg_dims[0],&arg_dims[1]) {
           (TableShape::Scalar, TableShape::Scalar) => {
+            resize_one(block,out);
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {

@@ -50,8 +50,8 @@ impl MechFunctionCompiler for SetAll {
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
-    out_brrw.set_col_kind(0,ValueKind::Bool);
     out_brrw.resize(1,1);
+    out_brrw.set_col_kind(0,ValueKind::Bool);
     let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
     if arg_name == *COLUMN {
       match arg_column {
@@ -70,8 +70,8 @@ impl MechFunctionCompiler for SetAny {
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
-    out_brrw.set_col_kind(0,ValueKind::Bool);
     out_brrw.resize(1,1);
+    out_brrw.set_col_kind(0,ValueKind::Bool);
     let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
     if arg_name == *COLUMN {
       match arg_column {
