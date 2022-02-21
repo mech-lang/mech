@@ -480,7 +480,6 @@ impl Block {
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
-    println!("{:?}",tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
@@ -803,7 +802,7 @@ impl Block {
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
-        let mut num = NumberLiteral{kind: *kind, bytes: bytes.to_vec()};
+        let mut num = NumberLiteral::new(*kind, bytes.to_vec());
         let mut bytes = bytes.clone();
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 

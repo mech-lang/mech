@@ -138,6 +138,10 @@ pub struct NumberLiteral {
 
 impl NumberLiteral {
 
+  pub fn new(kind: u64, bytes: Vec<u8>) -> NumberLiteral {
+    NumberLiteral{kind,bytes}
+  }
+
   fn is_float(&self) -> bool {
     if self.kind == *F32 || self.kind == *F32L {
       true 
@@ -145,7 +149,6 @@ impl NumberLiteral {
       false
     }
   }
-
 
   pub fn as_u8(&mut self) -> u8 {
     if self.is_float() {
@@ -208,20 +211,19 @@ impl NumberLiteral {
   }
 
   pub fn as_f32(&mut self) -> f32 {    
-    if self.is_float() {
-      while self.bytes.len() < 4 {
-        self.bytes.insert(0,0);
-      }
-      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f32>());
-      let x = f32::from_be_bytes(fbytes.try_into().unwrap());
-      x
-    } else {
-      self.as_u64() as f32
+    while self.bytes.len() < 4 {
+      self.bytes.insert(0,0);
     }
+    let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f32>());
+    f32::from_be_bytes(fbytes.try_into().unwrap())
   }
 
   pub fn as_usize(&mut self) -> usize {    
-    self.as_u64() as usize
+    if self.is_float() {
+      self.as_f32() as usize
+    } else {
+      self.as_u64() as usize
+    }
   }
 
 }
