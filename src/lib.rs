@@ -89,7 +89,6 @@ pub type Reference = Rc<RefCell<Table>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
-  Time(ColumnV<f32>),
   F32(ColumnV<f32>),
   F64(ColumnV<f64>),
   U8(ColumnV<u8>),
@@ -107,6 +106,8 @@ pub enum Column {
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
   Reference((Reference,(ColumnIndex,ColumnIndex))),
+  Time(ColumnV<f32>),
+  Length(ColumnV<f32>),
   Empty,
 }
 
@@ -135,14 +136,15 @@ impl Column {
       Column::I64(col) => Column::I64(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::I128(col) => Column::I128(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::F32(col) => Column::F32(Rc::new(RefCell::new(col.borrow().clone()))),
-      Column::Time(col) => Column::Time(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::F64(col) => Column::F64(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Bool(col) => Column::Bool(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Index(col) => Column::Index(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::String(col) => Column::String(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Ref(col) => Column::Ref(Rc::new(RefCell::new(col.borrow().clone()))),
       Column::Reference(reference) => Column::Reference(reference.clone()),
-      _ => Column::Empty,
+      Column::Time(col) => Column::Time(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Length(col) => Column::Length(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Empty => Column::Empty,
     } 
   }
 
@@ -226,7 +228,7 @@ impl Column {
       Column::I32(col) => col.borrow().len(),
       Column::I64(col) => col.borrow().len(),
       Column::I128(col) => col.borrow().len(),
-      Column::Time(col) |
+      Column::Length(col) | Column::Time(col) |
       Column::F32(col) => col.borrow().len(),
       Column::F64(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().len(),
@@ -254,7 +256,7 @@ impl Column {
       Column::I64(col) => col.borrow().len(),
       Column::I128(col) => col.borrow().len(),
       Column::Ref(col) => col.borrow().len(),
-      Column::Time(col) |
+      Column::Time(col) | Column::Length(col) |
       Column::F32(col) => col.borrow().len(),
       Column::F64(col) => col.borrow().len(),
       Column::Bool(col) => col.borrow().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
@@ -280,7 +282,7 @@ impl Column {
       Column::I32(col) => col.borrow_mut().resize(rows,0),
       Column::I64(col) => col.borrow_mut().resize(rows,0),
       Column::I128(col) => col.borrow_mut().resize(rows,0),
-      Column::Time(col) |
+      Column::Time(col) | Column::Length(col) |
       Column::F32(col) => col.borrow_mut().resize(rows,0.0),
       Column::F64(col) => col.borrow_mut().resize(rows,0.0),
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
@@ -295,7 +297,7 @@ impl Column {
 
   pub fn kind(&self) -> ValueKind {
     match self {
-      Column::Time(_) => ValueKind::Time,
+      
       Column::F32(_) => ValueKind::F32,
       Column::F64(_) => ValueKind::F64,
       Column::U8(_) => ValueKind::U8,
@@ -313,8 +315,9 @@ impl Column {
       Column::Index(_) => ValueKind::Index,
       Column::Ref(_) => ValueKind::Reference,
       Column::Reference((table,index)) => table.borrow().kind(),
+      Column::Time(_) => ValueKind::Time,
+      Column::Length(_) => ValueKind::Length,
       Column::Empty => ValueKind::Empty,
-      _ => ValueKind::Empty,
     }
   }
 

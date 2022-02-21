@@ -839,14 +839,14 @@ impl Block {
           t.set_kind(ValueKind::F32)?;
           t.set_raw(0,0,Value::F32(num.as_f32()))?;
         } 
-        /*else if *kind == *KM {
-          t.set_kind(ValueKind::Distance)?;
-          t.set_raw(0,0,Value::Distance(num.as_f32() * 1000.0))?;
+        else if *kind == *KM {
+          t.set_kind(ValueKind::Length)?;
+          t.set_raw(0,0,Value::Length(num.as_f32() * 1000.0))?;
         } 
         else if *kind == *M {
-          t.set_kind(ValueKind::Distance)?;
-          t.set_raw(0,0,Value::Distance(num.as_f32() * 1000.0))?;
-        }*/
+          t.set_kind(ValueKind::Length)?;
+          t.set_raw(0,0,Value::Length(num.as_f32()))?;
+        }
         else if *kind == *DEC {
           match bytes.len() {
             1 => {
