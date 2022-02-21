@@ -289,8 +289,8 @@ impl WasmCore {
                             )));           
                             (*wasm_core).process_transaction();
                             (*wasm_core).render();
-                            let table = (*wasm_core).core.get_table("time/timer").unwrap();
-                            log!("{:?}", table);
+                            //let table = (*wasm_core).core.get_table("circle").unwrap();
+                            //log!("{:?}", table);
                           }
                           x => {log!("6868 {:?}", x);},
                         }
@@ -332,6 +332,7 @@ impl WasmCore {
     let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
     let len = blocks.len();
     self.core.insert_blocks(blocks);
+    self.core.schedule_blocks();
     self.add_timers();
     self.add_apps();
     self.render();
