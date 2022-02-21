@@ -311,9 +311,8 @@ impl MechFunctionCompiler for MathNegate {
         let mut argument_columns = block.get_arg_columns(arguments)?;
         let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
         match (&argument_columns[0], &out_column) {
-          ((_,Column::I8(arg),_), Column::I8(out)) => {
-            block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });
-          }
+          ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV::<f32>{arg: arg.clone(), out: out.clone() });}
           _ => {return Err(MechError::GenericError(1961));},
         }
       }
@@ -438,11 +437,20 @@ macro_rules! math_compiler {
             out_brrw.resize(1,*cols);
 
             for (col_ix,(_,lhs_column,_)) in lhs_columns.iter().enumerate() {
-              out_brrw.set_col_kind(col_ix, ValueKind::U8);
-              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-              match (lhs_column,&rhs_column,out_col) {
-                (Column::U8(lhs), (_,Column::U8(rhs),_), Column::U8(out)) => {
-                  block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+              match (lhs_column,&rhs_column) {
+                (Column::U8(lhs), (_,Column::U8(rhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U8(out) = out_col {
+                    block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::F32(lhs), (_,Column::F32(rhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::F32);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F32(out) = out_col {
+                    block.plan.push($op3::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
                 }
                 _ => {return Err(MechError::GenericError(6340));},
               }
@@ -458,11 +466,20 @@ macro_rules! math_compiler {
             out_brrw.resize(1,*cols);
 
             for (col_ix,(_,rhs_column,_)) in rhs_columns.iter().enumerate() {
-              out_brrw.set_col_kind(col_ix, ValueKind::U8);
-              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-              match (rhs_column,&lhs_column,out_col) {
-                (Column::U8(rhs), (_,Column::U8(lhs),_), Column::U8(out)) => {
-                  block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+              match (rhs_column,&lhs_column) {
+                (Column::U8(rhs), (_,Column::U8(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U8(out) = out_col {
+                    block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::F32(rhs), (_,Column::F32(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::F32);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F32(out) = out_col {
+                    block.plan.push($op2::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
                 }
                 _ => {return Err(MechError::GenericError(6341));},
               }
@@ -483,11 +500,20 @@ macro_rules! math_compiler {
             out_brrw.resize(*lhs_rows,*lhs_cols);
 
             for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
-              out_brrw.set_col_kind(col_ix, ValueKind::U8);
-              let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
-              match (lhs_rhs,out_col) {
-                (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)),Column::U8(out)) => {
-                  block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+              match (lhs_rhs) {
+                (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::U8);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U8(out) = out_col {
+                    block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                  }
+                }
+                (((_,Column::F32(lhs),_), (_,Column::F32(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::F32);
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F32(out) = out_col {
+                    block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                  }
                 }
                 _ => {return Err(MechError::GenericError(6343));},
               }

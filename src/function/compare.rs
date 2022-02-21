@@ -236,6 +236,7 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               x => {
                 println!("{:?}",x);
                 return Err(MechError::GenericError(1241));
@@ -256,6 +257,7 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op3::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               _ => {return Err(MechError::GenericError(1255));},
             }
           }
@@ -267,6 +269,7 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               _ => {return Err(MechError::GenericError(1242));},
             }
           }
@@ -292,6 +295,7 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op1::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               _ => {return Err(MechError::GenericError(1240));},
@@ -302,6 +306,7 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => { block.plan.push($op2::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               _ => {return Err(MechError::GenericError(1252));},
@@ -312,6 +317,7 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => { block.plan.push($op3::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => { block.plan.push($op3::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => { block.plan.push($op3::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               _ => {return Err(MechError::GenericError(1250));},
@@ -325,6 +331,7 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               _ => {return Err(MechError::GenericError(1242));},

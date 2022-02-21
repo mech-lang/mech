@@ -130,7 +130,7 @@ impl Core {
           }
         }
         Change::NewTable{table_id, rows, columns} => {
-          let table = Table::new(*table_id,*rows,*columns);
+          let table = Table::new(*table_id,1,1);
           self.database.borrow_mut().insert_table(table)?;
           match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
             Some(mut ublocks) => {
@@ -193,7 +193,6 @@ impl Core {
     let temp_db = block_brrw.global_database.clone();
     block_brrw.global_database = self.database.clone();
     block_brrw.functions = Some(self.functions.clone());
-
     // Merge databases
     let mut temp_db_brrw = temp_db.borrow();
     match self.database.try_borrow_mut() {
@@ -202,12 +201,10 @@ impl Core {
       }
       Err(_) => ()
     }
-
     // Merge dictionaries
     for (k,v) in block_brrw.strings.borrow().iter() {
       self.dictionary.borrow_mut().insert(*k,v.clone());
     }
-
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
@@ -243,7 +240,6 @@ impl Core {
       },
     }
   }
-
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
     self.schedule.schedule_blocks()

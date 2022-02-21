@@ -298,7 +298,6 @@ impl Table {
   }
 
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
-    println!("{:?} {:?} {:?} {:?}", self, row, col, val);
     if col < self.cols && row < self.rows {
       match (&self.data[col], val) {
         (Column::Time(column_f32), Value::Time(value_f32)) |
@@ -321,7 +320,7 @@ impl Table {
         (Column::Ref(column_ref), Value::Reference(value_ref)) => column_ref.borrow_mut()[row] = value_ref,
         (Column::Empty, Value::Empty) => (),
         x => {
-          println!("???{:?}", x);
+          println!("{:?}", x);
           return Err(MechError::GenericError(1219));
         },
       }

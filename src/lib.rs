@@ -167,7 +167,6 @@ impl Column {
   
   pub fn get_f32(&self) -> Result<ColumnV<f32>,MechError> {
     match self {
-      Column::Time(col) |
       Column::F32(col) => Ok(col.clone()),
       x => {return Err(MechError::GenericError(8189));},
     }
@@ -421,6 +420,8 @@ pub struct BoxTable {
 impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
+
+
     let table_name: String = if let Some(mstring) = table.dictionary.borrow().get(&table.id) {
       format!("#{}", mstring.to_string())
     } else {

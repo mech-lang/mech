@@ -492,7 +492,6 @@ impl MechFunction for AppendRowSV {
 pub struct TableVerticalConcatenate{}
 impl MechFunctionCompiler for TableVerticalConcatenate {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-
     // Get all of the tables
     let mut arg_tables = vec![];
     let mut rows = 0;
@@ -501,30 +500,25 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
       let table = block.get_table(table_id)?;
       arg_tables.push(table);
     }
-
     // Each table should have the same number of columns
     let cols = arg_tables[0].borrow().cols;
     let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
     if consistent_cols == false {
       return Err(MechError::GenericError(1243));
     }
-    
     // Check to make sure column types are consistent
     let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
     let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
     if consistent_cols == false {
       return Err(MechError::GenericError(1244));
     }
-
     // Add up the rows
     let rows = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().rows);
-    
     // Resize out table to match dimensions 
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
     out_brrw.resize(rows,cols);
-
     // Set out column kind and push a concat function
     for (ix, kind) in (0..cols).zip(col_kinds.clone()) {
       out_brrw.set_col_kind(ix, kind);
@@ -535,7 +529,6 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
         let column = table_brrw.get_column(&TableIndex::Index(ix+1))?;
         argument_columns.push(column.clone());
       }
-
       match out_col {
         Column::U8(ref out_c) => {
           let mut u8_cols:Vec<ColumnV<u8>> = vec![];
@@ -643,6 +636,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopySS::<u64>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::U128(arg), ColumnIndex::Index(ix), Column::U128(out)) => block.plan.push(CopySS::<u128>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::Time(arg), ColumnIndex::Index(ix), Column::Time(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -658,6 +652,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               match (&arg_col, &arg_ix, &out_col) {
                 (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySV::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySV::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySV::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySV::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Empty, _, Column::Empty) => (),
@@ -763,9 +758,7 @@ impl MechFunctionCompiler for TableSplit {
           let mut dest_table = Table::new(split_id,1,cols);
           for (col,arg_col) in arg_cols.iter().enumerate() {
             match arg_col {
-              (_,Column::U8(_),_) => {
-                dest_table.set_col_kind(col,ValueKind::U8);
-              }
+              (_,Column::F32(_),_) => { dest_table.set_col_kind(col,ValueKind::F32); }
               _ => {return Err(MechError::GenericError(6095));},
             }
           }
@@ -775,16 +768,14 @@ impl MechFunctionCompiler for TableSplit {
         // Write functions
         for (col_ix,arg_col) in arg_cols.iter().enumerate() {
           match arg_col {
-            (_,Column::U8(src_col),ColumnIndex::All) => {
+            (_,Column::F32(src_col),ColumnIndex::All) => {
               for row in 0..rows {
                 // get the destination table
                 let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
                 let dest_table = block.get_table(&TableId::Global(split_id))?;
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
-                  Column::U8(dest_col) => {
-                    block.plan.push(SetSIxSIx::<u8>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0});
-                  }
+                  Column::F32(dest_col) => { block.plan.push(SetSIxSIx::<f32>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
                   _ => {return Err(MechError::GenericError(6097));},
                 }
               }
@@ -803,7 +794,7 @@ impl MechFunctionCompiler for TableSplit {
 // Copy Vector{Int Ix} : Vector
 #[derive(Debug)]
 pub struct Range  {
-  pub start: Arg<u8>, pub end: Arg<u8>, pub out: OutTable
+  pub start: Arg<f32>, pub end: Arg<f32>, pub out: OutTable
 }
 
 impl MechFunction for Range
@@ -811,14 +802,14 @@ impl MechFunction for Range
   fn solve(&mut self) {
     let start_value = self.start.borrow()[0];
     let end_value = self.end.borrow()[0];
-    let delta = end_value - start_value + 1;
+    let delta = end_value - start_value + 1.0;
     let mut out_brrw = self.out.borrow_mut();
     out_brrw.resize(delta as usize,1);
-    out_brrw.set_col_kind(0,ValueKind::U8);
+    out_brrw.set_col_kind(0,ValueKind::F32);
     let mut value = start_value;
     for row in 0..out_brrw.rows {
-      out_brrw.set_raw(row,0,Value::U8(value));
-      value += 1;
+      out_brrw.set_raw(row,0,Value::F32(value));
+      value += 1.0;
     } 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -833,7 +824,7 @@ impl MechFunctionCompiler for TableRange {
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
     match (&argument_columns[0], &argument_columns[1]) {
-      ((_,Column::U8(start),_), (_,Column::U8(end),_)) => {  
+      ((_,Column::F32(start),_), (_,Column::F32(end),_)) => {  
         let fxn = Range{start: start.clone(), end: end.clone(), out: out_table.clone()};
         block.plan.push(fxn);
       }
