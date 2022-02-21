@@ -139,10 +139,15 @@ impl Compiler {
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(MechString::from_chars(text))});
       },
       Node::NumberLiteral{kind, bytes} => {
-        let bytes_vec = bytes.to_vec();
-        let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes_vec)));
+        let string = bytes.iter().cloned().collect::<String>();
+        let bytes = if *kind == *U8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *U16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *U32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *U64 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
+          else { string.parse::<f32>().unwrap().to_be_bytes().to_vec() };
+        let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
-        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes_vec});
+        tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
       },
       Node::Table{name, id} => {
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
@@ -748,10 +753,7 @@ impl Compiler {
                               indices.push(TableIndex::Table(*table_id));
                             }
                             Transformation::NumberLiteral{kind, bytes} => {
-                              let mut value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
-                              println!("!!!!!!!!!!!2 {:?}", value);
-                              println!("!!!!!!!!!!!2 {:?}", value.as_f32());
-                              println!("!!!!!!!!!!!2 {:?}", value.as_u64());
+                              let mut value = NumberLiteral::new(*kind, bytes.clone());
                               if indices.len() == 2 && indices[0] == TableIndex::All {
                                 indices[0] = TableIndex::Index(value.as_usize());
                               } else {
@@ -806,10 +808,7 @@ impl Compiler {
                         indices.push(TableIndex::Table(*table_id));
                       }
                       Transformation::NumberLiteral{kind, bytes} => {
-                        let mut value = NumberLiteral{kind: *kind, bytes: bytes.clone()};
-                        println!("!!!!!!!!!!! {:?}", value);
-                        println!("!!!!!!!!!!!2 {:?}", value.as_f32());
-                        println!("!!!!!!!!!!!2 {:?}", value.as_u64());
+                        let mut value = NumberLiteral::new(*kind, bytes.clone());
                         if indices.len() == 2 && indices[0] == TableIndex::All {
                           indices[0] = TableIndex::Index(value.as_usize());
                         } else {

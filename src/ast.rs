@@ -89,7 +89,7 @@ pub enum Node {
   True,
   False,
   ReshapeColumn,
-  NumberLiteral{kind: u64, bytes: Vec<u8> },
+  NumberLiteral{kind: u64, bytes: Vec<char> },
   RationalNumber{children: Vec<Node> },
   // Markdown
   SectionTitle{ text: Vec<char> },
@@ -833,13 +833,13 @@ impl Ast {
         compiled.push(Node::KindAnnotation{children: result});
       },
       parser::Node::FloatLiteral{chars} => {
-        let string = chars.iter().cloned().collect::<String>();
+        /*let string = chars.iter().cloned().collect::<String>();
         let float = string.parse::<f32>().unwrap();
-        let bytes = float.to_be_bytes();
-        compiled.push(Node::NumberLiteral{kind: hash_str("f32-literal"), bytes: bytes.to_vec()});
+        let bytes = float.to_be_bytes();*/
+        compiled.push(Node::NumberLiteral{kind: hash_str("f32-literal"), bytes: chars.to_vec()});
       }
       parser::Node::DecimalLiteral{chars} => {
-        let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
+        /*let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         let mut dec_number: u128 = 0;
         dec_bytes.reverse();
         for (i,byte) in dec_bytes.iter().enumerate() {
@@ -851,20 +851,20 @@ impl Ast {
         // Remove leading zeros
         while bytes.len() > 1 && bytes[0] == 0 {
           bytes.remove(0);
-        }
-        compiled.push(Node::NumberLiteral{kind: *DEC, bytes: bytes.to_vec()});
+        }*/
+        compiled.push(Node::NumberLiteral{kind: *DEC, bytes: chars.to_vec()});
       },
       parser::Node::BinaryLiteral{chars} => {
-        let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: *BIN, bytes: bin_bytes});
+        //let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{kind: *BIN, bytes: chars.to_vec()});
       }
       parser::Node::OctalLiteral{chars} => {
-        let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: *OCT, bytes: oct_bytes});
+        //let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{kind: *OCT, bytes: chars.to_vec()});
       },
       parser::Node::HexadecimalLiteral{chars} => {
-        let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(Node::NumberLiteral{kind: *HEX, bytes: hex_bytes});
+        //let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
+        compiled.push(Node::NumberLiteral{kind: *HEX, bytes: chars.to_vec()});
       },
       parser::Node::True => compiled.push(Node::True),
       parser::Node::False => compiled.push(Node::False),
