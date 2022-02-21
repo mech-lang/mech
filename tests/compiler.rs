@@ -79,6 +79,10 @@ macro_rules! test_mech_txn {
 
 // ## Constant
 
+test_mech!(constant_float_basic, "#test = 5.5",Value::F32(5.5));
+test_mech!(constant_float_leading_zero, "#test = 0.5",Value::F32(0.5));
+test_mech!(constant_float_leading_decimal, "#test = .5",Value::F32(0.5));
+
 test_mech!(constant_basic, "block
   #test = 5",Value::F32(5.0));
 
