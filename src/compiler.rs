@@ -559,7 +559,6 @@ impl Compiler {
           }
           header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: 1});
           body_tfms.append(&mut result_tfms);
-          println!("$$$$$${:?}", args);
           body_tfms.push(Transformation::Function{
             name: *TABLE_VERTICAL__CONCATENATE,
             arguments: args,
@@ -568,11 +567,8 @@ impl Compiler {
           tfms.append(&mut header_tfms);
           tfms.append(&mut body_tfms);
         } else {
-          println!("DOWNHEREE!!!!");
           let mut result = self.compile_nodes(&table_children)?;
           tfms.append(&mut result);          
-          println!("{:?}", tfms);
-          println!("===============================");
         }
         match &tfms[0] {
           Transformation::NewTable{table_id,..} |
