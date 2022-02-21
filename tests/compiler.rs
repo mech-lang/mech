@@ -200,7 +200,7 @@ test_mech!(math_add_u16,"#test = 10<u16> + 400<u16>", Value::U16(410));
 
 test_mech!(math_add_f32,"#test = 123.456 + 456.123", Value::F32(579.579));
 
-test_mech!(math_add_m_km,"#test = 400<m> + 1<km>", Value::U16(1400));
+test_mech!(math_add_m_km,"#test = 400<m> + 1<km>", Value::Length(1400.0));
 
 test_mech!(math_subtract,"#test = 3 - 1", Value::F32(2.0));
 

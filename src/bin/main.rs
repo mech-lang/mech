@@ -12,12 +12,7 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  let parse_tree = parser::parse(r#"
-block
-  #ball = [|x y|
-            1 2  
-            3 4
-            5 6]"#)?;
+  let parse_tree = parser::parse(r#"#test = 400<m> + 1<km>"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -26,10 +21,12 @@ block
   println!("{:?}", ast.syntax_tree);
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
+
   core.insert_blocks(blocks)?;
+
   core.schedule_blocks()?;
 
-  //let ticks = 2;
+  let ticks = 2;
  // println!("{:#?}", core.get_table("balls").unwrap().borrow());
 
   /*for i in 1..=ticks {
@@ -46,7 +43,8 @@ block
 
   println!("{:#?}", core);
 
-  println!("{:#?}", core.get_table("ball").unwrap().borrow());
+  println!("Answer:");
+  println!("{:#?}", core.get_table("test").unwrap().borrow());
 
   Ok(())
 }

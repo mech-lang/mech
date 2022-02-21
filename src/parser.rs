@@ -666,7 +666,7 @@ fn quantity(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn number_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, number_variant) = alt((float_literal, hexadecimal_literal, octal_literal, binary_literal, decimal_literal))(input)?;
+  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
   let (input, kind_id) = opt(kind_annotation)(input)?;
   let mut children = vec![number_variant];
   match kind_id {

@@ -143,7 +143,10 @@ impl Compiler {
         let bytes = if *kind == *U8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *U16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *U32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *U64 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *U64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *HEX {
+            bytes.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>()
+          }
           else { string.parse::<f32>().unwrap().to_be_bytes().to_vec() };
         let table_id = TableId::Local(hash_str(&format!("{:?}{:?}", kind, bytes)));
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
