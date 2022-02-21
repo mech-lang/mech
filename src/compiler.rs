@@ -508,7 +508,6 @@ impl Compiler {
         }        
       }
       Node::AnonymousTableDefine{children} => {
-        println!("ATD");
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
