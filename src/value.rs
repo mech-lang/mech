@@ -94,8 +94,8 @@ impl fmt::Debug for Value {
       Value::I128(v) => write!(f,"{}i128",v)?, 
       Value::Time(v) => write!(f,"{}ms",v)?,
       Value::Length(v) => write!(f,"{}m",v)?,
-      Value::F32(v) => write!(f,"{}f32",v)?,
-      Value::F64(v) => write!(f,"{}f64",v)?, 
+      Value::F32(v) => write!(f,"{:.2}f32",v)?,
+      Value::F64(v) => write!(f,"{:.2}f64",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
