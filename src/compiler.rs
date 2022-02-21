@@ -484,7 +484,7 @@ impl Compiler {
           }
           _ => (),
         };
-        header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: columns});
+        header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: 1});
         tfms.append(&mut header_tfms);
       }
       Node::KindAnnotation{children} => {
@@ -548,7 +548,7 @@ impl Compiler {
             }  
             result_tfms.append(&mut result);       
           }
-          header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: args.len()});
+          header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: 1});
           body_tfms.append(&mut result_tfms);
           body_tfms.push(Transformation::Function{
             name: *TABLE_VERTICAL__CONCATENATE,
@@ -601,7 +601,7 @@ impl Compiler {
           }  
           result_tfms.append(&mut result);       
         }
-        tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: args.len()});
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: 1});
         tfms.append(&mut result_tfms);
         tfms.push(Transformation::Function{
           name: *TABLE_HORIZONTAL__CONCATENATE,

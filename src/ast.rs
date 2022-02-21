@@ -836,7 +836,7 @@ impl Ast {
         let string = chars.iter().cloned().collect::<String>();
         let float = string.parse::<f32>().unwrap();
         let bytes = float.to_be_bytes();
-        compiled.push(Node::NumberLiteral{kind: hash_str("f32"), bytes: bytes.to_vec()});
+        compiled.push(Node::NumberLiteral{kind: hash_str("f32-literal"), bytes: bytes.to_vec()});
       }
       parser::Node::DecimalLiteral{chars} => {
         let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();

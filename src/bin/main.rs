@@ -13,17 +13,11 @@ fn main() -> Result<(),MechError> {
   let mut core = Core::new();
 
   let parse_tree = parser::parse(r#"
-Drawing
-  #x = [
-    root: "mech-root"
-    contains: [
-      type: "a",
-      href: "google.com",
-      contains: 10
-    ]
-  ]
 block
-  #test = #x{:}"#)?;
+  #ball = [|x y|
+            1 2  
+            3 4
+            5 6]"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -32,12 +26,10 @@ block
   println!("{:?}", ast.syntax_tree);
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
-
   core.insert_blocks(blocks)?;
-
   core.schedule_blocks()?;
 
-  let ticks = 2;
+  //let ticks = 2;
  // println!("{:#?}", core.get_table("balls").unwrap().borrow());
 
   /*for i in 1..=ticks {
@@ -50,11 +42,11 @@ block
   println!("{:#?}", core.get_table("test").unwrap().borrow());*/
 
 
-  //println!("{:#?}", core.blocks);
+  println!("{:#?}", core.blocks);
 
   println!("{:#?}", core);
 
-  println!("{:#?}", core.get_table("test"));
+  println!("{:#?}", core.get_table("ball").unwrap().borrow());
 
   Ok(())
 }

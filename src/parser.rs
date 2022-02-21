@@ -684,18 +684,26 @@ fn rational_number(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn float_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, whole) = digit0(input)?;
-  let (input, _) = ascii_tag(".")(input)?;
-  let (input, fraction) = digit1(input)?;
-  let mut whole: Vec<char> = whole.iter().flat_map(|c| c.chars()).collect();
-  let mut fraction = fraction.iter().flat_map(|c| c.chars()).collect();
-  whole.push('.');
-  whole.append(&mut fraction);
+  let (input, p1) = opt(ascii_tag("."))(input)?;
+  let (input, p2) = digit1(input)?;
+  let (input, p3) = opt(ascii_tag("."))(input)?;
+  let (input, p4) = digit0(input)?;
+  let mut whole: Vec<char> = vec![];
+  if let Some(_) = p1 {
+    whole.push('.');
+  }
+  let mut digits = p2.iter().flat_map(|c| c.chars()).collect();
+  whole.append(&mut digits);
+  if let Some(_) = p3 {
+    whole.push('.');
+  }
+  let mut digits = p4.iter().flat_map(|c| c.chars()).collect();
+  whole.append(&mut digits);
   Ok((input, Node::FloatLiteral{chars: whole}))
 }
 
 fn decimal_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = opt(ascii_tag("0d"))(input)?;
+  let (input, _) = ascii_tag("0d")(input)?;
   let (input, chars) = digit1(input)?;
   Ok((input, Node::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
