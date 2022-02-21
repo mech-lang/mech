@@ -9,6 +9,24 @@
 //use errors::{ErrorType};
 use crate::*;
 use std::fmt;
+use std::mem::transmute;
+use std::convert::TryInto;
+
+lazy_static! {
+  pub static ref F32L: u64 = hash_str("f32-literal");
+  pub static ref F32: u64 = hash_str("f32");
+  pub static ref U8: u64 = hash_str("u8");
+  pub static ref U16: u64 = hash_str("u16");
+  pub static ref U32: u64 = hash_str("u32");
+  pub static ref U64: u64 = hash_str("u64");
+  pub static ref HZ: u64 = hash_str("hz");
+  pub static ref MS: u64 = hash_str("ms");
+  pub static ref S: u64 = hash_str("s");
+  pub static ref M: u64 = hash_str("m");
+  pub static ref KM: u64 = hash_str("km");
+  pub static ref HEX: u64 = hash_str("hex");
+  pub static ref DEC: u64 = hash_str("dec");
+}
 
 // ## Value structs and enums
 
@@ -120,33 +138,90 @@ pub struct NumberLiteral {
 
 impl NumberLiteral {
 
-  pub fn as_u8(&self) -> u8 {
-    self.bytes.last().unwrap().clone()
+  fn is_float(&self) -> bool {
+    if self.kind == *F32 || self.kind == *F32L {
+      true 
+    } else {
+      false
+    }
   }
 
-  pub fn as_u32(&self) -> u32 {
-    let mut container: u32 = 0;
-    for (i,byte) in self.bytes.iter().rev().take(4).enumerate() {
-      container = container | (*byte as u32) << (8 * i) ;
+
+  pub fn as_u8(&mut self) -> u8 {
+    if self.is_float() {
+      self.as_f32() as u8
+    } else {
+      self.bytes.last().unwrap().clone()
     }
-    container
   }
 
-  pub fn as_u64(&self) -> u64 {    
-    let mut container: u64 = 0;
-    for (i,byte) in self.bytes.iter().rev().take(8).enumerate() {
-      container = container | (*byte as u64) << (8 * i) ;
+  pub fn as_u16(&mut self) -> u16 {
+    if self.is_float() {
+      self.as_f32() as u16
+    } else {
+      while self.bytes.len() < 2 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u16>());
+      let x = u16::from_be_bytes(fbytes.try_into().unwrap());
+      x
     }
-    container
   }
 
-  pub fn as_usize(&self) -> usize {    
-    let mut container: usize = 0;
-    let usize_bytes = usize::BITS as usize / 8 ;
-    for (i,byte) in self.bytes.iter().rev().take(usize_bytes).enumerate() {
-      container = container | (*byte as usize) << (usize_bytes * i) ;
+  pub fn as_u32(&mut self) -> u32 {
+    if self.is_float() {
+      self.as_f32() as u32
+    } else {
+      while self.bytes.len() < 4 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u32>());
+      let x = u32::from_be_bytes(fbytes.try_into().unwrap());
+      x
     }
-    container
+  }
+
+  pub fn as_u64(&mut self) -> u64 {    
+    if self.is_float() {
+      self.as_f32() as u64
+    } else {
+      while self.bytes.len() < 8 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u64>());
+      let x = u64::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_u128(&mut self) -> u128 {    
+    if self.is_float() {
+      self.as_f32() as u128
+    } else {
+      while self.bytes.len() < 16 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u128>());
+      let x = u128::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_f32(&mut self) -> f32 {    
+    if self.is_float() {
+      while self.bytes.len() < 4 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f32>());
+      let x = f32::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    } else {
+      self.as_u64() as f32
+    }
+  }
+
+  pub fn as_usize(&mut self) -> usize {    
+    self.as_u64() as usize
   }
 
 }

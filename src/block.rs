@@ -256,7 +256,10 @@ impl Block {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
           Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
-          Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          Column::F32(ix_col) => {
+            println!("!!!!!!!!!!!!!!{:?}",ix_col.borrow()[0] as usize - 1);
+            ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
+          },
           x => {
             return Err(MechError::GenericError(9239));
           }
@@ -276,7 +279,10 @@ impl Block {
               Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
               Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
               Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
-              Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+              Column::F32(ix_col) => {
+                println!("!!!!!!!!!!!!!!{:?}",ix_col.borrow()[0] as usize - 1);
+                ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
+              },
               x => {
                 return Err(MechError::GenericError(9232));
               }
@@ -474,6 +480,7 @@ impl Block {
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
+    println!("{:?}",tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
@@ -796,196 +803,72 @@ impl Block {
         }
       }
       Transformation::NumberLiteral{kind, bytes} => {
+        let mut num = NumberLiteral{kind: *kind, bytes: bytes.to_vec()};
         let mut bytes = bytes.clone();
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
-        if *kind == *U16 {
-          match bytes.len() {
-            1..=2 => {
-              t.set_kind(ValueKind::U16)?;
-              while bytes.len() < 2 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U16(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6377));},
-          }
+        if *kind == *U8 {
+          t.set_kind(ValueKind::U8)?;
+          t.set_raw(0,0,Value::U8(num.as_u8()))?;
         } 
-        else if *kind == *U8 {
-          match bytes.len() {
-            1 => {
-              t.set_kind(ValueKind::U8)?;
-              t.set_raw(0,0,Value::U8(bytes[0]))?;
-            }
-            _ => {return Err(MechError::GenericError(6383));},
-          }
+        else if *kind == *U16 {
+          t.set_kind(ValueKind::U16)?;
+          t.set_raw(0,0,Value::U16(num.as_u16()))?;
         } 
         else if *kind == *U32 {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::U32)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
-              let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U32(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6385));},
-          }
+          t.set_kind(ValueKind::U32)?;
+          t.set_raw(0,0,Value::U32(num.as_u32()))?;
         } 
         else if *kind == *U64 {
-          match bytes.len() {
-            1..=8 => {
-              t.set_kind(ValueKind::U64)?;
-              while bytes.len() < 8 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
-              let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U64(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6386));},
-          }
+          t.set_kind(ValueKind::U64)?;
+          t.set_raw(0,0,Value::U64(num.as_u64()))?;
         } 
         else if *kind == *MS {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::Time)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
-              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::Time(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6377));},
-          }
+          t.set_kind(ValueKind::Time)?;
+          t.set_raw(0,0,Value::Time(num.as_f32()))?;
         } 
         else if *kind == *S {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::Time)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
-              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::Time(x * 1000.0))?;
-            }
-            _ => {return Err(MechError::GenericError(6877));},
-          }
+          t.set_kind(ValueKind::Time)?;
+          t.set_raw(0,0,Value::Time(num.as_f32() * 1000.0))?;
         } 
         else if *kind == *F32 {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::F32)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
-              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::F32(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6877));},
-          }
+          t.set_kind(ValueKind::F32)?;
+          t.set_raw(0,0,Value::F32(num.as_f32()))?;
         } 
         else if *kind == *F32L {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::F32)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
-              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::F32(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6877));},
-          }
-        }         else if *kind == *F32 {
-          match bytes.len() {
-            1..=4 => {
-              t.set_kind(ValueKind::F32)?;
-              while bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<f32>());
-              let x = f32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::F32(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6877));},
-          }
+          t.set_kind(ValueKind::F32)?;
+          t.set_raw(0,0,Value::F32(num.as_f32()))?;
         } 
-        else if *kind == *KM {
-          match bytes.len() {
-            1..=2 => {
-              t.set_kind(ValueKind::U16)?;
-              while bytes.len() < 2 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U16(x * 1000))?;
-            }
-            _ => {return Err(MechError::GenericError(6387));},
-          }
+        /*else if *kind == *KM {
+          t.set_kind(ValueKind::Distance)?;
+          t.set_raw(0,0,Value::Distance(num.as_f32() * 1000.0))?;
         } 
         else if *kind == *M {
-          match bytes.len() {
-            1..=2 => {
-              t.set_kind(ValueKind::U16)?;
-              while bytes.len() < 2 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U16(x))?;
-            }
-            _ => {return Err(MechError::GenericError(6388));},
-          }
-        } 
+          t.set_kind(ValueKind::Distance)?;
+          t.set_raw(0,0,Value::Distance(num.as_f32() * 1000.0))?;
+        }*/
         else if *kind == *DEC {
           match bytes.len() {
             1 => {
               t.set_col_kind(0, ValueKind::U8)?;
-              t.set_raw(0,0,Value::U8(bytes[0] as u8))?;
+              t.set_raw(0,0,Value::U8(num.as_u8()))?;
             }
             2 => {
               t.set_kind(ValueKind::U16)?;
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-              let x = u16::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U16(x))?;
+              t.set_raw(0,0,Value::U16(num.as_u16()))?;
             }
             3 | 4 => {
               t.set_kind(ValueKind::U32)?;
-              if bytes.len() < 4 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u32>());
-              let x = u32::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U32(x))?;
+              t.set_raw(0,0,Value::U32(num.as_u32()))?;
             }
             5..=8 => {
               t.set_kind(ValueKind::U64)?;
-              while bytes.len() < 8 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u64>());
-              let x = u64::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U64(x))?;
+              t.set_raw(0,0,Value::U64(num.as_u64()))?;
             }
             9..=16 => {
               t.set_kind(ValueKind::U128)?;
-              while bytes.len() < 16 {
-                bytes.insert(0,0);
-              }
-              let (int_bytes, rest) = bytes.split_at(std::mem::size_of::<u128>());
-              let x = u128::from_be_bytes(int_bytes.try_into().unwrap());
-              t.set_raw(0,0,Value::U128(x))?;
+              t.set_raw(0,0,Value::U128(num.as_u128()))?;
             }
             _ => {return Err(MechError::GenericError(6376));},
           }

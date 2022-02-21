@@ -465,6 +465,7 @@ impl Table {
         Err(MechError::GenericError(2825))
       }
       TableIndex::Index(ix) => {
+        println!("{:?}", ix);
         if *ix <= self.cols { 
           Ok(self.data[*ix-1].clone())
         } else {
