@@ -272,7 +272,7 @@ impl WasmCore {
               )));             
               self.process_transaction();
               match timers_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PERIOD)) {
-                Ok(Value::I32(period)) => {
+                Ok(Value::Time(period)) => {
                   let wasm_core = self as *mut WasmCore;
                   let closure = || { 
                     Closure::wrap(Box::new(move || {
@@ -300,17 +300,17 @@ impl WasmCore {
                   let timer_callback = closure();
                   let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
                     timer_callback.as_ref().unchecked_ref(),
-                    period
+                    period as i32,
                   ).unwrap();
                   self.timers.insert(row,timer_callback);
                 }
-                x => {log!("6868 {:?}", x);},
+                x => {log!("6869 {:?}", x);},
               }
             }
           }
         }
       }
-      x => {log!("6868 {:?}", x);},
+      x => {log!("6870 {:?}", x);},
     }   
     Ok(())
   }
@@ -332,7 +332,7 @@ impl WasmCore {
     let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
     let len = blocks.len();
     self.core.insert_blocks(blocks);
-    //self.add_timers();
+    self.add_timers();
     self.add_apps();
     self.render();
     log!("Loaded {} blocks.", len);
