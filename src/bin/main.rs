@@ -1,4 +1,3 @@
-
 #![allow(warnings)]
 // New runtime
 // requirements:
@@ -33,7 +32,7 @@ use num_traits::*;
 use std::ops::*;
 
 #[derive(Clone)]
-struct Column<T>(Rc<RefCell<Vec<T>>>);
+pub struct Column<T>(Rc<RefCell<Vec<T>>>);
 
 impl<T: Copy> Column<T> {
 
@@ -96,7 +95,97 @@ mech_type_conversion!(U32,U8,u8);
 mech_type_conversion!(U64,U8,u8);
 
 
-fn par_add<T,U>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<U>) 
+type TableIx = usize;
+type Alias = u64;
+
+pub struct AliasMap {
+  capacity: usize,
+  ix_to_alias: Vec<Alias>,  
+  alias_to_ix: HashMap<Alias,TableIx>,
+}
+
+impl AliasMap {
+  pub fn new(capacity: usize) -> Self {
+    AliasMap {
+      capacity,
+      ix_to_alias: vec![0;capacity],
+      alias_to_ix: HashMap::new(),
+    }
+  }
+
+  pub fn resize(&mut self, new_capacity: usize) {
+    self.ix_to_alias.resize(new_capacity,0);
+  }
+
+  pub fn insert(&mut self, ix: TableIx, alias: Alias) -> std::result::Result<(),MechError> {
+    if ix < self.capacity {
+      self.ix_to_alias[ix] = alias;
+      self.alias_to_ix.insert(alias,ix);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(8210))
+    }
+  }
+
+  pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
+    match self.alias_to_ix.get(alias) {
+      Some(ix) => Ok(*ix),
+      None => Err(MechError::GenericError(8211)),
+    }
+  }
+
+  pub fn get_alias(&self, ix: &TableIx) -> std::result::Result<Alias,MechError> {
+    if ix < &self.capacity {
+      Ok(self.ix_to_alias[*ix])
+    } else {
+      Err(MechError::GenericError(8212))
+    }
+  }
+
+}
+
+
+pub struct Table {
+  pub id: u64,                           
+  pub rows: usize,                       
+  pub cols: usize,                       
+  pub col_kinds: Vec<ValueKind>,                 
+  pub col_map: AliasMap,  
+  pub row_map: AliasMap,
+  pub data: Vec<Column<Value>>,
+  pub dictionary: StringDictionary,
+}
+
+impl Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      id,
+      rows,
+      cols,
+      col_kinds: Vec::with_capacity(cols),
+      col_map: AliasMap::new(cols),
+      row_map: AliasMap::new(rows),
+      data: Vec::with_capacity(cols),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
+    };
+    for col in 0..cols {
+      table.data.push(Column::new(vec![]));
+      table.col_kinds.push(ValueKind::Empty);
+    }
+    table
+  }
+}
+
+#[derive(Copy,Clone)]
+pub enum Value {
+  U8(U8),
+  U16(U16),
+  U32(U32),
+  U64(U64),
+  Empty,
+}
+
+pub fn par_add<T,U>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<U>) 
   where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send,
         U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send,
 {
@@ -107,7 +196,7 @@ fn par_add<T,U>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<U>)
      .for_each(|((out, lhs),rhs)| *out = lhs.add(*rhs)); 
 }
 
-fn add<T,U,V>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<V>) 
+pub fn add<T,U,V>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<V>) 
   where T: Copy + Debug + Clone + Add<Output = T> + Into<V>,
         U: Copy + Debug + Clone + Add<Output = U> + Into<V>,
         V: Copy + Debug + Clone + Add<Output = V>
@@ -119,7 +208,7 @@ fn add<T,U,V>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<V>)
      .for_each(|((out, lhs),rhs)| *out = lhs.add(rhs)); 
 }
 
-fn copy<T,U>(arg: &Column<T>, out: &Column<U>, start: usize) 
+pub fn copy<T,U>(arg: &Column<T>, out: &Column<U>, start: usize) 
   where T: Copy + Debug + Clone + Into<U>,
         U: Copy + Debug + Clone + Into<T>,
 {
@@ -132,7 +221,7 @@ fn copy<T,U>(arg: &Column<T>, out: &Column<U>, start: usize)
 macro_rules! mech_type {
   ($wrapper:tt,$type:tt) => (
     #[derive(Copy,Clone)]
-    struct $wrapper($type);
+    pub struct $wrapper($type);
     impl Add for $wrapper {
       type Output = $wrapper;
       fn add(self, rhs: $wrapper) -> $wrapper {
@@ -198,7 +287,7 @@ fn main() {
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f32;
   println!("{:0.4?} s", time / 1e9);
-  
+
   println!("U16");
   let start_ns = time::precise_time_ns();
   for _ in 0..i {
