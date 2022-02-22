@@ -479,6 +479,7 @@ impl Block {
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
+    println!("{:?}", tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));

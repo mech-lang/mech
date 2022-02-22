@@ -438,6 +438,7 @@ impl MechFunction for CopyT {
 pub struct TableVerticalConcatenate{}
 impl MechFunctionCompiler for TableVerticalConcatenate {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    println!("VERTCAT");
     // Get all of the tables
     let mut arg_tables = vec![];
     let mut rows = 0;
@@ -466,6 +467,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
     let mut out_brrw = out_table.borrow_mut();
     out_brrw.resize(rows,cols);
     // Set out column kind and push a concat function
+    println!("Col Kinds: {:?}", col_kinds);
     for (ix, kind) in (0..cols).zip(col_kinds.clone()) {
       out_brrw.set_col_kind(ix, kind);
       let out_col = out_brrw.get_column_unchecked(ix).clone();
@@ -477,6 +479,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
       }
       match out_col {
         Column::U8(ref out_c) => {
+          println!("u8");
           let mut u8_cols:Vec<ColumnV<u8>> = vec![];
           for colv in argument_columns {
             u8_cols.push(colv.get_u8()?.clone());
@@ -485,6 +488,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           block.plan.push(fxn);
         }
         Column::U16(ref out_c) => {
+          println!("u16");
           let mut u16_cols:Vec<ColumnV<u16>> = vec![];
           for colv in argument_columns {
             u16_cols.push(colv.get_u16()?.clone());
@@ -493,6 +497,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           block.plan.push(fxn);
         }
         Column::F32(ref out_c) => {
+          println!("32");
           let mut f32_cols:Vec<ColumnV<f32>> = vec![];
           for colv in argument_columns {
             f32_cols.push(colv.get_f32()?.clone());
@@ -537,6 +542,7 @@ pub struct TableHorizontalConcatenate{}
 impl MechFunctionCompiler for TableHorizontalConcatenate {
 
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    println!("HORZCAT");
     // Get all of the tables
     let mut rows = 0;
     let mut cols = 0;

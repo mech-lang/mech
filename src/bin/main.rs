@@ -1,4 +1,5 @@
 
+#![allow(warnings)]
 // New runtime
 // requirements:
 // pass all tests
@@ -27,8 +28,212 @@ use std::thread;
 use mech_core::*;
 use mech_core::function::*;
 
-fn main() -> Result<(),MechError> {
- 
+use std::fmt::*;
+use num_traits::*;
+use std::ops::*;
+
+#[derive(Clone)]
+struct Column<T>(Rc<RefCell<Vec<T>>>);
+
+impl<T: Copy> Column<T> {
+
+  pub fn new(vec: Vec<T>) -> Column<T> {
+    Column(Rc::new(RefCell::new(vec)))
+  }
+
+  pub fn len(&self) -> usize {
+    let Column(col) = self;
+    col.borrow().len()
+  }
+
+  pub fn get_unchecked(&mut self, row: usize) -> T {
+    let Column(col) = self;
+    let mut c_brrw = col.borrow_mut();
+    c_brrw[row]
+  }
+
+  pub fn set_unchecked(&mut self, row: usize, value: T) {
+    let Column(col) = self;
+    let mut c_brrw = col.borrow_mut();
+    c_brrw[row] = value;
+  }
+  
+}
+
+impl<T: Debug> fmt::Debug for Column<T> {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let Column(col) = self;
+    let col_brrw = col.borrow();
+    write!(f,"[")?;
+    for c in col_brrw.iter() {
+      write!(f,"{:?}, ",c)?;
+    }
+    write!(f,"]")?;
+    Ok(())
+  }
+}
+
+mech_type!(F32,f32);
+mech_type!(U8,u8);
+mech_type!(U16,u16);
+mech_type!(U32,u32);
+mech_type!(U64,u64);
+mech_type!(U128,u128);
+mech_type!(I8,i8);
+mech_type!(I16,i16);
+mech_type!(I32,i32);
+mech_type!(I64,i64);
+mech_type!(I128,i128);
+
+mech_type_conversion!(U8,F32,f32);
+mech_type_conversion!(U8,U64,u64);
+mech_type_conversion!(U8,U32,u32);
+mech_type_conversion!(U8,U16,u16);
+mech_type_conversion!(F32,U8,u8);
+mech_type_conversion!(U16,U8,u8);
+mech_type_conversion!(U32,U8,u8);
+mech_type_conversion!(U64,U8,u8);
+
+
+fn par_add<T,U>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<U>) 
+  where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send,
+        U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send,
+{
+  let (Column(lhs),Column(rhs),Column(out)) = (lhs,rhs,out);
+  out.borrow_mut().par_iter_mut()
+     .zip(lhs.borrow().par_iter().map(|x| T::into(*x)))
+     .zip(rhs.borrow().par_iter())
+     .for_each(|((out, lhs),rhs)| *out = lhs.add(*rhs)); 
+}
+
+fn add<T,U,V>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<V>) 
+  where T: Copy + Debug + Clone + Add<Output = T> + Into<V>,
+        U: Copy + Debug + Clone + Add<Output = U> + Into<V>,
+        V: Copy + Debug + Clone + Add<Output = V>
+{
+  let (Column(lhs),Column(rhs),Column(out)) = (lhs,rhs,out);
+  out.borrow_mut().iter_mut()
+     .zip(lhs.borrow().iter().map(|x| T::into(*x)))
+     .zip(rhs.borrow().iter().map(|x| U::into(*x)))
+     .for_each(|((out, lhs),rhs)| *out = lhs.add(rhs)); 
+}
+
+fn copy<T,U>(arg: &Column<T>, out: &Column<U>, start: usize) 
+  where T: Copy + Debug + Clone + Into<U>,
+        U: Copy + Debug + Clone + Into<T>,
+{
+  let (Column(arg),Column(out)) = (arg,out);
+  let mut o = out.borrow_mut();
+  o[start..].iter_mut().zip(arg.borrow().iter().map(|x| T::into(*x))).for_each(|(out, arg)| *out = arg.clone()); 
+}
+
+#[macro_export]
+macro_rules! mech_type {
+  ($wrapper:tt,$type:tt) => (
+    #[derive(Copy,Clone)]
+    struct $wrapper($type);
+    impl Add for $wrapper {
+      type Output = $wrapper;
+      fn add(self, rhs: $wrapper) -> $wrapper {
+        let ($wrapper(lhs),$wrapper(rhs)) = (self,rhs);
+        $wrapper(lhs + rhs)
+      }
+    }
+    impl fmt::Debug for $wrapper {
+      #[inline]
+      fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let $wrapper(col) = self;
+        write!(f,"{:?}",col)?;
+        Ok(())
+      }
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_type_conversion {
+  ($from_wrapper:tt,$to_wrapper:tt,$to_type:tt) => (
+    impl From<$from_wrapper> for $to_wrapper {
+      fn from(n: $from_wrapper) -> $to_wrapper {
+        let $from_wrapper(c) = n;
+        $to_wrapper(c as $to_type)
+      } 
+    }
+  )
+}
+
+fn main() {
+
+  let n = 1e6 as usize;
+
+  let mut f32_1 = Column::<F32>::new(vec![F32(1.0);n]);
+  let mut f32_2 = Column::<F32>::new(vec![F32(4.0);n]);
+  let mut f32_3 = Column::<F32>::new(vec![F32(0.0);n]);
+
+  let mut u16_1 = Column::<U16>::new(vec![U16(1);n]);
+  let mut u16_2 = Column::<U16>::new(vec![U16(4);n]);
+  let mut u16_3 = Column::<U16>::new(vec![U16(0);n]);
+
+  let mut u8_1 = Column::<U8>::new(vec![U8(1);n]);
+  let mut u8_2 = Column::<U8>::new(vec![U8(4);n]);
+  let mut u8_3 = Column::<U8>::new(vec![U8(0);n]);
+
+  let i = 4000;
+
+  println!("FLOAT");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    add(&f32_1,&f32_2,&f32_3);
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+  println!("U8");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    add(&u8_1,&u8_2,&u8_3);
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+  
+  println!("U16");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    add(&u16_1,&u16_2,&u16_3);
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+  println!("MIXED");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    add(&u8_1,&u16_2,&u16_3);
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+  /*let c2 = Column::<U8>::new(vec![U8(0);9]);
+  let c3 = Column::<U32>::new(vec![U32(4),U32(5),,U32(5)]);
+  let c4 = Column::<U64>::new(vec![U64(6),U64(7),U64(8),U64(9)]);
+
+  copy(&c1,&c2,0);
+  copy(&c3,&c2,c1.len());
+  copy(&c4,&c2,c1.len() + c3.len());
+
+  add(c1,c2,c2)
+
+
+  c1.set_unchecked(2,F32(42.0));
+
+  copy(&c1,&c2,0);*/
+
+
+/* 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
   let mut total_time = VecDeque::new();  
   let start_ns0 = time::precise_time_ns();
@@ -228,7 +433,7 @@ fn main() -> Result<(),MechError> {
 
   //println!("{:?}", core);
 
-  for i in 0..20000 {
+  for i in 0..5000 {
     let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(i as f32))]))];
     
     let start_ns = time::precise_time_ns();
@@ -240,14 +445,16 @@ fn main() -> Result<(),MechError> {
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
-    let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    //println!("{:?}", core.get_table("balls"));
+    //let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+    //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
-
+  let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f32;
   println!("{:0.4?} s", time / 1e9);
   println!("{:?}", core);
+*/
 
-  Ok(())
 }
