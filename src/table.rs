@@ -218,33 +218,33 @@ impl Table {
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
       match (&mut self.data[col], kind) {
-        /*(Column::U8(_), ValueKind::U8) => (),
+        (Column::U8(_), ValueKind::U8) => (),
         (Column::Empty, ValueKind::U8) => {
-          let column = ColumnV::<U8>::new(vec![crate::column::U8(0);self.rows]);
+          let column = ColumnV::<U8>::new(vec![U8::new(0);self.rows]);
           self.data[col] = Column::U8(column);
           self.col_kinds[col] = ValueKind::U8;
         },
         (Column::Empty, ValueKind::U16) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<U16>::new(vec![U16::new(0);self.rows]);
           self.data[col] = Column::U16(column);
           self.col_kinds[col] = ValueKind::U16;
         },
         (Column::Empty, ValueKind::U32) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<U32>::new(vec![U32::new(0);self.rows]);
           self.data[col] = Column::U32(column);
           self.col_kinds[col] = ValueKind::U32;
         },
         (Column::Empty, ValueKind::U64) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<U64>::new(vec![U64::new(0);self.rows]);
           self.data[col] = Column::U64(column);
           self.col_kinds[col] = ValueKind::U64;
         },
         (Column::Empty, ValueKind::U128) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<U128>::new(vec![U128::new(0);self.rows]);
           self.data[col] = Column::U128(column);
           self.col_kinds[col] = ValueKind::U128;
         },
-        (Column::Empty, ValueKind::I8) => {
+        /*(Column::Empty, ValueKind::I8) => {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::I8(column);
           self.col_kinds[col] = ValueKind::I8;
@@ -268,26 +268,26 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::I128(column);
           self.col_kinds[col] = ValueKind::I128;
-        },
+        },*/
         (Column::F32(_), ValueKind::F32) => (),
         (Column::Empty, ValueKind::F32) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
         },
         (Column::Time(_), ValueKind::Time) => (),
         (Column::Empty, ValueKind::Time) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
           self.data[col] = Column::Time(column);
           self.col_kinds[col] = ValueKind::Time;
         },
         (Column::Length(_), ValueKind::Length) => (),
         (Column::Empty, ValueKind::Length) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
           self.data[col] = Column::Length(column);
           self.col_kinds[col] = ValueKind::Length;
         },
-        (Column::Empty, ValueKind::F64) => {
+        /*(Column::Empty, ValueKind::F64) => {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F64(column);
           self.col_kinds[col] = ValueKind::F64;
@@ -339,6 +339,29 @@ impl Table {
       },
       _ => Err(MechError::GenericError(1216)),
     }
+  }
+
+  pub fn set(&self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
+    let row_ix = match row {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7495))},
+      TableIndex::Index(ix) => ix - 1,
+      _ => 0,
+    };
+    let col_ix = match col {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7123))},
+      TableIndex::Index(ix) => ix - 1,
+      TableIndex::Alias(alias) => {
+        match self.col_map.get_index(alias) {
+          Ok(ix) => ix,
+          Err(x) => {
+            println!("{:?}",x);
+            return Err(MechError::GenericError(2389))
+          }
+        }
+      }
+      _ => 0,
+    };
+    self.set_raw(row_ix,col_ix,val)
   }
 
   pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
@@ -593,25 +616,7 @@ impl Table {
     }
   }
 
-  pub fn set(&self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
-    let row_ix = match row {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7495))},
-      TableIndex::Index(ix) => ix - 1,
-      _ => 0,
-    };
-    let col_ix = match col {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7123))},
-      TableIndex::Index(ix) => ix - 1,
-      TableIndex::Alias(alias) => {
-        match self.column_alias_to_ix.get(alias) {
-          Some(ix) => *ix,
-          None => {return Err(MechError::GenericError(2389))}
-        }
-      }
-      _ => 0,
-    };
-    self.set_raw(row_ix,col_ix,val)
-  }
+
 
 
 
