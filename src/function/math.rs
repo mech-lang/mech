@@ -53,37 +53,13 @@ binary_infix_vs!(DivVS,div);
 //binary_infix_vs!(ExpVS,pow);*/
 
 // Vector : Vector
-//binary_infix_vv!(AddVV,add);
-
-#[derive(Debug)]
-pub struct AddVV<T,U,V> {
-  pub lhs: (ColumnV<T>, usize, usize),
-  pub rhs: (ColumnV<U>, usize, usize),
-  pub out: ColumnV<V>
-}
-impl<T,U,V> MechFunction for AddVV<T,U,V> 
-where T: Copy + Debug + Clone + Add<Output = T> + Into<V> + Sync + Send,
-      U: Copy + Debug + Clone + Add<Output = U> + Into<V> + Sync + Send,
-      V: Copy + Debug + Clone + Add<Output = V> + Sync + Send,
-{
-  fn solve(&self) {
-    let (lhs,lsix,leix) = &self.lhs;
-    let (rhs,rsix,reix) = &self.rhs;
-    self.out.borrow_mut().iter_mut()
-                    .zip(lhs.borrow()[*lsix..=*leix].iter().map(|x| T::into(*x)))
-                    .zip(rhs.borrow()[*rsix..=*reix].iter().map(|x| U::into(*x)))
-                    .for_each(|((out, lhs),rhs)| *out = lhs.add(rhs)); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-/*
-binary_infix_vv!(SubVV,sub);
-binary_infix_vv!(MulVV,mul);
-binary_infix_vv!(DivVV,div);
+binary_infix_vv!(AddVV,add);
+//binary_infix_vv!(SubVV,sub);
+//binary_infix_vv!(MulVV,mul);
+//binary_infix_vv!(DivVV,div);
 //binary_infix_vv!(ExpVV,pow);
 
-// Parallel Vector : Scalar
+/*// Parallel Vector : Scalar
 binary_infix_par_vs!(ParAddVS,add);
 binary_infix_par_vs!(ParSubVS,sub);
 binary_infix_par_vs!(ParMulVS,mul);
@@ -187,21 +163,30 @@ macro_rules! binary_infix_vs {
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
-}
+}*/
 
 #[macro_export]
 macro_rules! binary_infix_vv {
   ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
-    pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    pub struct $func_name<T,U,V> {
+      pub lhs: (ColumnV<T>, usize, usize),
+      pub rhs: (ColumnV<U>, usize, usize),
+      pub out: ColumnV<V>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: MechNumArithmetic<T> + Copy + Debug
+    impl<T,U,V> MechFunction for $func_name<T,U,V> 
+    where T: Copy + Debug + Clone + Add<Output = T> + Into<V> + Sync + Send,
+          U: Copy + Debug + Clone + Add<Output = U> + Into<V> + Sync + Send,
+          V: Copy + Debug + Clone + Add<Output = V> + Sync + Send,
     {
       fn solve(&self) {
-        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        self.out.borrow_mut().iter_mut()
+                        .zip(lhs.borrow()[*lsix..=*leix].iter().map(|x| T::into(*x)))
+                        .zip(rhs.borrow()[*rsix..=*reix].iter().map(|x| U::into(*x)))
+                        .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
@@ -213,21 +198,30 @@ macro_rules! binary_infix_par_vv {
   ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
-    pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    pub struct $func_name<T,U,V> {
+      pub lhs: (ColumnV<T>, usize, usize),
+      pub rhs: (ColumnV<U>, usize, usize),
+      pub out: ColumnV<V>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    impl<T,U,V> MechFunction for $func_name<T,U,V> 
+    where T: Copy + Debug + Clone + Add<Output = T> + Into<V> + Sync + Send,
+          U: Copy + Debug + Clone + Add<Output = U> + Into<V> + Sync + Send,
+          V: Copy + Debug + Clone + Add<Output = V> + Sync + Send,
     {
       fn solve(&self) {
-        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        self.out.borrow_mut().par_iter_mut()
+                        .zip(lhs.borrow()[*lsix..=*leix].par_iter().map(|x| T::into(*x)))
+                        .zip(rhs.borrow()[*rsix..=*reix].par_iter().map(|x| U::into(*x)))
+                        .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
 }
 
-#[macro_export]
+/*#[macro_export]
 macro_rules! binary_infix_par_vvip {
   ($func_name:ident, $op:tt) => (
 
