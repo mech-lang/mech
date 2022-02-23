@@ -22,7 +22,7 @@ pub struct SetAnyCol {
 }
 
 impl MechFunction for SetAnyCol {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let result = self.col.borrow().iter().any(|x| *x == true);
     self.out.borrow_mut()[0] = result
   }
@@ -36,7 +36,7 @@ pub struct SetAllCol {
 }
 
 impl MechFunction for SetAllCol {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let result = self.col.borrow().iter().all(|x| *x == true);
     self.out.borrow_mut()[0] = result
   }

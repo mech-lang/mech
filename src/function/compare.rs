@@ -86,7 +86,7 @@ macro_rules! compare_infix_ss {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Clone + Debug + std::cmp::PartialOrd
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] $op (self.rhs.borrow())[0];
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -107,7 +107,7 @@ macro_rules! compare_infix_vv {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -127,7 +127,7 @@ macro_rules! compare_infix_par_vv {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -149,7 +149,7 @@ macro_rules! compare_infix_vs {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = &self.rhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs $op *rhs); 
       }
@@ -170,7 +170,7 @@ macro_rules! compare_infix_par_vs {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = &self.rhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).for_each(|(out, lhs)| *out = *lhs $op *rhs); 
       }
@@ -192,7 +192,7 @@ macro_rules! compare_infix_sv {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = &self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = *lhs $op *rhs); 
       }
@@ -213,7 +213,7 @@ macro_rules! compare_infix_par_sv {
     impl<T> MechFunction for $func_name<T> 
     where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = &self.lhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(self.rhs.borrow().par_iter()).for_each(|(out, rhs)| *out = *lhs $op *rhs); 
       }

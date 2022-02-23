@@ -23,7 +23,7 @@ pub struct StatsSumCol<T> {
 impl<T> MechFunction for StatsSumCol<T>
 where T: std::ops::Add<Output = T> + Debug + Copy + Num
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let result = self.col.borrow().iter().fold(identities::Zero::zero(),|sum, n| sum + *n);
     self.out.borrow_mut()[0] = result
   }
@@ -38,7 +38,7 @@ pub struct StatsSumTable {
 }
 
 impl MechFunction for StatsSumTable {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut sum = 0.0;
     let table_brrw = self.table.borrow();
     let table_els = table_brrw.rows * table_brrw.cols;
@@ -61,7 +61,7 @@ pub struct StatsSumRow {
 }
 
 impl MechFunction for StatsSumRow {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let table_brrw = self.table.borrow();
     for row in 0..table_brrw.rows {
       let mut sum = 0.0;
@@ -87,7 +87,7 @@ pub struct StatsSumColVIx<T> {
 
 impl<T> MechFunction for StatsSumColVIx<T>
 where T: std::ops::Add<Output = T> + Debug + Copy + Num {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let result = self.col.borrow()
                          .iter()
                          .zip(self.ix.borrow().iter())
@@ -105,7 +105,7 @@ pub struct StatsSumColTIx {
 }
 
 impl MechFunction for StatsSumColTIx {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut sum = 0.0;
     let table_brrw = self.col.borrow();
     let ix_brrw = self.ix.borrow();

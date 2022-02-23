@@ -302,7 +302,6 @@ impl Column {
 
   pub fn kind(&self) -> ValueKind {
     match self {
-      
       Column::F32(_) => ValueKind::F32,
       Column::F64(_) => ValueKind::F64,
       Column::U8(_) => ValueKind::U8,

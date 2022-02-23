@@ -40,19 +40,26 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct Plan{
-  plan: Vec<Rc<RefCell<dyn MechFunction>>>
+  plan: Vec<Rc<dyn MechFunction>>
 }
 
 impl Plan {
-  fn new () -> Plan {
+  pub fn new () -> Plan {
     Plan {
       plan: Vec::new(),
     }
   }
   pub fn push<S: MechFunction + 'static>(&mut self, mut fxn: S) {
     fxn.solve();
-    self.plan.push(Rc::new(RefCell::new(fxn)));
+    self.plan.push(Rc::new(fxn));
   }
+
+  pub fn solve(&self) {
+    for fxn in &self.plan {
+      fxn.solve();
+    }
+  }
+
 }
 
 impl fmt::Debug for Plan {
@@ -62,7 +69,7 @@ impl fmt::Debug for Plan {
     let mut ix = 1;
     for step in &self.plan {
       plan.add_title("🦿",&format!("Step {}", ix));
-      plan.add_line(format!("{}",&step.borrow().to_string()));
+      plan.add_line(format!("{}",&step.to_string()));
       ix += 1;
     }
     write!(f,"{:?}",plan)?;
@@ -944,10 +951,10 @@ impl Block {
     Ok(())
   }
 
-  pub fn solve(&mut self) -> Result<(),MechError> {
+  pub fn solve(&self) -> Result<(),MechError> {
     if self.state == BlockState::Ready {
       for ref mut fxn in &mut self.plan.plan.iter() {
-        fxn.borrow_mut().solve();
+        fxn.solve();
       }
       Ok(())
     } else {

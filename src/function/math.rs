@@ -102,7 +102,7 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 impl<T> MechFunction for NegateS<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[0] = -((self.arg.borrow())[0]);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -119,7 +119,7 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 impl<T> MechFunction for NegateV<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(*arg)); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -136,7 +136,7 @@ macro_rules! binary_infix_sv {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
       }
@@ -155,7 +155,7 @@ macro_rules! binary_infix_vs {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = (*lhs).$op(rhs)); 
       }
@@ -175,7 +175,7 @@ macro_rules! binary_infix_vv {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -194,7 +194,7 @@ macro_rules! binary_infix_par_vv {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -213,7 +213,7 @@ macro_rules! binary_infix_par_vvip {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = (*out).$op(*arg)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -232,7 +232,7 @@ macro_rules! binary_infix_par_vs {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = (*lhs).$op(rhs));
       }
@@ -252,7 +252,7 @@ macro_rules! binary_infix_par_vsip {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let arg = self.arg.borrow()[0];
         self.out.borrow_mut().par_iter_mut().for_each(|out| *out = (*out).$op(arg));
       }
@@ -271,7 +271,7 @@ macro_rules! binary_infix_ss {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[self.lix];
         let rhs = self.rhs.borrow()[self.rix];
         self.out.borrow_mut().iter_mut().for_each(|out| *out = lhs.$op(rhs)); 
@@ -291,7 +291,7 @@ macro_rules! binary_infix_par_sv {
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
       }

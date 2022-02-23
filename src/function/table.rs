@@ -29,7 +29,7 @@ where T: Clone + Debug
 impl<T> MechFunction for ConcatV<T> 
 where T: Clone + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
     let mut arg_ix = 0;
     let mut ix = 0;
@@ -61,7 +61,7 @@ where T: Clone + Debug
 impl<T> MechFunction for CopyVV<T> 
 where T: Clone + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = arg.clone()); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -77,7 +77,7 @@ where T: Clone + Debug + Sync + Send
 impl<T> MechFunction for ParCopyVV<T> 
 where T: Clone + Debug + Sync + Send
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = arg.clone()); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -93,7 +93,7 @@ where T: Clone + Debug
 impl<T> MechFunction for CopySV<T> 
 where T: Clone + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let arg = self.arg.borrow()[self.ix].clone();
     self.out.borrow_mut().iter_mut().for_each(|out| *out = arg.clone()); 
   }
@@ -107,7 +107,7 @@ pub struct CopyVVRef {
   pub arg: Arg<TableId>, pub out: Out<TableId>
 }
 impl MechFunction for CopyVVRef {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| {
       let id = TableId::Global(*arg.unwrap());
       *out = id;
@@ -124,7 +124,7 @@ pub struct CopySVRef {
 }
 impl MechFunction for CopySVRef 
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let id = TableId::Global(*self.arg.borrow()[self.ix].unwrap());
     self.out.borrow_mut().iter_mut().for_each(|out| *out = id.clone()); 
   }
@@ -140,7 +140,7 @@ pub struct CopySS<T> {
 impl<T> MechFunction for CopySS<T> 
 where T: Clone + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[0] = (self.arg.borrow())[self.ix].clone()
   }
   fn to_string(&self) -> String { 
@@ -163,7 +163,7 @@ pub struct CopySSRef {
 }
 impl MechFunction for CopySSRef 
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[0] = TableId::Global(*self.arg.borrow()[self.ix].unwrap())
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -180,7 +180,7 @@ where T: Copy + Debug
 impl<T> MechFunction for CopyVB<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     // Filter the column to include only elements with a "true" index
     let filtered: Vec<T>  = 
       self.arg.borrow()
@@ -209,7 +209,7 @@ pub struct CopyVI<T>  {
 impl<T> MechFunction for CopyVI<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
     let ix_brrw = self.ix.borrow();
@@ -235,7 +235,7 @@ where T: Copy + Debug
 impl<T> MechFunction for SetSIxSIx<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[self.oix] = (self.arg.borrow())[self.ix];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -251,7 +251,7 @@ where T: Copy + Debug
 impl<T> MechFunction for SetSIxVB<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let oix_brrw = self.oix.borrow();
     for row in 0..oix_brrw.len() {
       if oix_brrw[row] {
@@ -269,7 +269,7 @@ pub struct CopyTB {
 }
 impl MechFunction for CopyTB
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let ix_brrw = self.ix.borrow();
     let rows = ix_brrw.logical_len();
 
@@ -301,7 +301,7 @@ pub struct SetVVB<T> {
 impl<T> MechFunction for SetVVB<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.oix.borrow().iter()).zip(self.arg.borrow().iter()).for_each(|((out,oix),x)| if *oix == true {
       *out = *x
     });
@@ -317,7 +317,7 @@ pub struct ParSetVVB<T> {
 impl<T> MechFunction for ParSetVVB<T> 
 where T: Copy + Debug + Sync + Send
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).zip(self.arg.borrow().par_iter()).for_each(|((out,oix),x)| if *oix == true {
       *out = *x
     });
@@ -334,7 +334,7 @@ pub struct SetVV<T> {
 impl<T> MechFunction for SetVV<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = *arg); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -348,7 +348,7 @@ pub struct ParSetVV<T> {
 impl<T> MechFunction for ParSetVV<T> 
 where T: Copy + Debug + Sync + Send
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = *arg); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -362,7 +362,7 @@ pub struct SetVS<T> {
 impl<T> MechFunction for SetVS<T> 
 where T: Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let arg = self.arg.borrow()[self.ix];
     self.out.borrow_mut().iter_mut().for_each(|out| *out = arg); 
   }
@@ -378,7 +378,7 @@ pub struct ParSetVS<T> {
 impl<T> MechFunction for ParSetVS<T> 
 where T: Copy + Debug + Sync + Send
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let arg = self.arg.borrow()[self.ix];
     self.out.borrow_mut().par_iter_mut().for_each(|out| *out = arg); 
   }
@@ -393,7 +393,7 @@ pub struct ParSetVSB<T> {
 impl<T> MechFunction for ParSetVSB<T> 
 where T: Copy + Debug + Sync + Send
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let arg = self.arg.borrow()[self.ix];
     self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).for_each(|(out, oix)| if *oix {*out = arg}); 
   }
@@ -407,7 +407,7 @@ pub struct CopyT {
 }
 
 impl MechFunction for CopyT {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
 
@@ -757,7 +757,7 @@ pub struct Range  {
 
 impl MechFunction for Range
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let start_value = self.start.borrow()[0];
     let end_value = self.end.borrow()[0];
     let delta = end_value - start_value + 1.0;
@@ -799,7 +799,7 @@ pub struct AppendRowT {
 }
 
 impl MechFunction for AppendRowT {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
     let orows = out_brrw.rows;
@@ -838,7 +838,7 @@ pub struct AppendRowSV {
 }
 
 impl MechFunction for AppendRowSV {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
     let arg_brrw = self.arg.borrow();
     let orows = out_brrw.rows;
@@ -887,7 +887,7 @@ pub struct Size  {
 
 impl MechFunction for Size
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     let arg_brrw = self.arg.borrow();
     let rows = arg_brrw.rows;
     let cols = arg_brrw.cols;

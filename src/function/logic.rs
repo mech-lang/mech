@@ -57,7 +57,7 @@ macro_rules! logic_infix_ss {
     }
     impl MechFunction for $func_name 
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         (self.out.borrow_mut())[0] = (self.lhs.borrow())[0] $op (self.rhs.borrow())[0];
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -75,7 +75,7 @@ macro_rules! logic_infix_vv {
     }
 
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -91,7 +91,7 @@ macro_rules! logic_infix_par_vv {
       pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
     }
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -109,7 +109,7 @@ macro_rules! logic_infix_vs {
     }
 
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = *lhs $op rhs); 
       }
@@ -127,7 +127,7 @@ macro_rules! logic_infix_par_vs {
     }
 
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).for_each(|(out, lhs)| *out = *lhs $op rhs); 
       }
@@ -146,7 +146,7 @@ macro_rules! logic_infix_sv {
     }
 
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs $op *rhs); 
       }
@@ -164,7 +164,7 @@ macro_rules! logic_infix_par_sv {
     }
 
     impl MechFunction for $func_name {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(self.rhs.borrow().par_iter()).for_each(|(out, rhs)| *out = lhs $op *rhs); 
       }
@@ -180,7 +180,7 @@ pub struct NotV {
 }
 
 impl MechFunction for NotV {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = !(*arg)); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -194,7 +194,7 @@ pub struct NotS
 }
 impl MechFunction for NotS 
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[0] = !(self.arg.borrow())[0];
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}

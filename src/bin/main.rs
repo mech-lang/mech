@@ -1,4 +1,5 @@
 #![allow(warnings)]
+#![feature(iter_intersperse)]
 // New runtime
 // requirements:
 // pass all tests
@@ -31,42 +32,203 @@ use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
 
+// -------------------------
+// Column
+// -------------------------
+
+#[derive(Clone, Debug)]
+pub enum Column {
+  F32(ColumnV<F32>),
+  F64(ColumnV<f64>),
+  U8(ColumnV<U8>),
+  U16(ColumnV<U16>),
+  U32(ColumnV<U32>),
+  U64(ColumnV<U64>),
+  U128(ColumnV<u128>),
+  Ref(ColumnV<TableId>),
+  I8(ColumnV<i8>),
+  I16(ColumnV<i16>),
+  I32(ColumnV<i32>),
+  I64(ColumnV<i64>),
+  I128(ColumnV<i128>),
+  Index(ColumnV<usize>),
+  Bool(ColumnV<bool>),
+  //String(ColumnV<MechString>),
+  Reference((Reference,(ColumnIndex,ColumnIndex))),
+  Time(ColumnV<F32>),
+  Length(ColumnV<F32>),
+  Empty,
+}
+
+#[derive(Clone, Debug)]
+pub enum ColumnIndex {
+  All,
+  Index(usize),
+  IndexCol(ColumnV<usize>),
+  Bool(ColumnV<bool>),
+  ReshapeColumn,
+  None,
+}
+
+impl Column {
+/*
+  pub fn copy(&self) -> Column {
+    match self {
+      Column::U8(col) => Column::U8(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U16(col) => Column::U16(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U32(col) => Column::U32(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U64(col) => Column::U64(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::U128(col) => Column::U128(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I8(col) => Column::I8(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I16(col) => Column::I16(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I32(col) => Column::I32(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I64(col) => Column::I64(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::I128(col) => Column::I128(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::F32(col) => Column::F32(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::F64(col) => Column::F64(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Bool(col) => Column::Bool(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Index(col) => Column::Index(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::String(col) => Column::String(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Ref(col) => Column::Ref(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Reference(reference) => Column::Reference(reference.clone()),
+      Column::Time(col) => Column::Time(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Length(col) => Column::Length(Rc::new(RefCell::new(col.borrow().clone()))),
+      Column::Empty => Column::Empty,
+    } 
+  }*/
+
+  pub fn len(&self) -> usize {
+    match self {
+      Column::U8(col) => col.len(),
+      Column::U16(col) => col.len(),
+      Column::U32(col) => col.len(),
+      Column::U64(col) => col.len(),
+      Column::U128(col) => col.len(),
+      Column::I8(col) => col.len(),
+      Column::I16(col) => col.len(),
+      Column::I32(col) => col.len(),
+      Column::I64(col) => col.len(),
+      Column::I128(col) => col.len(),
+      Column::Length(col) | Column::Time(col) |
+      Column::F32(col) => col.len(),
+      Column::F64(col) => col.len(),
+      Column::Bool(col) => col.len(),
+      Column::Index(col) => col.len(),
+      //Column::String(col) => col.len(),
+      Column::Ref(col) => col.len(),
+      Column::Reference((table,index)) => {
+        let t = table.borrow();
+        t.rows * t.cols
+      },
+      Column::Empty => 0,
+    }
+  }
+  
+  pub fn logical_len(&self) -> usize {
+    match self {
+      Column::Bool(col) => col.borrow_mut().iter().fold(0, |acc,x| if *x { acc + 1 } else { acc }),
+      _ => self.len(),
+    }    
+  }
+
+  pub fn resize(&self, rows: usize) -> std::result::Result<(),MechError> {
+    match self {
+      Column::U8(col) => col.borrow_mut().resize(rows,U8(0)),
+      Column::U16(col) => col.borrow_mut().resize(rows,U16(0)),
+      Column::U32(col) => col.borrow_mut().resize(rows,U32(0)),
+      Column::U64(col) => col.borrow_mut().resize(rows,U64(0)),
+      Column::U128(col) => col.borrow_mut().resize(rows,0),
+      Column::I8(col) => col.borrow_mut().resize(rows,0),
+      Column::I16(col) => col.borrow_mut().resize(rows,0),
+      Column::I32(col) => col.borrow_mut().resize(rows,0),
+      Column::I64(col) => col.borrow_mut().resize(rows,0),
+      Column::I128(col) => col.borrow_mut().resize(rows,0),
+      Column::Time(col) | Column::Length(col) |
+      Column::F32(col) => col.borrow_mut().resize(rows,F32(0.0)),
+      Column::F64(col) => col.borrow_mut().resize(rows,0.0),
+      Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
+      Column::Index(col) => col.borrow_mut().resize(rows,0),
+      Column::Bool(col) => col.borrow_mut().resize(rows,false),
+      //Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
+      Column::Reference(_) |
+      Column::Empty => {return Err(MechError::GenericError(7143));}
+    }
+    Ok(())
+  }
+
+  pub fn kind(&self) -> ValueKind {
+    match self {
+      Column::F32(_) => ValueKind::F32,
+      Column::F64(_) => ValueKind::F64,
+      Column::U8(_) => ValueKind::U8,
+      Column::U16(_) => ValueKind::U16,
+      Column::U32(_) => ValueKind::U32,
+      Column::U64(_) => ValueKind::U64,
+      Column::U128(_) => ValueKind::U128,
+      Column::I8(_) => ValueKind::I8,
+      Column::I16(_) => ValueKind::I16,
+      Column::I32(_) => ValueKind::I32,
+      Column::I64(_) => ValueKind::I64,
+      Column::I128(_) => ValueKind::I128,
+      Column::Bool(_) => ValueKind::Bool,
+      //Column::String(_) => ValueKind::String,
+      Column::Index(_) => ValueKind::Index,
+      Column::Ref(_) => ValueKind::Reference,
+      Column::Reference((table,index)) => table.borrow().kind(),
+      Column::Time(_) => ValueKind::Time,
+      Column::Length(_) => ValueKind::Length,
+      Column::Empty => ValueKind::Empty,
+    }
+  }
+
+}
+
 #[derive(Clone)]
-pub struct Column<T>(Rc<RefCell<Vec<T>>>);
+pub struct ColumnV<T>(Rc<RefCell<Vec<T>>>);
 
-impl<T: Copy> Column<T> {
+impl<T: Copy> ColumnV<T> {
 
-  pub fn new(vec: Vec<T>) -> Column<T> {
-    Column(Rc::new(RefCell::new(vec)))
+  pub fn new(vec: Vec<T>) -> ColumnV<T> {
+    ColumnV(Rc::new(RefCell::new(vec)))
   }
 
   pub fn len(&self) -> usize {
-    let Column(col) = self;
+    let ColumnV(col) = self;
     col.borrow().len()
   }
 
-  pub fn get_unchecked(&mut self, row: usize) -> T {
-    let Column(col) = self;
-    let mut c_brrw = col.borrow_mut();
+  pub fn get_unchecked(&self, row: usize) -> T {
+    let ColumnV(col) = self;
+    let mut c_brrw = col.borrow();
     c_brrw[row]
   }
 
   pub fn set_unchecked(&mut self, row: usize, value: T) {
-    let Column(col) = self;
+    let ColumnV(col) = self;
     let mut c_brrw = col.borrow_mut();
     c_brrw[row] = value;
+  }
+
+  pub fn borrow(&self) -> std::cell::Ref<Vec<T>> {
+    let ColumnV(col) = self;
+    col.borrow()
+  }
+
+  pub fn borrow_mut(&self) -> std::cell::RefMut<Vec<T>> {
+    let ColumnV(col) = self;
+    col.borrow_mut()
   }
   
 }
 
-impl<T: Debug> fmt::Debug for Column<T> {
+impl<T: Debug> fmt::Debug for ColumnV<T> {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let Column(col) = self;
+    let ColumnV(col) = self;
     let col_brrw = col.borrow();
     write!(f,"[")?;
-    for c in col_brrw.iter() {
-      write!(f,"{:?}, ",c)?;
+    for c in col_brrw.iter().map(|c| format!("{:?}",c)).intersperse(", ".to_string()) {
+      write!(f,"{}",c)?;
     }
     write!(f,"]")?;
     Ok(())
@@ -93,129 +255,6 @@ mech_type_conversion!(F32,U8,u8);
 mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U32,U8,u8);
 mech_type_conversion!(U64,U8,u8);
-
-
-type TableIx = usize;
-type Alias = u64;
-
-pub struct AliasMap {
-  capacity: usize,
-  ix_to_alias: Vec<Alias>,  
-  alias_to_ix: HashMap<Alias,TableIx>,
-}
-
-impl AliasMap {
-  pub fn new(capacity: usize) -> Self {
-    AliasMap {
-      capacity,
-      ix_to_alias: vec![0;capacity],
-      alias_to_ix: HashMap::new(),
-    }
-  }
-
-  pub fn resize(&mut self, new_capacity: usize) {
-    self.ix_to_alias.resize(new_capacity,0);
-  }
-
-  pub fn insert(&mut self, ix: TableIx, alias: Alias) -> std::result::Result<(),MechError> {
-    if ix < self.capacity {
-      self.ix_to_alias[ix] = alias;
-      self.alias_to_ix.insert(alias,ix);
-      Ok(())
-    } else {
-      Err(MechError::GenericError(8210))
-    }
-  }
-
-  pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
-    match self.alias_to_ix.get(alias) {
-      Some(ix) => Ok(*ix),
-      None => Err(MechError::GenericError(8211)),
-    }
-  }
-
-  pub fn get_alias(&self, ix: &TableIx) -> std::result::Result<Alias,MechError> {
-    if ix < &self.capacity {
-      Ok(self.ix_to_alias[*ix])
-    } else {
-      Err(MechError::GenericError(8212))
-    }
-  }
-
-}
-
-
-pub struct Table {
-  pub id: u64,                           
-  pub rows: usize,                       
-  pub cols: usize,                       
-  pub col_kinds: Vec<ValueKind>,                 
-  pub col_map: AliasMap,  
-  pub row_map: AliasMap,
-  pub data: Vec<Column<Value>>,
-  pub dictionary: StringDictionary,
-}
-
-impl Table {
-  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
-    let mut table = Table {
-      id,
-      rows,
-      cols,
-      col_kinds: Vec::with_capacity(cols),
-      col_map: AliasMap::new(cols),
-      row_map: AliasMap::new(rows),
-      data: Vec::with_capacity(cols),
-      dictionary: Rc::new(RefCell::new(HashMap::new())),
-    };
-    for col in 0..cols {
-      table.data.push(Column::new(vec![]));
-      table.col_kinds.push(ValueKind::Empty);
-    }
-    table
-  }
-}
-
-#[derive(Copy,Clone)]
-pub enum Value {
-  U8(U8),
-  U16(U16),
-  U32(U32),
-  U64(U64),
-  Empty,
-}
-
-pub fn par_add<T,U>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<U>) 
-  where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send,
-        U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send,
-{
-  let (Column(lhs),Column(rhs),Column(out)) = (lhs,rhs,out);
-  out.borrow_mut().par_iter_mut()
-     .zip(lhs.borrow().par_iter().map(|x| T::into(*x)))
-     .zip(rhs.borrow().par_iter())
-     .for_each(|((out, lhs),rhs)| *out = lhs.add(*rhs)); 
-}
-
-pub fn add<T,U,V>(lhs: &Column<T>, rhs: &Column<U>, out: &Column<V>) 
-  where T: Copy + Debug + Clone + Add<Output = T> + Into<V>,
-        U: Copy + Debug + Clone + Add<Output = U> + Into<V>,
-        V: Copy + Debug + Clone + Add<Output = V>
-{
-  let (Column(lhs),Column(rhs),Column(out)) = (lhs,rhs,out);
-  out.borrow_mut().iter_mut()
-     .zip(lhs.borrow().iter().map(|x| T::into(*x)))
-     .zip(rhs.borrow().iter().map(|x| U::into(*x)))
-     .for_each(|((out, lhs),rhs)| *out = lhs.add(rhs)); 
-}
-
-pub fn copy<T,U>(arg: &Column<T>, out: &Column<U>, start: usize) 
-  where T: Copy + Debug + Clone + Into<U>,
-        U: Copy + Debug + Clone + Into<T>,
-{
-  let (Column(arg),Column(out)) = (arg,out);
-  let mut o = out.borrow_mut();
-  o[start..].iter_mut().zip(arg.borrow().iter().map(|x| T::into(*x))).for_each(|(out, arg)| *out = arg.clone()); 
-}
 
 #[macro_export]
 macro_rules! mech_type {
@@ -252,22 +291,358 @@ macro_rules! mech_type_conversion {
   )
 }
 
-fn main() {
+// -------------------------
+// Table
+// -------------------------
 
-  let n = 1e6 as usize;
+#[derive(Debug)]
+pub struct Table {
+  pub id: u64,                           
+  pub rows: usize,                       
+  pub cols: usize,                       
+  pub col_kinds: Vec<ValueKind>,                 
+  pub col_map: AliasMap,  
+  pub row_map: AliasMap,
+  pub data: Vec<Column>,
+  pub dictionary: StringDictionary,
+}
 
-  let mut f32_1 = Column::<F32>::new(vec![F32(1.0);n]);
-  let mut f32_2 = Column::<F32>::new(vec![F32(4.0);n]);
-  let mut f32_3 = Column::<F32>::new(vec![F32(0.0);n]);
+impl Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      id,
+      rows,
+      cols,
+      col_kinds: Vec::with_capacity(cols),
+      col_map: AliasMap::new(cols),
+      row_map: AliasMap::new(rows),
+      data: Vec::with_capacity(cols),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
+    };
+    for col in 0..cols {
+      table.data.push(Column::Empty);
+      table.col_kinds.push(ValueKind::Empty);
+    }
+    table
+  }
 
-  let mut u16_1 = Column::<U16>::new(vec![U16(1);n]);
-  let mut u16_2 = Column::<U16>::new(vec![U16(4);n]);
-  let mut u16_3 = Column::<U16>::new(vec![U16(0);n]);
+  pub fn resize(&mut self, rows: usize, cols: usize) -> std::result::Result<(),MechError> {
+    self.rows = rows;
+    self.cols = cols;
+    self.col_kinds.resize(cols,ValueKind::Empty);
+    self.col_map.resize(cols);
+    self.row_map.resize(rows);
+    for col in &mut self.data {
+      col.resize(rows);
+    }
+    self.data.resize(cols,Column::Empty);
+    Ok(())
+  }
 
-  let mut u8_1 = Column::<U8>::new(vec![U8(1);n]);
-  let mut u8_2 = Column::<U8>::new(vec![U8(4);n]);
-  let mut u8_3 = Column::<U8>::new(vec![U8(0);n]);
+  pub fn get_col_raw(&self, col_ix: usize) -> std::result::Result<Column,MechError> {
+    if col_ix < self.cols {
+      Ok(self.data[col_ix].clone())
+    } else {
+      Err(MechError::GenericError(6353)) 
+    }
 
+  }
+
+  pub fn set_col(&mut self, col_ix: usize, column: Column) -> std::result::Result<(),MechError> {
+    if col_ix < self.cols {
+      if self.col_kinds[col_ix] == ValueKind::Empty {
+        self.col_kinds[col_ix] = column.kind();
+        self.data[col_ix] = column;
+        Ok(())
+      } else {
+        Err(MechError::GenericError(6354)) 
+      }
+    } else {
+      Err(MechError::GenericError(6355)) 
+    }
+  }
+
+  /*
+  pub fn set_raw(&mut self, row_ix: usize, col_ix: usize, value: Value) -> std::result::Result<(),MechError> {
+    if col_ix < self.cols && row_ix < self.rows {
+      let mut col = &mut self.data[col_ix];
+      col.set_unchecked(row_ix,value);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(6356))
+    }
+  }
+
+  pub fn get_raw(&self, row_ix: usize, col_ix: usize) -> std::result::Result<Value,MechError> {
+    if col_ix < self.cols && row_ix < self.rows {
+      let col = &self.data[col_ix];
+      Ok(col.get_unchecked(row_ix))
+    } else {
+      Err(MechError::GenericError(6357))
+    }
+  }*/
+}
+
+type TableIx = usize;
+type Alias = u64;
+
+#[derive(Debug)]
+pub struct AliasMap {
+  capacity: usize,
+  ix_to_alias: Vec<Alias>,  
+  alias_to_ix: HashMap<Alias,TableIx>,
+}
+
+impl AliasMap {
+  pub fn new(capacity: usize) -> Self {
+    AliasMap {
+      capacity,
+      ix_to_alias: vec![0;capacity],
+      alias_to_ix: HashMap::new(),
+    }
+  }
+
+  pub fn resize(&mut self, new_capacity: usize) {
+    self.capacity = new_capacity;
+    self.ix_to_alias.resize(new_capacity,0);
+  }
+
+  pub fn insert(&mut self, ix: TableIx, alias: Alias) -> std::result::Result<(),MechError> {
+    if ix < self.capacity {
+      self.ix_to_alias[ix] = alias;
+      self.alias_to_ix.insert(alias,ix);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(8210))
+    }
+  }
+
+  pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
+    match self.alias_to_ix.get(alias) {
+      Some(ix) => Ok(*ix),
+      None => Err(MechError::GenericError(8211)),
+    }
+  }
+
+  pub fn get_alias(&self, ix: &TableIx) -> std::result::Result<Alias,MechError> {
+    if ix < &self.capacity {
+      Ok(self.ix_to_alias[*ix])
+    } else {
+      Err(MechError::GenericError(8212))
+    }
+  }
+
+}
+
+// -------------------------
+// Value
+// -------------------------
+
+#[derive(Copy,Clone,Debug)]
+pub enum Value {
+  U8(U8),
+  U16(U16),
+  U32(U32),
+  U64(U64),
+  F32(F32),
+  Empty,
+}
+
+// -------------------------
+// Functions
+// -------------------------
+
+pub fn par_add<T,U>(lhs: &ColumnV<T>, rhs: &ColumnV<U>, out: &ColumnV<U>) 
+  where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send,
+        U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send,
+{
+  let (ColumnV(lhs),ColumnV(rhs),ColumnV(out)) = (lhs,rhs,out);
+  out.borrow_mut().par_iter_mut()
+     .zip(lhs.borrow().par_iter().map(|x| T::into(*x)))
+     .zip(rhs.borrow().par_iter())
+     .for_each(|((out, lhs),rhs)| *out = lhs.add(*rhs)); 
+}
+
+
+
+#[derive(Debug)]
+pub struct AddVV<T,U,V> {
+  pub lhs: (ColumnV<T>, usize, usize),
+  pub rhs: (ColumnV<U>, usize, usize),
+  pub out: ColumnV<V>
+}
+impl<T,U,V> MechFunction for AddVV<T,U,V> 
+where T: Copy + Debug + Clone + Add<Output = T> + Into<V> + Sync + Send,
+      U: Copy + Debug + Clone + Add<Output = U> + Into<V> + Sync + Send,
+      V: Copy + Debug + Clone + Add<Output = V> + Sync + Send,
+{
+  fn solve(&self) {
+    let (lhs,lsix,leix) = &self.lhs;
+    let (rhs,rsix,reix) = &self.rhs;
+    self.out.borrow_mut().par_iter_mut()
+                    .zip(lhs.borrow()[*lsix..=*leix].par_iter().map(|x| T::into(*x)))
+                    .zip(rhs.borrow()[*rsix..=*reix].par_iter().map(|x| U::into(*x)))
+                    .for_each(|((out, lhs),rhs)| *out = lhs.add(rhs)); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+pub fn copy<T,U>(arg: &ColumnV<T>, out: &ColumnV<U>, start: usize) 
+  where T: Copy + Debug + Clone + Into<U>,
+        U: Copy + Debug + Clone + Into<T>,
+{
+  let (ColumnV(arg),ColumnV(out)) = (arg,out);
+  let mut o = out.borrow_mut();
+  o[start..].iter_mut().zip(arg.borrow().iter().map(|x| T::into(*x))).for_each(|(out, arg)| *out = arg.clone()); 
+}
+
+
+
+fn main() -> std::result::Result<(),MechError> {
+
+  const n: usize = 1e7 as usize;
+
+  let xx = vec![1.0;n];
+  let yy = vec![2.0;n];
+  let mut zz = vec![0.0;n];
+
+
+  let mut f32_1 = ColumnV::<F32>::new(vec![F32(1.0);n]);
+  let mut f32_2 = ColumnV::<F32>::new(vec![F32(2.0);n]);
+  let mut f32_3 = ColumnV::<F32>::new(vec![F32(0.0);n]);
+
+  let mut u16_1 = ColumnV::<U16>::new(vec![U16(1);n]);
+  let mut u16_2 = ColumnV::<U16>::new(vec![U16(4);n]);
+  let mut u16_3 = ColumnV::<U16>::new(vec![U16(0);n]);
+
+  let mut u8_1 = ColumnV::<U8>::new(vec![U8(1);n]);
+  let mut u8_2 = ColumnV::<U8>::new(vec![U8(4);n]);
+  let mut u8_3 = ColumnV::<U8>::new(vec![U8(0);n]);
+
+  let mut table = Table::new(0x1234, 0,0);
+  let mut table2 = Table::new(0x12345, 0,0);
+
+  table.resize(n,2);
+  table2.resize(n,1);
+  
+  table.set_col(0,Column::U8(u8_1));
+  table.set_col(1,Column::U8(u8_2));
+  table2.set_col(0,Column::U8(u8_3));
+
+  let lhs = table.get_col_raw(0)?;
+  let rhs = table.get_col_raw(1)?;
+  let out = table2.get_col_raw(0)?;
+
+  let mut plan = Plan::new();
+
+  if let (Column::U8(lhs),Column::U8(rhs),Column::U8(out)) = (lhs,rhs,out) {
+    plan.push(AddVV{
+      lhs: (lhs.clone(),0,n-1),
+      rhs: (rhs.clone(),0,n-1),
+      out: out.clone()
+    });
+  }
+
+  let col0 = ColumnV::<Value>::new(vec![Value::F32(F32(1.0));table.rows]);
+  let col1 = ColumnV::<Value>::new(vec![Value::U8(U8(2));table.rows]);
+  let col3 = ColumnV::<Value>::new(vec![Value::F32(F32(0.0));table.rows]);
+
+  let mut mech_table = mech_core::Table::new(0x0123456789ABCDEF,n,2);
+  let mut mech_table2 = mech_core::Table::new(0x0123456789ABCDEA,n,1);
+
+  mech_table2.set_col_kind(0,ValueKind::F32);
+  let out = mech_table2.get_column_unchecked(0);
+
+
+  mech_table.set_col_kind(0,ValueKind::F32);
+  mech_table.set_col_kind(1,ValueKind::F32);
+
+  let lhs = mech_table.get_column_unchecked(0);
+  let rhs = mech_table.get_column_unchecked(1);
+
+
+  for i in 0..mech_table.rows {
+    mech_table.set_raw(i,0,mech_core::Value::F32(i as f32));
+    mech_table.set_raw(i,1,mech_core::Value::F32(i as f32));
+  }
+
+  let mut fxn = match (&lhs,&rhs,&out) {
+    (mech_core::Column::F32(lhs),mech_core::Column::F32(rhs),mech_core::Column::F32(out)) => {
+      mech_core::math::AddVV::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }
+    }
+    _ => {return Err(MechError::GenericError(8888));}
+  };
+
+
+  //println!("{:#?}", table);
+  //println!("{:#?}", table2);
+
+  let i = 4000;
+
+  println!("NEW HOTNESS");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    plan.solve();
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+
+  println!("STATUS QUO");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    fxn.solve();
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+/*
+  let i = 4000;
+  println!("FLOAT");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    par_add(&f32_1,&f32_2,&f32_3);
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+  println!("HEAP");
+  let start_ns = time::precise_time_ns();
+  for _ in 0..i {
+    for i in 0..n {
+      zz[i] = xx[i] + yy[i];
+    }
+  }
+  let end_ns = time::precise_time_ns();
+  let time = (end_ns - start_ns) as f32;
+  println!("{:0.4?} s", time / 1e9);
+
+  println!("{:?}", zz[n-1]);
+  println!("{:?}", f32_3.get_unchecked(n-1));*/
+
+
+
+
+/*
+  table.set_col(0,col0,ValueKind::F32);
+  table.set_col(1,col1,ValueKind::U8);
+  println!("{:#?}", table);
+  table.set_raw(0,1,Value::U8(U8(3)));
+  let val = table.get_raw(0,0);
+  println!("{:#?}", val);
+  println!("{:#?}", table);
+
+  let c1 = table.get_col_raw(0).unwrap();
+  println!("{:?}", c1);
+  let c2 = table.get_col_raw(1).unwrap();
+  println!("{:?}", c2);*/
+
+  //add(&c1,&c2,&col3);
+
+  /*
   let i = 4000;
 
   println!("FLOAT");
@@ -304,7 +679,7 @@ fn main() {
   }
   let end_ns = time::precise_time_ns();
   let time = (end_ns - start_ns) as f32;
-  println!("{:0.4?} s", time / 1e9);
+  println!("{:0.4?} s", time / 1e9);*/
 
   /*let c2 = Column::<U8>::new(vec![U8(0);9]);
   let c3 = Column::<U32>::new(vec![U32(4),U32(5),,U32(5)]);
@@ -545,5 +920,5 @@ fn main() {
   println!("{:0.4?} s", time / 1e9);
   println!("{:?}", core);
 */
-
+  Ok(())
 }
