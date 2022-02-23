@@ -5,8 +5,6 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-//use crate::quantity::{Quantity, ToQuantity, QuantityMath};
-//use errors::{ErrorType};
 use crate::*;
 use std::fmt;
 use std::mem::transmute;
@@ -30,38 +28,28 @@ lazy_static! {
 
 // ## Value structs and enums
 
-#[derive(Clone,Debug,Serialize,Deserialize)]
+#[derive(Clone,Serialize,Deserialize)]
 pub enum Value {
   U8(U8),
   U16(U16),
   U32(U32),
   U64(U64),
-  F32(F32),
-  Empty,
-}
-
-/*
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub enum Value {
-  U8(u8),
-  U16(u16),
-  U32(u32),
-  U64(u64),
   U128(u128),
   I8(i8),
   I16(i16),
   I32(i32),
   I64(i64),
   I128(i128),
-  F32(f32),
+  F32(F32),
   F64(f64),
   Bool(bool),
-  Time(f32),
-  Length(f32),
+  Time(F32),
+  Length(F32),
   String(MechString),
   Reference(TableId),
   Empty,
 }
+
 
 impl Value {
 
@@ -116,20 +104,20 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match &self {
-      Value::U8(v) => write!(f,"{}u8",v)?,
-      Value::U16(v) => write!(f,"{}u16",v)?, 
-      Value::U32(v) => write!(f,"{}u32",v)?, 
-      Value::U64(v) => write!(f,"{}u64",v)?,
+      Value::U8(v) => write!(f,"{:?}u8",v)?,
+      Value::U16(v) => write!(f,"{:?}u16",v)?, 
+      Value::U32(v) => write!(f,"{:?}u32",v)?, 
+      Value::U64(v) => write!(f,"{:?}u64",v)?,
       Value::U128(v) => write!(f,"{}u128",v)?, 
       Value::I8(v) => write!(f,"{}i8",v)?, 
       Value::I16(v) => write!(f,"{}i16",v)?, 
       Value::I32(v) => write!(f,"{}i32",v)?, 
       Value::I64(v) => write!(f,"{}i64",v)?, 
       Value::I128(v) => write!(f,"{}i128",v)?, 
-      Value::Time(v) => write!(f,"{}ms",v)?,
-      Value::Length(v) => write!(f,"{}m",v)?,
-      Value::F32(v) => write!(f,"{:.2}f32",v)?,
-      Value::F64(v) => write!(f,"{:.2}f64",v)?, 
+      Value::Time(v) => write!(f,"{:?}ms",v)?,
+      Value::Length(v) => write!(f,"{:?}m",v)?,
+      Value::F32(v) => write!(f,"{:?}f32",v)?,
+      Value::F64(v) => write!(f,"{}f64",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
@@ -139,7 +127,7 @@ impl fmt::Debug for Value {
     }
     Ok(())
   }
-}*/
+}
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueKind {
