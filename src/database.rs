@@ -112,7 +112,7 @@ impl Database {
 impl fmt::Debug for Database {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    /*let mut db_drawing = BoxPrinter::new();
+    let mut db_drawing = BoxPrinter::new();
     db_drawing.add_header("tables");
     for table in self.tables.values() {
       db_drawing.add_line(format!("{:?}", table.borrow()));
@@ -123,7 +123,7 @@ impl fmt::Debug for Database {
         db_drawing.add_line(format!("{} → {:?}", humanize(alias), id));
       }
     }
-    write!(f,"{:?}",db_drawing)?;*/
+    write!(f,"{:?}",db_drawing)?;
     Ok(())
   }
 }
