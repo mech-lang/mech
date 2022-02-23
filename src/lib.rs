@@ -32,7 +32,6 @@ mod block;
 mod core;
 mod schedule;
 
-
 pub use self::core::Core;
 pub use self::table::*;
 pub use self::column::*;
@@ -165,7 +164,6 @@ pub const WORDLIST: &[&str;256] = &[
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
 
-/* 
 pub struct BoxPrinter {
   pub lines: Vec<LineKind>,
   width: usize,
@@ -208,6 +206,7 @@ impl BoxTable {
     let mut column_aliases = Vec::new();
     let mut column_kinds = Vec::new();
 
+    /*
     for (col,alias) in table.column_ix_to_alias.iter().enumerate() {
       if let Some(alias_string) = table.dictionary.borrow().get(alias) {
         let chars = alias_string.len();
@@ -224,7 +223,7 @@ impl BoxTable {
         }
         column_aliases.push(alias);   
       }
-    }
+    }*/
 
     for (col,kind) in table.col_kinds.iter().enumerate() {
       let kind_string = format!("{:?}", kind);
@@ -491,4 +490,4 @@ impl fmt::Debug for BoxPrinter {
     write!(f,"{}",self.drawing)?;
     Ok(())
   }
-}*/
+}
