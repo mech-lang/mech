@@ -10,7 +10,7 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  //math::*,
+  math::*,
   //compare::*,
   //stats::*,
   //table::*,
@@ -64,8 +64,8 @@ impl Core {
   pub fn new() -> Core {
     
     let mut functions = Functions::new();
-    /*functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-    functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
+    functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    /*functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     //functions.insert(*MATH_EXPONENT, MathExp{});
