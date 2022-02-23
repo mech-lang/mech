@@ -19,7 +19,7 @@ pub enum MechError {
   //LinearSubscriptOutOfBounds((Rows,Rows)),          // (target) vs (actual) index
   //DuplicateAlias(u64),                            // Alias ID
   //DomainMismatch(u64, u64),                       // domain IDs (target vs actual)
-  //MissingFunction(u64),                             // ID of missing function
+  MissingFunction(u64),                             // ID of missing function
   //TransformationPending(Transformation),            // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
   GenericError(usize),
