@@ -161,9 +161,9 @@ impl Block {
   pub fn id(&self) -> BlockId {
     self.id
   }
-/*
+
   pub fn ready(&mut self) -> bool {
-    match self.state {
+    /*match self.state {
       BlockState::Ready => true,
       BlockState::Disabled => false,
       _ => {
@@ -189,9 +189,11 @@ impl Block {
           }
         }
       }
-    }
+    }*/
+    false
   }
 
+  /*
   pub fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
 
     let (arg_name, table_id, indices) = argument;
@@ -958,7 +960,7 @@ impl Block {
   }
 
 }
-/*
+
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -1021,7 +1023,7 @@ impl fmt::Debug for Block {
     write!(f,"{:?}",block_drawing)?;*/
     Ok(())
   }
-}*/
+}
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
