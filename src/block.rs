@@ -163,7 +163,7 @@ impl Block {
   }
 
   pub fn ready(&mut self) -> bool {
-    /*match self.state {
+    match self.state {
       BlockState::Ready => true,
       BlockState::Disabled => false,
       _ => {
@@ -189,11 +189,10 @@ impl Block {
           }
         }
       }
-    }*/
-    false
+    }
   }
 
-  /*
+  
   pub fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
 
     let (arg_name, table_id, indices) = argument;
@@ -229,7 +228,7 @@ impl Block {
 
     // Get the column and row
     match (row,col) {
-      (_,TableIndex::Index(ix)) |
+      /*(_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
         return Err(MechError::GenericError(3493));
       }
@@ -302,7 +301,7 @@ impl Block {
       (TableIndex::All, TableIndex::Index(col_ix)) => {
         let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
         Ok((*arg_name,col.clone(),ColumnIndex::All))
-      },
+      },*/
       _ => {
         let col = table_brrw.get_column(&col)?;
         if col.len() == 1 {
@@ -325,7 +324,7 @@ impl Block {
 
   pub fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
     let (arg_name,table_id,indices) = argument;
-
+  
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
       let argument = (0,table_id,vec![(*row,*column)]);
@@ -367,19 +366,20 @@ impl Block {
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
-          Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          //Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          //Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
           x => {
             return Err(MechError::GenericError(9253));
           }
         };
         ix
       }
+      _ => ColumnIndex::All,
     };
-    let arg_cols
-      = lhs_brrw.get_columns(&col)?.iter().map(|arg_col| (*arg_name,arg_col.clone(),row_index.clone())).collect();
+    let arg_cols = lhs_brrw.get_columns(&col)?.iter().map(|arg_col| (*arg_name,arg_col.clone(),row_index.clone())).collect();
     Ok(arg_cols)
   }
+
 
   pub fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechError> {
     let (out_table_id, _, _) = out;
@@ -392,7 +392,7 @@ impl Block {
     let column = t.get_column_unchecked(0);
     Ok(column)
   }
-
+ 
   pub fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechError> {
     let mut arg_shapes = Vec::new();
     for argument in arguments {
@@ -407,7 +407,7 @@ impl Block {
     for (row,column) in indices.iter().take(indices.len()-1) {
       let argument = (0,table_id,vec![(*row,*column)]);
       match self.get_arg_dim(&argument)? {
-        TableShape::Scalar => {
+        /*TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
           match (arg_col,row,column) {
             ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
@@ -421,7 +421,7 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6695));}
           }
-        }
+        }*/
         _ => {return Err(MechError::GenericError(6694));}
       }
     }
@@ -460,7 +460,7 @@ impl Block {
       _ => TableShape::Pending,
     };
     Ok(arg_shape)
-  }*/
+  }
 
   pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
     match self.state {
@@ -547,7 +547,8 @@ impl Block {
         }
         table.set_column_alias(*column_ix,*column_alias);
       },
-      /*Transformation::TableDefine{table_id, indices, out} => {
+      Transformation::TableDefine{table_id, indices, out} => {
+        
         if let TableId::Global(_) = table_id { 
           self.input.insert((*table_id,TableIndex::All,TableIndex::All));
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
@@ -576,7 +577,7 @@ impl Block {
         let argument = (0,table_id,vec![(*row,*column)]);
 
         match (row,column) {
-          // Select an entire table
+          /*// Select an entire table
           (TableIndex::All, TableIndex::All) => {
             match out {
               TableId::Global(gid) => {
@@ -668,7 +669,7 @@ impl Block {
                 return Err(MechError::GenericError(6388));
               },
             }
-          }
+          }*/
           x => {
             println!("{:?}", x);
             return Err(MechError::GenericError(6379));
@@ -680,7 +681,7 @@ impl Block {
         let arguments = vec![(0,*src_id,vec![(*src_row,*src_col)]),(0,*dest_id,vec![(*dest_row,*dest_col)])];
         let arg_shapes = self.get_arg_dims(&arguments)?;
         match (&arg_shapes[0], &arg_shapes[1]) {
-          (TableShape::Scalar, TableShape::Row(_)) |
+          /*(TableShape::Scalar, TableShape::Row(_)) |
           (TableShape::Row(_), TableShape::Row(_)) => {
             let src_table = self.get_table(src_id)?;
             let dest_table = self.get_table(dest_id)?;
@@ -806,10 +807,10 @@ impl Block {
                 return Err(MechError::GenericError(8835));
               },
             }
-          }
+          }*/
           _ => return Err(MechError::GenericError(8837)),
         }
-      }*/
+      }
       Transformation::NumberLiteral{kind, bytes} => {
         let mut num = NumberLiteral::new(*kind, bytes.to_vec());
         let mut bytes = bytes.clone();
@@ -964,7 +965,6 @@ impl Block {
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    /*
     let mut block_drawing = BoxPrinter::new();
     block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
@@ -1020,7 +1020,7 @@ impl fmt::Debug for Block {
     }
     block_drawing.add_title("📅","tables");
     block_drawing.add_line(format!("{:?}", &self.tables));
-    write!(f,"{:?}",block_drawing)?;*/
+    write!(f,"{:?}",block_drawing)?;
     Ok(())
   }
 }

@@ -426,6 +426,40 @@ impl Table {
       Err(MechError::GenericError(1211))
     }
   }
+
+  pub fn get_linear(&self, ix: usize) -> Result<Value,MechError> {
+    if ix < self.rows * self.cols {
+      let row = ix / self.cols;
+      let col = ix % self.cols;
+      self.get_raw(row,col)
+    } else {
+      Err(MechError::GenericError(1213))
+    }
+  }
+
+  pub fn len(&self) -> usize {
+    self.rows * self.cols
+  }
+
+  pub fn get_column_unchecked(&self, col: usize) -> Column {
+    self.data[col].clone()
+  }
+
+  pub fn logical_len(&self) -> usize {
+    match self.kind() {
+      ValueKind::Bool => {
+        let mut len = 0;
+        for i in 0..self.len() {
+          match self.get_linear(i) {
+            Ok(Value::Bool(x)) => if x == true { len += 1 },
+            _ => (),
+          }
+        }
+        len
+      }
+      _ => self.len(),
+    }
+  }
   
 }
 
@@ -596,15 +630,7 @@ impl Table {
     }
   }
 
-  pub fn get_linear(&self, ix: usize) -> Result<Value,MechError> {
-    if ix < self.rows * self.cols {
-      let row = ix / self.cols;
-      let col = ix % self.cols;
-      self.get_raw(row,col)
-    } else {
-      Err(MechError::GenericError(1213))
-    }
-  }
+
 
   pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),MechError> {
     if ix < self.rows * self.cols {
@@ -624,9 +650,6 @@ impl Table {
 
   
 
-  pub fn get_column_unchecked(&self, col: usize) -> Column {
-    self.data[col].clone()
-  }
 
   pub fn resize(&mut self, rows: usize, cols: usize) {
     if self.cols != cols {
@@ -642,25 +665,8 @@ impl Table {
     }
   }
 
-  pub fn len(&self) -> usize {
-    self.rows * self.cols
-  }
 
-  pub fn logical_len(&self) -> usize {
-    match self.kind() {
-      ValueKind::Bool => {
-        let mut len = 0;
-        for i in 0..self.len() {
-          match self.get_linear(i) {
-            Ok(Value::Bool(x)) => if x == true { len += 1 },
-            _ => (),
-          }
-        }
-        len
-      }
-      _ => self.len(),
-    }
-  }
+
   
 }
 
