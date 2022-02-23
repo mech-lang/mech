@@ -65,14 +65,14 @@ impl Plan {
 impl fmt::Debug for Plan {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    /*let mut plan = BoxPrinter::new();
+    let mut plan = BoxPrinter::new();
     let mut ix = 1;
     for step in &self.plan {
       plan.add_title("🦿",&format!("Step {}", ix));
       plan.add_line(format!("{}",&step.to_string()));
       ix += 1;
     }
-    write!(f,"{:?}",plan)?;*/
+    write!(f,"{:?}",plan)?;
     Ok(())
   }
 }
@@ -152,7 +152,7 @@ impl Block {
       }
     }
   }
-/*
+
   pub fn gen_id(&mut self) -> BlockId {
     self.id = hash_str(&format!("{:?}",self.transformations));
     self.id
@@ -161,7 +161,7 @@ impl Block {
   pub fn id(&self) -> BlockId {
     self.id
   }
-
+/*
   pub fn ready(&mut self) -> bool {
     match self.state {
       BlockState::Ready => true,
@@ -458,7 +458,7 @@ impl Block {
       _ => TableShape::Pending,
     };
     Ok(arg_shape)
-  }
+  }*/
 
   pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
     match self.state {
@@ -481,7 +481,6 @@ impl Block {
   }
 
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
-    println!("{:?}", tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
@@ -522,15 +521,16 @@ impl Block {
       Transformation::ColumnKind{table_id, column_ix, kind} => {
         let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
-        if *kind == *U8 { table_brrw.set_kind(ValueKind::U8); }
-        else if *kind == *U16 { table_brrw.set_kind(ValueKind::U16); }
-        else if *kind == *U32 { table_brrw.set_kind(ValueKind::U32); }
-        else if *kind == *U64 { table_brrw.set_kind(ValueKind::U64); }
-        else if *kind == *F32 { table_brrw.set_kind(ValueKind::F32); }
-        else if *kind == *M { table_brrw.set_kind(ValueKind::Length); }
-        else if *kind == *KM { table_brrw.set_kind(ValueKind::Length); }
-        else if *kind == *S { table_brrw.set_kind(ValueKind::Time); }
-        else if *kind == *MS { table_brrw.set_kind(ValueKind::Time); }
+        if *kind == *cU8 { table_brrw.set_kind(ValueKind::U8); }
+        else if *kind == *cU16 { table_brrw.set_kind(ValueKind::U16); }
+        else if *kind == *cU32 { table_brrw.set_kind(ValueKind::U32); }
+        else if *kind == *cU64 { table_brrw.set_kind(ValueKind::U64); }
+        else if *kind == *cF32 { table_brrw.set_kind(ValueKind::F32); }
+        else if *kind == *cM { table_brrw.set_kind(ValueKind::Length); }
+        else if *kind == *cKM { table_brrw.set_kind(ValueKind::Length); }
+        else if *kind == *cS { table_brrw.set_kind(ValueKind::Time); }
+        else if *kind == *cMS { table_brrw.set_kind(ValueKind::Time); }
+        else {return Err(MechError::GenericError(8492))}
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
@@ -545,7 +545,7 @@ impl Block {
         }
         table.set_column_alias(*column_ix,*column_alias);
       },
-      Transformation::TableDefine{table_id, indices, out} => {
+      /*Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
           self.input.insert((*table_id,TableIndex::All,TableIndex::All));
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
@@ -807,7 +807,7 @@ impl Block {
           }
           _ => return Err(MechError::GenericError(8837)),
         }
-      }
+      }*/
       Transformation::NumberLiteral{kind, bytes} => {
         let mut num = NumberLiteral::new(*kind, bytes.to_vec());
         let mut bytes = bytes.clone();
@@ -815,72 +815,72 @@ impl Block {
         let table =  self.get_table(&TableId::Local(table_id))?; 
         let mut t = table.borrow_mut();
         t.resize(1,1);
-        if *kind == *U8 {
+        if *kind == *cU8 {
           t.set_kind(ValueKind::U8)?;
-          t.set_raw(0,0,Value::U8(num.as_u8()))?;
+          t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
         } 
-        else if *kind == *U16 {
+        else if *kind == *cU16 {
           t.set_kind(ValueKind::U16)?;
-          t.set_raw(0,0,Value::U16(num.as_u16()))?;
+          t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
         } 
-        else if *kind == *U32 {
+       else if *kind == *cU32 {
           t.set_kind(ValueKind::U32)?;
-          t.set_raw(0,0,Value::U32(num.as_u32()))?;
+          t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
         } 
-        else if *kind == *U64 {
+        else if *kind == *cU64 {
           t.set_kind(ValueKind::U64)?;
-          t.set_raw(0,0,Value::U64(num.as_u64()))?;
+          t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
         } 
-        else if *kind == *MS {
+        else if *kind == *cMS {
           t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(num.as_f32()))?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
         } 
-        else if *kind == *S {
+        else if *kind == *cS {
           t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(num.as_f32() * 1000.0))?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32() * 1000.0)))?;
         } 
-        else if *kind == *F32 {
+        else if *kind == *cF32 {
           t.set_kind(ValueKind::F32)?;
-          t.set_raw(0,0,Value::F32(num.as_f32()))?;
+          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
         } 
-        else if *kind == *F32L {
+        else if *kind == *cF32L {
           t.set_kind(ValueKind::F32)?;
-          t.set_raw(0,0,Value::F32(num.as_f32()))?;
+          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
         } 
-        else if *kind == *KM {
+        else if *kind == *cKM {
           t.set_kind(ValueKind::Length)?;
-          t.set_raw(0,0,Value::Length(num.as_f32() * 1000.0))?;
+          t.set_raw(0,0,Value::Length(F32::new(num.as_f32() * 1000.0)))?;
         } 
-        else if *kind == *M {
+        else if *kind == *cM {
           t.set_kind(ValueKind::Length)?;
-          t.set_raw(0,0,Value::Length(num.as_f32()))?;
+          t.set_raw(0,0,Value::Length(F32::new(num.as_f32())))?;
         }
-        else if *kind == *DEC {
+        else if *kind == *cDEC {
           match bytes.len() {
             1 => {
               t.set_col_kind(0, ValueKind::U8)?;
-              t.set_raw(0,0,Value::U8(num.as_u8()))?;
+              t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
             }
             2 => {
               t.set_kind(ValueKind::U16)?;
-              t.set_raw(0,0,Value::U16(num.as_u16()))?;
+              t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
             }
             3 | 4 => {
               t.set_kind(ValueKind::U32)?;
-              t.set_raw(0,0,Value::U32(num.as_u32()))?;
+              t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
             }
             5..=8 => {
               t.set_kind(ValueKind::U64)?;
-              t.set_raw(0,0,Value::U64(num.as_u64()))?;
+              t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
             }
             9..=16 => {
               t.set_kind(ValueKind::U128)?;
-              t.set_raw(0,0,Value::U128(num.as_u128()))?;
+              t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
             }
             _ => {return Err(MechError::GenericError(6376));},
           }
         } 
-        else if *kind == *HEX {
+        else if *kind == *cHEX {
           let mut x: u128 = 0;
           t.set_kind(ValueKind::U128)?;
           while bytes.len() < 16 {
@@ -890,8 +890,8 @@ impl Block {
             x = x << 4;
             x = x | half_byte as u128;
           }
-          t.set_raw(0,0,Value::U128(x))?;
-        } 
+          t.set_raw(0,0,Value::U128(U128::new(x)))?;
+        }
         else {
           println!("{:?}", kind);
           return Err(MechError::GenericError(6996));
@@ -939,12 +939,12 @@ impl Block {
           }
           None => {return Err(MechError::GenericError(2352));},
         }
-      } 
+      }
       _ => {},
     }
     self.transformations.push(tfm.clone());
     Ok(())
-  }*/
+  }
   
   pub fn solve(&self) -> Result<(),MechError> {
     if self.state == BlockState::Ready {
@@ -1021,11 +1021,11 @@ impl fmt::Debug for Block {
     write!(f,"{:?}",block_drawing)?;*/
     Ok(())
   }
-}
+}*/
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: TableId,
   pub row: TableIndex,
   pub column: TableIndex,
-}*/
+}
