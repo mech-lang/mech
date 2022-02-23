@@ -1,5 +1,5 @@
 use crate::*;
-use crate::block::Argument;
+use crate::Argument;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt;

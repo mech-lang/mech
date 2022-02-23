@@ -11,7 +11,7 @@ type Cols = usize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechError {
-  //MissingTable(TableId),                            // TableId of missing table
+  MissingTable(TableId),                            // TableId of missing table
   //DimensionMismatch(((Rows,Cols),(Rows,Cols))),     // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),              // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),               // Excepted kind versus given kind

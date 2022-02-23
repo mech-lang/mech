@@ -212,8 +212,13 @@ mech_type_conversion!(U64,U8,u8);
 #[macro_export]
 macro_rules! mech_type {
   ($wrapper:tt,$type:tt) => (
-    #[derive(Copy, Clone)]
+    #[derive(Copy,Clone,Serialize,Deserialize)]
     pub struct $wrapper($type);
+    impl $wrapper {
+      pub fn new(inner: $type) -> $wrapper {
+        $wrapper(inner)
+      }
+    }
     impl Add for $wrapper {
       type Output = $wrapper;
       fn add(self, rhs: $wrapper) -> $wrapper {

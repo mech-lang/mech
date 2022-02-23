@@ -13,24 +13,24 @@ use std::mem::transmute;
 use std::convert::TryInto;
 
 lazy_static! {
-  pub static ref F32L: u64 = hash_str("f32-literal");
-  pub static ref F32: u64 = hash_str("f32");
-  pub static ref U8: u64 = hash_str("u8");
-  pub static ref U16: u64 = hash_str("u16");
-  pub static ref U32: u64 = hash_str("u32");
-  pub static ref U64: u64 = hash_str("u64");
-  pub static ref HZ: u64 = hash_str("hz");
-  pub static ref MS: u64 = hash_str("ms");
-  pub static ref S: u64 = hash_str("s");
-  pub static ref M: u64 = hash_str("m");
-  pub static ref KM: u64 = hash_str("km");
-  pub static ref HEX: u64 = hash_str("hex");
-  pub static ref DEC: u64 = hash_str("dec");
+  pub static ref cF32L: u64 = hash_str("f32-literal");
+  pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cU8: u64 = hash_str("u8");
+  pub static ref cU16: u64 = hash_str("u16");
+  pub static ref cU32: u64 = hash_str("u32");
+  pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cHZ: u64 = hash_str("hz");
+  pub static ref cMS: u64 = hash_str("ms");
+  pub static ref cS: u64 = hash_str("s");
+  pub static ref cM: u64 = hash_str("m");
+  pub static ref cKM: u64 = hash_str("km");
+  pub static ref cHEX: u64 = hash_str("hex");
+  pub static ref cDEC: u64 = hash_str("dec");
 }
 
 // ## Value structs and enums
 
-//#[derive(Clone,Debug)]
+#[derive(Clone,Debug,Serialize,Deserialize)]
 pub enum Value {
   U8(U8),
   U16(U16),
@@ -180,7 +180,7 @@ impl NumberLiteral {
   }
 
   fn is_float(&self) -> bool {
-    if self.kind == *F32 || self.kind == *F32L {
+    if self.kind == *cF32 || self.kind == *cF32L {
       true 
     } else {
       false

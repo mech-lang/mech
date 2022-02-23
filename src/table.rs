@@ -190,13 +190,12 @@ impl Table {
     }
   }  
 
-  /*
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
       match (&mut self.data[col], kind) {
-        (Column::U8(_), ValueKind::U8) => (),
+        /*(Column::U8(_), ValueKind::U8) => (),
         (Column::Empty, ValueKind::U8) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<U8>::new(vec![crate::column::U8(0);self.rows]);
           self.data[col] = Column::U8(column);
           self.col_kinds[col] = ValueKind::U8;
         },
@@ -282,7 +281,7 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![TableId::Local(0);self.rows]));
           self.data[col] = Column::Ref(column);
           self.col_kinds[col] = ValueKind::Reference;
-        },
+        },*/
         x => {
           println!("{:?}", x);
           return Err(MechError::GenericError(1229));
@@ -292,7 +291,7 @@ impl Table {
     } else {
       Err(MechError::GenericError(1215))
     }
-  }*/
+  }
 
   pub fn set_col(&mut self, col_ix: usize, column: Column) -> std::result::Result<(),MechError> {
     if col_ix < self.cols {

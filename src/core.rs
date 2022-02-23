@@ -10,12 +10,12 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  math::*,
-  compare::*,
-  stats::*,
-  table::*,
-  set::*,
-  logic::*,
+  //math::*,
+  //compare::*,
+  //stats::*,
+  //table::*,
+  //set::*,
+  //logic::*,
 };
 
 use hashbrown::{HashMap, HashSet};
@@ -58,7 +58,7 @@ pub struct Core {
   pub schedule: Schedule,
   pub dictionary: StringDictionary,
 }
-
+/*
 impl Core {
 
   pub fn new() -> Core {
@@ -283,3 +283,4 @@ impl fmt::Debug for Core {
     Ok(())
   }
 }
+*/

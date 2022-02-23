@@ -25,27 +25,30 @@ mod column;
 mod value;
 mod error;
 mod table;
+mod transformation;
+mod database;
+pub mod function;
+mod block;
+mod core;
+mod schedule;
 
+
+pub use self::core::Core;
 pub use self::table::*;
 pub use self::column::*;
 pub use self::value::*;
 pub use self::error::MechError;
-
-/*
-mod database;
-mod transformation;
-mod core;
-mod block;
-mod schedule;
-pub mod function;
-
-pub use self::database::*;
 pub use self::transformation::Transformation;
+pub use self::database::*;
 pub use self::function::*;
 pub use self::block::*;
-pub use self::core::Core;
 pub use self::schedule::*;
-*/
+
+pub type BlockId = u64;
+pub type ArgumentName = u64;
+pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
+pub type Out = (TableId, TableIndex, TableIndex);
+
 #[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct MechString {
   chars: Vec<char>,

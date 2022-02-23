@@ -12,7 +12,7 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  table::*,
+  //table::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -23,19 +23,19 @@ use std::mem::transmute;
 use std::convert::TryInto;
 
 lazy_static! {
-  pub static ref F32L: u64 = hash_str("f32-literal");
-  pub static ref F32: u64 = hash_str("f32");
-  pub static ref U8: u64 = hash_str("u8");
-  pub static ref U16: u64 = hash_str("u16");
-  pub static ref U32: u64 = hash_str("u32");
-  pub static ref U64: u64 = hash_str("u64");
-  pub static ref HZ: u64 = hash_str("hz");
-  pub static ref MS: u64 = hash_str("ms");
-  pub static ref S: u64 = hash_str("s");
-  pub static ref M: u64 = hash_str("m");
-  pub static ref KM: u64 = hash_str("km");
-  pub static ref HEX: u64 = hash_str("hex");
-  pub static ref DEC: u64 = hash_str("dec");
+  pub static ref cF32L: u64 = hash_str("f32-literal");
+  pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cU8: u64 = hash_str("u8");
+  pub static ref cU16: u64 = hash_str("u16");
+  pub static ref cU32: u64 = hash_str("u32");
+  pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cHZ: u64 = hash_str("hz");
+  pub static ref cMS: u64 = hash_str("ms");
+  pub static ref cS: u64 = hash_str("s");
+  pub static ref cM: u64 = hash_str("m");
+  pub static ref cKM: u64 = hash_str("km");
+  pub static ref cHEX: u64 = hash_str("hex");
+  pub static ref cDEC: u64 = hash_str("dec");
 }
 
 #[derive(Clone)]
@@ -65,22 +65,17 @@ impl Plan {
 impl fmt::Debug for Plan {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let mut plan = BoxPrinter::new();
+    /*let mut plan = BoxPrinter::new();
     let mut ix = 1;
     for step in &self.plan {
       plan.add_title("🦿",&format!("Step {}", ix));
       plan.add_line(format!("{}",&step.to_string()));
       ix += 1;
     }
-    write!(f,"{:?}",plan)?;
+    write!(f,"{:?}",plan)?;*/
     Ok(())
   }
 }
-
-pub type BlockId = u64;
-pub type ArgumentName = u64;
-pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
-pub type Out = (TableId, TableIndex, TableIndex);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BlockState {
@@ -157,7 +152,7 @@ impl Block {
       }
     }
   }
-
+/*
   pub fn gen_id(&mut self) -> BlockId {
     self.id = hash_str(&format!("{:?}",self.transformations));
     self.id
@@ -949,8 +944,8 @@ impl Block {
     }
     self.transformations.push(tfm.clone());
     Ok(())
-  }
-
+  }*/
+  
   pub fn solve(&self) -> Result<(),MechError> {
     if self.state == BlockState::Ready {
       for ref mut fxn in &mut self.plan.plan.iter() {
@@ -963,10 +958,11 @@ impl Block {
   }
 
 }
-
+/*
 impl fmt::Debug for Block {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    /*
     let mut block_drawing = BoxPrinter::new();
     block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
@@ -1022,7 +1018,7 @@ impl fmt::Debug for Block {
     }
     block_drawing.add_title("📅","tables");
     block_drawing.add_line(format!("{:?}", &self.tables));
-    write!(f,"{:?}",block_drawing)?;
+    write!(f,"{:?}",block_drawing)?;*/
     Ok(())
   }
 }
@@ -1032,4 +1028,4 @@ pub struct Register {
   pub table_id: TableId,
   pub row: TableIndex,
   pub column: TableIndex,
-}
+}*/
