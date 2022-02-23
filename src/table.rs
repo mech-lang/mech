@@ -95,6 +95,303 @@ impl fmt::Debug for TableIndex {
 
 pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
 
+
+
+#[derive(Debug)]
+pub struct Table {
+  pub id: u64,                           
+  pub rows: usize,                       
+  pub cols: usize,                       
+  pub col_kinds: Vec<ValueKind>,                 
+  pub col_map: AliasMap,  
+  pub row_map: AliasMap,
+  pub data: Vec<Column>,
+  pub dictionary: StringDictionary,
+}
+
+impl Table {
+  pub fn new(id: u64, rows: usize, cols: usize) -> Table {
+    let mut table = Table {
+      id,
+      rows,
+      cols,
+      col_kinds: Vec::with_capacity(cols),
+      col_map: AliasMap::new(cols),
+      row_map: AliasMap::new(rows),
+      data: Vec::with_capacity(cols),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
+    };
+    for col in 0..cols {
+      table.data.push(Column::Empty);
+      table.col_kinds.push(ValueKind::Empty);
+    }
+    table
+  }
+
+  pub fn resize(&mut self, rows: usize, cols: usize) -> std::result::Result<(),MechError> {
+    self.rows = rows;
+    self.cols = cols;
+    self.col_kinds.resize(cols,ValueKind::Empty);
+    self.col_map.resize(cols);
+    self.row_map.resize(rows);
+    for col in &mut self.data {
+      col.resize(rows);
+    }
+    self.data.resize(cols,Column::Empty);
+    Ok(())
+  }
+
+  pub fn get_col_raw(&self, col_ix: usize) -> std::result::Result<Column,MechError> {
+    if col_ix < self.cols {
+      Ok(self.data[col_ix].clone())
+    } else {
+      Err(MechError::GenericError(6353)) 
+    }
+  }
+
+  pub fn kind(&self) -> ValueKind {
+
+    let first_col_kind = self.col_kinds[0].clone();
+    if self.col_kinds.iter().all(|kind| *kind == first_col_kind) {
+      first_col_kind
+    } else {
+      ValueKind::Compound(self.col_kinds.clone())
+    }
+  }
+  
+  pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechError> {
+    match col {
+      TableIndex::Alias(alias) => {
+        match self.col_map.get_index(&alias) {
+          Ok(ix) => Ok(self.data[ix as usize].clone()),
+          Err(_) => Err(MechError::GenericError(2821)),
+        }
+      }
+      TableIndex::Index(0) => {
+        Err(MechError::GenericError(2825))
+      }
+      TableIndex::Index(ix) => {
+        if *ix <= self.cols { 
+          Ok(self.data[*ix-1].clone())
+        } else {
+          Err(MechError::GenericError(2822))
+        }
+      }
+      TableIndex::All => {
+        if self.cols == 1 {
+          Ok(self.data[0].clone())
+        } else {
+          Err(MechError::GenericError(2823))
+        }
+      }
+      TableIndex::ReshapeColumn |
+      TableIndex::Table(_) |
+      TableIndex::None => Err(MechError::GenericError(2824)), 
+    }
+  }  
+
+  /*
+  pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
+    if col < self.cols {
+      match (&mut self.data[col], kind) {
+        (Column::U8(_), ValueKind::U8) => (),
+        (Column::Empty, ValueKind::U8) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U8(column);
+          self.col_kinds[col] = ValueKind::U8;
+        },
+        (Column::Empty, ValueKind::U16) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U16(column);
+          self.col_kinds[col] = ValueKind::U16;
+        },
+        (Column::Empty, ValueKind::U32) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U32(column);
+          self.col_kinds[col] = ValueKind::U32;
+        },
+        (Column::Empty, ValueKind::U64) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U64(column);
+          self.col_kinds[col] = ValueKind::U64;
+        },
+        (Column::Empty, ValueKind::U128) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::U128(column);
+          self.col_kinds[col] = ValueKind::U128;
+        },
+        (Column::Empty, ValueKind::I8) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I8(column);
+          self.col_kinds[col] = ValueKind::I8;
+        },
+        (Column::Empty, ValueKind::I16) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I16(column);
+          self.col_kinds[col] = ValueKind::I16;
+        },
+        (Column::Empty, ValueKind::I32) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I32(column);
+          self.col_kinds[col] = ValueKind::I32;
+        },
+        (Column::Empty, ValueKind::I64) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I64(column);
+          self.col_kinds[col] = ValueKind::I64;
+        },
+        (Column::Empty, ValueKind::I128) => {
+          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          self.data[col] = Column::I128(column);
+          self.col_kinds[col] = ValueKind::I128;
+        },
+        (Column::F32(_), ValueKind::F32) => (),
+        (Column::Empty, ValueKind::F32) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F32(column);
+          self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::Time(_), ValueKind::Time) => (),
+        (Column::Empty, ValueKind::Time) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::Time(column);
+          self.col_kinds[col] = ValueKind::Time;
+        },
+        (Column::Length(_), ValueKind::Length) => (),
+        (Column::Empty, ValueKind::Length) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::Length(column);
+          self.col_kinds[col] = ValueKind::Length;
+        },
+        (Column::Empty, ValueKind::F64) => {
+          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
+          self.data[col] = Column::F64(column);
+          self.col_kinds[col] = ValueKind::F64;
+        },
+        (Column::Empty, ValueKind::Bool) => {
+          let column = Rc::new(RefCell::new(vec![false;self.rows]));
+          self.data[col] = Column::Bool(column);
+          self.col_kinds[col] = ValueKind::Bool;
+        },
+        (Column::Empty, ValueKind::String) => {
+          let column = Rc::new(RefCell::new(vec![MechString::new();self.rows]));
+          self.data[col] = Column::String(column);
+          self.col_kinds[col] = ValueKind::String;
+        },
+        (Column::Empty, ValueKind::Reference) => {
+          let column = Rc::new(RefCell::new(vec![TableId::Local(0);self.rows]));
+          self.data[col] = Column::Ref(column);
+          self.col_kinds[col] = ValueKind::Reference;
+        },
+        x => {
+          println!("{:?}", x);
+          return Err(MechError::GenericError(1229));
+        },
+      }
+      Ok(())
+    } else {
+      Err(MechError::GenericError(1215))
+    }
+  }*/
+
+  pub fn set_col(&mut self, col_ix: usize, column: Column) -> std::result::Result<(),MechError> {
+    if col_ix < self.cols {
+      if self.col_kinds[col_ix] == ValueKind::Empty {
+        self.col_kinds[col_ix] = column.kind();
+        self.data[col_ix] = column;
+        Ok(())
+      } else {
+        Err(MechError::GenericError(6354)) 
+      }
+    } else {
+      Err(MechError::GenericError(6355)) 
+    }
+  }
+
+  pub fn get_columns(&self, col: &TableIndex) -> Result<Vec<Column>, MechError> {
+    match col {
+      TableIndex::All => {
+        Ok(self.data.iter().cloned().collect())
+      },
+      _ => Err(MechError::GenericError(1216)),
+    }
+  }
+
+  /*
+  pub fn set_raw(&mut self, row_ix: usize, col_ix: usize, value: Value) -> std::result::Result<(),MechError> {
+    if col_ix < self.cols && row_ix < self.rows {
+      let mut col = &mut self.data[col_ix];
+      col.set_unchecked(row_ix,value);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(6356))
+    }
+  }
+
+  pub fn get_raw(&self, row_ix: usize, col_ix: usize) -> std::result::Result<Value,MechError> {
+    if col_ix < self.cols && row_ix < self.rows {
+      let col = &self.data[col_ix];
+      Ok(col.get_unchecked(row_ix))
+    } else {
+      Err(MechError::GenericError(6357))
+    }
+  }*/
+}
+
+type TableIx = usize;
+type Alias = u64;
+
+#[derive(Debug)]
+pub struct AliasMap {
+  capacity: usize,
+  ix_to_alias: Vec<Alias>,  
+  alias_to_ix: HashMap<Alias,TableIx>,
+}
+
+impl AliasMap {
+  pub fn new(capacity: usize) -> Self {
+    AliasMap {
+      capacity,
+      ix_to_alias: vec![0;capacity],
+      alias_to_ix: HashMap::new(),
+    }
+  }
+
+  pub fn resize(&mut self, new_capacity: usize) {
+    self.capacity = new_capacity;
+    self.ix_to_alias.resize(new_capacity,0);
+  }
+
+  pub fn insert(&mut self, ix: TableIx, alias: Alias) -> std::result::Result<(),MechError> {
+    if ix < self.capacity {
+      self.ix_to_alias[ix] = alias;
+      self.alias_to_ix.insert(alias,ix);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(8210))
+    }
+  }
+
+  pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
+    match self.alias_to_ix.get(alias) {
+      Some(ix) => Ok(*ix),
+      None => Err(MechError::GenericError(8211)),
+    }
+  }
+
+  pub fn get_alias(&self, ix: &TableIx) -> std::result::Result<Alias,MechError> {
+    if ix < &self.capacity {
+      Ok(self.ix_to_alias[*ix])
+    } else {
+      Err(MechError::GenericError(8212))
+    }
+  }
+
+}
+
+
+
+/*
 #[derive(Clone)]
 pub struct Table {
   pub id: u64,                           
@@ -138,15 +435,6 @@ impl Table {
     table
   }
 
-  pub fn kind(&self) -> ValueKind {
-
-    let first_col_kind = self.col_kinds[0].clone();
-    if self.col_kinds.iter().all(|kind| *kind == first_col_kind) {
-      first_col_kind
-    } else {
-      ValueKind::Compound(self.col_kinds.clone())
-    }
-  }
 
   pub fn has_col_aliases(&self) -> bool {
     self.column_ix_to_alias.len() > 0
@@ -346,149 +634,8 @@ impl Table {
     Ok(())
   }
 
-  pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
-    if col < self.cols {
-      match (&mut self.data[col], kind) {
-        (Column::U8(_), ValueKind::U8) => (),
-        (Column::Empty, ValueKind::U8) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::U8(column);
-          self.col_kinds[col] = ValueKind::U8;
-        },
-        (Column::Empty, ValueKind::U16) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::U16(column);
-          self.col_kinds[col] = ValueKind::U16;
-        },
-        (Column::Empty, ValueKind::U32) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::U32(column);
-          self.col_kinds[col] = ValueKind::U32;
-        },
-        (Column::Empty, ValueKind::U64) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::U64(column);
-          self.col_kinds[col] = ValueKind::U64;
-        },
-        (Column::Empty, ValueKind::U128) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::U128(column);
-          self.col_kinds[col] = ValueKind::U128;
-        },
-        (Column::Empty, ValueKind::I8) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::I8(column);
-          self.col_kinds[col] = ValueKind::I8;
-        },
-        (Column::Empty, ValueKind::I16) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::I16(column);
-          self.col_kinds[col] = ValueKind::I16;
-        },
-        (Column::Empty, ValueKind::I32) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::I32(column);
-          self.col_kinds[col] = ValueKind::I32;
-        },
-        (Column::Empty, ValueKind::I64) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::I64(column);
-          self.col_kinds[col] = ValueKind::I64;
-        },
-        (Column::Empty, ValueKind::I128) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
-          self.data[col] = Column::I128(column);
-          self.col_kinds[col] = ValueKind::I128;
-        },
-        (Column::F32(_), ValueKind::F32) => (),
-        (Column::Empty, ValueKind::F32) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::F32(column);
-          self.col_kinds[col] = ValueKind::F32;
-        },
-        (Column::Time(_), ValueKind::Time) => (),
-        (Column::Empty, ValueKind::Time) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::Time(column);
-          self.col_kinds[col] = ValueKind::Time;
-        },
-        (Column::Length(_), ValueKind::Length) => (),
-        (Column::Empty, ValueKind::Length) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::Length(column);
-          self.col_kinds[col] = ValueKind::Length;
-        },
-        (Column::Empty, ValueKind::F64) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::F64(column);
-          self.col_kinds[col] = ValueKind::F64;
-        },
-        (Column::Empty, ValueKind::Bool) => {
-          let column = Rc::new(RefCell::new(vec![false;self.rows]));
-          self.data[col] = Column::Bool(column);
-          self.col_kinds[col] = ValueKind::Bool;
-        },
-        (Column::Empty, ValueKind::String) => {
-          let column = Rc::new(RefCell::new(vec![MechString::new();self.rows]));
-          self.data[col] = Column::String(column);
-          self.col_kinds[col] = ValueKind::String;
-        },
-        (Column::Empty, ValueKind::Reference) => {
-          let column = Rc::new(RefCell::new(vec![TableId::Local(0);self.rows]));
-          self.data[col] = Column::Ref(column);
-          self.col_kinds[col] = ValueKind::Reference;
-        },
-        x => {
-          println!("{:?}", x);
-          return Err(MechError::GenericError(1229));
-        },
-      }
-      Ok(())
-    } else {
-      Err(MechError::GenericError(1215))
-    }
-  }
 
-  pub fn get_columns(&self, col: &TableIndex) -> Result<Vec<Column>, MechError> {
-    match col {
-      TableIndex::All => {
-        Ok(self.data.iter().cloned().collect())
-      },
-      _ => Err(MechError::GenericError(1216)),
-    }
-  }
-
-  pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechError> {
-
-    match col {
-      TableIndex::Alias(alias) => {
-        match self.column_alias_to_ix.get(&alias) {
-          Some(ix) => Ok(self.data[*ix as usize].clone()),
-          None => Err(MechError::GenericError(2821)),
-        }
-      }
-      TableIndex::Index(0) => {
-        Err(MechError::GenericError(2825))
-      }
-      TableIndex::Index(ix) => {
-        if *ix <= self.cols { 
-          Ok(self.data[*ix-1].clone())
-        } else {
-          Err(MechError::GenericError(2822))
-        }
-      }
-      TableIndex::All => {
-        if self.cols == 1 {
-          Ok(self.data[0].clone())
-        } else {
-          Err(MechError::GenericError(2823))
-        }
-      }
-      TableIndex::ReshapeColumn |
-      TableIndex::Table(_) |
-      TableIndex::None => Err(MechError::GenericError(2824)), 
-    }
-  }
+  
 
   pub fn get_column_unchecked(&self, col: usize) -> Column {
     self.data[col].clone()
@@ -538,4 +685,4 @@ impl fmt::Debug for Table {
     write!(f,"{:?}",table_drawing)?;
     Ok(())
   }
-}
+}*/

@@ -30,6 +30,17 @@ lazy_static! {
 
 // ## Value structs and enums
 
+//#[derive(Clone,Debug)]
+pub enum Value {
+  U8(U8),
+  U16(U16),
+  U32(U32),
+  U64(U64),
+  F32(F32),
+  Empty,
+}
+
+/*
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   U8(u8),
@@ -128,7 +139,7 @@ impl fmt::Debug for Value {
     }
     Ok(())
   }
-}
+}*/
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ValueKind {
