@@ -23,7 +23,7 @@ pub enum Column {
   U16(ColumnV<U16>),
   U32(ColumnV<U32>),
   U64(ColumnV<U64>),
-  U128(ColumnV<u128>),
+  U128(ColumnV<U128>),
   Ref(ColumnV<TableId>),
   I8(ColumnV<i8>),
   I16(ColumnV<i16>),
@@ -91,7 +91,7 @@ impl Column {
       Column::U16(col) => col.borrow_mut().resize(rows,U16(0)),
       Column::U32(col) => col.borrow_mut().resize(rows,U32(0)),
       Column::U64(col) => col.borrow_mut().resize(rows,U64(0)),
-      Column::U128(col) => col.borrow_mut().resize(rows,0),
+      Column::U128(col) => col.borrow_mut().resize(rows,U128(0)),
       Column::I8(col) => col.borrow_mut().resize(rows,0),
       Column::I16(col) => col.borrow_mut().resize(rows,0),
       Column::I32(col) => col.borrow_mut().resize(rows,0),
@@ -189,6 +189,7 @@ impl<T: Debug> fmt::Debug for ColumnV<T> {
 }
 
 mech_type!(F32,f32);
+mech_type!(F64,f64);
 mech_type!(U8,u8);
 mech_type!(U16,u16);
 mech_type!(U32,u32);
