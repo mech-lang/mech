@@ -58,13 +58,13 @@ pub struct Core {
   pub schedule: Schedule,
   pub dictionary: StringDictionary,
 }
-/*
+
 impl Core {
 
   pub fn new() -> Core {
-
+    
     let mut functions = Functions::new();
-    functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    /*functions.insert(*MATH_ADD, Box::new(MathAdd{}));
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
@@ -94,7 +94,7 @@ impl Core {
 
     functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
-
+    */ 
     Core {
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
@@ -107,7 +107,7 @@ impl Core {
       dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
   }
-
+/*
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
     let mut registers = Vec::new();
     let mut block_refs = Vec::new();
@@ -158,7 +158,7 @@ impl Core {
       self.step(register);
     }
     Ok(block_refs)
-  }
+  }*/
 
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
     self.database.borrow_mut().insert_table(table)
@@ -177,7 +177,7 @@ impl Core {
       None => Err(MechError::GenericError(2952)),
     }
   }
-
+/*
   pub fn insert_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
     let mut block_ids = vec![];
     for block in blocks {
@@ -239,7 +239,7 @@ impl Core {
         Err(MechError::GenericError(8963))
       },
     }
-  }
+  }*/
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
     self.schedule.schedule_blocks()
@@ -249,7 +249,7 @@ impl Core {
     self.schedule.run_schedule(register)
   }
 }
-
+/*
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -282,5 +282,4 @@ impl fmt::Debug for Core {
     write!(f,"{:?}",box_drawing)?;
     Ok(())
   }
-}
-*/
+}*/
