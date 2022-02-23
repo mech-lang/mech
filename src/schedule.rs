@@ -11,7 +11,7 @@ pub struct Schedule {
   pub schedules: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
-  /*
+
 impl Schedule {
 
   pub fn new() -> Schedule {
@@ -23,7 +23,7 @@ impl Schedule {
       unscheduled_blocks: Vec::new(),
     }
   }
-
+ 
   pub fn add_block(&mut self, block_ref: BlockRef) -> Result<(),MechError> {
 
     self.unscheduled_blocks.push(block_ref);
@@ -105,7 +105,7 @@ impl fmt::Debug for Schedule {
   }
 }
 
-*/
+
 #[derive(Clone)]
 pub struct Node {
   block: BlockRef,
@@ -185,11 +185,11 @@ impl BlockGraph {
 
 
 }
-/*
+
 impl fmt::Debug for BlockGraph {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f,"{:?}",self.root.borrow())?;
     Ok(())
   }
-}*/
+}
