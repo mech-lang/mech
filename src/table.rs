@@ -190,6 +190,31 @@ impl Table {
     }
   }  
 
+  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {
+    if ix < self.cols {
+      self.col_map.insert(ix,alias);
+      Ok(())
+    } else {
+      Err(MechError::GenericError(1210))
+    }
+  }
+
+  pub fn set_kind(&mut self, kind: ValueKind) -> Result<(),MechError> {
+    match kind {
+      ValueKind::Compound(kinds) => {
+        for col in 0..self.cols {
+          self.set_col_kind(col,kinds[col].clone())?;
+        }
+      }
+      kind => {
+        for col in 0..self.cols {
+          self.set_col_kind(col,kind.clone())?;
+        }
+      }
+    }
+    Ok(())
+  }
+
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
     if col < self.cols {
       match (&mut self.data[col], kind) {
@@ -316,25 +341,69 @@ impl Table {
     }
   }
 
-  /*
-  pub fn set_raw(&mut self, row_ix: usize, col_ix: usize, value: Value) -> std::result::Result<(),MechError> {
-    if col_ix < self.cols && row_ix < self.rows {
-      let mut col = &mut self.data[col_ix];
-      col.set_unchecked(row_ix,value);
+  pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
+    if col < self.cols && row < self.rows {
+      match (&self.data[col], val) {
+        (Column::Length(c), Value::Length(v)) |
+        (Column::Time(c), Value::Time(v)) |
+        (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
+        (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
+        (Column::U8(c), Value::U8(v)) => c.borrow_mut()[row] = v,
+        (Column::U16(c), Value::U16(v)) => c.borrow_mut()[row] = v,
+        (Column::U32(c), Value::U32(v)) => c.borrow_mut()[row] = v,
+        (Column::U64(c), Value::U64(v)) => c.borrow_mut()[row] = v,
+        (Column::U128(c), Value::U128(v)) => c.borrow_mut()[row] = v,
+        (Column::I8(c), Value::I8(v)) => c.borrow_mut()[row] = v,
+        (Column::I16(c), Value::I16(v)) => c.borrow_mut()[row] = v,
+        (Column::I32(c), Value::I32(v)) => c.borrow_mut()[row] = v,
+        (Column::I64(c), Value::I64(v)) => c.borrow_mut()[row] = v,
+        (Column::I128(c), Value::I128(v)) => c.borrow_mut()[row] = v,
+        (Column::Bool(c), Value::Bool(v)) => c.borrow_mut()[row] = v,
+        (Column::String(c), Value::String(v)) => c.borrow_mut()[row] = v,
+        (Column::Ref(c), Value::Reference(v)) => c.borrow_mut()[row] = v,
+        (Column::Empty, Value::Empty) => (),
+        x => {
+          println!("{:?}", x);
+          return Err(MechError::GenericError(1219));
+        },
+      }
       Ok(())
     } else {
-      Err(MechError::GenericError(6356))
+      Err(MechError::GenericError(1212))
     }
   }
 
-  pub fn get_raw(&self, row_ix: usize, col_ix: usize) -> std::result::Result<Value,MechError> {
-    if col_ix < self.cols && row_ix < self.rows {
-      let col = &self.data[col_ix];
-      Ok(col.get_unchecked(row_ix))
+  pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
+    if col < self.cols && row < self.rows {
+      match &self.data[col] {
+        Column::Time(c) => Ok(Value::Time(c.borrow()[row])),
+        Column::Length(c) => Ok(Value::Length(c.borrow()[row])),
+        Column::F32(c) => Ok(Value::F32(c.borrow()[row])),
+        Column::F64(c) => Ok(Value::F64(c.borrow()[row])),
+        Column::U8(c) => Ok(Value::U8(c.borrow()[row])),
+        Column::U16(c) => Ok(Value::U16(c.borrow()[row])),
+        Column::U32(c) => Ok(Value::U32(c.borrow()[row])),
+        Column::U64(c) => Ok(Value::U64(c.borrow()[row])),
+        Column::U128(c) => Ok(Value::U128(c.borrow()[row])),
+        Column::I8(c) => Ok(Value::I8(c.borrow()[row])),
+        Column::I16(c) => Ok(Value::I16(c.borrow()[row])),
+        Column::I32(c) => Ok(Value::I32(c.borrow()[row])),
+        Column::I64(c) => Ok(Value::I64(c.borrow()[row])),
+        Column::I128(c) => Ok(Value::I128(c.borrow()[row])),
+        Column::Bool(c) => Ok(Value::Bool(c.borrow()[row])),
+        Column::String(c) => Ok(Value::String(c.borrow()[row].clone())),
+        Column::Ref(c) => Ok(Value::Reference(c.borrow()[row].clone())),
+        Column::Empty => Ok(Value::Empty),
+        x => {
+          println!("{:?}", x);
+          Err(MechError::GenericError(1209))
+        },
+      }
     } else {
-      Err(MechError::GenericError(6357))
+      Err(MechError::GenericError(1211))
     }
-  }*/
+  }
+  
 }
 
 type TableIx = usize;
@@ -450,17 +519,6 @@ impl Table {
     }
   }
 
-  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {
-    if ix < self.cols {
-      self.column_ix_to_alias.resize(self.cols,0);
-      self.column_ix_to_alias[ix] = alias;
-      self.column_alias_to_ix.insert(alias,ix);
-      Ok(())
-    } else {
-      Err(MechError::GenericError(1210))
-    }
-  }
-
   pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
     match (row, &self.get_column(&col)?) {
       (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
@@ -504,36 +562,6 @@ impl Table {
     self.get_raw(row_ix,col_ix)
   }
 
-  pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
-    if col < self.cols && row < self.rows {
-      match &self.data[col] {
-        Column::Time(c) => Ok(Value::Time(c.borrow()[row])),
-        Column::Length(c) => Ok(Value::Length(c.borrow()[row])),
-        Column::F32(c) => Ok(Value::F32(c.borrow()[row])),
-        Column::F64(c) => Ok(Value::F64(c.borrow()[row])),
-        Column::U8(c) => Ok(Value::U8(c.borrow()[row])),
-        Column::U16(c) => Ok(Value::U16(c.borrow()[row])),
-        Column::U32(c) => Ok(Value::U32(c.borrow()[row])),
-        Column::U64(c) => Ok(Value::U64(c.borrow()[row])),
-        Column::U128(c) => Ok(Value::U128(c.borrow()[row])),
-        Column::I8(c) => Ok(Value::I8(c.borrow()[row])),
-        Column::I16(c) => Ok(Value::I16(c.borrow()[row])),
-        Column::I32(c) => Ok(Value::I32(c.borrow()[row])),
-        Column::I64(c) => Ok(Value::I64(c.borrow()[row])),
-        Column::I128(c) => Ok(Value::I128(c.borrow()[row])),
-        Column::Bool(c) => Ok(Value::Bool(c.borrow()[row])),
-        Column::String(c) => Ok(Value::String(c.borrow()[row].clone())),
-        Column::Ref(c) => Ok(Value::Reference(c.borrow()[row].clone())),
-        Column::Empty => Ok(Value::Empty),
-        x => {
-          println!("{:?}", x);
-          Err(MechError::GenericError(1209))
-        },
-      }
-    } else {
-      Err(MechError::GenericError(1211))
-    }
-  }
 
   pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {
     let row = ix / self.cols;
@@ -585,53 +613,8 @@ impl Table {
     self.set_raw(row_ix,col_ix,val)
   }
 
-  pub fn set_raw(&self, row: usize, col: usize, val: Value) -> Result<(),MechError> {
-    if col < self.cols && row < self.rows {
-      match (&self.data[col], val) {
-        (Column::Length(c), Value::Length(v)) |
-        (Column::Time(c), Value::Time(v)) |
-        (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
-        (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
-        (Column::U8(c), Value::U8(v)) => c.borrow_mut()[row] = v,
-        (Column::U16(c), Value::U16(v)) => c.borrow_mut()[row] = v,
-        (Column::U32(c), Value::U32(v)) => c.borrow_mut()[row] = v,
-        (Column::U64(c), Value::U64(v)) => c.borrow_mut()[row] = v,
-        (Column::U128(c), Value::U128(v)) => c.borrow_mut()[row] = v,
-        (Column::I8(c), Value::I8(v)) => c.borrow_mut()[row] = v,
-        (Column::I16(c), Value::I16(v)) => c.borrow_mut()[row] = v,
-        (Column::I32(c), Value::I32(v)) => c.borrow_mut()[row] = v,
-        (Column::I64(c), Value::I64(v)) => c.borrow_mut()[row] = v,
-        (Column::I128(c), Value::I128(v)) => c.borrow_mut()[row] = v,
-        (Column::Bool(c), Value::Bool(v)) => c.borrow_mut()[row] = v,
-        (Column::String(c), Value::String(v)) => c.borrow_mut()[row] = v,
-        (Column::Ref(c), Value::Reference(v)) => c.borrow_mut()[row] = v,
-        (Column::Empty, Value::Empty) => (),
-        x => {
-          println!("{:?}", x);
-          return Err(MechError::GenericError(1219));
-        },
-      }
-      Ok(())
-    } else {
-      Err(MechError::GenericError(1212))
-    }
-  }
 
-  pub fn set_kind(&mut self, kind: ValueKind) -> Result<(),MechError> {
-    match kind {
-      ValueKind::Compound(kinds) => {
-        for col in 0..self.cols {
-          self.set_col_kind(col,kinds[col].clone())?;
-        }
-      }
-      kind => {
-        for col in 0..self.cols {
-          self.set_col_kind(col,kind.clone())?;
-        }
-      }
-    }
-    Ok(())
-  }
+
 
 
   
