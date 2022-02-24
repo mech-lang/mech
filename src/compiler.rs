@@ -140,11 +140,13 @@ impl Compiler {
       },
       Node::NumberLiteral{kind, bytes} => {
         let string = bytes.iter().cloned().collect::<String>();
-        let bytes = if *kind == *U8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *U16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *U32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *U64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *HEX {
+        let bytes = if *kind == *cU8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU64 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cF32 { string.parse::<f32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cHEX {
             bytes.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>()
           }
           else { string.parse::<f32>().unwrap().to_be_bytes().to_vec() };
