@@ -937,7 +937,7 @@ impl Block {
                 // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
               }
-              None => {return Err(MechError::MissingFunction(*name));}
+              None => {return Err(MechError::MissingFunction(format!("{}",humanize(name))));}
             }
           }
           None => {return Err(MechError::GenericError(2352));},
