@@ -16,7 +16,7 @@ lazy_static! {
   pub static ref TABLE_SIZE: u64 = hash_str("table/size");
   pub static ref TABLE: u64 = hash_str("table");
 }
-
+/*
 // Concat Vectors
 #[derive(Debug)]
 pub struct ConcatV<T> 
@@ -398,7 +398,7 @@ where T: Copy + Debug + Sync + Send
     self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).for_each(|(out, oix)| if *oix {*out = arg}); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+}*/
 
 // Copy Table : Table
 #[derive(Debug)]
@@ -415,8 +415,8 @@ impl MechFunction for CopyT {
     for (col, kind) in arg_brrw.col_kinds.iter().enumerate() {
       out_brrw.set_col_kind(col, kind.clone());
     }
-    out_brrw.column_ix_to_alias = arg_brrw.column_ix_to_alias.clone();
-    out_brrw.column_alias_to_ix = arg_brrw.column_alias_to_ix.clone();
+    out_brrw.col_map = arg_brrw.col_map.clone();
+    out_brrw.row_map = arg_brrw.row_map.clone();
     for col in 0..arg_brrw.cols {
       for row in 0..arg_brrw.rows {
         let value = arg_brrw.get_raw(row,col).unwrap();
@@ -434,7 +434,7 @@ impl MechFunction for CopyT {
     box_drawing.print()
   }
 }
-
+/*
 pub struct TableVerticalConcatenate{}
 impl MechFunctionCompiler for TableVerticalConcatenate {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
@@ -920,3 +920,4 @@ impl MechFunctionCompiler for TableSize {
     Ok(())
   }
 }
+*/

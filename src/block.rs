@@ -12,7 +12,7 @@
 use crate::*;
 use crate::function::{
   MechFunction,
-  //table::*,
+  table::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -577,7 +577,7 @@ impl Block {
         let argument = (0,table_id,vec![(*row,*column)]);
 
         match (row,column) {
-          /*// Select an entire table
+          // Select an entire table
           (TableIndex::All, TableIndex::All) => {
             match out {
               TableId::Global(gid) => {
@@ -586,7 +586,7 @@ impl Block {
               _ => (),
             }
           }
-          // Select a column by row index
+          /*// Select a column by row index
           (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(_)) => {

@@ -95,9 +95,6 @@ impl fmt::Debug for TableIndex {
 
 pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
 
-
-
-#[derive(Debug)]
 pub struct Table {
   pub id: u64,                           
   pub rows: usize,                       
@@ -466,7 +463,7 @@ impl Table {
 type TableIx = usize;
 type Alias = u64;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct AliasMap {
   capacity: usize,
   ix_to_alias: Vec<Alias>,  
@@ -512,6 +509,16 @@ impl AliasMap {
     }
   }
 
+}
+
+impl fmt::Debug for Table {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut table_drawing = BoxPrinter::new();
+    table_drawing.add_table(self);
+    write!(f,"{:?}",table_drawing)?;
+    Ok(())
+  }
 }
 
 
@@ -670,12 +677,4 @@ impl Table {
   
 }
 
-impl fmt::Debug for Table {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let mut table_drawing = BoxPrinter::new();
-    table_drawing.add_table(self);
-    write!(f,"{:?}",table_drawing)?;
-    Ok(())
-  }
-}*/
+*/

@@ -28,7 +28,7 @@ lazy_static! {
 
 // ## Value structs and enums
 
-#[derive(Clone,Serialize,Deserialize)]
+#[derive(Clone,PartialEq,Serialize,Deserialize)]
 pub enum Value {
   U8(U8),
   U16(U16),

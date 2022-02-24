@@ -558,7 +558,7 @@ impl MechFunctionCompiler for MathAdd {
     let arg_shapes = block.get_arg_dims(&arguments)?;
     // Now decide on the correct tfm based on the shape
     match (&arg_shapes[0],&arg_shapes[1]) {
-      /*
+      
       (TableShape::Scalar, TableShape::Scalar) => {
         let mut argument_scalars = block.get_arg_columns(arguments)?;
         resize_one(block,out);
@@ -566,10 +566,10 @@ impl MechFunctionCompiler for MathAdd {
           ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix))) => { 
             let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
             if let Column::U8(out) = out_column {
-              block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+              block.plan.push(AddVV{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
             }
           },
-          ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
+          /*((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
             let mut out_column = block.get_out_column(out, 1, ValueKind::U16)?;
             if let Column::U16(out) = out_column {
               block.plan.push($op1::<u16>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
@@ -588,10 +588,12 @@ impl MechFunctionCompiler for MathAdd {
           ((_,Column::Time(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
             let mut out_column = block.get_out_column(out, 1, ValueKind::Time)?;
             if let Column::Time(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
-          }
+          }*/
           ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
             let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
-            if let Column::F32(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+            if let Column::F32(out) = out_column {
+              block.plan.push(AddVV{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+            }
           },
           x => {
             println!("{:?}", x);
@@ -599,7 +601,7 @@ impl MechFunctionCompiler for MathAdd {
           },
         }
       }
-      (TableShape::Scalar, TableShape::Column(rows)) => {
+      /*(TableShape::Scalar, TableShape::Column(rows)) => {
         let mut argument_columns = block.get_arg_columns(arguments)?;
         let (_,col,_) = &argument_columns[0];
         let mut out_column = block.get_out_column(out, *rows, col.kind())?;
