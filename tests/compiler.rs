@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate mech_syntax;
 extern crate mech_core;
 #[macro_use]
@@ -26,25 +25,26 @@ lazy_static! {
 macro_rules! test_mech {
   ($func:ident, $input:tt, $test:expr) => (
     #[test]
-    fn $func() {
+    fn $func() -> Result<(),MechError> {
       let mut compiler = Compiler::new();
       let mut core = Core::new();
 
       let input = String::from($input);
-      let blocks = compiler.compile_str(&input).unwrap();
+      let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        core.insert_block(Rc::new(RefCell::new(block)));
+        core.insert_block(Rc::new(RefCell::new(block)))?;
       }
 
       let test: Value = $test;
-      let actual = core.get_table("test").unwrap().borrow().get_raw(0, 0);
+      let actual = core.get_table("test")?.borrow().get_raw(0, 0);
       match actual {
         Ok(value) => {
-          assert_eq!(value, test);
+          assert_eq!(value,test);
         },
-        Err(_) => assert_eq!(0,1),
+        _ => {assert!(false)},
       }
+      Ok(())
     }
   )
 }
@@ -52,27 +52,28 @@ macro_rules! test_mech {
 macro_rules! test_mech_txn {
   ($func:ident, $input:tt, $txn:tt, $test:expr) => (
     #[test]
-    fn $func() {
+    fn $func() -> Result<(),MechError> {
       let mut compiler = Compiler::new();
       let mut core = Core::new();
 
       let input = String::from($input);
-      let blocks = compiler.compile_str(&input).unwrap();
+      let blocks = compiler.compile_str(&input)?;
       
-      core.insert_blocks(blocks);
+      core.insert_blocks(blocks)?;
       
-      core.schedule_blocks();
+      core.schedule_blocks()?;
 
-      core.process_transaction(&$txn);
+      core.process_transaction(&$txn)?;
 
       let test: Value = $test;
-      let actual = core.get_table("test").unwrap().borrow().get_raw(0, 0);
+      let actual = core.get_table("test")?.borrow().get_raw(0, 0);
       match actual {
         Ok(value) => {
-          assert_eq!(value, test);
+          assert_eq!(value,test);
         },
-        Err(_) => assert_eq!(0,1),
+        _ => {assert!(false)},
       }
+      Ok(())
     }
   )
 }
@@ -1279,3 +1280,4 @@ Keep the balls within the boundary height
   #balls.vy{iy} := #balls.vy * -0.80
 block  
   #test = #balls.y{2} + #balls.vy{2}"#, TXN4, Value::F32(F32::new(81.8)));
+  
