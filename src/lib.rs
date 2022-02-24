@@ -222,6 +222,9 @@ impl WasmCore {
       changes
     };
 
+  
+
+
     let mut changes = vec![];
     changes.append(&mut new_table(*TIME_TIMER, 0, vec![*PERIOD, *TICKS]));
     changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
@@ -234,6 +237,22 @@ impl WasmCore {
     let txn = Transaction{changes};
     mech.process_transaction(&txn);
 */
+    let html_code = r#"
+Pointer events
+  #html/event/pointer-move = [|x y target event-id|]
+  #html/event/pointer-down = [|x y target event-id|]
+
+Keyboard events
+  #html/event/key-up = [|key event-id|]
+  #html/event/key-down = [|key event-id|]
+
+Location information
+  #html/location = [|hash host host-name href origin path-name protocol search|]"#;
+
+    //let mut compiler = Compiler::new();
+    //let blocks = compiler.compile_str(&html_code).unwrap();
+    //log!("{:?}", blocks);
+
     WasmCore {
       core: mech,
       //programs: Vec::new(),
@@ -552,7 +571,7 @@ impl WasmCore {
         let contents_string = chars.to_string();
         div.set_inner_html(&contents_string);
       },
-      Value::F32(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::F32(x) => div.set_inner_html(&format!("{:.2}", x)),
       Value::F64(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U128(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U64(x) => div.set_inner_html(&format!("{:?}", x)),
