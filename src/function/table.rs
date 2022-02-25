@@ -17,40 +17,6 @@ lazy_static! {
   pub static ref TABLE: u64 = hash_str("table");
 }
 
-/*
-// Concat Vectors
-#[derive(Debug)]
-pub struct ConcatV<T> 
-where T: Clone + Debug
-{
-  pub args: Vec<Arg<T>>, 
-  pub out: Out<T>,
-}
-
-impl<T> MechFunction for ConcatV<T> 
-where T: Clone + Debug
-{
-  fn solve(&self) {
-    let mut out_brrw = self.out.borrow_mut();
-    let mut arg_ix = 0;
-    let mut ix = 0;
-    let mut arg_brrw = self.args[arg_ix].borrow();
-    for r in 0..out_brrw.len() {
-      out_brrw[r] = arg_brrw[ix].clone();
-      ix += 1;
-      if ix == arg_brrw.len() {
-        ix = 0;
-        arg_ix += 1;
-        if arg_ix == self.args.len() {
-          return;
-        } else {
-          arg_brrw = self.args[arg_ix].borrow();
-        }
-      } 
-    }
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
 
 // Copy Vector : Vector
 #[derive(Debug)]
@@ -73,22 +39,28 @@ where T: Copy + Debug + Clone + Into<U> + Sync + Send,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-/*// Parallel Copy Vector : Vector
+// Parallel Copy Vector : Vector
 #[derive(Debug)]
-pub struct ParCopyVV<T> 
-where T: Clone + Debug + Sync + Send
-{
-  pub arg: Arg<T>, pub out: Out<T>
+pub struct ParCopyVV<T,U> {
+  pub arg: (ColumnV<T>, usize, usize),
+  pub out: (ColumnV<U>, usize, usize),
 }
-impl<T> MechFunction for ParCopyVV<T> 
-where T: Clone + Debug + Sync + Send
+impl<T,U> MechFunction for ParCopyVV<T,U> 
+where T: Copy + Debug + Clone + Into<U> + Sync + Send,
+      U: Copy + Debug + Clone + Into<T> + Sync + Send,
 {
   fn solve(&self) {
-    self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = arg.clone()); 
+    let (arg,asix,aeix) = &self.arg;
+    let (out,osix,oeix) = &self.out;
+    out.borrow_mut()[*osix..=*oeix]
+       .par_iter_mut()
+       .zip(arg.borrow()[*asix..=*aeix].par_iter())
+       .for_each(|(out, arg)| *out = T::into(*arg)); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+/*
 // Copy Scalar : Vector
 #[derive(Debug)]
 pub struct CopySV<T> 
@@ -837,7 +809,7 @@ impl MechFunctionCompiler for TableRange {
   }
 }
 
-/*
+
 // AppendRow Table : Table
 #[derive(Debug)]
 pub struct AppendRowT {
@@ -853,11 +825,11 @@ impl MechFunction for AppendRowT {
     let arows = arg_brrw.rows;
     out_brrw.resize(orows + arows, ocols);
     if arg_brrw.has_col_aliases() {
-      for (alias,ix) in arg_brrw.column_alias_to_ix.iter() {
+      for (alias,ix) in arg_brrw.col_map.iter() {
         for row in 0..arows {
           let value = arg_brrw.get_raw(row,*ix).unwrap();
-          let col_ix = match out_brrw.column_alias_to_ix.get(&alias) {
-            Some(col_ix) => *col_ix,
+          let col_ix = match out_brrw.col_map.get_index(&alias) {
+            Ok(col_ix) => col_ix,
             _ => 0,
           };
           out_brrw.set_col_kind(col_ix,value.kind());
@@ -876,7 +848,7 @@ impl MechFunction for AppendRowT {
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
-
+/*
 // AppendRow Table : Table
 #[derive(Debug)]
 pub struct AppendRowSV {

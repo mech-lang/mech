@@ -447,6 +447,10 @@ impl Table {
     self.data[col].clone()
   }
 
+  pub fn has_col_aliases(&self) -> bool {
+    self.col_map.alias_to_ix.len() > 0
+  }
+
   pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {
     let row = ix / self.cols;
     let col = ix % self.cols;
@@ -539,6 +543,10 @@ impl AliasMap {
     self.ix_to_alias.iter()
   }
 
+  pub fn iter(&self) -> hashbrown::hash_map::Iter<u64, usize> {
+    self.alias_to_ix.iter()
+  }
+
 }
 
 impl fmt::Debug for Table {
@@ -595,13 +603,6 @@ impl Table {
       table.data[col] = self.data[col].copy();
     }
     table
-  }
-
-
-  pub fn has_col_aliases(&self) -> bool {
-    self.column_ix_to_alias.len() > 0
-  }
-
 
 
   pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
