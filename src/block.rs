@@ -628,14 +628,14 @@ impl Block {
           (TableIndex::Table(ix_table_id), TableIndex::None) => {
             let src_brrw = src_table.borrow();
             match src_brrw.shape() {
-              /*TableShape::Row(_) => {
+              TableShape::Row(_) => {
                 {
                   let mut out_brrw = out_table.borrow_mut();
                   out_brrw.set_kind(src_brrw.kind());
                 }
                 let ix_table = self.get_table(&ix_table_id)?;
                 self.plan.push(CopyTB{arg: src_table.clone(), ix: ix_table.clone(), out: out_table.clone()});
-              }*/
+              }
               _ => {
                 let (_, arg_col,arg_ix) = self.get_arg_column(&argument)?;
                 let mut out_brrw = out_table.borrow_mut();

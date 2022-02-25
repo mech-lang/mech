@@ -408,6 +408,7 @@ macro_rules! math_compiler {
             let (_,col,_) = &argument_columns[0];
             let mut out_column = block.get_out_column(out, *rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
@@ -527,14 +528,14 @@ macro_rules! math_compiler {
                   out_brrw.set_col_kind(col_ix, ValueKind::U8);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::U8(out) = out_col {
-                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() })
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
                 (((_,Column::F32(lhs),_), (_,Column::F32(rhs),_))) => {
                   out_brrw.set_col_kind(col_ix, ValueKind::F32);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
-                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() })
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
                 _ => {return Err(MechError::GenericError(6343));},

@@ -219,7 +219,7 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-/*
+
 // Set Scalar : Vector {Bool}
 #[derive(Debug)]
 pub struct CopyTB {
@@ -248,7 +248,7 @@ impl MechFunction for CopyTB
     }
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
+}
 
 // Set Vector : Vector {Bool}
 #[derive(Debug)]
@@ -668,7 +668,6 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
 }
 
 
-/*
 pub struct TableSplit{}
 impl MechFunctionCompiler for TableSplit {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
@@ -707,7 +706,7 @@ impl MechFunctionCompiler for TableSplit {
                 let dest_table = block.get_table(&TableId::Global(split_id))?;
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
-                  Column::F32(dest_col) => { block.plan.push(SetSIxSIx::<f32>{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
+                  Column::F32(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
                   _ => {return Err(MechError::GenericError(6097));},
                 }
               }
@@ -720,7 +719,7 @@ impl MechFunctionCompiler for TableSplit {
     }     
     Ok(())
   }
-}*/
+}
 
 
 // A range of values from start to end

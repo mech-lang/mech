@@ -460,6 +460,16 @@ impl Table {
       Err(MechError::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
     }
   }
+  
+  pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),MechError> {
+    if ix < self.rows * self.cols {
+      let row = ix / self.cols;
+      let col = ix % self.cols;
+      self.set_raw(row,col, val)
+    } else {
+      Err(MechError::GenericError(1214))
+    }
+  }
 
   pub fn shape(&self) -> TableShape {
     match (self.rows, self.cols) {
@@ -653,15 +663,6 @@ impl Table {
 
 
 
-  pub fn set_linear(&self, ix: usize, val: Value) -> Result<(),MechError> {
-    if ix < self.rows * self.cols {
-      let row = ix / self.cols;
-      let col = ix % self.cols;
-      self.set_raw(row,col, val)
-    } else {
-      Err(MechError::GenericError(1214))
-    }
-  }
 
 
 
