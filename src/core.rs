@@ -13,7 +13,7 @@ use crate::function::{
   math::*,
   //compare::*,
   //stats::*,
-  //table::*,
+  table::*,
   //set::*,
   //logic::*,
 };
@@ -86,9 +86,10 @@ impl Core {
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+     */
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
-    functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
+    /*functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
 
     functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
