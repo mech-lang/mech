@@ -13,7 +13,7 @@ pub mod math;
 pub mod stats;
 pub mod table;
 //pub mod set;
-//pub mod logic;
+pub mod logic;
 
 pub type Arg<T> = ColumnV<T>;
 pub type Out<T> = ColumnV<T>;

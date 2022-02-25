@@ -53,7 +53,7 @@ macro_rules! logic_infix_ss {
     #[derive(Debug)]
     pub struct $func_name
     {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
     impl MechFunction for $func_name 
     {
@@ -71,7 +71,7 @@ macro_rules! logic_infix_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
 
     impl MechFunction for $func_name {
@@ -88,7 +88,7 @@ macro_rules! logic_infix_par_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
     impl MechFunction for $func_name {
       fn solve(&self) {
@@ -105,7 +105,7 @@ macro_rules! logic_infix_vs {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
 
     impl MechFunction for $func_name {
@@ -123,7 +123,7 @@ macro_rules! logic_infix_par_vs {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
 
     impl MechFunction for $func_name {
@@ -142,7 +142,7 @@ macro_rules! logic_infix_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
 
     impl MechFunction for $func_name {
@@ -160,7 +160,7 @@ macro_rules! logic_infix_par_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name {
-      pub lhs: Arg<bool>, pub rhs: Arg<bool>, pub out: Out<bool>
+      pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
     }
 
     impl MechFunction for $func_name {
@@ -176,7 +176,7 @@ macro_rules! logic_infix_par_sv {
 // Not Vector
 #[derive(Debug)]
 pub struct NotV {
-  pub arg: Arg<bool>, pub out: Out<bool>
+  pub arg: ColumnV<bool>, pub out: ColumnV<bool>
 }
 
 impl MechFunction for NotV {
@@ -190,7 +190,7 @@ impl MechFunction for NotV {
 #[derive(Debug)]
 pub struct NotS
 {
-  pub arg: Arg<bool>, pub out: Out<bool>
+  pub arg: ColumnV<bool>, pub out: ColumnV<bool>
 }
 impl MechFunction for NotS 
 {

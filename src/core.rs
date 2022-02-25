@@ -15,7 +15,7 @@ use crate::function::{
   stats::*,
   table::*,
   //set::*,
-  //logic::*,
+  logic::*,
 };
 
 use hashbrown::{HashMap, HashSet};
@@ -69,12 +69,12 @@ impl Core {
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     //functions.insert(*MATH_EXPONENT, MathExp{});
-    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
+    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));*/
 
     functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
     functions.insert(*LOGIC_AND, Box::new(logic_and{}));
     functions.insert(*LOGIC_OR, Box::new(logic_or{}));
-    functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));*/
+    functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));
 
     //functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
     /*functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
