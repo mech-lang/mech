@@ -76,11 +76,11 @@ impl Core {
     functions.insert(*LOGIC_OR, Box::new(logic_or{}));
     functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));
 
-    //functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
-    /*functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
+    functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
+    functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
     functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(compare_greater__than__equal{}));
     functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(compare_less__than__equal{}));
-    */functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
+    functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
     functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));
 
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
