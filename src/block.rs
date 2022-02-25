@@ -192,7 +192,6 @@ impl Block {
     }
   }
 
-  
   pub fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
 
     let (arg_name, table_id, indices) = argument;
@@ -323,8 +322,8 @@ impl Block {
   }
 
   pub fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
+    
     let (arg_name,table_id,indices) = argument;
-  
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
       let argument = (0,table_id,vec![(*row,*column)]);
@@ -347,27 +346,36 @@ impl Block {
         _ => {return Err(MechError::GenericError(6394));}
       }
     }
-
     let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
+    let table_brrw = table.borrow();
 
-    let lhs_table = self.get_table(&table_id)?;
-    let lhs_brrw = lhs_table.borrow();
-    let row_index = match row {
-      TableIndex::ReshapeColumn => ColumnIndex::ReshapeColumn,
-      TableIndex::All => ColumnIndex::All,
-      TableIndex::None => ColumnIndex::None,
-      TableIndex::Index(ix) => ColumnIndex::Index(ix - 1),
-      TableIndex::Alias(alias) => {
+    match self.get_arg_dim(argument) {
+      Ok(TableShape::Column(rows)) => {
+        println!("5555555555555555555555555555555555");
+      }
+      _ => (),
+    };
+
+
+
+
+    let row_index = match (row,col) {
+      (TableIndex::ReshapeColumn,_) => ColumnIndex::ReshapeColumn,
+      (TableIndex::All,_) => ColumnIndex::All,
+      (TableIndex::None,_) => ColumnIndex::None,
+      (TableIndex::Index(ix),_) => ColumnIndex::Index(ix - 1),
+      (TableIndex::Alias(alias),_) => {
         return Err(MechError::GenericError(9257));
       },
-      TableIndex::Table(ix_table_id) => {
+      (TableIndex::Table(ix_table_id),_) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-          //Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
-          //Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
+          Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
           x => {
             return Err(MechError::GenericError(9253));
           }
@@ -376,7 +384,7 @@ impl Block {
       }
       _ => ColumnIndex::All,
     };
-    let arg_cols = lhs_brrw.get_columns(&col)?.iter().map(|arg_col| (*arg_name,arg_col.clone(),row_index.clone())).collect();
+    let arg_cols = table_brrw.get_columns(&col)?.iter().map(|arg_col| (*arg_name,arg_col.clone(),row_index.clone())).collect();
     Ok(arg_cols)
   }
 
@@ -637,7 +645,7 @@ impl Block {
                   //(Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
                   //(Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                   //(Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  //(Column::F32(arg), ColumnIndex::Bool(ix), Column::F32(out)) => self.plan.push(CopyVB::<f32>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                  (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
                   //(Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                   (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                   x => {return Err(MechError::GenericError(6380));},
@@ -645,7 +653,7 @@ impl Block {
               }
             }
           }
-          /*(TableIndex::Table(ix_table_id), TableIndex::All) => {
+          (TableIndex::Table(ix_table_id), TableIndex::All) => {
             let src_brrw = src_table.borrow();
             let mut out_brrw = out_table.borrow_mut();
             out_brrw.resize(1,src_brrw.cols);
@@ -654,14 +662,14 @@ impl Block {
               let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,TableIndex::Index(col+1))]))?;
               let mut out_col = out_brrw.get_column_unchecked(col); 
               match (&arg_col, &arg_ix, &out_col) {
-                (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
-                (Column::F32(arg), ColumnIndex::Bool(ix), Column::F32(out)) => self.plan.push(CopyVB::<f32>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                //(Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                //(Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                //(Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                 x => {return Err(MechError::GenericError(6382));},
               }
             }
-          }*/
+          }
           (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
             let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;

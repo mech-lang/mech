@@ -2,7 +2,7 @@ use crate::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
-use num_traits::*;
+use num_traits::{Zero,zero};
 use std::ops::*;
 
 use rayon::prelude::*;
@@ -24,12 +24,12 @@ pub struct StatsSumV<T,U> {
 }
 
 impl<T,U> MechFunction for StatsSumV<T,U>
-where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + num_traits::identities::Zero,
-      U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send + num_traits::identities::Zero,
+where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + Zero,
+      U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send + Zero,
 {
   fn solve(&self) {
     let (col,six,eix) = &self.col;
-    let result = col.borrow()[*six..=*eix].iter().fold(identities::Zero::zero(),|sum, n| sum + *n);
+    let result = col.borrow()[*six..=*eix].iter().fold(zero(),|sum, n| sum + *n);
     self.out.borrow_mut()[0] = T::into(result);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -83,21 +83,23 @@ impl MechFunction for StatsSumRow {
     }
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+}*/
 
 // stats/sum(column: x)
 #[derive(Debug)]
-pub struct StatsSumColVIx<T> {
-  pub col: Arg<T>, pub ix: Arg<bool>, pub out: Out<T>
+pub struct StatsSumVB<T,U> {
+  pub col: ColumnV<T>, pub ix: ColumnV<bool>, pub out: ColumnV<U>
 }
 
-impl<T> MechFunction for StatsSumColVIx<T>
-where T: std::ops::Add<Output = T> + Debug + Copy + Num {
+impl<T,U> MechFunction for StatsSumVB<T,U>
+where T: std::ops::Add<Output = T> + Debug + Copy + Into<U> + Zero, 
+      U: std::ops::Add<Output = U> + Debug + Copy + Into<T> + Zero,
+{
   fn solve(&self) {
     let result = self.col.borrow()
                          .iter()
                          .zip(self.ix.borrow().iter())
-                         .fold(identities::Zero::zero(),|sum, (n,ix)| if *ix {sum + *n} else {sum});
+                         .fold(zero(),|sum, (n,ix)| if *ix {sum + T::into(*n)} else {sum});
     self.out.borrow_mut()[0] = result
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -106,11 +108,11 @@ where T: std::ops::Add<Output = T> + Debug + Copy + Num {
 
 // stats/sum(column: x{ix})
 #[derive(Debug)]
-pub struct StatsSumColTIx {
-  pub col: ArgTable, pub ix: Arg<bool>, pub out: Out<f32>
+pub struct StatsSumTB {
+  pub col: ArgTable, pub ix: Arg<bool>, pub out: ColumnV<F32>
 }
 
-impl MechFunction for StatsSumColTIx {
+impl MechFunction for StatsSumTB {
   fn solve(&self) {
     let mut sum = 0.0;
     let table_brrw = self.col.borrow();
@@ -119,16 +121,16 @@ impl MechFunction for StatsSumColTIx {
       match (table_brrw.get_linear(i),ix_brrw[i]) {
         (Ok(Value::F32(val)),ix_value) => {
           if ix_value {
-            sum += val
+            sum = sum + val.unwrap()
           }
         },
         _ => (),
       }
     }
-    (*self.out.borrow_mut())[0] = sum;
+    (*self.out.borrow_mut())[0] = F32::new(sum);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
+}
 
 pub struct StatsSum{}
 
@@ -138,19 +140,20 @@ impl MechFunctionCompiler for StatsSum {
       return Err(MechError::GenericError(6352));
     }
     let (out_table_id, _, _) = out;
-    let arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
+    let arg_col = block.get_arg_column(&arguments[0])?;
+    let arg_cols = vec![arg_col]; // This is a hack for now until it's fixed later
     let out_table = block.get_table(out_table_id)?;
     let mut out_brrw = out_table.borrow_mut();
-    out_brrw.resize(1,arg_cols.len());
+    out_brrw.resize(1,arg_cols.len());           
     for (col_ix,(arg_name,arg_col,row_index)) in arg_cols.iter().enumerate() {
       if *arg_name == *COLUMN {
-        println!("COLUMN!!!!!!!!!!");
         out_brrw.set_col_kind(col_ix,arg_col.kind());
         let mut out_col = out_brrw.get_col_raw(col_ix)?;
         match (arg_col,row_index,out_col) {
           (Column::F32(col),ColumnIndex::All,Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::F32(col),ColumnIndex::Bool(bix),Column::F32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
           x => {
-            println!("{:?}",x);
             return Err(MechError::GenericError(6356));
           }
         }

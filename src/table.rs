@@ -535,6 +535,10 @@ impl AliasMap {
     }
   }
 
+  pub fn aliases(&self) -> std::slice::Iter<u64> {
+    self.ix_to_alias.iter()
+  }
+
 }
 
 impl fmt::Debug for Table {
