@@ -35,8 +35,6 @@ where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + Zero,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
-/*
 // stats/sum(table: x)
 #[derive(Debug)]
 pub struct StatsSumTable {
@@ -51,12 +49,12 @@ impl MechFunction for StatsSumTable {
     for i in 0..table_els {
       match table_brrw.get_linear(i) {
         Ok(Value::F32(val)) => {
-          sum += val
+          sum += val.unwrap()
         },
         _ => (),
       }
     }
-    (*self.out.borrow_mut())[0] = sum;
+    (*self.out.borrow_mut())[0] = F32::new(sum);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -74,16 +72,16 @@ impl MechFunction for StatsSumRow {
       for col in 0..table_brrw.cols {
         match table_brrw.get_raw(row,col) {
           Ok(Value::F32(val)) => {
-            sum += val
+            sum += val.unwrap()
           },
           _ => (),
         }
       }
-      (*self.out.borrow_mut())[row] = sum;
+      (*self.out.borrow_mut())[row] = F32::new(sum);
     }
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
+}
 
 // stats/sum(column: x)
 #[derive(Debug)]
@@ -158,24 +156,28 @@ impl MechFunctionCompiler for StatsSum {
           }
         }
       }
+      else if *arg_name == *ROW {
+        let (arg_name,arg_table_id,_) = arguments[0];
+        let arg_table = block.get_table(&arg_table_id)?;
+        out_brrw.resize(arg_table.borrow().rows,1);
+        out_brrw.set_kind(ValueKind::F32);
+        if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
+          block.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()});
+        }
+      } 
+      else if *arg_name == *TABLE {
+        let (arg_name,arg_table_id,_) = arguments[0];
+        let arg_table = block.get_table(&arg_table_id)?;
+        out_brrw.resize(1,1);
+        out_brrw.set_kind(ValueKind::F32);
+        if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
+          block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()});
+        }
+      }
       else {
         return Err(MechError::GenericError(6357));
       }
-    }
-    /*else if arg_name == *ROW { 
-      let arg_table = block.get_table(&arg_table_id)?;
-      out_brrw.resize(arg_table.borrow().rows,1);
-      out_brrw.set_kind(ValueKind::F32);
-      let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
-      block.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()})
     } 
-    else if arg_name == *TABLE {
-      let arg_table = block.get_table(&arg_table_id)?;
-      out_brrw.resize(1,1);
-      out_brrw.set_kind(ValueKind::F32);
-      let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
-      block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})
-    }*/ 
     Ok(())
   }
 }
