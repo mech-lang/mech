@@ -25,8 +25,8 @@ pub struct CopyVV<T,U> {
   pub out: (ColumnV<U>, usize, usize),
 }
 impl<T,U> MechFunction for CopyVV<T,U> 
-where T: Copy + Debug + Clone + Into<U> + Sync + Send,
-      U: Copy + Debug + Clone + Into<T> + Sync + Send,
+where T: Debug + Clone + Into<U> + Sync + Send,
+      U: Debug + Clone + Into<T> + Sync + Send,
 {
   fn solve(&self) {
     let (arg,asix,aeix) = &self.arg;
@@ -34,7 +34,7 @@ where T: Copy + Debug + Clone + Into<U> + Sync + Send,
     out.borrow_mut()[*osix..=*oeix]
        .iter_mut()
        .zip(arg.borrow()[*asix..=*aeix].iter())
-       .for_each(|(out, arg)| *out = T::into(*arg)); 
+       .for_each(|(out, arg)| *out = T::into(arg.clone())); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -66,7 +66,7 @@ where T: Copy + Debug + Clone + Into<U> + Sync + Send,
 pub struct CopySV<T> 
 where T: Clone + Debug
 {
-  pub arg: Arg<T>, pub ix: usize, pub out: Out<T>
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>
 }
 impl<T> MechFunction for CopySV<T> 
 where T: Clone + Debug
@@ -82,7 +82,7 @@ where T: Clone + Debug
 // Copy Vector : Vector Ref
 #[derive(Debug)]
 pub struct CopyVVRef {
-  pub arg: Arg<TableId>, pub out: Out<TableId>
+  pub arg: ColumnV<TableId>, pub out: ColumnV<TableId>
 }
 impl MechFunction for CopyVVRef {
   fn solve(&self) {
@@ -98,7 +98,7 @@ impl MechFunction for CopyVVRef {
 // Copy Reference
 #[derive(Debug)]
 pub struct CopySVRef {
-  pub arg: Arg<TableId>, pub ix: usize , pub out: Out<TableId>
+  pub arg: ColumnV<TableId>, pub ix: usize , pub out: ColumnV<TableId>
 }
 impl MechFunction for CopySVRef 
 {
@@ -113,7 +113,7 @@ impl MechFunction for CopySVRef
 // Copy Scalar : Scalar
 #[derive(Debug)]
 pub struct CopySS<T> {
-  pub arg: Arg<T>, pub ix: usize , pub out: Out<T>
+  pub arg: ColumnV<T>, pub ix: usize , pub out: ColumnV<T>
 }
 impl<T> MechFunction for CopySS<T> 
 where T: Clone + Debug
@@ -132,12 +132,12 @@ where T: Clone + Debug
     box_drawing.add_line(format!("{:?}", &self.out.borrow()));
     box_drawing.print()
   }
-}
+}*/
 
 // Copy Reference
 #[derive(Debug)]
 pub struct CopySSRef {
-  pub arg: Arg<TableId>, pub ix: usize , pub out: Out<TableId>
+  pub arg: ColumnV<TableId>, pub ix: usize , pub out: ColumnV<TableId>
 }
 impl MechFunction for CopySSRef 
 {
@@ -147,14 +147,11 @@ impl MechFunction for CopySSRef
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-*/
-
-
 // Copy Vector{Bool Ix} : Vector
 #[derive(Debug)]
 pub struct CopyVB<T,U> {
   pub arg: ColumnV<T>,
-  pub bix: Arg<bool>,
+  pub bix: ColumnV<bool>,
   pub out: ColumnV<U>,
 }
 impl<T,U> MechFunction for CopyVB<T,U> 
@@ -190,7 +187,7 @@ where T: Copy + Debug + Clone + Into<U> + Sync + Send,
 pub struct CopyVB<T> 
 where T: Copy + Debug
 {
-  pub arg: Arg<T>, pub ix: Arg<bool>, pub out: Out<T>
+  pub arg: ColumnV<T>, pub ix: ColumnV<bool>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for CopyVB<T> 
@@ -219,7 +216,7 @@ where T: Copy + Debug
 // Copy Vector{Int Ix} : Vector
 #[derive(Debug)]
 pub struct CopyVI<T>  {
-  pub arg: Arg<T>, pub ix: Arg<usize>, pub out: Out<T>
+  pub arg: ColumnV<T>, pub ix: ColumnV<usize>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for CopyVI<T> 
@@ -246,7 +243,7 @@ where T: Copy + Debug
 pub struct SetSIxSIx<T> 
 where T: Copy + Debug
 {
-  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>, pub oix: usize
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>, pub oix: usize
 }
 impl<T> MechFunction for SetSIxSIx<T> 
 where T: Copy + Debug
@@ -262,7 +259,7 @@ where T: Copy + Debug
 pub struct SetSIxVB<T> 
 where T: Copy + Debug
 {
-  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>, pub oix: Arg<bool>
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>, pub oix: ColumnV<bool>
 }
 impl<T> MechFunction for SetSIxVB<T> 
 where T: Copy + Debug
@@ -311,7 +308,7 @@ impl MechFunction for CopyTB
 // Set Vector : Vector {Bool}
 #[derive(Debug)]
 pub struct SetVVB<T> {
-  pub arg: Arg<T>, pub out: Arg<T>, pub oix: Arg<bool>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>, pub oix: ColumnV<bool>
 }
 
 impl<T> MechFunction for SetVVB<T> 
@@ -327,7 +324,7 @@ where T: Copy + Debug
 
 #[derive(Debug)]
 pub struct ParSetVVB<T> {
-  pub arg: Arg<T>, pub out: Arg<T>, pub oix: Arg<bool>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>, pub oix: ColumnV<bool>
 }
 
 impl<T> MechFunction for ParSetVVB<T> 
@@ -344,7 +341,7 @@ where T: Copy + Debug + Sync + Send
 // Set Vector : Vector
 #[derive(Debug)]
 pub struct SetVV<T> {
-  pub arg: Arg<T>, pub out: Arg<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for SetVV<T> 
@@ -358,7 +355,7 @@ where T: Copy + Debug
 
 #[derive(Debug)]
 pub struct ParSetVV<T> {
-  pub arg: Arg<T>, pub out: Arg<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for ParSetVV<T> 
@@ -372,7 +369,7 @@ where T: Copy + Debug + Sync + Send
 
 #[derive(Debug)]
 pub struct SetVS<T> {
-  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for SetVS<T> 
@@ -388,7 +385,7 @@ where T: Copy + Debug
 
 #[derive(Debug)]
 pub struct ParSetVS<T> {
-  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for ParSetVS<T> 
@@ -403,7 +400,7 @@ where T: Copy + Debug + Sync + Send
 
 #[derive(Debug)]
 pub struct ParSetVSB<T> {
-  pub arg: Arg<T>, pub ix: usize, pub out: Arg<T>, pub oix: Arg<bool>
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>, pub oix: ColumnV<bool>
 }
 
 impl<T> MechFunction for ParSetVSB<T> 
@@ -597,16 +594,16 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               match (&arg_col, &arg_ix, &out_col) {
                 (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-                /*(Column::U16(arg), ColumnIndex::Index(ix), Column::U16(out)) => block.plan.push(CopySS::<u16>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::U32(arg), ColumnIndex::Index(ix), Column::U32(out)) => block.plan.push(CopySS::<u32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopySS::<u64>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::U128(arg), ColumnIndex::Index(ix), Column::U128(out)) => block.plan.push(CopySS::<u128>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::Time(arg), ColumnIndex::Index(ix), Column::Time(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySS::<MechString>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySS::<bool>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::U16(arg), ColumnIndex::Index(ix), Column::U16(out)) => block.plan.push(CopySS::<u16>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::U32(arg), ColumnIndex::Index(ix), Column::U32(out)) => block.plan.push(CopySS::<u32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopySS::<u64>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::U128(arg), ColumnIndex::Index(ix), Column::U128(out)) => block.plan.push(CopySS::<u128>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                //(Column::Time(arg), ColumnIndex::Index(ix), Column::Time(out)) => block.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                */(Column::Empty, _, Column::Empty) => (),
+                //(Column::Empty, _, Column::Empty) => (),
                 x => {
                   println!("{:?}", x);
                   return Err(MechError::GenericError(6366));
@@ -769,7 +766,7 @@ impl MechFunctionCompiler for TableSplit {
 // A range of values from start to end
 #[derive(Debug)]
 pub struct Range  {
-  pub start: Arg<F32>, pub end: Arg<F32>, pub out: OutTable
+  pub start: ColumnV<F32>, pub end: ColumnV<F32>, pub out: OutTable
 }
 
 impl MechFunction for Range

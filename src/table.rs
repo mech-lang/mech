@@ -294,17 +294,17 @@ impl Table {
           let column = ColumnV::<bool>::new(vec![false;self.rows]);
           self.data[col] = Column::Bool(column);
           self.col_kinds[col] = ValueKind::Bool;
-        },/*
+        },
         (Column::Empty, ValueKind::String) => {
-          let column = Rc::new(RefCell::new(vec![MechString::new();self.rows]));
+          let column = ColumnV::<MechString>::new(vec![MechString::new();self.rows]);
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
         },
         (Column::Empty, ValueKind::Reference) => {
-          let column = Rc::new(RefCell::new(vec![TableId::Local(0);self.rows]));
+          let column = ColumnV::<TableId>::new(vec![TableId::Local(0);self.rows]);
           self.data[col] = Column::Ref(column);
           self.col_kinds[col] = ValueKind::Reference;
-        },*/
+        },
         x => {
           println!("{:?}", x);
           return Err(MechError::GenericError(1229));
