@@ -213,7 +213,6 @@ impl Table {
   }
 
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
-    println!("{:?}",(&mut self.data[col], &kind));
     if col < self.cols {
       match (&mut self.data[col], kind) {
         (Column::U8(_), ValueKind::U8) => (),
