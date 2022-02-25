@@ -18,7 +18,7 @@ lazy_static! {
 // set/any(column: x)
 #[derive(Debug)]
 pub struct SetAnyCol {
-  pub col: Arg<bool>, pub out: Out<bool>
+  pub col: ColumnV<bool>, pub out: ColumnV<bool>
 }
 
 impl MechFunction for SetAnyCol {
@@ -32,7 +32,7 @@ impl MechFunction for SetAnyCol {
 // set/all(column: x)
 #[derive(Debug)]
 pub struct SetAllCol {
-  pub col: Arg<bool>, pub out: Out<bool>
+  pub col: ColumnV<bool>, pub out: ColumnV<bool>
 }
 
 impl MechFunction for SetAllCol {
@@ -52,10 +52,10 @@ impl MechFunctionCompiler for SetAll {
     let mut out_brrw = out_table.borrow_mut();
     out_brrw.resize(1,1);
     out_brrw.set_col_kind(0,ValueKind::Bool);
-    let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
+    let out_col = out_brrw.get_column_unchecked(0);
     if arg_name == *COLUMN {
-      match arg_column {
-        Column::Bool(col) => block.plan.push(SetAllCol{col: col.clone(), out: out_col.clone()}),
+      match (arg_column,out_col) {
+        (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAllCol{col: col.clone(), out: out.clone()}),
         _ => {return Err(MechError::GenericError(6595));},
       }
     } 
@@ -72,13 +72,13 @@ impl MechFunctionCompiler for SetAny {
     let mut out_brrw = out_table.borrow_mut();
     out_brrw.resize(1,1);
     out_brrw.set_col_kind(0,ValueKind::Bool);
-    let out_col = out_brrw.get_column_unchecked(0).get_bool().unwrap();
+    let out_col = out_brrw.get_column_unchecked(0);
     if arg_name == *COLUMN {
-      match arg_column {
-        Column::Bool(col) => block.plan.push(SetAnyCol{col: col.clone(), out: out_col.clone()}),
-        _ => {return Err(MechError::GenericError(6391));},
+      match (arg_column,out_col) {
+        (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAllCol{col: col.clone(), out: out.clone()}),
+        _ => {return Err(MechError::GenericError(6597));},
       }
-    }
+    } 
     Ok(())
   }
 }

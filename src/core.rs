@@ -14,7 +14,7 @@ use crate::function::{
   compare::*,
   stats::*,
   table::*,
-  //set::*,
+  set::*,
   logic::*,
 };
 
@@ -93,9 +93,9 @@ impl Core {
 
     functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
-    /*functions.insert(*SET_ANY, Box::new(SetAny{}));
+    functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
-    */ 
+     
     Core {
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
