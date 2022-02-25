@@ -848,7 +848,7 @@ impl MechFunction for AppendRowT {
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
-/*
+
 // AppendRow Table : Table
 #[derive(Debug)]
 pub struct AppendRowSV {
@@ -910,8 +910,8 @@ impl MechFunction for Size
     let rows = arg_brrw.rows;
     let cols = arg_brrw.cols;
     let mut out_brrw = self.out.borrow_mut();
-    out_brrw.set_raw(0,0,Value::U64(rows as u64));
-    out_brrw.set_raw(0,1,Value::U64(cols as u64));
+    out_brrw.set_raw(0,0,Value::U64(U64::new(rows as u64)));
+    out_brrw.set_raw(0,1,Value::U64(U64::new(cols as u64)));
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -938,4 +938,3 @@ impl MechFunctionCompiler for TableSize {
     Ok(())
   }
 }
-*/
