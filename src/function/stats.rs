@@ -134,7 +134,6 @@ pub struct StatsSum{}
 
 impl MechFunctionCompiler for StatsSum {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
-    println!("stats sum");
     if arguments.len() > 1 {
       return Err(MechError::GenericError(6352));
     }
@@ -149,19 +148,19 @@ impl MechFunctionCompiler for StatsSum {
         out_brrw.set_col_kind(col_ix,arg_col.kind());
         let mut out_col = out_brrw.get_col_raw(col_ix)?;
         match (arg_col,row_index,out_col) {
+          (Column::F32(col),ColumnIndex::Index(ix),Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
           (Column::F32(col),ColumnIndex::All,Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::Bool(bix),Column::F32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
           (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
           x => {
+            println!("{:?}", x);
             return Err(MechError::GenericError(6356));
           }
         }
       }
       else if *arg_name == *ROW {
-        println!("ROW");
         let (arg_name,arg_table_id,_) = arguments[0];
         let arg_table = block.get_table(&arg_table_id)?;
-        println!("{:?}", arg_table);
         out_brrw.resize(arg_table.borrow().rows,1);
         out_brrw.set_kind(ValueKind::F32);
         if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
