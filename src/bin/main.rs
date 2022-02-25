@@ -14,10 +14,8 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #app = [2 [5 7]]
-  
-block
-  #test = #app{2}{2}"#)?;
+  #test = [1 2
+           3 4]"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -53,7 +51,6 @@ block
     println!("Answer:");
     println!("{:#?}", table.borrow());
   }
-  
 
   Ok(())
 }
