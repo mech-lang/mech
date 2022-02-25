@@ -188,12 +188,6 @@ block
 block
   #test = #x", Value::F32(F32::new(123.0)));
 
-test_mech!(select_table_reverse_ordering,"  
-block
-  #test = #x
-block
-  #x = 123", Value::F32(F32::new(123.0)));
-
 // ## Math
 
 test_mech!(math_constant,"#test = 10", Value::F32(F32::new(10.0)));
@@ -647,11 +641,11 @@ block
   #balls = [x: 10]
 
 block
+  #clicked = true
+
+block
   ~ #x
   #balls.x{#clicked} := #x.x
-  
-block
-  #clicked = true
   
 block
   #test = #balls.x", Value::F32(F32::new(3.0)));
@@ -942,10 +936,10 @@ block
 
 test_mech!(nesting_inline_table,r#"
 block
-  #test = #robot.y{:}{1} + #robot.y{:}{2}
+  #robot = [x: 20 y: [x: 30 y: 50]]
 
 block
-  #robot = [x: 20 y: [x: 30 y: 50]]"#, Value::F32(F32::new(80.0)));
+  #test = #robot.y{:}{1} + #robot.y{:}{2}"#, Value::F32(F32::new(80.0)));
 
 
 test_mech!(nesting_second_col,r#"
@@ -1049,17 +1043,6 @@ block
   #mech/test = ["foo", 3, stats/sum(column: 1:2)]
 block
   #test = #mech/test{2} == #mech/test{3}"#, Value::Bool(true));
-
-// ## Errors
-
-test_mech!(error_duplicate_alias, r#"
-block
-  #test = 5
-
-block
-  x = 1
-  x = 3
-  #test := 7"#, Value::F32(F32::new(5.0)));
 
 // ## Markdown
 

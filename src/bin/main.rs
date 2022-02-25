@@ -14,11 +14,12 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #x = []
+  #x = [10 20; 30 40;]
 block
-  #x += 5 * 2
+  x = [10 20 30]
+  #x += x{1:2}
 block
-  #test = stats/sum(column: #x)"#)?;
+  #test = stats/sum(table: #x)"#)?;
 
   println!("{:#?}", parse_tree);
 
