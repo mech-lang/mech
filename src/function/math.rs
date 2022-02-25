@@ -640,10 +640,10 @@ impl MechFunctionCompiler for MathAdd {
         let (_,col,_) = &argument_columns[0];
         let out_column = block.get_out_column(out, *lhs_rows, col.kind())?;
         match (&argument_columns[0], &argument_columns[1], &out_column) {
-          ((_,Column::U8(lhs),_),(_,Column::U8(rhs),_),Column::U8(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() }) },
-          ((_,Column::U16(lhs),_),(_,Column::U16(rhs),_),Column::U16(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() }) },
-          ((_,Column::U32(lhs),_),(_,Column::U32(rhs),_),Column::U32(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() }) },
-          ((_,Column::F32(lhs),_),(_,Column::F32(rhs),_),Column::F32(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()), rhs: (rhs.clone(),0,rhs.len()), out: out.clone() }) },
+          ((_,Column::U8(lhs),_),(_,Column::U8(rhs),_),Column::U8(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+          ((_,Column::U16(lhs),_),(_,Column::U16(rhs),_),Column::U16(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+          ((_,Column::U32(lhs),_),(_,Column::U32(rhs),_),Column::U32(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+          ((_,Column::F32(lhs),_),(_,Column::F32(rhs),_),Column::F32(out)) => { block.plan.push(AddVV{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
           x => {
             println!("{:?}",x);
             return Err(MechError::GenericError(1239));

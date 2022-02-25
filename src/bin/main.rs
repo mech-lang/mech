@@ -40,16 +40,9 @@ pub fn par_add<T,U>(lhs: &ColumnV<T>, rhs: &ColumnV<U>, out: &ColumnV<U>)
      .zip(lhs.borrow().par_iter().map(|x| T::into(*x)))
      .zip(rhs.borrow().par_iter())
      .for_each(|((out, lhs),rhs)| *out = lhs.add(*rhs)); 
-}
-
-pub fn copy<T,U>(arg: &ColumnV<T>, out: &ColumnV<U>, start: usize) 
-  where T: Copy + Debug + Clone + Into<U>,
-        U: Copy + Debug + Clone + Into<T>,
-{
-  let (ColumnV(arg),ColumnV(out)) = (arg,out);
-  let mut o = out.borrow_mut();
-  o[start..].iter_mut().zip(arg.borrow().iter().map(|x| T::into(*x))).for_each(|(out, arg)| *out = arg.clone()); 
 }*/
+
+
 
 
 

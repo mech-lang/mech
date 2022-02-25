@@ -12,7 +12,7 @@ use crate::function::{
   MechFunction,
   math::*,
   //compare::*,
-  //stats::*,
+  stats::*,
   table::*,
   //set::*,
   //logic::*,
@@ -89,11 +89,11 @@ impl Core {
      */
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
-    /*functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
+    //functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
 
     functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
-    functions.insert(*SET_ANY, Box::new(SetAny{}));
+    /*functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
     */ 
     Core {

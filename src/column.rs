@@ -201,6 +201,15 @@ mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
 
+impl num_traits::identities::Zero for F32 {
+  fn zero() -> Self {
+    F32::new(0.0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0.0
+  }
+}
+
 mech_type_conversion!(U8,F32,f32);
 mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);

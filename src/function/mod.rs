@@ -10,7 +10,7 @@ use std::thread;
 
 //pub mod compare;
 pub mod math;
-//pub mod stats;
+pub mod stats;
 pub mod table;
 //pub mod set;
 //pub mod logic;
