@@ -23,12 +23,12 @@ compare_infix_vv!(GreaterEqualVV,>=);
 compare_infix_vv!(EqualVV,==);
 compare_infix_vv!(NotEqualVV,!=);
 
-/*compare_infix_par_vv!(ParGreaterVV,>);
-compare_infix_par_vv!(ParLessVV,<);
-compare_infix_par_vv!(ParLessEqualVV,<=);
-compare_infix_par_vv!(ParGreaterEqualVV,>=);
-compare_infix_par_vv!(ParEqualVV,==);
-compare_infix_par_vv!(ParNotEqualVV,!=);*/
+par_compare_infix_vv!(ParGreaterVV,>);
+par_compare_infix_vv!(ParLessVV,<);
+par_compare_infix_vv!(ParLessEqualVV,<=);
+par_compare_infix_vv!(ParGreaterEqualVV,>=);
+par_compare_infix_vv!(ParEqualVV,==);
+par_compare_infix_vv!(ParNotEqualVV,!=);
 
 compare_infix_vs!(GreaterVS,>);
 compare_infix_vs!(LessVS,<);
@@ -37,12 +37,12 @@ compare_infix_vs!(GreaterEqualVS,>=);
 compare_infix_vs!(EqualVS,==);
 compare_infix_vs!(NotEqualVS,!=);
 
-/*par_compare_infix_vs!(ParGreaterVS,>);
+par_compare_infix_vs!(ParGreaterVS,>);
 par_compare_infix_vs!(ParLessVS,<);
 par_compare_infix_vs!(ParLessEqualVS,<=);
 par_compare_infix_vs!(ParGreaterEqualVS,>=);
 par_compare_infix_vs!(ParEqualVS,==);
-par_compare_infix_vs!(ParNotEqualVS,!=);*/
+par_compare_infix_vs!(ParNotEqualVS,!=);
 
 compare_infix_sv!(GreaterSV,>);
 compare_infix_sv!(LessSV,<);
@@ -51,22 +51,20 @@ compare_infix_sv!(GreaterEqualSV,>=);
 compare_infix_sv!(EqualSV,==);
 compare_infix_sv!(NotEqualSV,!=);
 
-/*compare_infix_par_sv!(ParGreaterSV,>);
-compare_infix_par_sv!(ParLessSV,<);
-compare_infix_par_sv!(ParLessEqualSV,<=);
-compare_infix_par_sv!(ParGreaterEqualSV,>=);
-compare_infix_par_sv!(ParEqualSV,==);
-compare_infix_par_sv!(ParNotEqualSV,!=);
-*/
+par_compare_infix_sv!(ParGreaterSV,>);
+par_compare_infix_sv!(ParLessSV,<);
+par_compare_infix_sv!(ParLessEqualSV,<=);
+par_compare_infix_sv!(ParGreaterEqualSV,>=);
+par_compare_infix_sv!(ParEqualSV,==);
+par_compare_infix_sv!(ParNotEqualSV,!=);
 
-compare_eq_compiler!(compare_equal,EqualSS,EqualVS,EqualSV,EqualVV);
-/*compare_eq_compiler!(compare_not__equal,Foo1,NotEqualVS,NotEqualSV,NotEqualVV);
+compare_eq_compiler!(compare_equal,Foo,EqualVS,EqualSV,EqualVV);
+compare_eq_compiler!(compare_not__equal,Foo,NotEqualVS,NotEqualSV,NotEqualVV);
 
-compare_compiler!(compare_greater__than,Foo1,GreaterVS,GreaterSV,GreaterVV);
-compare_compiler!(compare_less__than,Foo1,LessVS,LessSV,LessVV);
-compare_compiler!(compare_greater__than__equal,Foo1,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV);
-compare_compiler!(compare_less__than__equal,Foo1,LessEqualVS,LessEqualSV,LessEqualVV);
-*/
+//compare_compiler!(compare_greater__than,Foo,GreaterVS,GreaterSV,GreaterVV);
+//compare_compiler!(compare_less__than,Foo,LessVS,LessSV,LessVV);
+//compare_compiler!(compare_greater__than__equal,Foo,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV);
+//compare_compiler!(compare_less__than__equal,Foo,LessEqualVS,LessEqualSV,LessEqualVV);
 
 // Vector : Vector
 #[macro_export]
@@ -155,26 +153,33 @@ macro_rules! compare_infix_vs {
   )
 }
 
-/*#[macro_export]
-macro_rules! compare_infix_par_vs {
+#[macro_export]
+macro_rules! par_compare_infix_vs {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
-    pub struct $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
+    pub struct $func_name<T,U> 
     {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+      pub lhs: (ColumnV<T>, usize, usize), 
+      pub rhs: (ColumnV<U>, usize, usize), 
+      pub out: ColumnV<bool>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
+    impl<T,U> MechFunction for $func_name<T,U> 
+    where T: Clone + Debug + PartialEq + PartialOrd + Into<U> + Send + Sync,
+          U: Clone + Debug + PartialEq + PartialOrd + Into<T> + Send + Sync,
     {
       fn solve(&self) {
-        let rhs = &self.rhs.borrow()[0];
-        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).for_each(|(out, lhs)| *out = *lhs $op *rhs); 
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        let rhs = &rhs.borrow()[*rsix];
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].par_iter())
+                .for_each(|(out, lhs)| *out = *lhs $op U::into(rhs.clone())); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
-}*/
+}
 
 // Scalar : Vector
 #[macro_export]
@@ -205,27 +210,33 @@ macro_rules! compare_infix_sv {
   )
 }
 
-/*
 #[macro_export]
-macro_rules! compare_infix_par_sv {
+macro_rules! par_compare_infix_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
-    pub struct $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
+    pub struct $func_name<T,U> 
     {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+      pub lhs: (ColumnV<T>, usize, usize), 
+      pub rhs: (ColumnV<U>, usize, usize), 
+      pub out: ColumnV<bool>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd + Send + Sync
+    impl<T,U> MechFunction for $func_name<T,U> 
+    where T: Clone + Debug + PartialEq + PartialOrd + Into<U> + Send + Sync,
+          U: Clone + Debug + PartialEq + PartialOrd + Into<T> + Send + Sync,
     {
       fn solve(&self) {
-        let lhs = &self.lhs.borrow()[0];
-        self.out.borrow_mut().par_iter_mut().zip(self.rhs.borrow().par_iter()).for_each(|(out, rhs)| *out = *lhs $op *rhs); 
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        let lhs = &lhs.borrow()[*lsix];
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(rhs.borrow()[*rsix..=*reix].par_iter())
+                .for_each(|(out, rhs)| *out = T::into(lhs.clone()) $op *rhs ); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
-}*/
+}
 
 #[macro_export]
 macro_rules! compare_compiler {
