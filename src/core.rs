@@ -65,11 +65,11 @@ impl Core {
     
     let mut functions = Functions::new();
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-    /*functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
+    functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     //functions.insert(*MATH_EXPONENT, MathExp{});
-    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));*/
+    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
     functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
     functions.insert(*LOGIC_AND, Box::new(logic_and{}));
