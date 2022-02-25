@@ -227,18 +227,22 @@ impl Block {
 
     // Get the column and row
     match (row,col) {
+      // Return an error if either index is 0. An index can never be zero
       (_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
         return Err(MechError::GenericError(3493));
       }
+      // x{1,1}
       (TableIndex::Index(row),TableIndex::Index(_)) => {
         let col = table_brrw.get_column(&col)?;
         Ok((*arg_name,col.clone(),ColumnIndex::Index(row-1)))
       }
+      // x.y{1}
       (TableIndex::Index(ix),TableIndex::Alias(col_alias)) => {
         let arg_col = table_brrw.get_column(col)?;
         Ok((*arg_name,arg_col.clone(),ColumnIndex::Index(*ix-1)))
       }
+      // x{1}
       (TableIndex::Index(ix),TableIndex::None) => {
         let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
         let col = table_brrw.get_column(&TableIndex::Index(ix_col + 1))?;
@@ -246,6 +250,8 @@ impl Block {
 
         Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
       }
+      // x{z,1}
+      // x.y{z}
       (TableIndex::Table(ix_table_id),TableIndex::Index(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -268,6 +274,7 @@ impl Block {
         let arg_col = table_brrw.get_column(col)?;
         Ok((*arg_name,arg_col.clone(),ix))
       }
+      // x{z}
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
@@ -297,11 +304,17 @@ impl Block {
           }
         }
       }
+      // x{:,1}
       (TableIndex::All, TableIndex::Index(col_ix)) => {
         let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
         Ok((*arg_name,col.clone(),ColumnIndex::All))
       },
-      _ => {
+      // x{:,:}
+      x => {
+        if table_brrw.cols > 1 {
+          let reference = Column::Reference((table.clone(),(ColumnIndex::All,ColumnIndex::All)));
+          return Ok((*arg_name,reference,ColumnIndex::All));
+        }
         let col = table_brrw.get_column(&col)?;
         if col.len() == 1 {
           Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))

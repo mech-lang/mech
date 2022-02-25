@@ -14,6 +14,7 @@ use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
 
+pub type TableRef = Rc<RefCell<Table>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
@@ -33,7 +34,7 @@ pub enum Column {
   Index(ColumnV<usize>),
   Bool(ColumnV<bool>),
   String(ColumnV<MechString>),
-  Reference((Reference,(ColumnIndex,ColumnIndex))),
+  Reference((TableRef,(ColumnIndex,ColumnIndex))),
   Time(ColumnV<F32>),
   Length(ColumnV<F32>),
   Empty,
@@ -301,7 +302,6 @@ macro_rules! mech_type_conversion {
   )
 }
 
-pub type Reference = Rc<RefCell<Table>>;
 
 
 /*

@@ -134,6 +134,7 @@ pub struct StatsSum{}
 
 impl MechFunctionCompiler for StatsSum {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    println!("stats sum");
     if arguments.len() > 1 {
       return Err(MechError::GenericError(6352));
     }
@@ -157,8 +158,10 @@ impl MechFunctionCompiler for StatsSum {
         }
       }
       else if *arg_name == *ROW {
+        println!("ROW");
         let (arg_name,arg_table_id,_) = arguments[0];
         let arg_table = block.get_table(&arg_table_id)?;
+        println!("{:?}", arg_table);
         out_brrw.resize(arg_table.borrow().rows,1);
         out_brrw.set_kind(ValueKind::F32);
         if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
