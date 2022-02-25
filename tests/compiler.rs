@@ -669,11 +669,11 @@ block
 
 test_mech!(concat_horzcat_autofill,r#"
 block
-  #test = stats/sum(column: #y.type)
-
-block
   x = ["a"; "b"; "c"; "d"]
-  #y = [type: 1 class: "table" result: x]"#, Value::F32(F32::new(4.0)));
+  #y = [type: 1 class: "table" result: x]
+  
+block
+  #test = stats/sum(column: #y.type)"#, Value::F32(F32::new(4.0)));
 
 // ## Append
 
