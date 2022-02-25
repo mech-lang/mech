@@ -183,10 +183,11 @@ macro_rules! binary_infix_vv {
       fn solve(&self) {
         let (lhs,lsix,leix) = &self.lhs;
         let (rhs,rsix,reix) = &self.rhs;
-        self.out.borrow_mut().iter_mut()
-                        .zip(lhs.borrow()[*lsix..=*leix].iter().map(|x| T::into(*x)))
-                        .zip(rhs.borrow()[*rsix..=*reix].iter().map(|x| U::into(*x)))
-                        .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
+        self.out.borrow_mut()
+                .iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].iter().map(|x| T::into(*x)))
+                .zip(rhs.borrow()[*rsix..=*reix].iter().map(|x| U::into(*x)))
+                .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
@@ -211,10 +212,11 @@ macro_rules! binary_infix_par_vv {
       fn solve(&self) {
         let (lhs,lsix,leix) = &self.lhs;
         let (rhs,rsix,reix) = &self.rhs;
-        self.out.borrow_mut().par_iter_mut()
-                        .zip(lhs.borrow()[*lsix..=*leix].par_iter().map(|x| T::into(*x)))
-                        .zip(rhs.borrow()[*rsix..=*reix].par_iter().map(|x| U::into(*x)))
-                        .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].par_iter().map(|x| T::into(*x)))
+                .zip(rhs.borrow()[*rsix..=*reix].par_iter().map(|x| U::into(*x)))
+                .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
