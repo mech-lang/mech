@@ -189,6 +189,7 @@ impl<T: Debug> fmt::Debug for ColumnV<T> {
 }
 
 mech_type!(F32,f32);
+mech_neg!(F32);
 mech_type!(F64,f64);
 mech_type!(U8,u8);
 mech_type!(U16,u16);
@@ -196,6 +197,7 @@ mech_type!(U32,u32);
 mech_type!(U64,u64);
 mech_type!(U128,u128);
 mech_type!(I8,i8);
+mech_neg!(I8);
 mech_type!(I16,i16);
 mech_type!(I32,i32);
 mech_type!(I64,i64);
@@ -242,12 +244,46 @@ macro_rules! mech_type {
         $wrapper(lhs + rhs)
       }
     }
+    impl Sub for $wrapper {
+      type Output = $wrapper;
+      fn sub(self, rhs: $wrapper) -> $wrapper {
+        let ($wrapper(lhs),$wrapper(rhs)) = (self,rhs);
+        $wrapper(lhs - rhs)
+      }
+    }
+    impl Mul for $wrapper {
+      type Output = $wrapper;
+      fn mul(self, rhs: $wrapper) -> $wrapper {
+        let ($wrapper(lhs),$wrapper(rhs)) = (self,rhs);
+        $wrapper(lhs * rhs)
+      }
+    }
+    impl Div for $wrapper {
+      type Output = $wrapper;
+      fn div(self, rhs: $wrapper) -> $wrapper {
+        let ($wrapper(lhs),$wrapper(rhs)) = (self,rhs);
+        $wrapper(lhs / rhs)
+      }
+    }
     impl fmt::Debug for $wrapper {
       #[inline]
       fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let $wrapper(col) = self;
         write!(f,"{:?}",col)?;
         Ok(())
+      }
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_neg {
+  ($wrapper:tt) => (
+    impl Neg for $wrapper {
+      type Output = $wrapper;
+      fn neg(self) -> $wrapper {
+        let $wrapper(val) = self;
+        $wrapper(-val)
       }
     }
   )
