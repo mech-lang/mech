@@ -14,7 +14,9 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  5:14"#)?;
+  #range = 5 : 14
+block
+  #test = stats/sum(column: #range)"#)?;
 
   println!("{:#?}", parse_tree);
 
