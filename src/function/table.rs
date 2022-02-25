@@ -655,11 +655,14 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
           }
         }
         TableShape::Column(rows) => {
+          println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~{:?}", rows);
+          println!("{:?}", argument);
           match block.get_arg_column(&argument) {
             // The usual case where we just have a regular column
             Ok((_, arg_col,arg_ix)) => {
               o.set_col_kind(out_column_ix, arg_col.kind());
               let mut out_col = o.get_column_unchecked(out_column_ix);
+              println!("{:?}", (&arg_col, &arg_ix, &out_col));
               let fxn = match (&arg_col, arg_ix, &out_col) {
                 (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 //(Column::F32(arg), ColumnIndex::Bool(ix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
@@ -675,11 +678,9 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               };
               out_column_ix += 1;
             } 
-            _ => {
-              for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-                //println!("{:?} {:?}", arg_col, arg_ix);
-                return Err(MechError::GenericError(6967));
-              }
+            x => {
+              println!("{:?}",x);
+              return Err(MechError::GenericError(6967));
             }
           }
         }

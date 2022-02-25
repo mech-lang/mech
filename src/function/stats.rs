@@ -144,6 +144,7 @@ impl MechFunctionCompiler for StatsSum {
     out_brrw.resize(1,arg_cols.len());
     for (col_ix,(arg_name,arg_col,row_index)) in arg_cols.iter().enumerate() {
       if *arg_name == *COLUMN {
+        println!("COLUMN!!!!!!!!!!");
         out_brrw.set_col_kind(col_ix,arg_col.kind());
         let mut out_col = out_brrw.get_col_raw(col_ix)?;
         match (arg_col,row_index,out_col) {
@@ -172,7 +173,6 @@ impl MechFunctionCompiler for StatsSum {
       let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
       block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()})
     }*/ 
-          //(_,Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_) => block.plan.push(StatsSumColTIx{col: table.clone(), ix: ix_col.clone(), out: out_col.clone()}),
     Ok(())
   }
 }

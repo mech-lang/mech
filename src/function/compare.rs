@@ -16,12 +16,12 @@ lazy_static! {
   pub static ref COMPARE_NOT__EQUAL: u64 = hash_str("compare/not-equal");
 }
 
-compare_infix_ss!(GreaterSS,>);
-compare_infix_ss!(LessSS,<);
+//compare_infix_ss!(GreaterSS,>);
+/*compare_infix_ss!(LessSS,<);
 compare_infix_ss!(LessEqualSS,<=);
 compare_infix_ss!(GreaterEqualSS,>=);
 compare_infix_ss!(EqualSS,==);
-compare_infix_ss!(NotEqualSS,!=);
+compare_infix_ss!(NotEqualSS,!=);*/
 
 compare_infix_vv!(GreaterVV,>);
 compare_infix_vv!(LessVV,<);
@@ -30,7 +30,7 @@ compare_infix_vv!(GreaterEqualVV,>=);
 compare_infix_vv!(EqualVV,==);
 compare_infix_vv!(NotEqualVV,!=);
 
-compare_infix_par_vv!(ParGreaterVV,>);
+/*compare_infix_par_vv!(ParGreaterVV,>);
 compare_infix_par_vv!(ParLessVV,<);
 compare_infix_par_vv!(ParLessEqualVV,<=);
 compare_infix_par_vv!(ParGreaterEqualVV,>=);
@@ -64,15 +64,17 @@ compare_infix_par_sv!(ParLessEqualSV,<=);
 compare_infix_par_sv!(ParGreaterEqualSV,>=);
 compare_infix_par_sv!(ParEqualSV,==);
 compare_infix_par_sv!(ParNotEqualSV,!=);
+*/
 
 compare_eq_compiler!(compare_equal,EqualSS,EqualVS,EqualSV,EqualVV);
-compare_eq_compiler!(compare_not__equal,NotEqualSS,NotEqualVS,NotEqualSV,NotEqualVV);
+/*compare_eq_compiler!(compare_not__equal,NotEqualSS,NotEqualVS,NotEqualSV,NotEqualVV);
 
 compare_compiler!(compare_greater__than,GreaterSS,GreaterVS,GreaterSV,GreaterVV);
 compare_compiler!(compare_less__than,LessSS,LessVS,LessSV,LessVV);
 compare_compiler!(compare_greater__than__equal,GreaterEqualSS,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV);
 compare_compiler!(compare_less__than__equal,LessEqualSS,LessEqualVS,LessEqualSV,LessEqualVV);
-
+*/
+/*
 // Scalar : Scalar
 #[macro_export]
 macro_rules! compare_infix_ss {
@@ -92,30 +94,38 @@ macro_rules! compare_infix_ss {
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
-}
+}*/
 
 // Vector : Vector
 #[macro_export]
 macro_rules! compare_infix_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
-    pub struct $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd
+    pub struct $func_name<T,U> 
     {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<bool>
+      pub lhs: (ColumnV<T>, usize, usize), 
+      pub rhs: (ColumnV<U>, usize, usize), 
+      pub out: ColumnV<bool>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: PartialEq + Debug + std::cmp::PartialOrd
+    impl<T,U> MechFunction for $func_name<T,U> 
+    where T: Copy + Debug + PartialEq + PartialOrd + Clone + Into<U> + Sync + Send,
+          U: Copy + Debug + PartialEq + PartialOrd + Clone + Into<T> + Sync + Send,
     {
       fn solve(&self) {
-        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = *lhs $op *rhs); 
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        self.out.borrow_mut()
+                .iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].iter())
+                .zip(rhs.borrow()[*rsix..=*reix].iter())
+                .for_each(|((out, lhs), rhs)| *out = *lhs $op U::into(*rhs));
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
 }
 
-#[macro_export]
+/*#[macro_export]
 macro_rules! compare_infix_par_vv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
@@ -220,7 +230,7 @@ macro_rules! compare_infix_par_sv {
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
   )
-}
+}*/
 
 #[macro_export]
 macro_rules! compare_compiler {
@@ -231,7 +241,7 @@ macro_rules! compare_compiler {
       fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
         let arg_dims = block.get_arg_dims(&arguments)?;
         match (&arg_dims[0],&arg_dims[1]) {
-          (TableShape::Scalar, TableShape::Scalar) => {
+          /*(TableShape::Scalar, TableShape::Scalar) => {
             resize_one(block,out);
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
@@ -273,7 +283,7 @@ macro_rules! compare_compiler {
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
               _ => {return Err(MechError::GenericError(1242));},
             }
-          }
+          }*/
           x => {return Err(MechError::GenericError(6348));},
         }
         Ok(())
@@ -291,7 +301,7 @@ macro_rules! compare_eq_compiler {
       fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
         let arg_dims = block.get_arg_dims(&arguments)?;
         match (&arg_dims[0],&arg_dims[1]) {
-          (TableShape::Scalar, TableShape::Scalar) => {
+          /*(TableShape::Scalar, TableShape::Scalar) => {
             resize_one(block,out);
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
@@ -324,19 +334,22 @@ macro_rules! compare_eq_compiler {
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => { block.plan.push($op3::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()}) }
               _ => {return Err(MechError::GenericError(1250));},
             }
-          }
+          }*/
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
               return Err(MechError::GenericError(6523));
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
+            println!("!!!{:?}", out_column);
             match (&argument_columns[0], &argument_columns[1], &out_column) {
-              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
-              _ => {return Err(MechError::GenericError(1242));},
+              //((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              //((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<bool>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              //((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op4::<MechString>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone()})}
+              x => {
+                println!("{:?}",x);
+                return Err(MechError::GenericError(1242));},
             }
           }
           x => {return Err(MechError::GenericError(6348));},

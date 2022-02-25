@@ -228,7 +228,7 @@ impl Block {
 
     // Get the column and row
     match (row,col) {
-      /*(_,TableIndex::Index(ix)) |
+      (_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
         return Err(MechError::GenericError(3493));
       }
@@ -258,9 +258,9 @@ impl Block {
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
           Column::F32(ix_col) => {
-            ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
+            ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1)
           },
           x => {
             return Err(MechError::GenericError(9239));
@@ -280,9 +280,9 @@ impl Block {
             let ix = match ix_table_brrw.get_column_unchecked(0) {
               Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
               Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
-              Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0] as usize - 1),
+              Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
               Column::F32(ix_col) => {
-                ColumnIndex::Index(ix_col.borrow()[0] as usize - 1)
+                ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1)
               },
               x => {
                 return Err(MechError::GenericError(9232));
@@ -301,7 +301,7 @@ impl Block {
       (TableIndex::All, TableIndex::Index(col_ix)) => {
         let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
         Ok((*arg_name,col.clone(),ColumnIndex::All))
-      },*/
+      },
       _ => {
         let col = table_brrw.get_column(&col)?;
         if col.len() == 1 {
@@ -388,7 +388,11 @@ impl Block {
     let cols = if t.cols == 0 { 1 } else { t.cols };
     let rows = if rows == 0 { 1 } else { rows };
     t.resize(rows,cols);
+    println!("{:?}", col_kind);
     t.set_col_kind(0, col_kind);
+    println!("{:?}", t);
+
+
     let column = t.get_column_unchecked(0);
     Ok(column)
   }
@@ -407,7 +411,7 @@ impl Block {
     for (row,column) in indices.iter().take(indices.len()-1) {
       let argument = (0,table_id,vec![(*row,*column)]);
       match self.get_arg_dim(&argument)? {
-        /*TableShape::Scalar => {
+        TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
           match (arg_col,row,column) {
             ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
@@ -421,7 +425,7 @@ impl Block {
             }
             _ => {return Err(MechError::GenericError(6695));}
           }
-        }*/
+        }
         _ => {return Err(MechError::GenericError(6694));}
       }
     }
@@ -586,16 +590,16 @@ impl Block {
               _ => (),
             }
           }
-          /*// Select a column by row index
+          // Select a column by row index
           (TableIndex::All, TableIndex::Index(_)) |
           // Select a column by alias
           (TableIndex::All, TableIndex::Alias(_)) => {
             let (_, arg_col,_) = self.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
             match (&arg_col, &out_col) {
-              (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV::<u8>{arg: arg.clone(), out: out.clone()}),
-              (Column::F32(arg), Column::F32(out)) => self.plan.push(CopyVV::<f32>{arg: arg.clone(), out: out.clone()}),
-              (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopyVV::<bool>{arg: arg.clone(), out: out.clone()}),
+              (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
+              (Column::F32(arg), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
+              (Column::Bool(arg), Column::Bool(out)) => self.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               _ => {return Err(MechError::GenericError(6398));},
             }
           }
@@ -606,9 +610,9 @@ impl Block {
             let mut arg_col = src_brrw.get_column_unchecked(col);
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &out_col) {
-              (Column::U8(arg), Column::U8(out), ) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: row, out: out.clone()}),
-              (Column::F32(arg), Column::F32(out), ) => self.plan.push(CopySS::<f32>{arg: arg.clone(), ix: row, out: out.clone()}),
-              (Column::Ref(arg), Column::Ref(out), ) => self.plan.push(CopySS::<TableId>{arg: arg.clone(), ix: row, out: out.clone()}),
+              (Column::U8(arg), Column::U8(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+              (Column::F32(arg), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+              (Column::Ref(arg), Column::Ref(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
               _ => {return Err(MechError::GenericError(6381));},
             }
           }
@@ -616,32 +620,32 @@ impl Block {
           (TableIndex::Table(ix_table_id), TableIndex::None) => {
             let src_brrw = src_table.borrow();
             match src_brrw.shape() {
-              TableShape::Row(_) => {
+              /*TableShape::Row(_) => {
                 {
                   let mut out_brrw = out_table.borrow_mut();
                   out_brrw.set_kind(src_brrw.kind());
                 }
                 let ix_table = self.get_table(&ix_table_id)?;
                 self.plan.push(CopyTB{arg: src_table.clone(), ix: ix_table.clone(), out: out_table.clone()});
-              }
+              }*/
               _ => {
                 let (_, arg_col,arg_ix) = self.get_arg_column(&argument)?;
                 let mut out_brrw = out_table.borrow_mut();
                 out_brrw.set_kind(arg_col.kind());
                 let out_col = out_brrw.get_column_unchecked(0);    
                 match (&arg_col, &arg_ix, &out_col) {
-                  (Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                  (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
-                  (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::F32(arg), ColumnIndex::Bool(ix), Column::F32(out)) => self.plan.push(CopyVB::<f32>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                  (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
-                  (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                  //(Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                  //(Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                  //(Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                  //(Column::F32(arg), ColumnIndex::Bool(ix), Column::F32(out)) => self.plan.push(CopyVB::<f32>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
+                  //(Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                  (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                   x => {return Err(MechError::GenericError(6380));},
                 }
               }
             }
           }
-          (TableIndex::Table(ix_table_id), TableIndex::All) => {
+          /*(TableIndex::Table(ix_table_id), TableIndex::All) => {
             let src_brrw = src_table.borrow();
             let mut out_brrw = out_table.borrow_mut();
             out_brrw.resize(1,src_brrw.cols);
@@ -657,19 +661,19 @@ impl Block {
                 x => {return Err(MechError::GenericError(6382));},
               }
             }
-          }
+          }*/
           (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
             let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
             let out_col = self.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
             match (&arg_col, &arg_ix, &out_col) {
-              (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-              (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopySS::<f32>{arg: arg.clone(), ix: *ix, out: out.clone()}),
+              (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+              (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
               x => {
                 println!("{:?}", x);
                 return Err(MechError::GenericError(6388));
               },
             }
-          }*/
+          }
           x => {
             println!("{:?}", x);
             return Err(MechError::GenericError(6379));

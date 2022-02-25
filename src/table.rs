@@ -213,6 +213,7 @@ impl Table {
   }
 
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
+    println!("{:?}",(&mut self.data[col], &kind));
     if col < self.cols {
       match (&mut self.data[col], kind) {
         (Column::U8(_), ValueKind::U8) => (),
@@ -288,12 +289,12 @@ impl Table {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F64(column);
           self.col_kinds[col] = ValueKind::F64;
-        },
+        },*/
         (Column::Empty, ValueKind::Bool) => {
-          let column = Rc::new(RefCell::new(vec![false;self.rows]));
+          let column = ColumnV::<bool>::new(vec![false;self.rows]);
           self.data[col] = Column::Bool(column);
           self.col_kinds[col] = ValueKind::Bool;
-        },
+        },/*
         (Column::Empty, ValueKind::String) => {
           let column = Rc::new(RefCell::new(vec![MechString::new();self.rows]));
           self.data[col] = Column::String(column);
@@ -330,11 +331,15 @@ impl Table {
   }
 
   pub fn get_columns(&self, col: &TableIndex) -> Result<Vec<Column>, MechError> {
+    println!("{:?}", self);
     match col {
       TableIndex::All => {
         Ok(self.data.iter().cloned().collect())
       },
-      _ => Err(MechError::GenericError(1216)),
+      x => {
+        println!("1231234{:?}",x);
+        Err(MechError::GenericError(1216))
+      }
     }
   }
 
@@ -440,6 +445,27 @@ impl Table {
 
   pub fn get_column_unchecked(&self, col: usize) -> Column {
     self.data[col].clone()
+  }
+
+  pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {
+    let row = ix / self.cols;
+    let col = ix % self.cols;
+    if ix < self.rows * self.cols {
+      Ok((row,col))
+    } else {
+      Err(MechError::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
+    }
+  }
+
+  pub fn shape(&self) -> TableShape {
+    match (self.rows, self.cols) {
+      (0,_) |
+      (_,0) => TableShape::Pending,
+      (1,1) => TableShape::Scalar,
+      (x,1) => TableShape::Column(x),
+      (1,x) => TableShape::Row(x),
+      (x,y) => TableShape::Matrix(x,y), 
+    }
   }
 
   pub fn logical_len(&self) -> usize {
@@ -572,16 +598,7 @@ impl Table {
     self.column_ix_to_alias.len() > 0
   }
 
-  pub fn shape(&self) -> TableShape {
-    match (self.rows, self.cols) {
-      (0,_) |
-      (_,0) => TableShape::Pending,
-      (1,1) => TableShape::Scalar,
-      (x,1) => TableShape::Column(x),
-      (1,x) => TableShape::Row(x),
-      (x,y) => TableShape::Matrix(x,y), 
-    }
-  }
+
 
   pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
     match (row, &self.get_column(&col)?) {
@@ -627,15 +644,7 @@ impl Table {
   }
 
 
-  pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {
-    let row = ix / self.cols;
-    let col = ix % self.cols;
-    if ix < self.rows * self.cols {
-      Ok((row,col))
-    } else {
-      Err(MechError::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
-    }
-  }
+
 
 
 

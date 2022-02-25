@@ -225,7 +225,7 @@ macro_rules! mech_type {
     use std::fmt::*;
     use num_traits::*;
     use std::ops::*;
-    #[derive(Copy,Clone,PartialEq,Serialize,Deserialize)]
+    #[derive(Copy,Clone,PartialEq,PartialOrd,Serialize,Deserialize)]
     pub struct $wrapper($type);
     impl $wrapper {
       pub fn new(inner: $type) -> $wrapper {

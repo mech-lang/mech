@@ -16,7 +16,7 @@ pub enum MechError {
   //MissingColumn((TableId,TableIndex)),              // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),               // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))),  // (target) vs (actual) index
-  //LinearSubscriptOutOfBounds((Rows,Rows)),          // (target) vs (actual) index
+  LinearSubscriptOutOfBounds((Rows,Rows)),          // (target) vs (actual) index
   //DuplicateAlias(u64),                            // Alias ID
   //DomainMismatch(u64, u64),                       // domain IDs (target vs actual)
   MissingFunction(String),                             // ID of missing function
