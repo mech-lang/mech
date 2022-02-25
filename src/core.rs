@@ -84,7 +84,7 @@ impl Core {
     //functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));*/
 
     //functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
-    //functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
+    functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     //functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
     
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
