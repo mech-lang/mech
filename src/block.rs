@@ -642,12 +642,11 @@ impl Block {
                 out_brrw.set_kind(arg_col.kind());
                 let out_col = out_brrw.get_column_unchecked(0);    
                 match (&arg_col, &arg_ix, &out_col) {
-                  //(Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                  //(Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
-                  //(Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopySS::<u8>{arg: arg.clone(), ix: *ix, out: out.clone()}),
-                  (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
-                  //(Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                  (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                  (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                  (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),(Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
                   (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => self.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                  (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                   x => {return Err(MechError::GenericError(6380));},
                 }
               }
@@ -662,10 +661,10 @@ impl Block {
               let (_, arg_col,arg_ix) = self.get_arg_column(&(0,table_id,vec![(*row,TableIndex::Index(col+1))]))?;
               let mut out_col = out_brrw.get_column_unchecked(col); 
               match (&arg_col, &arg_ix, &out_col) {
-                //(Column::U8(arg), ColumnIndex::Bool(ix), Column::U8(out)) => self.plan.push(CopyVB::<u8>{arg: arg.clone(), ix: ix.clone(), out: out.clone()}),
-                //(Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI::<u8>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => self.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),(Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
                 (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => self.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
-                //(Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI::<f32>{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => self.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
                 x => {return Err(MechError::GenericError(6382));},
               }
             }
@@ -693,7 +692,7 @@ impl Block {
         let arguments = vec![(0,*src_id,vec![(*src_row,*src_col)]),(0,*dest_id,vec![(*dest_row,*dest_col)])];
         let arg_shapes = self.get_arg_dims(&arguments)?;
         match (&arg_shapes[0], &arg_shapes[1]) {
-          /*(TableShape::Scalar, TableShape::Row(_)) |
+         (TableShape::Scalar, TableShape::Row(_)) |
           (TableShape::Row(_), TableShape::Row(_)) => {
             let src_table = self.get_table(src_id)?;
             let dest_table = self.get_table(dest_id)?;
@@ -703,12 +702,12 @@ impl Block {
             // up with the destination columns if they are out of order or
             // incomplete.
             if src_table_brrw.has_col_aliases() {
-              for alias in src_table_brrw.column_ix_to_alias.iter() {
+              for alias in src_table_brrw.col_map.aliases() {
                 let dest_column = dest_table_brrw.get_column(&TableIndex::Alias(*alias))?;
                 let src_column = src_table_brrw.get_column(&TableIndex::Alias(*alias))?;
                 match (src_column,dest_column) {
-                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx::<u8>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
-                  (Column::F32(src),Column::F32(out)) => {self.plan.push(SetSIxSIx::<f32>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  (Column::F32(src),Column::F32(out)) => {self.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
                   _ => {return Err(MechError::GenericError(8839));}
                 }
               }
@@ -725,14 +724,14 @@ impl Block {
                 let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
                 let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
                 match (src_column,dest_column) {
-                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx::<u8>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
-                  (Column::F32(src),Column::F32(out)) => {self.plan.push(SetSIxSIx::<f32>{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  (Column::U8(src),Column::U8(out)) => {self.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+                  (Column::F32(src),Column::F32(out)) => {self.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
                   _ => {return Err(MechError::GenericError(8841));}
                 }
               }
             }
           }
-          (TableShape::Matrix(_,_),TableShape::Matrix(_,_)) |
+           /*(TableShape::Matrix(_,_),TableShape::Matrix(_,_)) |
           (TableShape::Matrix(_,_),TableShape::Row(_)) |
           (TableShape::Matrix(_,_),TableShape::Scalar) => {
             let src_table = self.get_table(src_id)?;

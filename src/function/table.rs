@@ -158,16 +158,15 @@ where T: Debug + Clone + Into<U> + Sync + Send,
 }
 
 
-/*
-
 // Copy Vector{Int Ix} : Vector
 #[derive(Debug)]
-pub struct CopyVI<T>  {
-  pub arg: ColumnV<T>, pub ix: ColumnV<usize>, pub out: ColumnV<T>
+pub struct CopyVI<T,U> {
+  pub arg: ColumnV<T>, pub ix: ColumnV<usize>, pub out: ColumnV<U>
 }
 
-impl<T> MechFunction for CopyVI<T> 
-where T: Copy + Debug
+impl<T,U> MechFunction for CopyVI<T,U> 
+where T: Clone + Debug + Into<U>,
+      U: Clone + Debug + Into<U>
 {
   fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
@@ -176,10 +175,10 @@ where T: Copy + Debug
 
     let rows = ix_brrw.len();
     if rows > out_brrw.len() {
-      out_brrw.resize(rows,arg_brrw[0]);
+      out_brrw.resize(rows,T::into(arg_brrw[0].clone()));
     }
     for (out_ix, row) in ix_brrw.iter().enumerate() {
-      out_brrw[out_ix] = arg_brrw[*row as usize - 1];
+      out_brrw[out_ix] = T::into(arg_brrw[*row as usize - 1].clone());
     }
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -187,21 +186,20 @@ where T: Copy + Debug
 
 // Set Scalar : Scalar
 #[derive(Debug)]
-pub struct SetSIxSIx<T> 
-where T: Copy + Debug
-{
-  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>, pub oix: usize
+pub struct SetSIxSIx<T,U> {
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: usize
 }
-impl<T> MechFunction for SetSIxSIx<T> 
-where T: Copy + Debug
+impl<T,U> MechFunction for SetSIxSIx<T,U>
+where T: Clone + Debug + Into<U>,
+      U: Clone + Debug + Into<U>
 {
   fn solve(&self) {
-    (self.out.borrow_mut())[self.oix] = (self.arg.borrow())[self.ix];
+    (self.out.borrow_mut())[self.oix] = T::into((self.arg.borrow())[self.ix].clone());
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// Set Scalar : Vector {Bool}
+/*// Set Scalar : Vector {Bool}
 #[derive(Debug)]
 pub struct SetSIxVB<T> 
 where T: Copy + Debug
