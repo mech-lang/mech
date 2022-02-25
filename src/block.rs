@@ -310,11 +310,19 @@ impl Block {
         Ok((*arg_name,col.clone(),ColumnIndex::All))
       },
       // x{:,:}
-      x => {
+      (TableIndex::All, TableIndex::All) => {
         if table_brrw.cols > 1 {
           let reference = Column::Reference((table.clone(),(ColumnIndex::All,ColumnIndex::All)));
           return Ok((*arg_name,reference,ColumnIndex::All));
         }
+        let col = table_brrw.get_column(&col)?;
+        if col.len() == 1 {
+          Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))
+        } else {
+          Ok((*arg_name,col.clone(),ColumnIndex::All))
+        }
+      }
+      _ => {
         let col = table_brrw.get_column(&col)?;
         if col.len() == 1 {
           Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))
