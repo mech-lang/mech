@@ -75,7 +75,7 @@ impl MechFunctionCompiler for SetAny {
     let out_col = out_brrw.get_column_unchecked(0);
     if arg_name == *COLUMN {
       match (arg_column,out_col) {
-        (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAllCol{col: col.clone(), out: out.clone()}),
+        (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAnyCol{col: col.clone(), out: out.clone()}),
         _ => {return Err(MechError::GenericError(6597));},
       }
     } 
