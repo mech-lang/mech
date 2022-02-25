@@ -14,12 +14,7 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #x = [1; 2; 3; 2]
-  #y = [2; 1; 3; 2]
-  
-block
-  ix = #x == #y
-  #y = #x{ix}"#)?;
+  5:14"#)?;
 
   println!("{:#?}", parse_tree);
 
