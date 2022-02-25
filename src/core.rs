@@ -83,10 +83,10 @@ impl Core {
     functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
     functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));
 
-    functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
+    functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));*/
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
-    functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
-     */
+    //functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+    
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
     //functions.insert(*TABLE_SIZE, Box::new(TableSize{}));

@@ -761,13 +761,13 @@ impl MechFunctionCompiler for TableSplit {
     }     
     Ok(())
   }
-}
+}*/
 
 
-// Copy Vector{Int Ix} : Vector
+// A range of values from start to end
 #[derive(Debug)]
 pub struct Range  {
-  pub start: Arg<f32>, pub end: Arg<f32>, pub out: OutTable
+  pub start: Arg<F32>, pub end: Arg<F32>, pub out: OutTable
 }
 
 impl MechFunction for Range
@@ -775,13 +775,13 @@ impl MechFunction for Range
   fn solve(&self) {
     let start_value = self.start.borrow()[0];
     let end_value = self.end.borrow()[0];
-    let delta = end_value - start_value + 1.0;
+    let delta = end_value.unwrap() - start_value.unwrap() + 1.0;
     let mut out_brrw = self.out.borrow_mut();
     out_brrw.resize(delta as usize,1);
     out_brrw.set_col_kind(0,ValueKind::F32);
-    let mut value = start_value;
+    let mut value = start_value.unwrap();
     for row in 0..out_brrw.rows {
-      out_brrw.set_raw(row,0,Value::F32(value));
+      out_brrw.set_raw(row,0,Value::F32(F32::new(value)));
       value += 1.0;
     } 
   }
@@ -807,6 +807,7 @@ impl MechFunctionCompiler for TableRange {
   }
 }
 
+/*
 // AppendRow Table : Table
 #[derive(Debug)]
 pub struct AppendRowT {

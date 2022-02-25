@@ -231,6 +231,9 @@ macro_rules! mech_type {
       pub fn new(inner: $type) -> $wrapper {
         $wrapper(inner)
       }
+      pub fn unwrap(&self) -> $type {
+        self.0
+      }
     }
     impl Add for $wrapper {
       type Output = $wrapper;
