@@ -12,7 +12,9 @@ fn main() -> Result<(),MechError> {
   let mut compiler = Compiler::new();
   let mut core = Core::new();
 
-  let parse_tree = parser::parse(r#"#test = 16 < 15"#)?;
+  let parse_tree = parser::parse(r#"
+block
+  #test = stats/sum(row: [1 2 3 4])"#)?;
 
   println!("{:#?}", parse_tree);
 
