@@ -478,17 +478,22 @@ impl Compiler {
           Some(Node::TableHeader{children}) => {
             let mut result = self.compile_nodes(&children)?;
             columns = result.len();
-            for (ix,tfm) in result.iter().enumerate() {
+            let mut ix = 0;
+            for tfm in result.iter() {
               match tfm {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix.clone(), column_alias: id.clone()};
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix, column_alias: id.clone()};
                   column_aliases.push(alias_tfm);
+                  column_aliases.push(tfm.clone());
+                  ix+=1;
                 }
-                _ => (),
+                Transformation::ColumnKind{table_id,column_ix,kind} => {
+                  let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: ix - 1, kind: *kind};
+                  column_aliases.push(kind_tfm);
+                }
+                x => column_aliases.push(x.clone()),
               }
             }
-
-            header_tfms.append(&mut result);
             header_tfms.append(&mut column_aliases);
             table_children.remove(0);
           }
