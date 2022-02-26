@@ -225,6 +225,7 @@ mech_type_conversion!(F32,U8,u8);
 mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U32,U8,u8);
 mech_type_conversion!(U64,U8,u8);
+mech_type_conversion_raw!(F32,f64);
 
 #[macro_export]
 macro_rules! mech_type {
@@ -274,7 +275,7 @@ macro_rules! mech_type {
       #[inline]
       fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let $wrapper(col) = self;
-        write!(f,"{:?}",col)?;
+        write!(f,"{}",col)?;
         Ok(())
       }
     }
@@ -301,6 +302,18 @@ macro_rules! mech_type_conversion {
       fn from(n: $from_wrapper) -> $to_wrapper {
         let $from_wrapper(c) = n;
         $to_wrapper(c as $to_type)
+      } 
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_type_conversion_raw {
+  ($from_wrapper:tt,$to_type:tt) => (
+    impl From<$from_wrapper> for $to_type {
+      fn from(n: $from_wrapper) -> $to_type {
+        let $from_wrapper(c) = n;
+        c as $to_type
       } 
     }
   )
