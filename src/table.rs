@@ -321,6 +321,30 @@ impl Table {
     }
   }
 
+  pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
+    match (row, &self.get_column(&col)?) {
+      (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
+      (TableIndex::Index(row),Column::f32(c)) => Ok(Value::f32(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::F32(c)) => Ok(Value::F32(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::F64(c)) => Ok(Value::F64(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U8(c)) => Ok(Value::U8(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U16(c)) => Ok(Value::U16(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U32(c)) => Ok(Value::U32(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U64(c)) => Ok(Value::U64(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::U128(c)) => Ok(Value::U128(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I8(c)) => Ok(Value::I8(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I16(c)) => Ok(Value::I16(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I32(c)) => Ok(Value::I32(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I64(c)) => Ok(Value::I64(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::I128(c)) => Ok(Value::I128(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::Bool(c)) => Ok(Value::Bool(c.borrow()[row-1])),
+      (TableIndex::Index(row),Column::String(c)) => Ok(Value::String(c.borrow()[row-1].clone())),
+      (TableIndex::Index(row),Column::Ref(c)) => Ok(Value::Reference(c.borrow()[row-1].clone())),
+      (_,Column::Empty) => Ok(Value::Empty),
+      _ => Err(MechError::GenericError(1299)),
+    }
+  }
+
   pub fn set_col(&mut self, col_ix: usize, column: Column) -> std::result::Result<(),MechError> {
     if col_ix < self.cols {
       if self.col_kinds[col_ix] == ValueKind::Empty {
@@ -402,6 +426,26 @@ impl Table {
     } else {
       Err(MechError::GenericError(1212))
     }
+  }
+  
+  pub fn get(&self, row: &TableIndex, col: &TableIndex) -> Result<Value,MechError> {
+    let row_ix = match row {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7497))},
+      TableIndex::Index(ix) => ix - 1,
+      _ => 0,
+    };
+    let col_ix = match col {
+      TableIndex::Index(0) => {return Err(MechError::GenericError(7124))},
+      TableIndex::Index(ix) => ix - 1,
+      TableIndex::Alias(alias) => {
+        match self.col_map.get_index(alias) {
+          Ok(ix) => ix,
+          Err(_) => {return Err(MechError::GenericError(2384))}
+        }
+      }
+      _ => 0,
+    };
+    self.get_raw(row_ix,col_ix)
   }
 
   pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
@@ -622,48 +666,7 @@ impl Table {
     table
 
 
-  pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
-    match (row, &self.get_column(&col)?) {
-      (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
-      (TableIndex::Index(row),Column::F32(c)) => Ok(Value::F32(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::F64(c)) => Ok(Value::F64(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::U8(c)) => Ok(Value::U8(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::U16(c)) => Ok(Value::U16(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::U32(c)) => Ok(Value::U32(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::U64(c)) => Ok(Value::U64(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::U128(c)) => Ok(Value::U128(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::I8(c)) => Ok(Value::I8(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::I16(c)) => Ok(Value::I16(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::I32(c)) => Ok(Value::I32(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::I64(c)) => Ok(Value::I64(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::I128(c)) => Ok(Value::I128(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::Bool(c)) => Ok(Value::Bool(c.borrow()[row-1])),
-      (TableIndex::Index(row),Column::String(c)) => Ok(Value::String(c.borrow()[row-1].clone())),
-      (TableIndex::Index(row),Column::Ref(c)) => Ok(Value::Reference(c.borrow()[row-1].clone())),
-      (_,Column::Empty) => Ok(Value::Empty),
-      _ => Err(MechError::GenericError(1299)),
-    }
-  }
 
-  pub fn get(&self, row: &TableIndex, col: &TableIndex) -> Result<Value,MechError> {
-    let row_ix = match row {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7497))},
-      TableIndex::Index(ix) => ix - 1,
-      _ => 0,
-    };
-    let col_ix = match col {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7124))},
-      TableIndex::Index(ix) => ix - 1,
-      TableIndex::Alias(alias) => {
-        match self.column_alias_to_ix.get(alias) {
-          Some(ix) => *ix,
-          None => {return Err(MechError::GenericError(2384))}
-        }
-      }
-      _ => 0,
-    };
-    self.get_raw(row_ix,col_ix)
-  }
 
 
 
