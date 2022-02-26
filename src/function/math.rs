@@ -28,6 +28,7 @@ impl MechNumArithmetic<I32> for I32 {}
 impl MechNumArithmetic<I64> for I64 {}
 impl MechNumArithmetic<I128> for I128 {}
 impl MechNumArithmetic<F32> for F32 {}
+impl MechNumArithmetic<f32> for f32 {}
 impl MechNumArithmetic<f64> for f64 {}
 
 
@@ -72,6 +73,9 @@ binary_infix_par_vv!(ParSubVV,sub);
 binary_infix_par_vv!(ParMulVV,mul);
 binary_infix_par_vv!(ParDivVV,div);
 //binary_infix_par_vv!(ExpParVV,pow);
+
+// Vector : Vector In Place
+binary_infix_vvip!(AddVVIP,add);
 
 // Parallel Vector : Vector In Place
 binary_infix_par_vvip!(ParAddVVIP,add);
@@ -235,7 +239,32 @@ macro_rules! binary_infix_par_vvip {
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
       fn solve(&self) {
-        self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = (*out).$op(*arg)); 
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(self.arg.borrow().par_iter())
+                .for_each(|(out, arg)| *out = (*out).$op(*arg)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_vvip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&self) {
+        self.out.borrow_mut()
+                .iter_mut()
+                .zip(self.arg.borrow().iter())
+                .for_each(|(out, arg)| *out = (*out).$op(*arg)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }

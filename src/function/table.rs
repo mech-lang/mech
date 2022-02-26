@@ -272,21 +272,26 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-/*#[derive(Debug)]
-pub struct ParSetVVB<T> {
-  pub arg: ColumnV<T>, pub out: ColumnV<T>, pub oix: ColumnV<bool>
+#[derive(Debug)]
+pub struct ParSetVVB<T,U> {
+  pub arg: ColumnV<T>, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
 
-impl<T> MechFunction for ParSetVVB<T> 
-where T: Copy + Debug + Sync + Send
+impl<T,U> MechFunction for ParSetVVB<T,U>
+where T: Clone + Debug + Into<U> + Sync + Send,
+      U: Clone + Debug + Into<T> + Sync + Send
 {
   fn solve(&self) {
-    self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).zip(self.arg.borrow().par_iter()).for_each(|((out,oix),x)| if *oix == true {
-      *out = *x
+    self.out.borrow_mut()
+            .par_iter_mut()
+            .zip(self.oix.borrow().par_iter())
+            .zip(self.arg.borrow().par_iter())
+            .for_each(|((out,oix),x)| if *oix == true {
+      *out = T::into(x.clone())
     });
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
+}
 
 // Set Vector : Vector
 #[derive(Debug)]
@@ -350,22 +355,45 @@ where T: Copy + Debug + Sync + Send
     self.out.borrow_mut().par_iter_mut().for_each(|out| *out = arg); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
+}*/
+
+#[derive(Debug)]
+pub struct ParSetVSB<T,U>  {
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: ColumnV<bool>
+}
+
+impl<T,U>  MechFunction for ParSetVSB<T,U> 
+where T: Clone + Debug + Into<U> + Sync + Send,
+      U: Clone + Debug + Into<T> + Sync + Send
+{
+  fn solve(&self) {
+    let arg = &self.arg.borrow()[self.ix];
+    self.out.borrow_mut()
+            .par_iter_mut()
+            .zip(self.oix.borrow().par_iter())
+            .for_each(|(out, oix)| if *oix {*out = T::into(arg.clone())}); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 #[derive(Debug)]
-pub struct ParSetVSB<T> {
-  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<T>, pub oix: ColumnV<bool>
+pub struct SetVSB<T,U>  {
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
 
-impl<T> MechFunction for ParSetVSB<T> 
-where T: Copy + Debug + Sync + Send
+impl<T,U>  MechFunction for SetVSB<T,U> 
+where T: Clone + Debug + Into<U> + Sync + Send,
+      U: Clone + Debug + Into<T> + Sync + Send
 {
   fn solve(&self) {
-    let arg = self.arg.borrow()[self.ix];
-    self.out.borrow_mut().par_iter_mut().zip(self.oix.borrow().par_iter()).for_each(|(out, oix)| if *oix {*out = arg}); 
+    let arg = &self.arg.borrow()[self.ix];
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(self.oix.borrow().iter())
+            .for_each(|(out, oix)| if *oix {*out = T::into(arg.clone())}); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}*/
+}
 
 
 // Copy Table : Table

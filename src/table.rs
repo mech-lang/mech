@@ -272,6 +272,12 @@ impl Table {
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
         },
+        (Column::f32(_), ValueKind::f32) => (),
+        (Column::Empty, ValueKind::f32) => {
+          let column = ColumnV::<f32>::new(vec![0.0;self.rows]);
+          self.data[col] = Column::f32(column);
+          self.col_kinds[col] = ValueKind::f32;
+        },
         (Column::Time(_), ValueKind::Time) => (),
         (Column::Empty, ValueKind::Time) => {
           let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
@@ -371,6 +377,7 @@ impl Table {
         (Column::Length(c), Value::Length(v)) |
         (Column::Time(c), Value::Time(v)) |
         (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
+        (Column::f32(c), Value::f32(v)) => c.borrow_mut()[row] = v,
         (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
         (Column::U8(c), Value::U8(v)) => c.borrow_mut()[row] = v,
         (Column::U16(c), Value::U16(v)) => c.borrow_mut()[row] = v,
@@ -403,6 +410,7 @@ impl Table {
         Column::Time(c) => Ok(Value::Time(c.borrow()[row])),
         Column::Length(c) => Ok(Value::Length(c.borrow()[row])),
         Column::F32(c) => Ok(Value::F32(c.borrow()[row])),
+        Column::f32(c) => Ok(Value::f32(c.borrow()[row])),
         Column::F64(c) => Ok(Value::F64(c.borrow()[row])),
         Column::U8(c) => Ok(Value::U8(c.borrow()[row])),
         Column::U16(c) => Ok(Value::U16(c.borrow()[row])),

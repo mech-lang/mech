@@ -18,6 +18,7 @@ pub type TableRef = Rc<RefCell<Table>>;
 
 #[derive(Clone, Debug)]
 pub enum Column {
+  f32(ColumnV<f32>),
   F32(ColumnV<F32>),
   F64(ColumnV<f64>),
   U8(ColumnV<U8>),
@@ -64,6 +65,7 @@ impl Column {
       Column::I32(col) => col.len(),
       Column::I64(col) => col.len(),
       Column::I128(col) => col.len(),
+      Column::f32(col) => col.len(),
       Column::Length(col) | Column::Time(col) |
       Column::F32(col) => col.len(),
       Column::F64(col) => col.len(),
@@ -98,6 +100,7 @@ impl Column {
       Column::I32(col) => col.borrow_mut().resize(rows,0),
       Column::I64(col) => col.borrow_mut().resize(rows,0),
       Column::I128(col) => col.borrow_mut().resize(rows,0),
+      Column::f32(col) => col.borrow_mut().resize(rows,0.0),
       Column::Time(col) | Column::Length(col) |
       Column::F32(col) => col.borrow_mut().resize(rows,F32(0.0)),
       Column::F64(col) => col.borrow_mut().resize(rows,0.0),
@@ -113,6 +116,7 @@ impl Column {
   
   pub fn kind(&self) -> ValueKind {
     match self {
+      Column::f32(_) => ValueKind::f32,
       Column::F32(_) => ValueKind::F32,
       Column::F64(_) => ValueKind::F64,
       Column::U8(_) => ValueKind::U8,
