@@ -3,7 +3,6 @@
 #![allow(warnings)]
 #![feature(iter_intersperse)]
 
-
 extern crate core as rust_core;
 extern crate hashbrown;
 #[macro_use]
@@ -32,6 +31,7 @@ mod block;
 mod core;
 mod schedule;
 
+
 pub use self::core::Core;
 pub use self::table::*;
 pub use self::column::*;
@@ -47,6 +47,7 @@ pub type BlockId = u64;
 pub type ArgumentName = u64;
 pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
 pub type Out = (TableId, TableIndex, TableIndex);
+
 
 #[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct MechString {
@@ -125,6 +126,7 @@ pub fn humanize(hash: &u64) -> String {
   string
 }
 
+
 pub const WORDLIST: &[&str;256] = &[
   "nil", "ama", "ine", "ska", "pha", "gel", "art", 
   "ona", "sas", "ist", "aus", "pen", "ust", "umn",
@@ -164,11 +166,6 @@ pub const WORDLIST: &[&str;256] = &[
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
 
-pub struct BoxPrinter {
-  pub lines: Vec<LineKind>,
-  width: usize,
-  drawing: String,
-}
 
 #[derive(Debug)]
 pub enum LineKind {
@@ -177,6 +174,7 @@ pub enum LineKind {
   Table(BoxTable),
   Separator,
 }
+
 
 #[derive(Debug)]
 pub struct BoxTable {
@@ -193,8 +191,6 @@ pub struct BoxTable {
 impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
-
-
     let table_name: String = if let Some(mstring) = table.dictionary.borrow().get(&table.id) {
       format!("#{}", mstring.to_string())
     } else {
@@ -207,7 +203,7 @@ impl BoxTable {
     let mut column_kinds = Vec::new();
 
     
-    for (col,alias) in table.col_map.aliases().enumerate() {
+    for (col,(alias,ix)) in table.col_map.iter().enumerate() {
       if let Some(alias_string) = table.dictionary.borrow().get(alias) {
         let chars = alias_string.len();
         if chars > column_widths[col] {
@@ -259,6 +255,13 @@ impl BoxTable {
     }
   }
 
+}
+
+
+pub struct BoxPrinter {
+  pub lines: Vec<LineKind>,
+  width: usize,
+  drawing: String,
 }
 
 impl BoxPrinter {
@@ -324,7 +327,6 @@ impl BoxPrinter {
     let mut middle = "".to_string();
     let mut bottom = "╰".to_string() + &BoxPrinter::format_repeated_char("─", self.width) + &"╯\n".to_string();
     
-
     for line in &self.lines {
 
       match line {
@@ -393,8 +395,6 @@ impl BoxPrinter {
             boxed_line += &"\n".to_string();
             middle += &boxed_line;
           }
-
-
           middle += "├";
           for col in 0..table.cols-1 {
             middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
@@ -402,6 +402,7 @@ impl BoxPrinter {
           }
           middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
           middle += "┤\n";
+
           // Print at most 10 rows
           for row in (0..table.rows).take(10) {
             let mut boxed_line = "│".to_string();
