@@ -14,12 +14,9 @@ fn main() -> Result<(),MechError> {
 
   let parse_tree = parser::parse(r#"
 block
-  #x = [10 20; 30 40;]
-block
-  x = [10 20 30]
-  #x += x{1:2}
-block
-  #test = stats/sum(table: #x)"#)?;
+  x = 10:20
+  z = 3
+  #test = x{z}"#)?;
 
   println!("{:#?}", parse_tree);
 
@@ -46,7 +43,7 @@ block
   println!("{:#?}", core.get_table("test").unwrap().borrow());*/
 
 
-  println!("{:#?}", core.blocks);
+  //println!("{:#?}", core.blocks);
 
   println!("{:#?}", core);
 
