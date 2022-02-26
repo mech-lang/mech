@@ -364,9 +364,9 @@ pub struct ParSetVS<T,U> {
   pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>
 }
 
-impl<T,U> MechFunction for SetVS<T,U>
-where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+impl<T,U> MechFunction for ParSetVS<T,U>
+where T: Clone + Debug + Into<U> + Sync + Send,
+      U: Clone + Debug + Into<T> + Sync + Send
 {
   fn solve(&self) {
     let arg = &self.arg.borrow()[self.ix];
