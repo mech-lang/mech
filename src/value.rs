@@ -5,52 +5,52 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-//use crate::quantity::{Quantity, ToQuantity, QuantityMath};
-//use errors::{ErrorType};
 use crate::*;
 use std::fmt;
 use std::mem::transmute;
 use std::convert::TryInto;
 
 lazy_static! {
-  pub static ref F32L: u64 = hash_str("f32-literal");
-  pub static ref F32: u64 = hash_str("f32");
-  pub static ref U8: u64 = hash_str("u8");
-  pub static ref U16: u64 = hash_str("u16");
-  pub static ref U32: u64 = hash_str("u32");
-  pub static ref U64: u64 = hash_str("u64");
-  pub static ref HZ: u64 = hash_str("hz");
-  pub static ref MS: u64 = hash_str("ms");
-  pub static ref S: u64 = hash_str("s");
-  pub static ref M: u64 = hash_str("m");
-  pub static ref KM: u64 = hash_str("km");
-  pub static ref HEX: u64 = hash_str("hex");
-  pub static ref DEC: u64 = hash_str("dec");
+  pub static ref cF32L: u64 = hash_str("f32-literal");
+  pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cU8: u64 = hash_str("u8");
+  pub static ref cU16: u64 = hash_str("u16");
+  pub static ref cU32: u64 = hash_str("u32");
+  pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cHZ: u64 = hash_str("hz");
+  pub static ref cMS: u64 = hash_str("ms");
+  pub static ref cS: u64 = hash_str("s");
+  pub static ref cM: u64 = hash_str("m");
+  pub static ref cKM: u64 = hash_str("km");
+  pub static ref cHEX: u64 = hash_str("hex");
+  pub static ref cDEC: u64 = hash_str("dec");
 }
 
 // ## Value structs and enums
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone,PartialEq,Serialize,Deserialize)]
 pub enum Value {
-  U8(u8),
-  U16(u16),
-  U32(u32),
-  U64(u64),
-  U128(u128),
+  U8(U8),
+  U16(U16),
+  U32(U32),
+  U64(U64),
+  U128(U128),
   I8(i8),
   I16(i16),
   I32(i32),
   I64(i64),
   I128(i128),
-  F32(f32),
+  f32(f32),
+  F32(F32),
   F64(f64),
   Bool(bool),
-  Time(f32),
-  Length(f32),
+  Time(F32),
+  Length(F32),
   String(MechString),
   Reference(TableId),
   Empty,
 }
+
 
 impl Value {
 
@@ -92,6 +92,7 @@ impl Value {
       Value::Length(_) => ValueKind::Length,
       Value::F32(_) => ValueKind::F32,
       Value::F64(_) => ValueKind::F64,
+      Value::f32(_) => ValueKind::f32,
       Value::Bool(_) => ValueKind::Bool,
       Value::Reference(_) => ValueKind::Reference,
       Value::String(_) => ValueKind::String,
@@ -105,20 +106,21 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match &self {
-      Value::U8(v) => write!(f,"{}u8",v)?,
-      Value::U16(v) => write!(f,"{}u16",v)?, 
-      Value::U32(v) => write!(f,"{}u32",v)?, 
-      Value::U64(v) => write!(f,"{}u64",v)?,
-      Value::U128(v) => write!(f,"{}u128",v)?, 
+      Value::U8(v) => write!(f,"{:?}u8",v)?,
+      Value::U16(v) => write!(f,"{:?}u16",v)?, 
+      Value::U32(v) => write!(f,"{:?}u32",v)?, 
+      Value::U64(v) => write!(f,"{:?}u64",v)?,
+      Value::U128(v) => write!(f,"{:?}u128",v)?, 
       Value::I8(v) => write!(f,"{}i8",v)?, 
       Value::I16(v) => write!(f,"{}i16",v)?, 
       Value::I32(v) => write!(f,"{}i32",v)?, 
       Value::I64(v) => write!(f,"{}i64",v)?, 
       Value::I128(v) => write!(f,"{}i128",v)?, 
-      Value::Time(v) => write!(f,"{}ms",v)?,
-      Value::Length(v) => write!(f,"{}m",v)?,
-      Value::F32(v) => write!(f,"{:.2}f32",v)?,
-      Value::F64(v) => write!(f,"{:.2}f64",v)?, 
+      Value::Time(v) => write!(f,"{:?}ms",v)?,
+      Value::Length(v) => write!(f,"{:?}m",v)?,
+      Value::f32(v) => write!(f,"{:?}f32",v)?,
+      Value::F32(v) => write!(f,"{:?}f32",v)?,
+      Value::F64(v) => write!(f,"{}f64",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
@@ -143,6 +145,7 @@ pub enum ValueKind {
   I64,
   I128,
   F32,
+  f32,
   F64,
   Index,
   Quantity,
@@ -169,7 +172,7 @@ impl NumberLiteral {
   }
 
   fn is_float(&self) -> bool {
-    if self.kind == *F32 || self.kind == *F32L {
+    if self.kind == *cF32 || self.kind == *cF32L {
       true 
     } else {
       false

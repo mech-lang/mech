@@ -27,7 +27,7 @@ pub trait MechFunctionCompiler {
 }
 
 pub trait MechFunction {
-  fn solve(&mut self);
+  fn solve(&self);
   fn to_string(&self) -> String;
 }
 

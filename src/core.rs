@@ -62,7 +62,7 @@ pub struct Core {
 impl Core {
 
   pub fn new() -> Core {
-
+    
     let mut functions = Functions::new();
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
@@ -86,6 +86,7 @@ impl Core {
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+    
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
     functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
@@ -94,7 +95,7 @@ impl Core {
 
     functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
-
+     
     Core {
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
@@ -208,6 +209,7 @@ impl Core {
     // try to satisfy the block
     match block_brrw.ready() {
       true => {
+        
         let id = block_brrw.gen_id();
 
         // Merge input and output

@@ -23,7 +23,7 @@ impl Schedule {
       unscheduled_blocks: Vec::new(),
     }
   }
-
+ 
   pub fn add_block(&mut self, block_ref: BlockRef) -> Result<(),MechError> {
 
     self.unscheduled_blocks.push(block_ref);

@@ -1,4 +1,5 @@
-
+#![allow(warnings)]
+#![feature(iter_intersperse)]
 // New runtime
 // requirements:
 // pass all tests
@@ -19,18 +20,21 @@ use std::fmt;
 use std::ptr;
 use std::rc::Rc;
 use hashbrown::{HashMap, HashSet};
-use seahash;
 
 use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
 use mech_core::*;
-use mech_core::function::*;
+use mech_core::function::table;
 
-fn main() -> Result<(),MechError> {
+use std::fmt::*;
+use num_traits::*;
+use std::ops::*;
+
+fn main() -> std::result::Result<(),MechError> {
  
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
-  let mut total_time = VecDeque::new();  
+
   let start_ns0 = time::precise_time_ns();
   let n = 1e6 as usize;
 
@@ -40,49 +44,49 @@ fn main() -> Result<(),MechError> {
   {
     // #time/timer += [period: 60Hz]
     let mut time_timer = Table::new(hash_str("time/timer"),1,2);
-    time_timer.set_col_kind(0,ValueKind::F32);
-    time_timer.set_col_kind(1,ValueKind::F32);
-    time_timer.set_raw(0,0,Value::F32(60.0));
-    core.insert_table(time_timer.clone());
+    time_timer.set_col_kind(0,ValueKind::f32);
+    time_timer.set_col_kind(1,ValueKind::f32);
+    time_timer.set_raw(0,0,Value::f32(60.0));
+    core.insert_table(time_timer);
 
     // #gravity = 1
     let mut gravity = Table::new(hash_str("gravity"),1,1);
-    gravity.set_col_kind(0,ValueKind::F32);
-    gravity.set_raw(0,0,Value::F32(1.0));
-    core.insert_table(gravity.clone());
+    gravity.set_col_kind(0,ValueKind::f32);
+    gravity.set_raw(0,0,Value::f32(1.0));
+    core.insert_table(gravity);
 
     // -80%
     let mut const1 = Table::new(hash_str("-0.8"),1,1);
-    const1.set_col_kind(0,ValueKind::F32);
-    const1.set_raw(0,0,Value::F32(-0.8));
-    core.insert_table(const1.clone());
+    const1.set_col_kind(0,ValueKind::f32);
+    const1.set_raw(0,0,Value::f32(-0.8));
+    core.insert_table(const1);
 
     // 500
     let mut const2 = Table::new(hash_str("500.0"),1,1);
-    const2.set_col_kind(0,ValueKind::F32);
-    const2.set_raw(0,0,Value::F32(500.0));
-    core.insert_table(const2.clone());
+    const2.set_col_kind(0,ValueKind::f32);
+    const2.set_raw(0,0,Value::f32(500.0));
+    core.insert_table(const2);
 
     // 0
     let mut const3 = Table::new(hash_str("0.0"),1,1);
-    const3.set_col_kind(0,ValueKind::F32);
-    const3.set_raw(0,0,Value::F32(0.0));
-    core.insert_table(const3.clone());
+    const3.set_col_kind(0,ValueKind::f32);
+    const3.set_raw(0,0,Value::f32(0.0));
+    core.insert_table(const3);
 
     // Create balls
     // #balls = [x: 0:n y: 0:n vx: 3.0 vy: 4.0]
     let mut balls = Table::new(hash_str("balls"),n,4);
-    balls.set_col_kind(0,ValueKind::F32);
-    balls.set_col_kind(1,ValueKind::F32);
-    balls.set_col_kind(2,ValueKind::F32);
-    balls.set_col_kind(3,ValueKind::F32);
+    balls.set_col_kind(0,ValueKind::f32);
+    balls.set_col_kind(1,ValueKind::f32);
+    balls.set_col_kind(2,ValueKind::f32);
+    balls.set_col_kind(3,ValueKind::f32);
     for i in 0..n {
-      balls.set_raw(i,0,Value::F32(i as f32));
-      balls.set_raw(i,1,Value::F32(i as f32));
-      balls.set_raw(i,2,Value::F32(3.0));
-      balls.set_raw(i,3,Value::F32(4.0));
+      balls.set_raw(i,0,Value::f32(i as f32));
+      balls.set_raw(i,1,Value::f32(i as f32));
+      balls.set_raw(i,2,Value::f32(3.0));
+      balls.set_raw(i,3,Value::f32(4.0));
     }
-    core.insert_table(balls.clone());
+    core.insert_table(balls);
   }
 
   // Table
@@ -140,14 +144,14 @@ fn main() -> Result<(),MechError> {
   };
   
   // Temp Vars
-  let mut vy2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
-  let mut iy = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut iyy = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut iy_or = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut ix = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut ixx = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut ix_or = Column::Bool(Rc::new(RefCell::new(vec![false; n])));
-  let mut vx2 = Column::F32(Rc::new(RefCell::new(vec![0.0; n])));
+  let mut vy2 = Column::f32(ColumnV::new(vec![0.0; n]));
+  let mut iy = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut iyy = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut iy_or = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut ix = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut ixx = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut ix_or = Column::Bool(ColumnV::new((vec![false; n])));
+  let mut vx2 = Column::f32(ColumnV::new((vec![0.0; n])));
 
   // Update the block positions on each tick of the timer  
   let mut block1 = Block::new();
@@ -157,13 +161,13 @@ fn main() -> Result<(),MechError> {
   block1.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   block1.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&x,&vx,&y,&vy,&g) {
-    (Column::F32(x),Column::F32(vx),Column::F32(y),Column::F32(vy),Column::F32(g)) => {
+    (Column::f32(x),Column::f32(vx),Column::f32(y),Column::f32(vy),Column::f32(g)) => {
       // #ball.x := #ball.x + #ball.vx
-      block1.plan.push(math::ParAddVVIP::<f32>{out: x.clone(), arg: vx.clone()});
+      block1.plan.push(math::ParAddVVIP{out: x.clone(), arg: vx.clone()});
       // #ball.y := #ball.y + #ball.vy    
-      block1.plan.push(math::ParAddVVIP::<f32>{out: y.clone(), arg: vy.clone()});
+      block1.plan.push(math::ParAddVVIP{out: y.clone(), arg: vy.clone()});
       // #ball.vy := #ball.vy + #gravity
-      block1.plan.push(math::ParAddVSIP::<f32>{out: vy.clone(), arg: g.clone()});
+      block1.plan.push(math::ParAddVSIP{out: vy.clone(), arg: g.clone()});
     }
     _ => (),
   }
@@ -175,21 +179,21 @@ fn main() -> Result<(),MechError> {
   block2.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   block2.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy,&c500,&c0) {
-    (Column::F32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::F32(c1),Column::F32(vy2),Column::F32(vy),Column::F32(m500),Column::F32(m0)) => {
+    (Column::f32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::f32(c1),Column::f32(vy2),Column::f32(vy),Column::f32(m500),Column::f32(m0)) => {
       // iy = #ball.y > #boundary.height
-      block2.plan.push(compare::ParGreaterVS::<f32>{lhs: y.clone(), rhs: m500.clone(), out: iy.clone()});
+      block2.plan.push(compare::ParGreaterVS{lhs: (y.clone(),0,y.len()-1), rhs: (m500.clone(),0,0), out: iy.clone()});
       // iyy = #ball.y < 0
-      block2.plan.push(compare::ParLessVS::<f32>{lhs: y.clone(), rhs: m0.clone(), out: iyy.clone()});
+      block2.plan.push(compare::ParLessVS{lhs: (y.clone(),0,y.len()-1), rhs: (m0.clone(),0,0), out: iyy.clone()});
       // #ball.y{iy} := #boundary.height
       block2.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out:  y.clone(), oix: iy.clone()});
       // #ball.vy{iy | iyy} := #ball.vy * -80%
       block2.plan.push(logic::ParOrVV{lhs: iy.clone(), rhs: iyy.clone(), out: iy_or.clone()});
-      block2.plan.push(math::ParMulVS::<f32>{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
-      block2.plan.push(table::ParSetVVB::<f32>{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
+      block2.plan.push(math::ParMulVS{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
+      block2.plan.push(table::ParSetVVB{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
     }
     _ => (),
   }
- 
+
   // Keep the balls within the boundary width
   let mut block3 = Block::new();
   block3.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block3")), rows: 1, columns: 1});
@@ -197,17 +201,17 @@ fn main() -> Result<(),MechError> {
   block3.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   block3.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
   match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2,&c500,&c0) {
-    (Column::F32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::F32(vx),Column::F32(c1),Column::F32(vx2),Column::F32(m500),Column::F32(m0)) => {
+    (Column::f32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::f32(vx),Column::f32(c1),Column::f32(vx2),Column::f32(m500),Column::f32(m0)) => {
       // ix = #ball.x > #boundary.width
-      block3.plan.push(compare::ParGreaterVS::<f32>{lhs: x.clone(), rhs: m500.clone(), out: ix.clone()});
+      block3.plan.push(compare::ParGreaterVS{lhs: (x.clone(),0,x.len()-1), rhs: (m500.clone(),0,0), out: ix.clone()});
       // ixx = #ball.x < 0
-      block3.plan.push(compare::ParLessVS::<f32>{lhs: x.clone(), rhs: m0.clone(), out: ixx.clone()});
+      block3.plan.push(compare::ParLessVS{lhs: (x.clone(),0,x.len()-1), rhs: (m0.clone(),0,0), out: ixx.clone()});
       // #ball.x{ix} := #boundary.width
       block3.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out: x.clone(), oix: ix.clone()});
       // #ball.vx{ix | ixx} := #ball.vx * -80%
       block3.plan.push(logic::ParOrVV{lhs: ix.clone(), rhs: ixx.clone(), out: ix_or.clone()});
-      block3.plan.push(math::ParMulVS::<f32>{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
-      block3.plan.push(table::ParSetVVB::<f32>{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
+      block3.plan.push(math::ParMulVS{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
+      block3.plan.push(table::ParSetVVB{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
     }
     _ => (),
   }
@@ -227,9 +231,10 @@ fn main() -> Result<(),MechError> {
   core.schedule_blocks();
 
   //println!("{:?}", core);
-
-  for i in 0..20000 {
-    let txn = vec![Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(i as f32))]))];
+let mut total_time = VecDeque::new();  
+  for i in 0..5000 {
+    let txn = vec![Change::Set((hash_str("time/timer"), 
+      vec![(TableIndex::Index(1), TableIndex::Index(2), Value::f32(i as f32))]))];
     
     let start_ns = time::precise_time_ns();
     core.process_transaction(&txn)?;
@@ -243,7 +248,8 @@ fn main() -> Result<(),MechError> {
     let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
-
+  let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   let end_ns0 = time::precise_time_ns();
   let time = (end_ns0 - start_ns0) as f32;
   println!("{:0.4?} s", time / 1e9);

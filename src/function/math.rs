@@ -17,18 +17,20 @@ lazy_static! {
   pub static ref MATH_NEGATE: u64 = hash_str("math/negate");
 }
 
-impl MechNumArithmetic<u8> for u8 {}
-impl MechNumArithmetic<u16> for u16 {}
-impl MechNumArithmetic<u32> for u32 {}
-impl MechNumArithmetic<u64> for u64 {}
-impl MechNumArithmetic<u128> for u128 {}
-impl MechNumArithmetic<i8> for i8 {}
-impl MechNumArithmetic<i16> for i16 {}
-impl MechNumArithmetic<i32> for i32 {}
-impl MechNumArithmetic<i64> for i64 {}
-impl MechNumArithmetic<i128> for i128 {}
+impl MechNumArithmetic<U8> for U8 {}
+impl MechNumArithmetic<U16> for U16 {}
+impl MechNumArithmetic<U32> for U32 {}
+impl MechNumArithmetic<U64> for U64 {}
+impl MechNumArithmetic<U128> for U128 {}
+impl MechNumArithmetic<I8> for I8 {}
+impl MechNumArithmetic<I16> for I16 {}
+impl MechNumArithmetic<I32> for I32 {}
+impl MechNumArithmetic<I64> for I64 {}
+impl MechNumArithmetic<I128> for I128 {}
+impl MechNumArithmetic<F32> for F32 {}
 impl MechNumArithmetic<f32> for f32 {}
 impl MechNumArithmetic<f64> for f64 {}
+
 
 // Scalar : Scalar
 binary_infix_ss!(AddSS,add);
@@ -72,6 +74,9 @@ binary_infix_par_vv!(ParMulVV,mul);
 binary_infix_par_vv!(ParDivVV,div);
 //binary_infix_par_vv!(ExpParVV,pow);
 
+// Vector : Vector In Place
+binary_infix_vvip!(AddVVIP,add);
+
 // Parallel Vector : Vector In Place
 binary_infix_par_vvip!(ParAddVVIP,add);
 
@@ -96,13 +101,13 @@ math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
 pub struct NegateS<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  pub arg: Arg<T>, pub out: Out<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for NegateS<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     (self.out.borrow_mut())[0] = -((self.arg.borrow())[0]);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -113,13 +118,13 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 pub struct NegateV<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  pub arg: Arg<T>, pub out: Out<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<T>
 }
 
 impl<T> MechFunction for NegateV<T> 
 where T: std::ops::Neg<Output = T> + Copy + Debug
 {
-  fn solve(&mut self) {
+  fn solve(&self) {
     self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(*arg)); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -131,12 +136,12 @@ macro_rules! binary_infix_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+      pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
       }
@@ -150,12 +155,12 @@ macro_rules! binary_infix_vs {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+      pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).for_each(|(out, lhs)| *out = (*lhs).$op(rhs)); 
       }
@@ -169,14 +174,24 @@ macro_rules! binary_infix_vv {
   ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
-    pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    pub struct $func_name<T,U,V> {
+      pub lhs: (ColumnV<T>, usize, usize),
+      pub rhs: (ColumnV<U>, usize, usize),
+      pub out: ColumnV<V>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: MechNumArithmetic<T> + Copy + Debug
+    impl<T,U,V> MechFunction for $func_name<T,U,V> 
+    where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send,
+          U: Copy + Debug + Clone + MechNumArithmetic<U> + Into<V> + Sync + Send,
+          V: Copy + Debug + Clone + MechNumArithmetic<V> + Sync + Send,
     {
-      fn solve(&mut self) {
-        self.out.borrow_mut().iter_mut().zip(self.lhs.borrow().iter()).zip(self.rhs.borrow().iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+      fn solve(&self) {
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        self.out.borrow_mut()
+                .iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].iter().map(|x| T::into(*x)))
+                .zip(rhs.borrow()[*rsix..=*reix].iter().map(|x| U::into(*x)))
+                .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
@@ -188,14 +203,24 @@ macro_rules! binary_infix_par_vv {
   ($func_name:ident, $op:tt) => (
 
     #[derive(Debug)]
-    pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+    pub struct $func_name<T,U,V> {
+      pub lhs: (ColumnV<T>, usize, usize),
+      pub rhs: (ColumnV<U>, usize, usize),
+      pub out: ColumnV<V>
     }
-    impl<T> MechFunction for $func_name<T> 
-    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    impl<T,U,V> MechFunction for $func_name<T,U,V> 
+    where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send,
+          U: Copy + Debug + Clone + MechNumArithmetic<U> + Into<V> + Sync + Send,
+          V: Copy + Debug + Clone + MechNumArithmetic<V> + Sync + Send,
     {
-      fn solve(&mut self) {
-        self.out.borrow_mut().par_iter_mut().zip(self.lhs.borrow().par_iter()).zip(self.rhs.borrow().par_iter()).for_each(|((out, lhs), rhs)| *out = (*lhs).$op(*rhs)); 
+      fn solve(&self) {
+        let (lhs,lsix,leix) = &self.lhs;
+        let (rhs,rsix,reix) = &self.rhs;
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(lhs.borrow()[*lsix..=*leix].par_iter().map(|x| T::into(*x)))
+                .zip(rhs.borrow()[*rsix..=*reix].par_iter().map(|x| U::into(*x)))
+                .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
@@ -208,13 +233,38 @@ macro_rules! binary_infix_par_vvip {
 
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub arg: Arg<T>, pub out: Out<T>
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
-        self.out.borrow_mut().par_iter_mut().zip(self.arg.borrow().par_iter()).for_each(|(out, arg)| *out = (*out).$op(*arg)); 
+      fn solve(&self) {
+        self.out.borrow_mut()
+                .par_iter_mut()
+                .zip(self.arg.borrow().par_iter())
+                .for_each(|(out, arg)| *out = (*out).$op(*arg)); 
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_vvip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&self) {
+        self.out.borrow_mut()
+                .iter_mut()
+                .zip(self.arg.borrow().iter())
+                .for_each(|(out, arg)| *out = (*out).$op(*arg)); 
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
@@ -227,12 +277,12 @@ macro_rules! binary_infix_par_vs {
 
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+      pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let rhs = self.rhs.borrow()[0];
         self.out.borrow_mut().par_iter_mut().zip(&(*self.lhs.borrow())).for_each(|(out, lhs)| *out = (*lhs).$op(rhs));
       }
@@ -247,12 +297,12 @@ macro_rules! binary_infix_par_vsip {
 
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub arg: Arg<T>, pub out: Out<T>
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let arg = self.arg.borrow()[0];
         self.out.borrow_mut().par_iter_mut().for_each(|out| *out = (*out).$op(arg));
       }
@@ -266,12 +316,12 @@ macro_rules! binary_infix_ss {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub lix: usize, pub rhs: Arg<T>, pub rix: usize, pub out: Out<T>
+      pub lhs: ColumnV<T>, pub lix: usize, pub rhs: ColumnV<T>, pub rix: usize, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[self.lix];
         let rhs = self.rhs.borrow()[self.rix];
         self.out.borrow_mut().iter_mut().for_each(|out| *out = lhs.$op(rhs)); 
@@ -286,12 +336,12 @@ macro_rules! binary_infix_par_sv {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
     pub struct $func_name<T> {
-      pub lhs: Arg<T>, pub rhs: Arg<T>, pub out: Out<T>
+      pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
     }
     impl<T> MechFunction for $func_name<T> 
     where T: MechNumArithmetic<T> + Copy + Debug
     {
-      fn solve(&mut self) {
+      fn solve(&self) {
         let lhs = self.lhs.borrow()[0];
         self.out.borrow_mut().iter_mut().zip(self.rhs.borrow().iter()).for_each(|(out, rhs)| *out = lhs.$op(*rhs)); 
       }
@@ -311,8 +361,8 @@ impl MechFunctionCompiler for MathNegate {
         let mut argument_columns = block.get_arg_columns(arguments)?;
         let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
         match (&argument_columns[0], &out_column) {
-          ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV::<i8>{arg: arg.clone(), out: out.clone() });}
-          ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV::<f32>{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           _ => {return Err(MechError::GenericError(1961));},
         }
       }
@@ -321,8 +371,8 @@ impl MechFunctionCompiler for MathNegate {
         let (_,col,_) = &argument_columns[0];
         let out_column = block.get_out_column(out, 1, col.kind())?;
         match (&argument_columns[0], &out_column) {
-          ((_,Column::I8(arg),_), Column::I8(out)) => block.plan.push(NegateS::<i8>{arg: arg.clone(), out: out.clone() }),
-          ((_,Column::F32(arg),_), Column::F32(out)) => block.plan.push(NegateS::<f32>{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::I8(arg),_), Column::I8(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::F32(arg),_), Column::F32(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
           x => {
             println!("{:?}", x);
             return Err(MechError::GenericError(1962));
@@ -353,32 +403,34 @@ macro_rules! math_compiler {
               ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
                 if let Column::U8(out) = out_column {
-                  block.plan.push($op1::<u8>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
               ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::U16)?;
                 if let Column::U16(out) = out_column {
-                  block.plan.push($op1::<u16>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
               ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::U64)?;
                 if let Column::U64(out) = out_column {
-                  block.plan.push($op1::<u64>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) 
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
               ((_,Column::Length(lhs),ColumnIndex::Index(lix)), (_,Column::Length(rhs),ColumnIndex::Index(rix))) => {
                 let mut out_column = block.get_out_column(out, 1, ValueKind::Length)?;
-                if let Column::Length(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+                if let Column::Length(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
               }
               ((_,Column::Time(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
                 let mut out_column = block.get_out_column(out, 1, ValueKind::Time)?;
-                if let Column::Time(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+                if let Column::Time(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
               }
               ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
-                if let Column::F32(out) = out_column { block.plan.push($op1::<f32>{lhs: lhs.clone(), lix: *lix, rhs: rhs.clone(), rix: *rix, out: out.clone()}) }
+                if let Column::F32(out) = out_column {
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
               },
               x => {
                 println!("{:?}", x);
@@ -391,18 +443,18 @@ macro_rules! math_compiler {
             let (_,col,_) = &argument_columns[0];
             let mut out_column = block.get_out_column(out, *rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
-              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2::<u16>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2::<u32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::U64(out)) => { block.plan.push($op2::<u64>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::U128(out)) => { block.plan.push($op2::<u128>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::I8(out)) => { block.plan.push($op2::<i8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::I16(out)) => { block.plan.push($op2::<i16>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::I32(out)) => { block.plan.push($op2::<i32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::I64(out)) => { block.plan.push($op2::<i64>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::I128(out)) => { block.plan.push($op2::<i128>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op2::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              _ => {return Err(MechError::GenericError(1237));},
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::U64(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::U128(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              /*((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::I8(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::I16(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::I32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::I64(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::I128(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              */_ => {return Err(MechError::GenericError(1237));},
             }
           }   
           (TableShape::Column(rows), TableShape::Scalar) => {
@@ -410,11 +462,11 @@ macro_rules! math_compiler {
             let (_,col,_) = &argument_columns[0];
             let out_column = block.get_out_column(out, *rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
-              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op3::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               _ => {return Err(MechError::GenericError(1238));},
             }
-          }                      
+          }                   
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
               return Err(MechError::GenericError(6401));
@@ -423,8 +475,10 @@ macro_rules! math_compiler {
             let (_,col,_) = &argument_columns[0];
             let out_column = block.get_out_column(out, *lhs_rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
-              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
-              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::U8(lhs),_),(_,Column::U8(rhs),_),Column::U8(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+              ((_,Column::U16(lhs),_),(_,Column::U16(rhs),_),Column::U16(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+              ((_,Column::U32(lhs),_),(_,Column::U32(rhs),_),Column::U32(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
+              ((_,Column::F32(lhs),_),(_,Column::F32(rhs),_),Column::F32(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
               x => {
                 println!("{:?}",x);
                 return Err(MechError::GenericError(1239));
@@ -446,14 +500,14 @@ macro_rules! math_compiler {
                   out_brrw.set_col_kind(col_ix, ValueKind::U8);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::U8(out) = out_col {
-                    block.plan.push($op3::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                    block.plan.push($op3::<U8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
                 (Column::F32(lhs), (_,Column::F32(rhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::F32);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
-                    block.plan.push($op3::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                    block.plan.push($op3::<F32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
                 _ => {return Err(MechError::GenericError(6340));},
@@ -475,14 +529,14 @@ macro_rules! math_compiler {
                   out_brrw.set_col_kind(col_ix, ValueKind::U8);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::U8(out) = out_col {
-                    block.plan.push($op2::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
                 (Column::F32(rhs), (_,Column::F32(lhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::F32);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
-                    block.plan.push($op2::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
                 _ => {return Err(MechError::GenericError(6341));},
@@ -490,7 +544,7 @@ macro_rules! math_compiler {
             }
           }            
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
-            
+           
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
               return Err(MechError::GenericError(6342));
             }
@@ -505,18 +559,18 @@ macro_rules! math_compiler {
 
             for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
               match (lhs_rhs) {
-                (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_))) => {
+                 (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_))) => {
                   out_brrw.set_col_kind(col_ix, ValueKind::U8);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::U8(out) = out_col {
-                    block.plan.push($op4::<u8>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
                 (((_,Column::F32(lhs),_), (_,Column::F32(rhs),_))) => {
                   out_brrw.set_col_kind(col_ix, ValueKind::F32);
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
-                    block.plan.push($op4::<f32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() })
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
                 _ => {return Err(MechError::GenericError(6343));},
