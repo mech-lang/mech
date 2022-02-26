@@ -265,7 +265,7 @@ impl Block {
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
           Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
           Column::F32(ix_col) => {
-            ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1)
+            ColumnIndex::RealIndex(ix_col)
           },
           x => {
             return Err(MechError::GenericError(9239));
@@ -288,7 +288,7 @@ impl Block {
               Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
               Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
               Column::F32(ix_col) => {
-                ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1)
+                ColumnIndex::RealIndex(ix_col)
               },
               x => {
                 return Err(MechError::GenericError(9232));
@@ -417,11 +417,7 @@ impl Block {
     let cols = if t.cols == 0 { 1 } else { t.cols };
     let rows = if rows == 0 { 1 } else { rows };
     t.resize(rows,cols);
-    println!("{:?}", col_kind);
     t.set_col_kind(0, col_kind);
-    println!("{:?}", t);
-
-
     let column = t.get_column_unchecked(0);
     Ok(column)
   }
@@ -581,7 +577,6 @@ impl Block {
         table.set_column_alias(*column_ix,*column_alias);
       },
       Transformation::TableDefine{table_id, indices, out} => {
-        
         if let TableId::Global(_) = table_id { 
           self.input.insert((*table_id,TableIndex::All,TableIndex::All));
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
@@ -603,12 +598,10 @@ impl Block {
             _ => {return Err(MechError::GenericError(6392));}
           }
         }
-
         let src_table = self.get_table(&table_id)?;
         let out_table = self.get_table(out)?;
         let (row, column) = indices.last().unwrap();
         let argument = (0,table_id,vec![(*row,*column)]);
-
         match (row,column) {
           // Select an entire table
           (TableIndex::All, TableIndex::All) => {

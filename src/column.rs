@@ -44,6 +44,7 @@ pub enum Column {
 #[derive(Clone, Debug)]
 pub enum ColumnIndex {
   All,
+  RealIndex(ColumnV<F32>),
   Index(usize),
   IndexCol(ColumnV<usize>),
   Bool(ColumnV<bool>),

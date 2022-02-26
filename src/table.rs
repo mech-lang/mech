@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::fmt;
 use crate::*;
 use hashbrown::HashMap;
+use indexmap::IndexMap;
 
 // ### Table Id
 
@@ -360,7 +361,6 @@ impl Table {
   }
 
   pub fn get_columns(&self, col: &TableIndex) -> Result<Vec<Column>, MechError> {
-    println!("{:?}", self);
     match col {
       TableIndex::All => {
         Ok(self.data.iter().cloned().collect())
@@ -480,6 +480,10 @@ impl Table {
     }
   }
 
+  pub fn get_linear_raw(&self, ix: usize) -> Result<Value,MechError> {
+    self.get_linear(ix-1)
+  }
+
   pub fn get_linear(&self, ix: usize) -> Result<Value,MechError> {
     if ix < self.rows * self.cols {
       let row = ix / self.cols;
@@ -554,11 +558,12 @@ impl Table {
 type TableIx = usize;
 type Alias = u64;
 
+
 #[derive(Debug,Clone)]
 pub struct AliasMap {
   capacity: usize,
   ix_to_alias: Vec<Alias>,  
-  alias_to_ix: HashMap<Alias,TableIx>,
+  alias_to_ix: IndexMap<Alias,TableIx>,
 }
 
 impl AliasMap {
@@ -566,7 +571,7 @@ impl AliasMap {
     AliasMap {
       capacity,
       ix_to_alias: vec![0;capacity],
-      alias_to_ix: HashMap::new(),
+      alias_to_ix: IndexMap::new(),
     }
   }
 
@@ -604,8 +609,12 @@ impl AliasMap {
     self.ix_to_alias.iter()
   }
 
-  pub fn iter(&self) -> hashbrown::hash_map::Iter<u64, usize> {
+  pub fn iter(&self) -> indexmap::map::Iter<u64, usize> {
     self.alias_to_ix.iter()
+  }
+
+  pub fn len(&self) -> usize {
+    self.alias_to_ix.iter().len()
   }
 
 }
