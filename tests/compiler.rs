@@ -147,11 +147,11 @@ block
 
 test_mech!(table_define_empty_table, "
 block
-  #bots = [|name position|]
+  #bots = [|x<f32> y<f32>|]
 block
-  #bots += [position: 4 name: 2]
+  #bots += [y: 4 x: 2]
 block
-  #test = #bots.position / #bots.name", Value::F32(F32::new(2.0)));
+  #test = #bots.y / #bots.x", Value::F32(F32::new(2.0)));
 
 test_mech!(table_define_program, "# A Working Program
 
@@ -673,7 +673,7 @@ block
 
 test_mech!(append_row_empty,"
 block
-  #robot = [|name position|]
+  #robot = [|name<f32> position<f32>|]
   
 block
   #robot += [name: 10 position: 20]
@@ -709,37 +709,21 @@ block
 block
   #test = stats/sum(column: #x)", Value::F32(F32::new(30.0)));
 
-test_mech!(append_row_math_empty,"
-block
-  #x = []
-block
-  #x += 5 * 2
-block
-  #test = stats/sum(column: #x)", Value::F32(F32::new(10.0)));
-
 test_mech!(append_row_math_empty_named," 
 block
-  #x = [|x|]
+  #x = [|x<f32>|]
 block
   #x += 5 * 2
 block
   #test = stats/sum(column: #x)", Value::F32(F32::new(10.0)));  
-
-test_mech!(append_row_math_empty_whole_table,"
-block
-  #x = []
-block
-  x = 10 + 20
-  #x += x
-block
-  #test = #x", Value::F32(F32::new(30.0)));
 
 test_mech!(append_row_select_linear_range,"
 block
   #x = [10 20; 30 40;]
 block
   x = [10 20 30]
-  #x += x{1:2}
+  ix = 1:2
+  #x += x{ix}
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(130.0)));  
 
@@ -766,17 +750,17 @@ block
 
 test_mech!(append_arbitrary_types_x,"
 block
-  #x = [|x y z|]
+  #x = [|x<f32> y<f32> z<f32>|]
 
 block
   #x += [y: 10, x: 99<u64>]
 
 block
-  #test = #x.x", Value::U64(U64::new(99))); 
+  #test = #x.x", Value::F32(F32::new(99.0))); 
     
 test_mech!(append_arbitrary_types_y,"
 block
-  #x = [|x y z|]
+  #x = [|x<f32> y<f32> z<f32>|]
 
 block
   #x += [y: 10, x: 99<u64>]
