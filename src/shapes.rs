@@ -11,7 +11,7 @@ fn get_stroke_string(parameters_table: &Table, row: usize, alias: u64) -> String
   match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
     Ok(Value::U128(stroke)) => {
       let mut color_string: String = "#".to_string();
-      color_string = format!("{}{:02x}", color_string, stroke);
+      color_string = format!("{}{:02x}", color_string, stroke.unwrap());
       color_string
     }
     _ => "#000000".to_string(),
@@ -20,7 +20,7 @@ fn get_stroke_string(parameters_table: &Table, row: usize, alias: u64) -> String
 
 fn get_line_width(parameters_table: &Table, row: usize) -> f64 {
   match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(*LINE__WIDTH))  {
-    Ok(Value::F32(line_width)) => line_width as f64,
+    Ok(Value::F32(line_width)) => f64::from(line_width),
     _ => 1.0,
   }
 }
@@ -100,7 +100,7 @@ pub fn render_arc(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRende
         let line_width = get_line_width(&parameters_table_brrw,row);
         context.save();
         context.begin_path();
-        context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
+        context.arc(cx.into(), cy.into(), radius.into(), f64::from(sa) * PI / 180.0, f64::from(ea) * PI / 180.0);
         context.set_fill_style(&JsValue::from_str(&fill));
         context.fill();
         context.set_stroke_style(&JsValue::from_str(&stroke));
@@ -252,7 +252,7 @@ pub fn render_arc_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<Canvas
          parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ENDING__ANGLE)),
          parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*RADIUS))) {
     (Ok(Value::F32(cx)),Ok(Value::F32(cy)),Ok(Value::F32(sa)),Ok(Value::F32(ea)),Ok(Value::F32(radius))) => {
-      context.arc(cx.into(), cy.into(), radius.into(), sa as f64 * PI / 180.0, ea as f64 * PI / 180.0);
+      context.arc(cx.into(), cy.into(), radius.into(), f64::from(sa) * PI / 180.0, f64::from(ea) * PI / 180.0);
     }
     x => {log!("5864 {:?}", x);},
   }
@@ -264,7 +264,7 @@ pub fn render_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
   context.save();
   let rotate = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*ROTATE)) {
     Ok(Value::F32(rotate)) => rotate,
-    _ => 0.0,
+    _ => F32::new(0.0),
   };
   let (tx,ty) = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*TRANSLATE)) {
     Ok(Value::Reference(TableId::Global(translate_table_id))) => {
@@ -273,13 +273,13 @@ pub fn render_path(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
       match (translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
               translate_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
         (Ok(Value::F32(tx)),Ok(Value::F32(ty))) => (tx,ty),
-        _ => (0.0,0.0),
+        _ => (F32::new(0.0),F32::new(0.0)),
       }
     },
-    _ => (0.0,0.0),
+    _ => (F32::new(0.0),F32::new(0.0)),
   };
   context.translate(tx.into(),ty.into());
-  context.rotate(rotate as f64 * PI / 180.0);
+  context.rotate(f64::from(rotate) * PI / 180.0);
   context.begin_path();
   
   match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*START__POINT)),
@@ -351,7 +351,7 @@ pub fn render_image(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRen
             let iy = img.height() as f64 / 2.0;
             context.save();
             context.translate(x.into(), y.into());
-            context.rotate(rotation as f64 * PI / 180.0);
+            context.rotate(rotation.unwrap() as f64 * PI / 180.0);
             context.draw_image_with_html_image_element(&img, -ix as f64, -iy as f64);
             context.restore();
           },

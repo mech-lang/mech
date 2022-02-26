@@ -287,7 +287,7 @@ Location information
                 *TIME_TIMER, vec![
                 (TableIndex::Index(1), 
                 TableIndex::Alias(*TICKS),
-                Value::U64(0))],
+                Value::U64(U64::new(0)))],
               )));             
               self.process_transaction();
               match timers_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PERIOD)) {
@@ -304,7 +304,7 @@ Location information
                               *TIME_TIMER, vec![
                               (TableIndex::Index(row), 
                               TableIndex::Alias(*TICKS),
-                              Value::U64(ticks+1))],
+                              Value::U64(U64::new(ticks.unwrap()+1)))],
                             )));           
                             (*wasm_core).process_transaction();
                             (*wasm_core).render();
@@ -319,7 +319,7 @@ Location information
                   let timer_callback = closure();
                   let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
                     timer_callback.as_ref().unchecked_ref(),
-                    period as i32,
+                    period.unwrap() as i32,
                   ).unwrap();
                   self.timers.insert(row,timer_callback);
                 }
@@ -386,7 +386,7 @@ Location information
               table_id, vec![
                 (TableIndex::Index(1), 
                 TableIndex::Alias(*EVENT__ID),
-                Value::U32(eid))])));
+                Value::U32(U32::new(eid)))])));
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //let table = (*wasm_core).core.get_table(hash_str("balls"));
@@ -437,7 +437,7 @@ Location information
               table_id, vec![(
                 TableIndex::Index(1), 
                 TableIndex::Alias(*EVENT__ID),
-                Value::U32(eid))])));  
+                Value::U32(U32::new(eid)))])));  
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //let table = (*wasm_core).core.get_table(hash_str("clicked"));
@@ -571,7 +571,7 @@ Location information
         let contents_string = chars.to_string();
         div.set_inner_html(&contents_string);
       },
-      Value::F32(x) => div.set_inner_html(&format!("{:.2}", x)),
+      Value::F32(x) => div.set_inner_html(&format!("{:.2?}", x)),
       Value::F64(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U128(x) => div.set_inner_html(&format!("{:?}", x)),
       Value::U64(x) => div.set_inner_html(&format!("{:?}", x)),
@@ -600,8 +600,8 @@ Location information
     container.set_id(&format!("{:?}",element_id));
     container.set_attribute("table-id", &format!("{}", table.id))?;
     // First check to see if the table has a "type" column. If it doesn't, just render the table
-    match table.column_alias_to_ix.contains_key(&*TYPE) {
-      true => {
+    match table.col_map.get_index(&*TYPE) {
+      Ok(_) => {
         for row in 1..=table.rows {
           match table.get(&TableIndex::Index(row), &TableIndex::Alias(*TYPE))  {
             Ok(Value::String(kind)) => {
@@ -623,7 +623,7 @@ Location information
         }
       }
       // There's no Type column, so we are going to treat the table as a generic thing and just turn it into divs
-      false => {
+      Err(_) => {
         // Make a div for each row
         for row in 1..=table.rows {
           let mut row_div = self.document.create_element("div")?;

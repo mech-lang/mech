@@ -89,11 +89,11 @@ pub fn render_slider(table: &Table, container: &mut web_sys::Element, wasm_core:
           .unwrap();
         let element_id = hash_str(&format!("slider-{:?}-{:?}", table.id, row));
         slider.set_attribute("type","range");
-        slider.set_attribute("min", &format!("{}", min));
-        slider.set_attribute("max", &format!("{}", max));
-        slider.set_attribute("value", &format!("{}", value));
-        slider.set_attribute("row", &format!("{}", row));
-        slider.set_attribute("table", &format!("{}", table.id));
+        slider.set_attribute("min", &format!("{:?}", min));
+        slider.set_attribute("max", &format!("{:?}", max));
+        slider.set_attribute("value", &format!("{:?}", value));
+        slider.set_attribute("row", &format!("{:?}", row));
+        slider.set_attribute("table", &format!("{:?}", table.id));
         slider.set_id(&format!("{:?}",element_id));
         // Changes to the slider update its own table
         {
@@ -109,7 +109,7 @@ pub fn render_slider(table: &Table, container: &mut web_sys::Element, wasm_core:
                   table_id, vec![ 
                     (TableIndex::Index(row),
                     TableIndex::Alias(*VALUE),
-                    Value::F32(slider_value as f32))]));
+                    Value::F32(F32::new(slider_value as f32)))]));
                 // TODO Make this safe
                 unsafe {
                   let table = (*wasm_core).core.get_table_by_id(table_id).unwrap();
@@ -148,8 +148,8 @@ pub fn render_canvas(table: &Table, container: &mut web_sys::Element, wasm_core:
             match (parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)),
             parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH))) {
               (Ok(Value::F32(height)),Ok(Value::F32(width))) => {
-                canvas.set_attribute("height", &format!("{}",height));
-                canvas.set_attribute("width", &format!("{}",width));
+                canvas.set_attribute("height", &format!("{:?}",height));
+                canvas.set_attribute("width", &format!("{:?}",width));
               }
               x => {log!("4740 {:?}", x);},
             }
