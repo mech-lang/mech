@@ -222,10 +222,13 @@ mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
 mech_type_conversion!(U8,U16,u16);
 mech_type_conversion!(F32,U8,u8);
+mech_type_conversion!(F32,U64,u64);
 mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U32,U8,u8);
 mech_type_conversion!(U64,U8,u8);
+mech_type_conversion!(U64,F32,f32);
 mech_type_conversion_raw!(F32,f64);
+mech_type_conversion_raw!(F32,usize);
 
 #[macro_export]
 macro_rules! mech_type {
