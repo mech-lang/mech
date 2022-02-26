@@ -18,24 +18,30 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct MathSinRadCol {
-  pub col: function::Arg<f32>, pub out: function::Out<f32>
+  pub col: ColumnV<F32>, pub out: ColumnV<F32>
 }
 
 impl MechFunction for MathSinRadCol {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.col.borrow().iter()).for_each(|(out, rhs)| *out = sinf(*rhs)); 
+  fn solve(&self) {
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(self.col.borrow().iter())
+            .for_each(|(out, rhs)| *out = F32::new(sinf(rhs.unwrap()))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 #[derive(Debug)]
 pub struct MathSinDegCol {
-  pub col: function::Arg<f32>, pub out: function::Out<f32>
+  pub col: ColumnV<F32>, pub out: ColumnV<F32>
 }
 
 impl MechFunction for MathSinDegCol {
-  fn solve(&mut self) {
-    self.out.borrow_mut().iter_mut().zip(self.col.borrow().iter()).for_each(|(out, rhs)| *out = sinf(*rhs * PI / 180.0)); 
+  fn solve(&self) {
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(self.col.borrow().iter())
+            .for_each(|(out, rhs)| *out = F32::new(sinf(rhs.unwrap() * PI / 180.0))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -61,10 +67,11 @@ impl MechFunctionCompiler for MathSin {
         TableShape::Column(rows) => {
           let arg = block.get_arg_columns(arguments)?[0].clone();
           out_brrw.resize(rows,1);
-          let out_col = out_brrw.get_column_unchecked(0).get_f32().unwrap();
-          match arg {
-            (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadCol{col: col.clone(), out: out_col.clone()}),
-            x => {return Err(MechError::GenericError(1348));},
+          if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
+            match arg {
+              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadCol{col: col.clone(), out: out_col.clone()}),
+              x => {return Err(MechError::GenericError(1348));},
+            }
           }
         }
         x => return Err(MechError::GenericError(1350)),
