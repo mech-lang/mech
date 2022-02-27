@@ -48,9 +48,8 @@ impl MechFunction for StatsSumTable {
     let table_els = table_brrw.rows * table_brrw.cols;
     for i in 0..table_els {
       match table_brrw.get_linear(i) {
-        Ok(Value::F32(val)) => {
-          sum += val.unwrap()
-        },
+        Ok(Value::F32(val)) => sum += val.unwrap(),
+        Ok(Value::U8(val)) => sum = sum + val.unwrap() as f32,
         _ => (),
       }
     }

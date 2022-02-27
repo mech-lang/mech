@@ -201,8 +201,6 @@ impl BoxTable {
     let mut column_widths = vec![0; table.cols];
     let mut column_aliases = Vec::new();
     let mut column_kinds = Vec::new();
-
-    
     for (col,(alias,ix)) in table.col_map.iter().enumerate() {
       if let Some(alias_string) = table.dictionary.borrow().get(alias) {
         let chars = alias_string.len();
