@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #![allow(dead_code)]
 #![feature(get_mut_unchecked)]
 #[macro_use]
