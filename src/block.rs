@@ -36,6 +36,7 @@ lazy_static! {
   pub static ref cKM: u64 = hash_str("km");
   pub static ref cHEX: u64 = hash_str("hex");
   pub static ref cDEC: u64 = hash_str("dec");
+  pub static ref cSTRING: u64 = hash_str("string");
 }
 
 #[derive(Clone)]
@@ -562,6 +563,7 @@ impl Block {
         else if *kind == *cKM { table_brrw.set_col_kind(*column_ix,ValueKind::Length); }
         else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time); }
         else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time); }
+        else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String); }
         else {
           println!("{:?}", humanize(kind));
           return Err(MechError::GenericError(8492))
