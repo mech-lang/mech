@@ -1,4 +1,5 @@
 #![feature(hash_drain_filter)]
+#![allow(warnings)]
 // # Mech
 
 /*
