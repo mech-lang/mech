@@ -778,7 +778,39 @@ block
 block
   #test = #x.y + #x.x", Value::U8(U8::new(109)));
 
-// ## Logic
+  test_mech!(append_inline_row_singleton,"
+block
+  #x = [|x<f32> y<u8>|]
+block
+  #x += [x: 10]
+block
+  #test = stats/sum(table: #x)", Value::F32(F32::new(10.0)));
+
+
+  test_mech!(append_inline_row_two_rows,"
+block
+  #x = [|x<f32> y<u8>|]
+block
+  #x += [x: 10]
+block
+  #x += [y: 20]
+block
+  #test = stats/sum(table: #x)", Value::F32(F32::new(30.0)));
+
+  test_mech!(append_inline_two_rows_set,"
+block
+  #x = [|x<f32> y<u8>|]
+block
+  #x += [x: 10]
+block
+  #x += [y: 20]
+block
+  #x{1,2} := 123
+  #x{2,1} := 456
+block
+  #test = stats/sum(table: #x)", Value::F32(F32::new(609.0)));
+
+  // ## Logic
 
 test_mech!(logic_and,"
 block
@@ -935,28 +967,7 @@ block
 block
   #test = #robot.y{:}{1} + #robot.y{:}{2}"#, Value::F32(F32::new(80.0)));
 
-
-test_mech!(nesting_second_col,r#"
-block
-  #app2 = [1 [7 8]]
-block
-  #q = [_ _]
-block
-  #q{2} := #app2{2}
-block
-  #test = #q{2}{1}"#, Value::F32(F32::new(7.0)));
-
-test_mech!(nesting_second_col2,r#"
-block
-  #app2 = [1 [7 8]]
-block
-  #q = [_ _]
-block
-  #q{2} := #app2{2}
-block
-  #test = #q{2}{2}"#, Value::F32(F32::new(8.0)));
-
-test_mech!(nesting_chained_dot_indexing,r#"
+  test_mech!(nesting_chained_dot_indexing,r#"
 block
   #app2 = [x: [a: 1 b: 2 c: 3] y: [x: 7 z: 8]]
 
