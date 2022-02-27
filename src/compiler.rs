@@ -3,6 +3,7 @@
 // ## Preamble
 
 use mech_core::*;
+use mech_core::function::table::*;
 
 use crate::ast::{Ast, Node};
 use crate::parser::{parse, parse_fragment};
@@ -17,15 +18,6 @@ use hashbrown::hash_set::{HashSet};
 use hashbrown::hash_map::{HashMap};
 use std::sync::Arc;
 use std::mem;
-
-lazy_static! {
-  static ref TABLE_APPEND: u64 = hash_str("table/append");
-  static ref TABLE_SPLIT: u64 = hash_str("table/split");
-  static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
-  static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
-  static ref TABLE_DEFINE: u64 = hash_str("table/define");
-  static ref TABLE_SET: u64 = hash_str("table/set");
-}
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
   let mut blocks = Vec::new();
