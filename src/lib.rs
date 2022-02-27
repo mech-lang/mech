@@ -243,9 +243,11 @@ impl BoxTable {
         strings[col][row] = value_string;
       }
     }
+    let width = column_widths.iter().sum();
+    if width == 0 {column_widths.push(0);}
     BoxTable {
       title,
-      width: column_widths.iter().sum(),
+      width,
       rows: table.rows,
       cols: table.cols,
       column_aliases,
@@ -335,9 +337,6 @@ impl BoxPrinter {
           middle += &boxed_line;
         }
         LineKind::Table(table) => {
-          if table.cols == 0 {
-            continue;
-          }
           let mut column_widths = table.column_widths.clone();
           if table.width + table.cols < self.width {
             let mut diff = self.width - (table.width + table.cols) + 1;
@@ -375,8 +374,26 @@ impl BoxPrinter {
             boxed_line += &"\n".to_string();
             middle += &boxed_line;
           }
-
-          if table.column_kinds.len() > 0 {
+          if table.cols > 0 {
+            if table.column_kinds.len() > 0 {
+              middle += "├";
+              for col in 0..table.cols-1 {
+                middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
+                middle += "┼";
+              }
+              middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
+              middle += "┤\n";
+              let mut boxed_line = "│".to_string();
+              for col in 0..table.cols {
+                let cell = &table.column_kinds[col];
+                let chars = cell.chars().count();
+                boxed_line += &cell; 
+                boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
+                boxed_line += "│";
+              }
+              boxed_line += &"\n".to_string();
+              middle += &boxed_line;
+            }
             middle += "├";
             for col in 0..table.cols-1 {
               middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
@@ -384,25 +401,10 @@ impl BoxPrinter {
             }
             middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
             middle += "┤\n";
-            let mut boxed_line = "│".to_string();
-            for col in 0..table.cols {
-              let cell = &table.column_kinds[col];
-              let chars = cell.chars().count();
-              boxed_line += &cell; 
-              boxed_line += &BoxPrinter::format_repeated_char(" ", column_widths[col] - chars);
-              boxed_line += "│";
-            }
-            boxed_line += &"\n".to_string();
-            middle += &boxed_line;
           }
-          middle += "├";
-          for col in 0..table.cols-1 {
-            middle += &BoxPrinter::format_repeated_char("─", column_widths[col]);
-            middle += "┼";
+          if table.cols == 0 {
+            continue;
           }
-          middle += &BoxPrinter::format_repeated_char("─", *column_widths.last().unwrap());
-          middle += "┤\n";
-
           // Print at most 10 rows
           for row in (0..table.rows).take(10) {
             let mut boxed_line = "│".to_string();

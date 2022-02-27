@@ -86,7 +86,8 @@ impl Core {
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
-    
+    functions.insert(*TABLE_DEFINE, Box::new(TableDefine{}));
+    functions.insert(*TABLE_SET, Box::new(TableSet{}));
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
     functions.insert(*TABLE_SIZE, Box::new(TableSize{}));

@@ -148,7 +148,9 @@ impl Table {
   }
 
   pub fn kind(&self) -> ValueKind {
-
+    if self.col_kinds.len() == 0 {
+      return ValueKind::Empty;
+    }
     let first_col_kind = self.col_kinds[0].clone();
     if self.col_kinds.iter().all(|kind| *kind == first_col_kind) {
       first_col_kind
@@ -198,6 +200,7 @@ impl Table {
   }
 
   pub fn set_kind(&mut self, kind: ValueKind) -> Result<(),MechError> {
+    println!("{:?}", kind);
     match kind {
       ValueKind::Compound(kinds) => {
         for col in 0..self.cols {
@@ -214,6 +217,7 @@ impl Table {
   }
 
   pub fn set_col_kind(&mut self, col: usize, kind: ValueKind) -> Result<(),MechError> {
+    println!("{:?}, {:?}", col, kind);
     if col < self.cols {
       match (&mut self.data[col], kind) {
         (Column::U8(_), ValueKind::U8) => (),
@@ -503,6 +507,7 @@ impl Table {
   }
 
   pub fn has_col_aliases(&self) -> bool {
+    println!("{:?}", self.col_map);
     self.col_map.alias_to_ix.len() > 0
   }
 
