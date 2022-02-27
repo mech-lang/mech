@@ -10,22 +10,6 @@ use std::fmt;
 use std::mem::transmute;
 use std::convert::TryInto;
 
-lazy_static! {
-  pub static ref cF32L: u64 = hash_str("f32-literal");
-  pub static ref cF32: u64 = hash_str("f32");
-  pub static ref cU8: u64 = hash_str("u8");
-  pub static ref cU16: u64 = hash_str("u16");
-  pub static ref cU32: u64 = hash_str("u32");
-  pub static ref cU64: u64 = hash_str("u64");
-  pub static ref cHZ: u64 = hash_str("hz");
-  pub static ref cMS: u64 = hash_str("ms");
-  pub static ref cS: u64 = hash_str("s");
-  pub static ref cM: u64 = hash_str("m");
-  pub static ref cKM: u64 = hash_str("km");
-  pub static ref cHEX: u64 = hash_str("hex");
-  pub static ref cDEC: u64 = hash_str("dec");
-}
-
 // ## Value structs and enums
 
 #[derive(Clone,PartialEq,Serialize,Deserialize)]
