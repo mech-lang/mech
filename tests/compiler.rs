@@ -1216,6 +1216,12 @@ block
   y = false
   #test = x & y"#, Value::Bool(false));
 
+  test_mech!(boolean_bug, r#"
+block
+  t = false
+  f = true
+  #test = f | t"#, Value::Bool(true));
+
 // ## Scheduler
 
 test_mech_txn!(scheduler_base_linear,r#"

@@ -626,12 +626,19 @@ fn boolean_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn true_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("true")(input)?;
+  let (input, _) = ascii_tag("t")(input)?;
+  let (input, _) = ascii_tag("r")(input)?;
+  let (input, _) = ascii_tag("u")(input)?;
+  let (input, _) = ascii_tag("e")(input)?;
   Ok((input, Node::True))
 }
 
 fn false_literal(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tag("false")(input)?;
+  let (input, _) = ascii_tag("f")(input)?;
+  let (input, _) = ascii_tag("a")(input)?;
+  let (input, _) = ascii_tag("l")(input)?;
+  let (input, _) = ascii_tag("s")(input)?;
+  let (input, _) = ascii_tag("e")(input)?;
   Ok((input, Node::False))
 }
 
