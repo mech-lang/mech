@@ -552,16 +552,20 @@ impl Block {
       Transformation::ColumnKind{table_id, column_ix, kind} => {
         let table = self.get_table(table_id)?;
         let mut table_brrw = table.borrow_mut();
-        if *kind == *cU8 { table_brrw.set_kind(ValueKind::U8); }
-        else if *kind == *cU16 { table_brrw.set_kind(ValueKind::U16); }
-        else if *kind == *cU32 { table_brrw.set_kind(ValueKind::U32); }
-        else if *kind == *cU64 { table_brrw.set_kind(ValueKind::U64); }
-        else if *kind == *cF32 { table_brrw.set_kind(ValueKind::F32); }
-        else if *kind == *cM { table_brrw.set_kind(ValueKind::Length); }
-        else if *kind == *cKM { table_brrw.set_kind(ValueKind::Length); }
-        else if *kind == *cS { table_brrw.set_kind(ValueKind::Time); }
-        else if *kind == *cMS { table_brrw.set_kind(ValueKind::Time); }
-        else {return Err(MechError::GenericError(8492))}
+        if *kind == *cU8 { table_brrw.set_col_kind(*column_ix,ValueKind::U8); }
+        else if *kind == *cU16 { table_brrw.set_col_kind(*column_ix,ValueKind::U16); }
+        else if *kind == *cU32 { table_brrw.set_col_kind(*column_ix,ValueKind::U32); }
+        else if *kind == *cU64 { table_brrw.set_col_kind(*column_ix,ValueKind::U64); }
+        else if *kind == *cF32 { table_brrw.set_col_kind(*column_ix,ValueKind::F32); }
+        else if *kind == *cF32L { table_brrw.set_col_kind(*column_ix,ValueKind::F32); }
+        else if *kind == *cM { table_brrw.set_col_kind(*column_ix,ValueKind::Length); }
+        else if *kind == *cKM { table_brrw.set_col_kind(*column_ix,ValueKind::Length); }
+        else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time); }
+        else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time); }
+        else {
+          println!("{:?}", humanize(kind));
+          return Err(MechError::GenericError(8492))
+        }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
