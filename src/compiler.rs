@@ -23,6 +23,8 @@ lazy_static! {
   static ref TABLE_SPLIT: u64 = hash_str("table/split");
   static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
+  static ref TABLE_DEFINE: u64 = hash_str("table/define");
+  static ref TABLE_SET: u64 = hash_str("table/set");
 }
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
@@ -99,7 +101,7 @@ impl Compiler {
     if blocks.len() > 0 {
       Ok(blocks)
     } else {
-      Err(MechError::GenericError(8492))
+      Err(MechError::GenericError(2292))
     }
   }
 
@@ -190,6 +192,11 @@ impl Compiler {
             dest.remove(0);
             let (src_row,src_col) = src_indices[0];
             tfms.push(Transformation::Set{src_id: src_table_id, src_row, src_col, dest_id, dest_row, dest_col});
+            /*tfms.push(Transformation::Function{
+              name: *TABLE_SET,
+              arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
+              out: (dest_id,dest_row,dest_col),
+            });*/
           }
           _ => (),
         }
@@ -336,6 +343,11 @@ impl Compiler {
             _ => {
               tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
               tfms.append(&mut input);
+              /*tfms.push(Transformation::Function{
+                name: *TABLE_DEFINE,
+                arguments: vec![(0,input_table_id.clone(),input_indices.clone())],
+                out: (output_table_id, TableIndex::All, TableIndex::All),
+              });*/
               tfms.push(Transformation::TableDefine{
                 table_id: input_table_id.clone(), 
                 indices: input_indices.clone(), 
@@ -461,6 +473,11 @@ impl Compiler {
             let out = TableId::Global(*table_id.unwrap());
             let in_t = table_id.clone();
             tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+            /*tfms.insert(0,Transformation::Function{
+              name: *TABLE_DEFINE,
+              arguments: vec![(0,in_t,vec![(TableIndex::All, TableIndex::All)])],
+              out: (out,TableIndex::All, TableIndex::All),
+            });*/
             tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
             tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
           }
@@ -476,22 +493,32 @@ impl Compiler {
         let mut columns = 1;
         match table_children.first() {
           Some(Node::TableHeader{children}) => {
-            let mut result = self.compile_nodes(&children)?;
-            columns = result.len();
             let mut ix = 0;
-            for tfm in result.iter() {
-              match tfm {
+            for child in children {
+              let mut result = self.compile_node(child)?;
+              columns = result.len();
+              // Get the column ID
+              match &result[0] {
                 Transformation::Identifier{name,id} => {
                   let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix, column_alias: id.clone()};
                   column_aliases.push(alias_tfm);
-                  column_aliases.push(tfm.clone());
+                  column_aliases.push(result[0].clone());
                   ix+=1;
+                  result.remove(0);
                 }
-                Transformation::ColumnKind{table_id,column_ix,kind} => {
-                  let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: ix - 1, kind: *kind};
-                  column_aliases.push(kind_tfm);
+                _ => (),
+              }
+              // Process the optional kind annotation
+              if result.len() > 0 {
+                match &result[0] {
+                  Transformation::ColumnKind{table_id,column_ix,kind} => {
+                    let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: ix - 1, kind: *kind};
+                    result.remove(0);
+                    column_aliases.append(&mut result);
+                    column_aliases.push(kind_tfm);
+                  }
+                  _ => (),
                 }
-                x => column_aliases.push(x.clone()),
               }
             }
             header_tfms.append(&mut column_aliases);
@@ -509,6 +536,7 @@ impl Compiler {
             Transformation::Identifier{name,id} => {
               let alias_tfm = Transformation::ColumnKind{table_id: TableId::Local(0), column_ix: ix.clone(), kind: id.clone()};
               tfms.push(alias_tfm);
+              tfms.push(tfm.clone());
             }
             _ => (),
           }
@@ -584,6 +612,11 @@ impl Compiler {
             let out = TableId::Global(*table_id.unwrap());
             let in_t = table_id.clone();
             tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+            /*tfms.insert(0,Transformation::Function{
+              name: *TABLE_DEFINE,
+              arguments: vec![(0,in_t,vec![(TableIndex::All, TableIndex::All)])],
+              out: (out,TableIndex::All, TableIndex::All),
+            });*/
             tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
             tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
           }

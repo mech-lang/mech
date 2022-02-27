@@ -748,7 +748,7 @@ block
   #test = stats/sum(table: #x)", Value::F32(F32::new(21.0))); 
   
 
-test_mech!(append_arbitrary_types_x,"
+test_mech!(append_arbitrary_kinds_x,"
 block
   #x = [|x<f32> y<f32> z<f32>|]
 
@@ -767,6 +767,16 @@ block
 
 block
   #test = #x.y", Value::F32(F32::new(10.0))); 
+
+  test_mech!(append_arbitrary_kinds_types,"
+block
+  #x = [|x<f32> y<u8>|]
+
+block
+  #x += [y: 10<f32>, x: 99<u8>]
+
+block
+  #test = #x.y + #x.x", Value::U8(U8::new(109)));
 
 // ## Logic
 
