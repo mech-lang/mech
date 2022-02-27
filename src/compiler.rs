@@ -547,29 +547,39 @@ impl Compiler {
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
         let mut column_aliases = Vec::new();
-        let mut column_kinds = Vec::new();
         let mut body_tfms = Vec::new();
         let mut columns = 0;
         match table_children.first() {
           Some(Node::TableHeader{children}) => {
-            let mut result = self.compile_nodes(&children)?;
-            for (ix,tfm) in result.iter().enumerate() {
-              match tfm {
+            let mut ix = 0;
+            for child in children {
+              let mut result = self.compile_node(child)?;
+              columns = result.len();
+              // Get the column ID
+              match &result[0] {
                 Transformation::Identifier{name,id} => {
-                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: columns, column_alias: id.clone()};
-                  header_tfms.push(tfm.clone());
+                  let alias_tfm = Transformation::ColumnAlias{table_id: TableId::Local(anon_table_id), column_ix: ix, column_alias: id.clone()};
                   column_aliases.push(alias_tfm);
-                  columns += 1;
-                }
-                Transformation::ColumnKind{table_id,column_ix,kind} => {
-                  let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: columns - 1, kind: *kind};
-                  column_kinds.push(kind_tfm);
+                  column_aliases.push(result[0].clone());
+                  ix+=1;
+                  result.remove(0);
                 }
                 _ => (),
               }
+              // Process the optional kind annotation
+              if result.len() > 0 {
+                match &result[0] {
+                  Transformation::ColumnKind{table_id,column_ix,kind} => {
+                    let kind_tfm = Transformation::ColumnKind{table_id: TableId::Local(anon_table_id), column_ix: ix - 1, kind: *kind};
+                    result.remove(0);
+                    column_aliases.append(&mut result);
+                    column_aliases.push(kind_tfm);
+                  }
+                  _ => (),
+                }
+              }
             }
             header_tfms.append(&mut column_aliases);
-            header_tfms.append(&mut column_kinds);
             table_children.remove(0);
           }
           _ => (),

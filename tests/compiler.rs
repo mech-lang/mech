@@ -909,6 +909,11 @@ test_mech!(string_table,r#"
 block
   #test = ["Hello" "World"]"#, Value::from_str("Hello"));
 
+test_mech!(string_typed_col,r#"
+block
+  #test = [|x<string>|
+            "Hello"  ]"#, Value::from_str("Hello"));
+
 test_mech!(string_backslash,r#"
 block
   #test = ["Hi\n"]"#, Value::from_str("Hi\\n"));
