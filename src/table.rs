@@ -293,6 +293,12 @@ impl Table {
           self.data[col] = Column::Length(column);
           self.col_kinds[col] = ValueKind::Length;
         },
+        (Column::Speed(_), ValueKind::Speed) => (),
+        (Column::Empty, ValueKind::Speed) => {
+          let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
+          self.data[col] = Column::Speed(column);
+          self.col_kinds[col] = ValueKind::Speed;
+        },
         /*(Column::Empty, ValueKind::F64) => {
           let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
           self.data[col] = Column::F64(column);
@@ -402,6 +408,7 @@ impl Table {
       match (&self.data[col], val) {
         (Column::Length(c), Value::Length(v)) |
         (Column::Time(c), Value::Time(v)) |
+        (Column::Speed(c), Value::Speed(v)) |
         (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
         (Column::f32(c), Value::f32(v)) => c.borrow_mut()[row] = v,
         (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
@@ -455,6 +462,7 @@ impl Table {
       match &self.data[col] {
         Column::Time(c) => Ok(Value::Time(c.borrow()[row])),
         Column::Length(c) => Ok(Value::Length(c.borrow()[row])),
+        Column::Speed(c) => Ok(Value::Speed(c.borrow()[row])),
         Column::F32(c) => Ok(Value::F32(c.borrow()[row])),
         Column::f32(c) => Ok(Value::f32(c.borrow()[row])),
         Column::F64(c) => Ok(Value::F64(c.borrow()[row])),

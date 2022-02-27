@@ -33,6 +33,7 @@ lazy_static! {
   pub static ref cMS: u64 = hash_str("ms");
   pub static ref cS: u64 = hash_str("s");
   pub static ref cM: u64 = hash_str("m");
+  pub static ref cM_S: u64 = hash_str("m/s");
   pub static ref cKM: u64 = hash_str("km");
   pub static ref cHEX: u64 = hash_str("hex");
   pub static ref cDEC: u64 = hash_str("dec");
@@ -378,10 +379,6 @@ impl Block {
       }
       _ => (),
     };
-
-
-
-
     let row_index = match (row,col) {
       (TableIndex::ReshapeColumn,_) => ColumnIndex::ReshapeColumn,
       (TableIndex::All,_) => ColumnIndex::All,
@@ -626,11 +623,11 @@ impl Block {
         } 
         else if *kind == *cMS {
           t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32() / 1000.0)))?;
         } 
         else if *kind == *cS {
           t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(F32::new(num.as_f32() * 1000.0)))?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
         } 
         else if *kind == *cF32 {
           t.set_kind(ValueKind::F32)?;
@@ -647,6 +644,10 @@ impl Block {
         else if *kind == *cM {
           t.set_kind(ValueKind::Length)?;
           t.set_raw(0,0,Value::Length(F32::new(num.as_f32())))?;
+        }
+        else if *kind == *cM_S {
+          t.set_kind(ValueKind::Speed)?;
+          t.set_raw(0,0,Value::Speed(F32::new(num.as_f32())))?;
         }
         else if *kind == *cDEC {
           match bytes.len() {

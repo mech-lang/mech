@@ -239,7 +239,7 @@ impl Core {
         println!("{:?}", mech_error);
         let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());
-        Err(MechError::GenericError(8963))
+        Err(MechError::GenericError(4444))
       },
     }
   }

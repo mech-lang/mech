@@ -38,6 +38,7 @@ pub enum Column {
   Reference((TableRef,(ColumnIndex,ColumnIndex))),
   Time(ColumnV<F32>),
   Length(ColumnV<F32>),
+  Speed(ColumnV<F32>),
   Empty,
 }
 
@@ -67,7 +68,7 @@ impl Column {
       Column::I64(col) => col.len(),
       Column::I128(col) => col.len(),
       Column::f32(col) => col.len(),
-      Column::Length(col) | Column::Time(col) |
+      Column::Length(col) | Column::Time(col) | Column::Speed(col) |
       Column::F32(col) => col.len(),
       Column::F64(col) => col.len(),
       Column::Bool(col) => col.len(),
@@ -102,7 +103,7 @@ impl Column {
       Column::I64(col) => col.borrow_mut().resize(rows,0),
       Column::I128(col) => col.borrow_mut().resize(rows,0),
       Column::f32(col) => col.borrow_mut().resize(rows,0.0),
-      Column::Time(col) | Column::Length(col) |
+      Column::Time(col) | Column::Length(col) | Column::Speed(col) |
       Column::F32(col) => col.borrow_mut().resize(rows,F32(0.0)),
       Column::F64(col) => col.borrow_mut().resize(rows,0.0),
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
@@ -136,6 +137,7 @@ impl Column {
       Column::Ref(_) => ValueKind::Reference,
       Column::Reference((table,index)) => table.borrow().kind(),
       Column::Time(_) => ValueKind::Time,
+      Column::Speed(_) => ValueKind::Speed,
       Column::Length(_) => ValueKind::Length,
       Column::Empty => ValueKind::Empty,
     }
