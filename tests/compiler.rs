@@ -200,10 +200,6 @@ test_mech!(math_add_u16,"#test = 10<u16> + 400<u16>", Value::U16(U16::new(410)))
 
 test_mech!(math_add_f32,"#test = 123.456 + 456.123", Value::F32(F32::new(579.579)));
 
-test_mech!(math_add_m_km,"#test = 400<m> + 1<km>", Value::Length(F32::new(1400.0)));
-
-test_mech!(math_add_ms_s,"#test = 4<s> + 100<ms>", Value::Time(F32::new(4100.0)));
-
 test_mech!(math_subtract,"#test = 3 - 1", Value::F32(F32::new(2.0)));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::F32(F32::new(4.0)));
@@ -337,6 +333,20 @@ block
 test_mech!(math_parenthetical_expression_constants,"
 block
   #test = (1 + 2) * 3", Value::F32(F32::new(9.0)));
+
+// Quantities
+
+
+test_mech!(quantitiy_add_m_km,"#test = 400<m> + 1<km>", Value::Length(F32::new(1400.0)));
+
+test_mech!(quantitiy_add_ms_s,"#test = 4<s> + 100<ms>", Value::Time(F32::new(4.10)));
+
+test_mech!(quantitiy_x_plus_v_times_t,r#""
+block
+  x = 10<m>
+  y = 20<m/s>
+  z = 3<s>
+  #test = x + y * z"#, Value::Length(F32::new(70.0)));
 
 // ## Ranges
 
