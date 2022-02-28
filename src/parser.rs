@@ -13,8 +13,8 @@ use nom::{
   IResult,
   branch::alt,
   sequence::tuple,
-  combinator::opt,
-  multi::{many1, many0, separated_list1},
+  combinator::{opt,eof},
+  multi::{many1, many_till, many0, separated_list1},
 };
 
 use unicode_segmentation::*;
@@ -365,6 +365,7 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
+        println!("{:?}", tree);
         println!("{:?}", unparsed);
         Err(MechError::GenericError(5424))
       } else { 
@@ -372,6 +373,7 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       }
     },
     Err(q) => {
+      println!("{:?}", q);
       Err(MechError::GenericError(5423))
     }
   }
@@ -587,9 +589,9 @@ fn symbol(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
-fn single_text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = alt((word, space, number, punctuation, symbol, emoji))(input)?;
-  Ok((input, Node::Text{children: vec![word]}))
+fn paragraph_symbol(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
+  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, underscore))(input)?;
+  Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
 fn text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
@@ -598,7 +600,7 @@ fn text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn paragraph_rest(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, word) = many1(alt((word, space, number, punctuation, symbol, quote, emoji)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
@@ -1053,7 +1055,7 @@ fn until_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn statement(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment, table_select))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
@@ -1330,16 +1332,16 @@ fn expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 // ### Block Basics
 
 fn transformation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, _) = tuple((space,space))(input)?;
   let (input, statement) = statement(input)?;
   let (input, _) = tuple((many0(space),opt(newline)))(input)?;
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
 fn block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, transformations) = many1(transformation)(input)?;
+  let (input, transformations) = many1(tuple((tuple((space,space)),transformation)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Block { children: transformations }))
+  let tfms: Vec<Node> = transformations.iter().map(|(_,tfm)| tfm).cloned().collect();
+  Ok((input, Node::Block { children: tfms }))
 }
 
 // ## Markdown
@@ -1390,8 +1392,10 @@ fn paragraph_text(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn paragraph(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, paragraph_elements) = many1(alt((inline_mech_code, inline_code, paragraph_text)))(input)?;
-  let (input, _) = opt(newline)(input)?;
+  let (input, (paragraph_elements,_)) = many_till(
+    alt((inline_mech_code, inline_code, paragraph_text)),
+    newline
+  )(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Paragraph { children: paragraph_elements }))
 }
@@ -1453,14 +1457,18 @@ fn mech_code_block(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn section(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, section_title) = opt(subtitle)(input)?;
-  let (input, mut section_elements) = many1(alt((block, code_block, mech_code_block, paragraph, unordered_list)))(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, mut section_elements) = many1(
+    tuple((
+      alt((block, code_block, mech_code_block, paragraph, statement, unordered_list)),
+      opt(whitespace),
+    ))
+  )(input)?;
   let mut section = vec![];
   match section_title {
     Some(subtitle) => section.push(subtitle),
     _ => (),
   };
-  section.append(&mut section_elements);
+  section.append(&mut section_elements.iter().map(|(x,_)|x).cloned().collect());
   Ok((input, Node::Section{ children: section }))
 }
 

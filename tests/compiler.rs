@@ -1159,6 +1159,15 @@ block
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));
 
+test_mech!(mechdown_flat, r#"
+# Hello World
+
+x = 10 + 15
+y = 20
+z = [1 2 3 4]
+q = z + y + x  
+#test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
+
 // ## Comments
 
 test_mech!(comment_line, r#"

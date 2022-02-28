@@ -13,12 +13,15 @@ fn main() -> Result<(),MechError> {
   let mut core = Core::new();
 
   let parse_tree = parser::parse(r#"
-block
-  x = 10:20
-  z = 3
-  #test = x{z}"#)?;
+# Hello World
 
-  println!("{:#?}", parse_tree);
+x = 10 + 15
+y = 20
+z = [1 2 3 4]
+q = z + y + x  
+#test = stats/sum(row: q)"#)?;
+
+println!("{:#?}", parse_tree);
 
   ast.build_syntax_tree(&parse_tree);
 
@@ -43,12 +46,12 @@ block
   println!("{:#?}", core.get_table("test").unwrap().borrow());*/
 
 
-  //println!("{:#?}", core.blocks);
+  println!("{:#?}", core.blocks);
 
   println!("{:#?}", core);
 
   
-  if let Ok(table) = core.get_table("test") {
+  if let Ok(table) = core.get_table("b") {
     println!("Answer:");
     println!("{:#?}", table.borrow());
   }

@@ -21,9 +21,10 @@ use std::mem;
 
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
   let mut blocks = Vec::new();
+  let mut statements = Vec::new();
   for n in nodes {
     match n {
-      Node::Statement{..} |
+      Node::Statement{..} => statements.push(n.clone()),
       Node::Block{..} => blocks.push(n.clone()),
       Node::MechCodeBlock{children} => {
         // Do something with the block state string.
@@ -47,6 +48,9 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
       }
       _ => (), 
     }
+  }
+  if statements.len() > 0 {
+    blocks.push(Node::Block{children: statements});
   }
   blocks
 }

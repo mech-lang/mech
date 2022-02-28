@@ -59,7 +59,6 @@ word = {alpha};
 number = {digit};
 punctuation = period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis |  left_angle | right_angle | left_brace | right_brace;
 symbol = ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | caret | underscore;
-single_text = word | space | punctuation | symbol;
 text = {word | space | number | punctuation | symbol};
 paragraph_rest = {word | space | number | punctuation | symbol | quote};
 paragraph_starter =  {word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis| right_parenthesis};
