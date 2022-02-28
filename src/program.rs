@@ -86,7 +86,7 @@ pub struct Program {
   pub mech: Core,
   pub cores: HashMap<u64,Core>,
   pub remote_cores: HashMap<u64,MechSocket>,
-  pub input_map: HashMap<Register,HashSet<u64>>,
+  pub input_map: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
   pub machines: HashMap<u64, Box<dyn Machine>>,
   pub mech_functions: HashMap<u64, Box<dyn MechFunctionCompiler>>,
@@ -97,7 +97,7 @@ pub struct Program {
   //pub errors: HashSet<Error>,
   programs: u64,
   loaded_machines: HashSet<u64>,
-  pub listeners: HashMap<Register,HashSet<u64>>,
+  pub listeners: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
 }
 
 impl Program {

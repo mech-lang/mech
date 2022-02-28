@@ -257,15 +257,14 @@ impl ProgramRunner {
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
-            /*
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
             program.mech.process_transaction(&txn);   
             // Trigger any machines that are now ready due to the transaction
-            program.trigger_machines();  
+            //program.trigger_machines();  
             // For all changed registers, inform all listeners of changes
-            let mut set = HashSet::new();
-            for changed_register in &program.mech.runtime.aggregate_changed_this_round {
+            /* let mut set = HashSet::new();
+           for changed_register in &program.mech.runtime.aggregate_changed_this_round {
               if set.contains(&changed_register.table_id) {
                 continue;
               }
@@ -309,40 +308,43 @@ impl ProgramRunner {
                 }
                 _ => (),
               }
-            }
+            }            */
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
             client_outgoing.send(ClientMessage::StepDone);
-            */
+
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
-            /*
-            match program.mech.runtime.output.contains(&register) {
+            let (table_id,row,col) = register;
+            match program.mech.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
+                println!("We have something they want: {:?}", register);
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
                 // Send over the table we have now
-                match program.mech.get_table(*register.table_id.unwrap()) {
-                  Some(table) => {
+                match program.mech.get_table_by_id(*table_id.unwrap()) {
+                  Ok(table) => {
                     // Decompose the table into changes for a transaction
                     let mut changes = vec![];
-                    changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
-                    for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
-                      changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
+                    let table_brrw = table.borrow();
+                    changes.push(Change::NewTable{table_id: table_brrw.id, rows: table_brrw.rows, columns: table_brrw.cols});
+                    for ((alias,ix)) in table_brrw.col_map.iter() {
+                      changes.push(Change::ColumnAlias{table_id: table_brrw.id, column_ix: *ix, column_alias: *alias});
                     } 
                     let mut values = vec![];
-                    for i in 1..=table.rows {
-                      for j in 1..=table.columns {
-                        let (value, _) = table.get_unchecked(i,j);
-                        values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                    for i in 0..table_brrw.rows {
+                      for j in 0..table_brrw.cols {
+                        match table_brrw.get_raw(i,j) {
+                          Ok(value) => {values.push((TableIndex::Index(i+1), TableIndex::Index(j+1), value));}
+                          _ => (),
+                        }
                       }
                     }
-                    changes.push(Change::Set{table_id: table.id, values});
-                    let txn = Transaction{changes};
-                    let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                    changes.push(Change::Set((table_brrw.id, values)));
+                    let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
                     let compressed_message = compress_to_vec(&message,6);
                     // Send the transaction to the remote core
                     match (&self.socket,program.remote_cores.get_mut(&core_id)) {
@@ -353,14 +355,13 @@ impl ProgramRunner {
                         websocket.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
                       }
                       _ => (),
-                    } 
+                    }
                   }
-                  None => (),
-                }
+                  Err(_) => (),
+                } 
               }, 
               false => (),
             }
-            */
           },
           (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_id)), _) => {
             match &self.socket {
@@ -423,11 +424,12 @@ impl ProgramRunner {
                       }
                     } 
                     Some(_) => {
-                      /*for register in &program.mech.runtime.needed_registers {
+                      for register in &program.mech.input {
+                        println!("I'm listening for {:?}", register);
                         let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
                         let compressed_message = compress_to_vec(&message,6);                    
                         let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
-                      }*/
+                      }
                     }
                   }
                 }
@@ -571,6 +573,10 @@ impl ProgramRunner {
               Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
             };
           },
+          (Ok(RunLoopMessage::PrintDebug), _) => {
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.blocks)));
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
+          },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             //println!("{:?}", program.mech.runtime);
             //client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
@@ -621,7 +627,6 @@ impl ProgramRunner {
           },
           x => println!("qq{:?}", x),
         }
-        //println!("{:?}", program.mech);
         client_outgoing.send(ClientMessage::Done);
       }
       /*if let Some(channel) = persistence_channel {
