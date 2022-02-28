@@ -577,6 +577,13 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.blocks)));
             client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
           },
+          (Ok(RunLoopMessage::PrintTable(table_id)), _) => {
+            let result = match program.mech.get_table_by_id(table_id) {
+              Ok(table_ref) => format!("{:?}", table_ref.borrow()),
+              Err(x) => format!("{:?}", x),
+            };
+            client_outgoing.send(ClientMessage::String(result));
+          },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             //println!("{:?}", program.mech.runtime);
             //client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
