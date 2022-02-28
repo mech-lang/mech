@@ -150,6 +150,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .value_name("REPL")
         .help("Start a REPL")
         .takes_value(false))
+      .arg(Arg::with_name("debug")
+        .short("d")
+        .long("debug")
+        .value_name("Debug")
+        .help("Print debug info")
+        .takes_value(false))
       .arg(Arg::with_name("inargs")
         .short("i")
         .long("inargs")
@@ -352,7 +358,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   } else if let Some(matches) = matches.subcommand_matches("run") {
 
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let repl = matches.is_present("repl_mode");    
+    let repl_flag = matches.is_present("repl_mode");    
+    let debug_flag = matches.is_present("debug");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
     let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
     let port: String = matches.value_of("port").unwrap_or("0").to_string();
@@ -528,7 +535,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Ok(ClientMessage::StepDone) => {
           println!("StepDone");
-          if repl {
+          if debug_flag{
+            mech_client.send(RunLoopMessage::PrintDebug);
+          }
+          if repl_flag {
             break 'receive_loop;
           }
           //let output_id: u64 = hash_str("mech/output"); 
