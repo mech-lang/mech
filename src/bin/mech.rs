@@ -547,6 +547,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           if debug_flag{
             mech_client.send(RunLoopMessage::PrintDebug);
           }
+          if out_tables.len() > 0 {
+            for table_name in &out_tables {
+              mech_client.send(RunLoopMessage::PrintTable(hash_str(table_name)));
+            }
+          }
           if repl_flag {
             break 'receive_loop;
           }
