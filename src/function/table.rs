@@ -946,7 +946,7 @@ impl MechFunctionCompiler for TableAppend {
           ((_,Column::U8(arg), ColumnIndex::All), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,src_rows-1), out: (out.clone(),dest_rows,new_rows-1)}),            
           x => {
             println!("{:?}",x);
-            return Err(MechError::GenericError(2844));
+            return Err(MechError::GenericError(2544));
           },
         }
       }
@@ -980,8 +980,11 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::F32(arg), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
                   (Column::U8(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::U64(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::F32(arg), Column::U64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   x => {
-                    return Err(MechError::GenericError(2844));
+                    println!("{:?}",x);
+                    return Err(MechError::GenericError(2744));
                   },
                 }
               }
@@ -995,7 +998,9 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::F32(arg), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
                   (Column::U8(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::U64(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   x => {
+                    println!("{:?}",x);
                     return Err(MechError::GenericError(2844));
                   },
                 }
