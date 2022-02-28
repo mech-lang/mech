@@ -2,14 +2,19 @@
 
 ## Version 0.1.0 Beta
 
-[ ] Errors
-[ ] Distribution
-[ ] Paralell operators
+[x] Errors
+[x] Distribution
+[x] Paralell operators
 [ ] GPU Processing
-[ ] Async blocks
+[ ] Automatic Differentiation
+[ ] Automatic Interpolation
+[x] Async blocks
+[ ] Capability system
 [ ] User defined functions
-[ ] Units
-[ ] Type checking
+[x] Units
+[x] Type checking
+[x] Multiple dispact
+[x] JIT Block Compiler
 [ ] Persistence
 [ ] Time travel debugging
 [ ] Native executables
