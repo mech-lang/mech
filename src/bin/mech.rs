@@ -155,7 +155,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .long("debug")
         .value_name("Debug")
         .help("Print debug info")
+        .multiple(true)
+        .required(false)
         .takes_value(false))
+      .arg(Arg::with_name("out")
+        .short("o")
+        .long("out")
+        .value_name("Out")
+        .help("Specify output table(s)")
+        .takes_value(true))
       .arg(Arg::with_name("inargs")
         .short("i")
         .long("inargs")
@@ -361,6 +369,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repl_flag = matches.is_present("repl_mode");    
     let debug_flag = matches.is_present("debug");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
+    let out_tables = matches.values_of("out").map_or(vec![], |out| out.collect());
     let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
     let port: String = matches.value_of("port").unwrap_or("0").to_string();
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
