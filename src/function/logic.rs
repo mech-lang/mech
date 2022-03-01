@@ -42,9 +42,9 @@ logic_infix_par_sv!(ParAndSV,&&);
 logic_infix_par_sv!(ParOrSV,||);
 logic_infix_par_sv!(ParXorSV,^);
 
-logic_compiler!(logic_and,AndSS,AndVS,AndSV,AndVV);
-logic_compiler!(logic_or,OrSS,OrVS,OrSV,OrVV);
-logic_compiler!(logic_xor,XorSS,XorVS,XorSV,XorVV);
+logic_compiler!(LogicAnd,AndSS,AndVS,AndSV,AndVV);
+logic_compiler!(LoigicOr,OrSS,OrVS,OrSV,OrVV);
+logic_compiler!(LogicXor,XorSS,XorVS,XorSV,XorVV);
 
 // Scalar : Scalars
 #[macro_export]

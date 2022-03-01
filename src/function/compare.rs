@@ -58,13 +58,13 @@ par_compare_infix_sv!(ParGreaterEqualSV,>=);
 par_compare_infix_sv!(ParEqualSV,==);
 par_compare_infix_sv!(ParNotEqualSV,!=);
 
-compare_eq_compiler!(compare_equal,Foo,EqualVS,EqualSV,EqualVV);
-compare_eq_compiler!(compare_not__equal,Foo,NotEqualVS,NotEqualSV,NotEqualVV);
+compare_eq_compiler!(CompareEqual,Foo,EqualVS,EqualSV,EqualVV);
+compare_eq_compiler!(CompareNotEqual,Foo,NotEqualVS,NotEqualSV,NotEqualVV);
 
-compare_compiler!(compare_greater__than,Foo,GreaterVS,GreaterSV,GreaterVV);
-compare_compiler!(compare_less__than,Foo,LessVS,LessSV,LessVV);
-compare_compiler!(compare_greater__than__equal,Foo,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV);
-compare_compiler!(compare_less__than__equal,Foo,LessEqualVS,LessEqualSV,LessEqualVV);
+compare_compiler!(CompareGreater,Foo,GreaterVS,GreaterSV,GreaterVV);
+compare_compiler!(CompareLess,Foo,LessVS,LessSV,LessVV);
+compare_compiler!(CompareGreaterEqual,Foo,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV);
+compare_compiler!(CompareLessEqual,Foo,LessEqualVS,LessEqualSV,LessEqualVV);
 
 // Vector : Vector
 #[macro_export]
