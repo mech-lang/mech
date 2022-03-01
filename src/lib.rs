@@ -239,6 +239,13 @@ impl WasmCore {
     mech.process_transaction(&txn);
 */
     let html_code = r#"
+# HTML
+
+This is the HTML machine. It's inside of the wasm crate right now, but I'll move it soon. to its proper crate in the machines directory.
+
+Timers
+  #time/timer = [|period<s> ticks<u64>|]
+
 Pointer events
   #html/event/pointer-move = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
   #html/event/pointer-down = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
@@ -388,8 +395,8 @@ Keyboard events
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //log!("Keydown");
-            //let table = (*wasm_core).core.get_table("html/event/key-down");
-            //log!("{:?}", table);
+            let table = (*wasm_core).core.get_table("html/event/key-down");
+            log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
       };
@@ -524,10 +531,8 @@ Keyboard events
 
   pub fn add_apps(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    let table = self.core.get_table("html/app");
-    match table {
+    match self.core.get_table("html/app") {
       Ok(app_table) => {        
-
         let app_table_brrw = app_table.borrow();
         for row in 1..=app_table_brrw.rows as usize {
           match (app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
@@ -552,7 +557,9 @@ Keyboard events
           }  
         }
       }
-      x => log!("4847 {:?}",x),
+      x => {
+        log!("4847 {:?}",x);
+      },
     }
     Ok(())
   }
