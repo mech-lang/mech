@@ -588,7 +588,6 @@ impl Block {
           self.input.insert((*table_id,TableIndex::All,TableIndex::All));
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
         }
-        println!("TWO");
         self.compile_tfm(Transformation::Function{
           name: *TABLE_DEFINE,
           arguments: vec![(0,table_id.clone(),indices.clone())],
@@ -597,7 +596,6 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
-        println!("THREEEE");
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
           arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
