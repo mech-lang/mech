@@ -11,6 +11,7 @@ pub enum Change {
   Set((TableName, Vec<(TableIndex, TableIndex, Value)>)),
   NewTable{table_id: u64, rows: usize, columns: usize},
   ColumnAlias{table_id: u64, column_ix: usize, column_alias: u64},
+  ColumnKind{table_id: u64, column_ix: usize, column_kind: ValueKind},
 }
 
 impl fmt::Debug for Change {
@@ -20,6 +21,7 @@ impl fmt::Debug for Change {
       Change::Set((table_name,args)) => write!(f,"Set({},{:#?})",table_name,args)?,
       Change::NewTable{table_id,rows,columns} => write!(f,"NewTable({},{:?},{:?})",humanize(table_id),rows,columns)?,
       Change::ColumnAlias{table_id,column_ix,column_alias} => write!(f,"ColumnAlias({},{:?},{})",humanize(table_id),column_ix,humanize(column_alias))?,
+      Change::ColumnKind{table_id,column_ix,column_kind} => write!(f,"ColumnKind({},{:?},{:?})",humanize(table_id),column_ix,column_kind)?,
     }
     Ok(())
   }
