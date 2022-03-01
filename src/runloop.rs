@@ -504,7 +504,7 @@ impl ProgramRunner {
               }
             };
             let mut new_block_ids = vec![];
-            match program.mech.insert_blocks(blocks) {
+            match program.mech.load_blocks(blocks) {
               Ok(mut nbi) => new_block_ids.append(&mut nbi),
               Err(x) => {
                 let resolved_errors: Vec<MechError> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();

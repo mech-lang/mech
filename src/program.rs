@@ -229,7 +229,7 @@ impl Program {
       let mut registry_compiler = Compiler::new();
       let blocks = registry_compiler.compile_str(&registry_file)?;
       let mut registry_core = Core::new();
-      registry_core.insert_blocks(blocks);
+      registry_core.load_blocks(blocks);
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table("mech/registry")?;
