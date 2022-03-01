@@ -1,3 +1,4 @@
+#![allow(warnings)]
 extern crate mech_core;
 extern crate mech_utilities;
 extern crate libm;
