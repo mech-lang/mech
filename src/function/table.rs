@@ -539,6 +539,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
         arg_cols.push(column.clone());
       }
       match out_col {
+        Column::Length(out) | Column::Speed(out) | Column::Time(out) |
         Column::F32(out) => {
           let mut out_ix = 0;
           for arg_col in arg_cols {
@@ -722,6 +723,9 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               o.set_col_kind(out_column_ix, arg_col.kind());
               let mut out_col = o.get_column_unchecked(out_column_ix);
               match (&arg_col, arg_ix, &out_col) {
+                (Column::Time(arg), ColumnIndex::All, Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
+                (Column::Speed(arg), ColumnIndex::All, Column::Speed(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
+                (Column::Length(arg), ColumnIndex::All, Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
                 (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),

@@ -599,6 +599,7 @@ impl Block {
         else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
+        else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
         else {
           println!("{:?}", humanize(kind));
           return Err(MechError::GenericError(8492))

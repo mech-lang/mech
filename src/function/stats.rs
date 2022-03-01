@@ -148,6 +148,7 @@ impl MechFunctionCompiler for StatsSum {
         let mut out_col = out_brrw.get_col_raw(col_ix)?;
         match (arg_col,row_index,out_col) {
           (Column::F32(col),ColumnIndex::Index(ix),Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::Length(col),ColumnIndex::All,Column::Length(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::All,Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::Bool(bix),Column::F32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
           (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
