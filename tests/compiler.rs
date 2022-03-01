@@ -346,12 +346,13 @@ test_mech!(quantitiy_add_m_km,"#test = 400<m> + 1<km>", Value::Length(F32::new(1
 
 test_mech!(quantitiy_add_ms_s,"#test = 4<s> + 100<ms>", Value::Time(F32::new(4.10)));
 
-test_mech!(quantitiy_x_plus_v_times_t,r#""
-block
-  x = 10<m>
-  y = 20<m/s>
-  z = 3<s>
-  #test = x + y * z"#, Value::Length(F32::new(70.0)));
+test_mech!(quantitiy_column_mat,r#"
+balls = [|x<m> vx<m/s>|
+          1    2
+          3    4]
+time = 2<s>
+distance-travelled = balls.x + balls.vx * time
+#test = stats/sum(column: distance-travelled)"#, Value::Length(F32::new(16.0)));
 
 // ## Ranges
 
