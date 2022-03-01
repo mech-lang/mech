@@ -1,16 +1,16 @@
 # Timer
 
 Start a timer
-  #time/timer += [period: 16]
+  #time/timer += [period: 16<ms>]
 
 Move the circles on each tick of the timer
-  ~ #time/timer.ticks{1}
+  ~ #time/timer.ticks
   #balls.x{¬#clicked} := #balls.x + #balls.vx
   #balls.y{¬#clicked} := #balls.y + #balls.vy
   #balls.vy{¬#clicked} := #balls.vy + (#gravity * 0.016)
 
 Bounce circles that have hit the boundary
-  ~ #time/timer.ticks{1}
+  ~ #time/timer.ticks
   ix = #balls.y > (500 - #balls.radius)
   #balls.vy{ix} := -#balls.vy * 0.9
   #balls.y{ix} := 500 - #balls.radius
