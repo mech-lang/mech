@@ -417,6 +417,8 @@ impl Table {
         (Column::Time(c), Value::Time(v)) |
         (Column::Speed(c), Value::Speed(v)) |
         (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
+        
+        (Column::F32(c), Value::U64(v)) => c.borrow_mut()[row] = v.into(),
         (Column::f32(c), Value::f32(v)) => c.borrow_mut()[row] = v,
         (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
         (Column::U8(c), Value::U8(v)) => c.borrow_mut()[row] = v,
