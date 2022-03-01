@@ -221,15 +221,35 @@ impl num_traits::identities::Zero for F32 {
 }
 
 mech_type_conversion!(U8,F32,f32);
+mech_type_conversion!(U8,U128,u128);
 mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
 mech_type_conversion!(U8,U16,u16);
 mech_type_conversion!(F32,U8,u8);
+mech_type_conversion!(F32,U16,u16);
+mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
+mech_type_conversion!(F32,U128,u128);
 mech_type_conversion!(U16,U8,u8);
+mech_type_conversion!(U16,U32,u32);
+mech_type_conversion!(U16,U64,u64);
+mech_type_conversion!(U16,U128,u128);
+mech_type_conversion!(U16,F32,f32);
 mech_type_conversion!(U32,U8,u8);
+mech_type_conversion!(U32,U16,u16);
+mech_type_conversion!(U32,U64,u64);
+mech_type_conversion!(U32,U128,u128);
+mech_type_conversion!(U32,F32,f32);
 mech_type_conversion!(U64,U8,u8);
+mech_type_conversion!(U64,U16,u16);
+mech_type_conversion!(U64,U128,u128);
+mech_type_conversion!(U64,U32,u32);
 mech_type_conversion!(U64,F32,f32);
+mech_type_conversion!(U128,F32,f32);
+mech_type_conversion!(U128,U8,u8);
+mech_type_conversion!(U128,U16,u16);
+mech_type_conversion!(U128,U32,u32);
+mech_type_conversion!(U128,U64,u64);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,usize);
 
