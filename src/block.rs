@@ -98,7 +98,6 @@ pub struct Block {
   pub state: BlockState,
   pub tables: Database,
   pub plan: Plan,
-  pub changes: Transaction,
   pub functions: Option<Rc<RefCell<core::Functions>>>,
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
@@ -117,7 +116,6 @@ impl Block {
       state: BlockState::New,
       tables: Database::new(),
       plan: Plan::new(),
-      changes: Vec::new(),
       functions: None,
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
@@ -494,6 +492,7 @@ impl Block {
   }
 
   pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
+    self.init_registers(&tfm);
     match self.state {
       BlockState::Unsatisfied => {
         self.pending_transformations.push(tfm.clone());
@@ -513,7 +512,42 @@ impl Block {
     Ok(())
   }
 
+  fn init_registers(&mut self, tfm: &Transformation) {
+    match tfm {
+      Transformation::TableDefine{table_id, indices, out} => {
+        if let TableId::Global(_) = table_id { 
+          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        }
+      }
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        if let TableId::Global(_) = table_id { 
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+        }
+      }
+      Transformation::Function{name, ref arguments, out} => {
+        for (_,table_id,indices) in arguments {
+          if let TableId::Global(_) = table_id {
+            self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          }
+        }
+        if let (TableId::Global(table_id),_,_) = out {
+          self.output.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+        }
+      }
+      Transformation::Whenever{table_id, indices} => {
+        self.triggers.clear();
+        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+      }
+      _ => (),
+    }
+  }
+
   fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
+    self.init_registers(&tfm);
     match &tfm {
       Transformation::Identifier{name, id} => {
         self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
@@ -581,7 +615,7 @@ impl Block {
           let rows = table.rows;
           table.resize(rows,*column_ix + 1);
         }
-        table.set_column_alias(*column_ix,*column_alias);
+        table.set_col_alias(*column_ix,*column_alias);
       },
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
@@ -710,7 +744,7 @@ impl Block {
         self.triggers.clear();
         self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
       }
-      Transformation::Function{name, ref arguments, out} => {
+      Transformation::Function{name, ref arguments, out} => {        
         // A list of all the functions that are
         // loaded onto this core.
         let fxns = self.functions.clone();
@@ -719,13 +753,6 @@ impl Block {
             let mut fxns = functions.borrow_mut();
             match fxns.get(*name) {
               Some(fxn) => {
-                // Add the input arguments as block input
-                for (_,table_id,indices) in arguments {
-                  if let TableId::Global(_) = table_id {
-                    self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-                    self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
-                  }
-                }
                 // A function knows how to compile itself
                 // based on what arguments are passed.
                 // Not all arguments are valid, in which
@@ -790,7 +817,10 @@ impl fmt::Debug for Block {
     if self.output.len() > 0 {
       for (table,row,col) in &self.output {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().to_string()
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table_id),
+          } 
         } else {
           format!("{:?}",table)
         };
@@ -809,10 +839,6 @@ impl fmt::Debug for Block {
     }
     block_drawing.add_title("🗺️","plan");
     block_drawing.add_line(format!("{:?}", &self.plan));
-    if self.changes.len() > 0 {
-      block_drawing.add_title("🛆", "changes");
-      block_drawing.add_line(format!("{:#?}", &self.changes));
-    }
     block_drawing.add_title("📅","tables");
     block_drawing.add_line(format!("{:?}", &self.tables));
     write!(f,"{:?}",block_drawing)?;
