@@ -20,6 +20,11 @@ lazy_static! {
     Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(1)))])),
     Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(2)))])),
   ];
+  static ref TXN5: Vec<Change> = vec![
+    Change::NewTable{table_id: hash_str("x"), rows: 1, columns: 1},
+    Change::ColumnKind{table_id: hash_str("x"), column_ix: 0, column_kind: ValueKind::F32},
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::F32(F32::new(42.0)))])),
+  ];
 }
 
 macro_rules! test_mech {
@@ -59,7 +64,7 @@ macro_rules! test_mech_txn {
       let input = String::from($input);
       let blocks = compiler.compile_str(&input)?;
       
-      core.load_blocks(blocks)?;
+      core.load_blocks(blocks);
       
       core.schedule_blocks()?;
 
@@ -1349,3 +1354,14 @@ Draw a shape to the canvas
 block
   #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(607.0)));
   
+
+// ## Async
+
+test_mech_txn!(async_satisfy_blocks,r#"
+block
+  #z = 123
+  #y = 456
+block
+  #b = #z + #y
+block
+  #test = #b + #x"#,TXN5,Value::F32(F32::new(621.0)));

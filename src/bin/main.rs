@@ -8,19 +8,23 @@ use std::rc::Rc;
 
 fn main() -> Result<(),MechError> {
 
+
+
+  let input = r#"
+block
+  #z = 123
+  #y = 456
+block
+  #b = #z + #y
+block
+  #a = #b + #x"#;
+
+  let input = String::from(input);
+
   let mut ast = Ast::new();
   let mut compiler = Compiler::new();
   let mut core = Core::new();
-
-  let parse_tree = parser::parse(r#"
-# Hello World
-
-x = 10 + 15
-y = 20
-z = [1 2 3 4]
-q = z + y + x  
-#test = stats/sum(row: q)"#)?;
-
+    let parse_tree = parser::parse(&input)?;
 println!("{:#?}", parse_tree);
 
   ast.build_syntax_tree(&parse_tree);
@@ -28,11 +32,11 @@ println!("{:#?}", parse_tree);
   println!("{:?}", ast.syntax_tree);
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
-
-  core.insert_blocks(blocks)?;
+  
+  core.load_blocks(blocks)?;
 
   core.schedule_blocks()?;
-
+  println!("Done");
   let ticks = 2;
  // println!("{:#?}", core.get_table("balls").unwrap().borrow());
 
@@ -44,10 +48,16 @@ println!("{:#?}", parse_tree);
     println!("{:#?}", core.get_table("ball").unwrap().borrow());
   }
   println!("{:#?}", core.get_table("test").unwrap().borrow());*/
-
-
+  let txn: Vec<Change> = vec![
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
+  ];
+  println!("Processing Txn...");
+  core.process_transaction(&txn);
+  println!("Done Txn.");
   println!("{:#?}", core.blocks);
 
+  println!("Core:");
   println!("{:#?}", core);
 
   
@@ -55,6 +65,5 @@ println!("{:#?}", parse_tree);
     println!("Answer:");
     println!("{:#?}", table.borrow());
   }
-
   Ok(())
 }
