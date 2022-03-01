@@ -259,12 +259,13 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
-            program.mech.process_transaction(&txn);   
+            program.mech.process_transaction(&txn);
+            /*   
             // Trigger any machines that are now ready due to the transaction
             //program.trigger_machines();  
             // For all changed registers, inform all listeners of changes
-            /* let mut set = HashSet::new();
-           for changed_register in &program.mech.runtime.aggregate_changed_this_round {
+            let mut set = HashSet::new();
+            for changed_register in &program.mech.runtime.aggregate_changed_this_round {
               if set.contains(&changed_register.table_id) {
                 continue;
               }
@@ -313,26 +314,30 @@ impl ProgramRunner {
             let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
             client_outgoing.send(ClientMessage::StepDone);
-
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
+            //println!("Remote core told us they're listening for {:?}", register);
             let (table_id,row,col) = register;
             match program.mech.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
-                println!("We have something they want: {:?}", register);
+                //println!("We have something they want: {:?}", register);
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
                 // Send over the table we have now
                 match program.mech.get_table_by_id(*table_id.unwrap()) {
                   Ok(table) => {
+                    //println!("{:?}", table);
                     // Decompose the table into changes for a transaction
                     let mut changes = vec![];
                     let table_brrw = table.borrow();
                     changes.push(Change::NewTable{table_id: table_brrw.id, rows: table_brrw.rows, columns: table_brrw.cols});
                     for ((alias,ix)) in table_brrw.col_map.iter() {
                       changes.push(Change::ColumnAlias{table_id: table_brrw.id, column_ix: *ix, column_alias: *alias});
+                    } 
+                    for (ix,kind) in table_brrw.col_kinds.iter().enumerate() {
+                      changes.push(Change::ColumnKind{table_id: table_brrw.id, column_ix: ix, column_kind: kind.clone()});
                     } 
                     let mut values = vec![];
                     for i in 0..table_brrw.rows {
@@ -424,8 +429,8 @@ impl ProgramRunner {
                       }
                     } 
                     Some(_) => {
-                      for register in &program.mech.input {
-                        println!("I'm listening for {:?}", register);
+                      for register in &program.mech.needed_registers() {
+                        //println!("I'm listening for {:?}", register);
                         let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
                         let compressed_message = compress_to_vec(&message,6);                    
                         let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
@@ -442,11 +447,11 @@ impl ProgramRunner {
             let remote_core_id = hash_str(&remote_core_address.to_string());
             let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
             // Tell the remote websocket what this core is listening for
-            /*for register in &program.mech.runtime.needed_registers {
-              let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
+            for needed_register in &program.mech.needed_registers() {
+              let message = bincode::serialize(&SocketMessage::Listening(*needed_register)).unwrap();
               let compressed_message = compress_to_vec(&message,6);
               ws_outgoing.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
-            }*/
+            }
             // Store the websocket sender
             program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
@@ -493,7 +498,7 @@ impl ProgramRunner {
                 match compiler.compile_str(&code) {
                   Ok(blocks) => blocks,
                   Err(x) => {
-                    println!("!!!{:?}", x);
+                    client_outgoing.send(ClientMessage::StepDone);
                     continue 'runloop;
                   }
                 }
@@ -512,7 +517,7 @@ impl ProgramRunner {
                   match program.mech.errors.remove(error) {
                     Some(mut ublocks) => {
                       for ublock in ublocks {
-                        if let Ok(nbi) = program.mech.insert_block(ublock) {
+                        if let Ok(nbi) = program.mech.load_block(ublock) {
                           new_block_ids.push(nbi);
                         }
                       }
@@ -520,40 +525,32 @@ impl ProgramRunner {
                     None => (),
                   }
                 }
-                // If there's still errors after downloading dependencies...
-                if program.mech.errors.len() > 0 {
-                  println!("@@@{:?}", program.mech.errors);
-                  continue 'runloop;
-                }
               }
             };
 
-            let block = program.mech.blocks.get(new_block_ids.last().unwrap()).unwrap().borrow();
-            let out_id = match block.transformations.last() {
-              Some(Transformation::Function{name,arguments,out}) => {
-                let (out_id,_,_) = out;
-                *out_id
-              } 
-              Some(Transformation::TableDefine{table_id,indices,out}) => {
-                *out
-              } 
-              Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
-                *dest_id
-              } 
-              Some(Transformation::TableAlias{table_id, alias}) => {
-                *table_id
-              } 
-              _ => TableId::Local(0),
-            };
+            if let Some(last_block_id) = new_block_ids.last() {
+              let block = program.mech.blocks.get(last_block_id).unwrap().borrow();
+              let out_id = match block.transformations.last() {
+                Some(Transformation::Function{name,arguments,out}) => {
+                  let (out_id,_,_) = out;
+                  *out_id
+                } 
+                Some(Transformation::TableDefine{table_id,indices,out}) => {
+                  *out
+                } 
+                Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
+                  *dest_id
+                } 
+                Some(Transformation::TableAlias{table_id, alias}) => {
+                  *table_id
+                } 
+                _ => TableId::Local(0),
+              };
+              let out_table = block.get_table(&out_id).unwrap();
+              client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
+            }
 
-            let out_table = block.get_table(&out_id).unwrap();
-            client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
-
-            /*
             // React to errors
-            for error in &program.mech.runtime.errors {
-              program.errors.insert(error.clone());
-            }*/
             if program.mech.errors.len() > 0 {
               client_outgoing.send(ClientMessage::String(format!("Errors found: {:?}", program.mech.errors.len())));
               //let error_string = format_errors();
