@@ -547,7 +547,7 @@ impl ProgramRunner {
             };
 
             let out_table = block.get_table(&out_id).unwrap();
-            println!("{:?}", out_table.borrow());
+            client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
 
             /*
             // React to errors
@@ -555,7 +555,7 @@ impl ProgramRunner {
               program.errors.insert(error.clone());
             }*/
             if program.mech.errors.len() > 0 {
-              println!("Errors found: {:?}", program.mech.errors.len());
+              client_outgoing.send(ClientMessage::String(format!("Errors found: {:?}", program.mech.errors.len())));
               //let error_string = format_errors();
               //client_outgoing.send(ClientMessage::String(error_string));
               //client_outgoing.send(ClientMessage::Exit(1));
