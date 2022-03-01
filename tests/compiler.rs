@@ -1297,7 +1297,7 @@ Keep the balls within the boundary height
   #balls.y{iy} := 100.0
   #balls.vy{iy} := #balls.vy * -0.80
 block  
-  #test = #balls.y{2} + #balls.vy{2}"#, TXN4, Value::F32(F32::new(81.8)));
+  #test = #balls.y{2} + #balls.vy{2}"#, TXN4, Value::F32(F32::new(90.4)));
 
 test_mech_txn!(bouncing_balls,r#"
 block
@@ -1347,5 +1347,5 @@ Draw a shape to the canvas
   ]
 
 block
-  #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(622.0)));
+  #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(607.0)));
   
