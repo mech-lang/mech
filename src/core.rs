@@ -159,12 +159,6 @@ impl Core {
         Change::NewTable{table_id, rows, columns} => {
           let table = Table::new(*table_id,*rows,*columns);
           self.database.borrow_mut().insert_table(table)?;
-          match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
-            Some(mut ublocks) => {
-              block_refs.append(&mut ublocks);
-            }
-            None => (),
-          }
         }
         Change::ColumnAlias{table_id, column_ix, column_alias} => {
           match self.database.borrow_mut().get_table_by_id(table_id) {
@@ -194,6 +188,15 @@ impl Core {
         }
       }
     }
+    for (changed_table_id,_,_) in &changed_registers {
+      match self.errors.remove(&MechError::MissingTable(*changed_table_id)) {
+        Some(mut ublocks) => {
+          block_refs.append(&mut ublocks);
+        }
+        None => (),
+      }
+    }
+    self.load_block_refs(block_refs.clone());
     self.schedule_blocks();
     for register in &changed_registers {
       self.step(register);
@@ -217,6 +220,15 @@ impl Core {
       Some(table) => Ok(table.clone()),
       None => Err(MechError::GenericError(2952)),
     }
+  }
+
+  pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> Result<Vec<BlockId>,MechError> {
+    let mut block_ids = vec![];
+    for block in blocks {
+      let block_id = self.load_block(block.clone())?;
+      block_ids.push(block_id);
+    }
+    Ok(block_ids)
   }
 
   pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
