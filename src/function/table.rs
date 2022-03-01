@@ -543,6 +543,7 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           let mut out_ix = 0;
           for arg_col in arg_cols {
             match arg_col {
+              Column::U64(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               Column::F32(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               Column::U8(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               x => (),
@@ -553,6 +554,18 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           let mut out_ix = 0;
           for arg_col in arg_cols {
             match arg_col {
+              Column::U64(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              Column::F32(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              Column::U8(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => (),
+            }
+          }
+        }
+        Column::U64(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::U64(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               Column::F32(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               Column::U8(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
               x => (),
@@ -666,12 +679,16 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             _ => {
               match (&arg_col, &arg_ix, &out_col) {
                 (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Empty, _, Column::Empty) => (),
-                x => {return Err(MechError::GenericError(6368));},
+                x => {
+                  println!("{:?}", x);
+                  return Err(MechError::GenericError(6368));
+                },
               };
               out_column_ix += 1;
             }
@@ -786,7 +803,10 @@ impl MechFunctionCompiler for TableSplit {
           for (col,arg_col) in arg_cols.iter().enumerate() {
             match arg_col {
               (_,Column::F32(_),_) => { dest_table.set_col_kind(col,ValueKind::F32); }
-              _ => {return Err(MechError::GenericError(6095));},
+              x => {
+                println!("{:?}",x);
+                return Err(MechError::GenericError(6095));
+              },
             }
           }
           block.global_database.borrow_mut().insert_table(dest_table);
@@ -807,7 +827,10 @@ impl MechFunctionCompiler for TableSplit {
                 }
               }
             }
-            _ => {return Err(MechError::GenericError(5995));},
+            x => {
+              println!("{:?}",x);
+              return Err(MechError::GenericError(5995));
+            },
           }
         }
       }
