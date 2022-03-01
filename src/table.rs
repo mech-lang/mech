@@ -224,21 +224,25 @@ impl Table {
           self.data[col] = Column::U8(column);
           self.col_kinds[col] = ValueKind::U8;
         },
+        (Column::U16(_), ValueKind::U16) => (),
         (Column::Empty, ValueKind::U16) => {
           let column = ColumnV::<U16>::new(vec![U16::new(0);self.rows]);
           self.data[col] = Column::U16(column);
           self.col_kinds[col] = ValueKind::U16;
         },
+        (Column::U32(_), ValueKind::U32) => (),
         (Column::Empty, ValueKind::U32) => {
           let column = ColumnV::<U32>::new(vec![U32::new(0);self.rows]);
           self.data[col] = Column::U32(column);
           self.col_kinds[col] = ValueKind::U32;
         },
+        (Column::U64(_), ValueKind::U64) => (),
         (Column::Empty, ValueKind::U64) => {
           let column = ColumnV::<U64>::new(vec![U64::new(0);self.rows]);
           self.data[col] = Column::U64(column);
           self.col_kinds[col] = ValueKind::U64;
         },
+        (Column::U128(_), ValueKind::U128) => (),
         (Column::Empty, ValueKind::U128) => {
           let column = ColumnV::<U128>::new(vec![U128::new(0);self.rows]);
           self.data[col] = Column::U128(column);
@@ -304,16 +308,19 @@ impl Table {
           self.data[col] = Column::F64(column);
           self.col_kinds[col] = ValueKind::F64;
         },*/
+        (Column::Bool(_), ValueKind::Bool) => (),
         (Column::Empty, ValueKind::Bool) => {
           let column = ColumnV::<bool>::new(vec![false;self.rows]);
           self.data[col] = Column::Bool(column);
           self.col_kinds[col] = ValueKind::Bool;
         },
+        (Column::String(_), ValueKind::String) => (),
         (Column::Empty, ValueKind::String) => {
           let column = ColumnV::<MechString>::new(vec![MechString::new();self.rows]);
           self.data[col] = Column::String(column);
           self.col_kinds[col] = ValueKind::String;
         },
+        (Column::Reference(_), ValueKind::Reference) => (),
         (Column::Empty, ValueKind::Reference) => {
           let column = ColumnV::<TableId>::new(vec![TableId::Local(0);self.rows]);
           self.data[col] = Column::Ref(column);
@@ -427,7 +434,7 @@ impl Table {
         (Column::Ref(c), Value::Reference(v)) => c.borrow_mut()[row] = v,
         (Column::Empty, Value::Empty) => (),
         x => {
-          println!("{:?}", x);
+          println!("!{:?}", x);
           return Err(MechError::GenericError(1219));
         },
       }
