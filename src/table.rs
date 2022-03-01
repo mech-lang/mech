@@ -193,7 +193,7 @@ impl Table {
     }
   }  
 
-  pub fn set_column_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {
+  pub fn set_col_alias(&mut self, ix: usize, alias: u64) -> Result<(),MechError> {
     if ix < self.cols {
       self.col_map.insert(ix,alias);
       Ok(())
