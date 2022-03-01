@@ -59,7 +59,7 @@ impl fmt::Debug for Functions {
 
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
+  unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
   pub errors: HashMap<MechError,Vec<BlockRef>>,
@@ -74,6 +74,11 @@ impl Core {
   pub fn new() -> Core {
     
     let mut functions = Functions::new();
+    // -----------------
+    // Standard Machines
+    // -----------------
+
+    // Math
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
@@ -81,18 +86,21 @@ impl Core {
     //functions.insert(*MATH_EXPONENT, MathExp{});
     functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
+    // Logic
     functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
-    functions.insert(*LOGIC_AND, Box::new(logic_and{}));
-    functions.insert(*LOGIC_OR, Box::new(logic_or{}));
-    functions.insert(*LOGIC_XOR, Box::new(logic_xor{}));
+    functions.insert(*LOGIC_AND, Box::new(LogicAnd{}));
+    functions.insert(*LOGIC_OR, Box::new(LoigicOr{}));
+    functions.insert(*LOGIC_XOR, Box::new(LogicXor{}));
 
-    functions.insert(*COMPARE_GREATER__THAN, Box::new(compare_greater__than{}));
-    functions.insert(*COMPARE_LESS__THAN, Box::new(compare_less__than{}));
-    functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(compare_greater__than__equal{}));
-    functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(compare_less__than__equal{}));
-    functions.insert(*COMPARE_EQUAL, Box::new(compare_equal{}));
-    functions.insert(*COMPARE_NOT__EQUAL, Box::new(compare_not__equal{}));
+    // Compare
+    functions.insert(*COMPARE_GREATER__THAN, Box::new(CompareGreater{}));
+    functions.insert(*COMPARE_LESS__THAN, Box::new(CompareLess{}));
+    functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(CompareGreaterEqual{}));
+    functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(CompareLessEqual{}));
+    functions.insert(*COMPARE_EQUAL, Box::new(CompareEqual{}));
+    functions.insert(*COMPARE_NOT__EQUAL, Box::new(CompareNotEqual{}));
 
+    // Table
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
@@ -101,15 +109,17 @@ impl Core {
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
     functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
     functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
-
+    
+    // Stats
     functions.insert(*STATS_SUM, Box::new(StatsSum{}));
 
+    // Set
     functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
      
     Core {
       blocks: HashMap::new(),
-      unsatisfied_blocks: HashMap::new(),
+      unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
       errors: HashMap::new(),
@@ -125,7 +135,7 @@ impl Core {
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
-    let mut registers = Vec::new();
+    let mut changed_registers = HashSet::new();
     let mut block_refs = Vec::new();
     for change in txn {
       match change {
@@ -136,7 +146,8 @@ impl Core {
               for (row,col,val) in adds {
                 match table_brrw.set(row, col, val.clone()) {
                   Ok(()) => {
-                    registers.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+                    // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
+                    changed_registers.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },
                   Err(x) => {return Err(x);}
                 }
@@ -163,7 +174,7 @@ impl Core {
               if *column_ix + 1 > table_brrw.cols {
                 table_brrw.resize(rows, column_ix + 1);
               }    
-              table_brrw.set_column_alias(*column_ix,*column_alias);     
+              table_brrw.set_col_alias(*column_ix,*column_alias);     
             }
             _ => {return Err(MechError::GenericError(9139));}
           }
@@ -184,7 +195,7 @@ impl Core {
       }
     }
     self.schedule_blocks();
-    for register in &registers {
+    for register in &changed_registers {
       self.step(register);
     }
     Ok(block_refs)
@@ -269,6 +280,8 @@ impl Core {
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
         let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());
+        self.unsatisfied_blocks.push(block_ref_c.clone());
+        //println!("{:?}", x);
         Err(MechError::GenericError(4444))
       },
     }
@@ -304,7 +317,7 @@ impl fmt::Debug for Core {
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     if self.unsatisfied_blocks.len() > 0 {
       box_drawing.add_title("😞","unsatisfied blocks");
-      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks.iter().map(|(k,v)|v.borrow().id).collect::<Vec<BlockId>>()));    
+      box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks));    
     }
     box_drawing.add_title("💻","functions");
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
