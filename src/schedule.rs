@@ -46,7 +46,7 @@ impl Schedule {
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
           if output_table_id == trigger_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
-              pblock.insert_block(&mut graph);
+              pblock.load_block(&mut graph);
             }
           }
         }
@@ -146,7 +146,7 @@ impl fmt::Debug for Node {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f,"[{}]",humanize(&self.block.borrow().id))?;
     for child in &self.children {
-      write!(f,"--->{:?}",&child.borrow())?;
+      write!(f,"--->{:?}\n",&child.borrow())?;
     }
     Ok(())
   }
@@ -166,7 +166,7 @@ impl BlockGraph {
     }
   }
 
-  pub fn insert_block(&mut self, block: &mut BlockGraph) -> Result<(),MechError> {
+  pub fn load_block(&mut self, block: &mut BlockGraph) -> Result<(),MechError> {
     {
       let mut root_block = self.root.borrow_mut();
       let rc = block.root.clone();

@@ -218,15 +218,15 @@ fn main() -> std::result::Result<(),MechError> {
 
   //println!("{:?}", block1);
   let block1_ref = Rc::new(RefCell::new(block1));
-  core.insert_block(block1_ref.clone());
+  core.load_block(block1_ref.clone());
 
   //println!("{:?}", block2);
   let block2_ref = Rc::new(RefCell::new(block2));
-  core.insert_block(block2_ref.clone());
+  core.load_block(block2_ref.clone());
 
   //println!("{:?}", block3);
   let block3_ref = Rc::new(RefCell::new(block3));
-  core.insert_block(block3_ref.clone());
+  core.load_block(block3_ref.clone());
 
   core.schedule_blocks();
 
