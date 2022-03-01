@@ -116,7 +116,6 @@ impl PartialOrd for Transformation {
 }
 
 impl Eq for Transformation { }
-
 impl PartialEq for Transformation {
   fn eq(&self, other: &Self) -> bool {
     hash_str(&format!("{:?}",self)) == hash_str(&format!("{:?}",other))
