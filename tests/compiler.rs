@@ -14,11 +14,11 @@ lazy_static! {
   ];
   static ref TXN3: Vec<Change> = vec![
     Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(F32::new(9.0)))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(F32::new(1.0)))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(1)))])),
   ];
   static ref TXN4: Vec<Change> = vec![
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(F32::new(1.0)))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(F32::new(2.0)))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(1)))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(2)))])),
   ];
 }
 
@@ -1298,4 +1298,54 @@ Keep the balls within the boundary height
   #balls.vy{iy} := #balls.vy * -0.80
 block  
   #test = #balls.y{2} + #balls.vy{2}"#, TXN4, Value::F32(F32::new(81.8)));
+
+test_mech_txn!(bouncing_balls,r#"
+block
+  #time/timer = [|period<s> ticks<u64>|]
+
+block
+  #time/timer += [period: 16<ms>]
+  #balls = [|x   y   vy|
+            20  10   2
+            100 50   1
+            300 100  3 ]
+  #gravity = 1
+
+block
+  ~ #time/timer.ticks
+  #balls.y := #balls.y + #balls.vy;
+  #balls.vy := #balls.vy + #gravity;
+
+block
+  ~ #time/timer.ticks
+  iy = #balls.y > 500
+  #balls.y{iy} := 500
+  #balls.vy{iy} := #balls.vy * -0.8
+
+Define the shapes
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: #balls.x  
+      center-y: #balls.y  
+      radius: 10     
+      fill: 0xFF0000    
+      line-width: 2
+    ]
+  ]
+
+Draw a shape to the canvas
+  shape = #circle
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| shape] 
+    parameters: [width: 500.0 height: 500.0]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
+
+block
+  #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(622.0)));
   
