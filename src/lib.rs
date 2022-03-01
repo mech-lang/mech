@@ -346,13 +346,18 @@ impl BoxPrinter {
               diff -= 1; 
             }
           }
-
+          if self.width < table.title.chars().count() {
+            self.width = table.title.chars().count() + 10;
+            let col_width = self.width / table.cols;
+            for (ix,mut w) in column_widths.iter_mut().enumerate() {
+              *w = col_width;
+            }
+          }
           // Print table header
           middle += "│";
           middle += &table.title;
           middle += &BoxPrinter::format_repeated_char(" ", self.width - table.title.chars().count());
           middle += "│\n";
-
           if table.column_aliases.len() > 0 {
             middle += "├";
             for col in 0..table.cols-1 {
