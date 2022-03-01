@@ -59,7 +59,7 @@ macro_rules! test_mech_txn {
       let input = String::from($input);
       let blocks = compiler.compile_str(&input)?;
       
-      core.insert_blocks(blocks)?;
+      core.load_blocks(blocks)?;
       
       core.schedule_blocks()?;
 
