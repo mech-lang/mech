@@ -2,6 +2,7 @@
 #![feature(alloc)]
 #![feature(drain_filter)]
 #![feature(get_mut_unchecked)]
+#![allow(warnings)]
 extern crate wasm_bindgen;
 extern crate hashbrown;
 #[macro_use]
@@ -164,7 +165,7 @@ pub struct WasmCore {
   /*nodes: HashMap<u64, Vec<u64>>,
   websocket: Option<web_sys::WebSocket>,
   remote_tables: HashSet<Register>,*/
-  event_id: u32,
+  event_id: u64,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   apps: HashSet<u64>,
   window: web_sys::Window,
@@ -239,19 +240,16 @@ impl WasmCore {
 */
     let html_code = r#"
 Pointer events
-  #html/event/pointer-move = [|x y target event-id|]
-  #html/event/pointer-down = [|x y target event-id|]
+  #html/event/pointer-move = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
+  #html/event/pointer-down = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
 
 Keyboard events
-  #html/event/key-up = [|key event-id|]
-  #html/event/key-down = [|key event-id|]
+  #html/event/key-up = [|key<string> event-id<u64>| "" 0]
+  #html/event/key-down = [|key<string> event-id<u64>| "" 0]"#;
 
-Location information
-  #html/location = [|hash host host-name href origin path-name protocol search|]"#;
-
-    //let mut compiler = Compiler::new();
-    //let blocks = compiler.compile_str(&html_code).unwrap();
-    //log!("{:?}", blocks);
+    let mut compiler = Compiler::new();
+    let blocks = compiler.compile_str(&html_code).unwrap();
+    mech.load_blocks(blocks);
 
     WasmCore {
       core: mech,
@@ -319,7 +317,7 @@ Location information
                   let timer_callback = closure();
                   let id = window.set_interval_with_callback_and_timeout_and_arguments_0(
                     timer_callback.as_ref().unchecked_ref(),
-                    period.unwrap() as i32,
+                    (period.unwrap() * 1000.0) as i32
                   ).unwrap();
                   self.timers.insert(row,timer_callback);
                 }
@@ -350,7 +348,7 @@ Location information
     let mut blocks: Vec<Block> = Vec::new();
     let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
     let len = blocks.len();
-    self.core.insert_blocks(blocks);
+    self.core.load_blocks(blocks);
     self.core.schedule_blocks();
     self.add_timers();
     self.add_apps();
@@ -386,10 +384,11 @@ Location information
               table_id, vec![
                 (TableIndex::Index(1), 
                 TableIndex::Alias(*EVENT__ID),
-                Value::U32(U32::new(eid)))])));
+                Value::U64(U64::new(eid)))])));
             (*wasm_core).process_transaction();
             (*wasm_core).render();
-            //let table = (*wasm_core).core.get_table(hash_str("balls"));
+            //log!("Keydown");
+            //let table = (*wasm_core).core.get_table("html/event/key-down");
             //log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
@@ -419,12 +418,12 @@ Location information
               table_id, vec![(
                 TableIndex::Index(1), 
                 TableIndex::Alias(*X),
-                Value::I32(x as i32))])));    
+                Value::F32(F32::new(x as f32)))])));    
             (*wasm_core).changes.push(Change::Set((
               table_id, vec![(
                 TableIndex::Index(1), 
                 TableIndex::Alias(*Y),
-                Value::I32(y as i32))])));              
+                Value::F32(F32::new(y as f32)))])));              
             /*(*wasm_core).changes.push(Change::Set{
               table_id: table_id, values: vec![
               (TableIndex::Index(1), 
@@ -437,7 +436,7 @@ Location information
               table_id, vec![(
                 TableIndex::Index(1), 
                 TableIndex::Alias(*EVENT__ID),
-                Value::U32(U32::new(eid)))])));  
+                Value::U64(U64::new(eid)))])));  
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //let table = (*wasm_core).core.get_table(hash_str("clicked"));
