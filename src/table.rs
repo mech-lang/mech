@@ -164,7 +164,10 @@ impl Table {
       TableIndex::Alias(alias) => {
         match self.col_map.get_index(&alias) {
           Ok(ix) => Ok(self.data[ix as usize].clone()),
-          Err(_) => Err(MechError::GenericError(2821)),
+          Err(x) => {
+            println!("{:?}",x);
+            Err(MechError::GenericError(2821))
+          },
         }
       }
       TableIndex::Index(0) => {
