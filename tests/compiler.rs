@@ -33,7 +33,7 @@ macro_rules! test_mech {
       let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        core.insert_block(Rc::new(RefCell::new(block)))?;
+        core.load_block(Rc::new(RefCell::new(block)))?;
       }
 
       let test: Value = $test;
