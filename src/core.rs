@@ -120,6 +120,10 @@ impl Core {
     }
   }
 
+  pub fn needed_registers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.input.difference(&self.output).cloned().collect()
+  }
+
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
     let mut registers = Vec::new();
     let mut block_refs = Vec::new();
@@ -142,7 +146,7 @@ impl Core {
           }
         }
         Change::NewTable{table_id, rows, columns} => {
-          let table = Table::new(*table_id,0,0);
+          let table = Table::new(*table_id,*rows,*columns);
           self.database.borrow_mut().insert_table(table)?;
           match self.errors.remove(&MechError::MissingTable(TableId::Global(*table_id))) {
             Some(mut ublocks) => {
@@ -164,8 +168,22 @@ impl Core {
             _ => {return Err(MechError::GenericError(9139));}
           }
         }
+        Change::ColumnKind{table_id, column_ix, column_kind} => {
+          match self.database.borrow_mut().get_table_by_id(table_id) {
+            Some(table) => {
+              let mut table_brrw = table.borrow_mut();   
+              let rows = table_brrw.rows;
+              if *column_ix + 1 > table_brrw.cols {
+                table_brrw.resize(rows, column_ix + 1);
+              }    
+              table_brrw.set_col_kind(*column_ix,column_kind.clone());     
+            }
+            _ => {return Err(MechError::GenericError(9139));}
+          }
+        }
       }
     }
+    self.schedule_blocks();
     for register in &registers {
       self.step(register);
     }
@@ -193,13 +211,13 @@ impl Core {
   pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
     let mut block_ids = vec![];
     for block in blocks {
-      let block_id = self.insert_block(Rc::new(RefCell::new(block.clone())))?;
+      let block_id = self.load_block(Rc::new(RefCell::new(block.clone())))?;
       block_ids.push(block_id);
     }
     Ok(block_ids)
   }
 
-  pub fn insert_block(&mut self, mut block_ref: BlockRef) -> Result<BlockId,MechError> {
+  pub fn load_block(&mut self, mut block_ref: BlockRef) -> Result<BlockId,MechError> {
     let block_ref_c = block_ref.clone();
     let mut block_brrw = block_ref.borrow_mut();
     let temp_db = block_brrw.global_database.clone();
@@ -236,7 +254,7 @@ impl Core {
           match self.errors.remove(&MechError::MissingTable(table_id)) {
             Some(mut ublocks) => {
               for ublock in ublocks {
-                self.insert_block(ublock);
+                self.load_block(ublock);
               }
             }
             None => (),
@@ -245,9 +263,10 @@ impl Core {
         Ok(id)
       }
       Err(x) => {
+        // Merge input and output
+        self.input = self.input.union(&mut block_brrw.input).cloned().collect();
+        self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
-        println!("{:?}", x);
-        println!("{:?}", mech_error);
         let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());
         Err(MechError::GenericError(4444))
