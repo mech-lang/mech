@@ -213,10 +213,10 @@ impl MechFunctionCompiler for LogicNot {
           ((_,Column::Bool(arg),_), Column::Bool(out)) => {
             block.plan.push(NotV{arg: arg.clone(), out: out.clone() });
           }
-          _ => {return Err(MechError::GenericError(1964));},
+          x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))};},
         }
       }
-      _ => {return Err(MechError::GenericError(1965));},
+      x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))};},
     }
     Ok(())
   }
@@ -239,7 +239,7 @@ macro_rules! logic_compiler {
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                 block.plan.push($op1{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
               }
-              _ => {return Err(MechError::GenericError(1340));},
+              x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))};},
             }
           }
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
@@ -249,10 +249,10 @@ macro_rules! logic_compiler {
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {
                 block.plan.push($op4{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() });
               }
-              _ => {return Err(MechError::GenericError(1342));},
+              x => {return Err(MechError{id: 1342, kind: MechErrorKind::GenericError(format!("{:?}",x))};},
             }
           }
-          _ => {return Err(MechError::GenericError(1341));},
+          x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))};},
         }
         Ok(())
       }

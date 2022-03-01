@@ -10,7 +10,13 @@ type Rows = usize;
 type Cols = usize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub enum MechError {
+pub struct MechError {
+  id: u64,
+  kind: MechErrorKind,
+}
+
+
+pub enum MechErrorKind {
   MissingTable(TableId),                             // TableId of missing table
   //DimensionMismatch(((Rows,Cols),(Rows,Cols))),    // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
@@ -22,5 +28,5 @@ pub enum MechError {
   MissingFunction(u64),                              // ID of missing function
   //TransformationPending(Transformation),           // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
-  GenericError(usize),
+  GenericError(String),
 }

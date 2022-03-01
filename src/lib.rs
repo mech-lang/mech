@@ -36,7 +36,7 @@ pub use self::core::Core;
 pub use self::table::*;
 pub use self::column::*;
 pub use self::value::*;
-pub use self::error::MechError;
+pub use self::error::*;
 pub use self::transformation::Transformation;
 pub use self::database::*;
 pub use self::function::*;
