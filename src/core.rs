@@ -47,6 +47,16 @@ impl Functions {
   
 }
 
+impl fmt::Debug for Functions {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"Functions...")?;
+    Ok(())
+  }
+}
+
+
+
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
   unsatisfied_blocks: HashMap<BlockId,BlockRef>,
@@ -180,7 +190,7 @@ impl Core {
     }
   }
 
-  pub fn insert_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
+  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
     let mut block_ids = vec![];
     for block in blocks {
       let block_id = self.insert_block(Rc::new(RefCell::new(block.clone())))?;
