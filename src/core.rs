@@ -219,7 +219,7 @@ impl Core {
     }
     // try to satisfy the block
     match block_brrw.ready() {
-      true => {
+      Ok(()) => {
         
         let id = block_brrw.gen_id();
 
@@ -244,8 +244,9 @@ impl Core {
         }
         Ok(id)
       }
-      false => {
+      Err(x) => {
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+        println!("{:?}", x);
         println!("{:?}", mech_error);
         let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());

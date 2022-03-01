@@ -164,10 +164,10 @@ impl Block {
     self.id
   }
 
-  pub fn ready(&mut self) -> bool {
+  pub fn ready(&mut self) -> Result<(),MechError> {
     match self.state {
-      BlockState::Ready => true,
-      BlockState::Disabled => false,
+      BlockState::Ready => Ok(()),
+      BlockState::Disabled => Err(MechError::GenericError(8940)),
       _ => {
         match &self.unsatisfied_transformation {
           Some((_,tfm)) => {
@@ -180,14 +180,17 @@ impl Block {
                 for tfm in pending_transformations.drain(..) {
                   self.add_tfm(tfm);
                 }
-                self.ready()
+                self.ready();
+                Ok(())
               }
-              Err(_) => false,
+              Err(x) => {
+                Err(x)
+              },
             }
           }
           None => {
             self.state = BlockState::Ready;
-            true
+            Ok(())
           }
         }
       }
@@ -585,6 +588,7 @@ impl Block {
           self.input.insert((*table_id,TableIndex::All,TableIndex::All));
           self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
         }
+        println!("TWO");
         self.compile_tfm(Transformation::Function{
           name: *TABLE_DEFINE,
           arguments: vec![(0,table_id.clone(),indices.clone())],
@@ -593,6 +597,7 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        println!("THREEEE");
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
           arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
