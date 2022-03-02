@@ -15,10 +15,10 @@ pub struct MechError {
   kind: MechErrorKind,
 }
 
-
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechErrorKind {
   MissingTable(TableId),                             // TableId of missing table
-  //DimensionMismatch(((Rows,Cols),(Rows,Cols))),    // Argument dimensions are mismatched ((row,col),(row,col))
+  DimensionMismatch(((Rows,Cols),(Rows,Cols))),      // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))), // (target) vs (actual) index
