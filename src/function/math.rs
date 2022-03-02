@@ -363,7 +363,7 @@ impl MechFunctionCompiler for MathNegate {
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
-          x => {return Err(MechError{id: 6001, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+          x => {return Err(MechError{id: 6001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
       TableShape::Scalar => {
@@ -373,10 +373,10 @@ impl MechFunctionCompiler for MathNegate {
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
           ((_,Column::F32(arg),_), Column::F32(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
-          x => {return Err(MechError{id: 6002, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+          x => {return Err(MechError{id: 6002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
-      x => {return Err(MechError{id: 6003, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+      x => {return Err(MechError{id: 6003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
@@ -439,7 +439,7 @@ macro_rules! math_compiler {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
-              x => {return Err(MechError{id: 6004, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+              x => {return Err(MechError{id: 6004, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
           (TableShape::Scalar, TableShape::Column(rows)) => {
@@ -459,7 +459,7 @@ macro_rules! math_compiler {
               ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::I64(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::I128(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               */
-              x => {return Err(MechError{id: 6005, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+              x => {return Err(MechError{id: 6005, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }   
           (TableShape::Column(rows), TableShape::Scalar) => {
@@ -502,12 +502,12 @@ macro_rules! math_compiler {
                   block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                 }
               }
-              x => {return Err(MechError{id: 6006, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+              x => {return Err(MechError{id: 6006, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }                   
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError::GenericError(6401));
+              return Err(MechError{id: 6007, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
@@ -520,7 +520,7 @@ macro_rules! math_compiler {
               ((_,Column::Length(lhs),_),(_,Column::Length(rhs),_),Column::Length(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
               ((_,Column::Speed(lhs),_),(_,Column::Speed(rhs),_),Column::Speed(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
               ((_,Column::Time(lhs),_),(_,Column::Time(rhs),_),Column::Time(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
-              x => {return Err(MechError{id: 6007, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+              x => {return Err(MechError{id: 6008, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
           (TableShape::Row(cols), TableShape::Scalar) => {
@@ -548,7 +548,7 @@ macro_rules! math_compiler {
                     block.plan.push($op3::<F32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
-                x => {return Err(MechError{id: 6008, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+                x => {return Err(MechError{id: 6009, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }
@@ -577,14 +577,14 @@ macro_rules! math_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
-                x => {return Err(MechError{id: 6009, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+                x => {return Err(MechError{id: 6010, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }            
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError::GenericError(6342));
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_row,*lhs_cols),(*rhs_rows,*rhs_cols)))});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -611,11 +611,11 @@ macro_rules! math_compiler {
                     block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
-                x => {return Err(MechError{id: 6010, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+                x => {return Err(MechError{id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }
-          x => {return Err(MechError{id: 6011, kind: MechErrorKind::GenericError(format!("{:?}", x)));},
+          x => {return Err(MechError{id: 6013, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }
