@@ -1,49 +1,69 @@
-extern crate mech_syntax;
-extern crate mech_core;
+use mech_syntax::parser;
+use mech_syntax::ast::Ast;
+use mech_syntax::compiler::Compiler;
+use mech_core::*;
 
-use mech_syntax::compiler::{Compiler, Node, Element};
-use mech_syntax::formatter::Formatter;
-use mech_core::Block;
-use mech_core::{Change, Transaction};
-use mech_core::{Value, TableIndex};
-use mech_core::hash_string;
-use mech_core::Core;
-use mech_core::{Quantity, ValueMethods, ToQuantity, QuantityMath};
-use std::time::{Duration, SystemTime};
-use std::mem;
-
+use std::cell::RefCell;
 use std::rc::Rc;
 
-fn main() {
+fn main() -> Result<(),MechError> {
 
-  // Some primitives
-  let input = String::from(r#"
-whatever you want here
-  x = 1:10
-  y = 11:20
-  #z = [x y]"#);
 
-  //compile_test(input.clone(), value);
 
+  let input = r#"
+block
+  #z = 123
+  #y = 456
+block
+  #b = #z + #y
+block
+  #a = #b + #x"#;
+
+  let input = String::from(input);
+
+  let mut ast = Ast::new();
   let mut compiler = Compiler::new();
-  let mut formatter = Formatter::new();
-  let mut core = Core::new(1_000_000, 20);
-  core.load_standard_library();
-  let programs = compiler.compile_string(input.clone());
+  let mut core = Core::new();
+    let parse_tree = parser::parse(&input)?;
+println!("{:#?}", parse_tree);
 
-  //println!("{:?}", programs);
-  //println!("{:?}", compiler.blocks);
-  //println!("{:?}", compiler.parse_tree);
-  println!("{:?}", compiler.syntax_tree);
-  for block in &compiler.blocks {
-    println!("{:?}", block);
+  ast.build_syntax_tree(&parse_tree);
+
+  println!("{:?}", ast.syntax_tree);
+
+  let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
+  
+  core.load_blocks(blocks)?;
+
+  core.schedule_blocks()?;
+  println!("Done");
+  let ticks = 2;
+ // println!("{:#?}", core.get_table("balls").unwrap().borrow());
+
+  /*for i in 1..=ticks {
+    let txn = vec![
+      Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(i as u64))])),
+    ];
+    core.process_transaction(&txn)?;
+    println!("{:#?}", core.get_table("ball").unwrap().borrow());
   }
-  core.runtime.register_blocks(programs[0].blocks.clone());
-  //core.runtime.register_block(compiler.blocks[0].clone());
-  //core.runtime.register_block(compiler.blocks[1].clone());
-  //core.runtime.register_block(compiler.blocks[2].clone());
-  //core.runtime.register_block(compiler.blocks[3].clone());
-  core.step();
-  println!("{:?}", core);
+  println!("{:#?}", core.get_table("test").unwrap().borrow());*/
+  let txn: Vec<Change> = vec![
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
+    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
+  ];
+  println!("Processing Txn...");
+  core.process_transaction(&txn);
+  println!("Done Txn.");
+  println!("{:#?}", core.blocks);
 
+  println!("Core:");
+  println!("{:#?}", core);
+
+  
+  if let Ok(table) = core.get_table("b") {
+    println!("Answer:");
+    println!("{:#?}", table.borrow());
+  }
+  Ok(())
 }
