@@ -3,7 +3,7 @@
 // ## Prelude
 
 use crate::lexer::Token;
-use mech_core::MechError;
+use mech_core::*;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -367,14 +367,14 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       if unparsed != "" {
         println!("{:?}", tree);
         println!("{:?}", unparsed);
-        Err(MechError::GenericError(5424))
+        Err(MechError{id: 0000, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
       println!("{:?}", q);
-      Err(MechError::GenericError(5423))
+      Err(MechError{id: 0000, kind: MechErrorKind::None})
     }
   }
 }
@@ -388,13 +388,13 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        Err(MechError::GenericError(5434))
+        Err(MechError{id: 0000, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
-      Err(MechError::GenericError(5433))
+      Err(MechError{id: 0000, kind: MechErrorKind::None})
     }
   }
 }

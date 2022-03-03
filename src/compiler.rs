@@ -97,7 +97,7 @@ impl Compiler {
     if blocks.len() > 0 {
       Ok(blocks)
     } else {
-      Err(MechError::GenericError(2292))
+      Err(MechError{id: 0000, kind: MechErrorKind::None})
     }
   }
 
