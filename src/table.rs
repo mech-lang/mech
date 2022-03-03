@@ -143,7 +143,7 @@ impl Table {
     if col_ix < self.cols {
       Ok(self.data[col_ix].clone())
     } else {
-      Err(MechError::GenericError(6353)) 
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -166,30 +166,30 @@ impl Table {
           Ok(ix) => Ok(self.data[ix as usize].clone()),
           Err(x) => {
             println!("{:?}",x);
-            Err(MechError::GenericError(2821))
+            Err(MechError{id: 0001, kind: MechErrorKind::None})
           },
         }
       }
       TableIndex::Index(0) => {
-        Err(MechError::GenericError(2825))
+        Err(MechError{id: 0001, kind: MechErrorKind::None})
       }
       TableIndex::Index(ix) => {
         if *ix <= self.cols { 
           Ok(self.data[*ix-1].clone())
         } else {
-          Err(MechError::GenericError(2822))
+          Err(MechError{id: 0001, kind: MechErrorKind::None})
         }
       }
       TableIndex::All => {
         if self.cols == 1 {
           Ok(self.data[0].clone())
         } else {
-          Err(MechError::GenericError(2823))
+          Err(MechError{id: 0001, kind: MechErrorKind::None})
         }
       }
       TableIndex::ReshapeColumn |
       TableIndex::Table(_) |
-      TableIndex::None => Err(MechError::GenericError(2824)), 
+      TableIndex::None => Err(MechError{id: 0001, kind: MechErrorKind::None}), 
     }
   }  
 
@@ -198,7 +198,7 @@ impl Table {
       self.col_map.insert(ix,alias);
       Ok(())
     } else {
-      Err(MechError::GenericError(1210))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -331,18 +331,18 @@ impl Table {
         },
         x => {
           println!("{:?}", x);
-          return Err(MechError::GenericError(1229));
+          return Err(MechError{id: 0001, kind: MechErrorKind::None});
         },
       }
       Ok(())
     } else {
-      Err(MechError::GenericError(1215))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
   pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
     match (row, &self.get_column(&col)?) {
-      (TableIndex::Index(0),_) => Err(MechError::GenericError(1298)),
+      (TableIndex::Index(0),_) => Err(MechError{id: 0001, kind: MechErrorKind::None}),
       (TableIndex::Index(row),Column::f32(c)) => Ok(Value::f32(c.borrow()[row-1])),
       (TableIndex::Index(row),Column::F32(c)) => Ok(Value::F32(c.borrow()[row-1])),
       (TableIndex::Index(row),Column::F64(c)) => Ok(Value::F64(c.borrow()[row-1])),
@@ -360,7 +360,7 @@ impl Table {
       (TableIndex::Index(row),Column::String(c)) => Ok(Value::String(c.borrow()[row-1].clone())),
       (TableIndex::Index(row),Column::Ref(c)) => Ok(Value::Reference(c.borrow()[row-1].clone())),
       (_,Column::Empty) => Ok(Value::Empty),
-      _ => Err(MechError::GenericError(1299)),
+      _ => Err(MechError{id: 0001, kind: MechErrorKind::None}),
     }
   }
 
@@ -371,10 +371,10 @@ impl Table {
         self.data[col_ix] = column;
         Ok(())
       } else {
-        Err(MechError::GenericError(6354)) 
+        Err(MechError{id: 0001, kind: MechErrorKind::None})
       }
     } else {
-      Err(MechError::GenericError(6355)) 
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -385,26 +385,26 @@ impl Table {
       },
       x => {
         println!("{:?}",x);
-        Err(MechError::GenericError(1216))
+        Err(MechError{id: 0001, kind: MechErrorKind::None})
       }
     }
   }
 
   pub fn set(&self, row: &TableIndex, col: &TableIndex, val: Value ) -> Result<(),MechError> {
     let row_ix = match row {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7495))},
+      TableIndex::Index(0) => {return Err(MechError{id: 0001, kind: MechErrorKind::None});},
       TableIndex::Index(ix) => ix - 1,
       _ => 0,
     };
     let col_ix = match col {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7123))},
+      TableIndex::Index(0) => {return Err(MechError{id: 0001, kind: MechErrorKind::None})},
       TableIndex::Index(ix) => ix - 1,
       TableIndex::Alias(alias) => {
         match self.col_map.get_index(alias) {
           Ok(ix) => ix,
           Err(x) => {
             println!("{:?}",x);
-            return Err(MechError::GenericError(2389))
+            return Err(MechError{id: 0001, kind: MechErrorKind::None})
           }
         }
       }
@@ -440,28 +440,28 @@ impl Table {
         (Column::Empty, Value::Empty) => (),
         x => {
           println!("!{:?}", x);
-          return Err(MechError::GenericError(1219));
+          return Err(MechError{id: 0001, kind: MechErrorKind::None});
         },
       }
       Ok(())
     } else {
-      Err(MechError::GenericError(1212))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
   
   pub fn get(&self, row: &TableIndex, col: &TableIndex) -> Result<Value,MechError> {
     let row_ix = match row {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7497))},
+      TableIndex::Index(0) => {return Err(MechError{id: 0001, kind: MechErrorKind::None})},
       TableIndex::Index(ix) => ix - 1,
       _ => 0,
     };
     let col_ix = match col {
-      TableIndex::Index(0) => {return Err(MechError::GenericError(7124))},
+      TableIndex::Index(0) => {return Err(MechError{id: 0001, kind: MechErrorKind::None})},
       TableIndex::Index(ix) => ix - 1,
       TableIndex::Alias(alias) => {
         match self.col_map.get_index(alias) {
           Ok(ix) => ix,
-          Err(_) => {return Err(MechError::GenericError(2384))}
+          Err(_) => {return Err(MechError{id: 0001, kind: MechErrorKind::None})}
         }
       }
       _ => 0,
@@ -494,11 +494,11 @@ impl Table {
         Column::Empty => Ok(Value::Empty),
         x => {
           println!("{:?}", x);
-          Err(MechError::GenericError(1209))
+          Err(MechError{id: 0001, kind: MechErrorKind::None})
         },
       }
     } else {
-      Err(MechError::GenericError(1211))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -512,7 +512,7 @@ impl Table {
       let col = ix % self.cols;
       self.get_raw(row,col)
     } else {
-      Err(MechError::GenericError(1213))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -534,7 +534,7 @@ impl Table {
     if ix < self.rows * self.cols {
       Ok((row,col))
     } else {
-      Err(MechError::LinearSubscriptOutOfBounds((ix,self.rows*self.cols)))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
   
@@ -544,7 +544,7 @@ impl Table {
       let col = ix % self.cols;
       self.set_raw(row,col, val)
     } else {
-      Err(MechError::GenericError(1214))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
@@ -608,14 +608,14 @@ impl AliasMap {
       self.alias_to_ix.insert(alias,ix);
       Ok(())
     } else {
-      Err(MechError::GenericError(8210))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 
   pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
     match self.alias_to_ix.get(alias) {
       Some(ix) => Ok(*ix),
-      None => Err(MechError::GenericError(8211)),
+      None => Err(MechError{id: 0001, kind: MechErrorKind::None}),
     }
   }
 
@@ -623,7 +623,7 @@ impl AliasMap {
     if ix < &self.capacity {
       Ok(self.ix_to_alias[*ix])
     } else {
-      Err(MechError::GenericError(8212))
+      Err(MechError{id: 0001, kind: MechErrorKind::None})
     }
   }
 

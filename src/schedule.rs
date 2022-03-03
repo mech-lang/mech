@@ -75,10 +75,10 @@ impl Schedule {
         for ref mut block_graph in block_graphs.iter_mut() {
           block_graph.solve();
         }
-        return Ok(())
+        Ok(())
       }
       None => {
-        return Err(MechError::GenericError(8519))
+        Err(MechError{id: 0001, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
       }
     }
   }

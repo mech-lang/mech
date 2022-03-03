@@ -46,14 +46,14 @@ impl Database {
     for (id,other_table) in other_tables.drain() {
       match self.tables.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(_) => {return Err(MechError::GenericError(4212));},
+        Err(x) => {return Err(MechError{id: 0001, kind: MechErrorKind::None});},
       }
     }
     let mut other_table_aliases = other.table_alias_to_id.clone();
     for (id,other_table) in other_table_aliases.drain() {
       match self.table_alias_to_id.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(_) => {return Err(MechError::GenericError(4213));},
+        Err(x) => {return Err(MechError{id: 0001, kind: MechErrorKind::None});},
       }
     }
     Ok(())
@@ -61,7 +61,7 @@ impl Database {
 
   pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
-      Err(_) => Err(MechError::GenericError(6333)),
+      Err(x) => {return Err(MechError{id: 0001, kind: MechErrorKind::None});},
       Ok(x) => Ok(*x), 
     }
   }
@@ -69,7 +69,7 @@ impl Database {
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.tables.try_insert(table.id, Rc::new(RefCell::new(table))) {
       Ok(x) => Ok(x.clone()),
-      Err(_) => Err(MechError::GenericError(4211)),
+      Err(x) => {return Err(MechError{id: 0001, kind: MechErrorKind::None});},
     }
   }
 

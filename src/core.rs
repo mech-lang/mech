@@ -62,7 +62,7 @@ pub struct Core {
   unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
-  pub errors: HashMap<MechError,Vec<BlockRef>>,
+  pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
   pub schedule: Schedule,
@@ -149,11 +149,11 @@ impl Core {
                     // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
                     changed_registers.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
                   },
-                  Err(x) => {return Err(x);}
+                  Err(x) => { return Err(MechError{id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
                 }
               }
             }
-            None => {return Err(MechError::GenericError(4219));}
+            None => {return Err(MechError{id: 1001, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
           }
         }
         Change::NewTable{table_id, rows, columns} => {
@@ -170,7 +170,7 @@ impl Core {
               }    
               table_brrw.set_col_alias(*column_ix,*column_alias);     
             }
-            _ => {return Err(MechError::GenericError(9139));}
+            x => {return Err(MechError{id: 1002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
         Change::ColumnKind{table_id, column_ix, column_kind} => {
@@ -183,13 +183,13 @@ impl Core {
               }    
               table_brrw.set_col_kind(*column_ix,column_kind.clone());     
             }
-            _ => {return Err(MechError::GenericError(9139));}
+            x => {return Err(MechError{id: 1003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
       }
     }
     for (changed_table_id,_,_) in &changed_registers {
-      match self.errors.remove(&MechError::MissingTable(*changed_table_id)) {
+      match self.errors.remove(&MechErrorKind::MissingTable(*changed_table_id)) {
         Some(mut ublocks) => {
           block_refs.append(&mut ublocks);
         }
@@ -211,14 +211,14 @@ impl Core {
   pub fn get_table(&mut self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
-      None => Err(MechError::GenericError(9999)),
+      None => {return Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
   pub fn get_table_by_id(&mut self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
-      None => Err(MechError::GenericError(2952)),
+      None => {return Err(MechError{id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
     }
   }
 
@@ -274,7 +274,7 @@ impl Core {
         let block_output = block_brrw.output.clone();
         self.blocks.insert(id,block_ref_c.clone());
         for (table_id,_,_) in block_output {
-          match self.errors.remove(&MechError::MissingTable(table_id)) {
+          match self.errors.remove(&MechErrorKind::MissingTable(table_id)) {
             Some(mut ublocks) => {
               for ublock in ublocks {
                 self.load_block(ublock);
@@ -290,11 +290,10 @@ impl Core {
         self.input = self.input.union(&mut block_brrw.input).cloned().collect();
         self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
         let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
-        let blocks_with_errors = self.errors.entry(mech_error.clone()).or_insert(Vec::new());
+        let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
         blocks_with_errors.push(block_ref_c.clone());
         self.unsatisfied_blocks.push(block_ref_c.clone());
-        //println!("{:?}", x);
-        Err(MechError::GenericError(4444))
+        Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))})
       },
     }
   }
