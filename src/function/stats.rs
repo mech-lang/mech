@@ -134,7 +134,7 @@ pub struct StatsSum{}
 impl MechFunctionCompiler for StatsSum {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     if arguments.len() > 1 {
-      return Err(MechError::GenericError(6352));
+      return Err(MechError{id: 1231, kind: MechErrorKind::GenericError("Too many function arguments".to_string())});
     }
     let (out_table_id, _, _) = out;
     let arg_col = block.get_arg_column(&arguments[0])?;
@@ -152,10 +152,7 @@ impl MechFunctionCompiler for StatsSum {
           (Column::F32(col),ColumnIndex::All,Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::Bool(bix),Column::F32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
           (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
-          x => {
-            println!("{:?}", x);
-            return Err(MechError::GenericError(6356));
-          }
+          x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       else if *arg_name == *ROW {
@@ -176,8 +173,8 @@ impl MechFunctionCompiler for StatsSum {
           block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()});
         }
       }
-      else {
-        return Err(MechError::GenericError(6357));
+      else {  
+        return Err(MechError{id: 1231, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
       }
     } 
     Ok(())

@@ -584,7 +584,7 @@ macro_rules! math_compiler {
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_row,*lhs_cols),(*rhs_rows,*rhs_cols)))});
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)))});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;

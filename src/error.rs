@@ -28,5 +28,10 @@ pub enum MechErrorKind {
   MissingFunction(u64),                              // ID of missing function
   //TransformationPending(Transformation),           // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
+  ZeroIndex,                                          // Zero cannot ever be used as an index.
+  BlockDisabled,
   GenericError(String),
+  Unhandled,
+  UnknownFunctionArgument(u64),
+  None,
 }
