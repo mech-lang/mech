@@ -11,8 +11,8 @@ type Cols = usize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MechError {
-  id: u64,
-  kind: MechErrorKind,
+  pub id: u64,
+  pub kind: MechErrorKind,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
