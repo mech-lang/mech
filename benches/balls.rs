@@ -7,7 +7,7 @@ use test::Bencher;
 
 extern crate mech_core;
 
-use mech_core::{Core, hash_string, Register, humanize, Table, TableId, TableIndex, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
+use mech_core::{Core, hash_str, Register, humanize, Table, TableId, TableIndex, Value, ValueMethods, IndexIterator, IndexRepeater, Change, Transaction, Transformation, Block, Store, QuantityMath, Quantity};
 use std::hash::Hasher;
 use std::time::{Duration, SystemTime};
 use std::io;
@@ -20,19 +20,19 @@ fn init(balls: usize) -> Core {
   let mut core = Core::new(balls * 4 * 4, 1000);
   core.load_standard_library();
 
-  let period = hash_string("period");
-  let ticks = hash_string("ticks");
-  let time_timer = hash_string("time/timer");
-  let gravity = hash_string("gravity");
-  let balls_id = hash_string("balls");
-  let x_id = hash_string("x");
-  let y_id = hash_string("y");
-  let vx_id = hash_string("vx");
-  let vy_id = hash_string("vy");
-  let math_add = hash_string("math/add");
-  let table_range = hash_string("table/range");
-  let table_horzcat = hash_string("table/horizontal-concatenate");
-  let table_set = hash_string("table/set");
+  let period = hash_str("period");
+  let ticks = hash_str("ticks");
+  let time_timer = hash_str("time/timer");
+  let gravity = hash_str("gravity");
+  let balls_id = hash_str("balls");
+  let x_id = hash_str("x");
+  let y_id = hash_str("y");
+  let vx_id = hash_str("vx");
+  let vy_id = hash_str("vy");
+  let math_add = hash_str("math/add");
+  let table_range = hash_str("table/range");
+  let table_horzcat = hash_str("table/horizontal-concatenate");
+  let table_set = hash_str("table/set");
 
   let mut block = Block::new(balls * 10 * 10);
   let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
@@ -266,8 +266,8 @@ x   y   20  0]"#.to_string(), vec![
 fn balls_1_000(b:&mut Bencher){
 
   let mut core = init(1000);
-  let time_timer = hash_string("time/timer");
-  let ticks = hash_string("ticks");
+  let time_timer = hash_str("time/timer");
+  let ticks = hash_str("ticks");
   let txn = Transaction{
   changes: vec![
     Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}
@@ -282,8 +282,8 @@ fn balls_1_000(b:&mut Bencher){
 fn balls_10_000(b:&mut Bencher){
 
   let mut core = init(10000);
-  let time_timer = hash_string("time/timer");
-  let ticks = hash_string("ticks");
+  let time_timer = hash_str("time/timer");
+  let ticks = hash_str("ticks");
   let txn = Transaction{
   changes: vec![
     Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}
@@ -299,8 +299,8 @@ fn balls_10_000(b:&mut Bencher){
 fn balls_100_000(b:&mut Bencher){
 
   let mut core = init(100000);
-  let time_timer = hash_string("time/timer");
-  let ticks = hash_string("ticks");
+  let time_timer = hash_str("time/timer");
+  let ticks = hash_str("ticks");
   let txn = Transaction{
   changes: vec![
     Change::Set{table_id: time_timer, values: vec![(TableIndex::Index(1), TableIndex::Alias(ticks), Value::from_u64(1 as u64))]}

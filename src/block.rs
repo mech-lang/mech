@@ -1,29 +1,4 @@
-use table::{Table, TableId, TableIndex};
-use value::{Value, ValueMethods, NumberLiteralKind};
-use index::{ValueIterator, TableIterator, IndexIterator, AliasIterator, ConstantIterator, IndexRepeater};
-use database::{Database, Store, Change, Transaction};
-use hashbrown::{HashMap, HashSet};
-use quantities::{QuantityMath};
-use operations::{MechFunction, Argument};
-use errors::{Error, ErrorType};
-use std::cell::RefCell;
-use std::cell::Cell;
-use std::sync::Arc;
-use std::rc::Rc;
-use rust_core::fmt;
-use ::humanize;
-use ::hash_string;
-
-lazy_static! {
-  static ref TABLE_COPY: u64 = hash_string("table/copy");
-  static ref TABLE_SPLIT: u64 = hash_string("table/split");
-  static ref GRAMS: u64 = hash_string("g");
-  static ref KILOGRAMS: u64 = hash_string("kg");
-  static ref HERTZ: u64 = hash_string("Hz");
-  static ref SECONDS: u64 = hash_string("s");
-}
-
-// ## Block
+// # Block
 
 // Blocks are the ubiquitous unit of code in a Mech program. Users do not write functions in Mech, as in
 // other languages. Blocks consist of a number of "Transforms" that read values from tables and reshape
@@ -31,581 +6,75 @@ lazy_static! {
 // output are tables. Blocks have their own internal table store. Local tables can be defined within a
 // block, which allows the programmer to break a computation down into steps. The result of the computation
 // is then output to one or more global tables, which triggers the execution of other blocks in the network.
+
+// ## Prelude
+
+use crate::*;
+use crate::function::{
+  MechFunction,
+  table::*,
+};
+use std::cell::RefCell;
+use std::rc::Rc;
+use hashbrown::{HashMap, HashSet};
+use std::fmt;
+use serde::Serialize;
+use std::mem::transmute;
+use std::convert::TryInto;
+
+lazy_static! {
+  pub static ref cF32L: u64 = hash_str("f32-literal");
+  pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cU8: u64 = hash_str("u8");
+  pub static ref cU16: u64 = hash_str("u16");
+  pub static ref cU32: u64 = hash_str("u32");
+  pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cHZ: u64 = hash_str("hz");
+  pub static ref cMS: u64 = hash_str("ms");
+  pub static ref cS: u64 = hash_str("s");
+  pub static ref cM: u64 = hash_str("m");
+  pub static ref cM_S: u64 = hash_str("m/s");
+  pub static ref cKM: u64 = hash_str("km");
+  pub static ref cHEX: u64 = hash_str("hex");
+  pub static ref cDEC: u64 = hash_str("dec");
+  pub static ref cSTRING: u64 = hash_str("string");
+}
+
 #[derive(Clone)]
-pub struct Block {
-  pub id: u64,
-  pub state: BlockState,
-  pub text: String,
-  pub name: String,
-  pub ready: HashSet<Register>,
-  pub input: HashSet<Register>,
-  pub output: HashSet<Register>,
-  pub output_dependencies: HashSet<Register>,
-  pub output_dependencies_ready: HashSet<Register>,
-  pub register_aliases: HashMap<Register, HashSet<Register>>,
-  pub tables: HashMap<u64, Arc<RefCell<Table>>>,
-  pub store: Arc<Store>,
-  pub transformations: Vec<(String, Vec<Transformation>)>,
-  pub plan: Vec<Transformation>,
-  pub changes: Vec<Change>,
-  pub errors: HashSet<Error>,
-  pub triggered: usize,
-  pub function_arguments: HashMap<Transformation, Vec<Rc<RefCell<Argument>>>>,
-  pub global_database: Arc<RefCell<Database>>,
+pub struct Plan{
+  plan: Vec<Rc<dyn MechFunction>>
 }
 
-impl Block {
-  pub fn new(capacity: usize) -> Block {
-    // We create a dummy database here which will be replaced when the block is registered with
-    // a runtime. I tried using an option but I didn't know how to unwrap it without copying
-    // it.
-    let database = Arc::new(RefCell::new(Database::new(1)));
-    Block {
-      id: 0,
-      text: String::new(),
-      name: String::new(),
-      ready: HashSet::new(),
-      input: HashSet::new(),
-      output: HashSet::new(),
-      output_dependencies: HashSet::new(),
-      output_dependencies_ready: HashSet::new(),
-      register_aliases: HashMap::new(),
-      state: BlockState::New,
-      tables: HashMap::new(),
-      store: Arc::new(Store::new(capacity)),
-      transformations: Vec::new(),
+impl Plan {
+  pub fn new () -> Plan {
+    Plan {
       plan: Vec::new(),
-      changes: Vec::new(),
-      errors: HashSet::new(),
-      function_arguments: HashMap::new(),
-      triggered: 0,
-      global_database: database,
     }
   }
-
-  pub fn gen_id(&mut self) {
-    let mut words = "".to_string();
-    for tfm in &self.transformations {
-      words = format!("{:?}{:?}", words, tfm);
-    }
-    self.id = seahash::hash(words.as_bytes()) & 0x00FFFFFFFFFFFFFF;
+  pub fn push<S: MechFunction + 'static>(&mut self, mut fxn: S) {
+    fxn.solve();
+    self.plan.push(Rc::new(fxn));
   }
 
-  pub fn register_transformations(&mut self, tfm_tuple: (String, Vec<Transformation>)) {
-    self.transformations.push(tfm_tuple.clone());
-
-    let (_, transformations) = tfm_tuple;
-
-    for tfm in transformations {
-      match tfm {
-        Transformation::TableAlias{table_id, alias} => {
-          match table_id {
-            TableId::Global(id) => {
-
-            }
-            TableId::Local(id)=> {
-              let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-              store.table_id_to_alias.insert(table_id, alias);
-              store.table_alias_to_id.insert(alias, table_id);
-            }
-          }
-        }
-        Transformation::TableReference{table_id, reference} => {
-          match table_id {
-            TableId::Local(id) => {
-              let mut reference_table = Table::new(id, 1, 1, self.store.clone());
-              reference_table.set_unchecked(1,1,reference);
-              self.tables.insert(id, Arc::new(RefCell::new(reference_table)));
-              self.changes.push(
-                Change::NewTable{
-                  table_id: reference.as_reference().unwrap(),
-                  rows: 1,
-                  columns: 1,
-                }
-              );
-              let register_all = Register{table_id: TableId::Global(reference.as_reference().unwrap()), row: TableIndex::All, column: TableIndex::All};
-              self.output.insert(register_all);
-            }
-            _ => (),
-          }
-        }
-        Transformation::Select{table_id, row, column, indices, out} => {
-          match out {
-            TableId::Global(_) => {
-              let register = Register{table_id: out, row: TableIndex::All, column: TableIndex::All};
-              self.output.insert(register);              
-            }
-            _ => (),
-          }
-          match table_id {
-            TableId::Global(_) => {
-              let register = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
-              self.input.insert(register);                
-            }
-            _ => (),
-          }
-          for (row, column) in indices {
-            match row {
-              TableIndex::Table(TableId::Global(id)) => {
-                let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
-                self.input.insert(register);
-              }
-              _ => (),
-            }
-            match column {
-              TableIndex::Table(TableId::Global(id)) => {
-                let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
-                self.input.insert(register);
-              }
-              _ => (),
-            }
-          }
-        }
-        Transformation::NewTable{table_id, rows, columns} => {
-          match table_id {
-            TableId::Global(id) => {
-              self.changes.push(
-                Change::NewTable{
-                  table_id: id,
-                  rows,
-                  columns,
-                }
-              );
-              let register_all = Register{table_id, row: TableIndex::All, column: TableIndex::All};
-              self.output.insert(register_all);
-            }
-            TableId::Local(id) => {
-              self.tables.insert(id, Arc::new(RefCell::new(Table::new(id, rows, columns, self.store.clone()))));
-            }
-          }
-        }
-        Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-          match table_id {
-            TableId::Global(id) => {
-              self.changes.push(
-                Change::SetColumnAlias{
-                  table_id: id,
-                  column_ix,
-                  column_alias,
-                }
-              );
-              let register_all = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
-              let register_alias = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::Alias(column_alias)};
-              let register_ix = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::Index(column_ix)};
-              // Alias mappings
-              let aliases = self.register_aliases.entry(register_alias).or_insert(HashSet::new());
-              aliases.insert(register_ix);
-              aliases.insert(register_all);
-              // Index mappings
-              let aliases = self.register_aliases.entry(register_ix).or_insert(HashSet::new());
-              aliases.insert(register_alias);
-              aliases.insert(register_all);
-              // All mappings
-              let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
-              aliases.insert(register_ix);
-              aliases.insert(register_alias);
-              self.output.insert(register_alias);              
-            }
-            TableId::Local(_id) => {
-              let store = unsafe{&mut *Arc::get_mut_unchecked(&mut self.store)};
-              store.column_index_to_alias.insert((*table_id.unwrap(),column_ix),column_alias);
-              store.column_alias_to_index.insert((*table_id.unwrap(),column_alias),column_ix);
-            }
-          }
-        }
-        Transformation::Constant{table_id, value, unit} => {
-          let (domain, scale) = if unit == *GRAMS { (1, 0) }
-            else if unit            == *KILOGRAMS { (1, 3) }
-            else if unit            == *HERTZ { (2, 0) }
-            else if unit            == *SECONDS { (3, 0) }
-//              "m" => (2, 0),
-//              "km" => (2, 3),
-//              "ms" => (3, 0),
-//              "s" => (3, 3),
-              else { (0, 0) };
-          let q = if value.is_number() {
-            value //Value::from_quantity(make_quantity(value.mantissa(), value.range() + scale, domain))
-          } else {
-            value
-          };
-          match table_id {
-            TableId::Local(id) => {
-              let mut table = self.tables.get_mut(&id).unwrap().borrow_mut();
-              table.set(&TableIndex::Index(1), &TableIndex::Index(1), q);
-            }
-            TableId::Global(id) => {
-              self.changes.push(
-                Change::Set{
-                  table_id: id,
-                  values: vec![(TableIndex::Index(1), TableIndex::Index(1), q)],
-                }
-              );
-            }
-           // _ => (),
-          }
-        }
-        Transformation::Set{table_id, row, column} => {
-          let register_all = Register{table_id: table_id, row: TableIndex::All, column: TableIndex::All};
-          self.output.insert(register_all);       
-          self.output_dependencies.insert(register_all);          
-          match row {
-            TableIndex::Table(TableId::Global(id)) => {
-              let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
-              self.input.insert(register);
-            }
-            _ => (),
-          }
-          match column {
-            TableIndex::Table(TableId::Global(id)) => {
-              let register = Register{table_id: TableId::Global(id), row: TableIndex::All, column: TableIndex::All};
-              self.input.insert(register);
-            }
-            _ => (),
-          }
-        }
-        Transformation::Whenever{table_id, registers, ..} => {
-          let whenever_ix_table_id = hash_string("~");
-          self.tables.insert(whenever_ix_table_id, Arc::new(RefCell::new(Table::new(whenever_ix_table_id, 0, 1, self.store.clone()))));
-          match table_id {
-            TableId::Global(_id) => {
-              for register in registers {
-                self.input.insert(register);
-              }
-            }
-            _ => (),
-          }
-        }
-        Transformation::Function{ref arguments, out, ..} => {
-          let (out_id, row, column) = out;
-          match out_id {
-            TableId::Global(_id) => {
-              let row = match row {
-                TableIndex::Table(_) => TableIndex::All,
-                x => x,
-              };
-              let column = match column {
-                TableIndex::Table(_) => TableIndex::All,
-                x => x,
-              };
-              let register = Register{table_id: out_id, row, column};
-              self.output.insert(register);
-              let register = Register{table_id: out_id, row: TableIndex::All, column: TableIndex::All};
-              self.output.insert(register);
-            },
-            _ => (),
-          }
-          for (_, table_id, row, column) in arguments {
-            match table_id {
-              TableId::Global(_id) => {
-                let row2: &TableIndex = match row {
-                  TableIndex::Table{..} => &TableIndex::All,
-                  TableIndex::None => &TableIndex::All,
-                  x => x,
-                };
-                let column2: &TableIndex = match column {
-                  TableIndex::Table{..} => &TableIndex::All,
-                  TableIndex::None => &TableIndex::All,
-                  x => x,
-                };
-                let register_ix = Register{table_id: *table_id, row: *row2, column: *column2};
-                let register_all = Register{table_id: *table_id, row: TableIndex::All, column: TableIndex::All};
-                let aliases = self.register_aliases.entry(register_ix).or_insert(HashSet::new());
-                aliases.insert(register_all);
-                let aliases = self.register_aliases.entry(register_all).or_insert(HashSet::new());
-                aliases.insert(register_ix);
-                self.input.insert(register_ix);
-              },
-              _ => (),
-            }
-          }
-        }
-        _ => (),
-      }
-    }
-  }
-
-  // Process changes queued on the block
-  pub fn process_changes(&mut self) {
-    if !self.changes.is_empty() {
-      let txn = Transaction {
-        changes: self.changes.clone(),
-      };
-      self.changes.clear();
-      self.global_database.borrow_mut().process_transaction(&txn).ok();
-    }
-  }
-
-  pub fn solve(&mut self, functions: &HashMap<u64, Option<MechFunction>>) -> Result<(), Error> {
-    self.triggered += 1;
-    'step_loop: for step in &self.plan {
-      match step {
-        Transformation::Whenever{table_id, registers, ..} => {
-          let register = registers[0];
-          // Resolve whenever table subscript so we can iterate through the values
-          let mut vi = ValueIterator::new(register.table_id,register.row,register.column,&self.global_database,&mut self.tables, &mut self.store);
-          // Get the whenever table from the local store
-        {
-          let whenever_ix_table_id = hash_string("~");
-          let mut whenever_table = self.tables.get_mut(&whenever_ix_table_id).unwrap().borrow_mut();
-          // Check to see if the whenever table needs to be resized
-          let before_rows = whenever_table.rows;
-          if vi.rows() > whenever_table.rows {
-            whenever_table.resize(vi.rows() * vi.columns(),1);
-            for (ix, (_, changed)) in vi.enumerate() {
-              // Mark the new rows as changed even if they are stale
-              if ix+1 > before_rows {
-                whenever_table.set_unchecked(ix+1, 1, Value::from_bool(true));
-              // Use the changed value of old rows
-              } else {
-                whenever_table.set_unchecked(ix+1, 1, Value::from_bool(changed));
-              }
-            }
-          // If the table hasn't been resized, use the changed value
-          } else {
-            for (ix, (_, changed)) in vi.enumerate() {
-              whenever_table.set_unchecked(ix+1, 1, Value::from_bool(changed));
-            }
-          }
-
-          // If all of the rows of the whenever table are false, there is nothing for this block to do
-          // because none of the values it is watching have changed
-          let mut flag = false;
-          for ix in 1..=whenever_table.rows {
-            let (val, _) = whenever_table.get_unchecked(ix,1);
-            match val.as_bool() {
-              Some(true) => flag = true,
-              _ => (),
-            }
-          }
-          if flag == false {
-            break 'step_loop;
-          }
-        }
-          
-          match table_id {
-            TableId::Global(_id) => {
-              for register in registers {
-                self.ready.remove(&register);
-              }
-            }
-            TableId::Local(id) => {
-              let mut flag = false;
-              let table = self.tables.get_mut(&id).unwrap().borrow();
-              unsafe {
-                for i in 1..=(*table).rows {
-                  for j in 1..=(*table).columns {
-                    let (val, _) = (*table).get_unchecked(i,j);
-                    match val.as_bool() {
-                      Some(true) => flag = true,
-                      _ => (),
-                    }
-                  }
-                }
-              }
-              if flag == false {
-                break 'step_loop;
-              } else {
-                for register in registers {
-                  self.ready.remove(&register);
-                }
-              }
-            },
-          }
-        },
-        Transformation::Select{table_id, row, column, indices, out} => {
-          // Get the output Iterator
-          let mut out = ValueIterator::new(*out, TableIndex::All, TableIndex::All, &self.global_database.clone(),&mut self.tables, &mut self.store);
-
-          let mut table_id = *table_id;
-          for (ix, (row_index, column_index)) in indices.iter().enumerate() {
-
-            let mut vi = ValueIterator::new(table_id, *row_index, *column_index, &self.global_database.clone(),&mut self.tables, &mut self.store);
-
-            // Size the out table if we're on the last index
-            if ix == indices.len() - 1 {
-              out.resize(vi.rows(), vi.columns());
-            }
-
-            let elements = vi.elements();
-            let mut out_iterator = out.linear_index_iterator();
-            for (value, _) in vi {
-              match value.as_reference() {
-                Some(reference) => {
-                  // We can only follow a reference is the selected table is scalar
-                  if elements == 1 && ix != indices.len() - 1 {
-                                           //^ We only want to follow a reference if we aren't at the
-                                           //  last index in the list.
-                    table_id = TableId::Global(reference);
-                    continue;
-                  // If we are at the last index, we'll store this reference in th out
-                  } else if ix == indices.len() - 1 { 
-                    match out_iterator.next() {
-                      Some(ix) => out.set_unchecked_linear(ix, value),
-                      _ => (),
-                    }
-                  }
-                }
-                None => {
-                  match out_iterator.next() {
-                    Some(ix) => out.set_unchecked_linear(ix, value),
-                    _ => (),
-                  }
-                }
-              }
-            }
-          }
-        }
-        Transformation::Function{name, arguments, out} => {
-
-          let mut args = self.function_arguments.entry(step.clone()).or_insert(vec![]);
-
-          if args.len() == 0 {
-            for (arg, table_id, row, column) in arguments {
-              let mut vi = ValueIterator::new(*table_id,*row,*column,&self.global_database.clone(),&mut self.tables, &mut self.store);
-              vi.compute_indices();
-              args.push(Rc::new(RefCell::new(Argument{name: arg.clone(), iterator: vi})));
-            }
-            let (out_table_id, out_row, out_column) = out;
-            let mut out_vi = ValueIterator::new(*out_table_id, *out_row, *out_column, &self.global_database.clone(),&mut self.tables, &mut self.store);
-            args.push(Rc::new(RefCell::new(Argument{name: 0, iterator: out_vi})));
-          }
-
-          args.iter().for_each(|mut arg| arg.borrow_mut().iterator.init_iterators());
-          
-          match functions.get(name) {
-            Some(Some(mech_fn)) => {
-              mech_fn(&mut args);
-            }
-            _ => {
-              if *name == *TABLE_SPLIT {
-                let vi = args[0].borrow().iterator.clone();
-                let mut out = args.last().unwrap().borrow_mut();
-
-                out.iterator.resize(vi.rows(), 1);
-
-                let mut db = self.global_database.borrow_mut();
-
-                // Create rows for tables
-                let old_table_id = vi.id();
-                let old_table_columns = vi.columns();
-                for row in vi.raw_row_iter.clone() {
-                  let split_table_id = hash_string(&format!("table/split/{:?}/{:?}",old_table_id,row));
-                  let mut split_table = Table::new(split_table_id,1,old_table_columns,self.store.clone());
-                  for column in vi.raw_column_iter.clone() {
-                    let (value,_) = vi.get(&row,&column).unwrap();
-                    split_table.set(&TableIndex::Index(1),&column, value);
-                  }
-                  out.iterator.set_unchecked(row.unwrap(),1, Value::from_id(split_table_id));
-                  self.tables.insert(split_table_id, Arc::new(RefCell::new(split_table.clone())));
-                  db.tables.insert(split_table_id, Arc::new(RefCell::new(split_table)));
-                }
-              } else {
-                let error = Error { 
-                  block_id: self.id,
-                  step_text: "".to_string(), // TODO Add better text
-                  error_type: ErrorType::MissingFunction(*name),
-                };
-                self.state = BlockState::Error;
-                self.errors.insert(error.clone());
-                return Err(error);
-              }
-            },
-          }
-        }
-        _ => (),
-      }
-    }
-    self.state = BlockState::Done;
-    Ok(())
-  }
-
-  pub fn is_ready(&mut self) -> bool {
-    // The block will not execute if it's in an error state or disabled
-    if self.state == BlockState::Error || self.state == BlockState::Disabled {
-      false
-    // The block will not execute if there are any errors listed on it
-    } else if self.errors.len() > 0 {
-      self.state = BlockState::Error;
-      false
-    } else {
-      // The block is ready if the ready output and input registers equal the total
-      if self.ready.len() < self.input.len() || self.output_dependencies_ready.len() < self.output_dependencies.len() {
-        false
-      } else {
-        self.state = BlockState::Ready;
-        true
-      }
+  pub fn solve(&self) {
+    for fxn in &self.plan {
+      fxn.solve();
     }
   }
 
 }
 
-impl fmt::Debug for Block {
+impl fmt::Debug for Plan {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "┌─────────────────────────────────────────────┐\n")?;
-    write!(f, "│ id: {}                         │\n", humanize(&self.id))?;
-    write!(f, "│ state: {:?}                                 │\n", self.state)?;
-    write!(f, "│ triggered: {:?}                                │\n", self.triggered)?;
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ Errors: {}                                   │\n", self.errors.len())?;
-    for (ix, error) in self.errors.iter().enumerate() {
-      write!(f, "│    {}. {:?}\n", ix+1, error)?;
+    let mut plan = BoxPrinter::new();
+    let mut ix = 1;
+    for step in &self.plan {
+      plan.add_title("🦿",&format!("Step {}", ix));
+      plan.add_line(format!("{}",&step.to_string()));
+      ix += 1;
     }
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ Registers                                   │\n")?;
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ ready: {}\n", self.ready.len())?;
-    for (ix, register) in self.ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-    }
-    write!(f, "│ input: {} \n", self.input.len())?;
-    for (ix, register) in self.input.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-    }
-    if self.ready.len() < self.input.len() {
-      write!(f, "│ missing: \n")?;
-      for (ix, register) in self.input.difference(&self.ready).enumerate() {
-        write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-      }
-    }
-    write!(f, "│ output: {}\n", self.output.len())?;
-    for (ix, register) in self.output.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-    }
-    write!(f, "│ output dep: {}\n", self.output_dependencies.len())?;
-    for (ix, register) in self.output_dependencies.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-    }
-    write!(f, "│ output ready: {}\n", self.output_dependencies_ready.len())?;
-    for (ix, register) in self.output_dependencies_ready.iter().enumerate() {
-      write!(f, "│    {}. {}\n", ix+1, format_register(&self.store.strings, register))?;
-    }
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ Transformations                             │\n")?;
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    for (ix, (text, tfms)) in self.transformations.iter().enumerate() {
-      write!(f, "│  {}. {}\n", ix+1, text)?;
-      for tfm in tfms {
-        let tfm_string = format_transformation(&self,&tfm);
-        write!(f, "│       > {}\n", tfm_string)?;
-      }
-    }
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ Plan                                        │\n")?;
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    for (ix, tfm) in self.plan.iter().enumerate() {
-      let tfm_string = format_transformation(&self,tfm);
-      write!(f, "│  {}. {}\n", ix+1, tfm_string)?;
-    }
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-    write!(f, "│ Tables: {}                                  │\n", self.tables.len())?;
-    write!(f, "├─────────────────────────────────────────────┤\n")?;
-
-    for (_, table) in self.tables.iter() {
-      write!(f, "{:?}\n", table.borrow())?;
-    }
-
+    write!(f,"{:?}",plan)?;
     Ok(())
   }
 }
@@ -617,21 +86,756 @@ pub enum BlockState {
   Done,         // All inputs are satisfied and the block has executed
   Unsatisfied,  // One or more inputs are not satisfied
   Error,        // One or more errors exist on the block
+  Pending,      // THe block is currently solving and the state is not settled
   Disabled,     // The block is disabled will not execute if it otherwise would
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum Transformation {
-  TableAlias{table_id: TableId, alias: u64},
-  TableReference{table_id: TableId, reference: Value},
-  NewTable{table_id: TableId, rows: usize, columns: usize },
-  Constant{table_id: TableId, value: Value, unit: u64},
-  ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
-  Set{table_id: TableId, row: TableIndex, column: TableIndex},
-  RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
-  Whenever{table_id: TableId, row: TableIndex, column: TableIndex, registers: Vec<Register>},
-  Function{name: u64, arguments: Vec<(u64, TableId, TableIndex, TableIndex)>, out: (TableId, TableIndex, TableIndex)},
-  Select{table_id: TableId, row: TableIndex, column: TableIndex, indices: Vec<(TableIndex, TableIndex)>, out: TableId},
+// ## Block
+
+#[derive(Clone)]
+pub struct Block {
+  pub id: BlockId,
+  pub state: BlockState,
+  pub tables: Database,
+  pub plan: Plan,
+  pub functions: Option<Rc<RefCell<core::Functions>>>,
+  pub global_database: Rc<RefCell<Database>>,
+  pub unsatisfied_transformation: Option<(MechError,Transformation)>,
+  pub pending_transformations: Vec<Transformation>,
+  pub transformations: Vec<Transformation>,
+  pub strings: StringDictionary,
+  pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+}
+
+impl Block {
+  pub fn new() -> Block {
+    Block {
+      id: 0,
+      state: BlockState::New,
+      tables: Database::new(),
+      plan: Plan::new(),
+      functions: None,
+      global_database: Rc::new(RefCell::new(Database::new())),
+      unsatisfied_transformation: None,
+      pending_transformations: Vec::new(),
+      transformations: Vec::new(),
+      strings: Rc::new(RefCell::new(HashMap::new())),
+      triggers: HashSet::new(),
+      input: HashSet::new(),
+      output: HashSet::new(),
+    }
+  }
+
+  pub fn get_table(&self, table_id: &TableId) -> Result<Rc<RefCell<Table>>, MechError> {
+    match &table_id {
+      TableId::Local(id) => match self.tables.get_table_by_id(id) {
+        Some(table) => Ok(table.clone()),
+        None => {
+          match self.tables.table_alias_to_id.get(table_id.unwrap()) {
+            Some(TableId::Global(id)) => match self.global_database.borrow().get_table_by_id(id) {
+              Some(table) => Ok(table.clone()),
+              None => Err(MechError{id: 1001, kind: MechErrorKind::MissingTable(*table_id)}),
+            }
+            Some(TableId::Local(id)) => match self.tables.get_table_by_id(id) {
+              Some(table) => Ok(table.clone()),
+              None => Err(MechError{id: 1002, kind: MechErrorKind::MissingTable(*table_id)}),
+            }
+            None => Err(MechError{id: 1003, kind: MechErrorKind::MissingTable(*table_id)}),
+          }
+        },
+      },
+      TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
+        Some(table) => Ok(table.clone()),
+        None => Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(*table_id)}),
+      }
+    }
+  }
+
+  pub fn gen_id(&mut self) -> BlockId {
+    self.id = hash_str(&format!("{:?}",self.transformations));
+    self.id
+  }
+
+  pub fn id(&self) -> BlockId {
+    self.id
+  }
+
+  pub fn ready(&mut self) -> Result<(),MechError> {
+    match self.state {
+      BlockState::Ready => Ok(()),
+      BlockState::Disabled => Err(MechError{id: 1001, kind: MechErrorKind::BlockDisabled}),
+      _ => {
+        match &self.unsatisfied_transformation {
+          Some((_,tfm)) => {
+            self.state = BlockState::Pending;
+            match self.add_tfm(tfm.clone()) {
+              Ok(_) => {
+                self.unsatisfied_transformation = None;
+                let mut pending_transformations = self.pending_transformations.clone();
+                self.pending_transformations.clear();
+                for tfm in pending_transformations.drain(..) {
+                  self.add_tfm(tfm);
+                }
+                self.ready();
+                Ok(())
+              }
+              Err(x) => {
+                Err(x)
+              },
+            }
+          }
+          None => {
+            self.state = BlockState::Ready;
+            Ok(())
+          }
+        }
+      }
+    }
+  }
+
+  pub fn get_arg_column(&self, argument: &Argument) -> Result<(u64,Column,ColumnIndex),MechError> {
+
+    let (arg_name, table_id, indices) = argument;
+
+    // This part handles multi-dimensional indexing e.g. {1,2}{3,4}{5,6}
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            x => {return Err(MechError{id: 1005, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        x => {return Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+
+    // get the table
+    let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
+    let table_brrw = table.borrow(); 
+
+    // Get the column and row
+    match (row,col) {
+      // Return an error if either index is 0. An index can never be zero
+      (_,TableIndex::Index(ix)) |
+      (TableIndex::Index(ix),_) if ix == &0 => {
+        return Err(MechError{id: 1007, kind: MechErrorKind::ZeroIndex});
+      }
+      // x{1,1}
+      (TableIndex::Index(row),TableIndex::Index(_)) => {
+        let col = table_brrw.get_column(&col)?;
+        Ok((*arg_name,col.clone(),ColumnIndex::Index(row-1)))
+      }
+      // x.y{1}
+      (TableIndex::Index(ix),TableIndex::Alias(col_alias)) => {
+        let arg_col = table_brrw.get_column(col)?;
+        Ok((*arg_name,arg_col.clone(),ColumnIndex::Index(*ix-1)))
+      }
+      // x{1}
+      (TableIndex::Index(ix),TableIndex::None) => {
+        let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
+        let col = table_brrw.get_column(&TableIndex::Index(ix_col + 1))?;
+        let (row,_) = table_brrw.index_to_subscript(ix - 1)?;
+
+        Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
+      }
+      // x{z,1}
+      // x.y{z}
+      (TableIndex::Table(ix_table_id),TableIndex::Index(_)) |
+      (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+
+        if ix_table_brrw.cols != 1 {
+          return Err(MechError{id: 1008, kind: MechErrorKind::GenericError("Table too big".to_string())});
+        }
+        let ix = match ix_table_brrw.get_column_unchecked(0) {
+          Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+          Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
+          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
+          Column::F32(ix_col) => {
+            ColumnIndex::RealIndex(ix_col)
+          },
+          x => {return Err(MechError{id: 1009, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        };
+        let arg_col = table_brrw.get_column(col)?;
+        Ok((*arg_name,arg_col.clone(),ix))
+      }
+      // x{z}
+      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        match table.borrow().kind() {
+          ValueKind::Compound(table_kind) => {
+            return Err(MechError{id: 1010, kind: MechErrorKind::GenericError("Can't handle compound".to_string())});
+          }
+          table_kind => {
+            let ix = match ix_table_brrw.get_column_unchecked(0) {
+              Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+              Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
+              Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
+              Column::F32(ix_col) => {
+                ColumnIndex::RealIndex(ix_col)
+              },
+              x => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            };
+            match table_brrw.shape() {
+              TableShape::Column(rows) => {
+                let col = table_brrw.get_column_unchecked(0);
+                Ok((*arg_name,col.clone(),ix))
+              }
+              _ => Ok((*arg_name,Column::Reference((table.clone(),(ix,ColumnIndex::None))),ColumnIndex::All)),
+            }
+          }
+        }
+      }
+      // x{:,1}
+      (TableIndex::All, TableIndex::Index(col_ix)) => {
+        let col = table_brrw.get_column(&TableIndex::Index(*col_ix))?;
+        Ok((*arg_name,col.clone(),ColumnIndex::All))
+      },
+      // x{:,:}
+      (TableIndex::All, TableIndex::All) => {
+        if table_brrw.cols > 1 {
+          let reference = Column::Reference((table.clone(),(ColumnIndex::All,ColumnIndex::All)));
+          return Ok((*arg_name,reference,ColumnIndex::All));
+        }
+        let col = table_brrw.get_column(&col)?;
+        if col.len() == 1 {
+          Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))
+        } else {
+          Ok((*arg_name,col.clone(),ColumnIndex::All))
+        }
+      }
+      _ => {
+        let col = table_brrw.get_column(&col)?;
+        if col.len() == 1 {
+          Ok((*arg_name,col.clone(),ColumnIndex::Index(0)))
+        } else {
+          Ok((*arg_name,col.clone(),ColumnIndex::All))
+        }
+      }
+    }
+  }
+
+  pub fn get_arg_columns(&self, arguments: &Vec<Argument>) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
+    let mut argument_columns = vec![];
+    for argument in arguments {
+      let arg_col = self.get_arg_column(argument)?;
+      argument_columns.push(arg_col);
+    }
+    Ok(argument_columns)
+  }
+
+  pub fn get_whole_table_arg_cols(&self, argument: &Argument) -> Result<Vec<(u64,Column,ColumnIndex)>,MechError> {
+    
+    let (arg_name,table_id,indices) = argument;
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            x => {return Err(MechError{id: 1011, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        x => {return Err(MechError{id: 1012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
+    let table_brrw = table.borrow();
+
+    match self.get_arg_dim(argument) {
+      Ok(TableShape::Column(rows)) => {
+        return Err(MechError{id: 1013, kind: MechErrorKind::GenericError("Can't handle this unless it's a column vector.".to_string())});
+      }
+      _ => (),
+    };
+    let row_index = match (row,col) {
+      (TableIndex::ReshapeColumn,_) => ColumnIndex::ReshapeColumn,
+      (TableIndex::All,_) => ColumnIndex::All,
+      (TableIndex::None,_) => ColumnIndex::None,
+      (TableIndex::Index(ix),_) => ColumnIndex::Index(ix - 1),
+      (TableIndex::Alias(alias),_) => {
+        return Err(MechError{id: 1014,  kind: MechErrorKind::GenericError("Can't index on row alias yet".to_string())});
+      },
+      (TableIndex::Table(ix_table_id),_) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        let ix = match ix_table_brrw.get_column_unchecked(0) {
+          Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
+          Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
+          Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
+          Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
+          x => {return Err(MechError{id: 1015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        };
+        ix
+      }
+      _ => ColumnIndex::All,
+    };
+    let arg_cols = table_brrw.get_columns(&col)?.iter().map(|arg_col| (*arg_name,arg_col.clone(),row_index.clone())).collect();
+    Ok(arg_cols)
+  }
+
+
+  pub fn get_out_column(&self, out: &Out, rows: usize, col_kind: ValueKind) -> Result<Column,MechError> {
+    let (out_table_id, _, _) = out;
+    let table = self.get_table(out_table_id)?;
+    let mut t = table.borrow_mut();
+    let cols = if t.cols == 0 { 1 } else { t.cols };
+    let rows = if rows == 0 { 1 } else { rows };
+    t.resize(rows,cols);
+    t.set_col_kind(0, col_kind)?;
+    let column = t.get_column_unchecked(0);
+    Ok(column)
+  }
+ 
+  pub fn get_arg_dims(&self, arguments: &Vec<Argument>) -> Result<Vec<TableShape>,MechError> {
+    let mut arg_shapes = Vec::new();
+    for argument in arguments {
+      arg_shapes.push(self.get_arg_dim(argument)?);
+    }
+    Ok(arg_shapes)
+  }
+
+  pub fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
+    let (_, table_id, indices) = argument;
+    let mut table_id = *table_id;
+    for (row,column) in indices.iter().take(indices.len()-1) {
+      let argument = (0,table_id,vec![(*row,*column)]);
+      match self.get_arg_dim(&argument)? {
+        TableShape::Scalar => {
+          let arg_col = self.get_arg_column(&argument)?;
+          match (arg_col,row,column) {
+            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
+              table_id = ref_col.borrow()[row_ix-1].clone();
+            }
+            ((_,Column::Ref(ref_col),_),_,_) => {
+              table_id = ref_col.borrow()[0].clone();
+            }
+            x => {return Err(MechError{id: 1016, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+          }
+        }
+        x => {return Err(MechError{id: 1017, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+      }
+    }
+    
+    let (row,col) = &indices.last().unwrap();
+    let table = self.get_table(&table_id)?;
+    let t = table.borrow();
+    let dim = match (row,col) {
+      (TableIndex::ReshapeColumn, TableIndex::All) => (t.rows*t.cols,1),
+      (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
+      (TableIndex::All, TableIndex::None) => (t.rows*t.cols,1),
+      (TableIndex::All,TableIndex::Index(_)) |
+      (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
+      (TableIndex::Index(_),TableIndex::None) |
+      (TableIndex::Index(_),TableIndex::Index(_)) |
+      (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
+      (TableIndex::Index(_),TableIndex::All) => (1,t.cols),
+      (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
+      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let rows = ix_table.borrow().logical_len();
+        (rows,1)
+      },
+      (TableIndex::Table(ix_table_id),TableIndex::All) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let rows = ix_table.borrow().logical_len();
+        (rows,t.cols)
+      },
+      x => {return Err(MechError{id: 1018, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+    };
+    let arg_shape = match dim {
+      (1,1) => TableShape::Scalar,
+      (1,x) => TableShape::Row(x),
+      (x,1) => TableShape::Column(x),
+      (x,y) => TableShape::Matrix(x,y),
+      _ => TableShape::Pending,
+    };
+    Ok(arg_shape)
+  }
+
+  pub fn add_tfm(&mut self, tfm: Transformation) -> Result<(),MechError> {
+    self.init_registers(&tfm);
+    match self.state {
+      BlockState::Unsatisfied => {
+        self.pending_transformations.push(tfm.clone());
+        return Err(MechError{id: 1019, kind: MechErrorKind::GenericError("Unsatisfied block".to_string())});
+      }
+      _ => {
+        match self.compile_tfm(tfm.clone()) {
+          Ok(()) => (),
+          Err(mech_error) => {
+            self.unsatisfied_transformation = Some((mech_error.clone(),tfm));
+            self.state = BlockState::Unsatisfied;
+            return Err(mech_error);        
+          }
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn init_registers(&mut self, tfm: &Transformation) {
+    match tfm {
+      Transformation::TableDefine{table_id, indices, out} => {
+        if let TableId::Global(_) = table_id { 
+          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        }
+      }
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        if let TableId::Global(_) = table_id { 
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+        }
+      }
+      Transformation::Function{name, ref arguments, out} => {
+        for (_,table_id,indices) in arguments {
+          if let TableId::Global(_) = table_id {
+            self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          }
+        }
+        if let (TableId::Global(table_id),_,_) = out {
+          self.output.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+        }
+      }
+      Transformation::Whenever{table_id, indices} => {
+        self.triggers.clear();
+        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+      }
+      _ => (),
+    }
+  }
+
+  fn compile_tfm(&mut self, tfm: Transformation) -> Result<(), MechError> {
+    self.init_registers(&tfm);
+    match &tfm {
+      Transformation::Identifier{name, id} => {
+        self.strings.borrow_mut().insert(*id, MechString::from_chars(name));
+      }
+      Transformation::NewTable{table_id, rows, columns} => {
+        match table_id {
+          TableId::Local(id) => {
+            let mut table = Table::new(*id, 0, 0);
+            table.dictionary = self.strings.clone();
+            self.tables.insert_table(table);
+          }
+          TableId::Global(id) => {
+            let mut table = Table::new(*id, 0, 0);
+            table.dictionary = self.strings.clone();
+            self.global_database.borrow_mut().insert_table(table);
+            self.output.insert((*table_id,TableIndex::All,TableIndex::All));
+          }
+        } 
+      },
+      Transformation::TableReference{table_id, reference} => {
+        let table = self.get_table(table_id)?;
+        let mut table_brrw = table.borrow_mut();
+        table_brrw.resize(1,1);
+        table_brrw.set_kind(ValueKind::Reference);
+        table_brrw.set_raw(0,0,reference.clone())?;
+
+        let src_table = self.get_table(&reference.as_table_reference()?)?;
+        let src_table_brrw = src_table.borrow();
+        let src_id = src_table_brrw.id;
+        let rows = src_table_brrw.rows;
+        let cols = src_table_brrw.cols;
+        let dest_table = Table::new(src_id,rows,cols);
+        self.global_database.borrow_mut().insert_table(dest_table);
+      }
+      Transformation::TableAlias{table_id, alias} => {
+        self.tables.insert_alias(*alias, *table_id)?;
+      },
+      Transformation::ColumnKind{table_id, column_ix, kind} => {
+        let table = self.get_table(table_id)?;
+        let mut table_brrw = table.borrow_mut();
+        if *kind == *cU8 { table_brrw.set_col_kind(*column_ix,ValueKind::U8)?; }
+        else if *kind == *cU16 { table_brrw.set_col_kind(*column_ix,ValueKind::U16)?; }
+        else if *kind == *cU32 { table_brrw.set_col_kind(*column_ix,ValueKind::U32)?; }
+        else if *kind == *cU64 { table_brrw.set_col_kind(*column_ix,ValueKind::U64)?; }
+        else if *kind == *cF32 { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
+        else if *kind == *cF32L { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
+        else if *kind == *cM { table_brrw.set_col_kind(*column_ix,ValueKind::Length)?; }
+        else if *kind == *cKM { table_brrw.set_col_kind(*column_ix,ValueKind::Length)?; }
+        else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
+        else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
+        else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
+        else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
+        else {
+          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+        }
+      }
+      Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
+        if let TableId::Global(_) = table_id { 
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+        }
+        let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
+        if table.cols == 0 || *column_ix > (table.cols - 1)  {
+          let rows = table.rows;
+          table.resize(rows,*column_ix + 1);
+        }
+        table.set_col_alias(*column_ix,*column_alias);
+      },
+      Transformation::TableDefine{table_id, indices, out} => {
+        if let TableId::Global(_) = table_id { 
+          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        }
+        self.compile_tfm(Transformation::Function{
+          name: *TABLE_DEFINE,
+          arguments: vec![(0,table_id.clone(),indices.clone())],
+          out: (*out, TableIndex::All, TableIndex::All),
+        })?;
+      }
+      Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        self.compile_tfm(Transformation::Function{
+          name: *TABLE_SET,
+          arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
+          out: (*dest_id,*dest_row,*dest_col),
+        })?;
+      }
+      Transformation::NumberLiteral{kind, bytes} => {
+        let mut num = NumberLiteral::new(*kind, bytes.to_vec());
+        let mut bytes = bytes.clone();
+        let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
+        let table =  self.get_table(&TableId::Local(table_id))?; 
+        let mut t = table.borrow_mut();
+        t.resize(1,1);
+        if *kind == *cU8 {
+          t.set_kind(ValueKind::U8)?;
+          t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
+        } 
+        else if *kind == *cU16 {
+          t.set_kind(ValueKind::U16)?;
+          t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
+        } 
+       else if *kind == *cU32 {
+          t.set_kind(ValueKind::U32)?;
+          t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
+        } 
+        else if *kind == *cU64 {
+          t.set_kind(ValueKind::U64)?;
+          t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+        } 
+        else if *kind == *cMS {
+          t.set_kind(ValueKind::Time)?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32() / 1000.0)))?;
+        } 
+        else if *kind == *cS {
+          t.set_kind(ValueKind::Time)?;
+          t.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
+        } 
+        else if *kind == *cF32 {
+          t.set_kind(ValueKind::F32)?;
+          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+        } 
+        else if *kind == *cF32L {
+          t.set_kind(ValueKind::F32)?;
+          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+        } 
+        else if *kind == *cKM {
+          t.set_kind(ValueKind::Length)?;
+          t.set_raw(0,0,Value::Length(F32::new(num.as_f32() * 1000.0)))?;
+        } 
+        else if *kind == *cM {
+          t.set_kind(ValueKind::Length)?;
+          t.set_raw(0,0,Value::Length(F32::new(num.as_f32())))?;
+        }
+        else if *kind == *cM_S {
+          t.set_kind(ValueKind::Speed)?;
+          t.set_raw(0,0,Value::Speed(F32::new(num.as_f32())))?;
+        }
+        else if *kind == *cDEC {
+          match bytes.len() {
+            1 => {
+              t.set_col_kind(0, ValueKind::U8)?;
+              t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
+            }
+            2 => {
+              t.set_kind(ValueKind::U16)?;
+              t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
+            }
+            3 | 4 => {
+              t.set_kind(ValueKind::U32)?;
+              t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
+            }
+            5..=8 => {
+              t.set_kind(ValueKind::U64)?;
+              t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+            }
+            9..=16 => {
+              t.set_kind(ValueKind::U128)?;
+              t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
+            }
+            _ => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError("Too many bytes in number".to_string())});},
+          }
+        } 
+        else if *kind == *cHEX {
+          let mut x: u128 = 0;
+          t.set_kind(ValueKind::U128)?;
+          while bytes.len() < 16 {
+            bytes.insert(0,0);
+          }
+          for half_byte in bytes {
+            x = x << 4;
+            x = x | half_byte as u128;
+          }
+          t.set_raw(0,0,Value::U128(U128::new(x)))?;
+        }
+        else {
+          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+        }
+      },
+      Transformation::Constant{table_id, value} => {
+        let table = self.get_table(table_id)?;
+        let mut table_brrw = table.borrow_mut();
+        table_brrw.resize(1,1);
+        match &value {
+          Value::Bool(_) => {table_brrw.set_col_kind(0, ValueKind::Bool)?;},
+          Value::String(_) => {table_brrw.set_col_kind(0, ValueKind::String)?;},
+          _ => (),
+        }
+        table_brrw.set_raw(0,0,value.clone())?;
+      }
+      Transformation::Whenever{table_id, indices} => {
+        self.triggers.clear();
+        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+      }
+      Transformation::Function{name, ref arguments, out} => {        
+        // A list of all the functions that are
+        // loaded onto this core.
+        let fxns = self.functions.clone();
+        match &fxns {
+          Some(functions) => {
+            let mut fxns = functions.borrow_mut();
+            match fxns.get(*name) {
+              Some(fxn) => {
+                // A function knows how to compile itself
+                // based on what arguments are passed.
+                // Not all arguments are valid, in which
+                // case an error is returned.
+                fxn.compile(self,&arguments,&out)?;
+              }
+              None => {return Err(MechError{id: 1001, kind: MechErrorKind::MissingFunction(*name)});},
+            }
+          }
+          None => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
+        }
+      }
+      _ => (),
+    }
+    self.transformations.push(tfm.clone());
+    Ok(())
+  }
+  
+  pub fn solve(&self) -> Result<(),MechError> {
+    if self.state == BlockState::Ready {
+      for ref mut fxn in &mut self.plan.plan.iter() {
+        fxn.solve();
+      }
+      Ok(())
+    } else {
+      Err(MechError{id: 1001, kind: MechErrorKind::GenericError("Block not ready".to_string())})
+    }
+  }
+
+}
+
+impl fmt::Debug for Block {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut block_drawing = BoxPrinter::new();
+    block_drawing.add_title("🧊","BLOCK");
+    block_drawing.add_line(format!("id: {}", humanize(&self.id)));
+    block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_title("⚙️",&format!("triggers ({})",self.triggers.len()));
+    if self.triggers.len() > 0 {
+      for (table,row,col) in &self.triggers {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().to_string()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
+    }
+    block_drawing.add_title("📭",&format!("input ({})",self.input.len()));
+    if self.input.len() > 0 {
+      for (table,row,col) in &self.input {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          self.strings.borrow().get(table_id).unwrap().to_string()
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
+    }
+    block_drawing.add_title("📬",&format!("output ({})",self.output.len()));
+    if self.output.len() > 0 {
+      for (table,row,col) in &self.output {
+        let table_name: String = if let TableId::Global(table_id) = table {
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table_id),
+          } 
+        } else {
+          format!("{:?}",table)
+        };
+        block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
+      }
+    }
+    block_drawing.add_title("🪄","transformations");
+    block_drawing.add_line(format!("{:#?}", &self.transformations));
+    if let Some(ut) = &self.unsatisfied_transformation {
+      block_drawing.add_title("😔","unsatisfied transformations");
+      block_drawing.add_line(format!("{:#?}", &ut));
+    }
+    if self.pending_transformations.len() > 0 {
+      block_drawing.add_title("⏳","pending transformations");
+      block_drawing.add_line(format!("{:#?}", &self.pending_transformations));
+    }
+    block_drawing.add_title("🗺️","plan");
+    block_drawing.add_line(format!("{:?}", &self.plan));
+    block_drawing.add_title("📅","tables");
+    block_drawing.add_line(format!("{:?}", &self.tables));
+    write!(f,"{:?}",block_drawing)?;
+    Ok(())
+  }
 }
 
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -639,490 +843,4 @@ pub struct Register {
   pub table_id: TableId,
   pub row: TableIndex,
   pub column: TableIndex,
-}
-
-impl Register {
-  pub fn hash(&self) -> u64 {
-    let id_bytes = (*self.table_id.unwrap()).to_le_bytes();
-
-    let unwrap_index = |index: &TableIndex| -> u64 {
-      match index {
-        TableIndex::Index(ix) => *ix as u64,
-        TableIndex::Alias(alias) => {
-          alias.clone()
-        },
-        TableIndex::Table(table_id) => *table_id.unwrap(),
-        TableIndex::None |
-        TableIndex::All => 0,
-      }
-    };
-
-    let row_bytes = unwrap_index(&self.row).to_le_bytes();
-    let column_bytes = unwrap_index(&self.column).to_le_bytes();
-    let array = [id_bytes, row_bytes, column_bytes].concat();
-    seahash::hash(&array) & 0x00FFFFFFFFFFFFFF
-  }
-}
-
-pub fn format_register(strings: &HashMap<u64, String>, register: &Register) -> String {
-
-  let table_id = register.table_id;
-  let row = register.row;
-  let column = register.column;
-  let mut arg = format!("");
-  match table_id {
-    TableId::Global(id) => {
-      let name = match strings.get(&id) {
-        Some(name) => name.clone(),
-        None => format!("{:}",humanize(&id)),
-      };
-      arg=format!("{}#{}",arg,name)
-    },
-    TableId::Local(id) => {
-      match strings.get(&id) {
-        Some(name) => arg = format!("{}{}",arg,name),
-        None => arg = format!("{}{}",arg,humanize(&id)),
-      }
-    }
-  };
-  match row {
-    TableIndex::None => arg=format!("{}{{-,",arg),
-    TableIndex::All => arg=format!("{}{{:,",arg),
-    TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
-    TableIndex::Table(table) => {
-      match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
-        TableId::Local(id) => {
-          match strings.get(&id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(&id)),
-          }
-        }
-      };
-    }
-    TableIndex::Alias(alias) => {
-      let alias_name = strings.get(&alias).unwrap();
-      arg=format!("{}{{{},",arg,alias_name);
-    },
-  }
-  match column {
-    TableIndex::None => arg=format!("{}-}}",arg),
-    TableIndex::All => arg=format!("{}:}}",arg),
-    TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
-    TableIndex::Table(table) => {
-      match table {
-        TableId::Global(id) => arg=format!("{}#{}",arg,strings.get(&id).unwrap()),
-        TableId::Local(id) => {
-          match strings.get(&id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(&id)),
-          }
-        }
-      };
-    }
-    TableIndex::Alias(alias) => {
-      match strings.get(&alias) {
-        Some(alias_name) => arg=format!("{}{}}}",arg,alias_name),
-        None => arg=format!("{}{}}}",arg,&humanize(&alias)),
-      };
-      
-    },
-  }
-  arg
-
-}
-
-fn format_transformation(block: &Block, tfm: &Transformation) -> String {
-  match tfm {
-    Transformation::TableAlias{table_id, alias} => {
-      let mut tfm = format!("table/alias(");
-      match table_id {
-        TableId::Global(id) => {
-          let name = match block.store.strings.get(id) {
-            Some(name) => name.clone(),
-            None => format!("{:}",humanize(id)),
-          };
-          tfm=format!("{}#{}",tfm,name)
-        },
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) => tfm = format!("{}{}",tfm,name),
-            None => tfm = format!("{}{}",tfm,humanize(id)),
-          }
-        }
-      };
-      let alias_string = match block.store.strings.get(alias) {
-        Some(name) => name.clone(),
-        None => format!("{:}",humanize(alias)),
-      };
-      let mut tfm = format!("{}) -> {}",tfm, alias_string);
-      tfm
-    }
-    Transformation::NewTable{table_id, rows, columns} => {
-      let mut tfm = format!("table/new(");
-      match table_id {
-        TableId::Global(id) => {
-          let name = match block.store.strings.get(id) {
-            Some(name) => name.clone(),
-            None => format!("{:}",humanize(id)),
-          };
-          tfm=format!("{}#{}",tfm,name);
-        }
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) =>  tfm=format!("{}{}",tfm,name),
-            None => tfm=format!("{}{}",tfm,humanize(id)),
-          }
-        }
-      };
-      tfm = format!("{} {} x {})",tfm,rows,columns);
-      tfm
-    }
-    Transformation::Whenever{table_id, row, column, ..} => {
-      let mut arg = format!("~ ");
-      match table_id {
-        TableId::Global(id) => {
-          let name = match block.store.strings.get(id) {
-            Some(name) => name.clone(),
-            None => format!("{:}",humanize(id)),
-          };
-          arg=format!("{}#{}",arg,name)
-        },
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(id)),
-          }
-        }
-      };
-      match row {
-        TableIndex::None => arg=format!("{}{{-,",arg),
-        TableIndex::All => arg=format!("{}{{:,",arg),
-        TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
-        TableIndex::Table(table) => {
-          match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
-            TableId::Local(id) => {
-              match block.store.strings.get(id) {
-                Some(name) => arg = format!("{}{}",arg,name),
-                None => arg = format!("{}{}",arg,humanize(id)),
-              }
-            }
-          };
-        }
-        TableIndex::Alias(alias) => {
-          let alias_name = block.store.strings.get(alias).unwrap();
-          arg=format!("{}{{{},",arg,alias_name);
-        },
-      }
-      match column {
-        TableIndex::None => arg=format!("{}-}}",arg),
-        TableIndex::All => arg=format!("{}:}}",arg),
-        TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
-        TableIndex::Table(table) => {
-          match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
-            TableId::Local(id) => {
-              match block.store.strings.get(id) {
-                Some(name) => arg = format!("{}{}",arg,name),
-                None => arg = format!("{}{}",arg,humanize(id)),
-              }
-            }
-          };
-        }
-        TableIndex::Alias(alias) => {
-          let alias_name = block.store.strings.get(alias).unwrap();
-          arg=format!("{}{}}}",arg,alias_name);
-        },
-      }
-      arg
-    }
-    Transformation::Constant{table_id, value, ..} => {
-      let mut tfm = format!("const(");
-      match value.as_quantity() {
-        Some(_quantity) => tfm = format!("{}{:?}", tfm, value),
-        None => {
-          if value.is_empty() {
-            tfm = format!("{} _",tfm);
-          } else {
-            match value.as_reference() {
-              Some(_reference) => {tfm = format!("{}@{}",tfm, humanize(value));}
-              None => {
-                match value.as_bool() {
-                  Some(true) => tfm = format!("{} true",tfm),
-                  Some(false) => tfm = format!("{} false",tfm),
-                  None => {
-                    match value.as_string() {
-                      Some(_string_hash) => {
-                        tfm = format!("{}{:?}",tfm, block.store.strings.get(value).unwrap());
-                      }
-                      None => {
-                        match block.store.number_literals.get(value) {
-                          Some(number_literal) => {
-                            match number_literal.kind {
-                              NumberLiteralKind::Hexadecimal => {
-                                tfm = format!("{}0x",tfm);
-                                for byte in &number_literal.bytes {
-                                  tfm = format!("{}{:x}",tfm, byte);
-                                }
-                              }
-                              NumberLiteralKind::Binary => {
-                                tfm = format!("{}0b",tfm);
-                                for byte in &number_literal.bytes {
-                                  tfm = format!("{}{:b}",tfm, byte);
-                                }
-                              }
-                              NumberLiteralKind::Octal => {
-                                tfm = format!("{}0o",tfm);
-                                for byte in &number_literal.bytes {
-                                  tfm = format!("{}{:o}",tfm, byte);
-                                }
-                              }
-                              NumberLiteralKind::Decimal => {
-                                tfm = format!("{}0d",tfm);
-                                for byte in &number_literal.bytes {
-                                  tfm = format!("{}{:}",tfm, byte);
-                                }
-                              }
-                            }
-                          },
-                          None => {
-                            format!("{}0x{:0x}",tfm, value & 0x00FFFFFFFFFFFFFF);
-                          }
-                        };
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-          }
-        },
-      }
-      tfm = format!("{}) -> ",tfm);
-      match table_id {
-        TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) =>  tfm=format!("{}{}",tfm,name),
-            None => tfm=format!("{}{}",tfm,humanize(id)),
-          }
-        }
-      };
-      tfm
-    }
-    Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
-      let mut tfm = format!("");
-      match table_id {
-        TableId::Global(id) => {
-          tfm = match block.store.strings.get(id) {
-            Some(string) => format!("{}#{}",tfm,string),
-            None => humanize(&id),
-          };
-        } 
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) => tfm = format!("{}{}",tfm,name),
-            None => tfm = format!("{}{}",tfm,humanize(id)),
-          }
-        }
-      }
-      tfm = format!("{}({:x})",tfm,column_ix);
-      tfm = format!("{} -> {}",tfm,block.store.strings.get(column_alias).unwrap());
-      tfm
-    }
-    Transformation::Select{table_id, row, column, indices, out} => {
-      let mut tfm = format!("table/select(");
-      match table_id {
-        TableId::Global(id) => {
-          let name = match block.store.strings.get(id) {
-            Some(name) => name.clone(),
-            None => format!("{:}",humanize(id)),
-          };
-          tfm=format!("{}#{}",tfm,name)
-        },
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) => tfm = format!("{}{}",tfm,name),
-            None => tfm = format!("{}{}",tfm,humanize(id)),
-          }
-        }
-      };
-      for (row, column) in indices {
-        match row {
-          TableIndex::None => tfm=format!("{}{{-,",tfm),
-          TableIndex::All => tfm=format!("{}{{:,",tfm),
-          TableIndex::Index(ix) => tfm=format!("{}{{{},",tfm,ix),
-          TableIndex::Table(table) => {
-            match table {
-              TableId::Global(id) => tfm=format!("{}{{#{},",tfm,block.store.strings.get(id).unwrap()),
-              TableId::Local(id) => {
-                match block.store.strings.get(id) {
-                  Some(name) => {
-                    tfm = format!("{}{{{},",tfm,name);
-                  },
-                  None => tfm = format!("{}{{{},",tfm,humanize(id)),
-                }
-              }
-            };
-          }
-          TableIndex::Alias(alias) => {
-            let alias_name = block.store.strings.get(alias).unwrap();
-            tfm=format!("{}{{{},",tfm,alias_name);
-          },
-        }
-        match column {
-          TableIndex::None => tfm=format!("{}-}}",tfm),
-          TableIndex::All => tfm=format!("{}:}}",tfm),
-          TableIndex::Index(ix) => tfm=format!("{}{}}}",tfm,ix),
-          TableIndex::Table(table) => {
-            match table {
-              TableId::Global(id) => tfm=format!("{}#{}",tfm,block.store.strings.get(id).unwrap()),
-              TableId::Local(id) => {
-                match block.store.strings.get(id) {
-                  Some(name) => tfm = format!("{}{}",tfm,name),
-                  None => tfm = format!("{}{}",tfm,humanize(id)),
-                }
-              }
-            };
-          }
-          TableIndex::Alias(alias) => {
-            let alias_name = block.store.strings.get(alias).unwrap();
-            tfm=format!("{}.{}}}",tfm,alias_name);
-          },
-        }
-      }
-      tfm=format!("{}) -> {}", tfm, humanize(&out.unwrap()));
-      tfm
-    }
-    Transformation::Function{name, arguments, out} => {
-      let name_string = match block.store.strings.get(name) {
-        Some(name_string) => name_string.clone(),
-        None => format!("{}", humanize(name)),
-      };
-      let mut arg = format!("");
-      for (ix,(_arg_id, table, row, column)) in arguments.iter().enumerate() {
-        match table {
-          TableId::Global(id) => {
-            let name = match block.store.strings.get(id) {
-              Some(name) => name.clone(),
-              None => format!("{:}",humanize(id)),
-            };
-            arg=format!("{}#{}",arg,name)
-          },
-          TableId::Local(id) => {
-            match block.store.strings.get(id) {
-              Some(name) => arg = format!("{}{}",arg,name),
-              None => arg = format!("{}{}",arg,humanize(id)),
-            }
-          }
-        };
-        match row {
-          TableIndex::None => arg=format!("{}{{-,",arg),
-          TableIndex::All => arg=format!("{}{{:,",arg),
-          TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
-          TableIndex::Table(table) => {
-            match table {
-              TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.strings.get(id).unwrap()),
-              TableId::Local(id) => {
-                match block.store.strings.get(id) {
-                  Some(name) => {
-                    arg = format!("{}{{{},",arg,name);
-                  },
-                  None => arg = format!("{}{{{},",arg,humanize(id)),
-                }
-              }
-            };
-          }
-          TableIndex::Alias(alias) => {
-            let alias_name = block.store.strings.get(alias).unwrap();
-            arg=format!("{}{{{},",arg,alias_name);
-          },
-        }
-        match column {
-          TableIndex::None => arg=format!("{}-}}",arg),
-          TableIndex::All => arg=format!("{}:}}",arg),
-          TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
-          TableIndex::Table(table) => {
-            match table {
-              TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
-              TableId::Local(id) => {
-                match block.store.strings.get(id) {
-                  Some(name) => arg = format!("{}{}",arg,name),
-                  None => arg = format!("{}{}",arg,humanize(id)),
-                }
-              }
-            };
-          }
-          TableIndex::Alias(alias) => {
-            let alias_name = block.store.strings.get(alias).unwrap();
-            arg=format!("{}.{}}}",arg,alias_name);
-          },
-        }
-        if ix < arguments.len()-1 {
-          arg=format!("{}, ", arg);
-        }
-      }
-      let mut arg = format!("{}({}) -> ",name_string,arg);
-      let (out_table, out_row, out_column) = out;
-      match out_table {
-        TableId::Global(id) => {
-          let name = match block.store.strings.get(id) {
-            Some(name) => name.clone(),
-            None => format!("{:}",humanize(id)),
-          };
-          arg=format!("{}#{}",arg,name);
-        }
-        TableId::Local(id) => {
-          match block.store.strings.get(id) {
-            Some(name) => arg = format!("{}{}",arg,name),
-            None => arg = format!("{}{}",arg,humanize(id)),
-          }
-        }
-      };
-      match out_row {
-        TableIndex::None => arg=format!("{}{{-,",arg),
-        TableIndex::All => arg=format!("{}{{:,",arg),
-        TableIndex::Index(ix) => arg=format!("{}{{{},",arg,ix),
-        TableIndex::Table(table) => {
-          match table {
-            TableId::Global(id) => arg=format!("{}{{#{},",arg,block.store.strings.get(id).unwrap()),
-            TableId::Local(id) => {
-              match block.store.strings.get(id) {
-                Some(name) => arg = format!("{}{{{},",arg,name),
-                None => arg = format!("{}{{{},",arg,humanize(id)),
-              }
-            }
-          };
-        }
-        TableIndex::Alias(alias) => {
-          let alias_name = block.store.strings.get(alias).unwrap();
-          arg=format!("{}{{{},",arg,alias_name);
-        },
-      }
-      match out_column {
-        TableIndex::None => arg=format!("{}-}}",arg),
-        TableIndex::All => arg=format!("{}:}}",arg),
-        TableIndex::Index(ix) => arg=format!("{}{}}}",arg,ix),
-        TableIndex::Table(table) => {
-          match table {
-            TableId::Global(id) => arg=format!("{}#{}",arg,block.store.strings.get(id).unwrap()),
-            TableId::Local(id) => {
-              match block.store.strings.get(id) {
-                Some(name) => arg = format!("{}{}",arg,name),
-                None => arg = format!("{}{}",arg,humanize(id)),
-              }
-            }
-          };
-        }
-        TableIndex::Alias(alias) => {
-          let alias_name = block.store.strings.get(alias).unwrap();
-          arg=format!("{}.{}}}",arg,alias_name);
-        },
-      }
-      arg
-    },
-    x => format!("{:?}", x),
-  }
 }

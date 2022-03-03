@@ -5,445 +5,242 @@
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
-use quantities::{Quantity, ToQuantity, QuantityMath};
-use errors::{ErrorType};
-use ::{hash_string};
+use crate::*;
+use std::fmt;
+use std::mem::transmute;
+use std::convert::TryInto;
 
 // ## Value structs and enums
 
-pub type Value = u64;
+#[derive(Clone,PartialEq,Serialize,Deserialize)]
+pub enum Value {
+  U8(U8),
+  U16(U16),
+  U32(U32),
+  U64(U64),
+  U128(U128),
+  I8(i8),
+  I16(i16),
+  I32(i32),
+  I64(i64),
+  I128(i128),
+  f32(f32),
+  F32(F32),
+  F64(f64),
+  Bool(bool),
+  Time(F32),
+  Length(F32),
+  Speed(F32),
+  String(MechString),
+  Reference(TableId),
+  Empty,
+}
+
+
+impl Value {
+
+  pub fn as_table_reference(&self) -> Result<TableId,MechError> {
+    match self {
+      Value::Reference(table_id) => Ok(*table_id),
+      _ => Err(MechError{id: 0001, kind: MechErrorKind::None}),
+    }
+  }
+
+  pub fn as_string(&self) -> Result<MechString,MechError> {
+    match self {
+      Value::String(string) => Ok(string.clone()),
+      _ => Err(MechError{id: 0001, kind: MechErrorKind::None}),
+    }
+  }
+
+  pub fn from_string(string: &String) -> Value {
+    Value::String(MechString::from_string(string.clone()))
+  }
+
+  pub fn from_str(string: &str) -> Value {
+    Value::String(MechString::from_string(string.to_string()))
+  }
+
+  pub fn kind(&self) -> ValueKind {
+    match &self {
+      Value::U8(_) => ValueKind::U8,
+      Value::U16(_) => ValueKind::U16,
+      Value::U32(_) => ValueKind::U32,
+      Value::U64(_) => ValueKind::U64,
+      Value::U128(_) => ValueKind::U128,
+      Value::I8(_) => ValueKind::I8,
+      Value::I16(_) => ValueKind::I16,
+      Value::I32(_) => ValueKind::I32,
+      Value::I64(_) => ValueKind::I64,
+      Value::I128(_) => ValueKind::I128,
+      Value::Time(_) => ValueKind::Time,
+      Value::Length(_) => ValueKind::Length,
+      Value::Speed(_) => ValueKind::Speed,
+      Value::F32(_) => ValueKind::F32,
+      Value::F64(_) => ValueKind::F64,
+      Value::f32(_) => ValueKind::f32,
+      Value::Bool(_) => ValueKind::Bool,
+      Value::Reference(_) => ValueKind::Reference,
+      Value::String(_) => ValueKind::String,
+      Value::Empty => ValueKind::Empty,
+    }
+  }
+  
+}
+
+impl fmt::Debug for Value {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match &self {
+      Value::U8(v) => write!(f,"{:?}u8",v)?,
+      Value::U16(v) => write!(f,"{:?}u16",v)?, 
+      Value::U32(v) => write!(f,"{:?}u32",v)?, 
+      Value::U64(v) => write!(f,"{:?}u64",v)?,
+      Value::U128(v) => write!(f,"{:?}u128",v)?, 
+      Value::I8(v) => write!(f,"{}i8",v)?, 
+      Value::I16(v) => write!(f,"{}i16",v)?, 
+      Value::I32(v) => write!(f,"{}i32",v)?, 
+      Value::I64(v) => write!(f,"{}i64",v)?, 
+      Value::I128(v) => write!(f,"{}i128",v)?, 
+      Value::Time(v) => write!(f,"{:?}s",v)?,
+      Value::Length(v) => write!(f,"{:?}m",v)?,
+      Value::Speed(v) => write!(f,"{:?}m/s",v)?,
+      Value::f32(v) => write!(f,"{:?}f32",v)?,
+      Value::F32(v) => write!(f,"{:?}f32",v)?,
+      Value::F64(v) => write!(f,"{}f64",v)?, 
+      Value::Bool(v) => write!(f,"{}",v)?,
+      Value::Reference(v) => write!(f,"{:?}",v)?, 
+      Value::String(v) => {
+        write!(f,"\"{}\"",v.to_string())?
+      }, 
+      Value::Empty => write!(f,"_")?,
+    }
+    Ok(())
+  }
+}
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub enum ValueType {
+pub enum ValueKind {
+  U8,
+  U16,
+  U32,
+  U64,
+  U128,
+  I8,
+  I16,
+  I32,
+  I64,
+  I128,
+  F32,
+  f32,
+  F64,
+  Index,
   Quantity,
-  Boolean,
+  Bool,
+  Time,
+  Length,
+  Speed,
   String,
   Reference,
   NumberLiteral,
+  Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub enum NumberLiteralKind {
-  Decimal,
-  Hexadecimal,
-  Octal,
-  Binary
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NumberLiteral {
-  pub kind: NumberLiteralKind,
+  pub kind: u64,
   pub bytes: Vec<u8>,
 }
 
 impl NumberLiteral {
 
-  pub fn as_u8(&self) -> u8 {
-    self.bytes.last().unwrap().clone()
+  pub fn new(kind: u64, bytes: Vec<u8>) -> NumberLiteral {
+    NumberLiteral{kind,bytes}
   }
 
-  pub fn as_u32(&self) -> u32 {
-    let mut container: u32 = 0;
-    for (i,byte) in self.bytes.iter().rev().take(4).enumerate() {
-      container = container | (*byte as u32) << (8 * i) ;
-    }
-    container
-  }
-
-  pub fn as_u64(&self) -> u64 {    
-    let mut container: u64 = 0;
-    for (i,byte) in self.bytes.iter().rev().take(8).enumerate() {
-      container = container | (*byte as u64) << (8 * i) ;
-    }
-    container
-  }
-}
-
-// ## Value Methods
-
-pub trait ValueMethods {
-  fn empty() -> Value;
-  fn from_string(string: &String) -> Value;
-  fn from_str(string: &str) -> Value;
-  fn from_bool(boolean: bool) -> Value;
-  fn from_quantity(num: Quantity) -> Value;
-  fn from_id(id: u64) -> Value;
-  fn from_number_literal(number_literal: &NumberLiteral) -> Value;
-  fn value_type(&self) -> ValueType;
-  fn as_quantity(&self) -> Option<Quantity>;
-  fn as_u64(&self) -> Option<u64>;
-  fn as_i64(&self) -> Option<i64>;
-  fn as_f64(&self) -> Option<f64>;
-  fn as_f32(&self) -> Option<f32>;
-  fn from_u64(num: u64) -> Quantity;
-  fn from_f32(num: f32) -> Quantity;
-  fn from_i32(num: i32) -> Quantity;
-  fn from_u32(num: u32) -> Quantity;
-  fn as_string(&self) -> Option<u64>;
-  fn as_number_literal(&self) -> Option<u64>;
-  fn as_bool(&self) -> Option<bool>;
-  fn as_reference(&self) -> Option<u64>;
-  fn as_raw(&self) -> u64;
-  fn get_tag(&self) -> u64;
-  fn is_empty(&self) -> bool;
-  fn is_number(&self) -> bool;
-  fn is_reference(&self) -> bool;
-  fn is_number_literal(&self) -> bool;
-  fn is_number_literal_interned(&self) -> bool;
-  fn len(&self) -> Option<usize>;
-  fn equal(&self, other: Value) -> Result<Value, ErrorType>;
-  fn not_equal(&self, other: Value) -> Result<Value, ErrorType>;
-  fn less_than(&self, other: Value) -> Result<Value, ErrorType>;
-  fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
-  fn greater_than(&self, other: Value) -> Result<Value, ErrorType>;
-  fn greater_than_equal(&self, other: Value) -> Result<Value, ErrorType>;
-  fn add(&self, other: Value) -> Result<Value, ErrorType>;
-  fn sub(&self, other: Value) -> Result<Value, ErrorType>;
-  fn multiply(&self, other: Value) -> Result<Value, ErrorType>;
-  fn divide(&self, other: Value) -> Result<Value, ErrorType>;
-  fn power(&self, other: Value) -> Result<Value, ErrorType>;
-  fn and(&self, other: Value) -> Result<Value, ErrorType>;
-  fn or(&self, other: Value) -> Result<Value, ErrorType>;
-  fn xor(&self, other: Value) -> Result<Value, ErrorType>;
-}
-
-
-// The first byte of a value indicates its domain. We have a couple built-in domains:
-
-// - Empty - 0x10
-// - Boolean - x40
-// - Reference - 0x20
-// - String - 0x80
-// - Number Literal - 0xC0
-
-const EMPTY: u64 = 0x1000000000000000;
-const TRUE: u64 = 0x4000000000000001;
-const FALSE: u64 = 0x4000000000000000;
-const REFERENCE: u64 = 0x2000000000000000;
-const STRING: u64 = 0x8000000000000000;
-const NUMBER_LITERAL: u64 = 0xC000000000000000;
-const NUMBER_LITERAL_INTERNED: u64 = 0xD000000000000000;
-
-impl ValueMethods for Value {
-
-  fn empty() -> Value {
-    EMPTY
-  }
-
-  fn from_number_literal(number_literal: &NumberLiteral) -> Value {
-    if number_literal.bytes.len() <= 7 {
-      let mut number: u64 = 0;
-      for (ix, byte) in number_literal.bytes.iter().enumerate() {
-        let shift = (number_literal.bytes.len() - ix - 1) * 8;
-        number = number | ((*byte as u64) << shift);
-      }
-      let len = (number_literal.bytes.len() as u64) << (14 * 4);
-      number = number + NUMBER_LITERAL;
-      number = number | len;
-      number
-    } else {
-      hash_string(&format!("byte vector: {:?}",number_literal)) + NUMBER_LITERAL_INTERNED
-    }
-  }
-
-  fn from_string(string: &String) -> Value {
-    let mut string_hash = hash_string(string);
-    string_hash = string_hash + STRING;
-    string_hash
-  }
-
-  fn from_str(string: &str) -> Value {
-    let mut string_hash = hash_string(string);
-    string_hash = string_hash + STRING;
-    string_hash
-  }
-
-  fn from_bool(boolean: bool) -> Value {
-    match boolean {
-      true => TRUE,
-      false => FALSE,
-    }
-  }
-
-  fn from_id(id: u64) -> Value {
-    id + REFERENCE
-  }
-
-  fn from_quantity(num: Quantity) -> Value {
-    num
-  }
-
-  fn is_empty(&self) -> bool {
-    if *self == Value::empty() {
-      true
+  fn is_float(&self) -> bool {
+    if self.kind == *cF32 || self.kind == *cF32L {
+      true 
     } else {
       false
     }
   }
 
-  fn value_type(&self) -> ValueType {
-    match self.as_quantity() {
-      Some(_) => ValueType::Quantity,
-      None => {
-        match self.as_string() {
-          Some(_) => ValueType::String,
-          None => {
-            match self.as_reference() {
-              Some(_) => ValueType::Reference,
-              None => {
-                match self.as_bool() {
-                  Some(_) => ValueType::Boolean,
-                  None => match self.as_number_literal() {
-                    Some(_) => ValueType::NumberLiteral,
-                    None => ValueType::Empty,
-                  },
-                }
-              }
-            }
-          }
-        }
+  pub fn as_u8(&mut self) -> u8 {
+    if self.is_float() {
+      self.as_f32() as u8
+    } else {
+      self.bytes.last().unwrap().clone()
+    }
+  }
+
+  pub fn as_u16(&mut self) -> u16 {
+    if self.is_float() {
+      self.as_f32() as u16
+    } else {
+      while self.bytes.len() < 2 {
+        self.bytes.insert(0,0);
       }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u16>());
+      let x = u16::from_be_bytes(fbytes.try_into().unwrap());
+      x
     }
   }
 
-  fn as_raw(&self) -> u64 {
-    self & 0x0FFFFFFFFFFFFFFF
-  }
-
-  fn get_tag(&self) -> u64 {
-    self & 0xF000000000000000
-  }
-
-  fn as_quantity(&self) -> Option<Quantity> {
-    match self.is_number() {
-      true => Some(*self),
-      false => None,
-    }
-  }
-
-  fn as_reference(&self) -> Option<u64> {
-    match self.get_tag() {
-      REFERENCE => Some(self.as_raw()),
-      _ => None,
-    }
-  }
-
-  fn as_u64(&self) -> Option<u64> {
-    match self.is_number() {
-      true => Some(self.to_u64()),
-      false => None,
-    }
-  }
-
-  fn is_number(&self) -> bool {
-    match self.get_tag() {
-      EMPTY | REFERENCE | TRUE | FALSE | STRING | NUMBER_LITERAL | NUMBER_LITERAL_INTERNED => false,
-      _ => true,
-    }
-  }
-
-  fn is_reference(&self) -> bool {
-    match self.get_tag() {
-      REFERENCE => true,
-      _ => false,
-    }
-  }   
-  
-  fn is_number_literal(&self) -> bool {
-    match self.get_tag() {
-      NUMBER_LITERAL => true,
-      _ => false,
-    }
-  } 
-
-  fn len(&self) -> Option<usize> {
-    match self.is_number_literal() {
-      true => {
-        Some(((self & 0x0F00000000000000) >> (14 * 4)) as usize)
-      },
-      _ => None,
-    }
-  } 
-
-  fn is_number_literal_interned(&self) -> bool {
-    match self.get_tag() {
-      NUMBER_LITERAL_INTERNED => true,
-      _ => false,
-    }
-  } 
-
-  fn as_f64(&self) -> Option<f64> {
-    match self.is_number() {
-      true => Some(self.to_f32() as f64),
-      false => None,
-    }
-  }
-
-  fn as_f32(&self) -> Option<f32> {
-    match self.is_number() {
-      true => Some(self.to_f32()),
-      false => None,
-    }
-  }
-
-  fn from_u64(num: u64) -> Value {
-    num.to_quantity()
-  }
-
-  fn from_i32(num: i32) -> Value {
-    num.to_quantity()
-  }
-
-  fn from_u32(num: u32) -> Value {
-    num.to_quantity()
-  }
-
-  fn from_f32(num: f32) -> Value {
-    num.to_quantity()
-  }
-
-  fn as_i64(&self) -> Option<i64> {
-    match self.is_number() {
-      true => Some(self.to_f32() as i64),
-      false => None,
-    }
-  }
-
-  fn as_string(&self) -> Option<u64> {
-    match self.get_tag() {
-      STRING => Some(*self),
-      _ => None,
-    }
-  }
-
-  fn as_bool(&self) -> Option<bool> {
-    match *self {
-      TRUE => Some(true),
-      FALSE => Some(false),
-      _ => None,
-    }
-  }
-
-  fn as_number_literal(&self) -> Option<u64> {
-    match self.get_tag() {
-      NUMBER_LITERAL | NUMBER_LITERAL_INTERNED => Some(*self),
-      _ => None,
-    }
-  }
-
-  fn equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.value_type(), other.value_type()) {
-      (ValueType::Boolean, ValueType::Boolean) => {
-        Ok(Value::from_bool(self.as_bool().unwrap() == other.as_bool().unwrap()))
+  pub fn as_u32(&mut self) -> u32 {
+    if self.is_float() {
+      self.as_f32() as u32
+    } else {
+      while self.bytes.len() < 4 {
+        self.bytes.insert(0,0);
       }
-      (ValueType::String, ValueType::String) => {
-        Ok(Value::from_bool(self.as_string().unwrap() == other.as_string().unwrap()))
-      }
-      (ValueType::Quantity, ValueType::Quantity) => {
-        Ok(Value::from_bool(self.as_quantity().unwrap().equal(other.as_quantity().unwrap())))
-      }
-      _ => Err(ErrorType::IncorrectFunctionArgumentType)
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u32>());
+      let x = u32::from_be_bytes(fbytes.try_into().unwrap());
+      x
     }
   }
 
-  fn not_equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.value_type(), other.value_type()) {
-      (ValueType::Boolean, ValueType::Boolean) => {
-        Ok(Value::from_bool(self.as_bool().unwrap() != other.as_bool().unwrap()))
+  pub fn as_u64(&mut self) -> u64 {    
+    if self.is_float() {
+      self.as_f32() as u64
+    } else {
+      while self.bytes.len() < 8 {
+        self.bytes.insert(0,0);
       }
-      (ValueType::String, ValueType::String) => {
-        Ok(Value::from_bool(self.as_string().unwrap() != other.as_string().unwrap()))
-      }
-      (ValueType::Quantity, ValueType::Quantity) => {
-        Ok(Value::from_bool(self.as_quantity().unwrap().not_equal(other.as_quantity().unwrap())))
-      }
-      _ => Err(ErrorType::IncorrectFunctionArgumentType)
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u64>());
+      let x = u64::from_be_bytes(fbytes.try_into().unwrap());
+      x
     }
   }
 
-  fn less_than(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
+  pub fn as_u128(&mut self) -> u128 {    
+    if self.is_float() {
+      self.as_f32() as u128
+    } else {
+      while self.bytes.len() < 16 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<u128>());
+      let x = u128::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
   }
 
-  fn less_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.less_than_equal(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
+  pub fn as_f32(&mut self) -> f32 {    
+    while self.bytes.len() < 4 {
+      self.bytes.insert(0,0);
+    }
+    let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f32>());
+    f32::from_be_bytes(fbytes.try_into().unwrap())
   }
 
-  fn greater_than(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn greater_than_equal(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q.greater_than_equal(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn add(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.add(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn sub(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.sub(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn multiply(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.multiply(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn divide(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.divide(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn power(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_quantity(), other.as_quantity()) {
-      (Some(q), Some(r)) => Ok(Value::from_quantity(q.power(r))),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn or(&self, other: Value) -> Result<Value, ErrorType>{
-    match (self.as_bool(), other.as_bool()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q || r)),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn and(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_bool(), other.as_bool()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q && r)),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
-  }
-
-  fn xor(&self, other: Value) -> Result<Value, ErrorType> {
-    match (self.as_bool(), other.as_bool()) {
-      (Some(q), Some(r)) => Ok(Value::from_bool(q ^ r)),
-      _ => Err(ErrorType::IncorrectFunctionArgumentType),
-    } 
+  pub fn as_usize(&mut self) -> usize {    
+    if self.is_float() {
+      self.as_f32() as usize
+    } else {
+      self.as_u64() as usize
+    }
   }
 
 }
