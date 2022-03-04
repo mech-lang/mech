@@ -378,7 +378,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error]));
+        println!("{}",format_errors(&vec![mech_error.kind]));
         std::process::exit(1);
       }
     };
@@ -392,7 +392,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blocks = match compile_code(code) {
       Ok(blocks) => blocks,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error]));
+        println!("{}",format_errors(&vec![mech_error.kind]));
         std::process::exit(1);
       }
     };
@@ -514,7 +514,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       None => (),
     };
 
-  
     //ClientHandler::new("Mech REPL", None, None, None, cores);
     let thread_receiver = mech_client.incoming.clone();
     
@@ -528,6 +527,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       match thread_receiver.recv() {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
+        },
+        (Ok(ClientMessage::Error(error))) => {
+          let formatted_errors = format_errors(&vec![error]);
+          println!("{}\n{}", formatted_name, formatted_errors);
         },
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
@@ -579,7 +582,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error]));
+        println!("{}",format_errors(&vec![mech_error.kind]));
         std::process::exit(1);
       }
     };

@@ -47,12 +47,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 match bincode::deserialize_from(&mut reader) {
                   Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
-                    return Err(MechError::GenericError(7492));
+                    return Err(MechError{id: 1234, kind: MechErrorKind::None});
                   },
                 }
               }
               Err(err) => {
-                return Err(MechError::GenericError(7493));
+                return Err(MechError{id: 1234, kind: MechErrorKind::None});
               },
             };
           }
@@ -65,14 +65,14 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                return Err(MechError::GenericError(7494));
+                return Err(MechError{id: 1234, kind: MechErrorKind::None});
               },
             };
           }
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError::GenericError(7496));},
+      _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
     }
     Ok(code)
   };
@@ -86,10 +86,10 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
         Ok(response) => {
           match response.text() {
             Ok(text) => code.push(MechCode::String(text)),
-            _ => {return Err(MechError::GenericError(7497));},
+            _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
           }
         }
-        _ => {return Err(MechError::GenericError(7498));},
+        _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
       }
     } else {
       // Compile a directory of mech files
@@ -106,7 +106,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
         let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        return Err(MechError::GenericError(7499));
+        return Err(MechError{id: 1234, kind: MechErrorKind::None});
       }
     };
   }
