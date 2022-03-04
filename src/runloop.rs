@@ -512,7 +512,7 @@ impl ProgramRunner {
             match program.mech.load_blocks(blocks) {
               Ok(mut nbi) => new_block_ids.append(&mut nbi),
               Err(x) => {
-                let resolved_errors: Vec<MechError> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+                let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
                 for error in &resolved_errors {
                   match program.mech.errors.remove(error) {
                     Some(mut ublocks) => {
