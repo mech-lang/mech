@@ -33,5 +33,6 @@ pub enum MechErrorKind {
   GenericError(String),
   Unhandled,
   UnknownFunctionArgument(u64),
+  UnknownColumnKind(u64),
   None,
 }

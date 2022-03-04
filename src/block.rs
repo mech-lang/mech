@@ -594,7 +594,7 @@ impl Block {
         else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
         else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
         else {
-          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+          return Err(MechError{id: 1001, kind: MechErrorKind::UnknownColumnKind(*kind)});
         }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
@@ -718,7 +718,7 @@ impl Block {
           t.set_raw(0,0,Value::U128(U128::new(x)))?;
         }
         else {
-          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+          return Err(MechError{id: 1001, kind: MechErrorKind::UnknownColumnKind(*kind)});
         }
       },
       Transformation::Constant{table_id, value} => {
