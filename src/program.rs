@@ -94,7 +94,7 @@ pub struct Program {
   capacity: usize,
   pub incoming: Receiver<RunLoopMessage>,
   pub outgoing: Sender<RunLoopMessage>,
-  //pub errors: HashSet<Error>,
+  pub errors: HashSet<MechErrorKind>,
   programs: usize,
   loaded_machines: HashSet<u64>,
   pub listeners: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
@@ -121,7 +121,7 @@ impl Program {
       input_map: HashMap::new(),
       incoming,
       outgoing,
-      //errors: HashSet::new(),
+      errors: HashSet::new(),
       programs: 0,
       listeners: HashMap::new(),
     }

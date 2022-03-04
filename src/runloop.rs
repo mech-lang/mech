@@ -61,6 +61,7 @@ pub enum ClientMessage {
   //Table(Option<Table>),
   Transaction(Transaction),
   String(String),
+  Error(MechErrorKind),
   //Block(Block),
   StepDone,
   Done,
@@ -551,11 +552,8 @@ impl ProgramRunner {
             }
 
             // React to errors
-            if program.mech.errors.len() > 0 {
-              client_outgoing.send(ClientMessage::String(format!("Errors found: {:?}", program.mech.errors.len())));
-              //let error_string = format_errors();
-              //client_outgoing.send(ClientMessage::String(error_string));
-              //client_outgoing.send(ClientMessage::Exit(1));
+            for (error,_) in program.mech.errors.iter() {
+              client_outgoing.send(ClientMessage::Error(error.clone()));
             }
             client_outgoing.send(ClientMessage::StepDone);
           }

@@ -50,7 +50,7 @@ pub use self::program::{Program};
 pub use self::runloop::{ProgramRunner, RunLoop, ClientMessage};
 pub use self::persister::{Persister};
 
-pub fn format_errors(errors: &Vec<MechError>) -> String {
+pub fn format_errors(errors: &Vec<MechErrorKind>) -> String {
   let mut formatted_errors = "".to_string();
   let plural = if errors.len() == 1 {
     ""
