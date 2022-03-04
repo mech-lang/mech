@@ -18,41 +18,27 @@ lazy_static! {
 }
 
 #[derive(Debug)]
-pub struct MathSinRadCol {
-  pub col: ColumnV<F32>, pub out: ColumnV<F32>
+pub struct MathSinRadVV {
+  pub col: (ColumnV<F32>,usize,usize), pub out: ColumnV<F32>
 }
 
-impl MechFunction for MathSinRadCol {
+impl MechFunction for MathSinRadVV {
   fn solve(&self) {
+    let (col,six,eix) = &self.col;
     self.out.borrow_mut()
             .iter_mut()
-            .zip(self.col.borrow().iter())
+            .zip(col.borrow()[*six..=*eix].iter())
             .for_each(|(out, rhs)| *out = F32::new(sinf(rhs.unwrap()))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-#[derive(Debug)]
-pub struct MathSinDegCol {
-  pub col: ColumnV<F32>, pub out: ColumnV<F32>
-}
-
-impl MechFunction for MathSinDegCol {
-  fn solve(&self) {
-    self.out.borrow_mut()
-            .iter_mut()
-            .zip(self.col.borrow().iter())
-            .for_each(|(out, rhs)| *out = F32::new(sinf(rhs.unwrap() * PI / 180.0))); 
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
 
 pub struct MathSin{}
-
 impl MechFunctionCompiler for MathSin {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     if arguments.len() > 1 {
-      return Err(MechError::GenericError(1347));
+      return Err(MechError{id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
     }
     let arg_dims = block.get_arg_dims(&arguments)?;
     let (arg_name,arg_table_id,_) = arguments[0];
@@ -63,23 +49,29 @@ impl MechFunctionCompiler for MathSin {
     if arg_name == *ANGLE {
       match arg_dims[0] {
         TableShape::Scalar => {
-
+          let arg = block.get_arg_columns(arguments)?[0].clone();
+          out_brrw.resize(1,1);
+          if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
+            match arg {
+              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadVV{col: (col.clone(),0,0), out: out_col.clone()}),
+              x => {return Err(MechError{id: 1348, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
+            }
+          }
         }
         TableShape::Column(rows) => {
           let arg = block.get_arg_columns(arguments)?[0].clone();
           out_brrw.resize(rows,1);
           if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
             match arg {
-              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadCol{col: col.clone(), out: out_col.clone()}),
-              x => {return Err(MechError::GenericError(1348));},
+              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadVV{col: (col.clone(),0,col.len()), out: out_col.clone()}),
+              x => {return Err(MechError{id: 1348, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
             }
           }
         }
-        x => return Err(MechError::GenericError(1350)),
+        x => {return Err(MechError{id: 1349, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
       }
-
     } else {
-      return Err(MechError::GenericError(1349));
+      return Err(MechError{id: 1350, kind: MechErrorKind::UnknownFunctionArgument(arg_name)});
     }
     Ok(())
   }
