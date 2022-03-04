@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #![allow(dead_code)]
 #![feature(get_mut_unchecked)]
 #[macro_use]
@@ -11,7 +12,7 @@ extern crate core as rust_core;
 use rust_core::fmt;
 use std::sync::Arc;
 use hashbrown::HashMap;
-use mech_core::{Block, Table, Value, Error, Transaction, TableId, Transformation, Register, Change, NumberLiteral};
+use mech_core::*;
 use crossbeam_channel::Sender;
 
 // ## Client Message
@@ -22,8 +23,8 @@ pub enum SocketMessage {
   Pong,
   RemoteCoreConnect(String),
   RemoteCoreDisconnect(u64),
-  Listening(Register),
-  Producing(Register),
+  Listening((TableId,TableIndex,TableIndex)),
+  Producing((TableId,TableIndex,TableIndex)),
   Code(MechCode),
   RemoveBlock(usize),
   Transaction(Transaction),
@@ -65,27 +66,26 @@ pub enum RunLoopMessage {
   Pause,
   Resume,
   Clear,
+  PrintDebug,
   String((String, u32)),
   Exit(i32),
   PrintCore(Option<u64>),
+  PrintTable(u64),
   PrintRuntime,
-  Listening((u64,Register)),
+  Listening((u64,(TableId,TableIndex,TableIndex))),
   GetTable(u64),
   Transaction(Transaction),
   Code(MechCode),
-  EchoCode(String),
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
   RemoteCoreDisconnect(u64),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniBlock {
   pub id: u64,
-  pub transformations: Vec<(String, Vec<Transformation>)>,
-  pub plan: Vec<Transformation>,
+  pub transformations: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
-  pub errors: Vec<Error>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
 }
 
@@ -94,51 +94,33 @@ impl MiniBlock {
     MiniBlock {
       id: 0,
       transformations: Vec::with_capacity(1),
-      plan: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
-      errors: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
     }
   }
+
+  pub fn maximize_block(miniblock: &MiniBlock) -> Block {
+    let mut block = Block::new();
+    for tfms in &miniblock.transformations {
+      block.add_tfm(tfms.clone());
+    }
+    block
+  }
+ 
+
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MiniProgram {
-  pub title: Option<String>,
-  pub blocks: Vec<MiniBlock>,
-}
-
-pub fn maximize_block(miniblock: &MiniBlock) -> Block {
-  let mut block = Block::new(100);
-  for tfms in &miniblock.transformations {
-    block.register_transformations(tfms.clone());
-  }
-  for error in &miniblock.errors {
-    block.errors.insert(error.clone());
-  }
-  block.plan = miniblock.plan.clone();
-  let store = unsafe{&mut *Arc::get_mut_unchecked(&mut block.store)};
-  for (ref key, ref value) in &miniblock.strings {
-    store.strings.insert(key.clone(), value.to_string());
-  }
-  for (ref key, ref value) in &miniblock.number_literals {
-    store.number_literals.insert(key.clone(), value.clone());
-  }
-  block.id = miniblock.id;
-  block
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
   MiniBlocks(Vec<MiniBlock>),
-  MiniPrograms(Vec<MiniProgram>),
 }
 
 pub trait Machine {
   fn name(&self) -> String;
   fn id(&self) -> u64;
-  fn on_change(&mut self, table: &Table) -> Result<(), String>;
+  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -158,6 +140,27 @@ macro_rules! export_machine {
     #[no_mangle]
     pub static $name: $crate::MachineDeclaration =
       $crate::MachineDeclaration {
+        register: $register,
+      };
+  };
+}
+
+#[derive(Copy, Clone)]
+pub struct MechFunctionDeclaration {
+  pub register: unsafe extern "C" fn(&mut dyn MechFunctionRegistrar),
+}
+
+pub trait MechFunctionRegistrar {
+  fn register_mech_function(&mut self, function_id: u64, mech_function_compiler: Box<dyn MechFunctionCompiler>);
+}
+
+#[macro_export]
+macro_rules! export_mech_function {
+  ($name:ident, $register:expr) => {
+    #[doc(hidden)]
+    #[no_mangle]
+    pub static $name: $crate::MechFunctionDeclaration =
+      $crate::MechFunctionDeclaration {
         register: $register,
       };
   };
