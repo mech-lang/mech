@@ -120,7 +120,7 @@ pub enum MechCode {
 pub trait Machine {
   fn name(&self) -> String;
   fn id(&self) -> u64;
-  fn on_change(&mut self, table: &Table) -> Result<(), String>;
+  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
