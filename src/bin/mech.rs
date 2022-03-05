@@ -93,7 +93,7 @@ lazy_static! {
 
 // ## Mech Entry
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), MechError> {
 
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
@@ -400,7 +400,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "[Running]".bright_green());
 
     let runner = ProgramRunner::new("Mech Runner", 1000);
-    let mech_client = runner.run();
+    let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
@@ -643,7 +643,7 @@ clear   - reset the current core
     Some(mech_client) => mech_client,
     None => {
       let runner = ProgramRunner::new("Mech REPL", 1000);
-      runner.run()
+      runner.run()?
     }
   };
 
