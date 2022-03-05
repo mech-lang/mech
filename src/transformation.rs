@@ -30,21 +30,21 @@ impl fmt::Debug for Transformation {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match &self {
-      Transformation::NewTable{table_id, rows, columns} =>  write!(f,"NewTable(table_id: {:?}, rows: {} cols: {})",table_id,rows,columns)?,
-      Transformation::Identifier{name,id} => write!(f,"Identifier(name: {:?}, id: {})",name,humanize(id))?,
-      Transformation::NumberLiteral{kind,bytes} => write!(f,"NumberLiteral(kind: {:?}, bytes: {:?})",humanize(kind),bytes)?,
-      Transformation::TableAlias{table_id,alias} => write!(f,"TableAlias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
-      Transformation::Select{table_id,indices} => write!(f,"Select(table_id: {:#?}, indices: {:#?})",table_id,indices)?,
+      Transformation::NewTable{table_id, rows, columns} =>  write!(f,"➕ NewTable(table_id: {:?}, rows: {} cols: {})",table_id,rows,columns)?,
+      Transformation::Identifier{name,id} => write!(f,"👀 Identifier(name: {:?}, id: {})",name,humanize(id))?,
+      Transformation::NumberLiteral{kind,bytes} => write!(f,"🐙 NumberLiteral(kind: {:?}, bytes: {:?})",humanize(kind),bytes)?,
+      Transformation::TableAlias{table_id,alias} => write!(f,"🥸 TableAlias(table_id: {:?}, alias: {})",table_id,humanize(alias))?,
+      Transformation::Select{table_id,indices} => write!(f,"☑️ Select(table_id: {:#?}, indices: {:#?})",table_id,indices)?,
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => write!(f,"Set(src_id: {:?}, src_indices: ({:?},{:?}),\n    dest_id: {:?}, dest_indices: ({:?},{:?}))",src_id,src_row,src_col,dest_id,dest_row,dest_col)?,
       Transformation::Function{name,arguments,out} => {
-        write!(f,"Function(name: {}, args: {:#?}, out: {:#?})",humanize(name),arguments,out)?
+        write!(f,"🧮 Function(name: {}, args: {:#?}, out: {:#?})",humanize(name),arguments,out)?
       },
-      Transformation::Constant{table_id, value} => write!(f,"Constant(table_id: {:?}, value: {:?})",table_id, value)?,
+      Transformation::Constant{table_id, value} => write!(f,"🪨 Constant(table_id: {:?}, value: {:?})",table_id, value)?,
       Transformation::ColumnKind{table_id, column_ix, kind} => write!(f,"ColumnKind(table_id: {:?}, column_ix: {}, kind: {})",table_id,column_ix,humanize(kind))?,
       Transformation::RowAlias{table_id, row_ix, row_alias} => write!(f,"RowAlias(table_id: {:?}, row_ix: {}, row_alias: {})",table_id,row_ix,humanize(row_alias))?,
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => write!(f,"ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
       Transformation::TableReference{table_id, reference} => write!(f,"TableReference(table_id: {:?}, reference: {:?})",table_id, reference)?,
-      Transformation::TableDefine{table_id, indices, out} => write!(f,"TableDefine(table_id: {:?}, indices: {:?}, out: {:?})",table_id, indices, out)?,
+      Transformation::TableDefine{table_id, indices, out} => write!(f,"📅 TableDefine(table_id: {:?}, indices: {:?}, out: {:?})",table_id, indices, out)?,
       Transformation::Whenever{table_id,indices} => write!(f,"Whenever(table_id: {:#?}, indices: {:#?})",table_id,indices)?,
     }
     Ok(())
