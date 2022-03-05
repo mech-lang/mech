@@ -74,6 +74,7 @@ pub enum RunLoopMessage {
   PrintRuntime,
   Listening((u64,(TableId,TableIndex,TableIndex))),
   GetTable(u64),
+  GetValue((u64,TableIndex,TableIndex)),
   Transaction(Transaction),
   Code(MechCode),
   Blocks(Vec<MiniBlock>),
