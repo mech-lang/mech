@@ -205,19 +205,19 @@ impl Program {
             Ok(mut response) => {
               match response.text() {
                 Ok(text) => text,
-                Err(_) => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+                Err(_) => {return Err(MechError{id: 1235, kind: MechErrorKind::None});},
               }
             }
-            Err(_) => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{id: 1236, kind: MechErrorKind::None});},
           };
           // Save registry
           let mut dest = match File::create("machines/registry.mec") {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{id: 1237, kind: MechErrorKind::None});},
           };
           match dest.write_all(response_text.as_bytes()) {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},            
+            Err(_) => {return Err(MechError{id: 1238, kind: MechErrorKind::None});},            
           }
           response_text
         }
@@ -361,8 +361,10 @@ impl Program {
     }
     for mec in &machine_init_code {
       self.compile_program(mec.to_string());
+      self.mech.schedule_blocks();
       self.trigger_machines();
     }
+
     //self.mech.step();
     //self.trigger_machines();
 
