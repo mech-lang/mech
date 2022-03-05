@@ -204,6 +204,31 @@ impl Core {
     Ok(block_refs)
   }
 
+  pub fn resolve_errors(&mut self, resolved_errors: &Vec<MechErrorKind>) -> Result<Vec<u64>,MechError> {
+    let mut new_block_ids =  vec![];
+    for error in resolved_errors.iter() {
+      match self.errors.remove(error) {
+        Some(mut ublocks) => {
+          println!("___{:?}", ublocks);
+          for ublock in ublocks {
+            match self.load_block(ublock) {
+              Ok(nbid) => {
+                new_block_ids.push(nbid);
+                println!("-------{:?}", self.unsatisfied_blocks);
+                self.unsatisfied_blocks = self.unsatisfied_blocks.iter().filter(|x| {
+                  x.borrow().state != BlockState::Ready
+                }).cloned().collect();
+              },
+              Err(x) => {return Err(MechError{id: 3859, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+            }
+          }
+        }
+        None => (),
+      }
+    }
+    Ok(new_block_ids)
+  }
+
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
     self.database.borrow_mut().insert_table(table)
   }
