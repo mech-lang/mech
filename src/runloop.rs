@@ -4,6 +4,7 @@ use mech_utilities::*;
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
+use std::cell::RefCell;
 use hashbrown::{HashSet, HashMap};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
@@ -58,7 +59,7 @@ pub enum ClientMessage {
   Exit(i32),
   Time(usize),
   NewBlocks(usize),
-  //Table(Option<Table>),
+  Value(Value),
   Transaction(Transaction),
   String(String),
   Error(MechErrorKind),
@@ -174,7 +175,7 @@ impl ProgramRunner {
     //self.persistence_channel = Some(persister.get_channel());
   }
 
-  pub fn run(self) -> RunLoop {
+  pub fn run(self) -> Result<RunLoop,MechError> {
     //let name = self.name;
     //let outgoing = self.program.outgoing.clone();
     let (outgoing, program_incoming) = crossbeam_channel::unbounded();
@@ -244,8 +245,9 @@ impl ProgramRunner {
         None => (),
       }
 
-      program.download_dependencies(Some(client_outgoing.clone()));
-      
+      let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+      program.mech.resolve_errors(&resolved_errors);
+      program.mech.schedule_blocks();
       // Step cores
       /*program.mech.step();
       for core in program.cores.values_mut() {
@@ -515,6 +517,7 @@ impl ProgramRunner {
               Err(x) => {
                 let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
                 program.mech.resolve_errors(&resolved_errors);
+                program.mech.schedule_blocks();
               }
             };
 
@@ -589,9 +592,17 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
-          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            //let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
-            //client_outgoing.send(table_msg);
+          (Ok(RunLoopMessage::GetValue((table_id,row,column))),_) => { 
+            let msg = match program.mech.get_table_by_id(table_id) {
+              Ok(table) => {
+                match table.borrow().get(&row,&column) {
+                  Ok(v) => ClientMessage::Value(v.clone()),
+                  Err(error) => ClientMessage::Error(error.kind.clone()),
+                }
+              }
+              Err(error) => ClientMessage::Error(error.kind.clone()),
+            };
+            client_outgoing.send(msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -625,7 +636,7 @@ impl ProgramRunner {
       }*/
     }).unwrap();
 
-    RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming }
+    Ok(RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming })
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {

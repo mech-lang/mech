@@ -57,13 +57,13 @@ pub fn format_errors(errors: &Vec<MechErrorKind>) -> String {
   } else {
     "s"
   };
-  let error_notice = format!("Found {} Error{}:\n", &errors.len(), plural);
-  formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice.bright_red());
+  let error_notice = format!("🐛 Found {} Error{}:\n", &errors.len(), plural);
+  formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice);
   for error in errors {
-    formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "--".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
+    formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "---".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
     formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
     formatted_errors = format!("{}\n", formatted_errors);
-    formatted_errors = format!("{}\n{}",formatted_errors, "---------------------------------------------------------------\n\n".truecolor(246,192,78));
+    formatted_errors = format!("{}\n{}",formatted_errors, "----------------------------------------------------------------\n\n".truecolor(246,192,78));
   }
   formatted_errors
 }
