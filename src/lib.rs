@@ -37,24 +37,41 @@ impl MechFunction for MathSinRadVV {
 pub struct MathSin{}
 impl MechFunctionCompiler for MathSin {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    println!("!!!!!!!!!!!!!!!!!!!!!!!!{:?}", arguments);
     if arguments.len() > 1 {
       return Err(MechError{id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
     }
     let arg_dims = block.get_arg_dims(&arguments)?;
+    println!("{:?}", arg_dims);
     let (arg_name,arg_table_id,_) = arguments[0];
+    println!("123");
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
+    println!("456");
     let mut out_brrw = out_table.borrow_mut();
-    out_brrw.set_kind(ValueKind::F32);
+    println!("456");
+    println!("456");
     if arg_name == *ANGLE {
       match arg_dims[0] {
         TableShape::Scalar => {
+          println!("1");
           let arg = block.get_arg_columns(arguments)?[0].clone();
+          println!("2");
           out_brrw.resize(1,1);
+          out_brrw.set_kind(ValueKind::F32);
+          println!("e3");
           if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
             match arg {
-              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadVV{col: (col.clone(),0,0), out: out_col.clone()}),
-              x => {return Err(MechError{id: 1348, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
+              (_,Column::F32(col),ColumnIndex::Index(_)) |
+              (_,Column::F32(col),ColumnIndex::All) => block.plan.push(
+                MathSinRadVV{col: (col.clone(),0,0), out: out_col.clone()}
+              ),
+              (_,Column::Angle(col),ColumnIndex::All) => block.plan.push(
+                MathSinRadVV{col: (col.clone(),0,0), out: out_col.clone()}
+              ),
+              x => {
+                println!("{:?}",x);
+                return Err(MechError{id: 1348, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
             }
           }
         }
@@ -64,14 +81,14 @@ impl MechFunctionCompiler for MathSin {
           if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
             match arg {
               (_,Column::F32(col),ColumnIndex::All) => block.plan.push(MathSinRadVV{col: (col.clone(),0,col.len()), out: out_col.clone()}),
-              x => {return Err(MechError{id: 1348, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
+              x => {return Err(MechError{id: 1349, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
             }
           }
         }
-        x => {return Err(MechError{id: 1349, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+        x => {return Err(MechError{id: 1350, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
       }
     } else {
-      return Err(MechError{id: 1350, kind: MechErrorKind::UnknownFunctionArgument(arg_name)});
+      return Err(MechError{id: 1351, kind: MechErrorKind::UnknownFunctionArgument(arg_name)});
     }
     Ok(())
   }
