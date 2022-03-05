@@ -41,7 +41,7 @@ impl fmt::Debug for TableId {
 
 // ## Table Shape
 
-#[derive(Debug,Copy,Clone,PartialEq,Eq)]
+#[derive(Debug,Copy,Clone,PartialEq,Eq, Serialize, Deserialize, Hash)]
 pub enum TableShape {
   Scalar,
   Column(usize),

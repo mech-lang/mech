@@ -209,12 +209,10 @@ impl Core {
     for error in resolved_errors.iter() {
       match self.errors.remove(error) {
         Some(mut ublocks) => {
-          println!("___{:?}", ublocks);
           for ublock in ublocks {
             match self.load_block(ublock) {
               Ok(nbid) => {
                 new_block_ids.push(nbid);
-                println!("-------{:?}", self.unsatisfied_blocks);
                 self.unsatisfied_blocks = self.unsatisfied_blocks.iter().filter(|x| {
                   x.borrow().state != BlockState::Ready
                 }).cloned().collect();
@@ -352,7 +350,7 @@ impl fmt::Debug for Core {
     box_drawing.add_title("🧊","blocks");
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     if self.unsatisfied_blocks.len() > 0 {
-      box_drawing.add_title("😞","unsatisfied blocks");
+      box_drawing.add_title("😔","unsatisfied blocks");
       box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks));    
     }
     box_drawing.add_title("💻","functions");

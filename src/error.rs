@@ -34,6 +34,8 @@ pub enum MechErrorKind {
   Unhandled,
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
+  UnhandledFunctionArgumentKind(ValueKind),
+  UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
   None,
 }

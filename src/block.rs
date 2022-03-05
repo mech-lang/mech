@@ -164,9 +164,13 @@ impl Block {
 
   pub fn ready(&mut self) -> Result<(),MechError> {
     match self.state {
+      // If the state is ready, we are good.
       BlockState::Ready => Ok(()),
-      BlockState::Disabled => Err(MechError{id: 1001, kind: MechErrorKind::BlockDisabled}),
-      _ => {
+      // If the block is disable that'd the end of it
+      BlockState::Disabled => Err(MechError{id: 2044, kind: MechErrorKind::BlockDisabled}),
+      // Other
+      BlockState::New | BlockState::Done | BlockState::Unsatisfied |  BlockState::Error |  
+      BlockState::Pending => {
         match &self.unsatisfied_transformation {
           Some((_,tfm)) => {
             self.state = BlockState::Pending;
@@ -178,8 +182,7 @@ impl Block {
                 for tfm in pending_transformations.drain(..) {
                   self.add_tfm(tfm);
                 }
-                self.ready();
-                Ok(())
+                self.ready()
               }
               Err(x) => {
                 Err(x)
@@ -742,7 +745,6 @@ impl Block {
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
-            println!("-----{:?}", humanize(name));
             let mut fxns = functions.borrow_mut();
             match fxns.get(*name) {
               Some(fxn) => {
@@ -823,7 +825,7 @@ impl fmt::Debug for Block {
     block_drawing.add_title("🪄","transformations");
     block_drawing.add_line(format!("{:#?}", &self.transformations));
     if let Some(ut) = &self.unsatisfied_transformation {
-      block_drawing.add_title("😔","unsatisfied transformations");
+      block_drawing.add_title("😔","unsatisfied transformation");
       block_drawing.add_line(format!("{:#?}", &ut));
     }
     if self.pending_transformations.len() > 0 {

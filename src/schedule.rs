@@ -32,7 +32,9 @@ impl Schedule {
   }
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    for block_ref in &self.unscheduled_blocks {
+    let ready_blocks: Vec<BlockRef> = self.unscheduled_blocks.drain_filter(|b| b.borrow().state == BlockState::Ready).collect();
+
+    for block_ref in &ready_blocks {
       let mut graph = BlockGraph::new(block_ref.clone());
       let block_brrw = block_ref.borrow();
 
@@ -65,7 +67,6 @@ impl Schedule {
       }
 
     }
-    self.unscheduled_blocks.clear();
     Ok(())
   }
 
