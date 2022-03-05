@@ -514,18 +514,7 @@ impl ProgramRunner {
               Ok(mut nbi) => new_block_ids.append(&mut nbi),
               Err(x) => {
                 let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
-                for error in &resolved_errors {
-                  match program.mech.errors.remove(error) {
-                    Some(mut ublocks) => {
-                      for ublock in ublocks {
-                        if let Ok(nbi) = program.mech.load_block(ublock) {
-                          new_block_ids.push(nbi);
-                        }
-                      }
-                    }
-                    None => (),
-                  }
-                }
+                program.mech.resolve_errors(&resolved_errors);
               }
             };
 
