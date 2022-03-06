@@ -150,6 +150,12 @@ async fn main() -> Result<(), MechError> {
         .value_name("REPL")
         .help("Start a REPL")
         .takes_value(false))
+      .arg(Arg::with_name("timings")
+        .short("t")
+        .long("timings")
+        .value_name("TIMINGS")
+        .help("Displays transaction frequency in Hz.")
+        .takes_value(false))
       .arg(Arg::with_name("debug")
         .short("d")
         .long("debug")
@@ -375,6 +381,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl_flag = matches.is_present("repl_mode");    
     let debug_flag = matches.is_present("debug");    
+    let timings_flag = matches.is_present("timings");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
     let out_tables = matches.values_of("out").map_or(vec![], |out| out.collect());
     let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
@@ -530,8 +537,13 @@ async fn main() -> Result<(), MechError> {
     let mut exit_code = 0;
 
     // Get all responses from the thread
-    'receive_loop: loop {
+    'run_receive_loop: loop {
       match thread_receiver.recv() {
+        (Ok(ClientMessage::Timing(freqeuncy))) => {
+          if timings_flag {
+            println!("{} Txn took: {:.2?}Hz", formatted_name, freqeuncy);
+          }
+        },
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
@@ -553,7 +565,6 @@ async fn main() -> Result<(), MechError> {
           exit_code = this_code;
         }
         Ok(ClientMessage::StepDone) => {
-          println!("StepDone");
           if debug_flag{
             mech_client.send(RunLoopMessage::PrintDebug);
           }
@@ -563,7 +574,7 @@ async fn main() -> Result<(), MechError> {
             }
           }
           if repl_flag {
-            break 'receive_loop;
+            break 'run_receive_loop;
           }
           //let output_id: u64 = hash_str("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
@@ -665,7 +676,7 @@ clear   - reset the current core
     let mut q = 0;
 
     // Get all responses from the thread
-    'receive_loop: loop {
+    'repl_receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::Pause)) => {
           println!("{} Paused", formatted_name);
@@ -724,7 +735,7 @@ clear   - reset the current core
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
-          break 'receive_loop;
+          break 'repl_receive_loop;
         }
         q => {
           //println!("else: {:?}", q);
