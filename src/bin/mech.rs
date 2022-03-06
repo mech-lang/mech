@@ -259,19 +259,26 @@ async fn main() -> Result<(), MechError> {
   // TEST
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
-    /*
+    
     println!("{}", "[Testing]".bright_green());
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
     mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
     let code = read_mech_files(&mech_paths)?;
-    let programs = compile_code(code);
+
+    let blocks = match compile_code(code) {
+      Ok(blocks) => blocks,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error.kind]));
+        std::process::exit(1);
+      }
+    };
 
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech Test", 1000);
-    let mech_client = runner.run();
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
-    
+    let mech_client = runner.run()?;
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
+
     let mut tests_count = 0;
     let mut tests_passed = 0;
     let mut tests_failed = 0;
@@ -284,7 +291,7 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /* (Ok(ClientMessage::Table(table))) => {
           match table {
             Some(test_results) => {
               println!("{} Running {} tests...\n", formatted_name, test_results.rows);
@@ -338,7 +345,7 @@ async fn main() -> Result<(), MechError> {
             None => println!("{} Table not found", formatted_name),
           }
           std::process::exit(0);
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -346,7 +353,7 @@ async fn main() -> Result<(), MechError> {
           // Do nothing
         },
         Ok(ClientMessage::StepDone) => {
-          mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
+          //mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
           //std::process::exit(0);
         },
         (Err(x)) => {
@@ -354,11 +361,11 @@ async fn main() -> Result<(), MechError> {
           std::process::exit(1);
         }
         q => {
-          //println!("else: {:?}", q);
+          println!("*else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
-    }*/
+    }
     None
   // ------------------------------------------------
   // RUN
