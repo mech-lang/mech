@@ -807,7 +807,7 @@ fn data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn kind_annotation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_angle(input)?;
-  let (input, kind_id) = separated_list1(tag(","),identifier)(input)?;
+  let (input, kind_id) = separated_list1(tag(","),alt((identifier,underscore)))(input)?;
   let (input, _) = right_angle(input)?;
   Ok((input, Node::KindAnnotation{children: kind_id}))
 }
