@@ -143,7 +143,7 @@ impl Program {
   pub fn compile_program(&mut self, input: String) -> Result<Vec<BlockId>,MechError> {
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&input.clone())?;
-    let new_block_ids = self.mech.load_blocks(blocks)?;
+    let (new_block_ids,_) = self.mech.load_blocks(blocks);
 
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = *MECH_CODE;
