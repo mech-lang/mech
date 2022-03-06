@@ -50,6 +50,13 @@ pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
 pub type Out = (TableId, TableIndex, TableIndex);
 
 
+pub trait Machine {
+  fn name(&self) -> String;
+  fn id(&self) -> u64;
+  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
+}
+
+
 #[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct MechString {
   chars: Vec<char>,
