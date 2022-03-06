@@ -127,32 +127,30 @@ impl Program {
     }
   }
 
-  pub fn trigger_machines(&mut self) {
-    /*
-    let database = self.mech.runtime.database.borrow();
-    for register in &self.mech.runtime.aggregate_changed_this_round {
-      match self.machines.get_mut(&register.hash()) {
-        // Invoke the machine!
-        Some(mut machine) => {
-          let table = database.tables.get(&register.table_id.unwrap()).unwrap().borrow();
-          machine.on_change(&table);
-        },
-        _ => (), // TODO Warn user that the machine is not loaded!
-      }
-    }*/
+  pub fn trigger_machine(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+    let (table_id,_,_) = register;
+    match self.machines.get_mut(table_id.unwrap()) {
+      Some(mut machine) => {
+        let table_ref = self.mech.get_table_by_id(*table_id.unwrap())?;
+        let table_ref_brrw = table_ref.borrow();
+        machine.on_change(&table_ref_brrw);
+      },
+        _ => (), // Warn user that the machine is not loaded? Or is it okay to just try?
+    }
+    Ok(())
   }
 
-  pub fn compile_program(&mut self, input: String) {
+  pub fn compile_program(&mut self, input: String) -> Result<Vec<BlockId>,MechError> {
     let mut compiler = Compiler::new();
-    let programs = compiler.compile_str(&input.clone());
-    for p in programs {
-      self.mech.load_blocks(p);
-    }
+    let blocks = compiler.compile_str(&input.clone())?;
+    let new_block_ids = self.mech.load_blocks(blocks)?;
+
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     let mech_code = *MECH_CODE;
     self.programs += 1;
     let txn = vec![Change::Set((mech_code, vec![(TableIndex::Index(self.programs),TableIndex::Index(1),Value::from_str(&input.clone()))]))];
     self.outgoing.send(RunLoopMessage::Transaction(txn));
+    Ok(new_block_ids)    
   }
 
   pub fn compile_fragment(&mut self, input: String) {
@@ -303,7 +301,15 @@ impl Program {
     for (needed_table_id,_,_) in needed_registers {
       needed_tables.insert(needed_table_id.clone());
     }
-    
+    for (error,_) in &self.mech.errors {
+      match error {
+        MechErrorKind::MissingTable(table_id) => {
+          needed_tables.insert(table_id.clone());
+        }
+        _ => (),
+      }
+    }
+
     let mut machine_init_code = vec![];
     for needed_table_id in needed_tables.iter() {
       let dictionary = self.mech.dictionary.borrow();
@@ -357,12 +363,18 @@ impl Program {
         }
         _ => (),
       }
-      
     }
+
+    // Load init code and trigger machines
     for mec in &machine_init_code {
-      self.compile_program(mec.to_string());
+      let new_block_ids = self.compile_program(mec.to_string())?;
       self.mech.schedule_blocks();
-      self.trigger_machines();
+      for block_id in new_block_ids {
+        let output = self.mech.get_output_by_block_id(block_id)?;
+        for register in output.iter() {
+          self.trigger_machine(register);
+        }
+      }
     }
 
     //self.mech.step();
