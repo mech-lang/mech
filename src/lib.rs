@@ -1,5 +1,6 @@
 // # Mech Program
 #![allow(dead_code)]
+#![allow(warnings)]
 
 // ## Prelude
 #![feature(extern_prelude)]
@@ -22,6 +23,7 @@ extern crate lazy_static;
 extern crate time;
 
 extern crate mech_core;
+use mech_core::*;
 extern crate mech_syntax;
 extern crate mech_utilities;
 extern crate colored;
@@ -48,7 +50,25 @@ pub use self::program::{Program};
 pub use self::runloop::{ProgramRunner, RunLoop, ClientMessage};
 pub use self::persister::{Persister};
 
-pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<std::error::Error>> {
+pub fn format_errors(errors: &Vec<MechErrorKind>) -> String {
+  let mut formatted_errors = "".to_string();
+  let plural = if errors.len() == 1 {
+    ""
+  } else {
+    "s"
+  };
+  let error_notice = format!("🐛 Found {} Error{}:\n", &errors.len(), plural);
+  formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice);
+  for error in errors {
+    formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "---".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
+    formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
+    formatted_errors = format!("{}\n", formatted_errors);
+    formatted_errors = format!("{}\n{}",formatted_errors, "----------------------------------------------------------------\n\n".truecolor(246,192,78));
+  }
+  formatted_errors
+}
+
+pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<dyn std::error::Error>> {
   create_dir("machines");
 
   let machine_file_path = format!("machines/{}",machine_name);

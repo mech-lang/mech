@@ -1,12 +1,10 @@
-use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType};
-use mech_core::{Block, BlockState};
-use mech_core::{Table, TableId, TableIndex};
-use mech_core::hash_string;
+use mech_core::*;
 use mech_syntax::compiler::Compiler;
-use mech_utilities::{maximize_block, RunLoopMessage, MechSocket, MechCode, Machine, MachineRegistrar, MachineDeclaration, SocketMessage};
+use mech_utilities::*;
 
 use std::thread::{self, JoinHandle};
 use std::sync::Arc;
+use std::cell::RefCell;
 use hashbrown::{HashSet, HashMap};
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
@@ -61,9 +59,10 @@ pub enum ClientMessage {
   Exit(i32),
   Time(usize),
   NewBlocks(usize),
-  Table(Option<Table>),
+  Value(Value),
   Transaction(Transaction),
   String(String),
+  Error(MechErrorKind),
   //Block(Block),
   StepDone,
   Done,
@@ -126,9 +125,6 @@ pub struct ProgramRunner {
 impl ProgramRunner {
 
   pub fn new(name:&str, capacity: usize) -> ProgramRunner {
-    // Start a new program
-    //let mut program = Program::new(name, capacity);
-
     // Start a persister
     /*
     let persist_name = format!("{}.mdb", name);
@@ -179,7 +175,7 @@ impl ProgramRunner {
     //self.persistence_channel = Some(persister.get_channel());
   }
 
-  pub fn run(self) -> RunLoop {
+  pub fn run(self) -> Result<RunLoop,MechError> {
     //let name = self.name;
     //let outgoing = self.program.outgoing.clone();
     let (outgoing, program_incoming) = crossbeam_channel::unbounded();
@@ -194,14 +190,13 @@ impl ProgramRunner {
       None => None,
     };
 
-    // Start start a channel receiving thread    
+    // Start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
-
+      
       let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
 
       let program_channel_udpsocket = program.outgoing.clone();
       let program_channel_udpsocket = program.outgoing.clone();
-
 
       match &self.socket {
         Some(ref socket) => {
@@ -222,7 +217,7 @@ impl ProgramRunner {
                       program_channel_udpsocket.send(RunLoopMessage::RemoteCoreDisconnect(remote_core_address));
                     }
                     Ok(SocketMessage::Listening(register)) => {
-                      program_channel_udpsocket.send(RunLoopMessage::Listening((hash_string(&src.to_string()), register)));
+                      program_channel_udpsocket.send(RunLoopMessage::Listening((hash_str(&src.to_string()), register)));
                     }
                     Ok(SocketMessage::Ping) => {
                       println!("Got a ping from: {:?}", src);
@@ -250,13 +245,14 @@ impl ProgramRunner {
         None => (),
       }
 
-      //program.download_dependencies(Some(client_outgoing.clone()));
-
+      let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+      program.mech.resolve_errors(&resolved_errors);
+      program.mech.schedule_blocks();
       // Step cores
-      program.mech.step();
+      /*program.mech.step();
       for core in program.cores.values_mut() {
         core.step();
-      }
+      }*/
 
       // Send the ready to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Ready);
@@ -266,9 +262,10 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
-            program.mech.process_transaction(&txn);   
+            program.mech.process_transaction(&txn);
+            /*   
             // Trigger any machines that are now ready due to the transaction
-            program.trigger_machines();  
+            //program.trigger_machines();  
             // For all changed registers, inform all listeners of changes
             let mut set = HashSet::new();
             for changed_register in &program.mech.runtime.aggregate_changed_this_round {
@@ -315,38 +312,47 @@ impl ProgramRunner {
                 }
                 _ => (),
               }
-            }
+            }            */
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
-            match program.mech.runtime.output.contains(&register) {
+            //println!("Remote core told us they're listening for {:?}", register);
+            let (table_id,row,col) = register;
+            match program.mech.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
+                //println!("We have something they want: {:?}", register);
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
                 // Send over the table we have now
-                match program.mech.get_table(*register.table_id.unwrap()) {
-                  Some(table) => {
+                match program.mech.get_table_by_id(*table_id.unwrap()) {
+                  Ok(table) => {
+                    //println!("{:?}", table);
                     // Decompose the table into changes for a transaction
                     let mut changes = vec![];
-                    changes.push(Change::NewTable{table_id: table.id, rows: table.rows, columns: table.columns});
-                    for ((_,column_ix), column_alias) in table.store.column_index_to_alias.iter() {
-                      changes.push(Change::SetColumnAlias{table_id: table.id, column_ix: *column_ix, column_alias: *column_alias});
+                    let table_brrw = table.borrow();
+                    changes.push(Change::NewTable{table_id: table_brrw.id, rows: table_brrw.rows, columns: table_brrw.cols});
+                    for ((alias,ix)) in table_brrw.col_map.iter() {
+                      changes.push(Change::ColumnAlias{table_id: table_brrw.id, column_ix: *ix, column_alias: *alias});
+                    } 
+                    for (ix,kind) in table_brrw.col_kinds.iter().enumerate() {
+                      changes.push(Change::ColumnKind{table_id: table_brrw.id, column_ix: ix, column_kind: kind.clone()});
                     } 
                     let mut values = vec![];
-                    for i in 1..=table.rows {
-                      for j in 1..=table.columns {
-                        let (value, _) = table.get_unchecked(i,j);
-                        values.push((TableIndex::Index(i), TableIndex::Index(j), value));
+                    for i in 0..table_brrw.rows {
+                      for j in 0..table_brrw.cols {
+                        match table_brrw.get_raw(i,j) {
+                          Ok(value) => {values.push((TableIndex::Index(i+1), TableIndex::Index(j+1), value));}
+                          _ => (),
+                        }
                       }
                     }
-                    changes.push(Change::Set{table_id: table.id, values});
-                    let txn = Transaction{changes};
-                    let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
+                    changes.push(Change::Set((table_brrw.id, values)));
+                    let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
                     let compressed_message = compress_to_vec(&message,6);
                     // Send the transaction to the remote core
                     match (&self.socket,program.remote_cores.get_mut(&core_id)) {
@@ -357,10 +363,10 @@ impl ProgramRunner {
                         websocket.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
                       }
                       _ => (),
-                    }                    
+                    }
                   }
-                  None => (),
-                }
+                  Err(_) => (),
+                } 
               }, 
               false => (),
             }
@@ -368,7 +374,7 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::RemoteCoreDisconnect(remote_core_id)), _) => {
             match &self.socket {
               Some(ref socket) => {
-                let socket_address = hash_string(&socket.local_addr().unwrap().to_string());
+                let socket_address = hash_str(&socket.local_addr().unwrap().to_string());
                 if remote_core_id != socket_address {
                   match program.remote_cores.get(&remote_core_id) {
                     None => {
@@ -385,7 +391,7 @@ impl ProgramRunner {
                             let len = socket.send_to(&compressed_message, core_address.clone()).unwrap();
                           }
                           MechSocket::WebSocket(_) => {
-                            // TODO
+                            // TODO send disconnect message to websockets
                           }
                           _ => (),
                         }
@@ -402,12 +408,12 @@ impl ProgramRunner {
               Some(ref socket) => {
                 let socket_address = socket.local_addr().unwrap().to_string();
                 if remote_core_address != socket_address {
-                  match program.remote_cores.get(&hash_string(&remote_core_address)) {
+                  match program.remote_cores.get(&hash_str(&remote_core_address)) {
                     None => {
                       // We've got a new remote core. Let's ask it what it needs from us
                       // and tell it about all the other cores in our network.
-                      program.remote_cores.insert(hash_string(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
-                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address)))));
+                      program.remote_cores.insert(hash_str(&remote_core_address),MechSocket::UdpSocket(remote_core_address.clone()));
+                      client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_str(&remote_core_address)))));
                       let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(socket_address.clone())).unwrap();
                       let compressed_message = compress_to_vec(&message,6);                    
                       let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
@@ -426,7 +432,8 @@ impl ProgramRunner {
                       }
                     } 
                     Some(_) => {
-                      for register in &program.mech.runtime.needed_registers {
+                      for register in &program.mech.needed_registers() {
+                        //println!("I'm listening for {:?}", register);
                         let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
                         let compressed_message = compress_to_vec(&message,6);                    
                         let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
@@ -440,18 +447,18 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream))), _) => {
             let remote_core_address = ws_stream.peer_addr().unwrap();
-            let remote_core_id = hash_string(&remote_core_address.to_string());
+            let remote_core_id = hash_str(&remote_core_address.to_string());
             let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
             // Tell the remote websocket what this core is listening for
-            for register in &program.mech.runtime.needed_registers {
-              let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
+            for needed_register in &program.mech.needed_registers() {
+              let message = bincode::serialize(&SocketMessage::Listening(*needed_register)).unwrap();
               let compressed_message = compress_to_vec(&message,6);
               ws_outgoing.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
             }
             // Store the websocket sender
             program.remote_cores.insert(remote_core_id, MechSocket::WebSocketSender(ws_outgoing));
             let program_channel_websocket = program.outgoing.clone();
-            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_string(&remote_core_address.to_string())))));
+            client_outgoing.send(ClientMessage::String(format!("Remote core connected: {}", humanize(&hash_str(&remote_core_address.to_string())))));
             thread::spawn(move || {
               for message in ws_incoming.incoming_messages() {
                 let message = message.unwrap();
@@ -488,67 +495,63 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             // Load the program
-            match code {
+            let blocks = match code {
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
-                let programs = compiler.compile_string(code);
-                for p in programs {
-                  program.mech.register_blocks(p.blocks); 
+                match compiler.compile_str(&code) {
+                  Ok(blocks) => blocks,
+                  Err(x) => {
+                    client_outgoing.send(ClientMessage::StepDone);
+                    continue 'runloop;
+                  }
                 }
               },
               MechCode::MiniBlocks(miniblocks) => {
                 let mut blocks: Vec<Block> = Vec::new();
-                for miniblock in miniblocks {
-                  blocks.push(maximize_block(&miniblock));
-                }
-                program.mech.register_blocks(blocks);
+                miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect()
               }
-              MechCode::MiniPrograms(miniprograms) => {
-                for p in miniprograms {
-                  let mut blocks: Vec<Block> = Vec::new();
-                  for miniblock in p.blocks {
-                    blocks.push(maximize_block(&miniblock));
-                  }
-                  program.mech.register_blocks(blocks);
-                }
+            };
+            let mut new_block_ids = vec![];
+            match program.mech.load_blocks(blocks) {
+              Ok(mut nbi) => new_block_ids.append(&mut nbi),
+              Err(x) => {
+                let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+                program.mech.resolve_errors(&resolved_errors);
+                program.mech.schedule_blocks();
               }
+            };
+
+            if let Some(last_block_id) = new_block_ids.last() {
+              let block = program.mech.blocks.get(last_block_id).unwrap().borrow();
+              let out_id = match block.transformations.last() {
+                Some(Transformation::Function{name,arguments,out}) => {
+                  let (out_id,_,_) = out;
+                  *out_id
+                } 
+                Some(Transformation::TableDefine{table_id,indices,out}) => {
+                  *out
+                } 
+                Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
+                  *dest_id
+                } 
+                Some(Transformation::TableAlias{table_id, alias}) => {
+                  *table_id
+                } 
+                _ => TableId::Local(0),
+              };
+              let out_table = block.get_table(&out_id).unwrap();
+              client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
             }
-            // Start the program
-            program.trigger_machines();
-            program.download_dependencies(Some(client_outgoing.clone()));
+
             // React to errors
-            for error in &program.mech.runtime.errors {
-              program.errors.insert(error.clone());
-            }
-            if program.errors.len() > 0 {
-              let error_string = format_errors(&program);
-              client_outgoing.send(ClientMessage::String(error_string));
-              client_outgoing.send(ClientMessage::Exit(1));
+            for (error,_) in program.mech.errors.iter() {
+              client_outgoing.send(ClientMessage::Error(error.clone()));
             }
             client_outgoing.send(ClientMessage::StepDone);
           }
-          (Ok(RunLoopMessage::EchoCode(code)), _) => {
-            
-            // Reset #ans
-            program.mech.clear_table(hash_string("ans"));
-
-            // Compile and run code
-            let mut compiler = Compiler::new();
-            compiler.compile_string(code);
-            program.mech.register_blocks(compiler.blocks);
-            program.download_dependencies(Some(client_outgoing.clone()));
-
-            // Get the result
-            let echo_table = program.mech.get_table(hash_string("ans"));
-            //program.listeners.insert(Register{table_id: TableId::Global(hash_string("ans")), row: TableIndex::All, column: TableIndex::All }); 
-
-            // Send it
-            //client_outgoing.send(ClientMessage::Table(echo_table));
-            client_outgoing.send(ClientMessage::StepDone);
-          } 
           (Ok(RunLoopMessage::Clear), _) => {
-            program.clear();
-            client_outgoing.send(ClientMessage::Clear);
+            /*program.clear();
+            client_outgoing.send(ClientMessage::Clear);*/
           },
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
@@ -557,12 +560,23 @@ impl ProgramRunner {
               Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
             };
           },
+          (Ok(RunLoopMessage::PrintDebug), _) => {
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.blocks)));
+            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
+          },
+          (Ok(RunLoopMessage::PrintTable(table_id)), _) => {
+            let result = match program.mech.get_table_by_id(table_id) {
+              Ok(table_ref) => format!("{:?}", table_ref.borrow()),
+              Err(x) => format!("{:?}", x),
+            };
+            client_outgoing.send(ClientMessage::String(result));
+          },
           (Ok(RunLoopMessage::PrintRuntime), _) => {
             //println!("{:?}", program.mech.runtime);
-            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
+            //client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
           (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
-            let mut blocks: Vec<Block> = Vec::new();
+            /*let mut blocks: Vec<Block> = Vec::new();
             for miniblock in miniblocks {
               let mut block = Block::new(100);
               for tfms in miniblock.transformations {
@@ -571,16 +585,24 @@ impl ProgramRunner {
               blocks.push(block);
             }
             program.mech.register_blocks(blocks);
-            program.mech.step();
+            program.mech.step();*/
             client_outgoing.send(ClientMessage::StepDone);
           }
           (Ok(RunLoopMessage::Stop), _) => { 
             client_outgoing.send(ClientMessage::Stop);
             break 'runloop;
           },
-          (Ok(RunLoopMessage::GetTable(table_id)), _) => { 
-            let table_msg = ClientMessage::Table(program.mech.get_table(table_id));
-            client_outgoing.send(table_msg);
+          (Ok(RunLoopMessage::GetValue((table_id,row,column))),_) => { 
+            let msg = match program.mech.get_table_by_id(table_id) {
+              Ok(table) => {
+                match table.borrow().get(&row,&column) {
+                  Ok(v) => ClientMessage::Value(v.clone()),
+                  Err(error) => ClientMessage::Error(error.kind.clone()),
+                }
+              }
+              Err(error) => ClientMessage::Error(error.kind.clone()),
+            };
+            client_outgoing.send(msg);
           },
           (Ok(RunLoopMessage::Pause), false) => { 
             paused = true;
@@ -607,7 +629,6 @@ impl ProgramRunner {
           },
           x => println!("qq{:?}", x),
         }
-        //println!("{:?}", program.mech);
         client_outgoing.send(ClientMessage::Done);
       }
       /*if let Some(channel) = persistence_channel {
@@ -615,51 +636,11 @@ impl ProgramRunner {
       }*/
     }).unwrap();
 
-    RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming }
+    Ok(RunLoop { name, socket_address, thread, outgoing: runloop_outgoing, incoming })
   }
 
   /*pub fn colored_name(&self) -> term_painter::Painted<String> {
     BrightCyan.paint(format!("[{}]", &self.name))
   }*/
 
-}
-
-
-fn format_errors(program: &Program) -> String {
-  let mut formatted_errors = "".to_string();
-  if program.errors.len() > 0 {
-    let plural = if program.errors.len() == 1 {
-      ""
-    } else {
-      "s"
-    };
-    let error_notice = format!("Found {} Error{}:\n", &program.errors.len(), plural);
-    formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice.bright_red());
-    for error in &program.errors {
-      let block = &program.mech.runtime.blocks.get(&error.block_id).unwrap();
-      formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "--".truecolor(246,192,78), "Block".truecolor(246,192,78), block.name, "--------------------------------------------".truecolor(246,192,78));
-      match &error.error_type {
-        ErrorType::DuplicateAlias(alias_id) => {
-          let alias = &program.mech.get_string(&alias_id).unwrap();
-          formatted_errors = format!("{} Local table {:?} defined more than once.\n",formatted_errors, alias);
-        },
-        ErrorType::MissingFunction(function_id) => {
-          let missing_function = &program.mech.get_string(&function_id).unwrap();
-          formatted_errors = format!("{} Missing function: {}()\n",formatted_errors, missing_function);
-        },
-        ErrorType::UnsatisfiedTransformation(missing_ids) => {
-          formatted_errors = format!("{} Missing:",formatted_errors);
-          for id in missing_ids {
-            let missing_string = &program.mech.get_string(&id).unwrap();
-            formatted_errors = format!("{} {}",formatted_errors,missing_string);
-          }
-        },
-        _ => formatted_errors = format!("{}{:?}\n", formatted_errors, error),
-      }
-      formatted_errors = format!("{}\n", formatted_errors);
-      formatted_errors = format!("{} {} {}\n",formatted_errors, ">".bright_red(), error.step_text);
-      formatted_errors = format!("{}\n{}",formatted_errors, "------------------------------------------------------\n\n".truecolor(246,192,78));
-    }
-  }
-  formatted_errors
 }

@@ -1,4 +1,4 @@
-use mech_core::{Core, humanize, Register, Transaction, Change, Error, ErrorType};
+use mech_core::{Core, humanize, Register, Transaction, Change};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::io::{Write, BufReader, BufWriter};
 use crossbeam_channel::Sender;
