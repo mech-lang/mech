@@ -19,7 +19,8 @@ pub struct MechError {
 pub enum MechErrorKind {
   MissingTable(TableId),                             // TableId of missing table
   MissingBlock(BlockId),                             // BlockId of missing block
-  DimensionMismatch(((Rows,Cols),(Rows,Cols))),     // Argument dimensions are mismatched ((row,col),(row,col))
+  PendingTable(TableId),                             // TableId of pending table                          
+  DimensionMismatch(((Rows,Cols),(Rows,Cols))),      // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))), // (target) vs (actual) index

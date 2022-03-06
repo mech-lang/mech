@@ -478,6 +478,9 @@ impl Block {
       x => {return Err(MechError{id: 2018, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
+      (_,0) |
+      (0,_) |
+      (0,0) => TableShape::Pending,
       (1,1) => TableShape::Scalar,
       (1,x) => TableShape::Row(x),
       (x,1) => TableShape::Column(x),

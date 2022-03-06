@@ -615,7 +615,15 @@ macro_rules! math_compiler {
               }
             }
           }
-          x => {return Err(MechError{id: 6013, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          (TableShape::Pending,_) => {
+            let (_,lhs_id,_) = &arguments[0];
+            return Err(MechError{id: 6013, kind: MechErrorKind::PendingTable(*lhs_id)});
+          }
+          (_,TableShape::Pending) => {
+            let (_,rhs_id,_) = &arguments[1];
+            return Err(MechError{id: 6014, kind: MechErrorKind::PendingTable(*rhs_id)});
+          }
+          x => {return Err(MechError{id: 6015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }

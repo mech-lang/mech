@@ -231,13 +231,16 @@ impl Core {
     Ok(block_ids)
   }
 
-  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
+  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
+    let mut block_errors = vec![];
     for block in blocks {
-      let mut new_block_ids = self.load_block(Rc::new(RefCell::new(block.clone())))?;
-      block_ids.append(&mut new_block_ids);
+      match self.load_block(Rc::new(RefCell::new(block.clone()))) {
+        Ok(mut new_block_id) => block_ids.append(&mut new_block_id),
+        Err(x) => block_errors.push(x),
+      }
     }
-    Ok(block_ids)
+    (block_ids,block_errors)
   }
 
   pub fn load_block(&mut self, mut block_ref: BlockRef) -> Result<Vec<BlockId>,MechError> {
@@ -310,8 +313,23 @@ impl Core {
                 self.unsatisfied_blocks = self.unsatisfied_blocks.iter().filter(|x| {
                   x.borrow().state != BlockState::Ready
                 }).cloned().collect();
+                // For each of the new blocks, check to see if any of the tables
+                // it provides are pending.
+                let mut new_block_pending_ids = vec![];
+                for id in &new_block_ids {
+                  let output = {
+                    let block_ref = self.blocks.get(&id).unwrap();
+                    let block_ref_brrw = block_ref.borrow();
+                    block_ref_brrw.output.clone()
+                  };
+                  for (table_id,_,_) in &output {
+                    let mut resolved = self.resolve_errors(&vec![MechErrorKind::PendingTable(*table_id)])?;
+                    new_block_pending_ids.append(&mut resolved);
+                  }
+                }
+                new_block_ids.append(&mut new_block_pending_ids);
               },
-              Err(x) => {return Err(MechError{id: 1007, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+              err => {return err;}
             }
           }
         }
