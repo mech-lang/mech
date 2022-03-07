@@ -1185,7 +1185,27 @@ impl MechFunctionCompiler for TableSet {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
             }
           }
-
+          ((_,Column::Length(arg),ColumnIndex::All),(_,Column::Length(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)),(_,Column::Length(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)), (_,Column::Length(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::Length(arg),ColumnIndex::All), (_,Column::Length(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::Length);
+            if let Column::Length(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::Length);
+            if let Column::Length(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
           ((_,Column::F32(arg),ColumnIndex::All),(_,Column::F32(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
           ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
           ((_,Column::F32(arg),ColumnIndex::Index(ix)), (_,Column::F32(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
