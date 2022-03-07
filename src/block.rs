@@ -103,6 +103,7 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
+  pub required_functions: HashSet<u64>,
   pub strings: StringDictionary,
   pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -117,6 +118,7 @@ impl Block {
       tables: Database::new(),
       plan: Plan::new(),
       functions: None,
+      required_functions: HashSet::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
@@ -527,6 +529,7 @@ impl Block {
         }
       }
       Transformation::Function{name, ref arguments, out} => {
+        self.required_functions.insert(*name);
         for (_,table_id,indices) in arguments {
           if let TableId::Global(_) = table_id {
             self.input.insert((*table_id,TableIndex::All,TableIndex::All));

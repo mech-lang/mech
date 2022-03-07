@@ -62,6 +62,7 @@ pub struct Core {
   unsatisfied_blocks: Vec<BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
+  pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -122,6 +123,7 @@ impl Core {
       unsatisfied_blocks: Vec::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
+      required_functions: HashSet::new(),
       errors: HashMap::new(),
       schedule: Schedule::new(),
       input: HashSet::new(),
@@ -262,6 +264,10 @@ impl Core {
       // Merge dictionaries
       for (k,v) in block_brrw.strings.borrow().iter() {
         self.dictionary.borrow_mut().insert(*k,v.clone());
+      }
+      // Merge dictionaries
+      for fxn_id in block_brrw.required_functions.iter() {
+        self.required_functions.insert(*fxn_id);
       }
       // try to satisfy the block
       result = match block_brrw.ready() {
