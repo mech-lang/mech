@@ -995,6 +995,7 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::F32(arg),    Column::U8(out))     => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
                   (Column::U8(arg),     Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::U64(arg),    Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::U64(arg),    Column::U64(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::F32(arg),    Column::U64(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::Time(arg),   Column::Time(out))   => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::Length(arg), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
@@ -1090,6 +1091,7 @@ impl MechFunctionCompiler for TableSet {
     // The destination is pushed into the arguments here in order to use the
     // get_argument_column() machinery later.
     arguments.push((0,*dest_id,vec![(*dest_row,*dest_col)]));
+    println!("=============!!!!!!!!!{:?} {:?}", arg_shapes, dest_shape);
     match (&arg_shapes[0], &dest_shape) {
       (TableShape::Scalar, TableShape::Row(_)) |
       (TableShape::Row(_), TableShape::Row(_)) => {
@@ -1160,6 +1162,24 @@ impl MechFunctionCompiler for TableSet {
           x => {return Err(MechError{id: 4921, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
+      (TableShape::Matrix(_,_),TableShape::Pending) |
+      (TableShape::Row(_),TableShape::Pending) => {
+        let src_table_brrw = src_table.borrow();
+        let mut dest_table_brrw = dest_table.borrow_mut();
+        dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);
+        dest_table_brrw.set_kind(src_table_brrw.kind());
+        for col_ix in 1..=src_table_brrw.cols {
+          let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+          let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
+          match (src_column,dest_column) {
+            (Column::U8(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Bool(src),Column::Bool(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            x => {return Err(MechError{id: 4923, kind: MechErrorKind::GenericError(format!("{:?}", x))});}      
+          }
+        }
+      }
+      // Everything Else!!
       _ |
       (TableShape::Column(_),TableShape::Column(_)) => {
         let arg_cols = block.get_arg_columns(&arguments)?;
@@ -1238,7 +1258,8 @@ impl MechFunctionCompiler for TableSet {
           x => {return Err(MechError{id: 4922, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
-      x => {return Err(MechError{id: 4923, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+
+      x => {return Err(MechError{id: 4924, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     }
     Ok(())
   }
