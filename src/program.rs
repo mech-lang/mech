@@ -241,56 +241,68 @@ impl Program {
     // Resolve missing function errors
     let mut resolved_errors = vec![];
     {
+      let mut missing_functions: HashSet<u64> = HashSet::new();
       for (error,eblocks) in &self.mech.errors {
         match error {
           MechErrorKind::MissingFunction(fxn_id) => {
-            let fun_name = self.mech.dictionary.borrow().get(&fxn_id).unwrap().to_string();
-            let m: Vec<_> = fun_name.split('/').collect();
-            let m = m[0];
-            let underscore_name = m.replace("-","_");
-            #[cfg(target_os = "macos")]
-            let machine_name = format!("libmech_{}.dylib", underscore_name);
-            #[cfg(target_os = "linux")]
-            let machine_name = format!("libmech_{}.so", underscore_name);
-            #[cfg(target_os = "windows")]
-            let machine_name = format!("mech_{}.dll", underscore_name);
-            match self.machine_repository.get(&m.to_string()) {
-              Some((ver, path)) => {
-                let library = self.libraries.entry(m.to_string()).or_insert_with(||{
-                  match File::open(format!("machines/{}",machine_name)) {
-                    Ok(_) => {
-                      match &outgoing {
-                        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m, ver)));}
-                        None => (),
-                      }
-                      let message = format!("Can't load library {:?}", machine_name);
-                      unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
-                    }
-                    _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
-                  }
-                });
-                // Replace slashes with underscores and then add a null terminator
-                let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
-                let error_msg = format!("Symbol {} not found",s);
-                let mut registrar = MechFunctions::new();
-                unsafe{
-                  match library.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
-                    Ok(good) => {
-                      let declaration = good.read();
-                      (declaration.register)(&mut registrar);
-                    }
-                    Err(_) => {
-                      println!("Couldn't find the specified machine: {}", fun_name);
-                    }
-                  }
-                }     
-                self.mech.functions.borrow_mut().extend(registrar.mech_functions);
-                resolved_errors.push(error.clone());
-              }
-              _ => (),
-            }
+            missing_functions.insert(*fxn_id);
           }
           _ => (), // Other error, do nothing
+        }
+      }
+      for fxn_id in &self.mech.required_functions {
+        missing_functions.insert(*fxn_id);
+      }
+
+      for fxn_id in self.mech.functions.borrow().functions.keys() {
+        missing_functions.remove(fxn_id);
+      }
+
+      for fxn_id in missing_functions {
+        let fun_name = self.mech.dictionary.borrow().get(&fxn_id).unwrap().to_string();
+        let m: Vec<_> = fun_name.split('/').collect();
+        let m = m[0];
+        let underscore_name = m.replace("-","_");
+        #[cfg(target_os = "macos")]
+        let machine_name = format!("libmech_{}.dylib", underscore_name);
+        #[cfg(target_os = "linux")]
+        let machine_name = format!("libmech_{}.so", underscore_name);
+        #[cfg(target_os = "windows")]
+        let machine_name = format!("mech_{}.dll", underscore_name);
+        match self.machine_repository.get(&m.to_string()) {
+          Some((ver, path)) => {
+            let library = self.libraries.entry(m.to_string()).or_insert_with(||{
+              match File::open(format!("machines/{}",machine_name)) {
+                Ok(_) => {
+                  match &outgoing {
+                    Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m, ver)));}
+                    None => (),
+                  }
+                  let message = format!("Can't load library {:?}", machine_name);
+                  unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
+                }
+                _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
+              }
+            });
+            // Replace slashes with underscores and then add a null terminator
+            let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
+            let error_msg = format!("Symbol {} not found",s);
+            let mut registrar = MechFunctions::new();
+            unsafe{
+              match library.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
+                Ok(good) => {
+                  let declaration = good.read();
+                  (declaration.register)(&mut registrar);
+                }
+                Err(_) => {
+                  println!("Couldn't find the specified machine: {}", fun_name);
+                }
+              }
+            }     
+            self.mech.functions.borrow_mut().extend(registrar.mech_functions);
+            resolved_errors.push(MechErrorKind::MissingFunction(fxn_id));
+          }
+          _ => (),
         }
       }
     }
