@@ -29,7 +29,7 @@ pub struct CopyVV<T,U> {
 }
 impl<T,U> MechFunction for CopyVV<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
-      U: Debug + Clone + Into<T> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
 {
   fn solve(&self) {
     let (arg,asix,aeix) = &self.arg;
@@ -1001,6 +1001,8 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::Length(arg), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::Speed(arg),  Column::Speed(out))  => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::String(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::F32(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   x => {return Err(MechError{id: 4911, kind: MechErrorKind::GenericError(format!("{:?}", x))});},   
                 }
               }

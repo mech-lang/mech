@@ -38,6 +38,7 @@ lazy_static! {
   pub static ref cHEX: u64 = hash_str("hex");
   pub static ref cDEC: u64 = hash_str("dec");
   pub static ref cSTRING: u64 = hash_str("string");
+  pub static ref cANY: u64 = hash_str("_");
 }
 
 #[derive(Clone)]
@@ -602,6 +603,7 @@ impl Block {
         else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
         else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
+        else if *kind == *cANY { table_brrw.set_col_kind(*column_ix,ValueKind::Any)?; }
         else {
           return Err(MechError{id: 2120, kind: MechErrorKind::UnknownColumnKind(*kind)});
         }

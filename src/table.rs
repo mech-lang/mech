@@ -328,8 +328,14 @@ impl Table {
           self.data[col] = Column::Ref(column);
           self.col_kinds[col] = ValueKind::Reference;
         },
+        (Column::Any(_), ValueKind::Any) => (),
+        (Column::Empty, ValueKind::Any) => {
+          let column = ColumnV::<Value>::new(vec![Value::Empty; self.rows]);
+          self.data[col] = Column::Any(column);
+          self.col_kinds[col] = ValueKind::Any;
+        },
         x => {
-          return Err(MechError{id: 7009, kind: MechErrorKind::None});
+          return Err(MechError{id: 7009, kind: MechErrorKind::GenericError(format!("{:?}",x))});
         },
       }
       Ok(())
@@ -486,6 +492,7 @@ impl Table {
         Column::Bool(c) => Ok(Value::Bool(c.borrow()[row])),
         Column::String(c) => Ok(Value::String(c.borrow()[row].clone())),
         Column::Ref(c) => Ok(Value::Reference(c.borrow()[row].clone())),
+        Column::Any(c) => Ok(c.borrow()[row].clone()),
         Column::Empty => Ok(Value::Empty),
         x => {
           Err(MechError{id: 7021, kind: MechErrorKind::None})

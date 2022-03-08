@@ -40,6 +40,7 @@ pub enum Column {
   Length(ColumnV<F32>),
   Angle(ColumnV<F32>),
   Speed(ColumnV<F32>),
+  Any(ColumnV<Value>),
   Empty,
 }
 
@@ -76,6 +77,7 @@ impl Column {
       Column::Bool(col) => col.len(),
       Column::Index(col) => col.len(),
       Column::String(col) => col.len(),
+      Column::Any(col) => col.len(),
       Column::Ref(col) => col.len(),
       Column::Reference((table,index)) => {
         let t = table.borrow();
@@ -111,6 +113,7 @@ impl Column {
       Column::F64(col) => col.borrow_mut().resize(rows,0.0),
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
       Column::Index(col) => col.borrow_mut().resize(rows,0),
+      Column::Any(col) => col.borrow_mut().resize(rows,Value::Empty),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
       Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
       Column::Reference(_) |
@@ -143,6 +146,7 @@ impl Column {
       Column::Speed(_) => ValueKind::Speed,
       Column::Length(_) => ValueKind::Length,
       Column::Angle(_) => ValueKind::Angle,
+      Column::Any(_) => ValueKind::Any,
       Column::Empty => ValueKind::Empty,
     }
   }
@@ -257,6 +261,9 @@ mech_type_conversion!(U128,U64,u64);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,usize);
 
+mech_value_conversion!(F32,F32);
+mech_value_conversion!(MechString,String);
+
 #[macro_export]
 macro_rules! mech_type {
   ($wrapper:tt,$type:tt) => (
@@ -344,6 +351,17 @@ macro_rules! mech_type_conversion_raw {
       fn from(n: $from_wrapper) -> $to_type {
         let $from_wrapper(c) = n;
         c as $to_type
+      } 
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_value_conversion {
+  ($from_wrapper:tt,$to_type:tt) => (
+    impl From<$from_wrapper> for Value {
+      fn from(n: $from_wrapper) -> Value {
+        Value::$to_type(n)
       } 
     }
   )

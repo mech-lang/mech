@@ -147,6 +147,7 @@ pub enum ValueKind {
   String,
   Reference,
   NumberLiteral,
+  Any,
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
 }
