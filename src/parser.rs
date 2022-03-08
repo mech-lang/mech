@@ -953,7 +953,7 @@ fn add_row_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn add_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table_id) = table(input)?;
-  let (input, _) = tuple((space, add_row_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), add_row_operator, many1(space)))(input)?;
   let (input, table) = alt((expression, inline_table, anonymous_table))(input)?;
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
@@ -965,28 +965,28 @@ fn set_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn set_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = data(input)?;
-  let (input, _) = tuple((space, set_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), set_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SetData{children: vec![table, expression]}))
 }
 
 fn split_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = alt((identifier, table))(input)?;
-  let (input, _) = tuple((space, split_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), split_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SplitData{children: vec![table, expression]}))
 }
 
 fn join_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = identifier(input)?;
-  let (input, _) = tuple((space, join_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::JoinData{children: vec![table, expression]}))
 }
 
 fn variable_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, variable) = identifier(input)?;
-  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
 }
@@ -997,7 +997,7 @@ fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   children.push(table);
   let (input, kind_id) = opt(kind_annotation)(input)?;
   if let Some(kind_id) = kind_id { children.push(kind_id); }
-  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   children.push(expression);
   Ok((input, Node::TableDefine{children}))
