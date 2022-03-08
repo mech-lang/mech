@@ -538,6 +538,9 @@ impl Compiler {
           }
         }        
       }
+      Node::Token{token, chars} => {
+        tfms.push(Transformation::Identifier{name: chars.to_vec(), id: hash_chars(chars)});
+      }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
