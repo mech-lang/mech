@@ -261,6 +261,11 @@ mech_type_conversion!(U128,U64,u64);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,usize);
 
+mech_value_conversion!(U8,U8);
+mech_value_conversion!(U16,U16);
+mech_value_conversion!(U32,U32);
+mech_value_conversion!(U64,U64);
+mech_value_conversion!(U128,U128);
 mech_value_conversion!(F32,F32);
 mech_value_conversion!(MechString,String);
 

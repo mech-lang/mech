@@ -14,7 +14,7 @@ use indexmap::IndexMap;
 
 // ### Table Id
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum TableId {
   Local(u64),
   Global(u64),
@@ -422,7 +422,6 @@ impl Table {
         (Column::Time(c), Value::Time(v)) |
         (Column::Speed(c), Value::Speed(v)) |
         (Column::F32(c), Value::F32(v)) => c.borrow_mut()[row] = v,
-        
         (Column::F32(c), Value::U64(v)) => c.borrow_mut()[row] = v.into(),
         (Column::f32(c), Value::f32(v)) => c.borrow_mut()[row] = v,
         (Column::F64(c), Value::F64(v)) => c.borrow_mut()[row] = v,
@@ -438,6 +437,7 @@ impl Table {
         (Column::I128(c), Value::I128(v)) => c.borrow_mut()[row] = v,
         (Column::Bool(c), Value::Bool(v)) => c.borrow_mut()[row] = v,
         (Column::String(c), Value::String(v)) => c.borrow_mut()[row] = v,
+        (Column::Any(c), v) => c.borrow_mut()[row] = v,
         (Column::Ref(c), Value::Reference(v)) => c.borrow_mut()[row] = v,
         (Column::Empty, Value::Empty) => (),
         x => {

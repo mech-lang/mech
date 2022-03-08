@@ -682,6 +682,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::Length(arg), ColumnIndex::Index(ix), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::Any(arg), ColumnIndex::Index(ix), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Empty, _, Column::Empty) => (),
                 x => {return Err(MechError{id: 4896, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -714,6 +715,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               o.set_col_kind(out_column_ix, arg_col.kind());
               let mut out_col = o.get_column_unchecked(out_column_ix);
               match (&arg_col, arg_ix, &out_col) {
+                (Column::Any(arg), ColumnIndex::All, Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::Time(arg), ColumnIndex::All, Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::Speed(arg), ColumnIndex::All, Column::Speed(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::Length(arg), ColumnIndex::All, Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
@@ -1003,6 +1005,7 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::String(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::F32(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::U64(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   x => {return Err(MechError{id: 4911, kind: MechErrorKind::GenericError(format!("{:?}", x))});},   
                 }
               }

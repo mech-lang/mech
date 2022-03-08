@@ -12,7 +12,7 @@ use std::convert::TryInto;
 
 // ## Value structs and enums
 
-#[derive(Clone,PartialEq,Serialize,Deserialize)]
+#[derive(Clone,PartialEq,PartialOrd,Serialize,Deserialize)]
 pub enum Value {
   U8(U8),
   U16(U16),
@@ -36,7 +36,6 @@ pub enum Value {
   Reference(TableId),
   Empty,
 }
-
 
 impl Value {
 
@@ -151,6 +150,7 @@ pub enum ValueKind {
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
 }
+
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NumberLiteral {
