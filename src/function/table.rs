@@ -1091,7 +1091,6 @@ impl MechFunctionCompiler for TableSet {
     // The destination is pushed into the arguments here in order to use the
     // get_argument_column() machinery later.
     arguments.push((0,*dest_id,vec![(*dest_row,*dest_col)]));
-    println!("=============!!!!!!!!!{:?} {:?}", arg_shapes, dest_shape);
     match (&arg_shapes[0], &dest_shape) {
       (TableShape::Scalar, TableShape::Row(_)) |
       (TableShape::Row(_), TableShape::Row(_)) => {
