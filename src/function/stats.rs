@@ -134,7 +134,7 @@ pub struct StatsSum{}
 impl MechFunctionCompiler for StatsSum {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     if arguments.len() > 1 {
-      return Err(MechError{id: 1231, kind: MechErrorKind::GenericError("Too many function arguments".to_string())});
+      return Err(MechError{id: 3040, kind: MechErrorKind::GenericError("Too many function arguments".to_string())});
     }
     let (out_table_id, _, _) = out;
     let arg_col = block.get_arg_column(&arguments[0])?;
@@ -151,8 +151,18 @@ impl MechFunctionCompiler for StatsSum {
           (Column::Length(col),ColumnIndex::All,Column::Length(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::All,Column::F32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F32(col),ColumnIndex::Bool(bix),Column::F32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::Reference((ref table, (ColumnIndex::All, ColumnIndex::All))),ColumnIndex::All,Column::F32(out)) => {
+            let table_brrw = table.borrow();
+            out_brrw.resize(1,table_brrw.cols);
+            out_brrw.set_kind(table_brrw.kind());
+            for i in 0..table_brrw.cols {
+              if let (Column::F32(col),Column::F32(out)) = (table_brrw.get_col_raw(i)?, out_brrw.get_col_raw(i)?) {
+                block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()});
+              }
+            }
+          }
           (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
-          x => {return Err(MechError{id: 1231, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{id: 3041, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       else if *arg_name == *ROW {
@@ -174,7 +184,7 @@ impl MechFunctionCompiler for StatsSum {
         }
       }
       else {  
-        return Err(MechError{id: 1231, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
+        return Err(MechError{id: 3042, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
       }
     } 
     Ok(())
