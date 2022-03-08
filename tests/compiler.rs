@@ -826,7 +826,17 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(609.0)));
 
-  // ## Logic
+  test_mech!(append_any_column,r#"
+block
+  #x = [|x<u64> y<_> z<_>|]
+block
+  #x += [x: 123<u64> y: "Hello" z: "Hello"]
+block
+  #x += [x: 456<u64> y: 10, z: 10]
+block
+  #test = set/all(column: #x.y == #x.z)"#, Value::Bool(true));
+
+// ## Logic
 
 test_mech!(logic_and,"
 block
