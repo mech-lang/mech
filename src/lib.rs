@@ -240,7 +240,7 @@ impl BoxTable {
       for col in 0..table.cols {
         let value_string = match table.get_raw(row,col) {
           Ok(v) => format!("{:?}", v), 
-          _ => format!(""),
+          Err(x) => format!("{:?}",x),
         };
         let chars = value_string.chars().count();
         if chars > column_widths[col] {
