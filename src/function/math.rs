@@ -83,6 +83,9 @@ binary_infix_par_vvip!(ParAddVVIP,add);
 // Parallel Vector : Scalar In Place
 binary_infix_par_vsip!(ParAddVSIP,add);
 
+// Vector : Scalar In Place
+binary_infix_vsip!(AddVSIP,add);
+
 // Parallel Scalar : Vector
 binary_infix_par_sv!(ParAddSV,add);
 binary_infix_par_sv!(ParSubSV,sub);
@@ -305,6 +308,26 @@ macro_rules! binary_infix_par_vsip {
       fn solve(&self) {
         let arg = self.arg.borrow()[0];
         self.out.borrow_mut().par_iter_mut().for_each(|out| *out = (*out).$op(arg));
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! binary_infix_vsip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&self) {
+        let arg = self.arg.borrow()[0];
+        self.out.borrow_mut().iter_mut().for_each(|out| *out = (*out).$op(arg));
       }
       fn to_string(&self) -> String { format!("{:#?}", self)}
     }
