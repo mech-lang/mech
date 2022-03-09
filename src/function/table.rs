@@ -65,6 +65,30 @@ where T: Debug + Clone + Into<U> + Sync + Send,
 }
 
 
+// Copy Vector : Vector
+#[derive(Debug)]
+pub struct CopyVIV<T,U> {
+  pub arg: ColumnV<T>,
+  pub ix: ColumnV<F32>,
+  pub out: ColumnV<U>,
+}
+impl<T,U> MechFunction for CopyVIV<T,U> 
+where T: Debug + Clone + Into<U> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
+{
+  fn solve(&self) {
+    let arg_brrw = self.arg.borrow();
+    self.out.borrow_mut()
+       .iter_mut()
+       .zip(self.ix.borrow().iter())
+       .for_each(|(out, ix)| {
+         *out = T::into(arg_brrw[ix.unwrap() as usize - 1].clone())
+       });
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
 // Copy Scalar : Vector
 #[derive(Debug)]
 pub struct CopySV<T,U> {
@@ -658,6 +682,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
     let mut o = out_table.borrow_mut();
     o.resize(*max_rows,cols);
     let mut out_column_ix = 0;
+    println!("(((({:?}", arguments);
     for (argument, shape) in arguments.iter().zip(arg_shapes) {
       match shape {
         TableShape::Scalar => {
@@ -727,6 +752,10 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::U64(arg), ColumnIndex::Bool(bix), Column::U64(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),        
                 (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::RealIndex(ix), Column::F32(out)) => {
+                  o.resize(ix.len(),1);
+                  block.plan.push(CopyVIV{arg: arg.clone(), ix: ix.clone(), out: out.clone()})
+                },
                 x => {return Err(MechError{id: 4898, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               };
               out_column_ix += 1;
