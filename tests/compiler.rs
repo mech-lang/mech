@@ -1026,6 +1026,14 @@ block
   x = [1;2;3;4]
   #test = stats/sum(column: x{#y})"#, Value::F32(F32::new(3.0)));
 
+
+test_mech!(indexing_real_indices,r#"
+block
+  ix = [2; 1; 2; 2; 3; 3; 1]
+  b = [47; 93; 38]
+  q = b{ix}
+  #test = stats/sum(column: q)"#, Value::F32(F32::new(449.0)));
+
 // ## Functions
 
 test_mech!(function_stats_sum,r#"
