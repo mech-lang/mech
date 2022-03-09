@@ -11,7 +11,7 @@ use std::thread;
 use crate::*;
 
 use std::fmt::*;
-use num_traits::*;
+use num_traits::identities::Zero;
 use std::ops::*;
 
 pub type TableRef = Rc<RefCell<Table>>;
@@ -219,7 +219,7 @@ mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
 
-impl num_traits::identities::Zero for F32 {
+impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
   }
@@ -258,6 +258,20 @@ mech_type_conversion!(U128,U8,u8);
 mech_type_conversion!(U128,U16,u16);
 mech_type_conversion!(U128,U32,u32);
 mech_type_conversion!(U128,U64,u64);
+mech_type_conversion_raw!(U8,u8);
+mech_type_conversion_raw!(U16,u16);
+mech_type_conversion_raw!(U32,u32);
+mech_type_conversion_raw!(U64,u32);
+mech_type_conversion_raw!(U64,u64);
+mech_type_conversion_raw!(U128,u32);
+mech_type_conversion_raw!(U128,u128);
+mech_type_conversion_raw!(I8,i8);
+mech_type_conversion_raw!(I16,i16);
+mech_type_conversion_raw!(I32,i32);
+mech_type_conversion_raw!(I64,i64);
+mech_type_conversion_raw!(I128,u32);
+mech_type_conversion_raw!(I128,i128);
+mech_type_conversion_raw!(F32,f32);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,usize);
 
@@ -319,6 +333,99 @@ macro_rules! mech_type {
         let $wrapper(col) = self;
         write!(f,"{}",col)?;
         Ok(())
+      }
+    }
+  )
+}
+
+macro_rules! pow_impl {
+  ($t:ty) => {
+    pow_impl!($t, u8);
+    pow_impl!($t, usize);
+  };
+  ($t:ty, $rhs:ty) => {
+    pow_impl!($t, $rhs, usize, pow);
+  };
+  ($t:tt, $rhs:tt, $rhs_t:tt, $method:expr) => {
+    impl Pow<$rhs> for $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(lhs, <u32 as From<$rhs_t>>::from(rhs)))
+      }
+    }
+
+    impl<'a> Pow<&'a $rhs> for $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: &'a $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(lhs, <u32 as From<$rhs_t>>::from(*rhs)))
+      }
+    }
+
+    impl<'a> Pow<$rhs> for &'a $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(*lhs, <u32 as From<$rhs_t>>::from(rhs)))
+      }
+    }
+
+    impl<'a, 'b> Pow<&'a $rhs> for &'b $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: &'a $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(*lhs, <u32 as From<$rhs_t>>::from(*rhs)))
+      }
+    }
+  };
+}
+
+pow_impl!(U8, U8, u8, u8::pow);
+pow_impl!(U8, U16, u16, u8::pow);
+pow_impl!(U8, U32, u32, u8::pow);
+pow_impl!(I8, U8, u8, i8::pow);
+pow_impl!(I8, U16, u16, i8::pow);
+pow_impl!(I8, U32, u32, i8::pow);
+pow_impl!(U16, U8, u8, u16::pow);
+pow_impl!(U16, U16, u16, u16::pow);
+pow_impl!(U16, U32, u32, u16::pow);
+pow_impl!(I16, U8, u8, i16::pow);
+pow_impl!(I16, U16, u16, i16::pow);
+pow_impl!(I16, U32, u32, i16::pow);
+pow_impl!(U32, U8, u8, u32::pow);
+pow_impl!(U32, U16, u16, u32::pow);
+pow_impl!(U32, U32, u32, u32::pow);
+pow_impl!(I32, U8, u8, i32::pow);
+pow_impl!(I32, U16, u16, i32::pow);
+pow_impl!(I32, U32, u32, i32::pow);
+pow_impl!(U64, U8, u8, u64::pow);
+pow_impl!(U64, U16, u16, u64::pow);
+pow_impl!(U64, U32, u32, u64::pow);
+pow_impl!(I64, U8, u8, i64::pow);
+pow_impl!(I64, U16, u16, i64::pow);
+pow_impl!(I64, U32, u32, i64::pow);
+pow_impl!(U128, U8, u8, u128::pow);
+pow_impl!(U128, U16, u16, u128::pow);
+pow_impl!(U128, U32, u32, u128::pow);
+pow_impl!(I128, U8, u8, i128::pow);
+pow_impl!(I128, U16, u16, i128::pow);
+pow_impl!(I128, U32, u32, i128::pow);
+
+mech_powf!(F32,f32);
+
+#[macro_export]
+macro_rules! mech_powf{
+  ($wrapper:tt,$rhs:tt) => (
+    impl<T: Into<$rhs>> Pow<T> for $wrapper {
+      type Output = $wrapper;
+      fn pow(self, rhs: T) -> $wrapper {
+        let ($wrapper(lhs),rhs) = (self,rhs);
+        $wrapper(lhs.powf(T::into(rhs)))
       }
     }
   )
