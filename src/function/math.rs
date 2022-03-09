@@ -37,42 +37,42 @@ binary_infix_ss!(AddSS,add);
 binary_infix_ss!(SubSS,sub);
 binary_infix_ss!(MulSS,mul);
 binary_infix_ss!(DivSS,div);
-//binary_infix_ss!(ExpSS,pow);
+binary_infix_ss!(ExpSS,pow);
 
 // Scalar : Vector
 binary_infix_sv!(AddSV,add);
 binary_infix_sv!(SubSV,sub);
 binary_infix_sv!(MulSV,mul);
 binary_infix_sv!(DivSV,div);
-//binary_infix_sv!(ExpSV,pow);
+binary_infix_sv!(ExpSV,pow);
 
 // Vector : Scalar
 binary_infix_vs!(AddVS,add);
 binary_infix_vs!(SubVS,sub);
 binary_infix_vs!(MulVS,mul);
 binary_infix_vs!(DivVS,div);
-//binary_infix_vs!(ExpVS,pow);
+binary_infix_vs!(ExpVS,pow);
 
 // Vector : Vector
 binary_infix_vv!(AddVV,add);
 binary_infix_vv!(SubVV,sub);
 binary_infix_vv!(MulVV,mul);
 binary_infix_vv!(DivVV,div);
-//binary_infix_vv!(ExpVV,pow);
+binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
 binary_infix_par_vs!(ParAddVS,add);
 binary_infix_par_vs!(ParSubVS,sub);
 binary_infix_par_vs!(ParMulVS,mul);
 binary_infix_par_vs!(ParDivVS,div);
-//binary_infix_par_vs!(ExpParVS,pow);
+binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
 binary_infix_par_vv!(ParAddVV,add);
 binary_infix_par_vv!(ParSubVV,sub);
 binary_infix_par_vv!(ParMulVV,mul);
 binary_infix_par_vv!(ParDivVV,div);
-//binary_infix_par_vv!(ExpParVV,pow);
+binary_infix_par_vv!(ExpParVV,pow);
 
 // Vector : Vector In Place
 binary_infix_vvip!(AddVVIP,add);
@@ -91,13 +91,13 @@ binary_infix_par_sv!(ParAddSV,add);
 binary_infix_par_sv!(ParSubSV,sub);
 binary_infix_par_sv!(ParMulSV,mul);
 binary_infix_par_sv!(ParDivSV,div);
-//binary_infix_par_sv!(ExpParSV,pow);
+binary_infix_par_sv!(ExpParSV,pow);
 
 math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
 math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
 math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
 math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
-//math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
+math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 // Negate Vector
 #[derive(Debug)]

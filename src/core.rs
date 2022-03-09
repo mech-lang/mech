@@ -84,7 +84,7 @@ impl Core {
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
-    //functions.insert(*MATH_EXPONENT, MathExp{});
+    functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
     functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
     // Logic

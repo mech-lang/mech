@@ -34,7 +34,7 @@ use std::ops::*;
 fn main() -> std::result::Result<(),MechError> {
  
   let start_ns0 = time::precise_time_ns();
-  let n = 1e6 as usize;
+  let n = 1e7 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
 
@@ -273,7 +273,8 @@ fn main() -> std::result::Result<(),MechError> {
       total_time.pop_front();
     }
     let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (cycle_duration / 1_000_000_000.0));
   }
   let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
   println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));

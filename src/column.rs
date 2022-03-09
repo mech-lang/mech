@@ -403,20 +403,37 @@ pow_impl!(U32, U32, u32, u32::pow);
 pow_impl!(I32, U8, u8, i32::pow);
 pow_impl!(I32, U16, u16, i32::pow);
 pow_impl!(I32, U32, u32, i32::pow);
-pow_impl!(U64, U8, u8, u64::pow);
-pow_impl!(U64, U16, u16, u64::pow);
-pow_impl!(U64, U32, u32, u64::pow);
 pow_impl!(I64, U8, u8, i64::pow);
 pow_impl!(I64, U16, u16, i64::pow);
 pow_impl!(I64, U32, u32, i64::pow);
-pow_impl!(U128, U8, u8, u128::pow);
-pow_impl!(U128, U16, u16, u128::pow);
-pow_impl!(U128, U32, u32, u128::pow);
 pow_impl!(I128, U8, u8, i128::pow);
 pow_impl!(I128, U16, u16, i128::pow);
 pow_impl!(I128, U32, u32, i128::pow);
 
 mech_powf!(F32,f32);
+
+// These are just to get things compiling. We should
+// to a better job implementing these.
+mech_pow_dummy!(I8,I8);
+mech_pow_dummy!(I16,I16);
+mech_pow_dummy!(I32,I32);
+mech_pow_dummy!(I64,I64);
+mech_pow_dummy!(I128,I128);
+mech_pow_dummy!(U128,U128);
+mech_pow_dummy!(U64,U64);
+
+#[macro_export]
+macro_rules! mech_pow_dummy{
+  ($wrapper:tt,$rhs:tt) => (
+    impl<T: Into<$rhs>> Pow<T> for $wrapper {
+      type Output = $wrapper;
+      fn pow(self, rhs: T) -> $wrapper {
+        let ($wrapper(lhs),rhs) = (self,rhs);
+        $wrapper(0)
+      }
+    }
+  )
+}
 
 #[macro_export]
 macro_rules! mech_powf{
