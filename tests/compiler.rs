@@ -211,6 +211,8 @@ test_mech!(math_multiply,"#test = 2 * 2", Value::F32(F32::new(4.0)));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
+test_mech!(math_power,"#test = 3 ^ 2", Value::F32(F32::new(9.0)));
+
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::F32(F32::new(19.0)));
 
 test_mech!(math_constant_collision,"#test = 123 + 1", Value::F32(F32::new(124.0)));
