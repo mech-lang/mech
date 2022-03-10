@@ -396,8 +396,8 @@ Keyboard events
             (*wasm_core).process_transaction();
             (*wasm_core).render();
             //log!("Keydown");
-            let table = (*wasm_core).core.get_table("html/event/key-down");
-            log!("{:?}", table);
+            //let table = (*wasm_core).core.get_table("balls");
+            //log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
       };
