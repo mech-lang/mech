@@ -1,8 +1,10 @@
 # Pong
 
-Game elements
-  #ball = [x: 10, y: 10, vx: 1, vy: 1]
-  #gravity = 1
+Game elements 
+  #balls = [|x  y  vx vy radius color  a| 
+            50 10 0  0 20     0xA00000 1]
+  #gravity = 0.1
+  #clicked = [x: false]
 
 Add a game timer
   #time/timer += [period: 16<ms>]
@@ -11,35 +13,62 @@ Add a game timer
 
 Move the ball with every tick of the timer
   ~ #time/timer.ticks
-  #ball.x := #ball.x + #ball.vx
-  #ball.y := #ball.y + #ball.vy
-  #ball.vy := #ball.vy + #gravity
+  #balls.x := #balls.x + #balls.vx
+  #balls.y := #balls.y + #balls.vy
+  #balls.vy := #balls.vy + #gravity * #balls.a
 
 Keep the balls within the boundary height
-  ~ #time/timer.ticks
-  iy = #ball.y > 500
-  iyy = #ball.y < 0
-  #ball.y{iy} := 500
-  #ball.y{iyy} := 0
-  #ball.vy{iy | iyy} := -#ball.vy * 0.80
+  iy = #balls.y > 500
+  iyy = #balls.y < 0
+  #balls.y{iy} := 500
+  #balls.y{iyy} := 0
+  #balls.vy{iy | iyy} := -#balls.vy * 0.80
 
 Keep the balls within the boundary width
-  ~ #time/timer.ticks
-  ix = #ball.x > 500
-  ixx = #ball.x < 0
-  #ball.x{ix} := 500
-  #ball.x{ixx} := 0
-  #ball.vx{ix | ixx} := -#ball.vx * 0.80
+  ix = #balls.x > 500
+  ixx = #balls.x < 0
+  #balls.x{ix} := 500
+  #balls.x{ixx} := 0
+  #balls.vx{ix | ixx} := -#balls.vx * 0.80
+
+Determine if the pointer is within the ball's hitbox
+  dx = #html/event/pointer-move.x - #balls.x
+  dy = #html/event/pointer-move.y - #balls.y
+  #hover = ((dx ^ 2 + dy ^ 2) ^ 0.5) < #balls.radius
+
+Change color of hovered balls
+  #balls.color{#hover} := 0x00A000
+  #balls.color{!#hover} := 0xA00000
+
+Click the circle
+  ~ #html/event/pointer-down
+  #clicked.x{#hover} := true
+  #balls.a{#hover} := 0
+  #balls.x{#hover} := #html/event/pointer-down.x
+  #balls.y{#hover} := #html/event/pointer-down.y
+  #balls.vy{#hover} := 0
+  #balls.vx{#hover} := 0
+
+Un-click the circle
+  ~ #html/event/pointer-up
+  #clicked.x{#hover} := false
+  #balls.a{#hover} := 1
+
+Move the circle to the pointer if it's clicked
+  ~ #html/event/pointer-move
+  #balls.x{#clicked} := #html/event/pointer-move.x
+  #balls.y{#clicked} := #html/event/pointer-move.y
+
 
 Set up drawing elements 
   #circle = [
     shape: "circle" 
     parameters: [
-      center-x: #ball.x 
-      center-y: #ball.y 
-      radius: 10 
-      fill: 0x222222 
-      line-width: 5
+      center-x: #balls.x 
+      center-y: #balls.y 
+      radius: #balls.radius
+      fill: #balls.color 
+      line-width: 3
     ]
   ]
 
