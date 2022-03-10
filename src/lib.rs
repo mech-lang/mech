@@ -249,6 +249,7 @@ Timers
 Pointer events
   #html/event/pointer-move = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
   #html/event/pointer-down = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
+  #html/event/pointer-up = [|x<f32> y<f32> target<string> event-id<u64>| 0 0 "" 0]
 
 Keyboard events
   #html/event/key-up = [|key<string> event-id<u64>| "" 0]
@@ -446,7 +447,7 @@ Keyboard events
                 Value::U64(U64::new(eid)))])));  
             (*wasm_core).process_transaction();
             (*wasm_core).render();
-            //let table = (*wasm_core).core.get_table(hash_str("clicked"));
+            //let table = (*wasm_core).core.get_table_by_id(hash_str("balls"));
             //log!("{:?}", table);
           }
         }) as Box<dyn FnMut(_)>)
