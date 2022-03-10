@@ -182,11 +182,11 @@ impl Program {
           // Loading machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".bright_cyan())));}
-            None => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            None => {return Err(MechError{id: 1244, kind: MechErrorKind::None});},
           }
           let mut contents = String::new();
           match file.read_to_string(&mut contents) {
-            Err(_) => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{id: 1445, kind: MechErrorKind::None});},
             _ => (),
           }
           contents
@@ -195,7 +195,7 @@ impl Program {
           // Download machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry.", "[Downloading]".bright_cyan())));}
-            None => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
           let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/registry.mec";
