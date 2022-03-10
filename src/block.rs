@@ -29,6 +29,7 @@ lazy_static! {
   pub static ref cU16: u64 = hash_str("u16");
   pub static ref cU32: u64 = hash_str("u32");
   pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cU128: u64 = hash_str("u128");
   pub static ref cHZ: u64 = hash_str("hz");
   pub static ref cMS: u64 = hash_str("ms");
   pub static ref cS: u64 = hash_str("s");
@@ -265,8 +266,8 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
-
-        if ix_table_brrw.cols != 1 {
+        println!("000000000000{:?}", ix_table_brrw);
+        if ix_table_brrw.cols > 1 {
           return Err(MechError{id: 2108, kind: MechErrorKind::GenericError("Table too big".to_string())});
         }
         let ix = match ix_table_brrw.get_column_unchecked(0) {
@@ -430,6 +431,7 @@ impl Block {
   }
 
   pub fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
+    println!("{:?}", argument);
     let (_, table_id, indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
@@ -470,12 +472,12 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
-        let rows = ix_table.borrow().logical_len();
+        let rows = ix_table.borrow().len();
         (rows,1)
       },
       (TableIndex::Table(ix_table_id),TableIndex::All) => {
         let ix_table = self.get_table(&ix_table_id)?;
-        let rows = ix_table.borrow().logical_len();
+        let rows = ix_table.borrow().len();
         (rows,t.cols)
       },
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
@@ -634,6 +636,12 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        match dest_row {
+          TableIndex::Table(TableId::Global(ix_table_id)) => {
+            self.input.insert((TableId::Global(*ix_table_id),TableIndex::All,TableIndex::All));
+          }
+          _ => (),
+        }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
           arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
@@ -655,13 +663,17 @@ impl Block {
           t.set_kind(ValueKind::U16)?;
           t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
         } 
-       else if *kind == *cU32 {
+        else if *kind == *cU32 {
           t.set_kind(ValueKind::U32)?;
           t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
         } 
         else if *kind == *cU64 {
           t.set_kind(ValueKind::U64)?;
           t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+        } 
+        else if *kind == *cU128 {
+          t.set_kind(ValueKind::U128)?;
+          t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
         } 
         else if *kind == *cMS {
           t.set_kind(ValueKind::Time)?;
@@ -798,7 +810,10 @@ impl fmt::Debug for Block {
     if self.triggers.len() > 0 {
       for (table,row,col) in &self.triggers {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().to_string()
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table),
+          }
         } else {
           format!("{:?}",table)
         };
@@ -809,7 +824,10 @@ impl fmt::Debug for Block {
     if self.input.len() > 0 {
       for (table,row,col) in &self.input {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().to_string()
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table),
+          }
         } else {
           format!("{:?}",table)
         };
