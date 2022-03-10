@@ -216,7 +216,17 @@ impl MechFunctionCompiler for LogicNot {
           x => {return Err(MechError{id: 8213, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
         }
       }
-      x => {return Err(MechError{id: 8214, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+      TableShape::Scalar => {
+        let mut argument_columns = block.get_arg_columns(arguments)?;
+        let out_column = block.get_out_column(out, 1, ValueKind::Bool)?;
+        match (&argument_columns[0], &out_column) {
+          ((_,Column::Bool(arg),_), Column::Bool(out)) => {
+            block.plan.push(NotS{arg: arg.clone(), out: out.clone() });
+          }
+          x => {return Err(MechError{id: 8214, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+        }
+      }
+      x => {return Err(MechError{id: 8215, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
     }
     Ok(())
   }
