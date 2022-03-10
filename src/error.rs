@@ -33,6 +33,7 @@ pub enum MechErrorKind {
   ZeroIndex,                                         // Zero cannot ever be used as an index.
   BlockDisabled,
   GenericError(String),
+  FileNotFound(String),
   Unhandled,
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
