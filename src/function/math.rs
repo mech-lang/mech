@@ -118,17 +118,17 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 
 // Negate Vector
 #[derive(Debug)]
-pub struct NegateV<T> 
-where T: std::ops::Neg<Output = T> + Copy + Debug
+pub struct NegateV<T,U> 
 {
-  pub arg: ColumnV<T>, pub out: ColumnV<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<U>
 }
 
-impl<T> MechFunction for NegateV<T> 
-where T: std::ops::Neg<Output = T> + Copy + Debug
+impl<T,U> MechFunction for NegateV<T,U>  
+where T: std::ops::Neg<Output = T> + Into<U> + Copy + Debug,
+      U: std::ops::Neg<Output = U> + Into<T> + Copy + Debug,
 {
   fn solve(&self) {
-    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(*arg)); 
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(T::into(*arg))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -386,6 +386,7 @@ impl MechFunctionCompiler for MathNegate {
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::F32(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           x => {return Err(MechError{id: 6001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }

@@ -250,11 +250,12 @@ impl Table {
           self.data[col] = Column::U128(column);
           self.col_kinds[col] = ValueKind::U128;
         },
-        /*(Column::Empty, ValueKind::I8) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+        (Column::I8(_), ValueKind::I8) => (),
+        (Column::Empty, ValueKind::I8) => {
+          let column = ColumnV::<I8>::new(vec![I8::new(0);self.rows]);
           self.data[col] = Column::I8(column);
           self.col_kinds[col] = ValueKind::I8;
-        },
+        },/*
         (Column::Empty, ValueKind::I16) => {
           let column = Rc::new(RefCell::new(vec![0;self.rows]));
           self.data[col] = Column::I16(column);

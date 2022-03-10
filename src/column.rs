@@ -27,7 +27,7 @@ pub enum Column {
   U64(ColumnV<U64>),
   U128(ColumnV<U128>),
   Ref(ColumnV<TableId>),
-  I8(ColumnV<i8>),
+  I8(ColumnV<I8>),
   I16(ColumnV<i16>),
   I32(ColumnV<i32>),
   I64(ColumnV<i64>),
@@ -101,7 +101,7 @@ impl Column {
       Column::U32(col) => col.borrow_mut().resize(rows,U32(0)),
       Column::U64(col) => col.borrow_mut().resize(rows,U64(0)),
       Column::U128(col) => col.borrow_mut().resize(rows,U128(0)),
-      Column::I8(col) => col.borrow_mut().resize(rows,0),
+      Column::I8(col) => col.borrow_mut().resize(rows,I8(0)),
       Column::I16(col) => col.borrow_mut().resize(rows,0),
       Column::I32(col) => col.borrow_mut().resize(rows,0),
       Column::I64(col) => col.borrow_mut().resize(rows,0),
@@ -234,6 +234,7 @@ mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
 mech_type_conversion!(U8,U16,u16);
 mech_type_conversion!(F32,U8,u8);
+mech_type_conversion!(F32,I8,i8);
 mech_type_conversion!(F32,U16,u16);
 mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
@@ -258,6 +259,7 @@ mech_type_conversion!(U128,U8,u8);
 mech_type_conversion!(U128,U16,u16);
 mech_type_conversion!(U128,U32,u32);
 mech_type_conversion!(U128,U64,u64);
+mech_type_conversion!(I8,F32,f32);
 mech_type_conversion_raw!(U8,u8);
 mech_type_conversion_raw!(U16,u16);
 mech_type_conversion_raw!(U32,u32);
