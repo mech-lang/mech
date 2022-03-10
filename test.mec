@@ -1,22 +1,22 @@
 # Pong
 
 Game elements
-  #ball = [x: 1:1000000, y: 1:1000000, vx: 1, vy: 1]
+  #ball = [x: 10, y: 10, vx: 1, vy: 1]
   #gravity = 1
 
 Add a game timer
-  #time/timer += [period: 16]
+  #time/timer += [period: 16<ms>]
 
 ## Movement
 
 Move the ball with every tick of the timer
-  ~ #time/timer.ticks{1}
+  ~ #time/timer.ticks
   #ball.x := #ball.x + #ball.vx
   #ball.y := #ball.y + #ball.vy
   #ball.vy := #ball.vy + #gravity
 
 Keep the balls within the boundary height
-  ~ #time/timer.ticks{1}
+  ~ #time/timer.ticks
   iy = #ball.y > 500
   iyy = #ball.y < 0
   #ball.y{iy} := 500
@@ -24,9 +24,34 @@ Keep the balls within the boundary height
   #ball.vy{iy | iyy} := -#ball.vy * 0.80
 
 Keep the balls within the boundary width
-  ~ #time/timer.ticks{1}
+  ~ #time/timer.ticks
   ix = #ball.x > 500
   ixx = #ball.x < 0
   #ball.x{ix} := 500
   #ball.x{ixx} := 0
   #ball.vx{ix | ixx} := -#ball.vx * 0.80
+
+Set up drawing elements 
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: #ball.x 
+      center-y: #ball.y 
+      radius: 10 
+      fill: 0x222222 
+      line-width: 5
+    ]
+  ]
+
+Draw to canvas
+  #canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #circle] 
+    parameters: [width: 1000 height: 500]
+  ]
+
+Attach game to root
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| #canvas]
+  ]
