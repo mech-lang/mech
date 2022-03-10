@@ -266,9 +266,8 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
-        println!("000000000000{:?}", ix_table_brrw);
         if ix_table_brrw.cols > 1 {
-          return Err(MechError{id: 2108, kind: MechErrorKind::GenericError("Table too big".to_string())});
+          return Err(MechError{id: 2108, kind: MechErrorKind::GenericError("Index table must be a column vector.".to_string())});
         }
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
@@ -431,7 +430,6 @@ impl Block {
   }
 
   pub fn get_arg_dim(&self, argument: &Argument) -> Result<TableShape,MechError> {
-    println!("{:?}", argument);
     let (_, table_id, indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
