@@ -11,7 +11,7 @@ fn get_stroke_string(parameters_table: &Table, row: usize, alias: u64) -> String
   match parameters_table.get(&TableIndex::Index(row), &TableIndex::Alias(alias))  {
     Ok(Value::U128(stroke)) => {
       let mut color_string: String = "#".to_string();
-      color_string = format!("{}{:02x}", color_string, stroke.unwrap());
+      color_string = format!("{}{:06x}", color_string, stroke.unwrap());
       color_string
     }
     _ => "#000000".to_string(),
