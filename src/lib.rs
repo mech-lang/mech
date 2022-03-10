@@ -47,12 +47,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 match bincode::deserialize_from(&mut reader) {
                   Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
-                    return Err(MechError{id: 1234, kind: MechErrorKind::None});
+                    return Err(MechError{id: 1237, kind: MechErrorKind::None});
                   },
                 }
               }
               Err(err) => {
-                return Err(MechError{id: 1234, kind: MechErrorKind::None});
+                return Err(MechError{id: 1238, kind: MechErrorKind::None});
               },
             };
           }
@@ -65,14 +65,14 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                return Err(MechError{id: 1234, kind: MechErrorKind::None});
+                return Err(MechError{id: 1239, kind: MechErrorKind::None});
               },
             };
           }
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+      _ => {return Err(MechError{id: 1240, kind: MechErrorKind::None});},
     }
     Ok(code)
   };
@@ -86,10 +86,10 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
         Ok(response) => {
           match response.text() {
             Ok(text) => code.push(MechCode::String(text)),
-            _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+            _ => {return Err(MechError{id: 1241, kind: MechErrorKind::None});},
           }
         }
-        _ => {return Err(MechError{id: 1234, kind: MechErrorKind::None});},
+        _ => {return Err(MechError{id: 1242, kind: MechErrorKind::None});},
       }
     } else {
       // Compile a directory of mech files
@@ -106,7 +106,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
         let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        return Err(MechError{id: 1234, kind: MechErrorKind::None});
+        return Err(MechError{id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
       }
     };
   }
