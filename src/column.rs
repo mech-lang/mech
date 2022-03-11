@@ -117,7 +117,7 @@ impl Column {
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
       Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
       Column::Reference(_) |
-      Column::Empty => {return Err(MechError{id: 0001, kind: MechErrorKind::None});}
+      Column::Empty => {return Err(MechError{id: 9430, kind: MechErrorKind::None});}
     }
     Ok(())
   }

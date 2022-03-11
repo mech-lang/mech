@@ -347,7 +347,7 @@ impl Table {
 
   pub fn get_by_index(&self, row: TableIndex, col: TableIndex) -> Result<Value,MechError> {
     match (row, &self.get_column(&col)?) {
-      (TableIndex::Index(0),_) => Err(MechError{id: 0001, kind: MechErrorKind::None}),
+      (TableIndex::Index(0),_) => Err(MechError{id: 7111, kind: MechErrorKind::None}),
       (TableIndex::Index(row),Column::f32(c)) => Ok(Value::f32(c.borrow()[row-1])),
       (TableIndex::Index(row),Column::F32(c)) => Ok(Value::F32(c.borrow()[row-1])),
       (TableIndex::Index(row),Column::F64(c)) => Ok(Value::F64(c.borrow()[row-1])),

@@ -537,13 +537,13 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
     let cols = arg_tables[0].borrow().cols;
     let consistent_cols = arg_tables.iter().all(|arg| {arg.borrow().cols == cols});
     if consistent_cols == false {
-      return Err(MechError{id: 0001, kind: MechErrorKind::None});
+      return Err(MechError{id: 4886, kind: MechErrorKind::None});
     }
     // Check to make sure column types are consistent
     let col_kinds: Vec<ValueKind> = arg_tables[0].borrow().col_kinds.clone();
     let consistent_col_kinds = arg_tables.iter().all(|arg| arg.borrow().col_kinds.iter().zip(&col_kinds).all(|(k1,k2)| *k1 == *k2));
     if consistent_cols == false {
-      return Err(MechError{id: 0001, kind: MechErrorKind::None});
+      return Err(MechError{id: 4887, kind: MechErrorKind::None});
     }
     // Add up the rows
     let rows = arg_tables.iter().fold(0, |acc, table| acc + table.borrow().rows);
