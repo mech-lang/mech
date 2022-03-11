@@ -367,14 +367,14 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       if unparsed != "" {
         println!("{:?}", tree);
         println!("{:?}", unparsed);
-        Err(MechError{id: 0000, kind: MechErrorKind::None})
+        Err(MechError{id: 3302, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
       println!("{:?}", q);
-      Err(MechError{id: 0000, kind: MechErrorKind::None})
+      Err(MechError{id: 3303, kind: MechErrorKind::None})
     }
   }
 }
@@ -388,13 +388,13 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        Err(MechError{id: 0000, kind: MechErrorKind::None})
+        Err(MechError{id: 3304, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
-      Err(MechError{id: 0000, kind: MechErrorKind::None})
+      Err(MechError{id: 3305, kind: MechErrorKind::None})
     }
   }
 }
