@@ -103,10 +103,6 @@ pub struct Program {
 impl Program {
   pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
     let mut mech = Core::new();
-    //`   `mech.load_standard_library();
-    let mech_code = hash_str("mech/code");
-    //let txn = Transaction{changes: vec![Change::NewTable{table_id: mech_code, rows: 1, columns: 1}]};
-    //mech.process_transaction(&txn);
     Program { 
       name: name.to_owned(), 
       capacity,
