@@ -445,6 +445,12 @@ macro_rules! math_compiler {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
+              ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
+                if let Column::F32(out) = out_column {
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
+              },
               ((_,Column::Speed(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
                 let mut out_column = block.get_out_column(out, 1, ValueKind::Length)?;
                 if let Column::Length(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
