@@ -643,14 +643,6 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(100.0)));
 
-test_mech!(set_empty_table_with_column,"
-block
-  #x = [|code|]
-block
-  #x := 10  
-block
-  #test = #x", Value::F32(F32::new(10.0)));
-
 test_mech!(set_table_index_row_dependency,"
 block
   #x = [x: 3]
