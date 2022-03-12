@@ -350,6 +350,25 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Set Vector : Vector {RealIndex}
+#[derive(Debug)]
+pub struct SetVVRIx<T,U> {
+  pub arg: ColumnV<T>, pub out: ColumnV<U>, pub oix: ColumnV<F32>
+}
+impl<T,U> MechFunction for SetVVRIx<T,U>
+where T: Clone + Debug + Into<U>,
+      U: Clone + Debug + Into<T>
+{
+  fn solve(&self) {
+    let arg_brrw = self.arg.borrow();
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(self.oix.borrow().iter())
+            .for_each(|(out,oix)| *out = T::into(arg_brrw[oix.unwrap() as usize].clone()));
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 
 #[derive(Debug)]
 pub struct ParSetVVB<T,U> {
@@ -1311,6 +1330,7 @@ impl MechFunctionCompiler for TableSet {
           }
           ((_,Column::F32(arg),ColumnIndex::All),(_,Column::F32(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
           ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::All), (_,Column::F32(out),ColumnIndex::RealIndex(oix))) => block.plan.push(SetVVRIx{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
           ((_,Column::F32(arg),ColumnIndex::Index(ix)), (_,Column::F32(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
           ((_,Column::F32(arg),ColumnIndex::All), (_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
           ((_,Column::F32(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
