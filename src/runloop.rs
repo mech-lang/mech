@@ -63,6 +63,7 @@ pub enum ClientMessage {
   Transaction(Transaction),
   String(String),
   Error(MechErrorKind),
+  Timing(f64),
   //Block(Block),
   StepDone,
   Done,
@@ -315,7 +316,7 @@ impl ProgramRunner {
             }            */
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;
-            client_outgoing.send(ClientMessage::String(format!("Txn took {:0.2} Hz", 1.0 / (time / 1_000_000_000.0))));
+            client_outgoing.send(ClientMessage::Timing(1.0 / (time / 1_000_000_000.0)));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
@@ -511,15 +512,14 @@ impl ProgramRunner {
                 miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect()
               }
             };
-            let mut new_block_ids = vec![];
-            match program.mech.load_blocks(blocks) {
-              Ok(mut nbi) => new_block_ids.append(&mut nbi),
-              Err(x) => {
-                let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
-                program.mech.resolve_errors(&resolved_errors);
-                program.mech.schedule_blocks();
-              }
-            };
+
+            let (mut new_block_ids, new_block_errors) = program.mech.load_blocks(blocks);
+
+            if new_block_errors.len() > 0 {
+              let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
+              program.mech.resolve_errors(&resolved_errors);
+              program.mech.schedule_blocks();
+            }
 
             if let Some(last_block_id) = new_block_ids.last() {
               let block = program.mech.blocks.get(last_block_id).unwrap().borrow();
