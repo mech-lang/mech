@@ -1,4 +1,4 @@
-# Drawing
+## Drawing
 
 Set up drawing elements 
   #circle = [
@@ -6,24 +6,21 @@ Set up drawing elements
     parameters: [
       center-x: #balls.x 
       center-y: #balls.y 
-      radius: #balls.radius 
-      fill: #balls.color
-      line-width: 5
+      radius: #balls.radius
+      fill: #balls.color 
+      line-width: 3
     ]
   ]
 
-Change color of hovered balls
-  #balls.color{#clicked} := 0x0000C0
-  #balls.color{#hover} := 0x00A000
-  #balls.color{!#hover} := 0xA00000
-
-Draw a circle
-  canvas = [
+Draw to canvas
+  #canvas = [
     type: "canvas" 
     contains: [|shape parameters| #circle] 
-    parameters: [width: 500 height: 500]
+    parameters: [width: 1000 height: 500]
   ]
+
+Attach game to root
   #html/app = [
     root: "mech-root" 
-    contains: [|type contains parameters| canvas]
+    contains: [|type contains parameters| #canvas]
   ]
