@@ -162,9 +162,9 @@ pub struct WasmCore {
   changes: Vec<Change>,
   images: HashMap<u64, web_sys::HtmlImageElement>,
   canvases: HashSet<u64>,
-  /*nodes: HashMap<u64, Vec<u64>>,
+  /*nodes: HashMap<u64, Vec<u64>>,*/
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashSet<Register>,*/
+  remote_tables: HashSet<(TableId,TableIndex,TableIndex)>,
   event_id: u64,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   apps: HashSet<u64>,
@@ -265,9 +265,9 @@ Keyboard events
       changes: Vec::new(),
       images: HashMap::new(),
       canvases: HashSet::new(),
-      /*nodes: HashMap::new(),
+      /*nodes: HashMap::new(),*/
       websocket: None,
-      remote_tables: HashSet::new(),*/
+      remote_tables: HashSet::new(),
       event_id: 0,
       timers: HashMap::new(),
       apps: HashSet::new(),
@@ -276,6 +276,10 @@ Keyboard events
     }
   }
   
+  pub fn connect_remote_core(&mut self, address: String) -> Result<(),JsValue> {
+    connect_remote_core(self,address)
+  }
+
   pub fn add_timers(&mut self) -> Result<(),JsValue> {
    
     let window = web_sys::window().expect("no global `window` exists");
