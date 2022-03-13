@@ -63,6 +63,7 @@ pub fn connect_remote_core(wasm_core: *mut WasmCore, address: String) -> Result<
   {
     let cloned_ws = ws.clone();
     let onopen_callback = Closure::wrap(Box::new(move |_| {
+      log!("Websocket Opened.");
       // Upon an open connection, send the server a list of tables to which we are listening
       unsafe {
         for input_table_id in (*wasm_core).core.needed_registers().iter() {
