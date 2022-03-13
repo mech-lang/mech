@@ -272,7 +272,20 @@ impl ProgramRunner {
                   // has been triggered for the first time, then we need to get the list of
                   // output blocks
                   match program.trigger_to_listener.entry(*trigger_register) {
-                    Entry::Occupied(o) => {
+                    Entry::Occupied(mut o) => {
+                      // Here is the output that the triggered register will cause to update
+                      match program.mech.schedule.trigger_to_output.get(trigger_register) {
+                        Some(output) => {
+                          // Is any of this being listened for?
+                          for (register,remote_cores) in &program.listeners {
+                            if output.contains(&register) {
+                              o.insert((*register,remote_cores.clone()));
+                              break;
+                            }
+                          }
+                        }
+                        None => ()
+                      }
                       // We have listeners, so let's send them the changes
                       let ((output_table_id,row_ix,col_ix),listeners) = o.get();
                       let trigger = o.key();
@@ -328,12 +341,11 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
-            println!("Remote core told us they're listening for {:?}", register);
             let (table_id,row,col) = register;
             match program.mech.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
-                println!("We have something they want: {:?}", register);
+                client_outgoing.send(ClientMessage::String(format!("Sending {:?} to {}", table_id, humanize(&core_id))));
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
