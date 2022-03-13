@@ -1,5 +1,5 @@
 
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use crate::core::BlockRef;
 use crate::*;
 
@@ -8,6 +8,7 @@ pub struct Schedule {
   pub trigger_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub input_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub output_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub trigger_to_output: HashMap<(TableId,TableIndex,TableIndex),HashSet<(TableId,TableIndex,TableIndex)>>,
   pub schedules: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
@@ -19,6 +20,7 @@ impl Schedule {
       trigger_to_blocks: HashMap::new(),
       input_to_blocks: HashMap::new(),
       output_to_blocks: HashMap::new(),
+      trigger_to_output: HashMap::new(),
       schedules: HashMap::new(),
       unscheduled_blocks: Vec::new(),
     }
@@ -67,6 +69,22 @@ impl Schedule {
       }
 
     }
+    // TODO I'd like to do this incrementally instead of redoing it
+    // every time blocks are scheduled. But I'm short on time now and 
+    // this is all I can think of to do without changing too much.
+    for (register,block_graphs) in self.schedules.iter() {
+      let (table_id,row_ix,col_ix) = register;
+      let mut aggregate_output = HashSet::new();
+      for graph in block_graphs {
+        let mut node = &graph.root;
+        let node_brrw = node.borrow();
+        let mut output = node_brrw.aggregate_output();
+        aggregate_output = aggregate_output.union(&mut output).cloned().collect();
+      }
+      self.trigger_to_output.insert(*register,aggregate_output);
+    }
+
+
     Ok(())
   }
 
@@ -95,6 +113,8 @@ impl fmt::Debug for Schedule {
     box_drawing.add_line(format!("{:#?}", &self.input_to_blocks));
     box_drawing.add_header("output");
     box_drawing.add_line(format!("{:#?}", &self.output_to_blocks));
+    box_drawing.add_header("output schedule");
+    box_drawing.add_line(format!("{:#?}", &self.trigger_to_output));
     box_drawing.add_header("schedules");
     box_drawing.add_line(format!("{:#?}", &self.schedules));
     if self.unscheduled_blocks.len() > 0 {
@@ -122,6 +142,29 @@ impl Node {
       parents: Vec::new(),
       children: Vec::new(),
     }
+  }
+
+  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().output.clone()
+  }
+
+  pub fn aggregate_output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    let mut aggregate_output = self.output();
+    let mut child_output = self.output_recurse();
+    aggregate_output = aggregate_output.union(&mut child_output).cloned().collect();
+    aggregate_output
+  }
+
+  pub fn output_recurse(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    let mut aggregate_output = HashSet::new();
+    for child in &self.children {
+      let child_brrw = child.borrow();
+      let mut output = child_brrw.output();
+      let mut child_output = child_brrw.output_recurse();
+      aggregate_output = aggregate_output.union(&mut output).cloned().collect();
+      aggregate_output = aggregate_output.union(&mut child_output).cloned().collect();
+    }
+    aggregate_output
   }
 
   pub fn add_child(&mut self, child: Rc<RefCell<Node>>) {

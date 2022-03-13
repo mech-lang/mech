@@ -136,7 +136,7 @@ impl Core {
     self.input.difference(&self.output).cloned().collect()
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(Vec<BlockRef>,HashSet<(TableId,TableIndex,TableIndex)>),MechError> {
     let mut changed_registers = HashSet::new();
     let mut block_refs = Vec::new();
     for change in txn {
@@ -203,7 +203,7 @@ impl Core {
     for register in &changed_registers {
       self.step(register);
     }
-    Ok(block_refs)
+    Ok((block_refs,changed_registers))
   }
 
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {

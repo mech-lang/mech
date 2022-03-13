@@ -576,6 +576,35 @@ impl Table {
       _ => self.len(),
     }
   }
+
+  pub fn to_changes(&self) -> Vec<Change> {
+    let mut changes = vec![];
+    changes.push(Change::NewTable{table_id: self.id, rows: self.rows, columns: self.cols});
+    for ((alias,ix)) in self.col_map.iter() {
+      changes.push(Change::ColumnAlias{table_id: self.id, column_ix: *ix, column_alias: *alias});
+    } 
+    for (ix,kind) in self.col_kinds.iter().enumerate() {
+      changes.push(Change::ColumnKind{table_id: self.id, column_ix: ix, column_kind: kind.clone()});
+    } 
+    let mut data_changes = self.data_to_changes();
+    changes.append(&mut data_changes);
+    changes
+  }
+
+  pub fn data_to_changes(&self) -> Vec<Change> {
+    let mut changes = vec![];
+    let mut values = vec![];
+    for i in 0..self.rows {
+      for j in 0..self.cols {
+        match self.get_raw(i,j) {
+          Ok(value) => {values.push((TableIndex::Index(i+1), TableIndex::Index(j+1), value));}
+          _ => (),
+        }
+      }
+    }
+    changes.push(Change::Set((self.id, values)));
+    changes
+  }
   
 }
 
