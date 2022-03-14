@@ -442,7 +442,7 @@ impl Table {
         (Column::Ref(c), Value::Reference(v)) => c.borrow_mut()[row] = v,
         (Column::Empty, Value::Empty) => (),
         x => {
-          return Err(MechError{id: 7016, kind: MechErrorKind::None});
+          return Err(MechError{id: 7016, kind: MechErrorKind::GenericError(format!("{:?}",x))});
         },
       }
       Ok(())
