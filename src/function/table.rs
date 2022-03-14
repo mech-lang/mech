@@ -834,6 +834,10 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             out_column_ix += 1;
           }
         }
+        TableShape::Pending => {
+          let (_,table_id,_) = argument;
+          return Err(MechError{id: 4912, kind: MechErrorKind::PendingTable(*table_id)});
+        }
         x => {return Err(MechError{id: 4902, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
