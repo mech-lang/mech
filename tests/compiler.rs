@@ -1315,7 +1315,7 @@ block
   #balls.vy := #balls.vy + #gravity
   
 Keep the balls within the boundary height
-  ~ #balls.y
+  ~ #time/timer.ticks
   iy = #balls.y > 100.0
   #balls.y{iy} := 100.0
   #balls.vy{iy} := #balls.vy * -0.80
@@ -1336,8 +1336,8 @@ block
 
 block
   ~ #time/timer.ticks
-  #balls.y := #balls.y + #balls.vy;
-  #balls.vy := #balls.vy + #gravity;
+  #balls.y := #balls.y + #balls.vy
+  #balls.vy := #balls.vy + #gravity
 
 block
   ~ #time/timer.ticks
