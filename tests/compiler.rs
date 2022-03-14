@@ -25,6 +25,11 @@ lazy_static! {
     Change::ColumnKind{table_id: hash_str("x"), column_ix: 0, column_kind: ValueKind::F32},
     Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::F32(F32::new(42.0)))])),
   ];
+  static ref TXN6: Vec<Change> = vec![
+    Change::NewTable{table_id: hash_str("radius"), rows: 1, columns:1 },
+    Change::ColumnKind{table_id: hash_str("radius"), column_ix: 0, column_kind: ValueKind::F32},
+    Change::Set((hash_str("radius"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::F32(F32::new(10.0)))])),
+  ];
 }
 
 macro_rules! test_mech {
@@ -1299,8 +1304,8 @@ test_mech_txn!(temporal_whenever_blocks,r#"
 block
   #time/timer = [period: 1000, ticks: 0]
   #balls = [|x y vx vy|
-             1.0 1.0 1.0  1.0
-             50.0 80.0 2.0  10.0]
+              1.0 1.0 1.0  1.0
+              50.0 80.0 2.0  10.0]
   #gravity = 1.0
 
 block
@@ -1366,7 +1371,6 @@ Draw a shape to the canvas
 
 block
   #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(607.0)));
-  
 
 // ## Async
 
@@ -1378,3 +1382,33 @@ block
   #b = #z + #y
 block
   #test = #b + #x"#,TXN5,Value::F32(F32::new(621.0)));
+
+test_mech_txn!(async_late_resolved,r#"
+Set up drawing elements 
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: 100 
+      center-y: 200
+      radius: #radius
+      fill: 0xAA00AA
+      line-width: 3
+    ]
+  ]
+
+Draw to canvas
+  #canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #circle] 
+    parameters: [width: 1000 height: 500]
+  ]
+
+Attach game to root
+  #html/app = [
+    root: 12.34
+    contains: [|type contains parameters| #canvas]
+  ]
+  
+block
+  #test = #html/app.root"#, TXN6, Value::F32(F32::new(12.34)));
+
