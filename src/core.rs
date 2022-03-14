@@ -191,19 +191,45 @@ impl Core {
       }
     }
     for (changed_table_id,_,_) in &changed_registers {
-      match self.errors.remove(&MechErrorKind::MissingTable(*changed_table_id)) {
-        Some(mut ublocks) => {
-          block_refs.append(&mut ublocks);
-        }
-        None => (),
-      }
+      let mut block_refs = self.remove_error(*changed_table_id)?;
     }
-    self.load_block_refs(block_refs.clone());
-    self.schedule_blocks();
     for register in &changed_registers {
       self.step(register);
     }
     Ok((block_refs,changed_registers))
+  }
+
+  pub fn remove_error(&mut self, table_id: TableId) -> Result<Vec<BlockRef>,MechError> {
+    let mut block_refs = vec![];
+    match &self.errors.remove(&MechErrorKind::MissingTable(table_id)) {
+      Some(ref ublocks) => {
+        let mut mb = ublocks.clone();
+        block_refs.append(&mut mb);
+      }
+      None => (),
+    }
+    match self.errors.remove(&MechErrorKind::PendingTable(table_id)) {
+      Some(ref ublocks) => {
+        let mut mb = ublocks.clone();
+        block_refs.append(&mut mb);
+      }
+      None => (),
+    }
+    self.load_block_refs(block_refs.clone());
+    self.schedule_blocks();
+    let mut graph_output = vec![];
+    match self.schedule.trigger_to_output.get(&(table_id,TableIndex::All,TableIndex::All)) {
+      Some(output) => {
+        for (table_id,_,_) in output {
+          graph_output.push(table_id.clone());
+        }
+      }
+      None => (),
+    }
+    for table_id in graph_output {
+      self.remove_error(table_id);
+    }
+    Ok(block_refs)
   }
 
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
