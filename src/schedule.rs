@@ -33,7 +33,11 @@ impl Schedule {
     Ok(())
   }
 
+
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
+    if  self.unscheduled_blocks.len() == 0 {
+      return Ok(())
+    }
     let ready_blocks: Vec<BlockRef> = self.unscheduled_blocks.drain_filter(|b| b.borrow().state == BlockState::Ready).collect();
 
     for block_ref in &ready_blocks {
@@ -50,7 +54,7 @@ impl Schedule {
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
           if output_table_id == trigger_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
-              pblock.load_block(&mut graph);
+              pblock.add_child(&mut graph);
             }
           }
         }
@@ -58,20 +62,26 @@ impl Schedule {
 
       // Map input registers to blocks
       for (input_table_id,row,col) in &block_brrw.input {
-        let ref mut dependent_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
-        dependent_blocks.push(graph.clone());
+        let ref mut consuming_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
+        consuming_blocks.push(graph.clone());
       }
 
       // Map output registers to blocks
       for (output_table_id,row,col) in &block_brrw.output {
-        let ref mut dependent_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
-        dependent_blocks.push(graph.clone());
+        let ref mut producing_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
+        producing_blocks.push(graph.clone());
+        // Map block outputs to triggers
+        if let Some(consuming_blocks) = self.trigger_to_blocks.get(&(*output_table_id,*row,*col)) {
+          for block in consuming_blocks {
+            graph.add_child(&block);
+          }
+        }
       }
-
     }
     // TODO I'd like to do this incrementally instead of redoing it
     // every time blocks are scheduled. But I'm short on time now and 
     // this is all I can think of to do without changing too much.
+    // This collects all of the output that would have been changed given a trigger
     for (register,block_graphs) in self.schedules.iter() {
       let (table_id,row_ix,col_ix) = register;
       let mut aggregate_output = HashSet::new();
@@ -83,8 +93,6 @@ impl Schedule {
       }
       self.trigger_to_output.insert(*register,aggregate_output);
     }
-
-
     Ok(())
   }
 
@@ -142,6 +150,14 @@ impl Node {
       parents: Vec::new(),
       children: Vec::new(),
     }
+  }
+
+  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().triggers.clone()
+  }
+
+  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().input.clone()
   }
 
   pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
@@ -210,7 +226,23 @@ impl BlockGraph {
     }
   }
 
-  pub fn load_block(&mut self, block: &mut BlockGraph) -> Result<(),MechError> {
+  pub fn id(&self) -> u64 {
+    self.root.borrow().block.borrow().id
+  }
+
+  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().triggers()
+  }
+
+  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().input()
+  }
+
+  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().output()
+  }
+
+  pub fn add_child(&mut self, block: &BlockGraph) -> Result<(),MechError> {
     {
       let mut root_block = self.root.borrow_mut();
       let rc = block.root.clone();
