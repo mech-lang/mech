@@ -539,10 +539,16 @@ impl ProgramRunner {
                 Some(Transformation::TableAlias{table_id, alias}) => {
                   *table_id
                 } 
-                _ => TableId::Local(0),
+                Some(Transformation::Whenever{table_id, ..}) => {
+                  *table_id
+                } 
+                _ => {
+                  TableId::Local(0)
+                }
               };
-              let out_table = block.get_table(&out_id).unwrap();
-              client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
+              if let Ok(out_table) = block.get_table(&out_id) {
+                client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
+              }
             }
 
             // React to errors
