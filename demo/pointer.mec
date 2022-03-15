@@ -6,6 +6,7 @@ Determine if the pointer is within the ball's hitbox
   #hover = ((dx ^ 2 + dy ^ 2) ^ 0.5) < #balls.radius
 
 Change color of hovered balls
+  ~ #time/timer.ticks
   #balls.color{#hover} := 0x00A000
   #balls.color{¬#hover} := 0xA00000
 

@@ -7,6 +7,7 @@ Move the ball with every tick of the timer
   #balls.vy := #balls.vy + #gravity * #balls.a
 
 Keep the balls within the boundary height
+  ~ #time/timer.ticks
   iy = #balls.y > 500
   iyy = #balls.y < 0
   #balls.y{iy} := 500
@@ -14,6 +15,7 @@ Keep the balls within the boundary height
   #balls.vy{iy | iyy} := #balls.vy * -0.80
 
 Keep the balls within the boundary width
+  ~ #time/timer.ticks
   ix = #balls.x > 500
   ixx = #balls.x < 0
   #balls.x{ix} := 500
