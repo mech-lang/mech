@@ -1372,6 +1372,25 @@ Draw a shape to the canvas
 block
   #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(607.0)));
 
+test_mech_txn!(bouncing_balls_out_of_order,r#"
+Two moc-kin-flo-his
+  #parameters = [
+    center-y: #balls.y 
+  ]
+
+One nes-sta-mas-lac
+  #balls = [|y   vy | 
+             10  1  
+             100 30 ]
+  #time/timer = [period: 1<s> ticks: 0]
+
+Three was-lue-neb-kit
+  ~ #time/timer.ticks
+  #balls.y := #balls.y + #balls.vy
+
+block
+  #test = stats/sum(table: #parameters)"#, TXN4, Value::F32(F32::new(172.0)));
+
 // ## Async
 
 test_mech_txn!(async_satisfy_blocks,r#"
