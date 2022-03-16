@@ -319,7 +319,7 @@ Keyboard events
                             (*wasm_core).process_transaction();
                             (*wasm_core).render();
                             //let table = (*wasm_core).core.get_table("circle").unwrap();
-                            //log!("{:?}", table);
+                            //log!("{:?}",(*wasm_core).core);
                           }
                           x => {log!("6868 {:?}", x);},
                         }
@@ -475,7 +475,11 @@ Keyboard events
           if hash.len() > 1 {
             hash = hash[1..].to_string();
           }
-
+          if hash.len() > 6 && hash[0..6].to_string()=="debug=".to_string() {
+            let table = (*wasm_core).core.get_table_by_id(hash_str(&hash[6..]));
+            log!("{:?}", table);
+          }
+               
           (*wasm_core).changes.push(Change::Set((
             *HTML_LOCATION, vec![(
               TableIndex::Index(1), 
