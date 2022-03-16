@@ -105,6 +105,7 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
+  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
   pub required_functions: HashSet<u64>,
   pub strings: StringDictionary,
   pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -124,6 +125,7 @@ impl Block {
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
+      defined_tables: HashSet::new(),
       transformations: Vec::new(),
       strings: Rc::new(RefCell::new(HashMap::new())),
       triggers: HashSet::new(),
@@ -567,6 +569,7 @@ impl Block {
             table.dictionary = self.strings.clone();
             self.global_database.borrow_mut().insert_table(table);
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.defined_tables.insert((*table_id,TableIndex::All,TableIndex::All));
           }
         } 
       },

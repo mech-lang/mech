@@ -66,6 +66,7 @@ pub struct Core {
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
   pub schedule: Schedule,
   pub dictionary: StringDictionary,
 }
@@ -128,12 +129,13 @@ impl Core {
       schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      defined_tables: HashSet::new(),
       dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
   }
 
   pub fn needed_registers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
-    self.input.difference(&self.output).cloned().collect()
+    self.input.difference(&self.defined_tables).cloned().collect()
   }
 
   pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(Vec<BlockRef>,HashSet<(TableId,TableIndex,TableIndex)>),MechError> {
@@ -190,6 +192,7 @@ impl Core {
         }
       }
     }
+
     for (changed_table_id,_,_) in &changed_registers {
       let mut block_refs = self.remove_error(*changed_table_id)?;
     }
@@ -304,6 +307,7 @@ impl Core {
           // Merge input and output
           self.input = self.input.union(&mut block_brrw.input).cloned().collect();
           self.output = self.output.union(&mut block_brrw.output).cloned().collect();
+          self.defined_tables = self.defined_tables.union(&mut block_brrw.defined_tables).cloned().collect();
 
           self.schedule.add_block(block_ref.clone());
           self.blocks.insert(id,block_ref_c.clone());
