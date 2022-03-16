@@ -259,6 +259,7 @@ impl ProgramRunner {
       // Send the ready to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Ready);
       let mut paused = false;
+      let mut iteration: u64 = 0;
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
@@ -296,13 +297,32 @@ impl ProgramRunner {
                           let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
                           let compressed_message = compress_to_vec(&message,6);
                           // Send the transaction to the remote core
-                          for core_id in listeners {
-                            match (&self.socket,program.remote_cores.get_mut(&core_id)) {
+                          for remote_core_id in listeners {
+                            match (&self.socket,program.remote_cores.get_mut(&remote_core_id)) {
                               (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                                 let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                               }
-                              (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                                websocket.send_message(&OwnedMessage::Binary(compressed_message.clone())).unwrap();
+                              (Some(ref socket),Some(MechSocket::WebSocketSender(websocket))) => {
+                                match websocket.send_message(&OwnedMessage::Binary(compressed_message.clone())) {
+                                  Ok(()) => (),
+                                  Err(x) => {
+                                    client_outgoing.send(ClientMessage::String(format!("Remote core disconnected: {}", humanize(&remote_core_id))));
+                                    program.remote_cores.remove(&remote_core_id);
+                                    for (core_id, core_address) in &program.remote_cores {
+                                      match core_address {
+                                        MechSocket::UdpSocket(core_address) => {
+                                          let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(*remote_core_id)).unwrap();
+                                          let compressed_message = compress_to_vec(&message,6);
+                                          let len = socket.send_to(&compressed_message, core_address.clone()).unwrap();
+                                        }
+                                        MechSocket::WebSocket(_) => {
+                                          // TODO send disconnect message to websockets
+                                        }
+                                        _ => (),
+                                      }
+                                    }
+                                  },
+                                };
                               }
                               _ => (),
                             }
