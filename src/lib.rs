@@ -370,7 +370,43 @@ Keyboard events
   }
 
   pub fn process_transaction(&mut self) {
+    // Collect the new table messages
+    let mut set_tables: Vec<(TableId,TableIndex,TableIndex)> = vec![];
+    for change in self.changes.iter() {
+      match change {
+        // If any new tables are sent, mark them as remote tables
+        // Remote tables are any tables that are not defined in the
+        // current core, but may be used (written to or read from).
+        Change::NewTable{table_id,..} => {
+          self.remote_tables.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+        }
+        Change::Set((table_id,data)) => {
+          set_tables.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+        }
+        _ => (),
+      }
+    }
     self.core.process_transaction(&self.changes);
+    // For any tables that have changed which are remote,
+    // send a record of those changes back to the sender.
+    for register in set_tables {
+      match self.core.schedule.trigger_to_output.get(&register) {
+        Some(out_registers) => {
+          for (table_id,_,_) in self.remote_tables.intersection(out_registers) {
+            let table = self.core.get_table_by_id(*table_id.unwrap()).unwrap();
+            let changes = table.borrow().data_to_changes();
+            match &self.websocket {
+              Some(ws) => {
+                let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
+                ws.send_with_u8_array(&message);        
+              }
+              _ => (),
+            }
+          }
+        }
+        _ => (),
+      }
+    }
     // TODO Send changes to remote cores via websocket
     self.changes.clear();
   }

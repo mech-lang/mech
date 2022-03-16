@@ -1,8 +1,26 @@
 use mech_core::*;
 use wasm_bindgen::JsValue;
 use web_sys::*;
+use web_sys::console;
 
 use crate::*;
+
+/*pub struct Timer<'a> {
+  name: &'a str,
+}
+
+impl<'a> Timer<'a> {
+  pub fn new(name: &'a str) -> Timer<'a> {
+      console::time_with_label(name);
+      Timer { name }
+  }
+}
+
+impl<'a> Drop for Timer<'a> {
+  fn drop(&mut self) {
+      console::time_end_with_label(self.name);
+  }
+}*/
 
 pub fn connect_remote_core(wasm_core: *mut WasmCore, address: String) -> Result<(), JsValue> {
   
@@ -13,14 +31,17 @@ pub fn connect_remote_core(wasm_core: *mut WasmCore, address: String) -> Result<
   {
     let cloned_ws = ws.clone();
     let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
+      //let _timer = Timer::new("Universe::tick");
+      //log!("Got a message");
       if let Ok(abuf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-        let compressed_message = js_sys::Uint8Array::new(&abuf).to_vec();
+        let compressed_message = js_sys::Uint8Array::new(&abuf).to_vec();        
         let serialized_message = decompress_to_vec(&compressed_message).expect("Failed to decompress!");
         let msg: Result<SocketMessage, bincode::Error> = bincode::deserialize(&serialized_message.to_vec());
         match msg {
           Ok(SocketMessage::Transaction(txn)) => {
             unsafe {
-              (*wasm_core).core.process_transaction(&txn);
+              (*wasm_core).changes = txn;
+              (*wasm_core).process_transaction();
               (*wasm_core).add_apps();
               (*wasm_core).render();
             }
@@ -42,7 +63,7 @@ pub fn connect_remote_core(wasm_core: *mut WasmCore, address: String) -> Result<
               }
             }
           }
-          msg => log!("{:?}", msg),
+          msg => (), //log!("{:?}", msg),
         }
       } else {
         log!("Unhandled Message {:?}", e.data());
