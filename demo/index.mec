@@ -1,6 +1,6 @@
-# Pong
+# Mech Demo
 
-Game elements 
+Game elements
   #balls = [|x  y   vx vy radius color  a clicked| 
             50  10  0  0  10     0xA00000 1 false
             100 100 0  30 30     0xA00000 1 false  ]
