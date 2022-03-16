@@ -53,6 +53,20 @@ pub fn render_circle(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRe
       context.stroke();                
       context.restore();
     }
+    (Ok(Value::U64(cx)), Ok(Value::U64(cy)), Ok(Value::F32(radius))) => {
+      let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+      let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+      let line_width = get_line_width(&parameters_table_brrw,row);
+      context.save();
+      context.begin_path();
+      context.arc(cx.into(), cy.into(), radius.into(), 0.0, 2.0 * PI);
+      context.set_fill_style(&JsValue::from_str(&fill));
+      context.fill();
+      context.set_stroke_style(&JsValue::from_str(&stroke));
+      context.set_line_width(line_width.into());    
+      context.stroke();                
+      context.restore();
+    }
       x => {log!("5854 {:?}", x);},
     }        
   }
@@ -150,6 +164,34 @@ pub fn render_text(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRend
         let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
         let line_width = get_line_width(&parameters_table_brrw,row);
         let text = get_property(&parameters_table_brrw, row, *TEXT);
+
+        context.save();
+        context.set_fill_style(&JsValue::from_str(&fill));
+        context.set_line_width(line_width);
+        match parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*FONT)) {
+          Ok(Value::Reference(font_table_id)) => {
+            let font_table = unsafe{(*wasm_core).core.get_table_by_id(*font_table_id.unwrap()).unwrap()};
+            let font_table_brrw = font_table.borrow();
+            let size = get_property(&font_table_brrw, row, *SIZE);
+            let face = match &*get_property(&font_table_brrw, row, *FACE) {
+              "" => "sans-serif".to_string(),
+              x => x.to_string(),
+            };
+            let font_string = format!("{}px {}", size, face);
+            context.set_font(&*font_string);
+          }
+          _ => (),
+        }
+        context.fill_text(&text,x.into(),y.into());
+        context.restore();
+      }
+      (Ok(Value::U64(number)), Ok(Value::F32(x)), Ok(Value::F32(y))) => {
+
+        let text = format!("{:?}",number);
+
+        let stroke = get_stroke_string(&parameters_table_brrw,row, *STROKE);
+        let fill = get_stroke_string(&parameters_table_brrw,row, *FILL);
+        let line_width = get_line_width(&parameters_table_brrw,row);
 
         context.save();
         context.set_fill_style(&JsValue::from_str(&fill));
