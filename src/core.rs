@@ -194,7 +194,8 @@ impl Core {
     }
 
     for (changed_table_id,_,_) in &changed_registers {
-      let mut block_refs = self.remove_error(*changed_table_id)?;
+      let mut cured_block_refs = self.remove_error(*changed_table_id)?;
+      block_refs.append(&mut cured_block_refs);
     }
     for register in &changed_registers {
       self.step(register);
