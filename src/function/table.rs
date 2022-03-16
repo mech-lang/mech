@@ -834,10 +834,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             out_column_ix += 1;
           }
         }
-        TableShape::Pending => {
-          let (_,table_id,_) = argument;
-          return Err(MechError{id: 4912, kind: MechErrorKind::PendingTable(*table_id)});
-        }
+        TableShape::Pending(table_id) => { return Err(MechError{id: 4912, kind: MechErrorKind::PendingTable(table_id)}); },
         x => {return Err(MechError{id: 4902, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
@@ -978,7 +975,7 @@ impl MechFunctionCompiler for TableAppend {
     let dest_table = block.get_table(dest_table_id)?;
     let dest_shape = {dest_table.borrow().shape()};
     match (arg_shape,arow_ix,dest_shape) {
-      (TableShape::Scalar,TableIndex::All,TableShape::Pending) |
+      (TableShape::Scalar,TableIndex::All,TableShape::Pending(_)) |
       (TableShape::Scalar,TableIndex::Index(_),TableShape::Column(_)) |
       (TableShape::Scalar,TableIndex::All,TableShape::Scalar) => {
         let arg_col = block.get_arg_column(&arguments[0])?;
@@ -1230,7 +1227,7 @@ impl MechFunctionCompiler for TableSet {
           x => {return Err(MechError{id: 4921, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
-      (TableShape::Scalar,TableShape::Pending) => {
+      (TableShape::Scalar,TableShape::Pending(_)) => {
         /*println!("~~{:?}",src_table);
         println!("~~{:?}",dest_table);
         let arg_cols = block.get_arg_columns(&arguments)?;
@@ -1246,8 +1243,8 @@ impl MechFunctionCompiler for TableSet {
         //let src_column = src_table_brrw.get_column()?;
         //let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
       }*/
-      (TableShape::Matrix(_,_),TableShape::Pending) |
-      (TableShape::Row(_),TableShape::Pending) => {
+      (TableShape::Matrix(_,_),TableShape::Pending(_)) |
+      (TableShape::Row(_),TableShape::Pending(_)) => {
         let src_table_brrw = src_table.borrow();
         let mut dest_table_brrw = dest_table.borrow_mut();
         dest_table_brrw.resize(src_table_brrw.rows,src_table_brrw.cols);

@@ -22,7 +22,9 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+
 pub type BlockRef = Rc<RefCell<Block>>;
+
 
 pub struct Functions{
   pub functions: HashMap<u64,Box<dyn MechFunctionCompiler>>,
@@ -54,7 +56,6 @@ impl fmt::Debug for Functions {
     Ok(())
   }
 }
-
 
 
 pub struct Core {
@@ -240,14 +241,14 @@ impl Core {
     self.database.borrow_mut().insert_table(table)
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
+  pub fn get_table(&self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
       None => {return Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
-  pub fn get_table_by_id(&mut self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
+  pub fn get_table_by_id(&self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
       None => {return Err(MechError{id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
@@ -376,7 +377,6 @@ impl Core {
     Ok(new_block_ids)
   }
 
-  
   pub fn get_output_by_block_id(&self, block_id: BlockId) -> Result<HashSet<(TableId,TableIndex,TableIndex)>,MechError> {
     match self.blocks.get(&block_id) {
       Some(block_ref) => {
@@ -386,7 +386,6 @@ impl Core {
       None => Err(MechError{id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
     }
   }
-
 
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
     self.schedule.schedule_blocks()

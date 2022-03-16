@@ -47,7 +47,7 @@ pub enum TableShape {
   Column(usize),
   Row(usize),
   Matrix(usize,usize),
-  Pending,
+  Pending(TableId),
 }
 
 // ### TableIndex
@@ -553,7 +553,7 @@ impl Table {
   pub fn shape(&self) -> TableShape {
     match (self.rows, self.cols) {
       (0,_) |
-      (_,0) => TableShape::Pending,
+      (_,0) => TableShape::Pending(TableId::Global(self.id)),
       (1,1) => TableShape::Scalar,
       (x,1) => TableShape::Column(x),
       (1,x) => TableShape::Row(x),

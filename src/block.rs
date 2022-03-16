@@ -485,12 +485,12 @@ impl Block {
     let arg_shape = match dim {
       (_,0) |
       (0,_) |
-      (0,0) => TableShape::Pending,
+      (0,0) => TableShape::Pending(table_id),
       (1,1) => TableShape::Scalar,
       (1,x) => TableShape::Row(x),
       (x,1) => TableShape::Column(x),
       (x,y) => TableShape::Matrix(x,y),
-      _ => TableShape::Pending,
+      _ => TableShape::Pending(table_id),
     };
     Ok(arg_shape)
   }
