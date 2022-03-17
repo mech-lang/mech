@@ -1,3 +1,4 @@
+#![allow(warnings)]
 // # Mech
 
 // ## Prelude
@@ -9,13 +10,11 @@ extern crate mech_utilities;
 
 mod repl;
 
-pub use mech_core::{Core, TableIndex, ValueMethods, Change, Transaction, Transformation, hash_string, Block, Table, Value, Error, ErrorType};
-pub use mech_core::QuantityMath;
-pub use mech_syntax::compiler::Compiler;
-pub use mech_syntax::parser::{Parser, Node as ParserNode};
-pub use mech_program::{Program, ProgramRunner, RunLoop, ClientMessage};
-pub use mech_utilities::{RunLoopMessage, MiniBlock, MiniProgram, MechCode, SocketMessage, MechSocket};
-pub use self::repl::{ReplCommand, parse_repl_command};
+pub use mech_core::*;
+pub use mech_syntax::compiler::*;
+pub use mech_program::*;
+pub use mech_utilities::*;
+pub use self::repl::*;
 
 extern crate colored;
 use colored::*;
@@ -29,13 +28,13 @@ use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
 
-extern crate nom;
+//extern crate nom;
 
-pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dyn std::error::Error>> {
+pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechError> {
 
   let mut code: Vec<MechCode> = Vec::new();
 
-  let read_file_to_code = |path: &Path| -> Vec<MechCode> {
+  let read_file_to_code = |path: &Path| -> Result<Vec<MechCode>, MechError> {
     let mut code: Vec<MechCode> = Vec::new();
     match (path.to_str(), path.extension())  {
       (Some(name), Some(extension)) => {
@@ -46,14 +45,14 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
                 println!("{} {}", "[Loading]".bright_green(), name);
                 let mut reader = BufReader::new(file);
                 match bincode::deserialize_from(&mut reader) {
-                  Ok(miniprograms) => {code.push(MechCode::MiniPrograms(miniprograms));},
+                  Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
-                    println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                    return Err(MechError{id: 1237, kind: MechErrorKind::None});
                   },
                 }
               }
               Err(err) => {
-                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                return Err(MechError{id: 1238, kind: MechErrorKind::None});
               },
             };
           }
@@ -66,16 +65,16 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                println!("{} Failed to load {}", "[Error]".bright_red(), name);
+                return Err(MechError{id: 1239, kind: MechErrorKind::None});
               },
             };
           }
-          _ => (),
+          _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {println!("{} Failed to load {:?}", "[Error]".bright_red(), path);},
+      _ => {return Err(MechError{id: 1240, kind: MechErrorKind::None});},
     }
-    code
+    Ok(code)
   };
 
   for path_str in mech_paths {
@@ -83,50 +82,55 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, Box<dy
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
       println!("{} {}", "[Downloading]".bright_green(), path.display());
-      let program = reqwest::blocking::get(path.to_str().unwrap())?.text()?;
-      code.push(MechCode::String(program));
+      match reqwest::blocking::get(path.to_str().unwrap()) {
+        Ok(response) => {
+          match response.text() {
+            Ok(text) => code.push(MechCode::String(text)),
+            _ => {return Err(MechError{id: 1241, kind: MechErrorKind::None});},
+          }
+        }
+        _ => {return Err(MechError{id: 1242, kind: MechErrorKind::None});},
+      }
     } else {
       // Compile a directory of mech files
       if path.is_dir() {
         for entry in path.read_dir().expect("read_dir call failed") {
           if let Ok(entry) = entry {
             let path = entry.path();
-            let mut new_code = read_file_to_code(&path);
+            let mut new_code = read_file_to_code(&path)?;
             code.append(&mut new_code);
           }
         }
       } else if path.is_file() {
         // Compile a single file
-        let mut new_code = read_file_to_code(&path);
+        let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        println!("{} Failed to open {:?}", "[Error]".bright_red(), path);
+        return Err(MechError{id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
       }
     };
   }
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Vec<MiniProgram> {
+pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
   print!("{}", "[Compiling] ".bright_green());
-  let mut miniprograms = vec![];
+  let mut miniblocks = vec![];
   for c in code {
     match c {
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
-        let programs = compiler.compile_string(c);
-        let mut mp = programs.iter().map(|p| minify_program(p)).collect::<Vec<MiniProgram>>();
-        miniprograms.append(&mut mp);
+        let blocks = compiler.compile_str(&c)?;
+        let mut mb = minify_blocks(&blocks);
+        miniblocks.append(&mut mb);
       },
-      MechCode::MiniBlocks(miniblocks) => {
-        miniprograms.push(MiniProgram{title: None, blocks: miniblocks});
+      MechCode::MiniBlocks(mut mb) => {
+        miniblocks.append(&mut mb);
       },
-      MechCode::MiniPrograms(mut p) => {
-        miniprograms.append(&mut p);
-      }
     }
   }
-  miniprograms
+  println!("Compiled {} blocks.", miniblocks.len());
+  Ok(miniblocks)
 }
 
 pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
@@ -134,39 +138,19 @@ pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
   for block in blocks {
     let mut miniblock = MiniBlock::new();
     miniblock.transformations = block.transformations.clone();
-    miniblock.plan = block.plan.clone();
-    for (k,v) in block.store.strings.iter() {
-      miniblock.strings.push((k.clone(), v.clone()));
+    match &block.unsatisfied_transformation {
+      Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
+      _ => (),
     }
-    for (k,v) in block.store.number_literals.iter() {
+    miniblock.transformations.append(&mut block.pending_transformations.clone());
+    /*for (k,v) in block.store.number_literals.iter() {
       miniblock.number_literals.push((k.clone(), v.clone()));
     }
     for error in &block.errors {
       miniblock.errors.push(error.clone());
-    }
+    }*/
     miniblock.id = block.id;
     miniblocks.push(miniblock);
   }
   miniblocks
-}
-
-pub fn minify_program(program: &mech_syntax::compiler::Program) -> MiniProgram {
-  let mut miniblocks = Vec::new();
-  for block in &program.blocks {
-    let mut miniblock = MiniBlock::new();
-    miniblock.transformations = block.transformations.clone();
-    miniblock.plan = block.plan.clone();
-    for (k,v) in block.store.strings.iter() {
-      miniblock.strings.push((k.clone(), v.clone()));
-    }
-    for (k,v) in block.store.number_literals.iter() {
-      miniblock.number_literals.push((k.clone(), v.clone()));
-    }
-    for error in &block.errors {
-      miniblock.errors.push(error.clone());
-    }
-    miniblock.id = block.id;
-    miniblocks.push(miniblock);
-  }
-  MiniProgram{title: program.title.clone(), blocks: miniblocks}
 }

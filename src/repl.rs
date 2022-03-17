@@ -1,4 +1,6 @@
-use mech_syntax::parser::{Parser, Node as ParserNode};
+use mech_syntax::*;
+use mech_utilities::*;
+use crate::minify_blocks;
 
 #[macro_use]
 use nom::{
@@ -21,41 +23,29 @@ pub enum ReplCommand {
   Resume,
   Stop,
   PrintCore(Option<u64>),
-  PrintRuntime,
   Clear,
   Table(u64),
-  Code(String),
-  EchoCode(String),
-  ParsedCode(ParserNode),
+  Code(MechCode),
+  //ParsedCode(ParserNode),
   Empty,
   Error,
 }
 
 fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  // Try parsing mech code
-  let mut parser = Parser::new();
-  match parser.parse_fragment(input) {
-    Ok(_) => Ok((input, ReplCommand::Code(input.to_string()))),
-    Err(_) => {
-      // Try parsing it as an anonymous statement
-      let command = format!("#ans = {}", input.trim());
-      let mut parser = Parser::new();
-      match parser.parse_fragment(&command) { 
-        Ok(_) => Ok((input, ReplCommand::EchoCode(command.to_string()))),
-        Err(_) => Ok((input, ReplCommand::Error)),
-      }
-    }
+  // Try parsing mech code fragment
+  let mut compiler = compiler::Compiler::new();
+  match compiler.compile_fragment(input) {
+    Ok(blocks) => {
+      let mut mb = minify_blocks(&blocks);
+      Ok((input, ReplCommand::Code(MechCode::MiniBlocks(mb))))
+    },
+    Err(_) => Ok((input, ReplCommand::Error)),
   }
 }
 
 fn clear(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag("clear")(input)?;
   Ok((input, ReplCommand::Clear))
-}
-
-fn runtime(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  let (input, _) = tag("runtime")(input)?;
-  Ok((input, ReplCommand::PrintRuntime))
 }
 
 fn core(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
@@ -91,7 +81,7 @@ fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 
 fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((quit, help, pause, resume, core, runtime, clear))(input)?;
+  let (input, command) = alt((quit, help, pause, resume, core, clear))(input)?;
   Ok((input, command))
 }
 

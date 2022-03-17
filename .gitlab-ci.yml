@@ -5,12 +5,9 @@ image: "rust:latest"
 
 test:cargo:
   script:
-  - rustup default nightly-2021-07-23
+  - rustup default nightly-2021-12-25
   - rustup show
   - rustc --version && cargo --version
   - rustup component add rust-src
   - cargo build --bin mech --release
   - ./target/release/mech test tests
-  - ./target/release/mech test https://gitlab.com/mech-lang/machines/math/-/raw/main/tests/math.mec
-  - ./target/release/mech test https://gitlab.com/mech-lang/machines/stats/-/raw/main/tests/stats.mec
-  - ./target/release/mech test https://gitlab.com/mech-lang/machines/set/-/raw/main/tests/set.mec

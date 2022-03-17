@@ -1,4 +1,5 @@
 #![feature(hash_drain_filter)]
+#![allow(warnings)]
 // # Mech
 
 /*
@@ -28,37 +29,7 @@ extern crate colored;
 use colored::*;
 
 extern crate mech;
-use mech::{
-  Core, 
-  Change,
-  Transaction,
-  TableIndex,
-  ValueMethods,
-  MiniBlock, 
-  Block, 
-  Transformation, 
-  Compiler, 
-  Table, 
-  Value, 
-  ParserNode, 
-  hash_string, 
-  Program, 
-  ErrorType, 
-  ProgramRunner, 
-  RunLoop, 
-  RunLoopMessage, 
-  ClientMessage, 
-  Parser,
-  MechCode,
-  SocketMessage,
-  compile_code,
-  read_mech_files,
-  ReplCommand,
-  parse_repl_command,
-  minify_blocks,
-  MechSocket,
-};
-use mech::QuantityMath;
+use mech::*;
 
 use std::thread::{self, JoinHandle};
 
@@ -111,9 +82,9 @@ use crossterm::{
 };
 
 lazy_static! {
-  static ref MECH_TEST: u64 = hash_string("mech/test");
-  static ref NAME: u64 = hash_string("name");
-  static ref RESULT: u64 = hash_string("result");
+  static ref MECH_TEST: u64 = hash_str("mech/test");
+  static ref NAME: u64 = hash_str("name");
+  static ref RESULT: u64 = hash_str("result");
 }
 
 lazy_static! {
@@ -122,15 +93,23 @@ lazy_static! {
 
 // ## Mech Entry
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), MechError> {
+
+  let text_logo = r#"
+  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
+  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
+  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
+  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
+  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
+  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
 
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.0.6";
+  let version = "0.1.0";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
-    .about("Mech's compiler and REPL. Also contains various other helpful tools! Default values for options are in parentheses.")
+    .about(&*format!("{}", text_logo))
     .subcommand(SubCommand::with_name("serve")
       .about("Starts a Mech HTTP and websocket server")
       .arg(Arg::with_name("mech_serve_file_paths")
@@ -171,6 +150,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .value_name("REPL")
         .help("Start a REPL")
         .takes_value(false))
+      .arg(Arg::with_name("timings")
+        .short("t")
+        .long("timings")
+        .value_name("TIMINGS")
+        .help("Displays transaction frequency in Hz.")
+        .takes_value(false))
+      .arg(Arg::with_name("debug")
+        .short("d")
+        .long("debug")
+        .value_name("Debug")
+        .help("Print debug info")
+        .multiple(true)
+        .required(false)
+        .takes_value(false))
+      .arg(Arg::with_name("out")
+        .short("o")
+        .long("out")
+        .value_name("Out")
+        .help("Specify output table(s)")
+        .takes_value(true))
       .arg(Arg::with_name("inargs")
         .short("i")
         .long("inargs")
@@ -233,7 +232,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-
     let index = warp::get()
                 .and(warp::path::end())
                 .and(warp::fs::dir("./notebook/"));
@@ -246,8 +244,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(move |addr: Option<SocketAddr>| {
                   println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
                   let code = read_mech_files(&mech_paths).unwrap();
-                  let programs = compile_code(code);
-                  let miniblocks = programs.iter().flat_map(|ref p| p.blocks.clone()).collect::<Vec<MiniBlock>>();
+                  // TODO Handle error situations
+                  let miniblocks = compile_code(code).unwrap();
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
                   let compressed_miniblocks = compress_to_vec(&serialized_miniblocks,6);
                   encode(compressed_miniblocks)
@@ -267,18 +265,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // TEST
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
+    
     println!("{}", "[Testing]".bright_green());
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
-    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
+    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/test.mec".to_string());
     let code = read_mech_files(&mech_paths)?;
-    let programs = compile_code(code);
+
+    let blocks = match compile_code(code) {
+      Ok(blocks) => blocks,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error.kind]));
+        std::process::exit(1);
+      }
+    };
 
     println!("{}", "[Running]".bright_green());
     let runner = ProgramRunner::new("Mech Test", 1000);
-    let mech_client = runner.run();
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
-    
+    let mech_client = runner.run()?;
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
+
     let mut tests_count = 0;
     let mut tests_passed = 0;
     let mut tests_failed = 0;
@@ -286,12 +292,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
     let thread_receiver = mech_client.incoming.clone();
 
+    let mut to_exit = false;
+    let mut exit_code = 0;
+
     'receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /* (Ok(ClientMessage::Table(table))) => {
           match table {
             Some(test_results) => {
               println!("{} Running {} tests...\n", formatted_name, test_results.rows);
@@ -299,15 +308,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               for i in 1..=test_results.rows as usize {
                 tests_count += 1;
                 
-                let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
+                /*let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
                   Some((string,_)) => {
                     string.to_string()
                   }
                   _ => "".to_string()
-                };
+                };*/
       
-                let (test_result,_) = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
-                let test_result_string = match test_result.as_bool() {
+                //let test_result = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
+                /*let test_result_string = match test_result.as_bool() {
                   Some(false) => {
                     passed_all_tests = false;
                     tests_failed += 1;
@@ -326,7 +335,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     format!("{}", "failed".red())
                   },
                 };
-                println!("\t{0: <30} {1: <5}", test_name, test_result_string);
+                println!("\t{0: <30} {1: <5}", test_name, test_result_string);*/
               }
 
               if passed_all_tests {
@@ -345,15 +354,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => println!("{} Table not found", formatted_name),
           }
           std::process::exit(0);
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
-        (Ok(ClientMessage::Done)) => {
+        (Ok(ClientMessage::Timing(_))) => {
           // Do nothing
         },
+        (Ok(ClientMessage::Done)) => {
+          if to_exit {
+            io::stdout().flush().unwrap();
+            std::process::exit(exit_code);
+          }
+        },
+        (Ok(ClientMessage::Exit(this_code))) => {
+          to_exit = true;
+          exit_code = this_code;
+        }
         Ok(ClientMessage::StepDone) => {
-          mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
+          //mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
           //std::process::exit(0);
         },
         (Err(x)) => {
@@ -361,7 +380,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           std::process::exit(1);
         }
         q => {
-          //println!("else: {:?}", q);
+          println!("*else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -373,27 +392,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   } else if let Some(matches) = matches.subcommand_matches("run") {
 
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let repl = matches.is_present("repl_mode");    
+    let repl_flag = matches.is_present("repl_mode");    
+    let debug_flag = matches.is_present("debug");    
+    let timings_flag = matches.is_present("timings");    
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
+    let out_tables = matches.values_of("out").map_or(vec![], |out| out.collect());
     let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
     let port: String = matches.value_of("port").unwrap_or("0").to_string();
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
     let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
-    
-    let mut code: Vec<MechCode> = read_mech_files(&mech_paths)?;
-    if input_arguments.len() > 0 {
-      let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));;
-      let inargs_code = format!("block
-  #system/input-arguments += [{}]", arg_string);
+
+    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error.kind]));
+        std::process::exit(1);
+      }
+    };
+
+    /*if input_arguments.len() > 0 {
+      let arg_string: String = input_arguments.iter().fold("".to_string(), |acc, arg| format!("{}\"{}\";",acc,arg));
+      let inargs_code = format!("#system/input-arguments += [{}]", arg_string);
       code.push(MechCode::String(inargs_code));
-    }
-    let programs = compile_code(code);
+    }*/
+    
+    let blocks = match compile_code(code) {
+      Ok(blocks) => blocks,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error.kind]));
+        std::process::exit(1);
+      }
+    };
 
     println!("{}", "[Running]".bright_green());
+
     let runner = ProgramRunner::new("Mech Runner", 1000);
-    let mech_client = runner.run();
-    
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniPrograms(programs)));
+    let mech_client = runner.run()?;
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
     let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
     let mech_client_name = mech_client.name.clone();
@@ -404,7 +439,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match mech_socket_address {
       Some(mech_socket_address) => {
         println!("{} Core socket started at: {}", formatted_name, mech_socket_address.clone());
-        thread::spawn(move || {
+        thread::Builder::new().name("Core socket".to_string()).spawn(move || {
           let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
           // A socket bound to 3235 is the maestro. It will be the one other cores search for
           'socket_loop: loop {
@@ -414,19 +449,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
                 let mut buf = [0; 16_383];
                 // Heartbeat thread periodically checks to see how long it's been since we've last heard from each remote core
-                thread::spawn(move || {
+                thread::Builder::new().name("Heartbeat".to_string()).spawn(move || {
                   loop {
                     thread::sleep(Duration::from_millis(500));
                     let now = SystemTime::now();
                     let mut core_map = CORE_MAP.lock().unwrap();
                     // If a core hasn't been heard from since 1 second ago, disconnect it.
                     for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_string(&remote_core_address.to_string())));
+                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_str(&remote_core_address.to_string())));
                     }
                   }
                 });
                 // TCP socket thread for websocket connections
-                thread::spawn(move || {
+                thread::Builder::new().name("TCP Socket".to_string()).spawn(move || {
                   let server = Server::bind(websocket_address.clone()).unwrap();
                   println!("{} {} Websocket server started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), websocket_address);
                   for request in server.filter_map(Result::ok) {
@@ -464,7 +499,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                   }
                 }
               }
-              // Maestro port is bound, start a remote core
+              // Maestro port is already bound, start a remote core
               Err(_) => {
                 let socket = UdpSocket::bind(format!("{}:{}",address,port)).unwrap();
                 let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
@@ -506,7 +541,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       None => (),
     };
 
-  
     //ClientHandler::new("Mech REPL", None, None, None, cores);
     let thread_receiver = mech_client.incoming.clone();
     
@@ -516,23 +550,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut exit_code = 0;
 
     // Get all responses from the thread
-    'receive_loop: loop {
+    'run_receive_loop: loop {
       match thread_receiver.recv() {
+        (Ok(ClientMessage::Timing(freqeuncy))) => {
+          if timings_flag {
+            println!("{} Txn took: {:.2?}Hz", formatted_name, freqeuncy);
+          }
+        },
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        (Ok(ClientMessage::Table(table))) => {
-          if !repl {
-            match table {
-              Some(table) => {
-                //println!("{:?}", table);
-              }
-              None => (), //println!("{} Table not found", formatted_name),
-            }
-            std::process::exit(0);
-          } else {
-            break 'receive_loop;
-          }
+        (Ok(ClientMessage::Error(error))) => {
+          let formatted_errors = format_errors(&vec![error]);
+          println!("{}\n{}", formatted_name, formatted_errors);
         },
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
@@ -548,7 +578,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           exit_code = this_code;
         }
         Ok(ClientMessage::StepDone) => {
-          //let output_id: u64 = hash_string("mech/output"); 
+          if debug_flag{
+            mech_client.send(RunLoopMessage::PrintDebug);
+          }
+          if out_tables.len() > 0 {
+            for table_name in &out_tables {
+              mech_client.send(RunLoopMessage::PrintTable(hash_str(table_name)));
+            }
+          }
+          if repl_flag {
+            break 'run_receive_loop;
+          }
+          //let output_id: u64 = hash_str("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
           //std::process::exit(0);
         },
@@ -558,7 +599,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
           std::process::exit(1);
         }
         q => {
-          //println!("else: {:?}", q);
+          println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -569,7 +610,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let code = read_mech_files(&mech_paths)?;
+    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error.kind]));
+        std::process::exit(1);
+      }
+    };
     let programs = compile_code(code);
 
     let output_name = match matches.value_of("output_name") {
@@ -597,13 +644,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     None
   };
 
-let text_logo = r#"
-  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
-  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
-  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
-  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
-  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
-  └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
     let help_message = r#"
 Available commands are: 
 
@@ -634,7 +674,7 @@ clear   - reset the current core
     Some(mech_client) => mech_client,
     None => {
       let runner = ProgramRunner::new("Mech REPL", 1000);
-      runner.run()
+      runner.run()?
     }
   };
 
@@ -643,13 +683,13 @@ clear   - reset the current core
   //ClientHandler::new("Mech REPL", None, None, None, cores);
   let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
   let thread_receiver = mech_client.incoming.clone();
-  
+
   // Break out receiver into its own thread
   let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
     let mut q = 0;
 
     // Get all responses from the thread
-    'receive_loop: loop {
+    'repl_receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::Pause)) => {
           println!("{} Paused", formatted_name);
@@ -667,7 +707,7 @@ clear   - reset the current core
           println!("{} {}", formatted_name, message);
           print!("{}", ">: ".truecolor(246,192,78));
         },
-        (Ok(ClientMessage::Table(table))) => {
+        /*(Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
               println!("{} ", formatted_name);
@@ -698,16 +738,17 @@ clear   - reset the current core
             }
             None => println!("{} Table not found", formatted_name),
           }
-        },
+        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
         (Ok(ClientMessage::Done)) => {
+          print!("{}", ">: ".truecolor(246,192,78));
           // Do nothing
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
-          break 'receive_loop;
+          break 'repl_receive_loop;
         }
         q => {
           //println!("else: {:?}", q);
@@ -719,10 +760,10 @@ clear   - reset the current core
 
 
   'REPL: loop {
-     
+    
     io::stdout().flush().unwrap();
     // Print a prompt
-    print!("{}", ">: ".truecolor(246,192,78));
+    //print!("{}", ">: ".truecolor(246,192,78));
     io::stdout().flush().unwrap();
     let mut input = String::new();
 
@@ -743,22 +784,29 @@ clear   - reset the current core
             println!("{}",help_message);
           },
           ReplCommand::Quit => {
+            println!("Quit");
             break 'REPL;
           },
           ReplCommand::Table(id) => {
+            println!("Table {:?}", id);
             //mech_client.send(RunLoopMessage::Table(id));
           },
           ReplCommand::Clear => {
+            println!("Clear");
             mech_client.send(RunLoopMessage::Clear);
           },
           ReplCommand::PrintCore(core_id) => {
+            println!("PrintCore {:?}", core_id);
             mech_client.send(RunLoopMessage::PrintCore(core_id));
           },
-          ReplCommand::PrintRuntime => {
-            mech_client.send(RunLoopMessage::PrintRuntime);
+          ReplCommand::Pause => {
+            println!("Pause");
+            mech_client.send(RunLoopMessage::Pause);
           },
-          ReplCommand::Pause => {mech_client.send(RunLoopMessage::Pause);},
-          ReplCommand::Resume => {mech_client.send(RunLoopMessage::Resume);},
+          ReplCommand::Resume => {
+            println!("Resume");
+            mech_client.send(RunLoopMessage::Resume);
+          },
           ReplCommand::Empty => {
             println!("Empty");
           },
@@ -766,10 +814,8 @@ clear   - reset the current core
             println!("Unknown command. Enter :help to see available commands.");
           },
           ReplCommand::Code(code) => {
-            mech_client.send(RunLoopMessage::Code(MechCode::String(code)));
-          },
-          ReplCommand::EchoCode(code) => {
-            mech_client.send(RunLoopMessage::EchoCode(code));
+            //println!("Code {:?}", code);
+            mech_client.send(RunLoopMessage::Code(code));
           },
           _ => {
             println!("something else: {}", help_message);

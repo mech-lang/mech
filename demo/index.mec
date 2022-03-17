@@ -1,0 +1,10 @@
+# Mech Demo
+
+Game elements
+  #balls = [|x  y   vx vy radius color  a clicked| 
+            50  10  0  0  10     0xA00000 1 false
+            100 100 0  30 30     0xA00000 1 false  ]
+  #gravity = 0.1
+
+Add a game timer
+  #time/timer += [period: 16<ms>]
