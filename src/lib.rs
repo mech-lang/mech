@@ -74,6 +74,7 @@ pub enum RunLoopMessage {
   PrintRuntime,
   Listening((u64,(TableId,TableIndex,TableIndex))),
   GetTable(u64),
+  GetValue((u64,TableIndex,TableIndex)),
   Transaction(Transaction),
   Code(MechCode),
   Blocks(Vec<MiniBlock>),
@@ -115,12 +116,6 @@ impl MiniBlock {
 pub enum MechCode {
   String(String),
   MiniBlocks(Vec<MiniBlock>),
-}
-
-pub trait Machine {
-  fn name(&self) -> String;
-  fn id(&self) -> u64;
-  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
