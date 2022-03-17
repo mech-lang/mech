@@ -342,6 +342,12 @@ macro_rules! mech_type {
   )
 }
 
+impl From<bool> for MechString {
+  fn from(n: bool) -> MechString {
+    MechString{chars: format!("{:?}", n).chars().collect()}
+  } 
+}
+
 macro_rules! pow_impl {
   ($t:ty) => {
     pow_impl!($t, u8);

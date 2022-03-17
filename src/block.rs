@@ -39,6 +39,7 @@ lazy_static! {
   pub static ref cHEX: u64 = hash_str("hex");
   pub static ref cDEC: u64 = hash_str("dec");
   pub static ref cSTRING: u64 = hash_str("string");
+  pub static ref cBOOL: u64 = hash_str("bool");
   pub static ref cANY: u64 = hash_str("_");
 }
 
@@ -605,6 +606,7 @@ impl Block {
         else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
+        else if *kind == *cBOOL { table_brrw.set_col_kind(*column_ix,ValueKind::Bool)?; }
         else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
         else if *kind == *cANY { table_brrw.set_col_kind(*column_ix,ValueKind::Any)?; }
         else {

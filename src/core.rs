@@ -60,7 +60,7 @@ impl fmt::Debug for Functions {
 
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: Vec<BlockRef>,
+  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
   pub required_functions: HashSet<u64>,
@@ -122,7 +122,7 @@ impl Core {
      
     Core {
       blocks: HashMap::new(),
-      unsatisfied_blocks: Vec::new(),
+      unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
       required_functions: HashSet::new(),
@@ -316,10 +316,11 @@ impl Core {
 
           // Try to satisfy other blocks
           let block_output = block_brrw.output.clone();
-          let resolved_tables: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::MissingTable(*table_id)).collect();
-          let mut newly_resolved_block_ids = self.resolve_errors(&resolved_tables)?;
-
           let mut result = vec![id];
+          let mut resolved_tables1: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::MissingTable(*table_id)).collect();
+          let mut resolved_tables2: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::PendingTable(*table_id)).collect();
+          resolved_tables1.append(&mut resolved_tables2);
+          let mut newly_resolved_block_ids = self.resolve_errors(&resolved_tables1)?;
           result.append(&mut newly_resolved_block_ids);
           Ok(result)
         }
@@ -330,12 +331,19 @@ impl Core {
           let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
-          self.unsatisfied_blocks.push(block_ref_c.clone());
+          self.unsatisfied_blocks.insert(0,block_ref_c.clone());
           Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))})
         },
       };
     }
-    self.unsatisfied_blocks.drain_filter(|b| b.borrow().state == BlockState::Ready);
+    self.unsatisfied_blocks.drain_filter(|k,v| { 
+      let state = {
+        v.borrow().state.clone()
+      };
+
+      state == BlockState::Ready
+    
+    });
     result
   }
   
@@ -348,9 +356,12 @@ impl Core {
             match self.load_block(ublock) {
               Ok(mut nbid) => {
                 new_block_ids.append(&mut nbid);
-                self.unsatisfied_blocks = self.unsatisfied_blocks.iter().filter(|x| {
-                  x.borrow().state != BlockState::Ready
-                }).cloned().collect();
+                self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
+                  let state = {
+                      v.borrow().state.clone()
+                  };
+                  state != BlockState::Ready
+                }).collect();
                 // For each of the new blocks, check to see if any of the tables
                 // it provides are pending.
                 let mut new_block_pending_ids = vec![];

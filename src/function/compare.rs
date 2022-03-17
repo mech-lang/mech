@@ -319,6 +319,7 @@ macro_rules! compare_eq_compiler {
               ((_,Column::Bool(lhs),ColumnIndex::Index(lix)), (_,Column::Bool(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::String(lhs),ColumnIndex::All), (_,Column::String(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::String(lhs),ColumnIndex::Index(lix)), (_,Column::String(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::Any(lhs),ColumnIndex::Index(lix)), (_,Column::Any(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               x => {return Err(MechError{id: 7106, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -359,7 +360,11 @@ macro_rules! compare_eq_compiler {
               x => {return Err(MechError{id: 7110, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
-          x => {return Err(MechError{id: 7111, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          (_, TableShape::Pending(table_id)) |
+          (TableShape::Pending(table_id), _) => {
+            return Err(MechError{id: 7111, kind: MechErrorKind::PendingTable(*table_id)});
+          }
+          x => {return Err(MechError{id: 7112, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }
