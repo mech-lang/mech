@@ -273,6 +273,7 @@ mech_type_conversion_raw!(I32,i32);
 mech_type_conversion_raw!(I64,i64);
 mech_type_conversion_raw!(I128,u32);
 mech_type_conversion_raw!(I128,i128);
+mech_type_conversion_raw!(F32,i32);
 mech_type_conversion_raw!(F32,f32);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,u64);
