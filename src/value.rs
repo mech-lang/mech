@@ -12,14 +12,14 @@ use std::convert::TryInto;
 
 // ## Value structs and enums
 
-#[derive(Clone,PartialEq,Serialize,Deserialize)]
+#[derive(Clone,PartialEq,PartialOrd,Serialize,Deserialize)]
 pub enum Value {
   U8(U8),
   U16(U16),
   U32(U32),
   U64(U64),
   U128(U128),
-  I8(i8),
+  I8(I8),
   I16(i16),
   I32(i32),
   I64(i64),
@@ -31,25 +31,25 @@ pub enum Value {
   Time(F32),
   Length(F32),
   Speed(F32),
+  Angle(F32),
   String(MechString),
   Reference(TableId),
   Empty,
 }
-
 
 impl Value {
 
   pub fn as_table_reference(&self) -> Result<TableId,MechError> {
     match self {
       Value::Reference(table_id) => Ok(*table_id),
-      _ => Err(MechError{id: 0001, kind: MechErrorKind::None}),
+      _ => Err(MechError{id: 4020, kind: MechErrorKind::None}),
     }
   }
 
   pub fn as_string(&self) -> Result<MechString,MechError> {
     match self {
       Value::String(string) => Ok(string.clone()),
-      _ => Err(MechError{id: 0001, kind: MechErrorKind::None}),
+      _ => Err(MechError{id: 4021, kind: MechErrorKind::None}),
     }
   }
 
@@ -76,6 +76,7 @@ impl Value {
       Value::Time(_) => ValueKind::Time,
       Value::Length(_) => ValueKind::Length,
       Value::Speed(_) => ValueKind::Speed,
+      Value::Angle(_) => ValueKind::Angle,
       Value::F32(_) => ValueKind::F32,
       Value::F64(_) => ValueKind::F64,
       Value::f32(_) => ValueKind::f32,
@@ -97,7 +98,7 @@ impl fmt::Debug for Value {
       Value::U32(v) => write!(f,"{:?}u32",v)?, 
       Value::U64(v) => write!(f,"{:?}u64",v)?,
       Value::U128(v) => write!(f,"{:?}u128",v)?, 
-      Value::I8(v) => write!(f,"{}i8",v)?, 
+      Value::I8(v) => write!(f,"{:?}i8",v)?, 
       Value::I16(v) => write!(f,"{}i16",v)?, 
       Value::I32(v) => write!(f,"{}i32",v)?, 
       Value::I64(v) => write!(f,"{}i64",v)?, 
@@ -105,6 +106,7 @@ impl fmt::Debug for Value {
       Value::Time(v) => write!(f,"{:?}s",v)?,
       Value::Length(v) => write!(f,"{:?}m",v)?,
       Value::Speed(v) => write!(f,"{:?}m/s",v)?,
+      Value::Angle(v) => write!(f,"{:?}rad",v)?,
       Value::f32(v) => write!(f,"{:?}f32",v)?,
       Value::F32(v) => write!(f,"{:?}f32",v)?,
       Value::F64(v) => write!(f,"{}f64",v)?, 
@@ -139,13 +141,16 @@ pub enum ValueKind {
   Bool,
   Time,
   Length,
+  Angle,
   Speed,
   String,
   Reference,
   NumberLiteral,
+  Any,
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
 }
+
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NumberLiteral {

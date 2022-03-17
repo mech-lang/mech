@@ -11,7 +11,7 @@ use std::thread;
 use crate::*;
 
 use std::fmt::*;
-use num_traits::*;
+use num_traits::identities::Zero;
 use std::ops::*;
 
 pub type TableRef = Rc<RefCell<Table>>;
@@ -27,7 +27,7 @@ pub enum Column {
   U64(ColumnV<U64>),
   U128(ColumnV<U128>),
   Ref(ColumnV<TableId>),
-  I8(ColumnV<i8>),
+  I8(ColumnV<I8>),
   I16(ColumnV<i16>),
   I32(ColumnV<i32>),
   I64(ColumnV<i64>),
@@ -38,7 +38,9 @@ pub enum Column {
   Reference((TableRef,(ColumnIndex,ColumnIndex))),
   Time(ColumnV<F32>),
   Length(ColumnV<F32>),
+  Angle(ColumnV<F32>),
   Speed(ColumnV<F32>),
+  Any(ColumnV<Value>),
   Empty,
 }
 
@@ -69,11 +71,13 @@ impl Column {
       Column::I128(col) => col.len(),
       Column::f32(col) => col.len(),
       Column::Length(col) | Column::Time(col) | Column::Speed(col) |
+      Column::Angle(col) |
       Column::F32(col) => col.len(),
       Column::F64(col) => col.len(),
       Column::Bool(col) => col.len(),
       Column::Index(col) => col.len(),
       Column::String(col) => col.len(),
+      Column::Any(col) => col.len(),
       Column::Ref(col) => col.len(),
       Column::Reference((table,index)) => {
         let t = table.borrow();
@@ -97,21 +101,23 @@ impl Column {
       Column::U32(col) => col.borrow_mut().resize(rows,U32(0)),
       Column::U64(col) => col.borrow_mut().resize(rows,U64(0)),
       Column::U128(col) => col.borrow_mut().resize(rows,U128(0)),
-      Column::I8(col) => col.borrow_mut().resize(rows,0),
+      Column::I8(col) => col.borrow_mut().resize(rows,I8(0)),
       Column::I16(col) => col.borrow_mut().resize(rows,0),
       Column::I32(col) => col.borrow_mut().resize(rows,0),
       Column::I64(col) => col.borrow_mut().resize(rows,0),
       Column::I128(col) => col.borrow_mut().resize(rows,0),
       Column::f32(col) => col.borrow_mut().resize(rows,0.0),
-      Column::Time(col) | Column::Length(col) | Column::Speed(col) |
+      Column::Length(col) | Column::Time(col) | Column::Speed(col) |
+      Column::Angle(col) |
       Column::F32(col) => col.borrow_mut().resize(rows,F32(0.0)),
       Column::F64(col) => col.borrow_mut().resize(rows,0.0),
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
       Column::Index(col) => col.borrow_mut().resize(rows,0),
+      Column::Any(col) => col.borrow_mut().resize(rows,Value::Empty),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
       Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
       Column::Reference(_) |
-      Column::Empty => {return Err(MechError{id: 0001, kind: MechErrorKind::None});}
+      Column::Empty => {return Err(MechError{id: 9430, kind: MechErrorKind::None});}
     }
     Ok(())
   }
@@ -139,6 +145,8 @@ impl Column {
       Column::Time(_) => ValueKind::Time,
       Column::Speed(_) => ValueKind::Speed,
       Column::Length(_) => ValueKind::Length,
+      Column::Angle(_) => ValueKind::Angle,
+      Column::Any(_) => ValueKind::Any,
       Column::Empty => ValueKind::Empty,
     }
   }
@@ -211,7 +219,7 @@ mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
 
-impl num_traits::identities::Zero for F32 {
+impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
   }
@@ -226,6 +234,7 @@ mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
 mech_type_conversion!(U8,U16,u16);
 mech_type_conversion!(F32,U8,u8);
+mech_type_conversion!(F32,I8,i8);
 mech_type_conversion!(F32,U16,u16);
 mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
@@ -250,8 +259,34 @@ mech_type_conversion!(U128,U8,u8);
 mech_type_conversion!(U128,U16,u16);
 mech_type_conversion!(U128,U32,u32);
 mech_type_conversion!(U128,U64,u64);
+mech_type_conversion!(I8,F32,f32);
+mech_type_conversion_raw!(U8,u8);
+mech_type_conversion_raw!(U16,u16);
+mech_type_conversion_raw!(U32,u32);
+mech_type_conversion_raw!(U64,u32);
+mech_type_conversion_raw!(U64,u64);
+mech_type_conversion_raw!(U128,u32);
+mech_type_conversion_raw!(U128,u128);
+mech_type_conversion_raw!(I8,i8);
+mech_type_conversion_raw!(I16,i16);
+mech_type_conversion_raw!(I32,i32);
+mech_type_conversion_raw!(I64,i64);
+mech_type_conversion_raw!(I128,u32);
+mech_type_conversion_raw!(I128,i128);
+mech_type_conversion_raw!(F32,i32);
+mech_type_conversion_raw!(F32,f32);
 mech_type_conversion_raw!(F32,f64);
+mech_type_conversion_raw!(F32,u64);
+mech_type_conversion_raw!(U64,f64);
 mech_type_conversion_raw!(F32,usize);
+
+mech_value_conversion!(U8,U8);
+mech_value_conversion!(U16,U16);
+mech_value_conversion!(U32,U32);
+mech_value_conversion!(U64,U64);
+mech_value_conversion!(U128,U128);
+mech_value_conversion!(F32,F32);
+mech_value_conversion!(MechString,String);
 
 #[macro_export]
 macro_rules! mech_type {
@@ -308,6 +343,122 @@ macro_rules! mech_type {
   )
 }
 
+impl From<bool> for MechString {
+  fn from(n: bool) -> MechString {
+    MechString{chars: format!("{:?}", n).chars().collect()}
+  } 
+}
+
+macro_rules! pow_impl {
+  ($t:ty) => {
+    pow_impl!($t, u8);
+    pow_impl!($t, usize);
+  };
+  ($t:ty, $rhs:ty) => {
+    pow_impl!($t, $rhs, usize, pow);
+  };
+  ($t:tt, $rhs:tt, $rhs_t:tt, $method:expr) => {
+    impl Pow<$rhs> for $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(lhs, <u32 as From<$rhs_t>>::from(rhs)))
+      }
+    }
+
+    impl<'a> Pow<&'a $rhs> for $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: &'a $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(lhs, <u32 as From<$rhs_t>>::from(*rhs)))
+      }
+    }
+
+    impl<'a> Pow<$rhs> for &'a $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(*lhs, <u32 as From<$rhs_t>>::from(rhs)))
+      }
+    }
+
+    impl<'a, 'b> Pow<&'a $rhs> for &'b $t {
+      type Output = $t;
+      #[inline]
+      fn pow(self, rhs: &'a $rhs) -> $t {
+        let ($t(lhs),$rhs(rhs)) = (self,rhs);
+        $t(($method)(*lhs, <u32 as From<$rhs_t>>::from(*rhs)))
+      }
+    }
+  };
+}
+
+pow_impl!(U8, U8, u8, u8::pow);
+pow_impl!(U8, U16, u16, u8::pow);
+pow_impl!(U8, U32, u32, u8::pow);
+pow_impl!(I8, U8, u8, i8::pow);
+pow_impl!(I8, U16, u16, i8::pow);
+pow_impl!(I8, U32, u32, i8::pow);
+pow_impl!(U16, U8, u8, u16::pow);
+pow_impl!(U16, U16, u16, u16::pow);
+pow_impl!(U16, U32, u32, u16::pow);
+pow_impl!(I16, U8, u8, i16::pow);
+pow_impl!(I16, U16, u16, i16::pow);
+pow_impl!(I16, U32, u32, i16::pow);
+pow_impl!(U32, U8, u8, u32::pow);
+pow_impl!(U32, U16, u16, u32::pow);
+pow_impl!(U32, U32, u32, u32::pow);
+pow_impl!(I32, U8, u8, i32::pow);
+pow_impl!(I32, U16, u16, i32::pow);
+pow_impl!(I32, U32, u32, i32::pow);
+pow_impl!(I64, U8, u8, i64::pow);
+pow_impl!(I64, U16, u16, i64::pow);
+pow_impl!(I64, U32, u32, i64::pow);
+pow_impl!(I128, U8, u8, i128::pow);
+pow_impl!(I128, U16, u16, i128::pow);
+pow_impl!(I128, U32, u32, i128::pow);
+
+mech_powf!(F32,f32);
+
+// These are just to get things compiling. We should
+// to a better job implementing these.
+mech_pow_dummy!(I8,I8);
+mech_pow_dummy!(I16,I16);
+mech_pow_dummy!(I32,I32);
+mech_pow_dummy!(I64,I64);
+mech_pow_dummy!(I128,I128);
+mech_pow_dummy!(U128,U128);
+mech_pow_dummy!(U64,U64);
+
+#[macro_export]
+macro_rules! mech_pow_dummy{
+  ($wrapper:tt,$rhs:tt) => (
+    impl<T: Into<$rhs>> Pow<T> for $wrapper {
+      type Output = $wrapper;
+      fn pow(self, rhs: T) -> $wrapper {
+        let ($wrapper(lhs),rhs) = (self,rhs);
+        $wrapper(0)
+      }
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_powf{
+  ($wrapper:tt,$rhs:tt) => (
+    impl<T: Into<$rhs>> Pow<T> for $wrapper {
+      type Output = $wrapper;
+      fn pow(self, rhs: T) -> $wrapper {
+        let ($wrapper(lhs),rhs) = (self,rhs);
+        $wrapper(lhs.powf(T::into(rhs)))
+      }
+    }
+  )
+}
+
 #[macro_export]
 macro_rules! mech_neg {
   ($wrapper:tt) => (
@@ -340,6 +491,17 @@ macro_rules! mech_type_conversion_raw {
       fn from(n: $from_wrapper) -> $to_type {
         let $from_wrapper(c) = n;
         c as $to_type
+      } 
+    }
+  )
+}
+
+#[macro_export]
+macro_rules! mech_value_conversion {
+  ($from_wrapper:tt,$to_type:tt) => (
+    impl From<$from_wrapper> for Value {
+      fn from(n: $from_wrapper) -> Value {
+        Value::$to_type(n)
       } 
     }
   )

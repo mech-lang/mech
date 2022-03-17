@@ -37,42 +37,42 @@ binary_infix_ss!(AddSS,add);
 binary_infix_ss!(SubSS,sub);
 binary_infix_ss!(MulSS,mul);
 binary_infix_ss!(DivSS,div);
-//binary_infix_ss!(ExpSS,pow);
+binary_infix_ss!(ExpSS,pow);
 
 // Scalar : Vector
 binary_infix_sv!(AddSV,add);
 binary_infix_sv!(SubSV,sub);
 binary_infix_sv!(MulSV,mul);
 binary_infix_sv!(DivSV,div);
-//binary_infix_sv!(ExpSV,pow);
+binary_infix_sv!(ExpSV,pow);
 
 // Vector : Scalar
 binary_infix_vs!(AddVS,add);
 binary_infix_vs!(SubVS,sub);
 binary_infix_vs!(MulVS,mul);
 binary_infix_vs!(DivVS,div);
-//binary_infix_vs!(ExpVS,pow);
+binary_infix_vs!(ExpVS,pow);
 
 // Vector : Vector
 binary_infix_vv!(AddVV,add);
 binary_infix_vv!(SubVV,sub);
 binary_infix_vv!(MulVV,mul);
 binary_infix_vv!(DivVV,div);
-//binary_infix_vv!(ExpVV,pow);
+binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
 binary_infix_par_vs!(ParAddVS,add);
 binary_infix_par_vs!(ParSubVS,sub);
 binary_infix_par_vs!(ParMulVS,mul);
 binary_infix_par_vs!(ParDivVS,div);
-//binary_infix_par_vs!(ExpParVS,pow);
+binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
 binary_infix_par_vv!(ParAddVV,add);
 binary_infix_par_vv!(ParSubVV,sub);
 binary_infix_par_vv!(ParMulVV,mul);
 binary_infix_par_vv!(ParDivVV,div);
-//binary_infix_par_vv!(ExpParVV,pow);
+binary_infix_par_vv!(ExpParVV,pow);
 
 // Vector : Vector In Place
 binary_infix_vvip!(AddVVIP,add);
@@ -83,18 +83,21 @@ binary_infix_par_vvip!(ParAddVVIP,add);
 // Parallel Vector : Scalar In Place
 binary_infix_par_vsip!(ParAddVSIP,add);
 
+// Vector : Scalar In Place
+binary_infix_vsip!(AddVSIP,add);
+
 // Parallel Scalar : Vector
 binary_infix_par_sv!(ParAddSV,add);
 binary_infix_par_sv!(ParSubSV,sub);
 binary_infix_par_sv!(ParMulSV,mul);
 binary_infix_par_sv!(ParDivSV,div);
-//binary_infix_par_sv!(ExpParSV,pow);
+binary_infix_par_sv!(ExpParSV,pow);
 
 math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
 math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
 math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
 math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
-//math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
+math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
 
 // Negate Vector
 #[derive(Debug)]
@@ -115,17 +118,17 @@ where T: std::ops::Neg<Output = T> + Copy + Debug
 
 // Negate Vector
 #[derive(Debug)]
-pub struct NegateV<T> 
-where T: std::ops::Neg<Output = T> + Copy + Debug
+pub struct NegateV<T,U> 
 {
-  pub arg: ColumnV<T>, pub out: ColumnV<T>
+  pub arg: ColumnV<T>, pub out: ColumnV<U>
 }
 
-impl<T> MechFunction for NegateV<T> 
-where T: std::ops::Neg<Output = T> + Copy + Debug
+impl<T,U> MechFunction for NegateV<T,U>  
+where T: std::ops::Neg<Output = T> + Into<U> + Copy + Debug,
+      U: std::ops::Neg<Output = U> + Into<T> + Copy + Debug,
 {
   fn solve(&self) {
-    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(*arg)); 
+    self.out.borrow_mut().iter_mut().zip(self.arg.borrow().iter()).for_each(|(out, arg)| *out = -(T::into(*arg))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -312,6 +315,26 @@ macro_rules! binary_infix_par_vsip {
 }
 
 #[macro_export]
+macro_rules! binary_infix_vsip {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T> {
+      pub arg: ColumnV<T>, pub out: ColumnV<T>
+    }
+    impl<T> MechFunction for $func_name<T> 
+    where T: MechNumArithmetic<T> + Copy + Debug + Send + Sync
+    {
+      fn solve(&self) {
+        let arg = self.arg.borrow()[0];
+        self.out.borrow_mut().iter_mut().for_each(|out| *out = (*out).$op(arg));
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
+#[macro_export]
 macro_rules! binary_infix_ss {
   ($func_name:ident, $op:tt) => (
     #[derive(Debug)]
@@ -363,6 +386,7 @@ impl MechFunctionCompiler for MathNegate {
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::F32(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           x => {return Err(MechError{id: 6001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
@@ -418,6 +442,12 @@ macro_rules! math_compiler {
               ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::U64)?;
                 if let Column::U64(out) = out_column {
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
+              },
+              ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
+                if let Column::F32(out) = out_column {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
@@ -581,6 +611,49 @@ macro_rules! math_compiler {
               }
             }
           }            
+          (TableShape::Row(lhs_cols), TableShape::Row(rhs_cols)) => {
+            let lhs_rows = 1;
+            let rhs_rows = 1;
+
+            if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
+            }
+
+            let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
+            let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
+
+            let (out_table_id, _, _) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(lhs_rows,*lhs_cols);
+
+            for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+              match (lhs_rhs) {
+                 (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::U8)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U8(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                (((_,Column::U64(lhs),_), (_,Column::U64(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::U64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U64(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                (((_,Column::F32(lhs),_), (_,Column::F32(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::F32)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F32(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                x => {return Err(MechError{id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              }
+            }
+          }
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
@@ -615,7 +688,9 @@ macro_rules! math_compiler {
               }
             }
           }
-          x => {return Err(MechError{id: 6013, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          (TableShape::Pending(table_id),_) => { return Err(MechError{id: 6013, kind: MechErrorKind::PendingTable(*table_id)}); }
+          (_,TableShape::Pending(table_id)) => {return Err(MechError{id: 6014, kind: MechErrorKind::PendingTable(*table_id)}); },
+          x => {return Err(MechError{id: 6015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }

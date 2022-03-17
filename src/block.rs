@@ -29,6 +29,7 @@ lazy_static! {
   pub static ref cU16: u64 = hash_str("u16");
   pub static ref cU32: u64 = hash_str("u32");
   pub static ref cU64: u64 = hash_str("u64");
+  pub static ref cU128: u64 = hash_str("u128");
   pub static ref cHZ: u64 = hash_str("hz");
   pub static ref cMS: u64 = hash_str("ms");
   pub static ref cS: u64 = hash_str("s");
@@ -38,6 +39,8 @@ lazy_static! {
   pub static ref cHEX: u64 = hash_str("hex");
   pub static ref cDEC: u64 = hash_str("dec");
   pub static ref cSTRING: u64 = hash_str("string");
+  pub static ref cBOOL: u64 = hash_str("bool");
+  pub static ref cANY: u64 = hash_str("_");
 }
 
 #[derive(Clone)]
@@ -103,6 +106,8 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
+  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub required_functions: HashSet<u64>,
   pub strings: StringDictionary,
   pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
@@ -117,9 +122,11 @@ impl Block {
       tables: Database::new(),
       plan: Plan::new(),
       functions: None,
+      required_functions: HashSet::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
+      defined_tables: HashSet::new(),
       transformations: Vec::new(),
       strings: Rc::new(RefCell::new(HashMap::new())),
       triggers: HashSet::new(),
@@ -136,19 +143,19 @@ impl Block {
           match self.tables.table_alias_to_id.get(table_id.unwrap()) {
             Some(TableId::Global(id)) => match self.global_database.borrow().get_table_by_id(id) {
               Some(table) => Ok(table.clone()),
-              None => Err(MechError{id: 1001, kind: MechErrorKind::MissingTable(*table_id)}),
+              None => Err(MechError{id: 2101, kind: MechErrorKind::MissingTable(*table_id)}),
             }
             Some(TableId::Local(id)) => match self.tables.get_table_by_id(id) {
               Some(table) => Ok(table.clone()),
-              None => Err(MechError{id: 1002, kind: MechErrorKind::MissingTable(*table_id)}),
+              None => Err(MechError{id: 2102, kind: MechErrorKind::MissingTable(*table_id)}),
             }
-            None => Err(MechError{id: 1003, kind: MechErrorKind::MissingTable(*table_id)}),
+            None => Err(MechError{id: 2103, kind: MechErrorKind::MissingTable(*table_id)}),
           }
         },
       },
       TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
         Some(table) => Ok(table.clone()),
-        None => Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(*table_id)}),
+        None => Err(MechError{id: 2104, kind: MechErrorKind::MissingTable(*table_id)}),
       }
     }
   }
@@ -164,9 +171,13 @@ impl Block {
 
   pub fn ready(&mut self) -> Result<(),MechError> {
     match self.state {
+      // If the state is ready, we are good.
       BlockState::Ready => Ok(()),
-      BlockState::Disabled => Err(MechError{id: 1001, kind: MechErrorKind::BlockDisabled}),
-      _ => {
+      // If the block is disable that'd the end of it
+      BlockState::Disabled => Err(MechError{id: 2144, kind: MechErrorKind::BlockDisabled}),
+      // Other
+      BlockState::New | BlockState::Done | BlockState::Unsatisfied |  BlockState::Error |  
+      BlockState::Pending => {
         match &self.unsatisfied_transformation {
           Some((_,tfm)) => {
             self.state = BlockState::Pending;
@@ -178,8 +189,7 @@ impl Block {
                 for tfm in pending_transformations.drain(..) {
                   self.add_tfm(tfm);
                 }
-                self.ready();
-                Ok(())
+                self.ready()
               }
               Err(x) => {
                 Err(x)
@@ -216,10 +226,10 @@ impl Block {
             ((_,Column::Ref(ref_col),_),_,_) => {
               table_id = ref_col.borrow()[0].clone();
             }
-            x => {return Err(MechError{id: 1005, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{id: 2105, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
-        x => {return Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{id: 2106, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
 
@@ -233,7 +243,7 @@ impl Block {
       // Return an error if either index is 0. An index can never be zero
       (_,TableIndex::Index(ix)) |
       (TableIndex::Index(ix),_) if ix == &0 => {
-        return Err(MechError{id: 1007, kind: MechErrorKind::ZeroIndex});
+        return Err(MechError{id: 2107, kind: MechErrorKind::ZeroIndex});
       }
       // x{1,1}
       (TableIndex::Index(row),TableIndex::Index(_)) => {
@@ -259,9 +269,8 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
-
-        if ix_table_brrw.cols != 1 {
-          return Err(MechError{id: 1008, kind: MechErrorKind::GenericError("Table too big".to_string())});
+        if ix_table_brrw.cols > 1 {
+          return Err(MechError{id: 2108, kind: MechErrorKind::GenericError("Index table must be a column vector.".to_string())});
         }
         let ix = match ix_table_brrw.get_column_unchecked(0) {
           Column::Bool(bool_col) => ColumnIndex::Bool(bool_col),
@@ -270,7 +279,7 @@ impl Block {
           Column::F32(ix_col) => {
             ColumnIndex::RealIndex(ix_col)
           },
-          x => {return Err(MechError{id: 1009, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{id: 2109, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         };
         let arg_col = table_brrw.get_column(col)?;
         Ok((*arg_name,arg_col.clone(),ix))
@@ -281,7 +290,7 @@ impl Block {
         let ix_table_brrw = ix_table.borrow();
         match table.borrow().kind() {
           ValueKind::Compound(table_kind) => {
-            return Err(MechError{id: 1010, kind: MechErrorKind::GenericError("Can't handle compound".to_string())});
+            return Err(MechError{id: 2110, kind: MechErrorKind::GenericError("Can't handle compound".to_string())});
           }
           table_kind => {
             let ix = match ix_table_brrw.get_column_unchecked(0) {
@@ -291,7 +300,7 @@ impl Block {
               Column::F32(ix_col) => {
                 ColumnIndex::RealIndex(ix_col)
               },
-              x => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              x => {return Err(MechError{id: 2111, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             };
             match table_brrw.shape() {
               TableShape::Column(rows) => {
@@ -360,10 +369,10 @@ impl Block {
             ((_,Column::Ref(ref_col),_),_,_) => {
               table_id = ref_col.borrow()[0].clone();
             }
-            x => {return Err(MechError{id: 1011, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{id: 2211, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
-        x => {return Err(MechError{id: 1012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{id: 2112, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
     let (row,col) = &indices.last().unwrap();
@@ -372,7 +381,7 @@ impl Block {
 
     match self.get_arg_dim(argument) {
       Ok(TableShape::Column(rows)) => {
-        return Err(MechError{id: 1013, kind: MechErrorKind::GenericError("Can't handle this unless it's a column vector.".to_string())});
+        return Err(MechError{id: 2113, kind: MechErrorKind::GenericError("Can't handle this unless it's a column vector.".to_string())});
       }
       _ => (),
     };
@@ -382,7 +391,7 @@ impl Block {
       (TableIndex::None,_) => ColumnIndex::None,
       (TableIndex::Index(ix),_) => ColumnIndex::Index(ix - 1),
       (TableIndex::Alias(alias),_) => {
-        return Err(MechError{id: 1014,  kind: MechErrorKind::GenericError("Can't index on row alias yet".to_string())});
+        return Err(MechError{id: 2114,  kind: MechErrorKind::GenericError("Can't index on row alias yet".to_string())});
       },
       (TableIndex::Table(ix_table_id),_) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -392,7 +401,7 @@ impl Block {
           Column::Index(ix_col) => ColumnIndex::IndexCol(ix_col),
           Column::U8(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
           Column::F32(ix_col) => ColumnIndex::Index(ix_col.borrow()[0].unwrap() as usize - 1),
-          x => {return Err(MechError{id: 1015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{id: 2115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         };
         ix
       }
@@ -441,10 +450,10 @@ impl Block {
             ((_,Column::Ref(ref_col),_),_,_) => {
               table_id = ref_col.borrow()[0].clone();
             }
-            x => {return Err(MechError{id: 1016, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+            x => {return Err(MechError{id: 2116, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
           }
         }
-        x => {return Err(MechError{id: 1017, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+        x => {return Err(MechError{id: 2117, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
       }
     }
     
@@ -464,22 +473,25 @@ impl Block {
       (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::Table(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
-        let rows = ix_table.borrow().logical_len();
+        let rows = ix_table.borrow().len();
         (rows,1)
       },
       (TableIndex::Table(ix_table_id),TableIndex::All) => {
         let ix_table = self.get_table(&ix_table_id)?;
-        let rows = ix_table.borrow().logical_len();
+        let rows = ix_table.borrow().len();
         (rows,t.cols)
       },
-      x => {return Err(MechError{id: 1018, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+      x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
+      (_,0) |
+      (0,_) |
+      (0,0) => TableShape::Pending(table_id),
       (1,1) => TableShape::Scalar,
       (1,x) => TableShape::Row(x),
       (x,1) => TableShape::Column(x),
       (x,y) => TableShape::Matrix(x,y),
-      _ => TableShape::Pending,
+      _ => TableShape::Pending(table_id),
     };
     Ok(arg_shape)
   }
@@ -489,7 +501,7 @@ impl Block {
     match self.state {
       BlockState::Unsatisfied => {
         self.pending_transformations.push(tfm.clone());
-        return Err(MechError{id: 1019, kind: MechErrorKind::GenericError("Unsatisfied block".to_string())});
+        return Err(MechError{id: 2119, kind: MechErrorKind::GenericError("Unsatisfied block".to_string())});
       }
       _ => {
         match self.compile_tfm(tfm.clone()) {
@@ -521,6 +533,7 @@ impl Block {
         }
       }
       Transformation::Function{name, ref arguments, out} => {
+        self.required_functions.insert(*name);
         for (_,table_id,indices) in arguments {
           if let TableId::Global(_) = table_id {
             self.input.insert((*table_id,TableIndex::All,TableIndex::All));
@@ -557,6 +570,7 @@ impl Block {
             table.dictionary = self.strings.clone();
             self.global_database.borrow_mut().insert_table(table);
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.defined_tables.insert((*table_id,TableIndex::All,TableIndex::All));
           }
         } 
       },
@@ -592,9 +606,11 @@ impl Block {
         else if *kind == *cS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cMS { table_brrw.set_col_kind(*column_ix,ValueKind::Time)?; }
         else if *kind == *cSTRING { table_brrw.set_col_kind(*column_ix,ValueKind::String)?; }
+        else if *kind == *cBOOL { table_brrw.set_col_kind(*column_ix,ValueKind::Bool)?; }
         else if *kind == *cM_S { table_brrw.set_col_kind(*column_ix,ValueKind::Speed)?; }
+        else if *kind == *cANY { table_brrw.set_col_kind(*column_ix,ValueKind::Any)?; }
         else {
-          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+          return Err(MechError{id: 2120, kind: MechErrorKind::UnknownColumnKind(*kind)});
         }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
@@ -623,6 +639,12 @@ impl Block {
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        match dest_row {
+          TableIndex::Table(TableId::Global(ix_table_id)) => {
+            self.input.insert((TableId::Global(*ix_table_id),TableIndex::All,TableIndex::All));
+          }
+          _ => (),
+        }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
           arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
@@ -644,13 +666,17 @@ impl Block {
           t.set_kind(ValueKind::U16)?;
           t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
         } 
-       else if *kind == *cU32 {
+        else if *kind == *cU32 {
           t.set_kind(ValueKind::U32)?;
           t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
         } 
         else if *kind == *cU64 {
           t.set_kind(ValueKind::U64)?;
           t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+        } 
+        else if *kind == *cU128 {
+          t.set_kind(ValueKind::U128)?;
+          t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
         } 
         else if *kind == *cMS {
           t.set_kind(ValueKind::Time)?;
@@ -702,7 +728,7 @@ impl Block {
               t.set_kind(ValueKind::U128)?;
               t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
             }
-            _ => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError("Too many bytes in number".to_string())});},
+            _ => {return Err(MechError{id: 2121, kind: MechErrorKind::GenericError("Too many bytes in number".to_string())});},
           }
         } 
         else if *kind == *cHEX {
@@ -718,7 +744,7 @@ impl Block {
           t.set_raw(0,0,Value::U128(U128::new(x)))?;
         }
         else {
-          return Err(MechError{id: 1001, kind: MechErrorKind::GenericError(format!("Unhandled table kind {:?}", kind))});
+          return Err(MechError{id: 2122, kind: MechErrorKind::UnknownColumnKind(*kind)});
         }
       },
       Transformation::Constant{table_id, value} => {
@@ -751,10 +777,10 @@ impl Block {
                 // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
               }
-              None => {return Err(MechError{id: 1001, kind: MechErrorKind::MissingFunction(*name)});},
+              None => {return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)});},
             }
           }
-          None => {return Err(MechError{id: 1001, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
+          None => {return Err(MechError{id: 2124, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
         }
       }
       _ => (),
@@ -770,7 +796,7 @@ impl Block {
       }
       Ok(())
     } else {
-      Err(MechError{id: 1001, kind: MechErrorKind::GenericError("Block not ready".to_string())})
+      Err(MechError{id: 2125, kind: MechErrorKind::GenericError("Block not ready".to_string())})
     }
   }
 
@@ -787,7 +813,10 @@ impl fmt::Debug for Block {
     if self.triggers.len() > 0 {
       for (table,row,col) in &self.triggers {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().to_string()
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table),
+          }
         } else {
           format!("{:?}",table)
         };
@@ -798,7 +827,10 @@ impl fmt::Debug for Block {
     if self.input.len() > 0 {
       for (table,row,col) in &self.input {
         let table_name: String = if let TableId::Global(table_id) = table {
-          self.strings.borrow().get(table_id).unwrap().to_string()
+          match self.strings.borrow().get(table_id) {
+            Some(s) => s.to_string(),
+            None => format!("{:?}",table),
+          }
         } else {
           format!("{:?}",table)
         };
@@ -822,7 +854,7 @@ impl fmt::Debug for Block {
     block_drawing.add_title("🪄","transformations");
     block_drawing.add_line(format!("{:#?}", &self.transformations));
     if let Some(ut) = &self.unsatisfied_transformation {
-      block_drawing.add_title("😔","unsatisfied transformations");
+      block_drawing.add_title("😔","unsatisfied transformation");
       block_drawing.add_line(format!("{:#?}", &ut));
     }
     if self.pending_transformations.len() > 0 {

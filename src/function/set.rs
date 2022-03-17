@@ -56,7 +56,7 @@ impl MechFunctionCompiler for SetAll {
     if arg_name == *COLUMN {
       match (arg_column,out_col) {
         (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAllCol{col: col.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4887, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{id: 4687, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } 
     Ok(())
@@ -76,7 +76,7 @@ impl MechFunctionCompiler for SetAny {
     if arg_name == *COLUMN {
       match (arg_column,out_col) {
         (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAnyCol{col: col.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4888, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{id: 4688, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } 
     Ok(())

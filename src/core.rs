@@ -22,7 +22,9 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+
 pub type BlockRef = Rc<RefCell<Block>>;
+
 
 pub struct Functions{
   pub functions: HashMap<u64,Box<dyn MechFunctionCompiler>>,
@@ -56,15 +58,16 @@ impl fmt::Debug for Functions {
 }
 
 
-
 pub struct Core {
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: Vec<BlockRef>,
+  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
+  pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,TableIndex,TableIndex)>,
   pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
   pub schedule: Schedule,
   pub dictionary: StringDictionary,
 }
@@ -83,7 +86,7 @@ impl Core {
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
-    //functions.insert(*MATH_EXPONENT, MathExp{});
+    functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
     functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
 
     // Logic
@@ -119,22 +122,24 @@ impl Core {
      
     Core {
       blocks: HashMap::new(),
-      unsatisfied_blocks: Vec::new(),
+      unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
+      required_functions: HashSet::new(),
       errors: HashMap::new(),
       schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      defined_tables: HashSet::new(),
       dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
   }
 
   pub fn needed_registers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
-    self.input.difference(&self.output).cloned().collect()
+    self.input.difference(&self.defined_tables).cloned().collect()
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<Vec<BlockRef>,MechError> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(Vec<BlockRef>,HashSet<(TableId,TableIndex,TableIndex)>),MechError> {
     let mut changed_registers = HashSet::new();
     let mut block_refs = Vec::new();
     for change in txn {
@@ -188,18 +193,46 @@ impl Core {
         }
       }
     }
+
     for (changed_table_id,_,_) in &changed_registers {
-      match self.errors.remove(&MechErrorKind::MissingTable(*changed_table_id)) {
-        Some(mut ublocks) => {
-          block_refs.append(&mut ublocks);
-        }
-        None => (),
+      let mut cured_block_refs = self.remove_error(*changed_table_id)?;
+      block_refs.append(&mut cured_block_refs);
+    }
+    for register in &changed_registers {
+      self.step(register);
+    }
+    Ok((block_refs,changed_registers))
+  }
+
+  pub fn remove_error(&mut self, table_id: TableId) -> Result<Vec<BlockRef>,MechError> {
+    let mut block_refs = vec![];
+    match &self.errors.remove(&MechErrorKind::MissingTable(table_id)) {
+      Some(ref ublocks) => {
+        let mut mb = ublocks.clone();
+        block_refs.append(&mut mb);
       }
+      None => (),
+    }
+    match self.errors.remove(&MechErrorKind::PendingTable(table_id)) {
+      Some(ref ublocks) => {
+        let mut mb = ublocks.clone();
+        block_refs.append(&mut mb);
+      }
+      None => (),
     }
     self.load_block_refs(block_refs.clone());
     self.schedule_blocks();
-    for register in &changed_registers {
-      self.step(register);
+    let mut graph_output = vec![];
+    match self.schedule.trigger_to_output.get(&(table_id,TableIndex::All,TableIndex::All)) {
+      Some(output) => {
+        for (table_id,_,_) in output {
+          graph_output.push(table_id.clone());
+        }
+      }
+      None => (),
+    }
+    for table_id in graph_output {
+      self.remove_error(table_id);
     }
     Ok(block_refs)
   }
@@ -208,14 +241,14 @@ impl Core {
     self.database.borrow_mut().insert_table(table)
   }
 
-  pub fn get_table(&mut self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
+  pub fn get_table(&self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
       None => {return Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
-  pub fn get_table_by_id(&mut self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
+  pub fn get_table_by_id(&self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
       None => {return Err(MechError{id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
@@ -225,76 +258,143 @@ impl Core {
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> Result<Vec<BlockId>,MechError> {
     let mut block_ids = vec![];
     for block in blocks {
-      let block_id = self.load_block(block.clone())?;
-      block_ids.push(block_id);
+      let mut new_block_ids = self.load_block(block.clone())?;
+      block_ids.append(&mut new_block_ids);
     }
     Ok(block_ids)
   }
 
-  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> Result<Vec<BlockId>,MechError> {
+  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
+    let mut block_errors = vec![];
     for block in blocks {
-      let block_id = self.load_block(Rc::new(RefCell::new(block.clone())))?;
-      block_ids.push(block_id);
+      match self.load_block(Rc::new(RefCell::new(block.clone()))) {
+        Ok(mut new_block_id) => block_ids.append(&mut new_block_id),
+        Err(x) => block_errors.push(x),
+      }
     }
-    Ok(block_ids)
+    (block_ids,block_errors)
   }
 
-  pub fn load_block(&mut self, mut block_ref: BlockRef) -> Result<BlockId,MechError> {
+  pub fn load_block(&mut self, mut block_ref: BlockRef) -> Result<Vec<BlockId>,MechError> {
     let block_ref_c = block_ref.clone();
-    let mut block_brrw = block_ref.borrow_mut();
-    let temp_db = block_brrw.global_database.clone();
-    block_brrw.global_database = self.database.clone();
-    block_brrw.functions = Some(self.functions.clone());
-    // Merge databases
-    let mut temp_db_brrw = temp_db.borrow();
-    match self.database.try_borrow_mut() {
-      Ok(ref mut database_brrw) => {
-        database_brrw.union(&mut temp_db_brrw);
+    let result;
+    {
+      let mut block_brrw = block_ref.borrow_mut();
+      let temp_db = block_brrw.global_database.clone();
+      block_brrw.global_database = self.database.clone();
+      block_brrw.functions = Some(self.functions.clone());
+      // Merge databases
+      let mut temp_db_brrw = temp_db.borrow();
+      match self.database.try_borrow_mut() {
+        Ok(ref mut database_brrw) => {
+          database_brrw.union(&mut temp_db_brrw);
+        }
+        Err(_) => ()
       }
-      Err(_) => ()
+      // Merge dictionaries
+      for (k,v) in block_brrw.strings.borrow().iter() {
+        self.dictionary.borrow_mut().insert(*k,v.clone());
+      }
+      // Merge dictionaries
+      for fxn_id in block_brrw.required_functions.iter() {
+        self.required_functions.insert(*fxn_id);
+      }
+      // try to satisfy the block
+      result = match block_brrw.ready() {
+        Ok(()) => {
+          
+          let id = block_brrw.gen_id();
+
+          // Merge input and output
+          self.input = self.input.union(&mut block_brrw.input).cloned().collect();
+          self.output = self.output.union(&mut block_brrw.output).cloned().collect();
+          self.defined_tables = self.defined_tables.union(&mut block_brrw.defined_tables).cloned().collect();
+
+          self.schedule.add_block(block_ref.clone());
+          self.blocks.insert(id,block_ref_c.clone());
+
+          // Try to satisfy other blocks
+          let block_output = block_brrw.output.clone();
+          let mut result = vec![id];
+          let mut resolved_tables1: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::MissingTable(*table_id)).collect();
+          let mut resolved_tables2: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::PendingTable(*table_id)).collect();
+          resolved_tables1.append(&mut resolved_tables2);
+          let mut newly_resolved_block_ids = self.resolve_errors(&resolved_tables1)?;
+          result.append(&mut newly_resolved_block_ids);
+          Ok(result)
+        }
+        Err(x) => {
+          // Merge input and output
+          self.input = self.input.union(&mut block_brrw.input).cloned().collect();
+          self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
+          let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+          let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
+          blocks_with_errors.push(block_ref_c.clone());
+          self.unsatisfied_blocks.insert(0,block_ref_c.clone());
+          Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))})
+        },
+      };
     }
-    // Merge dictionaries
-    for (k,v) in block_brrw.strings.borrow().iter() {
-      self.dictionary.borrow_mut().insert(*k,v.clone());
-    }
-    // try to satisfy the block
-    match block_brrw.ready() {
-      Ok(()) => {
-        
-        let id = block_brrw.gen_id();
+    self.unsatisfied_blocks.drain_filter(|k,v| { 
+      let state = {
+        v.borrow().state.clone()
+      };
 
-        // Merge input and output
-        self.input = self.input.union(&mut block_brrw.input).cloned().collect();
-        self.output = self.output.union(&mut block_brrw.output).cloned().collect();
-
-        self.schedule.add_block(block_ref.clone());
-
-        // Try to satisfy other blocks
-        let block_output = block_brrw.output.clone();
-        self.blocks.insert(id,block_ref_c.clone());
-        for (table_id,_,_) in block_output {
-          match self.errors.remove(&MechErrorKind::MissingTable(table_id)) {
-            Some(mut ublocks) => {
-              for ublock in ublocks {
-                self.load_block(ublock);
-              }
+      state == BlockState::Ready
+    
+    });
+    result
+  }
+  
+  pub fn resolve_errors(&mut self, resolved_errors: &Vec<MechErrorKind>) -> Result<Vec<u64>,MechError> {
+    let mut new_block_ids =  vec![];
+    for error in resolved_errors.iter() {
+      match self.errors.remove(error) {
+        Some(mut ublocks) => {
+          for ublock in ublocks {
+            match self.load_block(ublock) {
+              Ok(mut nbid) => {
+                new_block_ids.append(&mut nbid);
+                self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
+                  let state = {
+                      v.borrow().state.clone()
+                  };
+                  state != BlockState::Ready
+                }).collect();
+                // For each of the new blocks, check to see if any of the tables
+                // it provides are pending.
+                let mut new_block_pending_ids = vec![];
+                for id in &new_block_ids {
+                  let output = {
+                    let block_ref = self.blocks.get(&id).unwrap();
+                    let block_ref_brrw = block_ref.borrow();
+                    block_ref_brrw.output.clone()
+                  };
+                  for (table_id,_,_) in &output {
+                    let mut resolved = self.resolve_errors(&vec![MechErrorKind::PendingTable(*table_id)])?;
+                    new_block_pending_ids.append(&mut resolved);
+                  }
+                }
+                new_block_ids.append(&mut new_block_pending_ids);
+              },
+              err => {return err;}
             }
-            None => (),
           }
         }
-        Ok(id)
+        None => (),
       }
-      Err(x) => {
-        // Merge input and output
-        self.input = self.input.union(&mut block_brrw.input).cloned().collect();
-        self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
-        let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
-        let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
-        blocks_with_errors.push(block_ref_c.clone());
-        self.unsatisfied_blocks.push(block_ref_c.clone());
-        Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))})
-      },
+    }
+    Ok(new_block_ids)
+  }
+
+  pub fn get_output_by_block_id(&self, block_id: BlockId) -> Result<HashSet<(TableId,TableIndex,TableIndex)>,MechError> {
+    match self.blocks.get(&block_id) {
+      Some(block_ref) => {
+        let output = block_ref.borrow().output.clone();
+        Ok(output)
+      }
+      None => Err(MechError{id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
     }
   }
 
@@ -327,7 +427,7 @@ impl fmt::Debug for Core {
     box_drawing.add_title("🧊","blocks");
     box_drawing.add_line(format!("{:#?}", &self.blocks.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     if self.unsatisfied_blocks.len() > 0 {
-      box_drawing.add_title("😞","unsatisfied blocks");
+      box_drawing.add_title("😔","unsatisfied blocks");
       box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks));    
     }
     box_drawing.add_title("💻","functions");

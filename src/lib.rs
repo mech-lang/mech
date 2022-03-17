@@ -2,6 +2,7 @@
 #![feature(concat_idents)]
 #![allow(warnings)]
 #![feature(iter_intersperse)]
+#![feature(drain_filter)]
 
 extern crate core as rust_core;
 extern crate hashbrown;
@@ -47,6 +48,13 @@ pub type BlockId = u64;
 pub type ArgumentName = u64;
 pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
 pub type Out = (TableId, TableIndex, TableIndex);
+
+
+pub trait Machine {
+  fn name(&self) -> String;
+  fn id(&self) -> u64;
+  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
+}
 
 
 #[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -232,7 +240,7 @@ impl BoxTable {
       for col in 0..table.cols {
         let value_string = match table.get_raw(row,col) {
           Ok(v) => format!("{:?}", v), 
-          _ => format!(""),
+          Err(x) => format!("{:?}",x),
         };
         let chars = value_string.chars().count();
         if chars > column_widths[col] {

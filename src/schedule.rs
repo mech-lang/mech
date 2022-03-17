@@ -1,5 +1,5 @@
 
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use crate::core::BlockRef;
 use crate::*;
 
@@ -8,6 +8,7 @@ pub struct Schedule {
   pub trigger_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub input_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
   pub output_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
+  pub trigger_to_output: HashMap<(TableId,TableIndex,TableIndex),HashSet<(TableId,TableIndex,TableIndex)>>,
   pub schedules: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
@@ -19,6 +20,7 @@ impl Schedule {
       trigger_to_blocks: HashMap::new(),
       input_to_blocks: HashMap::new(),
       output_to_blocks: HashMap::new(),
+      trigger_to_output: HashMap::new(),
       schedules: HashMap::new(),
       unscheduled_blocks: Vec::new(),
     }
@@ -31,8 +33,14 @@ impl Schedule {
     Ok(())
   }
 
+
   pub fn schedule_blocks(&mut self) -> Result<(),MechError> {
-    for block_ref in &self.unscheduled_blocks {
+    if  self.unscheduled_blocks.len() == 0 {
+      return Ok(())
+    }
+    let ready_blocks: Vec<BlockRef> = self.unscheduled_blocks.drain_filter(|b| b.borrow().state == BlockState::Ready).collect();
+
+    for block_ref in &ready_blocks {
       let mut graph = BlockGraph::new(block_ref.clone());
       let block_brrw = block_ref.borrow();
 
@@ -46,7 +54,7 @@ impl Schedule {
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
           if output_table_id == trigger_table_id {
             for ref mut pblock in producing_blocks.iter_mut() {
-              pblock.load_block(&mut graph);
+              pblock.add_child(&mut graph);
             }
           }
         }
@@ -54,18 +62,37 @@ impl Schedule {
 
       // Map input registers to blocks
       for (input_table_id,row,col) in &block_brrw.input {
-        let ref mut dependent_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
-        dependent_blocks.push(graph.clone());
+        let ref mut consuming_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
+        consuming_blocks.push(graph.clone());
       }
 
       // Map output registers to blocks
       for (output_table_id,row,col) in &block_brrw.output {
-        let ref mut dependent_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
-        dependent_blocks.push(graph.clone());
+        let ref mut producing_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
+        producing_blocks.push(graph.clone());
+        // Map block outputs to triggers
+        if let Some(consuming_blocks) = self.trigger_to_blocks.get(&(*output_table_id,*row,*col)) {
+          for block in consuming_blocks {
+            graph.add_child(&block);
+          }
+        }
       }
-
     }
-    self.unscheduled_blocks.clear();
+    // TODO I'd like to do this incrementally instead of redoing it
+    // every time blocks are scheduled. But I'm short on time now and 
+    // this is all I can think of to do without changing too much.
+    // This collects all of the output that would have been changed given a trigger
+    for (register,block_graphs) in self.schedules.iter() {
+      let (table_id,row_ix,col_ix) = register;
+      let mut aggregate_output = HashSet::new();
+      for graph in block_graphs {
+        let mut node = &graph.root;
+        let node_brrw = node.borrow();
+        let mut output = node_brrw.aggregate_output();
+        aggregate_output = aggregate_output.union(&mut output).cloned().collect();
+      }
+      self.trigger_to_output.insert(*register,aggregate_output);
+    }
     Ok(())
   }
 
@@ -78,7 +105,7 @@ impl Schedule {
         Ok(())
       }
       None => {
-        Err(MechError{id: 0001, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
+        Err(MechError{id: 5368, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
       }
     }
   }
@@ -94,6 +121,8 @@ impl fmt::Debug for Schedule {
     box_drawing.add_line(format!("{:#?}", &self.input_to_blocks));
     box_drawing.add_header("output");
     box_drawing.add_line(format!("{:#?}", &self.output_to_blocks));
+    box_drawing.add_header("output schedule");
+    box_drawing.add_line(format!("{:#?}", &self.trigger_to_output));
     box_drawing.add_header("schedules");
     box_drawing.add_line(format!("{:#?}", &self.schedules));
     if self.unscheduled_blocks.len() > 0 {
@@ -121,6 +150,37 @@ impl Node {
       parents: Vec::new(),
       children: Vec::new(),
     }
+  }
+
+  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().triggers.clone()
+  }
+
+  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().input.clone()
+  }
+
+  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.block.borrow().output.clone()
+  }
+
+  pub fn aggregate_output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    let mut aggregate_output = self.output();
+    let mut child_output = self.output_recurse();
+    aggregate_output = aggregate_output.union(&mut child_output).cloned().collect();
+    aggregate_output
+  }
+
+  pub fn output_recurse(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    let mut aggregate_output = HashSet::new();
+    for child in &self.children {
+      let child_brrw = child.borrow();
+      let mut output = child_brrw.output();
+      let mut child_output = child_brrw.output_recurse();
+      aggregate_output = aggregate_output.union(&mut output).cloned().collect();
+      aggregate_output = aggregate_output.union(&mut child_output).cloned().collect();
+    }
+    aggregate_output
   }
 
   pub fn add_child(&mut self, child: Rc<RefCell<Node>>) {
@@ -166,7 +226,23 @@ impl BlockGraph {
     }
   }
 
-  pub fn load_block(&mut self, block: &mut BlockGraph) -> Result<(),MechError> {
+  pub fn id(&self) -> u64 {
+    self.root.borrow().block.borrow().id
+  }
+
+  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().triggers()
+  }
+
+  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().input()
+  }
+
+  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+    self.root.borrow().output()
+  }
+
+  pub fn add_child(&mut self, block: &BlockGraph) -> Result<(),MechError> {
     {
       let mut root_block = self.root.borrow_mut();
       let rc = block.root.clone();
