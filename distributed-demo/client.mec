@@ -1,0 +1,72 @@
+Make the balls different colors
+  #color = [0xAA0000; 0xAA0000]
+  #clicked = [false; false]
+
+Determine if the pointer is within the ball's hitbox
+  dx = #html/event/pointer-move.x - #balls.x
+  dy = #html/event/pointer-move.y - #balls.y
+  #hover = ((dx ^ 2 + dy ^ 2) ^ 0.5) < #balls.radius
+
+Change the color
+  ~ #html/event/pointer-move
+  #color{#hover} := 0x00AA00
+  #color{¬#hover} := 0xAA0000
+
+## Keyboard Events
+
+Move the ball with the keyboard
+  ~ #html/event/key-down
+  up = #html/event/key-down.key == "ArrowUp"
+  down = #html/event/key-down.key == "ArrowDown"
+  left = #html/event/key-down.key == "ArrowLeft"
+  right = #html/event/key-down.key == "ArrowRight"
+  #balls.vx{left} := -5
+  #balls.vx{right} := 5
+  #balls.vy{up} := -5
+  #balls.vy{down} := 5
+
+## Pointer Events
+
+Click the circle
+  ~ #html/event/pointer-down
+  #balls.clicked{#hover} := 0
+  #balls.x{#hover} := #html/event/pointer-down.x
+  #balls.y{#hover} := #html/event/pointer-down.y
+  #balls.vy{#hover} := 0
+  #balls.vx{#hover} := 0
+
+Un-click the circle
+  ~ #html/event/pointer-up
+  #balls.clicked{#hover} := 1
+
+Move the circle to the pointer if it's clicked
+  ~ #html/event/pointer-move
+  ix = #balls.clicked == 0
+  #balls.x{ix} := #html/event/pointer-move.x
+  #balls.y{ix} := #html/event/pointer-move.y
+
+## Drawing
+
+Set up drawing elements 
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: #balls.x
+      center-y: #balls.y
+      radius: #balls.radius
+      fill: #color 
+      line-width: 3
+    ]
+  ]
+
+Draw a shape to the canvas
+  shape = #circle
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| shape] 
+    parameters: [width: 650.0 height: 500.0]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
