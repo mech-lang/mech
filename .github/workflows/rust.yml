@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup
-      run: rustup default nightly-2021-12-01
+      run: rustup default nightly-2021-12-25
     - name: Build
       run: cargo build --bin mech --release
     - name: Run tests
