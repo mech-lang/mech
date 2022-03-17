@@ -834,8 +834,8 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             out_column_ix += 1;
           }
         }
-        TableShape::Pending(table_id) => { return Err(MechError{id: 4912, kind: MechErrorKind::PendingTable(table_id)}); },
-        x => {return Err(MechError{id: 4902, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        TableShape::Pending(table_id) => { return Err(MechError{id: 4902, kind: MechErrorKind::PendingTable(table_id)}); },
+        x => {return Err(MechError{id: 4503, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
     Ok(())
@@ -991,6 +991,8 @@ impl MechFunctionCompiler for TableAppend {
           ((_,Column::Time(arg), ColumnIndex::Index(ix)), Column::Time(out)) => { dest_table_brrw.resize(new_rows,ocols); block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),out_rows,out_rows)}) },            
           ((_,Column::Length(arg), ColumnIndex::Index(ix)), Column::Length(out)) => { dest_table_brrw.resize(new_rows,ocols); block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),out_rows,out_rows)}) },            
           ((_,Column::Speed(arg), ColumnIndex::Index(ix)), Column::Speed(out)) => { dest_table_brrw.resize(new_rows,ocols); block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),out_rows,out_rows)}) },            
+          ((_,Column::String(arg), ColumnIndex::Index(ix)), Column::String(out)) => { dest_table_brrw.resize(new_rows,ocols); block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),out_rows,out_rows)}) },            
+          ((_,Column::Bool(arg), ColumnIndex::Index(ix)), Column::Bool(out)) => { dest_table_brrw.resize(new_rows,ocols); block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),out_rows,out_rows)}) },
           x => {return Err(MechError{id: 4907, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
@@ -1029,6 +1031,7 @@ impl MechFunctionCompiler for TableAppend {
           (_,Column::F32(_),ColumnIndex::All) => {
             return Err(MechError{id: 4910, kind: MechErrorKind::Unhandled});  
           }
+          (_,Column::Bool(_),ColumnIndex::All) |
           (_,Column::Time(_),ColumnIndex::Index(_)) |
           (_,Column::F32(_),ColumnIndex::Index(_)) |
           (_,Column::Reference((_,(ColumnIndex::All,ColumnIndex::All))),ColumnIndex::All) => {
@@ -1069,7 +1072,6 @@ impl MechFunctionCompiler for TableAppend {
             } else {
               for i in 0..arg_brrw.cols {
                 let arg_col = arg_brrw.get_column_unchecked(i);
-                let mut dest_table_brrw = dest_table.borrow_mut();
                 let out_col = dest_table_brrw.get_column_unchecked(i);
                 match (&arg_col, &out_col) {
                   (Column::F32(arg),    Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
@@ -1080,6 +1082,7 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::Length(arg), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::Speed(arg),  Column::Speed(out))  => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
+                  (Column::Bool(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
                   x => {return Err(MechError{id: 4912, kind: MechErrorKind::GenericError(format!("{:?}", x))});},   
                 }
               }
