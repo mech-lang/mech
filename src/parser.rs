@@ -367,14 +367,14 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       if unparsed != "" {
         println!("{:?}", tree);
         println!("{:?}", unparsed);
-        Err(MechError{id: 0000, kind: MechErrorKind::None})
+        Err(MechError{id: 3302, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
       println!("{:?}", q);
-      Err(MechError{id: 0000, kind: MechErrorKind::None})
+      Err(MechError{id: 3303, kind: MechErrorKind::None})
     }
   }
 }
@@ -388,13 +388,13 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
     Ok((rest, tree)) => {
       let unparsed = rest.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        Err(MechError{id: 0000, kind: MechErrorKind::None})
+        Err(MechError{id: 3304, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
-      Err(MechError{id: 0000, kind: MechErrorKind::None})
+      Err(MechError{id: 3305, kind: MechErrorKind::None})
     }
   }
 }
@@ -807,7 +807,7 @@ fn data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn kind_annotation(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, _) = left_angle(input)?;
-  let (input, kind_id) = separated_list1(tag(","),identifier)(input)?;
+  let (input, kind_id) = separated_list1(tag(","),alt((identifier,underscore)))(input)?;
   let (input, _) = right_angle(input)?;
   Ok((input, Node::KindAnnotation{children: kind_id}))
 }
@@ -953,7 +953,7 @@ fn add_row_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn add_row(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table_id) = table(input)?;
-  let (input, _) = tuple((space, add_row_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), add_row_operator, many1(space)))(input)?;
   let (input, table) = alt((expression, inline_table, anonymous_table))(input)?;
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
@@ -965,28 +965,28 @@ fn set_operator(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 
 fn set_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = data(input)?;
-  let (input, _) = tuple((space, set_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), set_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SetData{children: vec![table, expression]}))
 }
 
 fn split_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = alt((identifier, table))(input)?;
-  let (input, _) = tuple((space, split_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), split_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SplitData{children: vec![table, expression]}))
 }
 
 fn join_data(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, table) = identifier(input)?;
-  let (input, _) = tuple((space, join_operator, space))(input)?;
+  let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::JoinData{children: vec![table, expression]}))
 }
 
 fn variable_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   let (input, variable) = identifier(input)?;
-  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
 }
@@ -997,7 +997,7 @@ fn table_define(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
   children.push(table);
   let (input, kind_id) = opt(kind_annotation)(input)?;
   if let Some(kind_id) = kind_id { children.push(kind_id); }
-  let (input, _) = tuple((space, equal, space))(input)?;
+  let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   children.push(expression);
   Ok((input, Node::TableDefine{children}))

@@ -8,16 +8,11 @@ use std::rc::Rc;
 
 fn main() -> Result<(),MechError> {
 
-
-
   let input = r#"
 block
-  #z = 123
-  #y = 456
+  #x = [|x<u64> y<_>|]
 block
-  #b = #z + #y
-block
-  #a = #b + #x"#;
+  #x += [x: 123<u64> y: "Hello"]"#;
 
   let input = String::from(input);
 
@@ -33,7 +28,7 @@ println!("{:#?}", parse_tree);
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
   
-  core.load_blocks(blocks)?;
+  core.load_blocks(blocks);
 
   core.schedule_blocks()?;
   println!("Done");

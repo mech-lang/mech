@@ -97,7 +97,7 @@ impl Compiler {
     if blocks.len() > 0 {
       Ok(blocks)
     } else {
-      Err(MechError{id: 0000, kind: MechErrorKind::None})
+      Err(MechError{id: 3749, kind: MechErrorKind::None})
     }
   }
 
@@ -537,6 +537,9 @@ impl Compiler {
             _ => (),
           }
         }        
+      }
+      Node::Token{token, chars} => {
+        tfms.push(Transformation::Identifier{name: chars.to_vec(), id: hash_chars(chars)});
       }
       Node::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));

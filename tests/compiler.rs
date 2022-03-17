@@ -25,6 +25,11 @@ lazy_static! {
     Change::ColumnKind{table_id: hash_str("x"), column_ix: 0, column_kind: ValueKind::F32},
     Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::F32(F32::new(42.0)))])),
   ];
+  static ref TXN6: Vec<Change> = vec![
+    Change::NewTable{table_id: hash_str("radius"), rows: 1, columns:1 },
+    Change::ColumnKind{table_id: hash_str("radius"), column_ix: 0, column_kind: ValueKind::F32},
+    Change::Set((hash_str("radius"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::F32(F32::new(10.0)))])),
+  ];
 }
 
 macro_rules! test_mech {
@@ -210,6 +215,8 @@ test_mech!(math_subtract,"#test = 3 - 1", Value::F32(F32::new(2.0)));
 test_mech!(math_multiply,"#test = 2 * 2", Value::F32(F32::new(4.0)));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
+
+test_mech!(math_power,"#test = 3 ^ 2", Value::F32(F32::new(9.0)));
 
 test_mech!(math_two_terms,"#test = 1 + 2 * 9", Value::F32(F32::new(19.0)));
 
@@ -641,14 +648,6 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(100.0)));
 
-test_mech!(set_empty_table_with_column,"
-block
-  #x = [|code|]
-block
-  #x := 10  
-block
-  #test = #x", Value::F32(F32::new(10.0)));
-
 test_mech!(set_table_index_row_dependency,"
 block
   #x = [x: 3]
@@ -826,7 +825,17 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(609.0)));
 
-  // ## Logic
+  test_mech!(append_any_column,r#"
+block
+  #x = [|x<u64> y<_> z<_>|]
+block
+  #x += [x: 123<u64> y: "Hello" z: "Hello"]
+block
+  #x += [x: 456<u64> y: 10, z: 10]
+block
+  #test = set/all(column: #x.y == #x.z)"#, Value::Bool(true));
+
+// ## Logic
 
 test_mech!(logic_and,"
 block
@@ -1013,6 +1022,14 @@ block
 block
   x = [1;2;3;4]
   #test = stats/sum(column: x{#y})"#, Value::F32(F32::new(3.0)));
+
+
+test_mech!(indexing_real_indices,r#"
+block
+  ix = [2; 1; 2; 2; 3; 3; 1]
+  b = [47; 93; 38]
+  q = b{ix}
+  #test = stats/sum(column: q)"#, Value::F32(F32::new(449.0)));
 
 // ## Functions
 
@@ -1287,8 +1304,8 @@ test_mech_txn!(temporal_whenever_blocks,r#"
 block
   #time/timer = [period: 1000, ticks: 0]
   #balls = [|x y vx vy|
-             1.0 1.0 1.0  1.0
-             50.0 80.0 2.0  10.0]
+              1.0 1.0 1.0  1.0
+              50.0 80.0 2.0  10.0]
   #gravity = 1.0
 
 block
@@ -1298,7 +1315,7 @@ block
   #balls.vy := #balls.vy + #gravity
   
 Keep the balls within the boundary height
-  ~ #balls.y
+  ~ #time/timer.ticks
   iy = #balls.y > 100.0
   #balls.y{iy} := 100.0
   #balls.vy{iy} := #balls.vy * -0.80
@@ -1319,8 +1336,8 @@ block
 
 block
   ~ #time/timer.ticks
-  #balls.y := #balls.y + #balls.vy;
-  #balls.vy := #balls.vy + #gravity;
+  #balls.y := #balls.y + #balls.vy
+  #balls.vy := #balls.vy + #gravity
 
 block
   ~ #time/timer.ticks
@@ -1354,7 +1371,25 @@ Draw a shape to the canvas
 
 block
   #test = stats/sum(table: #balls)"#, TXN4, Value::F32(F32::new(607.0)));
-  
+
+test_mech_txn!(bouncing_balls_out_of_order,r#"
+Two moc-kin-flo-his
+  #parameters = [
+    center-y: #balls.y 
+  ]
+
+One nes-sta-mas-lac
+  #balls = [|y   vy | 
+             10  1  
+             100 30 ]
+  #time/timer = [period: 1<s> ticks: 0]
+
+Three was-lue-neb-kit
+  ~ #time/timer.ticks
+  #balls.y := #balls.y + #balls.vy
+
+block
+  #test = stats/sum(table: #parameters)"#, TXN4, Value::F32(F32::new(172.0)));
 
 // ## Async
 
@@ -1366,3 +1401,33 @@ block
   #b = #z + #y
 block
   #test = #b + #x"#,TXN5,Value::F32(F32::new(621.0)));
+
+test_mech_txn!(async_late_resolved,r#"
+Set up drawing elements 
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: 100 
+      center-y: 200
+      radius: #radius
+      fill: 0xAA00AA
+      line-width: 3
+    ]
+  ]
+
+Draw to canvas
+  #canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| #circle] 
+    parameters: [width: 1000 height: 500]
+  ]
+
+Attach game to root
+  #html/app = [
+    root: 12.34
+    contains: [|type contains parameters| #canvas]
+  ]
+  
+block
+  #test = #html/app.root"#, TXN6, Value::F32(F32::new(12.34)));
+
