@@ -98,6 +98,7 @@ pub struct Program {
   programs: usize,
   loaded_machines: HashSet<u64>,
   pub listeners: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
+  pub trigger_to_listener: HashMap<(TableId,TableIndex,TableIndex),((TableId, TableIndex, TableIndex),HashSet<u64>)>
 }
 
 impl Program {
@@ -120,6 +121,7 @@ impl Program {
       errors: HashSet::new(),
       programs: 0,
       listeners: HashMap::new(),
+      trigger_to_listener: HashMap::new(),
     }
   }
 

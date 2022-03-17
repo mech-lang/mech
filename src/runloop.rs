@@ -6,6 +6,7 @@ use std::thread::{self, JoinHandle};
 use std::sync::Arc;
 use std::cell::RefCell;
 use hashbrown::{HashSet, HashMap};
+use hashbrown::hash_map::Entry;
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 use colored::*;
@@ -258,101 +259,122 @@ impl ProgramRunner {
       // Send the ready to the client to indicate that the program is initialized
       client_outgoing.send(ClientMessage::Ready);
       let mut paused = false;
+      let mut iteration: u64 = 0;
       'runloop: loop {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             // Process the transaction and calculate how long it took. 
             let start_ns = time::precise_time_ns();
-            program.mech.process_transaction(&txn);
-            /*   
-            // Trigger any machines that are now ready due to the transaction
-            //program.trigger_machines();  
-            // For all changed registers, inform all listeners of changes
-            let mut set = HashSet::new();
-            for changed_register in &program.mech.runtime.aggregate_changed_this_round {
-              if set.contains(&changed_register.table_id) {
-                continue;
-              }
-              set.insert(changed_register.table_id.clone());
-              match (program.listeners.get(&changed_register),program.mech.get_table(*changed_register.table_id.unwrap())) {
-                (Some(listeners),Some(table)) => {
-                  let mut data: Vec<u8> = vec![0; (table.data.len()+1)*8+1];
-                  data[0] = 0x42;
-                  for i in 0..8 {
-                    data[1+i] = (table.id >> (i * 8)) as u8
-                  }
-                  for i in 0..table.data.len() {
-                    let val = table.data[i];
-                    for j in 0..8 {
-                      let shifted = (val >> (j * 8)) as u8;
-                      data[j+i*8+9] = shifted;
-                    }
-                  }
-                  let compressed_message = compress_to_vec(&data,6);
-                  /*let change = Change::Table{table_id: table.id, data: table.data};
-                  let txn = Transaction{changes: vec![change]};
-                  let message = bincode::serialize(&SocketMessage::Transaction(txn)).unwrap();
-                  let compressed_message = compress_to_vec(&message,6);*/
-                  // Send the transaction to each listener
-                  for core_id in listeners {
-                    match (&self.socket,program.remote_cores.get_mut(&core_id)) {
-                      (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
-                        let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
-                      }
-                      (_,Some(MechSocket::WebSocketSender(websocket))) => {
-                        match websocket.send_message(&OwnedMessage::Binary(compressed_message.clone())) {
-                          Err(_) => {
-                            program.outgoing.send(RunLoopMessage::RemoteCoreDisconnect(*core_id));
+            match program.mech.process_transaction(&txn) {
+              Ok((new_block_ids,changed_registers)) => {
+                for trigger_register in &changed_registers {
+                  // What are we doing here: We have a triggered register, and we need to get all of the
+                  // blocks that it potentially updated. We already have that list. If this register
+                  // has been triggered for the first time, then we need to get the list of
+                  // output blocks
+                  match program.trigger_to_listener.entry(*trigger_register) {
+                    Entry::Occupied(mut o) => {
+                      // Here is the output that the triggered register will cause to update
+                      match program.mech.schedule.trigger_to_output.get(trigger_register) {
+                        Some(output) => {
+                          // Is any of this being listened for?
+                          for (register,remote_cores) in &program.listeners {
+                            if output.contains(&register) {
+                              o.insert((*register,remote_cores.clone()));
+                              break;
+                            }
                           }
-                          _ => (),
-                        };
+                        }
+                        None => ()
                       }
-                      _ => (),
+                      // We have listeners, so let's send them the changes
+                      let ((output_table_id,row_ix,col_ix),listeners) = o.get();
+                      let trigger = o.key();
+                      match program.mech.get_table_by_id(*output_table_id.unwrap()) {
+                        Ok(table) =>{
+                          let table_brrw = table.borrow();
+                          let changes = table_brrw.data_to_changes();
+                          let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
+                          let compressed_message = compress_to_vec(&message,6);
+                          // Send the transaction to the remote core
+                          for remote_core_id in listeners {
+                            match (&self.socket,program.remote_cores.get_mut(&remote_core_id)) {
+                              (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
+                                let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
+                              }
+                              (Some(ref socket),Some(MechSocket::WebSocketSender(websocket))) => {
+                                match websocket.send_message(&OwnedMessage::Binary(compressed_message.clone())) {
+                                  Ok(()) => (),
+                                  Err(x) => {
+                                    client_outgoing.send(ClientMessage::String(format!("Remote core disconnected: {}", humanize(&remote_core_id))));
+                                    program.remote_cores.remove(&remote_core_id);
+                                    for (core_id, core_address) in &program.remote_cores {
+                                      match core_address {
+                                        MechSocket::UdpSocket(core_address) => {
+                                          let message = bincode::serialize(&SocketMessage::RemoteCoreDisconnect(*remote_core_id)).unwrap();
+                                          let compressed_message = compress_to_vec(&message,6);
+                                          let len = socket.send_to(&compressed_message, core_address.clone()).unwrap();
+                                        }
+                                        MechSocket::WebSocket(_) => {
+                                          // TODO send disconnect message to websockets
+                                        }
+                                        _ => (),
+                                      }
+                                    }
+                                  },
+                                };
+                              }
+                              _ => (),
+                            }
+                          }
+                        }
+                        Err(MechError{id,kind}) => {
+                          //client_outgoing.send(ClientMessage::Error(kind.clone()));
+                        }
+                      }
+                    }
+                    Entry::Vacant(mut v) => {
+                      // Here is the output that the triggered register will cause to update
+                      match program.mech.schedule.trigger_to_output.get(trigger_register) {
+                        Some(output) => {
+                          // Is any of this being listened for?
+                          for (register,remote_cores) in &program.listeners {
+                            if output.contains(&register) {
+                              v.insert((*register,remote_cores.clone()));
+                              break;
+                            }
+                          }
+                        }
+                        None => ()
+                      }
                     }
                   }
                 }
-                _ => (),
               }
-            }            */
+              Err(MechError{id,kind}) => {
+                //client_outgoing.send(ClientMessage::Error(kind.clone()));
+              }
+            };
             let end_ns = time::precise_time_ns();
             let time = (end_ns - start_ns) as f64;
             client_outgoing.send(ClientMessage::Timing(1.0 / (time / 1_000_000_000.0)));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
-            //println!("Remote core told us they're listening for {:?}", register);
             let (table_id,row,col) = register;
             match program.mech.output.contains(&register) {
               // We produce a table for which they're listening
               true => {
-                //println!("We have something they want: {:?}", register);
+                client_outgoing.send(ClientMessage::String(format!("Sending {:?} to {}", table_id, humanize(&core_id))));
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
                 // Send over the table we have now
                 match program.mech.get_table_by_id(*table_id.unwrap()) {
                   Ok(table) => {
-                    //println!("{:?}", table);
                     // Decompose the table into changes for a transaction
-                    let mut changes = vec![];
                     let table_brrw = table.borrow();
-                    changes.push(Change::NewTable{table_id: table_brrw.id, rows: table_brrw.rows, columns: table_brrw.cols});
-                    for ((alias,ix)) in table_brrw.col_map.iter() {
-                      changes.push(Change::ColumnAlias{table_id: table_brrw.id, column_ix: *ix, column_alias: *alias});
-                    } 
-                    for (ix,kind) in table_brrw.col_kinds.iter().enumerate() {
-                      changes.push(Change::ColumnKind{table_id: table_brrw.id, column_ix: ix, column_kind: kind.clone()});
-                    } 
-                    let mut values = vec![];
-                    for i in 0..table_brrw.rows {
-                      for j in 0..table_brrw.cols {
-                        match table_brrw.get_raw(i,j) {
-                          Ok(value) => {values.push((TableIndex::Index(i+1), TableIndex::Index(j+1), value));}
-                          _ => (),
-                        }
-                      }
-                    }
-                    changes.push(Change::Set((table_brrw.id, values)));
+                    let changes = table_brrw.to_changes();
                     let message = bincode::serialize(&SocketMessage::Transaction(changes)).unwrap();
                     let compressed_message = compress_to_vec(&message,6);
                     // Send the transaction to the remote core
@@ -537,10 +559,16 @@ impl ProgramRunner {
                 Some(Transformation::TableAlias{table_id, alias}) => {
                   *table_id
                 } 
-                _ => TableId::Local(0),
+                Some(Transformation::Whenever{table_id, ..}) => {
+                  *table_id
+                } 
+                _ => {
+                  TableId::Local(0)
+                }
               };
-              let out_table = block.get_table(&out_id).unwrap();
-              client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
+              if let Ok(out_table) = block.get_table(&out_id) {
+                client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
+              }
             }
 
             // React to errors
