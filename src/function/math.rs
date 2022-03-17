@@ -611,6 +611,49 @@ macro_rules! math_compiler {
               }
             }
           }            
+          (TableShape::Row(lhs_cols), TableShape::Row(rhs_cols)) => {
+            let lhs_rows = 1;
+            let rhs_rows = 1;
+
+            if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
+            }
+
+            let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
+            let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
+
+            let (out_table_id, _, _) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(lhs_rows,*lhs_cols);
+
+            for (col_ix,lhs_rhs) in lhs_columns.iter().zip(rhs_columns).enumerate() {
+              match (lhs_rhs) {
+                 (((_,Column::U8(lhs),_), (_,Column::U8(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::U8)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U8(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                (((_,Column::U64(lhs),_), (_,Column::U64(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::U64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U64(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                (((_,Column::F32(lhs),_), (_,Column::F32(rhs),_))) => {
+                  out_brrw.set_col_kind(col_ix, ValueKind::F32)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F32(out) = out_col {
+                    block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
+                  }
+                }
+                x => {return Err(MechError{id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              }
+            }
+          }
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
