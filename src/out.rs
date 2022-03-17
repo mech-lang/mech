@@ -24,7 +24,7 @@ extern "C" fn io_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<
 #[derive(Debug)]
 pub struct Out {
   outgoing: Sender<RunLoopMessage>,
-  printed: usize,
+  //printed: usize,
 }
 
 impl Machine for Out {
@@ -51,7 +51,7 @@ impl Machine for Out {
         x => {return Err(MechError{id: 8395, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
       }
     }
-    table.clear();
+    //table.clear();
     Ok(())
   }
 }
