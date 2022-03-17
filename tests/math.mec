@@ -1,0 +1,8 @@
+# Math Unit Tests
+
+Test math with scalars
+  #test += [|name             expected actual|
+             "Addition"       2        1 + 1 
+             "Subtraction"    2        4 - 2
+             "Division"       2        4 / 2
+             "Multiplication" 6        2 * 3 ]

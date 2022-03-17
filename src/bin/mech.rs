@@ -269,7 +269,7 @@ async fn main() -> Result<(), MechError> {
     println!("{}", "[Testing]".bright_green());
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
-    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/test.mec".to_string());
+    mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/test.mec".to_string());
     let code = read_mech_files(&mech_paths)?;
 
     let blocks = match compile_code(code) {
@@ -291,6 +291,9 @@ async fn main() -> Result<(), MechError> {
     
     let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
     let thread_receiver = mech_client.incoming.clone();
+
+    let mut to_exit = false;
+    let mut exit_code = 0;
 
     'receive_loop: loop {
       match thread_receiver.recv() {
@@ -355,9 +358,19 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
-        (Ok(ClientMessage::Done)) => {
+        (Ok(ClientMessage::Timing(_))) => {
           // Do nothing
         },
+        (Ok(ClientMessage::Done)) => {
+          if to_exit {
+            io::stdout().flush().unwrap();
+            std::process::exit(exit_code);
+          }
+        },
+        (Ok(ClientMessage::Exit(this_code))) => {
+          to_exit = true;
+          exit_code = this_code;
+        }
         Ok(ClientMessage::StepDone) => {
           //mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
           //std::process::exit(0);
