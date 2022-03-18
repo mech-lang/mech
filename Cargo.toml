@@ -18,8 +18,9 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
 
-crossbeam-channel = "0.4"
+crossbeam-channel = "0.5.1"
+gilrs = "0.8.2"
 lazy_static = "1.4.0"
