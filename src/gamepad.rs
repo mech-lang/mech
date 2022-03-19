@@ -21,7 +21,7 @@ export_machine!(io_gamepad, io_gamepad_reg);
 extern "C" fn io_gamepad_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
   let mut gilrs = Gilrs::new().unwrap();
   registrar.register_machine(Box::new(Gamepad{outgoing,gamepads: HashMap::new(), gilrs}));
-  "#io/gamepad = [|id<u64> left-stick-x<f32> left-stick-y<f32>|]".to_string()
+  "#io/gamepad = [|id<u64> left-stick-x<f32> left-stick-y<f32> right-stick-x<f32> right-stick-y<f32>|]".to_string()
 }
 
 #[derive(Debug)]
@@ -57,6 +57,8 @@ impl Machine for Gamepad {
                 match event {
                   EventType::AxisChanged(Axis::LeftStickX,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(2), Value::F32(F32::new(value)))]))]));}
                   EventType::AxisChanged(Axis::LeftStickY,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(3), Value::F32(F32::new(value)))]))]));}
+                  EventType::AxisChanged(Axis::RightStickX,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(4), Value::F32(F32::new(value)))]))]));}
+                  EventType::AxisChanged(Axis::RightStickY,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(5), Value::F32(F32::new(value)))]))]));}
                   x => (),
                 }
               }
@@ -69,19 +71,3 @@ impl Machine for Gamepad {
     Ok(())
   }
 }
-
-/*
-
-let timer_handle = thread::spawn(move || {
-  let duration = Duration::from_millis((period.unwrap() * 1000.0) as u64);
-  let mut counter = 0;
-  loop {
-    thread::sleep(duration);
-    counter = counter + 1;
-    outgoing.send(RunLoopMessage::Transaction(vec![
-      Change::Set((*TIME_TIMER,vec![(timer_row, TableIndex::Alias(*TICKS), Value::U64(U64::new(counter)))]))
-    ]));
-  }
-});
-
-*/
