@@ -383,8 +383,9 @@ pub fn render_image(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRen
     match (parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SOURCE)),
           parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*X)),
           parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*Y)),
-          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE))) {
-      (Ok(Value::String(source)), Ok(Value::F32(x)), Ok(Value::F32(y)), Ok(Value::F32(rotation))) => {
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROTATE)),
+          parameters_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SCALE))) {
+      (Ok(Value::String(source)), Ok(Value::F32(x)), Ok(Value::F32(y)), rotation, scale) => {
         let source_hash = source.hash();
         match unsafe{(*wasm_core).images.entry(source_hash)} {
           Entry::Occupied(img_entry) => {
@@ -393,7 +394,21 @@ pub fn render_image(parameters_table: Rc<RefCell<Table>>, context: &Rc<CanvasRen
             let iy = img.height() as f64 / 2.0;
             context.save();
             context.translate(x.into(), y.into());
-            context.rotate(rotation.unwrap() as f64 * PI / 180.0);
+            if let Ok(Value::F32(rotation)) = rotation {
+              context.rotate(rotation.unwrap() as f64 * PI / 180.0);
+            } // TODO Else warn user it's the wrong type
+            if let Ok(Value::Reference(scale_table_id)) = scale {
+              let scale_table = unsafe{(*wasm_core).core.get_table_by_id(*scale_table_id.unwrap()).unwrap()};
+              let scale_table_brrw = scale_table.borrow();
+              match (scale_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*X)),
+                     scale_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*Y))) {
+                (Ok(Value::F32(x)),Ok(Value::F32(y))) => {
+                  context.scale(x.unwrap() as f64, y.unwrap() as f64);
+                }
+                _ => (),
+              }
+              //context.rotate(rotation.unwrap() as f64 * PI / 180.0);
+            } // TODO Else warn user it's the wrong type
             context.draw_image_with_html_image_element(&img, -ix as f64, -iy as f64);
             context.restore();
           },
