@@ -21,7 +21,7 @@ export_machine!(io_gamepad, io_gamepad_reg);
 extern "C" fn io_gamepad_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
   let mut gilrs = Gilrs::new().unwrap();
   registrar.register_machine(Box::new(Gamepad{outgoing,gamepads: HashMap::new(), gilrs}));
-  "#io/gamepad = [|id<u64> left-stick-x<f32> left-stick-y<f32> right-stick-x<f32> right-stick-y<f32>|]".to_string()
+  "#io/gamepad = [|id<u64> left-stick-x<f32> left-stick-y<f32> right-stick-x<f32> right-stick-y<f32> north<f32> south<f32> east<f32> west<f32>|]".to_string()
 }
 
 #[derive(Debug)]
@@ -59,6 +59,10 @@ impl Machine for Gamepad {
                   EventType::AxisChanged(Axis::LeftStickY,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(3), Value::F32(F32::new(value)))]))]));}
                   EventType::AxisChanged(Axis::RightStickX,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(4), Value::F32(F32::new(value)))]))]));}
                   EventType::AxisChanged(Axis::RightStickY,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(5), Value::F32(F32::new(value)))]))]));}
+                  EventType::ButtonChanged(Button::North,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(6), Value::F32(F32::new(value)))]))]));}
+                  EventType::ButtonChanged(Button::South,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(7), Value::F32(F32::new(value)))]))]));}
+                  EventType::ButtonChanged(Button::East,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(8), Value::F32(F32::new(value)))]))]));}
+                  EventType::ButtonChanged(Button::West,value,code) => {outgoing.send(RunLoopMessage::Transaction(vec![Change::Set((*IO_GAMEPAD,vec![(TableIndex::Index(1), TableIndex::Index(9), Value::F32(F32::new(value)))]))]));}
                   x => (),
                 }
               }
