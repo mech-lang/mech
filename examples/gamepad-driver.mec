@@ -12,7 +12,7 @@ block
   south = 1 - #io/gamepad.south
   east = 1 - #io/gamepad.east
   west = 1 - #io/gamepad.west
-  #player = [
+  #player/controller = [
     left-x: x1 
     left-y: y1 
     right-x: x2 

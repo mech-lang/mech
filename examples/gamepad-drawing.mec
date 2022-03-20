@@ -4,8 +4,8 @@ Set up drawing elements
   #left-pad = [
     shape: "circle" 
     parameters: [
-      center-x: #player.left-x + 345
-      center-y: #player.left-y + 157
+      center-x: #player/controller.left-x + 345
+      center-y: #player/controller.left-y + 157
       radius: 30 
       fill: 0x999999
       stroke: 0x111111
@@ -15,8 +15,8 @@ Set up drawing elements
   #right-pad = [
     shape: "circle" 
     parameters: [
-      center-x: #player.right-x + 552
-      center-y: #player.right-y + 240
+      center-x: #player/controller.right-x + 552
+      center-y: #player/controller.right-y + 240
       radius: 30 
       fill: 0x999999
       stroke: 0x111111
@@ -26,7 +26,7 @@ Set up drawing elements
   #north = [
     shape: "circle" 
     parameters: [
-      center-x: 619 - 10000 * #player.north
+      center-x: 619 - 10000 * #player/controller.north
       center-y: 123
       radius: 16 
       fill: 0xFFC000
@@ -37,7 +37,7 @@ Set up drawing elements
   #south = [
     shape: "circle" 
     parameters: [
-      center-x: 619 - 10000 * #player.south
+      center-x: 619 - 10000 * #player/controller.south
       center-y: 195
       radius: 16 
       fill: 0x00AA00
@@ -48,7 +48,7 @@ Set up drawing elements
   #west = [
     shape: "circle" 
     parameters: [
-      center-x: 582 - 10000 * #player.west
+      center-x: 582 - 10000 * #player/controller.west
       center-y: 158
       radius: 17
       fill: 0x0000AA
@@ -59,7 +59,7 @@ Set up drawing elements
   #east = [
     shape: "circle" 
     parameters: [
-      center-x: 658 - 10000 * #player.east
+      center-x: 658 - 10000 * #player/controller.east
       center-y: 158
       radius: 16 
       fill: 0xAA0000
