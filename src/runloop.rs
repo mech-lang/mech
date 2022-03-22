@@ -267,12 +267,29 @@ impl ProgramRunner {
             let start_ns = time::precise_time_ns();
             match program.mech.process_transaction(&txn) {
               Ok((new_block_ids,changed_registers)) => {
-                for trigger_register in &changed_registers {
-                  // What are we doing here: We have a triggered register, and we need to get all of the
+                for trigger_register in &changed_registers {                  
+                  // Handle machines first
+                  let mut machine_triggers = vec![];
+                  match &program.mech.schedule.trigger_to_output.get(trigger_register) {
+                    Some(ref output) => {
+                      for register in output.iter() {
+                        machine_triggers.push(register.clone());
+                      }
+                    }
+                    None => ()
+                  }
+                  for register in machine_triggers {
+                    program.trigger_machine(&register);
+                  }
+
+
+
+                  // We have a triggered register, and we need to get all of the
                   // blocks that it potentially updated. We already have that list. If this register
                   // has been triggered for the first time, then we need to get the list of
                   // output blocks
                   match program.trigger_to_listener.entry(*trigger_register) {
+                    // Already triggered in the past
                     Entry::Occupied(mut o) => {
                       // Here is the output that the triggered register will cause to update
                       match program.mech.schedule.trigger_to_output.get(trigger_register) {
@@ -333,6 +350,7 @@ impl ProgramRunner {
                         }
                       }
                     }
+                    // Triggered for the first time
                     Entry::Vacant(mut v) => {
                       // Here is the output that the triggered register will cause to update
                       match program.mech.schedule.trigger_to_output.get(trigger_register) {
