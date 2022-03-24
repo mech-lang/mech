@@ -255,30 +255,32 @@ impl Core {
     }
   }
 
-  pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> Result<Vec<BlockId>,MechError> {
+  pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
+    let mut block_errors = vec![];
     for block in blocks {
-      let mut new_block_ids = self.load_block(block.clone())?;
+      let (mut new_block_ids, mut new_block_errors) = self.load_block(block.clone());
       block_ids.append(&mut new_block_ids);
+      block_errors.append(&mut new_block_errors);
     }
-    Ok(block_ids)
+    (block_ids,block_errors)
   }
 
   pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
     let mut block_errors = vec![];
     for block in blocks {
-      match self.load_block(Rc::new(RefCell::new(block.clone()))) {
-        Ok(mut new_block_id) => block_ids.append(&mut new_block_id),
-        Err(x) => block_errors.push(x),
-      }
+      let (mut new_block_ids, mut new_block_errors) = self.load_block(Rc::new(RefCell::new(block.clone())));
+      block_ids.append(&mut new_block_ids);
+      block_errors.append(&mut new_block_errors);
     }
     (block_ids,block_errors)
   }
 
-  pub fn load_block(&mut self, mut block_ref: BlockRef) -> Result<Vec<BlockId>,MechError> {
+  pub fn load_block(&mut self, mut block_ref: BlockRef) -> (Vec<BlockId>,Vec<MechError>) {
     let block_ref_c = block_ref.clone();
-    let result;
+    let mut new_block_ids = vec![];
+    let mut new_block_errors = vec![];
     {
       let mut block_brrw = block_ref.borrow_mut();
       let temp_db = block_brrw.global_database.clone();
@@ -301,7 +303,7 @@ impl Core {
         self.required_functions.insert(*fxn_id);
       }
       // try to satisfy the block
-      result = match block_brrw.ready() {
+      match block_brrw.ready() {
         Ok(()) => {
           
           let id = block_brrw.gen_id();
@@ -316,13 +318,13 @@ impl Core {
 
           // Try to satisfy other blocks
           let block_output = block_brrw.output.clone();
-          let mut result = vec![id];
           let mut resolved_tables1: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::MissingTable(*table_id)).collect();
           let mut resolved_tables2: Vec<MechErrorKind> = block_output.iter().map(|(table_id,_,_)| MechErrorKind::PendingTable(*table_id)).collect();
           resolved_tables1.append(&mut resolved_tables2);
-          let mut newly_resolved_block_ids = self.resolve_errors(&resolved_tables1)?;
-          result.append(&mut newly_resolved_block_ids);
-          Ok(result)
+          new_block_ids.push(id);
+          let (mut newly_resolved_block_ids, mut new_errors) = self.resolve_errors(&resolved_tables1);
+          new_block_ids.append(&mut newly_resolved_block_ids);
+          new_block_errors.append(&mut new_errors);
         }
         Err(x) => {
           // Merge input and output
@@ -332,7 +334,8 @@ impl Core {
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
           self.unsatisfied_blocks.insert(0,block_ref_c.clone());
-          Err(MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))})
+          let error = MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
+          new_block_errors.push(error);
         },
       };
     }
@@ -344,48 +347,49 @@ impl Core {
       state == BlockState::Ready
     
     });
-    result
+    (new_block_ids,new_block_errors)
   }
   
-  pub fn resolve_errors(&mut self, resolved_errors: &Vec<MechErrorKind>) -> Result<Vec<u64>,MechError> {
+  pub fn resolve_errors(&mut self, resolved_errors: &Vec<MechErrorKind>) -> (Vec<u64>,Vec<MechError>) {
     let mut new_block_ids =  vec![];
+    let mut new_block_errors =  vec![];
     for error in resolved_errors.iter() {
       match self.errors.remove(error) {
         Some(mut ublocks) => {
           for ublock in ublocks {
-            match self.load_block(ublock) {
-              Ok(mut nbid) => {
-                new_block_ids.append(&mut nbid);
-                self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
-                  let state = {
-                      v.borrow().state.clone()
-                  };
-                  state != BlockState::Ready
-                }).collect();
-                // For each of the new blocks, check to see if any of the tables
-                // it provides are pending.
-                let mut new_block_pending_ids = vec![];
-                for id in &new_block_ids {
-                  let output = {
-                    let block_ref = self.blocks.get(&id).unwrap();
-                    let block_ref_brrw = block_ref.borrow();
-                    block_ref_brrw.output.clone()
-                  };
-                  for (table_id,_,_) in &output {
-                    let mut resolved = self.resolve_errors(&vec![MechErrorKind::PendingTable(*table_id)])?;
-                    new_block_pending_ids.append(&mut resolved);
-                  }
+            let (mut nbids,mut nberrs) = self.load_block(ublock);
+            {
+              new_block_ids.append(&mut nbids);
+              self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
+                let state = {
+                    v.borrow().state.clone()
+                };
+                state != BlockState::Ready
+              }).collect();
+              // For each of the new blocks, check to see if any of the tables
+              // it provides are pending.
+              let mut new_block_pending_ids = vec![];
+              for id in &new_block_ids {
+                let output = {
+                  let block_ref = self.blocks.get(&id).unwrap();
+                  let block_ref_brrw = block_ref.borrow();
+                  block_ref_brrw.output.clone()
+                };
+                for (table_id,_,_) in &output {
+                  let (mut resolved, mut errs) = self.resolve_errors(&vec![MechErrorKind::PendingTable(*table_id)]);
+                  new_block_pending_ids.append(&mut resolved);
+                  new_block_errors.append(&mut errs)
                 }
-                new_block_ids.append(&mut new_block_pending_ids);
-              },
-              err => {return err;}
+              }
+              new_block_ids.append(&mut new_block_pending_ids);
             }
+            new_block_errors.append(&mut nberrs)
           }
         }
         None => (),
       }
     }
-    Ok(new_block_ids)
+    (new_block_ids,new_block_errors)
   }
 
   pub fn get_output_by_block_id(&self, block_id: BlockId) -> Result<HashSet<(TableId,TableIndex,TableIndex)>,MechError> {
@@ -440,3 +444,4 @@ impl fmt::Debug for Core {
     Ok(())
   }
 }
+

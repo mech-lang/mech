@@ -165,7 +165,7 @@ impl Table {
         match self.col_map.get_index(&alias) {
           Ok(ix) => Ok(self.data[ix as usize].clone()),
           Err(x) => {
-            Err(MechError{id: 7002, kind: MechErrorKind::None})
+            Err(MechError{id: 7002, kind: MechErrorKind::GenericError(format!("{:?}", x))})
           },
         }
       }
@@ -646,7 +646,7 @@ impl AliasMap {
   pub fn get_index(&self, alias: &Alias) -> std::result::Result<TableIx,MechError> {
     match self.alias_to_ix.get(alias) {
       Some(ix) => Ok(*ix),
-      None => Err(MechError{id: 7027, kind: MechErrorKind::None}),
+      None => Err(MechError{id: 7027, kind: MechErrorKind::GenericError(format!("{:?}", humanize(alias)))}),
     }
   }
 
