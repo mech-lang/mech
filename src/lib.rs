@@ -9,6 +9,7 @@
 extern crate core;
 extern crate libloading;
 extern crate reqwest;
+extern crate indexmap;
 
 #[macro_use]
 extern crate serde_derive;
