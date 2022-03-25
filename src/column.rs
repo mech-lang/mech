@@ -266,6 +266,7 @@ mech_type_conversion_raw!(U32,u32);
 mech_type_conversion_raw!(U64,u32);
 mech_type_conversion_raw!(U64,u64);
 mech_type_conversion_raw!(U64,i32);
+mech_type_conversion_raw!(U64,f64);
 mech_type_conversion_raw!(U128,u32);
 mech_type_conversion_raw!(U128,u128);
 mech_type_conversion_raw!(I8,i8);
@@ -278,7 +279,6 @@ mech_type_conversion_raw!(F32,i32);
 mech_type_conversion_raw!(F32,f32);
 mech_type_conversion_raw!(F32,f64);
 mech_type_conversion_raw!(F32,u64);
-mech_type_conversion_raw!(U64,f64);
 mech_type_conversion_raw!(F32,usize);
 
 mech_value_conversion!(U8,U8);

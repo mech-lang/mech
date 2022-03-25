@@ -116,8 +116,7 @@ pub fn hash_str(input: &str) -> u64 {
 }
 
 pub fn humanize(hash: &u64) -> String {
-  use std::mem::transmute;
-  let bytes: [u8; 8] = unsafe { transmute(hash.to_be()) };
+  let bytes: [u8; 8] = hash.to_be_bytes();
   let mut string = "".to_string();
   let mut ix = 0;
   for byte in bytes.iter() {
