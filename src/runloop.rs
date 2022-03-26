@@ -126,7 +126,7 @@ pub struct ProgramRunner {
 
 impl ProgramRunner {
 
-  pub fn new(name:&str, capacity: usize) -> ProgramRunner {
+  pub fn new(name:&str) -> ProgramRunner {
     // Start a persister
     /*
     let persist_name = format!("{}.mdb", name);
@@ -281,8 +281,6 @@ impl ProgramRunner {
                   for register in machine_triggers {
                     program.trigger_machine(&register);
                   }
-
-
 
                   // We have a triggered register, and we need to get all of the
                   // blocks that it potentially updated. We already have that list. If this register
