@@ -281,7 +281,7 @@ async fn main() -> Result<(), MechError> {
     };
 
     println!("{}", "[Running]".bright_green());
-    let runner = ProgramRunner::new("Mech Test", 1000);
+    let runner = ProgramRunner::new("Mech Test");
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
@@ -426,7 +426,7 @@ async fn main() -> Result<(), MechError> {
 
     println!("{}", "[Running]".bright_green());
 
-    let runner = ProgramRunner::new("Mech Runner", 1000);
+    let runner = ProgramRunner::new("Mech Runner");
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
@@ -673,7 +673,7 @@ clear   - reset the current core
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
     None => {
-      let runner = ProgramRunner::new("Mech REPL", 1000);
+      let runner = ProgramRunner::new("Mech REPL");
       runner.run()?
     }
   };

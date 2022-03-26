@@ -3,10 +3,10 @@
 
 // ## Prelude
 
-extern crate mech_core;
-extern crate mech_syntax;
-extern crate mech_program;
-extern crate mech_utilities;
+pub extern crate mech_core as core;
+pub extern crate mech_syntax as syntax;
+pub extern crate mech_program as program;
+pub extern crate mech_utilities as utilities;
 
 mod repl;
 
@@ -23,7 +23,6 @@ extern crate bincode;
 use std::io::{Write, BufReader, BufWriter};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 
-extern crate core;
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
