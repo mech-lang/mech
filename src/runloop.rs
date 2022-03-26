@@ -523,11 +523,16 @@ impl ProgramRunner {
             });
           }
           (Ok(RunLoopMessage::String((string,color))), _) => {
-            let r: u8 = (color >> 16) as u8;
-            let g: u8 = (color >> 8) as u8;
-            let b: u8 = color as u8;
-            let colored_string = format!("{}", string.truecolor(r,g,b));
-            client_outgoing.send(ClientMessage::String(colored_string));
+            let out_string = match color {
+              Some(color) => {
+                let r: u8 = (color >> 16) as u8;
+                let g: u8 = (color >> 8) as u8;
+                let b: u8 = color as u8;
+                format!("{}", string.truecolor(r,g,b))
+              },
+              None => string,
+            };
+            client_outgoing.send(ClientMessage::String(out_string));
           } 
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
