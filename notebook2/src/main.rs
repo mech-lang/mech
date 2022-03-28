@@ -6,17 +6,27 @@ extern crate mech;
 use mech::program::*;
 use mech::utilities::*;
 use mech::core::*;
+use std::thread::JoinHandle;
 
 struct MechApp {
   mech_client: RunLoop,
   ticks: u64,
+  maestro_thread: Option<JoinHandle<()>>,
 }
 
 impl Default for MechApp {
     fn default() -> Self {
-      let runner = ProgramRunner::new("Mech Runner");
+      let runner = ProgramRunner::new("Mech Run");
       let mech_client = runner.run().unwrap();
-      mech_client.send(RunLoopMessage::Code(MechCode::String(r#"#time/timer += [period: 16.667<ms>]"#.to_string())));
+      let mcc = mech_client.outgoing.clone();
+
+      let maestro_thread = match mech_client.socket_address {
+        Some(ref mech_socket_address) => {
+          Some(mech::start_maestro(mech_socket_address.to_string(), "127.0.0.1:0".to_string(), "127.0.0.1:3235".to_string(), "127.0.0.1:3235".to_string(), mcc).unwrap())
+        }
+        None => None,
+      };
+      mech_client.send(RunLoopMessage::Code(MechCode::String(r#"#x = #z + 1"#.to_string())));
       let thread_receiver = mech_client.incoming.clone();
       // Empty recv queue
       loop {
@@ -28,19 +38,20 @@ impl Default for MechApp {
       Self {
         ticks: 0,
         mech_client,
+        maestro_thread,
       }
     }
   }
 
 impl epi::App for MechApp {
 
-   fn name(&self) -> &str {
-       "Mech Notebook"
-   }
+  fn name(&self) -> &str {
+    "Mech Notebook"
+  }
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-    let Self { mech_client, ticks } = self;
-    mech_client.send(RunLoopMessage::GetValue((hash_str("time/timer"),TableIndex::Index(1),TableIndex::Index(2))));
+    let Self { mech_client, ticks, .. } = self;
+    mech_client.send(RunLoopMessage::GetValue((hash_str("x"),TableIndex::Index(1),TableIndex::Index(1))));
     let thread_receiver = mech_client.incoming.clone();
     let mut values = vec![];
     let mut log = "".to_string();
@@ -97,7 +108,7 @@ impl epi::App for MechApp {
         }
         ui.painter().extend(shapes);
       });
-      //ui.heading(format!("{:?}", ticks));
+      ui.heading(format!("{:?}", ticks));
     });
   }
 }
