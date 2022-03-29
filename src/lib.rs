@@ -67,6 +67,7 @@ pub enum RunLoopMessage {
   Resume,
   Clear,
   PrintDebug,
+  //Table(Table),
   String((String, Option<u32>)),
   Exit(i32),
   PrintCore(Option<u64>),
