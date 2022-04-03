@@ -296,61 +296,6 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        /* (Ok(ClientMessage::Table(table))) => {
-          match table {
-            Some(test_results) => {
-              println!("{} Running {} tests...\n", formatted_name, test_results.rows);
-              let mut failed_tests = vec![];
-              for i in 1..=test_results.rows as usize {
-                tests_count += 1;
-                
-                /*let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
-                  Some((string,_)) => {
-                    string.to_string()
-                  }
-                  _ => "".to_string()
-                };*/
-      
-                //let test_result = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
-                /*let test_result_string = match test_result.as_bool() {
-                  Some(false) => {
-                    passed_all_tests = false;
-                    tests_failed += 1;
-                    failed_tests.push(test_name.clone());
-                    format!("{}", "failed".red())
-      
-                  },
-                  Some(true) => {
-                    tests_passed += 1;
-                    format!("{}", "ok".green())
-                  }
-                  x => {
-                    passed_all_tests = false;
-                    tests_failed += 1;
-                    failed_tests.push(test_name.clone());
-                    format!("{}", "failed".red())
-                  },
-                };
-                println!("\t{0: <30} {1: <5}", test_name, test_result_string);*/
-              }
-
-              if passed_all_tests {
-                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "ok".green(), tests_count, tests_passed, tests_failed);
-                std::process::exit(0);
-              } else {
-                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "failed".red(), tests_count, tests_passed, tests_failed);
-                println!("\nFailed tests:\n");
-                for failed_test in &failed_tests {
-                  println!("\t{}", failed_test);
-                }
-                print!("\n");
-                std::process::exit(failed_tests.len() as i32);
-              }
-            }
-            None => println!("{} Table not found", formatted_name),
-          }
-          std::process::exit(0);
-        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
