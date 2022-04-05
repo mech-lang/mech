@@ -24,9 +24,9 @@ Move the player according to its dynamic model
 
 Keep the balls within the boundary height
   ~ #time/timer.ticks
-  iy = #player.y > 500
+  iy = #player.y > 450
   iyy = #player.y < 0
-  #player.y{iy} := 500
+  #player.y{iy} := 450
   #player.y{iyy} := 0
   #player.vy{iy | iyy} := 0
 
@@ -49,7 +49,26 @@ Bounce with the South button
 ## Drawing
 
 Set up drawing elements 
-
+  #sun = [
+    shape: "text" 
+    parameters: [
+      x: 350
+      y: 100
+      text: "☀️"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+  #tree = [
+    shape: "text" 
+    parameters: [
+      x: 0
+      y: 400
+      text: "🌴"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
   #player/drawing = [
     shape: "text" 
     parameters: [
@@ -62,9 +81,29 @@ Set up drawing elements
   ]
 
 Draw a circle
+  ground = [
+    shape: "rectangle" 
+    parameters: [
+      x: 0.0   
+      y: 400.0   
+      width: 500.0
+      height: 100.0
+      fill: 0x006400
+    ]
+  ]
+  sky = [
+    shape: "rectangle" 
+    parameters: [
+      x: 0.0   
+      y: 0.0   
+      width: 500.0
+      height: 500.0
+      fill: 0x87CEEB
+    ]
+  ]
   canvas = [
     type: "canvas" 
-    contains: [|shape parameters| #player/drawing] 
+    contains: [|shape parameters| sky; ground; #sun; #tree; #player/drawing] 
     parameters: [width: 500 height: 500]
   ]
   #html/app = [
