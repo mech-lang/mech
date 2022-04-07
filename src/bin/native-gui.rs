@@ -1,4 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use eframe::{epi, egui};
 use eframe::egui::{containers::*, *};
 extern crate mech;
@@ -17,29 +18,31 @@ struct MechApp {
   maestro_thread: Option<JoinHandle<()>>,
 }
 
-impl Default for MechApp {
-    fn default() -> Self {
-      let code = include_str!("test2.mec");
+static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
 
-      let mut mech_core = mech_core::Core::new();
-      let mut compiler = Compiler::new(); 
-      match compiler.compile_str(&code) {
-        Ok(blocks) => {
-          mech_core.load_blocks(blocks);
-        }
-        Err(x) => {
-          
-        }
+impl MechApp {
+  pub fn new(input: String) -> Self {
+    let code = LONG_STRING;
+
+    let mut mech_core = mech_core::Core::new();
+    let mut compiler = Compiler::new(); 
+    match compiler.compile_str("test2.mec") {
+      Ok(blocks) => {
+        mech_core.load_blocks(blocks);
       }
-      
-      Self {
-        ticks: 0.0,
-        //mech_client,
-        mech: mech_core,
-        maestro_thread: None,
+      Err(x) => {
+        
       }
     }
+    
+    Self {
+      ticks: 0.0,
+      //mech_client,
+      mech: mech_core,
+      maestro_thread: None,
+    }
   }
+}
 
 impl epi::App for MechApp {
 
@@ -121,7 +124,8 @@ impl epi::App for MechApp {
 }
 
 fn main() {
-    let app = MechApp::default();
+    let input = std::env::args().nth(1).unwrap();
+    let app = MechApp::new(input);
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(Box::new(app), native_options);
 }
