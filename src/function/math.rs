@@ -406,6 +406,32 @@ impl MechFunctionCompiler for MathNegate {
   }
 }
 
+
+#[derive(Debug)]
+pub struct ConcatVV<T,U> {
+  pub lhs: (ColumnV<T>, usize, usize),
+  pub rhs: (ColumnV<U>, usize, usize),
+  pub out: ColumnV<MechString>
+}
+impl<T,U> MechFunction for ConcatVV<T,U> 
+where T: Copy + Debug + Clone + Sync + Send,
+      U: Copy + Debug + Clone + Sync + Send,
+{
+  fn solve(&self) {
+    let (lhs,lsix,leix) = &self.lhs;
+    let (rhs,rsix,reix) = &self.rhs;
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(lhs.borrow()[*lsix..=*leix].iter())
+            .zip(rhs.borrow()[*rsix..=*reix].iter())
+            .for_each(|((out, lhs),rhs)| 
+              *out = MechString::from_string(format!("{:?}{:?}", lhs, *rhs))); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
+
 #[macro_export]
 macro_rules! math_compiler {
   ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
@@ -467,6 +493,12 @@ macro_rules! math_compiler {
                 let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
                 if let Column::F32(out) = out_column {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
+              },
+              ((_,Column::String(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::String)?;
+                if let Column::String(out) = out_column {
+                  //block.plan.push(ConcatVV{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
               x => {return Err(MechError{id: 6004, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
