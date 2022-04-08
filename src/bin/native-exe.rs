@@ -1,3 +1,5 @@
+const SOURCE_FILES: &[(&str, &[u8])] = &include!(concat!(env!("OUT_DIR"), "/mech_app_files.rs"));
+
 extern crate mech;
 use mech::core::Core;
 use mech::syntax::compiler::Compiler;
@@ -5,13 +7,19 @@ use mech::*;
 
 fn main() {
 
-  let mech_code = include_str!("test.mec");
-
   let mut compiler = Compiler::new();
-  let blocks = compiler.compile_str(&mech_code).unwrap();
+
   let runner = ProgramRunner::new("Mech Run");
   let mech_client = runner.run().unwrap();
-  mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(mech::minify_blocks(&blocks))));
+
+  for (name, data) in SOURCE_FILES {
+    println!("File {} is {} bytes", name, data.len());
+    let mech_code = String::from_utf8(data.to_vec()).unwrap();
+    let blocks = compiler.compile_str(&mech_code).unwrap();
+    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(mech::minify_blocks(&blocks))));
+
+  }
+
   let thread_receiver = mech_client.incoming.clone();
   // Some state variables to control receive loop
   let mut skip_receive = false;
@@ -25,7 +33,7 @@ fn main() {
 
       },
       Ok(ClientMessage::String(message)) => {
-
+        println!("{:?}", message);
       },
       Ok(ClientMessage::Error(error)) => {
 
