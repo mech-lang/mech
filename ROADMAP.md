@@ -7,7 +7,6 @@
 [x] Paralell operators
 [ ] GPU Processing
 [ ] Automatic Differentiation
-[ ] Automatic Interpolation
 [x] Async blocks
 [ ] Capability system
 [ ] User defined functions
@@ -17,8 +16,8 @@
 [x] JIT Block Compiler
 [ ] Persistence
 [ ] Time travel debugging
-[ ] Native executables
-[ ] REPL
+[x] Native executables
+[x] REPL
 - Machines
     [ ] JSON
     [ ] Sockets
