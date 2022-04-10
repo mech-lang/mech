@@ -38,9 +38,31 @@ impl MechApp {
     Self {
       ticks: 0.0,
       //mech_client,
-      mech: mech_core,
+      core: mech_core,
       maestro_thread: None,
     }
+  }
+
+  pub fn add_apps(&mut self) -> Result<(), JsValue> {
+    match self.core.get_table("mech/app") {
+      Ok(app_table) => {        
+        let app_table_brrw = app_table.borrow();
+        for row in 1..=app_table_brrw.rows as usize {
+          match (app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
+                 app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
+            (Ok(Value::String(root)), Ok(contents)) => {
+              let root_id = root.hash();
+
+            }
+            x => log!("4846 {:?}",x),
+          }  
+        }
+      }
+      x => {
+        log!("4847 {:?}",x);
+      },
+    }
+    Ok(())
   }
 }
 
@@ -82,7 +104,7 @@ impl epi::App for MechApp {
       Frame::none().show(ui, |ui| {
         ui.ctx().request_repaint();
         let time = ui.input().time;
-        let table = self.mech.get_table("balls").unwrap();
+        let table = self.core.get_table("balls").unwrap();
         let table_brrw = table.borrow();
         let x = table_brrw.get_column_unchecked(0);
         let y = table_brrw.get_column_unchecked(1);
@@ -115,13 +137,14 @@ impl epi::App for MechApp {
 
         ui.painter().extend(shapes);
         let change = Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(time as u64)))]));
-        self.mech.process_transaction(&vec![change]);
+        self.core.process_transaction(&vec![change]);
       });
-      let table = self.mech.get_table("balls");
+      let table = self.core.get_table("balls");
       //ui.heading(format!("{:?}", table));
     });
   }
 }
+
 
 fn main() {
     let input = std::env::args().nth(1).unwrap();
