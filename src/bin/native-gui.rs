@@ -11,22 +11,30 @@ use mech::core as mech_core;
 use mech::Compiler;
 use std::thread::JoinHandle;
 
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static! {
+  static ref CONTAINS: u64 = hash_str("contains");
+  static ref ROOT: u64 = hash_str("root");
+}
+
 struct MechApp {
   //mech_client: RunLoop,
   ticks: f32,
-  mech: mech_core::Core,
+  core: mech_core::Core,
   maestro_thread: Option<JoinHandle<()>>,
 }
 
-static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
+//static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
 
 impl MechApp {
-  pub fn new(input: String) -> Self {
-    let code = LONG_STRING;
-
+  pub fn new() -> Self {
+    //let code = LONG_STRING;
+    let code = include_str!("test2.mec");
     let mut mech_core = mech_core::Core::new();
     let mut compiler = Compiler::new(); 
-    match compiler.compile_str("test2.mec") {
+    match compiler.compile_str(code) {
       Ok(blocks) => {
         mech_core.load_blocks(blocks);
       }
@@ -42,28 +50,57 @@ impl MechApp {
       maestro_thread: None,
     }
   }
-
-  pub fn add_apps(&mut self) -> Result<(), JsValue> {
+  
+  pub fn add_apps(&mut self) -> Result<(), MechError> {
     match self.core.get_table("mech/app") {
       Ok(app_table) => {        
         let app_table_brrw = app_table.borrow();
         for row in 1..=app_table_brrw.rows as usize {
-          match (app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*ROOT)), 
-                 app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS))) {
-            (Ok(Value::String(root)), Ok(contents)) => {
-              let root_id = root.hash();
+          match app_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+            Ok(contents) => {
 
             }
-            x => log!("4846 {:?}",x),
+            x => println!("4846 {:?}",x),
           }  
         }
       }
       x => {
-        log!("4847 {:?}",x);
+        println!("4847 {:?}",x);
       },
     }
     Ok(())
   }
+
+  fn render_value(&mut self, value: Value) -> Result<(), MechError> {
+    match value {
+      /*Value::String(chars) => {
+        let contents_string = chars.to_string();
+        div.set_inner_html(&contents_string);
+      },
+      Value::F32(x) => div.set_inner_html(&format!("{:.2?}", x)),
+      Value::F64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U128(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U32(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U16(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::U8(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I128(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I64(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I32(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I16(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::I8(x) => div.set_inner_html(&format!("{:?}", x)),
+      Value::Reference(TableId::Global(table_id)) => {
+        let table = self.core.get_table_by_id(table_id).unwrap();
+        let rendered_ref = self.make_element(&table.borrow())?;
+        div.append_child(&rendered_ref)?;
+      }*/
+      x => println!("4745 {:?}",x),
+    }
+    Ok(())
+  }
+
+
+
 }
 
 impl epi::App for MechApp {
@@ -73,7 +110,7 @@ impl epi::App for MechApp {
   }
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-    let Self { ticks, mech, .. } = self;
+    let Self { ticks, core, .. } = self;
     /*mech_client.send(RunLoopMessage::GetValue((hash_str("x"),TableIndex::Index(1),TableIndex::Index(1))));
     let thread_receiver = mech_client.incoming.clone();
     let mut values = vec![];
@@ -98,10 +135,11 @@ impl epi::App for MechApp {
     }*/
 
     egui::CentralPanel::default().show(ctx, |ui| {
-
+      
       let color = Color32::from_additive_luminance(196);
 
       Frame::none().show(ui, |ui| {
+        
         ui.ctx().request_repaint();
         let time = ui.input().time;
         let table = self.core.get_table("balls").unwrap();
@@ -109,7 +147,6 @@ impl epi::App for MechApp {
         let x = table_brrw.get_column_unchecked(0);
         let y = table_brrw.get_column_unchecked(1);
         let r = table_brrw.get_column_unchecked(4);
-
 
         let desired_size = ui.available_width() * vec2(1.0, 0.35);
         let (_id, rect) = ui.allocate_space(desired_size);
@@ -139,16 +176,16 @@ impl epi::App for MechApp {
         let change = Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(time as u64)))]));
         self.core.process_transaction(&vec![change]);
       });
-      let table = self.core.get_table("balls");
-      //ui.heading(format!("{:?}", table));
+      //let table = self.core.get_table("balls");
+      ui.heading(format!("{:?}", 10));
     });
   }
 }
 
 
 fn main() {
-    let input = std::env::args().nth(1).unwrap();
-    let app = MechApp::new(input);
+    //let input = std::env::args().nth(1).unwrap();
+    let app = MechApp::new();
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(Box::new(app), native_options);
 }
