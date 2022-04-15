@@ -25,6 +25,10 @@ lazy_static! {
   static ref URL: u64 = hash_str("url");
   static ref LINK: u64 = hash_str("link");
   static ref CANVAS: u64 = hash_str("link");
+  static ref SLIDER: u64 = hash_str("slider");
+  static ref MIN: u64 = hash_str("min");
+  static ref MAX: u64 = hash_str("max");
+  static ref VALUE: u64 = hash_str("value");
 }
 
 struct MechApp {
@@ -121,10 +125,10 @@ impl MechApp {
               let raw_kind = kind.hash();
               // Render an element
               if raw_kind == *LINK { self.render_link(table,ui)?; }
+              else if raw_kind == *SLIDER { self.render_slider(table,ui)?; }
               /*else if raw_kind == *A { render_link(table,&mut container,wasm_core)?; }
               else if raw_kind == *IMG { render_img(table,&mut container,wasm_core)?; }
               else if raw_kind == *BUTTON { render_button(table,&mut container,wasm_core)?; }
-              else if raw_kind == *SLIDER { render_slider(table,&mut container,wasm_core)?; }
               */else if raw_kind == *CANVAS { self.render_canvas(table,ui)?; }
               else {
                 return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
@@ -169,7 +173,7 @@ impl MechApp {
   }
 
   pub fn render_canvas(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
+    /*for row in 1..=table.rows {
       match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
         Ok(contents) => {
           // Is there a parameters field?
@@ -199,9 +203,35 @@ impl MechApp {
         }
         x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
-    }
+    }*/
     Ok(())
   }
+
+  pub fn render_slider(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
+          (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::Reference(value_table_id))) => {
+          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+          let value_table_brrw = value_table.borrow();
+          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+            Ok(Value::F32(value)) => {
+              self.ticks = value.into();
+              let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
+              if response.changed() {
+                let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
+                self.core.process_transaction(&vec![change]);
+              }
+            }
+            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }  
 
 
 }
@@ -269,4 +299,5 @@ fn main() {
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(Box::new(app), native_options);
 }
+
 
