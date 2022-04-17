@@ -72,7 +72,6 @@ lazy_static! {
   static ref MINOR__AXIS: u64 = hash_str("minor-axis");
   static ref STARTING__ANGLE: u64 = hash_str("starting-angle");
   static ref ENDING__ANGLE: u64 = hash_str("ending-angle");
-  static ref TEXT: u64 = hash_str("text");
   static ref FONT: u64 = hash_str("font");
   static ref SIZE: u64 = hash_str("size");
   static ref FACE: u64 = hash_str("face");
@@ -90,7 +89,9 @@ lazy_static! {
   static ref RIGHT: u64 = hash_str("right");
   static ref CENTER: u64 = hash_str("center");
   static ref BEZIER: u64 = hash_str("bezier");
+  static ref TEXT: u64 = hash_str("text");
   static ref URL: u64 = hash_str("url");
+  static ref CODE: u64 = hash_str("code");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -108,6 +109,7 @@ fn load_icon(path: &Path) -> epi::IconData {
 struct MechApp {
   //mech_client: RunLoop,
   ticks: f32,
+  code: String,
   core: mech_core::Core,
   maestro_thread: Option<JoinHandle<()>>,
   shapes: Vec<epaint::Shape>,
@@ -130,9 +132,7 @@ impl MechApp {
       }
     }
     
-    let code = r#"
-timer  
-  #time/timer = [|period<s> ticks<u64>|]"#;
+    let code = r#"#time/timer = [|period<s> ticks<u64>|]"#;
 
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&code).unwrap();
@@ -142,6 +142,7 @@ timer
 
     Self {
       ticks: 0.0,
+      code: "".to_string(),
       //mech_client,
       core: mech_core,
       maestro_thread: None,
@@ -192,9 +193,7 @@ timer
       Value::I8(x) => {ui.label(&format!("{:?}", x));},
       Value::Reference(TableId::Global(table_id)) => {
         let table = self.core.get_table_by_id(table_id).unwrap();
-        ui.group(|ui| {
-          self.make_element(&table.borrow(), ui);  
-        });
+        self.make_element(&table.borrow(), ui);  
         //div.append_child(&rendered_ref)?;
       }
       x => {return Err(MechError{id: 6488, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -212,12 +211,11 @@ timer
               // Render an element
               if raw_kind == *LINK { self.render_link(table,ui)?; }
               else if raw_kind == *SLIDER { self.render_slider(table,ui)?; }
-              /*else if raw_kind == *IMG { render_img(table,&mut container,wasm_core)?; }
-              else if raw_kind == *BUTTON { render_button(table,&mut container,wasm_core)?; }
+              else if raw_kind == *CODE { self.render_code(table,ui)?; }
+              /*else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
+              else if raw_kind == *BUTTON { render_button(table,ui)?; }
               */
-              else if raw_kind == *CANVAS { 
-                self.render_canvas(table,ui)?; 
-              }
+              else if raw_kind == *CANVAS { self.render_canvas(table,ui)?; }
               else {
                 return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
               }
@@ -247,6 +245,32 @@ timer
     Ok(())
   }
 
+  pub fn render_code(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
+        Ok(Value::Reference(code_table_id)) => {
+          let code_table = self.core.get_table_by_id(*code_table_id.unwrap()).unwrap();
+          let code_table_brrw = code_table.borrow();
+          match code_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+            Ok(Value::String(code)) => {
+              self.code = code.to_string();
+              let response = container.add_sized(container.available_size(), egui::TextEdit::multiline(&mut self.code)
+                .code_editor()
+              );
+              if response.changed() {
+                let change = Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))]));
+                self.core.process_transaction(&vec![change]);
+              }
+            }
+            x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }
+
   pub fn render_link(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
     for row in 1..=table.rows {
       match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
@@ -259,6 +283,32 @@ timer
     }
     Ok(())
   }
+
+  pub fn render_slider(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
+          (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::Reference(value_table_id))) => {
+          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+          let value_table_brrw = value_table.borrow();
+          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+            Ok(Value::F32(value)) => {
+              self.ticks = value.into();
+              let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
+              if response.changed() {
+                let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
+                self.core.process_transaction(&vec![change]);
+              }
+            }
+            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }  
 
   pub fn render_canvas(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
     for row in 1..=table.rows {
@@ -325,46 +375,22 @@ timer
     Ok(shapes)
   }
 
-  pub fn render_slider(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-          (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::Reference(value_table_id))) => {
-          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
-          let value_table_brrw = value_table.borrow();
-          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
-            Ok(Value::F32(value)) => {
-              self.ticks = value.into();
-              let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
-              if response.changed() {
-                let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
-                self.core.process_transaction(&vec![change]);
-              }
-            }
-            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
-          }
-        }
-        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
-      }
-    }
-    Ok(())
-  }  
-
 }
 
 impl epi::App for MechApp {
 
   fn name(&self) -> &str {
-    "  Mech Notebook"
+    " Mech Notebook"
   }
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
+    egui::SidePanel::left("my_left_panel").resizable(false).min_width(100.0).show(ctx, |ui| {
+      ui.label("Hello World!");
+   });
     egui::CentralPanel::default().show(ctx, |ui| {
       ui.ctx().request_repaint();
-      let desired_size = ui.available_width() * vec2(1.0, 0.35);
-      let (_id, rect) = ui.allocate_space(desired_size);
+
 
       self.render_app(ui);
 
@@ -392,6 +418,7 @@ fn main() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
     let icon = load_icon(Path::new(path));
     native_options.icon_data = Some(icon);
+    native_options.min_window_size = Some(Vec2{x: 640.0, y: 480.0});
     eframe::run_native(Box::new(app), native_options);
 }
 
