@@ -385,7 +385,14 @@ impl epi::App for MechApp {
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
-    egui::SidePanel::left("my_left_panel").resizable(false).min_width(100.0).show(ctx, |ui| {
+    let mut frame = Frame::default();
+    frame.margin = egui::style::Margin::same(10.0);
+    frame.fill = Color32::from_rgb(0x23,0x22,0x2A);
+    egui::SidePanel::left("my_left_panel")
+    .resizable(false)
+    .min_width(100.0)
+    .frame(frame)
+    .show(ctx, |ui| {
       ui.label("Hello World!");
    });
     egui::CentralPanel::default().show(ctx, |ui| {
