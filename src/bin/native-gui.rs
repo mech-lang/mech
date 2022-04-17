@@ -11,6 +11,8 @@ use mech::core::*;
 use mech::core as mech_core;
 use mech::Compiler;
 use std::thread::JoinHandle;
+extern crate image;
+use std::path::Path;
 
 #[macro_use]
 extern crate lazy_static;
@@ -89,6 +91,18 @@ lazy_static! {
   static ref CENTER: u64 = hash_str("center");
   static ref BEZIER: u64 = hash_str("bezier");
   static ref URL: u64 = hash_str("url");
+}
+
+fn load_icon(path: &Path) -> epi::IconData {
+  let (icon_rgba, icon_width, icon_height) = {
+      let image = image::open(path)
+          .expect("Failed to open icon path")
+          .into_rgba8();
+      let (width, height) = image.dimensions();
+      let rgba = image.into_raw();
+      (rgba, width, height)
+  };
+  epi::IconData{rgba: icon_rgba, width: icon_width, height: icon_height}
 }
 
 struct MechApp {
@@ -290,7 +304,7 @@ timer
 
     //let to_screen = emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=500.0, 0.0..=500.0), rect);
     let mut shapes = vec![];
-    let color = Color32::from_additive_luminance(196);
+    let color = Color32::from_rgb(0xFF,0,0);
 
     match (x,y,r) {
       (Column::F32(x), Column::F32(y), Column::F32(r)) => {
@@ -342,7 +356,7 @@ timer
 impl epi::App for MechApp {
 
   fn name(&self) -> &str {
-    "Mech Notebook"
+    "  Mech Notebook"
   }
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
@@ -359,13 +373,25 @@ impl epi::App for MechApp {
       self.core.process_transaction(&vec![change]);
     });
   }
+
+  fn clear_color(&self) -> egui::Rgba {
+    egui::Rgba::from_rgb(255.0,0.0,0.0)
+  }
+
+  fn warm_up_enabled(&self) -> bool {
+    true
+  }
+
 }
 
 
 fn main() {
     //let input = std::env::args().nth(1).unwrap();
     let app = MechApp::new();
-    let native_options = eframe::NativeOptions::default();
+    let mut native_options = eframe::NativeOptions::default();
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
+    let icon = load_icon(Path::new(path));
+    native_options.icon_data = Some(icon);
     eframe::run_native(Box::new(app), native_options);
 }
 
