@@ -10,3 +10,6 @@
 [submodule "core"]
 	path = core
 	url = https://gitlab.com/mech-lang/core
+[submodule "syntax"]
+	path = syntax
+	url = https://gitlab.com/mech-lang/syntax
