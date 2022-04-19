@@ -10,15 +10,3 @@
 [submodule "core"]
 	path = core
 	url = https://gitlab.com/mech-lang/core
-[submodule "program"]
-	path = program
-	url = https://gitlab.com/mech-lang/program
-[submodule "syntax"]
-	path = syntax
-	url = https://gitlab.com/mech-lang/syntax
-[submodule "wasm"]
-	path = wasm
-	url = https://gitlab.com/mech-lang/wasm
-[submodule "utilities"]
-	path = utilities
-	url = https://gitlab.com/mech-lang/utilities
