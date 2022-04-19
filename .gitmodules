@@ -17,8 +17,8 @@
 	path = program
 	url = https://gitlab.com/mech-lang/program.git
 [submodule "utilities"]
-	path = uilities
-	url = https://gitlab.com/mech-lang/utilities.git
+	path = utilities
+	url = https://gitlab.com/mech-lang/utilities
 [submodule "wasm"]
 	path = wasm
 	url = https://gitlab.com/mech-lang/wasm.git
