@@ -24,7 +24,7 @@ mech-utilities = {path = "utilities"}
 
 clap = "2.34.0"
 colored = "2.0.0"
-nom = {path = "syntax/vendor/nom"}
+nom = "7.1.1"
 reqwest = {version = "0.11.3", features = ["blocking"]}
 bincode = "1.3.3"
 serde = "1.0.133"
@@ -70,15 +70,3 @@ LegalCopyright = "Copyright © 2022"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 tracing-wasm = "0.2"
-
-[patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'core' }
-
-[patch.'https://gitlab.com/mech-lang/syntax']
-mech-core = { path = 'syntax' }
-
-[patch.'https://gitlab.com/mech-lang/program']
-mech-core = { path = 'program' }
-
-[patch.'https://gitlab.com/mech-lang/utilities']
-mech-core = { path = 'utilities' }
