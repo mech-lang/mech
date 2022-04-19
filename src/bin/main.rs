@@ -8,18 +8,11 @@ use std::rc::Rc;
 
 fn main() -> Result<(),MechError> {
 
-let input = r#"
-controller
-  #player/controller = [left-y: 0.5]
+let input = r#"# Title
 
-sphero
-  #sphero/foo = [|id<string> speed<f32> heading<f32>|]
+Para graph
 
-sphero
-  #sphero/foo += [id: "SB-C714"]
-
-sphero controls
-  #sphero/foo.speed := #player/controller.left-y"#;
+  #test = 123"#;
 
   let input = String::from(input);
 
