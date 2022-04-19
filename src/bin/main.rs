@@ -34,7 +34,7 @@ use std::ops::*;
 fn main() -> std::result::Result<(),MechError> {
  
   let start_ns0 = time::precise_time_ns();
-  let n = 1e7 as usize;
+  let n = 1e6 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
 
@@ -230,20 +230,20 @@ fn main() -> std::result::Result<(),MechError> {
 
   core.schedule_blocks();
 
-  /*let mut x: Vec<f32> = vec![10.0;n];
+  let mut x: Vec<f32> = vec![10.0;n];
   let mut y: Vec<f32> = vec![10.0;n];
   let mut vx: Vec<f32> = vec![1.0;n];
   let mut vy: Vec<f32> = vec![1.0;n];
-  let gravity: f32 = 1.0;*/
+  let gravity: f32 = 1.0;
 
   //println!("{:?}", core);
   let mut total_time = VecDeque::new();  
-  for i in 0..5000 {
+  for i in 0..50000 {
     let txn = vec![Change::Set((hash_str("time/timer"), 
       vec![(TableIndex::Index(1), TableIndex::Index(2), Value::f32(i as f32))]))];
     
     let start_ns = time::precise_time_ns();
-    /*for i in 0..n {
+    for i in 0..n {
       x[i] = x[i] + vx[i];
       y[i] = y[i] + vy[i];
       vy[i] = vy[i] + gravity;
@@ -263,8 +263,8 @@ fn main() -> std::result::Result<(),MechError> {
         y[i] = 500.0;
         vy[i] = vy[i] * -0.8;
       }
-    }*/
-    core.process_transaction(&txn)?;
+    }
+    //core.process_transaction(&txn)?;
     let end_ns = time::precise_time_ns();
 
     let cycle_duration = (end_ns - start_ns) as f32;
