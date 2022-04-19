@@ -1218,7 +1218,7 @@ fn l5_infix(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn l6(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, l6) = alt((empty_table, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -1325,7 +1325,7 @@ fn string(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
 }
 
 fn expression(input: Vec<&str>) -> IResult<Vec<&str>, Node> {
-  let (input, expression) = alt((string, inline_table, math_expression, empty_table, anonymous_table))(input)?;
+  let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 

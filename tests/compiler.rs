@@ -43,7 +43,8 @@ macro_rules! test_mech {
       let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        core.load_block(Rc::new(RefCell::new(block)))?;
+        let (_,errors) = core.load_block(Rc::new(RefCell::new(block)));
+        assert!(errors.len() == 0);
       }
 
       let test: Value = $test;
