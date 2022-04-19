@@ -636,7 +636,7 @@ fn identifier(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Identifier{children: id}))
 }
 
-/*fn boolean_literal(input: ParseString) -> IResult<ParseString, Node> {
+fn boolean_literal(input: ParseString) -> IResult<ParseString, Node> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
   Ok((input, Node::BooleanLiteral{children: vec![boolean]}))
 }
@@ -656,7 +656,7 @@ fn false_literal(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = ascii_tag("s")(input)?;
   let (input, _) = ascii_tag("e")(input)?;
   Ok((input, Node::False))
-}*/
+}
 
 fn carriage_newline(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("\r\n")(input)?;
@@ -763,11 +763,11 @@ fn binary_literal(input: ParseString) -> IResult<ParseString, Node> {
   let chars: Vec<char> = strs.iter().flat_map(|c| c.chars()).collect();
   Ok((input, Node::BinaryLiteral{chars}))*/
   Ok((input, Node::OctalLiteral{chars: vec![]}))
-
-}
+}*/
 
 fn value(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, value) = alt((empty, boolean_literal, number_literal, quantity, number_literal, string))(input)?;
+  let (input, value) = alt((empty, string))(input)?;
+  //let (input, value) = alt((empty, boolean_literal, number_literal, quantity, number_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
 
@@ -841,7 +841,7 @@ fn kind_annotation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, kind_id) = separated_list1(tag(","),alt((identifier,underscore)))(input)?;
   let (input, _) = right_angle(input)?;
   Ok((input, Node::KindAnnotation{children: kind_id}))
-}*/
+}
 
 // ### Tables
 
@@ -866,7 +866,7 @@ fn table(input: ParseString) -> IResult<ParseString, Node> {
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
   Ok((input, Node::Binding{children}))
-}
+}*/
 
 fn function_binding(input: ParseString) -> IResult<ParseString, Node> {
   let (input, binding_id) = identifier(input)?;
@@ -877,7 +877,7 @@ fn function_binding(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 
-fn table_column(input: ParseString) -> IResult<ParseString, Node> {
+/*fn table_column(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, item) = alt((expression, value, data, ))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
@@ -889,7 +889,7 @@ fn table_row(input: ParseString) -> IResult<ParseString, Node> {
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = tuple((opt(semicolon), opt(newline)))(input)?;
   Ok((input, Node::TableRow{children: columns}))
-}
+}*/
 
 fn attribute(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
@@ -908,7 +908,7 @@ fn table_header(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::TableHeader{children: attributes}))
 }
 
-fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
+/*fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = many0(space)(input)?;
@@ -923,7 +923,7 @@ fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
   };
   table.append(&mut table_rows);
   Ok((input, Node::AnonymousTable{children: table}))
-}
+}*/
 
 fn empty_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
@@ -940,7 +940,7 @@ fn empty_table(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::EmptyTable{children: table}))
 }
 
-fn anonymous_matrix(input: ParseString) -> IResult<ParseString, Node> {
+/*fn anonymous_matrix(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_angle(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1013,14 +1013,14 @@ fn join_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::JoinData{children: vec![table, expression]}))
-}
+}*/
 
 fn variable_define(input: ParseString) -> IResult<ParseString, Node> {
   let (input, variable) = identifier(input)?;
   let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
-}*/
+}
 
 fn table_define(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
@@ -1086,7 +1086,7 @@ fn until_data(input: ParseString) -> IResult<ParseString, Node> {
 }*/
 
 fn statement(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, statement) = table_define(input)?;
+  let (input, statement) = alt((table_define, variable_define))(input)?;
   //let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
@@ -1094,7 +1094,7 @@ fn statement(input: ParseString) -> IResult<ParseString, Node> {
 // ### Expressions
 
 // #### Math Expressions
-/*
+
 fn parenthetical_expression(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_parenthesis(input)?;
   let (input, l0) = l0(input)?;
@@ -1250,7 +1250,8 @@ fn l5_infix(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn l6(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, string))(input)?;
+  //let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -1305,10 +1306,6 @@ fn next_state_operator(input: ParseString) -> IResult<ParseString, Node> {
 
   #timer? x -> x + 1
 
-
-
-
-
 fn state_transition(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many1(space)(input)?;
 
@@ -1342,7 +1339,7 @@ fn xor(input: ParseString) -> IResult<ParseString, Node> {
 
 // #### Other Expressions
 
-fn string_interpolation(input: ParseString) -> IResult<ParseString, Node> {
+/*fn string_interpolation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("{{")(input)?;
   let (input, expression) = expression(input)?;
   let (input, _) = tag("}}")(input)?;
@@ -1357,7 +1354,7 @@ fn string(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn expression(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, expression) = string(input)?;
+  let (input, expression) = alt((math_expression, string, empty_table))(input)?;
   //let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
