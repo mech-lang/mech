@@ -960,7 +960,7 @@ fn inline_table(input: ParseString) -> IResult<ParseString, Node> {
 
 // ### Statements
 
-/*fn comment_sigil(input: ParseString) -> IResult<ParseString, Node> {
+fn comment_sigil(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("--")(input)?;
   Ok((input, Node::Null))
 }
@@ -1007,7 +1007,7 @@ fn join_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::JoinData{children: vec![table, expression]}))
-}*/
+}
 
 fn variable_define(input: ParseString) -> IResult<ParseString, Node> {
   let (input, variable) = identifier(input)?;
@@ -1028,7 +1028,7 @@ fn table_define(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::TableDefine{children}))
 }
 
-/*fn table_select(input: ParseString) -> IResult<ParseString, Node> {
+fn table_select(input: ParseString) -> IResult<ParseString, Node> {
   let (input, expression) = expression(input)?;
   Ok((input, Node::TableSelect{children: vec![expression]}))
 }
@@ -1077,11 +1077,10 @@ fn until_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = space(input)?;
   let (input, watch) = alt((variable_define, expression, data))(input)?;
   Ok((input, Node::Until{children: vec![watch]}))
-}*/
+}
 
 fn statement(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, statement) = alt((table_define, variable_define))(input)?;
-  //let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
