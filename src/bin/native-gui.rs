@@ -26,6 +26,7 @@ lazy_static! {
   static ref BUTTON: u64 = hash_str("button");
   static ref SLIDER: u64 = hash_str("slider");
   static ref MIN: u64 = hash_str("min");
+  static ref MIN__WIDTH: u64 = hash_str("min-width");
   static ref MAX: u64 = hash_str("max");
   static ref VALUE: u64 = hash_str("value");
   static ref CANVAS: u64 = hash_str("canvas");
@@ -92,6 +93,8 @@ lazy_static! {
   static ref TEXT: u64 = hash_str("text");
   static ref URL: u64 = hash_str("url");
   static ref CODE: u64 = hash_str("code");
+  static ref PANEL__LEFT: u64 = hash_str("panel-left");
+  static ref PANEL__CENTER: u64 = hash_str("panel-center");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -212,6 +215,8 @@ impl MechApp {
               if raw_kind == *LINK { self.render_link(table,ui)?; }
               else if raw_kind == *SLIDER { self.render_slider(table,ui)?; }
               else if raw_kind == *CODE { self.render_code(table,ui)?; }
+              else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,ui)?; }
+              else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,ui)?; }
               /*else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
               else if raw_kind == *BUTTON { render_button(table,ui)?; }
               */
@@ -256,6 +261,7 @@ impl MechApp {
               self.code = code.to_string();
               let response = container.add_sized(container.available_size(), egui::TextEdit::multiline(&mut self.code)
                 .code_editor()
+                .frame(false)
               );
               if response.changed() {
                 let change = Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))]));
@@ -264,6 +270,83 @@ impl MechApp {
             }
             x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
+        }
+        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_left(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+        (contained,parameters_table) => {
+          let mut frame = Frame::default();
+          let mut min_width = 100.0;
+          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+              Ok(parameters_table) => {
+                let parameters_table_brrow = parameters_table.borrow();
+                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                  let color: u32 = value.into();
+                  let r = (color >> 16) as u8;
+                  let g = (color >> 8) as u8;
+                  let b = color as u8;
+                  frame.fill = Color32::from_rgb(r,g,b);
+                }
+                if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+                  min_width = value.into();
+                }
+              }
+              _ => (),
+            }
+          }
+          frame.margin = egui::style::Margin::same(10.0);
+          egui::SidePanel::left(humanize(&table.id))
+            .resizable(false)
+            .min_width(min_width)
+            .frame(frame)
+          .show_inside(container, |ui| {
+            if let Ok(contained) = contained {
+              self.render_value(contained, ui);
+            }
+          });
+        }
+      }
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_center(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+        (contained,parameters_table) => {
+          let mut frame = Frame::default();
+          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+              Ok(parameters_table) => {
+                let parameters_table_brrow = parameters_table.borrow();
+                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                  let color: u32 = value.into();
+                  let r = (color >> 16) as u8;
+                  let g = (color >> 8) as u8;
+                  let b = color as u8;
+                  frame.fill = Color32::from_rgb(r,g,b);
+                }
+              }
+              _ => (),
+            }
+          }
+          frame.margin = egui::style::Margin::same(10.0);
+          egui::CentralPanel::default()
+            .frame(frame)
+          .show_inside(container, |ui| {
+            if let Ok(contained) = contained {
+              self.render_value(contained, ui);
+            }
+          });
         }
         x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
@@ -386,21 +469,13 @@ impl epi::App for MechApp {
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
     let mut frame = Frame::default();
-    frame.margin = egui::style::Margin::same(10.0);
+    frame.margin = egui::style::Margin::same(0.0);
     frame.fill = Color32::from_rgb(0x23,0x22,0x2A);
-    egui::SidePanel::left("my_left_panel")
-    .resizable(false)
-    .min_width(100.0)
-    .frame(frame)
+    egui::CentralPanel::default()
+      .frame(frame)
     .show(ctx, |ui| {
-      ui.label("Hello World!");
-   });
-    egui::CentralPanel::default().show(ctx, |ui| {
       ui.ctx().request_repaint();
-
-
       self.render_app(ui);
-
       let time = ui.input().time;
       let change = Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(time as u64)))]));
       self.core.process_transaction(&vec![change]);
@@ -408,7 +483,7 @@ impl epi::App for MechApp {
   }
 
   fn clear_color(&self) -> egui::Rgba {
-    egui::Rgba::from_rgb(255.0,0.0,0.0)
+    egui::Rgba::from_rgb(35.0,34.0,42.0)
   }
 
   fn warm_up_enabled(&self) -> bool {
