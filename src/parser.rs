@@ -599,8 +599,7 @@ fn text(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn paragraph_rest(input: ParseString) -> IResult<ParseString, Node> {
-  println!("REST {:?}", input);
-  let (input, word) = many1(word)(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
