@@ -375,23 +375,17 @@ impl<'a> nom::InputLength for ParseString<'a> {
 pub fn parse(text: &str) -> Result<Node,MechError> {
 
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-
-  let foo_graphemes = ParseString{data: graphemes};
-
-  let parse_tree = parse_mech(foo_graphemes);
+  let parse_tree = parse_mech(ParseString{data: graphemes});
   match parse_tree {
     Ok((rest, tree)) => {
       let unparsed = rest.data.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        println!("{:?}", tree);
-        println!("{:?}", unparsed);
         Err(MechError{id: 3302, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
-      println!("{:?}", q);
       Err(MechError{id: 3303, kind: MechErrorKind::None})
     }
   }
@@ -400,22 +394,20 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
 pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
 
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-
-  /*let parse_tree = parse_mech_fragment(graphemes);
+  let parse_tree = parse_mech_fragment(ParseString{data: graphemes});
   match parse_tree {
     Ok((rest, tree)) => {
       let unparsed = rest.data.iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
-        Err(MechError{id: 3304, kind: MechErrorKind::None})
+        Err(MechError{id: 3302, kind: MechErrorKind::None})
       } else { 
         Ok(tree)
       }
     },
     Err(q) => {
-      Err(MechError{id: 3305, kind: MechErrorKind::None})
+      Err(MechError{id: 3303, kind: MechErrorKind::None})
     }
-  }*/
-  Err(MechError{id: 3305, kind: MechErrorKind::None})
+  }
 }
 
 pub fn tag(tag: &str) -> impl Fn(ParseString) -> IResult<ParseString, ParseString>  {
@@ -495,32 +487,32 @@ leaf!{ampersand, "&", Token::Ampersand}
 leaf!{semicolon, ";", Token::Semicolon}
 leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
-/*
+
 // ## The Basics
+
 fn emoji_grapheme(mut input: ParseString) -> IResult<ParseString, String> {
-  if input.len() >= 1 {
-    let rest = input.split_off(1);
-    let chars = input[0].chars();
-    match chars.peekable().peek() {
+  if input.data.len() >= 1 {
+    let rest = input.data.split_off(1);
+    let mut adata = input.data[0].chars();
+    match adata.next() {
       Some(c) => {
-        if !c.is_ascii() && !c.is_betic() {
-          Ok((rest, input[0]))
+        if !c.is_ascii() && !c.is_alphabetic() {
+          return Ok((ParseString{data: rest}, input.data[0].to_string()))
         } else {
-          Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+          return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
         }
       }
-      None => Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+      None => {return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)));}
     }
-  } else {
-    Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
   }
+  Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
 }
 
 fn emoji(input: ParseString) -> IResult<ParseString, Node> {
   let (input, matching) = many1(emoji_grapheme)(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Emoji{children: chars}))
-}*/
+}
 
 fn word(input: ParseString) -> IResult<ParseString, Node> {
   let (input, matching) = many1(alpha)(input)?;
@@ -582,11 +574,11 @@ fn oct_digit(input: ParseString) -> IResult<ParseString, String> {
 
 fn number(input: ParseString) -> IResult<ParseString, Node> {
   let (input, matching) = digit1(input)?;
-  //let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, Node::Number{children: vec![]}))
+  let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, Node::Number{children: chars}))
 }
 
-/*fn punctuation(input: ParseString) -> IResult<ParseString, Node> {
+fn punctuation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
@@ -599,11 +591,10 @@ fn symbol(input: ParseString) -> IResult<ParseString, Node> {
 fn paragraph_symbol(input: ParseString) -> IResult<ParseString, Node> {
   let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, underscore))(input)?;
   Ok((input, Node::Symbol{children: vec![symbol]}))
-}*/
+}
 
 fn text(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, word) = many1(alt((word, space)))(input)?;
-  //let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
@@ -614,17 +605,13 @@ fn paragraph_rest(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn paragraph_starter(input: ParseString) -> IResult<ParseString, Node> {
-  println!("STARTER {:?}", input);
-  let (input, word) = many1(word)(input)?;
-  println!("{:?} {:?}", input, word);
-  //let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, left_parenthesis, right_parenthesis, emoji)))(input)?;
+  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, left_parenthesis, right_parenthesis, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
 fn identifier(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(space)(input)?;
-  let (input, (word, mut rest)) = tuple((alt((word,word)), many0(alt((word, word)))))(input)?;
-  //let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
+  let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
   Ok((input, Node::Identifier{children: id}))
