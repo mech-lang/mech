@@ -541,23 +541,17 @@ fn alpha(mut input: ParseString) -> IResult<ParseString, String> {
   return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
 }
 
-/*fn digit(mut input: ParseString) -> IResult<ParseString, String> {
+fn digit(mut input: ParseString) -> IResult<ParseString, String> {
   if input.data.len() >= 1 {
-    let rest = input.data[0].split_at(1);
-    let chars = input.data[0].chars();
-    match chars.peekable().peek() {
-      Some(c) => {
-        if c.is_numeric() {
-          Ok((rest, input.data[0].to_string()))
-        } else {
-          Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
-        }
-      }
-      None => Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
+    let rest = input.data.split_off(1);
+    let mut adata = input.data[0].chars();
+    if adata.next().unwrap().is_numeric() {
+      return Ok((ParseString{data: rest}, input.data[0].to_string()))
+    } else {
+      return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
     }
-  } else {
-    Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
   }
+  return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Tag)))
 }
 
 fn digit1(input: ParseString) -> IResult<ParseString, Vec<String>> {
@@ -570,7 +564,7 @@ fn digit0(input: ParseString) -> IResult<ParseString, Vec<String>> {
   Ok(result)
 }
 
-fn bin_digit(input: ParseString) -> IResult<ParseString, String> {
+/*fn bin_digit(input: ParseString) -> IResult<ParseString, String> {
   let result = alt((ascii_tag("1"),ascii_tag("0")))(input)?;
   Ok(result)
 }
@@ -691,10 +685,11 @@ fn quantity(input: ParseString) -> IResult<ParseString, Node> {
   };
   quantity.push(unit);
   Ok((input, Node::Quantity{children: quantity}))
-}
+}*/
 
 fn number_literal(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
+  let (input, number_variant) = float_literal(input)?;
+  //let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
   let (input, kind_id) = opt(kind_annotation)(input)?;
   let mut children = vec![number_variant];
   match kind_id {
@@ -704,15 +699,15 @@ fn number_literal(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::NumberLiteral{children}))
 }
 
-fn rational_number(input: ParseString) -> IResult<ParseString, Node> {
+/*fn rational_number(input: ParseString) -> IResult<ParseString, Node> {
   let (input, numerator) = alt((quantity, number_literal))(input)?;
   let (input, _) = tag("/")(input)?;
   let (input, denominator) = alt((quantity, number_literal))(input)?;
   Ok((input, Node::Null))
-}
+}*/
 
 fn float_literal(input: ParseString) -> IResult<ParseString, Node> {
-  /*let (input, p1) = opt(ascii_tag("."))(input)?;
+  let (input, p1) = opt(ascii_tag("."))(input)?;
   let (input, p2) = digit1(input)?;
   let (input, p3) = opt(ascii_tag("."))(input)?;
   let (input, p4) = digit0(input)?;
@@ -720,17 +715,17 @@ fn float_literal(input: ParseString) -> IResult<ParseString, Node> {
   if let Some(_) = p1 {
     whole.push('.');
   }
-  let mut digits = p2.chars().flat_map(|c| c).collect();
+  let mut digits = p2.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
   whole.append(&mut digits);
   if let Some(_) = p3 {
     whole.push('.');
   }
-  let mut digits = p4.chars().flat_map(|c| c).collect();
-  whole.append(&mut digits);*/
-  Ok((input, Node::FloatLiteral{chars: vec![]}))
+  let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
+  whole.append(&mut digits);
+  Ok((input, Node::FloatLiteral{chars: whole}))
 }
 
-fn decimal_literal(input: ParseString) -> IResult<ParseString, Node> {
+/*fn decimal_literal(input: ParseString) -> IResult<ParseString, Node> {
   /*let (input, _) = ascii_tag("0d")(input)?;
   let (input, chars) = digit1(input)?;
   Ok((input, Node::DecimalLiteral{chars: chars.data.iter().flat_map(|c| c.chars()).collect()}))*/
@@ -766,7 +761,7 @@ fn binary_literal(input: ParseString) -> IResult<ParseString, Node> {
 }*/
 
 fn value(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, value) = alt((empty, string))(input)?;
+  let (input, value) = alt((empty, boolean_literal, number_literal, string))(input)?;
   //let (input, value) = alt((empty, boolean_literal, number_literal, quantity, number_literal, string))(input)?;
   Ok((input, Node::Value{children: vec![value]}))
 }
@@ -851,7 +846,7 @@ fn table(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Table{children: vec![table_identifier]}))
 }
 
-/*fn binding(input: ParseString) -> IResult<ParseString, Node> {
+fn binding(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
@@ -866,7 +861,7 @@ fn table(input: ParseString) -> IResult<ParseString, Node> {
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
   Ok((input, Node::Binding{children}))
-}*/
+}
 
 fn function_binding(input: ParseString) -> IResult<ParseString, Node> {
   let (input, binding_id) = identifier(input)?;
@@ -876,8 +871,7 @@ fn function_binding(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::FunctionBinding{children: vec![binding_id, bound]}))
 }
 
-
-/*fn table_column(input: ParseString) -> IResult<ParseString, Node> {
+fn table_column(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, item) = alt((expression, value, data, ))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
@@ -889,7 +883,7 @@ fn table_row(input: ParseString) -> IResult<ParseString, Node> {
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = tuple((opt(semicolon), opt(newline)))(input)?;
   Ok((input, Node::TableRow{children: columns}))
-}*/
+}
 
 fn attribute(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
@@ -908,7 +902,7 @@ fn table_header(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::TableHeader{children: attributes}))
 }
 
-/*fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
+fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = many0(space)(input)?;
@@ -923,7 +917,7 @@ fn table_header(input: ParseString) -> IResult<ParseString, Node> {
   };
   table.append(&mut table_rows);
   Ok((input, Node::AnonymousTable{children: table}))
-}*/
+}
 
 fn empty_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
@@ -940,7 +934,7 @@ fn empty_table(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::EmptyTable{children: table}))
 }
 
-/*fn anonymous_matrix(input: ParseString) -> IResult<ParseString, Node> {
+fn anonymous_matrix(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_angle(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = many0(space)(input)?;
@@ -966,7 +960,7 @@ fn inline_table(input: ParseString) -> IResult<ParseString, Node> {
 
 // ### Statements
 
-fn comment_sigil(input: ParseString) -> IResult<ParseString, Node> {
+/*fn comment_sigil(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("--")(input)?;
   Ok((input, Node::Null))
 }
@@ -1026,8 +1020,8 @@ fn table_define(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
   let (input, table) = table(input)?;
   children.push(table);
-  //let (input, kind_id) = opt(kind_annotation)(input)?;
-  //if let Some(kind_id) = kind_id { children.push(kind_id); }
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  if let Some(kind_id) = kind_id { children.push(kind_id); }
   let (input, _) = tuple((many1(space), equal, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   children.push(expression);
@@ -1250,8 +1244,7 @@ fn l5_infix(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn l6(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, l6) = alt((empty_table, string))(input)?;
-  //let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
@@ -1354,8 +1347,7 @@ fn string(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn expression(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, expression) = alt((math_expression, string, empty_table))(input)?;
-  //let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
+  let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 
@@ -1548,7 +1540,6 @@ pub fn parse_mech_fragment(input: ParseString) -> IResult<ParseString, Node> {
 }*/
 
 fn parse_mech(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, mech) = program(input)?;
-  //let (input, mech) = alt((program,statement))(input)?;
+  let (input, mech) = alt((program,statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
