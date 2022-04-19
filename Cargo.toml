@@ -25,7 +25,7 @@ mech-core = {git = "https://gitlab.com/mech-lang/core"}
 
 hashbrown = "0.11.2"
 lazy_static = "1.4.0"
-nom = {path = "vendor/nom"}
+nom = "7.1.1"
 nom-unicode = "0.3.0"
 unicode-segmentation = "1.9.0"
 rlibc = { version = "=1.0", optional = true }
