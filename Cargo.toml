@@ -17,17 +17,10 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-<<<<<<< HEAD
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
-=======
 mech-core = {path = "core"}
 mech-syntax = {path = "syntax"}
 mech-program = {path = "program"}
 mech-utilities = {path = "utilities"}
->>>>>>> ae5d7ba9820561c6e38e58a3d43a1441e884402b
 
 clap = "2.34.0"
 colored = "2.0.0"
