@@ -5,4 +5,5 @@ Test math with scalars
              "Addition"       2        1 + 1 
              "Subtraction"    2        4 - 2
              "Division"       2        4 / 2
-             "Multiplication" 6        2 * 3 ]
+             "Multiplication" 6        2 * 3 
+             "Exponentiation" 9        3 ^ 2]
