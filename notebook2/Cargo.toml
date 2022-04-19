@@ -25,7 +25,7 @@ syntax_highlighting = ["egui_demo_lib/syntax_highlighting"]
 
 [dependencies]
 eframe = { version = "0.17.0"}
-mech = {path = "../mech"}
+mech = {path = "../"}
 
 # To use the old glium backend instead:
 # eframe = { version = "0.17.0", path = "../eframe", default-features = false, features = ["default_fonts", "egui_glium"] }
