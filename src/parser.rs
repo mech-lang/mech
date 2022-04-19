@@ -356,7 +356,7 @@ pub fn spacer(width: usize) {
 
 
 #[derive(Debug,Clone)]
-struct ParseString<'a> {
+pub struct ParseString<'a> {
   pub data: Vec<&'a str>,
 }
 
@@ -1491,25 +1491,25 @@ fn program(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Program { children: program }))
 }
 
-fn raw_transformation(input: ParseString) -> IResult<ParseString, Node> {
+pub fn raw_transformation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, statement) = statement(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = opt(newline)(input)?;
   Ok((input, Node::Transformation { children:  vec![statement] }))
 }
 
-fn parse_block(input: ParseString) -> IResult<ParseString, Node> {
+pub fn parse_block(input: ParseString) -> IResult<ParseString, Node> {
   let (input, transformations) = many1(raw_transformation)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children:  transformations }))
 }
 
-fn parse_mech_fragment(input: ParseString) -> IResult<ParseString, Node> {
+pub fn parse_mech_fragment(input: ParseString) -> IResult<ParseString, Node> {
   let (input, statement) = statement(input)?;
   Ok((input, Node::Root { children:  vec![statement] }))
 }
 
-fn parse_mech(input: ParseString) -> IResult<ParseString, Node> {
+pub fn parse_mech(input: ParseString) -> IResult<ParseString, Node> {
   let (input, mech) = alt((program,statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
