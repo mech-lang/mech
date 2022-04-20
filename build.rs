@@ -7,7 +7,7 @@ use std::{
 };
 extern crate winres;
 
-const SOURCE_DIR: &str = r"demo";
+const SOURCE_DIR: &str = r"project";
 
 fn main() -> Result<(), Box<dyn Error>> {
   

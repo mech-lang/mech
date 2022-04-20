@@ -123,7 +123,7 @@ struct MechApp {
 impl MechApp {
   pub fn new() -> Self {
     //let code = LONG_STRING;
-    let code = include_str!("test2.mec");
+    let code = include_str!("../../project/notebook.mec");
     let mut mech_core = mech_core::Core::new();
     let mut compiler = Compiler::new(); 
     match compiler.compile_str(code) {
