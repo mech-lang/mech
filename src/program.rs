@@ -22,6 +22,7 @@ use mech_utilities::*;
 use crossbeam_channel::Sender;
 use crossbeam_channel::Receiver;
 use hashbrown::{HashSet, HashMap};
+use indexmap::IndexSet;
 
 use super::download_machine;
 use super::persister::Persister;
@@ -141,13 +142,13 @@ impl Program {
   pub fn compile_program(&mut self, input: String) -> Result<Vec<BlockId>,MechError> {
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&input.clone())?;
-    let (new_block_ids,_) = self.mech.load_blocks(blocks);
+    let (new_block_ids,block_errors) = self.mech.load_blocks(blocks);
 
     //self.errors.append(&mut self.mech.runtime.errors.clone());
-    let mech_code = *MECH_CODE;
+    /*let mech_code = *MECH_CODE;
     self.programs += 1;
     let txn = vec![Change::Set((mech_code, vec![(TableIndex::Index(self.programs),TableIndex::Index(1),Value::from_str(&input.clone()))]))];
-    self.outgoing.send(RunLoopMessage::Transaction(txn));
+    self.outgoing.send(RunLoopMessage::Transaction(txn));*/
     Ok(new_block_ids)    
   }
 
@@ -307,7 +308,7 @@ impl Program {
     
     // Dedupe needed ids
     let needed_registers = self.mech.needed_registers();
-    let mut needed_tables = HashSet::new();
+    let mut needed_tables = IndexSet::new();
     for (needed_table_id,_,_) in needed_registers {
       needed_tables.insert(needed_table_id.clone());
     }
@@ -376,8 +377,8 @@ impl Program {
     }
 
     // Load init code and trigger machines
-    for mec in &machine_init_code {
-      let new_block_ids = self.compile_program(mec.to_string())?;
+    for mic in &machine_init_code {
+      let new_block_ids = self.compile_program(mic.to_string())?;
       self.mech.schedule_blocks();
       for block_id in new_block_ids {
         let output = self.mech.get_output_by_block_id(block_id)?;

@@ -17,9 +17,9 @@ gitlab = { repository = "mech-lang/program", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax", branch = "v0.1-beta"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
+mech-core = {git = "https://gitlab.com/mech-lang/core"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
 
 time = "0.2.25"
 serde = "1.0.123"
@@ -35,3 +35,4 @@ url = "2.2.1"
 hashbrown = "0.11.2"
 websocket = "0.26.2"
 miniz_oxide = "0.4.4"
+indexmap = "1.7.0"
