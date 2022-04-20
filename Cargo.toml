@@ -70,3 +70,15 @@ LegalCopyright = "Copyright © 2022"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 tracing-wasm = "0.2"
+
+[patch.'https://gitlab.com/mech-lang/core']
+mech-core = { path = 'core' }
+
+[patch.'https://gitlab.com/mech-lang/syntax']
+mech-syntax = { path = 'syntax' }
+
+[patch.'https://gitlab.com/mech-lang/program']
+mech-program = { path = 'program' }
+
+[patch.'https://gitlab.com/mech-lang/utilities']
+mech-utilities = { path = 'utilities' }
