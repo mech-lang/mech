@@ -87,18 +87,14 @@ lazy_static! {
   static ref RESULT: u64 = hash_str("result");
 }
 
-lazy_static! {
-  static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
-}
-
 // ## Mech Entry
 #[tokio::main]
 async fn main() -> Result<(), MechError> {
 
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
-  └───┐ ┌─┐ │ └──────┘ │ │ └┐ │ │ │   │ │
-  ┌─┐ │ │ │ │ ┌──────┐ │ │  └─┘ │ └─┐ │ │
+  └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
+  ┌─┐ │ │ ┌─┐ ┌──────┐ │ │  └─┘ │ └─┐ │ │
   │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘ │ │
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
@@ -281,7 +277,7 @@ async fn main() -> Result<(), MechError> {
     };
 
     println!("{}", "[Running]".bright_green());
-    let runner = ProgramRunner::new("Mech Test", 1000);
+    let runner = ProgramRunner::new("Mech Test");
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
@@ -300,61 +296,6 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
-        /* (Ok(ClientMessage::Table(table))) => {
-          match table {
-            Some(test_results) => {
-              println!("{} Running {} tests...\n", formatted_name, test_results.rows);
-              let mut failed_tests = vec![];
-              for i in 1..=test_results.rows as usize {
-                tests_count += 1;
-                
-                /*let test_name = match test_results.get_string(&TableIndex::Index(i),&TableIndex::Alias(*NAME)) {
-                  Some((string,_)) => {
-                    string.to_string()
-                  }
-                  _ => "".to_string()
-                };*/
-      
-                //let test_result = test_results.get(&TableIndex::Index(i),&TableIndex::Alias(*RESULT)).unwrap();
-                /*let test_result_string = match test_result.as_bool() {
-                  Some(false) => {
-                    passed_all_tests = false;
-                    tests_failed += 1;
-                    failed_tests.push(test_name.clone());
-                    format!("{}", "failed".red())
-      
-                  },
-                  Some(true) => {
-                    tests_passed += 1;
-                    format!("{}", "ok".green())
-                  }
-                  x => {
-                    passed_all_tests = false;
-                    tests_failed += 1;
-                    failed_tests.push(test_name.clone());
-                    format!("{}", "failed".red())
-                  },
-                };
-                println!("\t{0: <30} {1: <5}", test_name, test_result_string);*/
-              }
-
-              if passed_all_tests {
-                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "ok".green(), tests_count, tests_passed, tests_failed);
-                std::process::exit(0);
-              } else {
-                println!("\nTest result: {} | total {} | passed {} | failed {} | \n", "failed".red(), tests_count, tests_passed, tests_failed);
-                println!("\nFailed tests:\n");
-                for failed_test in &failed_tests {
-                  println!("\t{}", failed_test);
-                }
-                print!("\n");
-                std::process::exit(failed_tests.len() as i32);
-              }
-            }
-            None => println!("{} Table not found", formatted_name),
-          }
-          std::process::exit(0);
-        },*/
         (Ok(ClientMessage::Transaction(txn))) => {
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
@@ -426,117 +367,25 @@ async fn main() -> Result<(), MechError> {
 
     println!("{}", "[Running]".bright_green());
 
-    let runner = ProgramRunner::new("Mech Runner", 1000);
+    let runner = ProgramRunner::new("Mech Run");
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
-    let formatted_name = format!("[{}]", mech_client.name).bright_cyan();
+    let formatted_name = format!("[{}]", mech_client.name).bright_cyan().to_string();
     let mech_client_name = mech_client.name.clone();
-    let mech_client_channel = mech_client.outgoing.clone();
-    let mech_client_channel_ws = mech_client.outgoing.clone();
-    let mech_client_channel_heartbeat = mech_client.outgoing.clone();
+    let mech_client_channel = mech_client.outgoing.clone();   
+
     let mech_socket_address = mech_client.socket_address.clone();
+    let mut core_socket_thread;
+    let formatted_address = format!("{}:{}",address,port);
     match mech_socket_address {
       Some(mech_socket_address) => {
-        println!("{} Core socket started at: {}", formatted_name, mech_socket_address.clone());
-        thread::Builder::new().name("Core socket".to_string()).spawn(move || {
-          let formatted_name = format!("[{}]", mech_client_name).bright_cyan();
-          // A socket bound to 3235 is the maestro. It will be the one other cores search for
-          'socket_loop: loop {
-            match UdpSocket::bind(maestro_address.clone()) {
-              // The maestro core
-              Ok(socket) => {
-                println!("{} {} Socket started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), maestro_address);
-                let mut buf = [0; 16_383];
-                // Heartbeat thread periodically checks to see how long it's been since we've last heard from each remote core
-                thread::Builder::new().name("Heartbeat".to_string()).spawn(move || {
-                  loop {
-                    thread::sleep(Duration::from_millis(500));
-                    let now = SystemTime::now();
-                    let mut core_map = CORE_MAP.lock().unwrap();
-                    // If a core hasn't been heard from since 1 second ago, disconnect it.
-                    for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                      mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_str(&remote_core_address.to_string())));
-                    }
-                  }
-                });
-                // TCP socket thread for websocket connections
-                thread::Builder::new().name("TCP Socket".to_string()).spawn(move || {
-                  let server = Server::bind(websocket_address.clone()).unwrap();
-                  println!("{} {} Websocket server started at: {}", formatted_name, "[Maestro]".truecolor(246,192,78), websocket_address);
-                  for request in server.filter_map(Result::ok) {
-                    let mut ws_stream = request.accept().unwrap();
-                    let address = ws_stream.peer_addr().unwrap();
-                    mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream)));
-                  }
-                });
-
-                // Loop to receive UDP messages from remote cores
-                loop {
-                  let (amt, src) = socket.recv_from(&mut buf).unwrap();
-                  let now = SystemTime::now();
-                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-                  match message {
-                    // If a remote core connects, send a connection message back to it
-                    Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                      CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                      mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
-                      let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone())).unwrap();
-                      let len = socket.send_to(&message, src.clone()).unwrap();
-                    },
-                    Ok(SocketMessage::Ping) => {
-                      let mut core_map = CORE_MAP.lock().unwrap();
-                      match core_map.get_mut(&src) {
-                        Some((_, last_seen)) => {
-                          *last_seen = now;
-                        } 
-                        None => (),
-                      }
-                      let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                      let len = socket.send_to(&message, src).unwrap();
-                    },
-                    _ => (),
-                  }
-                }
-              }
-              // Maestro port is already bound, start a remote core
-              Err(_) => {
-                let socket = UdpSocket::bind(format!("{}:{}",address,port)).unwrap();
-                let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
-                // Send a remote core message to the maestro
-                let len = socket.send_to(&message, maestro_address.clone()).unwrap();
-                let mut buf = [0; 16_383];
-                loop {
-                  let message = bincode::serialize(&SocketMessage::Ping).unwrap();
-                  let len = socket.send_to(&message, maestro_address.clone()).unwrap();
-                  match socket.recv_from(&mut buf) {
-                    Ok((amt, src)) => {
-                      let now = SystemTime::now();
-                      if src.to_string() == maestro_address {
-                        let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-                        match message {
-                          Ok(SocketMessage::Pong) => {
-                            thread::sleep(Duration::from_millis(500));
-                            // Maestro is still alive
-                          },
-                          Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                            CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                            mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
-                          }
-                          _ => (),
-                        }
-                      }
-                    } 
-                    Err(_) => {
-                      println!("{} Maestro is dead.", formatted_name);
-                      continue 'socket_loop;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        });
+        core_socket_thread = start_maestro(
+          mech_socket_address, 
+          formatted_address, 
+          maestro_address, 
+          websocket_address, 
+          mech_client_channel);
       }
       None => (),
     };
@@ -673,7 +522,7 @@ clear   - reset the current core
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
     None => {
-      let runner = ProgramRunner::new("Mech REPL", 1000);
+      let runner = ProgramRunner::new("Mech REPL");
       runner.run()?
     }
   };

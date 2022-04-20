@@ -1,0 +1,47 @@
+[package]
+name = "mech-notebook2"
+version = "0.1.0"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+license = "Apache-2.0"
+edition = "2021"
+rust-version = "1.56"
+publish = false
+build = "build.rs"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+
+[features]
+default = ["persistence"]
+http = ["egui_demo_lib/http"]
+persistence = ["eframe/persistence", "egui_demo_lib/persistence"]
+screen_reader = ["eframe/screen_reader"]                          # experimental
+syntax_highlighting = ["egui_demo_lib/syntax_highlighting"]
+
+
+[dependencies]
+eframe = { version = "0.17.0"}
+mech = {path = "../"}
+
+# To use the old glium backend instead:
+# eframe = { version = "0.17.0", path = "../eframe", default-features = false, features = ["default_fonts", "egui_glium"] }
+
+egui_demo_lib = { version = "0.17.0", features = [
+    "extra_debug_asserts",
+] }
+tracing-subscriber = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
+
+[build-dependencies]
+winres = "0.1.12"
+
+[package.metadata.winres]
+OriginalFilename = "MECH.EXE"
+LegalCopyright = "Copyright © 2022"

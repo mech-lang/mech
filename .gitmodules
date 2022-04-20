@@ -7,3 +7,18 @@
 [submodule "docs"]
 	path = docs
 	url = https://gitlab.com/mech-lang/docs.git
+[submodule "core"]
+	path = core
+	url = https://gitlab.com/mech-lang/core.git
+[submodule "syntax"]
+	path = syntax
+	url = https://gitlab.com/mech-lang/syntax.git
+[submodule "program"]
+	path = program
+	url = https://gitlab.com/mech-lang/program.git
+[submodule "utilities"]
+	path = utilities
+	url = https://gitlab.com/mech-lang/utilities
+[submodule "wasm"]
+	path = wasm
+	url = https://gitlab.com/mech-lang/wasm.git

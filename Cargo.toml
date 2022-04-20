@@ -17,14 +17,14 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax"}
-mech-program = {git = "https://gitlab.com/mech-lang/program"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = {path = "core"}
+mech-syntax = {path = "syntax"}
+mech-program = {path = "program"}
+mech-utilities = {path = "utilities"}
 
 clap = "2.34.0"
 colored = "2.0.0"
-nom = "6.2.1"
+nom = "7.1.1"
 reqwest = {version = "0.11.3", features = ["blocking"]}
 bincode = "1.3.3"
 serde = "1.0.133"
@@ -40,12 +40,45 @@ warp = "0.3.2"
 websocket = "0.26.2"
 miniz_oxide = "0.5.1"
 base64 = "0.13.0"
+eframe = { version = "0.17.0" }
+image = { version = "0.24.0", default-features = false, features = [
+  "ico",
+  "jpeg",
+  "png",
+] }
+syntect = { version = "4", optional = true, default-features = false, features = [
+  "default-fancy",
+] }
 
 [workspace]
 
 members = [
   "notebook",
+  "notebook2",
 ]
 
 [profile.release]
 debug = true
+
+[build-dependencies]
+winres = "0.1.12"
+
+[package.metadata.winres]
+OriginalFilename = "MECH.EXE"
+LegalCopyright = "Copyright © 2022"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
+
+[patch.'https://gitlab.com/mech-lang/core']
+mech-core = { path = 'core' }
+
+[patch.'https://gitlab.com/mech-lang/syntax']
+mech-syntax = { path = 'syntax' }
+
+[patch.'https://gitlab.com/mech-lang/program']
+mech-program = { path = 'program' }
+
+[patch.'https://gitlab.com/mech-lang/utilities']
+mech-utilities = { path = 'utilities' }
