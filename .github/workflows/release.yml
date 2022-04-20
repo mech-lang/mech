@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v1
       - name: build
         run: |
-          rustup default nightly-2021-12-25
+          rustup default nightly-2022-03-27
           cargo build --release
       # and finally do an upload!
       - name: Upload release assets
