@@ -217,8 +217,9 @@ impl MechApp {
               else if raw_kind == *CODE { self.render_code(table,ui)?; }
               else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,ui)?; }
               else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,ui)?; }
+              else if raw_kind == *BUTTON { self.render_button(table,ui)?; }
               /*else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
-              else if raw_kind == *BUTTON { render_button(table,ui)?; }
+              
               */
               else if raw_kind == *CANVAS { self.render_canvas(table,ui)?; }
               else {
@@ -360,6 +361,22 @@ impl MechApp {
              table.get(&TableIndex::Index(row), &TableIndex::Alias(*URL))) {
         (Ok(Value::String(text)), Ok(Value::String(url))) => {
           container.hyperlink_to(text.to_string(),url.to_string());
+        }
+        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }
+
+  pub fn render_button(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
+        Ok(Value::String(text)) => {
+          let response = container.button(text.to_string());
+          if response.changed() {
+            //let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
+            //self.core.process_transaction(&vec![change]);
+          }
         }
         x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
