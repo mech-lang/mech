@@ -1,5 +1,18 @@
 # Mech Project Roadmap
 
+### Stage 1 - Alpha v0.0.1
+
+Conception: started 2014
+Implementation: started 2018
+
+### Stage 2 - Beta v0.1.0
+
+Target release: October 2022
+
+### Stage 3 - Stable v1.0.0
+
+Target release: ???
+
 ## Version 0.1.0 Beta
 
 [x] Errors
