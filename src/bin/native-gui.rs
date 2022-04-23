@@ -95,6 +95,7 @@ lazy_static! {
   static ref CODE: u64 = hash_str("code");
   static ref PANEL__LEFT: u64 = hash_str("panel-left");
   static ref PANEL__CENTER: u64 = hash_str("panel-center");
+  static ref DEBUG: u64 = hash_str("debug");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -112,10 +113,12 @@ fn load_icon(path: &Path) -> epi::IconData {
 struct MechApp {
   //mech_client: RunLoop,
   ticks: f32,
+  frame: usize,
   code: String,
   core: mech_core::Core,
   maestro_thread: Option<JoinHandle<()>>,
   shapes: Vec<epaint::Shape>,
+  changes: Vec<Change>,
 }
 
 //static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
@@ -135,21 +138,26 @@ impl MechApp {
       }
     }
     
-    let code = r#"#time/timer = [|period<s> ticks<u64>|]"#;
+    let code = r#"
+#time/timer = [|period<s> ticks<u64>|]
+#io/pointer = [|x<f32> y<f32>| 0 0]"#;
 
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&code).unwrap();
     mech_core.load_blocks(blocks);
+    mech_core.schedule_blocks();
 
     let mut shapes = vec![epaint::Shape::Noop; 100000];
 
     Self {
+      frame: 0,
       ticks: 0.0,
       code: "".to_string(),
       //mech_client,
       core: mech_core,
       maestro_thread: None,
       shapes,
+      changes: vec![],
     }
   }
   
@@ -218,10 +226,9 @@ impl MechApp {
               else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,ui)?; }
               else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,ui)?; }
               else if raw_kind == *BUTTON { self.render_button(table,ui)?; }
-              /*else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
-              
-              */
               else if raw_kind == *CANVAS { self.render_canvas(table,ui)?; }
+              else if raw_kind == *DEBUG { self.render_debug(table,ui)?; }
+              //else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
               else {
                 return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
               }
@@ -265,8 +272,7 @@ impl MechApp {
                 .frame(false)
               );
               if response.changed() {
-                let change = Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))]));
-                self.core.process_transaction(&vec![change]);
+                self.changes.push(Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))])));
               }
             }
             x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -397,8 +403,7 @@ impl MechApp {
               self.ticks = value.into();
               let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
               if response.changed() {
-                let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
-                self.core.process_transaction(&vec![change]);
+                self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))])));
               }
             }
             x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -407,6 +412,13 @@ impl MechApp {
         x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
+    Ok(())
+  }  
+
+  pub fn render_debug(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    egui::ScrollArea::vertical().show(container, |ui| {
+      ui.label(format!("{:?}", self.core));
+    });
     Ok(())
   }  
 
@@ -485,6 +497,14 @@ impl epi::App for MechApp {
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
+
+    // Set font
+    let mut fonts = FontDefinitions::default();
+    fonts.font_data.insert("FiraCode-Regular".to_owned(),FontData::from_static(include_bytes!("../../assets/fonts/FiraCode-Regular.ttf")));
+    fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "FiraCode-Regular".to_owned());
+    ctx.set_fonts(fonts);
+
+    // Draw frame
     let mut frame = Frame::default();
     frame.margin = egui::style::Margin::same(0.0);
     frame.fill = Color32::from_rgb(0x23,0x22,0x2A);
@@ -492,10 +512,22 @@ impl epi::App for MechApp {
       .frame(frame)
     .show(ctx, |ui| {
       ui.ctx().request_repaint();
+      self.frame += 1;
       self.render_app(ui);
+      // Update IO
       let time = ui.input().time;
-      let change = Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(time as u64)))]));
-      self.core.process_transaction(&vec![change]);
+      self.changes.push(Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(self.frame as u64)))])));
+      match ui.input().pointer.hover_pos() {
+        Some(pos) => {
+          self.changes.push(Change::Set((hash_str("io/pointer"),vec![
+            (TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(pos.x))),
+            (TableIndex::Index(1),TableIndex::Index(2),Value::F32(F32::new(pos.y)))
+          ])));
+        }
+        _ => (),
+      }
+      self.core.process_transaction(&self.changes);
+      self.changes.clear();
     });
   }
 
