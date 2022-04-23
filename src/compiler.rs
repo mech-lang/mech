@@ -230,20 +230,26 @@ impl Compiler {
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
                 input.remove(0);
                 input.remove(0);
-                input.remove(0);
+                if let Transformation::Select{table_id,indices} = input.remove(0) {
+                  rhs.push((table_id,indices));
+                }
                 continue;
               },
               _ => break,
             }
           }
           let (input_table_id, input_indices) = &rhs[0];
-          tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
-          tfms.append(&mut input);
-          tfms.push(Transformation::TableDefine{
-            table_id: input_table_id.clone(), 
-            indices: input_indices.clone(), 
-            out: output_table_id
-          });
+          if *input_table_id != output_table_id {
+            tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
+            tfms.append(&mut input);
+            tfms.push(Transformation::TableDefine{
+              table_id: input_table_id.clone(), 
+              indices: input_indices.clone(), 
+              out: output_table_id
+            });
+          } else {
+            tfms.append(&mut input);
+          }
         }
       }
       Node::TableSelect{children} => {
@@ -268,7 +274,9 @@ impl Compiler {
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
                 input.remove(0);
                 input.remove(0);
-                input.remove(0);
+                if let Transformation::Select{table_id,indices} = input.remove(0) {
+                  rhs.push((table_id,indices));
+                }
                 continue;
               },
               _ => break,
@@ -282,13 +290,15 @@ impl Compiler {
               tfms.append(&mut input);
             }
             _ => {
-              tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
-              tfms.append(&mut input);
-              tfms.push(Transformation::TableDefine{
-                table_id: input_table_id.clone(), 
-                indices: input_indices.clone(), 
-                out: output_table_id
-              });
+              if *input_table_id != output_table_id {
+                tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
+                tfms.append(&mut input);
+                tfms.push(Transformation::TableDefine{
+                  table_id: input_table_id.clone(), 
+                  indices: input_indices.clone(), 
+                  out: output_table_id
+                });
+              }
             }
           }
         }
@@ -324,7 +334,9 @@ impl Compiler {
               Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
                 input.remove(0);
                 input.remove(0);
-                input.remove(0);
+                if let Transformation::Select{table_id,indices} = input.remove(0) {
+                  rhs.push((table_id,indices));
+                }
                 continue;
               },
               _ => break,
@@ -337,18 +349,20 @@ impl Compiler {
               tfms.append(&mut input);
             }
             _ => {
-              tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
-              tfms.append(&mut input);
-              /*tfms.push(Transformation::Function{
-                name: *TABLE_DEFINE,
-                arguments: vec![(0,input_table_id.clone(),input_indices.clone())],
-                out: (output_table_id, TableIndex::All, TableIndex::All),
-              });*/
-              tfms.push(Transformation::TableDefine{
-                table_id: input_table_id.clone(), 
-                indices: input_indices.clone(), 
-                out: output_table_id
-              });
+              if *input_table_id != output_table_id {
+                tfms.push(Transformation::NewTable{table_id: output_table_id, rows: 1, columns: 1});
+                tfms.append(&mut input);
+                /*tfms.push(Transformation::Function{
+                  name: *TABLE_DEFINE,
+                  arguments: vec![(0,input_table_id.clone(),input_indices.clone())],
+                  out: (output_table_id, TableIndex::All, TableIndex::All),
+                });*/
+                tfms.push(Transformation::TableDefine{
+                  table_id: input_table_id.clone(), 
+                  indices: input_indices.clone(), 
+                  out: output_table_id
+                });
+              }
             }
           }
         }
@@ -620,14 +634,20 @@ impl Compiler {
             let value = Value::Reference(table_id.clone());
             let out = TableId::Global(*table_id.unwrap());
             let in_t = table_id.clone();
-            tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
-            /*tfms.insert(0,Transformation::Function{
-              name: *TABLE_DEFINE,
-              arguments: vec![(0,in_t,vec![(TableIndex::All, TableIndex::All)])],
-              out: (out,TableIndex::All, TableIndex::All),
-            });*/
-            tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
-            tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
+            if in_t != out {
+              tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+              /*tfms.insert(0,Transformation::Function{
+                name: *TABLE_DEFINE,
+                arguments: vec![(0,in_t,vec![(TableIndex::All, TableIndex::All)])],
+                out: (out,TableIndex::All, TableIndex::All),
+              });*/
+              tfms.insert(0,Transformation::TableDefine{table_id: in_t, indices: vec![(TableIndex::All, TableIndex::All)], out});
+              tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
+            } else {
+              tfms.insert(0,Transformation::NewTable{table_id: reference_table_id, rows: 1, columns: 1});
+              tfms.insert(0,Transformation::TableReference{table_id: reference_table_id, reference: value});
+            }
+          
           }
           _ => (),
         }  
@@ -637,9 +657,11 @@ impl Compiler {
         tfms.append(&mut result);
       },
       Node::TableRow{children} => {
-        let row_id = hash_str(&format!("horzcat:{:?}", children));
+        let mut row_id = hash_str(&format!("horzcat:{:?}", children));
         let mut args: Vec<Argument> = vec![];
         let mut result_tfms = vec![];
+        let mut all = false;
+        let mut all_arg = vec![];
         for child in children {
           let mut result = self.compile_node(child)?;
           match &result[0] {
@@ -647,6 +669,15 @@ impl Compiler {
               args.push((0,table_id.clone(),vec![(TableIndex::All, TableIndex::All)]));
             }
             Transformation::Select{table_id, indices} => {
+              if indices.len() == 1 {
+                match (table_id, indices[0]) {
+                  (TableId::Global(table_id2), (TableIndex::All, TableIndex::All)) => {
+                    all = true;
+                    all_arg.push(result[0].clone());
+                  }
+                  _ => ()
+                } 
+              }
               args.push((0,table_id.clone(),indices.to_vec()));
               result.remove(0);
             }
@@ -658,13 +689,18 @@ impl Compiler {
           }  
           result_tfms.append(&mut result);       
         }
-        tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: 1});
-        tfms.append(&mut result_tfms);
-        tfms.push(Transformation::Function{
-          name: *TABLE_HORIZONTAL__CONCATENATE,
-          arguments: args,
-          out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
-        });
+        if args.len() == 1 && all {
+          tfms.append(&mut all_arg);
+          tfms.append(&mut result_tfms);
+        } else {
+          tfms.push(Transformation::NewTable{table_id: TableId::Local(row_id), rows: 1, columns: 1});
+          tfms.append(&mut result_tfms);
+          tfms.push(Transformation::Function{
+            name: *TABLE_HORIZONTAL__CONCATENATE,
+            arguments: args,
+            out: (TableId::Local(row_id), TableIndex::All, TableIndex::All),
+          });
+        }
       },
       Node::AddRow{children} => {
         let mut result_tfms = Vec::new();

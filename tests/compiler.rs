@@ -199,6 +199,12 @@ block
 block
   #test = #x", Value::F32(F32::new(123.0)));
 
+test_mech!(select_table_horzcat,"  
+block
+  #x = 123
+block
+  #test = stats/sum(row: [#x 2 3])", Value::F32(F32::new(128.0)));
+
 // ## Math
 
 test_mech!(math_constant,"#test = 10", Value::F32(F32::new(10.0)));
