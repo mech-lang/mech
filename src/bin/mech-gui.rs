@@ -96,6 +96,7 @@ lazy_static! {
   static ref CODE: u64 = hash_str("code");
   static ref PANEL__LEFT: u64 = hash_str("panel-left");
   static ref PANEL__CENTER: u64 = hash_str("panel-center");
+  static ref PANEL__RIGHT: u64 = hash_str("panel-right");
   static ref DEBUG: u64 = hash_str("debug");
   static ref CLICKED: u64 = hash_str("clicked");
 }
@@ -141,9 +142,15 @@ impl MechApp {
       }
     }
     
-    let code = r#"
+    let mut code = r#"
 #time/timer = [|period<s> ticks<u64>|]
-#io/pointer = [|x<f32> y<f32>| 0 0]"#;
+#io/pointer = [|x<f32> y<f32>| 0 0]"#.to_string();
+
+code += r#"
+#mech/tables = [|name<string>|
+                 "time/timer"
+                 "io/pointer"
+                 "mech/tables"]"#;
 
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&code).unwrap();
@@ -229,6 +236,7 @@ impl MechApp {
               if raw_kind == *LINK { self.render_link(table,ui)?; }
               else if raw_kind == *SLIDER { self.render_slider(table,ui)?; }
               else if raw_kind == *CODE { self.render_code(table,ui)?; }
+              else if raw_kind == *PANEL__RIGHT { self.render_panel_right(table,ui)?; }
               else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,ui)?; }
               else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,ui)?; }
               else if raw_kind == *BUTTON { self.render_button(table,ui)?; }
@@ -317,6 +325,47 @@ impl MechApp {
           }
           frame.margin = egui::style::Margin::same(10.0);
           egui::SidePanel::left(humanize(&table.id))
+            .resizable(false)
+            .min_width(min_width)
+            .frame(frame)
+          .show_inside(container, |ui| {
+            if let Ok(contained) = contained {
+              self.render_value(contained, ui);
+            }
+          });
+        }
+      }
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_right(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+        (contained,parameters_table) => {
+          let mut frame = Frame::default();
+          let mut min_width = 100.0;
+          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+              Ok(parameters_table) => {
+                let parameters_table_brrow = parameters_table.borrow();
+                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                  let color: u32 = value.into();
+                  let r = (color >> 16) as u8;
+                  let g = (color >> 8) as u8;
+                  let b = color as u8;
+                  frame.fill = Color32::from_rgb(r,g,b);
+                }
+                if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+                  min_width = value.into();
+                }
+              }
+              _ => (),
+            }
+          }
+          frame.margin = egui::style::Margin::same(10.0);
+          egui::SidePanel::right(humanize(&table.id))
             .resizable(false)
             .min_width(min_width)
             .frame(frame)
@@ -562,7 +611,7 @@ fn main() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
     let icon = load_icon(Path::new(path));
     native_options.icon_data = Some(icon);
-    native_options.min_window_size = Some(Vec2{x: 640.0, y: 480.0});
+    native_options.min_window_size = Some(Vec2{x: 1280.0, y: 720.0});
     eframe::run_native(Box::new(app), native_options);
 }
 
