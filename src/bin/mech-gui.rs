@@ -13,6 +13,7 @@ use mech::Compiler;
 use std::thread::JoinHandle;
 extern crate image;
 use std::path::Path;
+use std::collections::HashMap;
 
 #[macro_use]
 extern crate lazy_static;
@@ -96,6 +97,7 @@ lazy_static! {
   static ref PANEL__LEFT: u64 = hash_str("panel-left");
   static ref PANEL__CENTER: u64 = hash_str("panel-center");
   static ref DEBUG: u64 = hash_str("debug");
+  static ref CLICKED: u64 = hash_str("clicked");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -118,6 +120,7 @@ struct MechApp {
   core: mech_core::Core,
   maestro_thread: Option<JoinHandle<()>>,
   shapes: Vec<epaint::Shape>,
+  value_store: HashMap<usize,Value>,
   changes: Vec<Change>,
 }
 
@@ -150,6 +153,7 @@ impl MechApp {
     let mut shapes = vec![epaint::Shape::Noop; 100000];
 
     Self {
+
       frame: 0,
       ticks: 0.0,
       code: "".to_string(),
@@ -157,6 +161,7 @@ impl MechApp {
       core: mech_core,
       maestro_thread: None,
       shapes,
+      value_store: HashMap::new(),
       changes: vec![],
     }
   }
@@ -190,6 +195,7 @@ impl MechApp {
         let contents_string = chars.to_string();
         ui.label(&contents_string);
       },
+      Value::Bool(x) => {ui.label(&format!("{}", x));},
       Value::F32(x) => {ui.label(&format!("{:.2?}", x));},
       Value::F64(x) => {ui.label(&format!("{:?}", x));},
       Value::U128(x) => {ui.label(&format!("{:?}", x));},
@@ -376,15 +382,21 @@ impl MechApp {
 
   pub fn render_button(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
     for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
-        Ok(Value::String(text)) => {
-          let response = container.button(text.to_string());
-          if response.changed() {
-            //let change = Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))]));
-            //self.core.process_transaction(&vec![change]);
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*CLICKED))) {
+          (Ok(Value::String(text)), Ok(Value::Reference(value_table_id))) => {
+          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+          let value_table_brrw = value_table.borrow();
+          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+            Ok(Value::Bool(value)) => {
+              if container.add(egui::Button::new(text.to_string())).clicked() {
+                self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::Bool(!value))])));
+              }
+            }
+            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
-        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
     Ok(())
@@ -512,10 +524,11 @@ impl epi::App for MechApp {
       .frame(frame)
     .show(ctx, |ui| {
       ui.ctx().request_repaint();
-      self.frame += 1;
       self.render_app(ui);
+
       // Update IO
       let time = ui.input().time;
+      self.frame += 1;
       self.changes.push(Change::Set((hash_str("time/timer"),vec![(TableIndex::Index(1),TableIndex::Index(2),Value::U64(U64::new(self.frame as u64)))])));
       match ui.input().pointer.hover_pos() {
         Some(pos) => {
