@@ -198,11 +198,7 @@ pub struct BoxTable {
 impl BoxTable {
 
   pub fn new(table: &Table) -> BoxTable {
-    let table_name: String = if let Some(mstring) = table.dictionary.borrow().get(&table.id) {
-      format!("#{}", mstring.to_string())
-    } else {
-      format!("{}", humanize(&table.id))
-    };
+    let table_name: String = table.name();
     let title = format!("{} ({} x {})", table_name,table.rows,table.cols);
     let mut strings: Vec<Vec<String>> = vec![vec!["".to_string(); table.rows]; table.cols];
     let mut column_widths = vec![0; table.cols];
