@@ -1,28 +1,49 @@
 # Mech Notebook
 
-A value
+Some global values
+  #debug-button = false
+  #code-button = false
   #value = 42
+  #time/timer += [period: 16<ms>]
 
 The code
   #code = "Hello"
 
-Code area contents
-  #mid-contents = [
-    "One"
-    "Two"
-    "Three"
+A slider with a label attached
+  #slider = [
+    [#value * 10]
+    [kind: "slider" min: 0, max: 100, value: [#value]]
   ]
 
-Mid panel contents
-  #code-area-contents = [
-    [#value]
-    [[kind: "slider" min: 0, max: 100, value: [#value]]]
+Set the thing to nothing
+  #contents = [[kind: "code" text: [#code]]]
+
+Panel contents
+  #mid-contents = [
+    [[kind: "button" clicked: [#code-button] text: "Code"]]
+    [[kind: "button" clicked: [#debug-button] text: "Debug"]]
   ]
+  #code-area-contents = [
+    [kind: "code" text: [#code]]
+  ]
+
+## Interactions
+
+When the debug button is clicked, do a thing
+  ~ #debug-button
+  #contents := [[kind: "debug"]]
+
+
+When the debug button is clicked, do a thing
+  ~ #code-button
+  #contents := [[#code-area-contents]]
+
+## Drawing
 
 The panels
   #left-panel = [[
     kind: "panel-left" 
-    parameters: [fill: 0x2E2A3C min-width: 25] 
+    parameters: [fill: 0x2E2A3C min-width: 5] 
   ]]
   #mid-panel = [[
     kind: "panel-left" 
@@ -31,7 +52,7 @@ The panels
   ]]
   #code-area = [[
     kind: "panel-center" 
-    contains: [#code-area-contents] 
+    contains: [#contents] 
     parameters: [fill: 0x131218] 
   ]]
 
