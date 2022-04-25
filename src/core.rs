@@ -256,7 +256,7 @@ impl Core {
   }
 
   pub fn table_names(&self) -> Vec<String> {
-    self.database.borrow().tables.iter().map(|(_,t)| {
+    self.database.borrow().tables.iter().filter_map(|(_,t)| {
       t.borrow().name()
     }).collect::<Vec<String>>()
   }

@@ -159,11 +159,11 @@ impl Table {
     }
   }
 
-  pub fn name(&self) -> String {
+  pub fn name(&self) -> Option<String> {
     if let Some(mstring) = self.dictionary.borrow().get(&self.id) {
-      format!("{}", mstring.to_string())
+      Some(format!("{}", mstring.to_string()))
     } else {
-      format!("{}", humanize(&self.id))
+      None
     }
   }
 
