@@ -158,7 +158,15 @@ impl Table {
       ValueKind::Compound(self.col_kinds.clone())
     }
   }
-  
+
+  pub fn name(&self) -> String {
+    if let Some(mstring) = self.dictionary.borrow().get(&self.id) {
+      format!("{}", mstring.to_string())
+    } else {
+      format!("{}", humanize(&self.id))
+    }
+  }
+
   pub fn get_column(&self, col: &TableIndex) -> Result<Column, MechError> {
     match col {
       TableIndex::Alias(alias) => {

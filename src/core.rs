@@ -255,6 +255,12 @@ impl Core {
     }
   }
 
+  pub fn table_names(&self) -> Vec<String> {
+    self.database.borrow().tables.iter().map(|(_,t)| {
+      t.borrow().name()
+    }).collect::<Vec<String>>()
+  }
+
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
     let mut block_errors = vec![];
