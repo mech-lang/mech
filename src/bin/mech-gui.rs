@@ -13,7 +13,7 @@ use mech::Compiler;
 use std::thread::JoinHandle;
 extern crate image;
 use std::path::Path;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[macro_use]
 extern crate lazy_static;
@@ -99,6 +99,7 @@ lazy_static! {
   static ref PANEL__RIGHT: u64 = hash_str("panel-right");
   static ref DEBUG: u64 = hash_str("debug");
   static ref CLICKED: u64 = hash_str("clicked");
+  static ref TABLE__WINDOW: u64 = hash_str("table-window");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -123,6 +124,7 @@ struct MechApp {
   shapes: Vec<epaint::Shape>,
   value_store: HashMap<usize,Value>,
   changes: Vec<Change>,
+  windows: HashSet<String>,
 }
 
 //static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
@@ -150,7 +152,14 @@ code += r#"
 #mech/tables = [|name<string>|
                  "time/timer"
                  "io/pointer"
-                 "mech/tables"]"#;
+                 "mech/tables""#;
+for name in mech_core.table_names() {
+  code += &format!("\n{:?}",name);     
+}
+code += "]";
+
+
+
 
     let mut compiler = Compiler::new();
     let blocks = compiler.compile_str(&code).unwrap();
@@ -168,13 +177,14 @@ code += r#"
       core: mech_core,
       maestro_thread: None,
       shapes,
+      windows: HashSet::new(),
       value_store: HashMap::new(),
       changes: vec![],
     }
   }
   
   pub fn render_app(&mut self, ui: &mut egui::Ui) -> Result<(), MechError> {
-    match self.core.get_table("mech/app") {
+    match self.core.get_table("app") {
       Ok(app_table) => { 
         let app_table_brrw = app_table.borrow();
         ui.columns(app_table_brrw.cols, |cols| {
@@ -233,15 +243,16 @@ code += r#"
             Ok(Value::String(kind)) => {
               let raw_kind = kind.hash();
               // Render an element
-              if raw_kind == *LINK { self.render_link(table,ui)?; }
-              else if raw_kind == *SLIDER { self.render_slider(table,ui)?; }
-              else if raw_kind == *CODE { self.render_code(table,ui)?; }
-              else if raw_kind == *PANEL__RIGHT { self.render_panel_right(table,ui)?; }
-              else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,ui)?; }
-              else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,ui)?; }
-              else if raw_kind == *BUTTON { self.render_button(table,ui)?; }
-              else if raw_kind == *CANVAS { self.render_canvas(table,ui)?; }
-              else if raw_kind == *DEBUG { self.render_debug(table,ui)?; }
+              if raw_kind == *LINK { self.render_link(table,row,ui)?; }
+              else if raw_kind == *SLIDER { self.render_slider(table,row,ui)?; }
+              else if raw_kind == *CODE { self.render_code(table,row,ui)?; }
+              else if raw_kind == *PANEL__RIGHT { self.render_panel_right(table,row,ui)?; }
+              else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,row,ui)?; }
+              else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,row,ui)?; }
+              else if raw_kind == *BUTTON { self.render_button(table,row,ui)?; }
+              else if raw_kind == *TABLE__WINDOW { self.render_table__window(table,row,ui)?; }
+              else if raw_kind == *CANVAS { self.render_canvas(table,row,ui)?; }
+              else if raw_kind == *DEBUG { self.render_debug(table,row,ui)?; }
               //else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
               else {
                 return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
@@ -272,252 +283,250 @@ code += r#"
     Ok(())
   }
 
-  pub fn render_code(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
-        Ok(Value::Reference(code_table_id)) => {
-          let code_table = self.core.get_table_by_id(*code_table_id.unwrap()).unwrap();
-          let code_table_brrw = code_table.borrow();
-          match code_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
-            Ok(Value::String(code)) => {
-              self.code = code.to_string();
-              let response = container.add_sized(container.available_size(), egui::TextEdit::multiline(&mut self.code)
-                .code_editor()
-                .frame(false)
-              );
-              if response.changed() {
-                self.changes.push(Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))])));
+  pub fn render_code(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
+      Ok(Value::Reference(code_table_id)) => {
+        let code_table = self.core.get_table_by_id(*code_table_id.unwrap()).unwrap();
+        let code_table_brrw = code_table.borrow();
+        match code_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+          Ok(Value::String(code)) => {
+            self.code = code.to_string();
+            let response = container.add_sized(container.available_size(), egui::TextEdit::multiline(&mut self.code)
+              .code_editor()
+              .frame(false)
+            );
+            if response.changed() {
+              self.changes.push(Change::Set((code_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string(self.code.clone())))])));
+            }
+          }
+          x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        }
+      }
+      x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_left(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+      (contained,parameters_table) => {
+        let mut frame = Frame::default();
+        let mut min_width = 100.0;
+        if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+          match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+            Ok(parameters_table) => {
+              let parameters_table_brrow = parameters_table.borrow();
+              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                let color: u32 = value.into();
+                let r = (color >> 16) as u8;
+                let g = (color >> 8) as u8;
+                let b = color as u8;
+                frame.fill = Color32::from_rgb(r,g,b);
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+                min_width = value.into();
               }
             }
-            x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            _ => (),
           }
         }
-        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        frame.margin = egui::style::Margin::same(10.0);
+        egui::SidePanel::left(humanize(&table.id))
+          .resizable(false)
+          .min_width(min_width)
+          .frame(frame)
+        .show_inside(container, |ui| {
+          if let Ok(contained) = contained {
+            self.render_value(contained, ui);
+          }
+        });
       }
     }
     Ok(())
   }
 
-  pub fn render_panel_left(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (contained,parameters_table) => {
-          let mut frame = Frame::default();
-          let mut min_width = 100.0;
-          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
-            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
-              Ok(parameters_table) => {
-                let parameters_table_brrow = parameters_table.borrow();
-                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                  let color: u32 = value.into();
-                  let r = (color >> 16) as u8;
-                  let g = (color >> 8) as u8;
-                  let b = color as u8;
-                  frame.fill = Color32::from_rgb(r,g,b);
-                }
-                if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
-                  min_width = value.into();
-                }
+  pub fn render_panel_right(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+      (contained,parameters_table) => {
+        let mut frame = Frame::default();
+        let mut min_width = 100.0;
+        if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+          match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+            Ok(parameters_table) => {
+              let parameters_table_brrow = parameters_table.borrow();
+              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                let color: u32 = value.into();
+                let r = (color >> 16) as u8;
+                let g = (color >> 8) as u8;
+                let b = color as u8;
+                frame.fill = Color32::from_rgb(r,g,b);
               }
-              _ => (),
+              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+                min_width = value.into();
+              }
             }
+            _ => (),
           }
-          frame.margin = egui::style::Margin::same(10.0);
-          egui::SidePanel::left(humanize(&table.id))
-            .resizable(false)
-            .min_width(min_width)
-            .frame(frame)
-          .show_inside(container, |ui| {
-            if let Ok(contained) = contained {
-              self.render_value(contained, ui);
-            }
-          });
         }
+        frame.margin = egui::style::Margin::same(10.0);
+        egui::SidePanel::right(humanize(&table.id))
+          .resizable(false)
+          .min_width(min_width)
+          .frame(frame)
+        .show_inside(container, |ui| {
+          if let Ok(contained) = contained {
+            self.render_value(contained, ui);
+          }
+        });
       }
     }
     Ok(())
   }
 
-  pub fn render_panel_right(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (contained,parameters_table) => {
-          let mut frame = Frame::default();
-          let mut min_width = 100.0;
-          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
-            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
-              Ok(parameters_table) => {
-                let parameters_table_brrow = parameters_table.borrow();
-                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                  let color: u32 = value.into();
-                  let r = (color >> 16) as u8;
-                  let g = (color >> 8) as u8;
-                  let b = color as u8;
-                  frame.fill = Color32::from_rgb(r,g,b);
-                }
-                if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
-                  min_width = value.into();
-                }
+  pub fn render_panel_center(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+      (contained,parameters_table) => {
+        let mut frame = Frame::default();
+        if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+          match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+            Ok(parameters_table) => {
+              let parameters_table_brrow = parameters_table.borrow();
+              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                let color: u32 = value.into();
+                let r = (color >> 16) as u8;
+                let g = (color >> 8) as u8;
+                let b = color as u8;
+                frame.fill = Color32::from_rgb(r,g,b);
               }
-              _ => (),
             }
+            _ => (),
           }
-          frame.margin = egui::style::Margin::same(10.0);
-          egui::SidePanel::right(humanize(&table.id))
-            .resizable(false)
-            .min_width(min_width)
-            .frame(frame)
-          .show_inside(container, |ui| {
-            if let Ok(contained) = contained {
-              self.render_value(contained, ui);
-            }
-          });
         }
+        frame.margin = egui::style::Margin::same(10.0);
+        egui::CentralPanel::default()
+          .frame(frame)
+        .show_inside(container, |ui| {
+          if let Ok(contained) = contained {
+            self.render_value(contained, ui);
+          }
+        });
       }
+      x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
 
-  pub fn render_panel_center(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (contained,parameters_table) => {
-          let mut frame = Frame::default();
-          if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
-            match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
-              Ok(parameters_table) => {
-                let parameters_table_brrow = parameters_table.borrow();
-                if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                  let color: u32 = value.into();
-                  let r = (color >> 16) as u8;
-                  let g = (color >> 8) as u8;
-                  let b = color as u8;
-                  frame.fill = Color32::from_rgb(r,g,b);
-                }
-              }
-              _ => (),
-            }
-          }
-          frame.margin = egui::style::Margin::same(10.0);
-          egui::CentralPanel::default()
-            .frame(frame)
-          .show_inside(container, |ui| {
-            if let Ok(contained) = contained {
-              self.render_value(contained, ui);
-            }
-          });
-        }
-        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+  pub fn render_link(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*URL))) {
+      (Ok(Value::String(text)), Ok(Value::String(url))) => {
+        container.hyperlink_to(text.to_string(),url.to_string());
       }
+      x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+    }
+    Ok(())
+  }
+  
+  pub fn render_table__window(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
+      Ok(Value::String(text)) => {
+        if container.add(egui::Button::new(text.to_string())).clicked() {
+          self.windows.insert(text.to_string());
+        }
+      }
+      x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
 
-  pub fn render_link(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*URL))) {
-        (Ok(Value::String(text)), Ok(Value::String(url))) => {
-          container.hyperlink_to(text.to_string(),url.to_string());
+  pub fn render_button(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*CLICKED))) {
+        (Ok(Value::String(text)), Ok(Value::Reference(value_table_id))) => {
+        let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+        let value_table_brrw = value_table.borrow();
+        match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+          Ok(Value::Bool(value)) => {
+            if container.add(egui::Button::new(text.to_string())).clicked() {
+              self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::Bool(!value))])));
+            }
+          }
+          x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
-        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
+      x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
 
-  pub fn render_button(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*CLICKED))) {
-          (Ok(Value::String(text)), Ok(Value::Reference(value_table_id))) => {
-          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
-          let value_table_brrw = value_table.borrow();
-          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
-            Ok(Value::Bool(value)) => {
-              if container.add(egui::Button::new(text.to_string())).clicked() {
-                self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::Bool(!value))])));
-              }
+  pub fn render_slider(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
+        (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::Reference(value_table_id))) => {
+        let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+        let value_table_brrw = value_table.borrow();
+        match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+          Ok(Value::F32(value)) => {
+            self.ticks = value.into();
+            let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
+            if response.changed() {
+              self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))])));
             }
-            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
+          x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
-        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
-    }
-    Ok(())
-  }
-
-  pub fn render_slider(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*MIN)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*MAX)),
-             table.get(&TableIndex::Index(row), &TableIndex::Alias(*VALUE))) {
-          (Ok(Value::F32(min)), Ok(Value::F32(max)), Ok(Value::Reference(value_table_id))) => {
-          let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
-          let value_table_brrw = value_table.borrow();
-          match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
-            Ok(Value::F32(value)) => {
-              self.ticks = value.into();
-              let response = container.add(egui::Slider::new(&mut self.ticks, min.into()..=max.into()));
-              if response.changed() {
-                self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::F32(F32::new(self.ticks)))])));
-              }
-            }
-            x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
-          }
-        }
-        x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
-      }
+      x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }  
 
-  pub fn render_debug(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+  pub fn render_debug(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
     egui::ScrollArea::vertical().show(container, |ui| {
       ui.label(format!("{:?}", self.core));
     });
     Ok(())
   }  
 
-  pub fn render_canvas(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
-    for row in 1..=table.rows {
-      match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
-        Ok(Value::Reference(contains_table_id)) => {
-          Frame::none().show(container, |ui| {
-            let table = self.core.get_table_by_id(*contains_table_id.unwrap()).unwrap();
-            let table_brrw = table.borrow();
-            match (table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*SHAPE)),
-                    table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*PARAMETERS)))  {
-              (Ok(Value::String(kind)),Ok(Value::Reference(contains_table_id))) => {
-                let table = self.core.get_table_by_id(*contains_table_id.unwrap()).unwrap();
-                let table_brrw = table.borrow();
-                let raw_kind = kind.hash();
-                // Render an element
+  pub fn render_canvas(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)) {
+      Ok(Value::Reference(contains_table_id)) => {
+        Frame::none().show(container, |ui| {
+          let table = self.core.get_table_by_id(*contains_table_id.unwrap()).unwrap();
+          let table_brrw = table.borrow();
+          match (table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
+                  table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS)))  {
+            (Ok(Value::String(kind)),Ok(Value::Reference(contains_table_id))) => {
+              let table = self.core.get_table_by_id(*contains_table_id.unwrap()).unwrap();
+              let table_brrw = table.borrow();
+              let raw_kind = kind.hash();
+              // Render an element
+              for row in 1..=table_brrw.rows as usize {
                 if raw_kind == *CIRCLE { 
-                  let shapes = self.render_circle(&table_brrw,ui)?;
+                  let shapes = self.render_circle(&table_brrw,row,ui)?;
                   ui.painter().extend(shapes);
                 } else {
                   return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
                 }
               }
-              x => {
-                return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});
-              },
             }
-            Ok(())
-          });
-        }
-        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {
+              return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});
+            },
+          }
+          Ok(())
+        });
       }
+      x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
 
-  pub fn render_circle(&mut self, table: &Table, container: &mut egui::Ui) -> Result<Vec<epaint::Shape>,MechError> {
+  pub fn render_circle(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<Vec<epaint::Shape>,MechError> {
     let x = table.get_column_unchecked(0);
     let y = table.get_column_unchecked(1);
     let r = table.get_column_unchecked(2);
@@ -558,6 +567,15 @@ impl epi::App for MechApp {
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
+
+    let windows = self.windows.clone();
+    for table_id in windows {
+      egui::Window::new(table_id.clone()).show(ctx, |ui| {
+        let table = self.core.get_table(&table_id).unwrap();
+        let table_brrw = table.borrow();
+        self.make_element(&table_brrw,ui);
+      });
+    }
 
     // Set font
     let mut fonts = FontDefinitions::default();
@@ -611,7 +629,7 @@ fn main() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
     let icon = load_icon(Path::new(path));
     native_options.icon_data = Some(icon);
-    native_options.min_window_size = Some(Vec2{x: 1280.0, y: 720.0});
+    native_options.min_window_size = Some(Vec2{x: 1480.0, y: 800.0});
     eframe::run_native(Box::new(app), native_options);
 }
 
