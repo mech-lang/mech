@@ -916,11 +916,14 @@ impl MechFunctionCompiler for TableSplit {
     match arg_shapes[0] {
       TableShape::Matrix(rows,cols) => {
         out_brrw.resize(rows,1);
+
         // Initialize table
         for row in 0..rows {
           let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+
           let mut dest_table = Table::new(split_id,1,cols);
           for (col,arg_col) in arg_cols.iter().enumerate() {
+
             match arg_col {
               (_,Column::F32(_),_) => { dest_table.set_col_kind(col,ValueKind::F32); }
               (_,Column::U8(_),_) => { dest_table.set_col_kind(col,ValueKind::U8); }
@@ -936,7 +939,8 @@ impl MechFunctionCompiler for TableSplit {
               x => {return Err(MechError{id: 4903, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
-          block.global_database.borrow_mut().insert_table(dest_table);
+          let mut db_brrw = block.global_database.borrow_mut();
+          db_brrw.insert_table(dest_table);
           out_brrw.set_raw(row,0,Value::Reference(TableId::Global(split_id)));
         }
         // Write functions

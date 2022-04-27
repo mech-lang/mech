@@ -293,12 +293,14 @@ impl Core {
       block_brrw.global_database = self.database.clone();
       block_brrw.functions = Some(self.functions.clone());
       // Merge databases
-      let mut temp_db_brrw = temp_db.borrow();
-      match self.database.try_borrow_mut() {
-        Ok(ref mut database_brrw) => {
-          database_brrw.union(&mut temp_db_brrw);
+      {
+        let mut temp_db_brrw = temp_db.borrow();
+        match self.database.try_borrow_mut() {
+          Ok(ref mut database_brrw) => {
+            database_brrw.union(&mut temp_db_brrw);
+          }
+          Err(_) => ()
         }
-        Err(_) => ()
       }
       // Merge dictionaries
       for (k,v) in block_brrw.strings.borrow().iter() {
