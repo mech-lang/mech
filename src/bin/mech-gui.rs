@@ -431,16 +431,31 @@ code += "]";
   }
   
   pub fn render_table__window(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
-    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT))) {
-      Ok(Value::String(text)) => {
-        if container.add(egui::Button::new(text.to_string())).clicked() {
-          self.windows.insert(text.to_string());
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*CLICKED))) {
+        (Ok(Value::String(text)), Ok(Value::Reference(value_table_id))) => {
+        let value_table = self.core.get_table_by_id(*value_table_id.unwrap())?;
+        let value_table_brrw = value_table.borrow();
+        match value_table_brrw.get(&TableIndex::Index(1), &TableIndex::Index(1)) {
+          Ok(Value::Bool(value)) => {
+            if container.add(egui::Button::new(text.to_string())).clicked() {
+              let new_value = !value;
+              if new_value {
+                self.windows.insert(text.to_string());
+              } else {
+                self.windows.remove(&text.to_string());
+              }
+              self.changes.push(Change::Set((value_table_brrw.id,vec![(TableIndex::Index(1),TableIndex::Index(1),Value::Bool(!value))])));
+            }
+          }
+          x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
       x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
+
 
   pub fn render_button(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
     match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
@@ -569,6 +584,7 @@ impl epi::App for MechApp {
     let Self { ticks, core, .. } = self;
 
     let windows = self.windows.clone();
+    
     for table_id in windows {
       egui::Window::new(table_id.clone()).show(ctx, |ui| {
         let table = self.core.get_table(&table_id).unwrap();

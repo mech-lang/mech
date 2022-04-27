@@ -40,9 +40,13 @@ Panel contents
 
 ## Panels
 
+Form button switches
+  x = [false #mech/tables]
+  #table-toggles >- x
+
 Tables panels
   #tables-panel-contents = [
-    [kind: "table-window" text: #mech/tables]
+    [kind: "table-window" clicked: #table-toggles text: #mech/tables]
   ]
 
 ## Interactions
