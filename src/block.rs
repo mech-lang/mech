@@ -568,7 +568,9 @@ impl Block {
           TableId::Global(id) => {
             let mut table = Table::new(*id, 0, 0);
             table.dictionary = self.strings.clone();
-            self.global_database.borrow_mut().insert_table(table);
+            {
+              self.global_database.borrow_mut().insert_table(table);
+            }
             self.output.insert((*table_id,TableIndex::All,TableIndex::All));
             self.defined_tables.insert((*table_id,TableIndex::All,TableIndex::All));
           }
@@ -587,7 +589,9 @@ impl Block {
         let rows = src_table_brrw.rows;
         let cols = src_table_brrw.cols;
         let dest_table = Table::new(src_id,rows,cols);
-        self.global_database.borrow_mut().insert_table(dest_table);
+        {
+          self.global_database.borrow_mut().insert_table(dest_table);
+        }
       }
       Transformation::TableAlias{table_id, alias} => {
         self.tables.insert_alias(*alias, *table_id)?;
