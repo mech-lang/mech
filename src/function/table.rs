@@ -923,6 +923,16 @@ impl MechFunctionCompiler for TableSplit {
           for (col,arg_col) in arg_cols.iter().enumerate() {
             match arg_col {
               (_,Column::F32(_),_) => { dest_table.set_col_kind(col,ValueKind::F32); }
+              (_,Column::U8(_),_) => { dest_table.set_col_kind(col,ValueKind::U8); }
+              (_,Column::U32(_),_) => { dest_table.set_col_kind(col,ValueKind::U32); }
+              (_,Column::U64(_),_) => { dest_table.set_col_kind(col,ValueKind::U64); }
+              (_,Column::U128(_),_) => { dest_table.set_col_kind(col,ValueKind::U128); }
+              (_,Column::I8(_),_) => { dest_table.set_col_kind(col,ValueKind::I8); }
+              (_,Column::I32(_),_) => { dest_table.set_col_kind(col,ValueKind::I32); }
+              (_,Column::I64(_),_) => { dest_table.set_col_kind(col,ValueKind::I64); }
+              (_,Column::I128(_),_) => { dest_table.set_col_kind(col,ValueKind::I128); }
+              (_,Column::String(_),_) => { dest_table.set_col_kind(col,ValueKind::String); }
+              (_,Column::Bool(_),_) => { dest_table.set_col_kind(col,ValueKind::Bool); }
               x => {return Err(MechError{id: 4903, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -940,6 +950,28 @@ impl MechFunctionCompiler for TableSplit {
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
                   Column::F32(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
+                  x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
+              }
+            }
+            (_,Column::String(src_col),ColumnIndex::All) => {
+              for row in 0..rows {
+                // get the destination table
+                let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+                let dest_table = block.get_table(&TableId::Global(split_id))?;
+                let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
+                match dest_col {
+                  Column::String(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
+                  x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
+              }
+            }
+            (_,Column::Bool(src_col),ColumnIndex::All) => {
+              for row in 0..rows {
+                // get the destination table
+                let split_id = hash_str(&format!("{:?}{:?}", out_table_id, row));
+                let dest_table = block.get_table(&TableId::Global(split_id))?;
+                let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
+                match dest_col {
+                  Column::Bool(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
                   x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
               }
             }
