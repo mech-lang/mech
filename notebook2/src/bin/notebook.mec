@@ -6,6 +6,7 @@ Some global values
   #tables-button = false
   #docs-button = false
   #system-button = false
+  #compile-button = false
   #value = 42
   #time/timer += [period: 16<ms>]
 
@@ -21,8 +22,7 @@ A slider with a label attached
     [kind: "slider" min: 0, max: 100, value: [#value]]
   ]
 
-Set the thing to nothing
-  #code-contents = [[kind: "code" text: [#code]]]
+## Panels
 
 Panel contents
   switches = [
@@ -35,10 +35,14 @@ Panel contents
   labels = ["Code"; "Tables"; "Docs"; "System"; "Debug"]
   #left-contents = [[kind: "button" clicked: switches text: labels]]
   #mid-contents = [[#files]]
-  #inspector-contents = ["One"; "Two"; "Three"]
+  #inspector-contents = [
+    "Inspector"
+  ]
+  #code-contents = [
+    [kind: "button" clicked: [#compile-button] text: "Compile"]
+    [kind: "code" text: [#code]]
+  ]
   #app-contents = [1:10]
-
-## Panels
 
 Form button switches
   x = [false #mech/tables]
@@ -50,6 +54,11 @@ Tables panels
   ]
 
 ## Interactions
+
+When the compile button is clicked, take the contents of the code area
+and compile it.
+  ~ #compile-button
+  #mech/compiler := #code  
 
 When the debug button is clicked, show the debugger
   ~ #debug-button
@@ -95,10 +104,4 @@ The panels
   ]]
 
 Add a gui application
-  #app = [
-    #left-panel
-    #mid-panel
-    #code-area
-    #app-area
-    #inspector-panel
-  ]
+  #app = [#left-panel; #mid-panel; #code-area; #app-area; #inspector-panel]
