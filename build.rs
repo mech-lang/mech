@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     res.set_icon("mech.ico");
     res.compile().unwrap();
   }
-
+/*
   let out_dir = env::var("OUT_DIR")?;
   let dest_path = Path::new(&out_dir).join("mech_app_files.rs");
   let mut all_the_files = File::create(&dest_path)?;
@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
       )?;
   }
 
-  writeln!(&mut all_the_files, r##"]"##,)?;
+  writeln!(&mut all_the_files, r##"]"##,)?;*/
 
   Ok(())
 }

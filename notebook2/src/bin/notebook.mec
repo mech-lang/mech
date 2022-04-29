@@ -1,0 +1,110 @@
+# Mech Notebook
+
+Some global values
+  #debug-button = false
+  #code-button = false
+  #tables-button = false
+  #compile-button = false
+  #time/timer += [period: 16<ms>]
+
+The code
+  #code = "1:10"
+
+The files
+  #files = "untitiled.mec"
+
+Slider value container
+  #value = 42
+
+A slider with a label attached
+  #slider = [
+    [#value * 10]
+    [kind: "slider" min: 0, max: 100, value: [#value]]
+  ]
+
+## Panels
+
+Panel contents
+  switches = [
+    [#code-button]
+    [#tables-button]
+    [#debug-button]
+  ]
+  labels = ["Code"; "Tables"; "Debug"]
+  #left-contents = [[kind: "button" clicked: switches text: labels]]
+  #mid-contents = [[#files]]
+  #inspector-contents = [
+    "right panel"
+  ]
+  #code-contents = [
+    [kind: "button" clicked: [#compile-button] text: "Compile"]
+    [kind: "code" text: [#code]]
+  ]
+  #app-contents = [1:10]
+
+Form button switches
+  x = [false #mech/tables]
+  #table-toggles >- x
+
+Tables panels
+  #tables-panel-contents = [
+    [kind: "table-window" clicked: #table-toggles text: #mech/tables]
+  ]
+
+## Interactions
+
+When the compile button is clicked, take the contents of the code area
+and compile it.
+  ~ #compile-button
+  #mech/compiler := #code  
+
+When the debug button is clicked, show debug output
+  ~ #debug-button
+  #code-area.contains := [[kind: "debug"]]
+
+When the code button is clicked, show the code editor
+  ~ #code-button
+  #code-area.contains := [[#code-contents]]
+  #mid-panel.contains := [[#mid-contents]]
+
+When the code button is clicked, show the code editor
+  ~ #tables-button
+  #mid-panel.contains := [[#tables-panel-contents]]
+
+## Drawing
+
+The panels
+  #left-panel = [
+    kind: "panel-left" 
+    contains: [#left-contents] 
+    parameters: [fill: 0x2E2A3C, min-width: 5] 
+  ]
+  #mid-panel = [
+    kind: "panel-left" 
+    contains: [#mid-contents]
+    parameters: [fill: 0x23222A, min-width: 150] 
+  ]
+  #code-area = [
+    kind: "panel-left" 
+    contains: [#code-contents] 
+    parameters: [fill: 0x131218, min-width: 600] 
+  ]
+  #app-area = [
+    kind: "panel-center" 
+    contains: [#app-contents] 
+    parameters: [fill: 0x0B0A0E] 
+  ]
+  #inspector-panel = [
+    kind: "panel-right" 
+    contains: [#inspector-contents] 
+    parameters: [fill: 0x23222A, min-width: 150] 
+  ]
+
+Add a gui application
+  #app = [
+    [#left-panel]
+    [#mid-panel]
+    [#code-area]
+    [#app-area]
+    [#inspector-panel]
+  ]

@@ -607,7 +607,6 @@ clear   - reset the current core
     }
   });
 
-
   'REPL: loop {
     
     io::stdout().flush().unwrap();
