@@ -146,14 +146,15 @@ impl MechApp {
     
     let mut code = r#"
 #time/timer = [|period<s> ticks<u64>|]
-#mech/compile = [|code<string>|]
+#mech/compiler = [|code<string>| "hi"]
 #io/pointer = [|x<f32> y<f32>| 0 0]"#.to_string();
 
 code += r#"
 #mech/tables = [|name<string>|
                  "time/timer"
                  "io/pointer"
-                 "mech/tables""#;
+                 "mech/tables"
+                 "mech/compiler""#;
 for name in mech_core.table_names() {
   code += &format!("\n{:?}",name);     
 }
@@ -583,6 +584,17 @@ impl epi::App for MechApp {
 
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
+
+    // Compile new code...
+    {
+      let code_table = core.get_table("mech/compiler").unwrap();
+      let code_table_brrw = code_table.borrow();
+      if let Value::String(code_string) = code_table_brrw.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap() {
+
+      }
+    }
+
+
 
     let windows = self.windows.clone();
     
