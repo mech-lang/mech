@@ -585,17 +585,6 @@ impl epi::App for MechApp {
   fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
     let Self { ticks, core, .. } = self;
 
-    // Compile new code...
-    {
-      let code_table = core.get_table("mech/compiler").unwrap();
-      let code_table_brrw = code_table.borrow();
-      if let Value::String(code_string) = code_table_brrw.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap() {
-
-      }
-    }
-
-
-
     let windows = self.windows.clone();
     
     for table_id in windows {
@@ -619,6 +608,24 @@ impl epi::App for MechApp {
     egui::CentralPanel::default()
       .frame(frame)
     .show(ctx, |ui| {
+      // Compile new code...
+      {
+        let code_table = self.core.get_table("mech/compiler").unwrap();
+        let code_table_brrw = code_table.borrow();
+        if let Value::String(code_string) = code_table_brrw.get(&TableIndex::Index(1),&TableIndex::Index(1)).unwrap() {
+          if code_string.to_string() != "" {
+            let mut compiler = Compiler::new();
+            let blocks = compiler.compile_str(&code_string.to_string()).unwrap();
+            self.core.load_blocks(blocks);
+            self.core.schedule_blocks();    
+            self.changes.push(Change::Set((hash_str("mech/compiler"),vec![
+              (TableIndex::Index(1),TableIndex::Index(1),Value::String(MechString::from_string("".to_string())))
+            ])));
+          }
+        }
+      }
+
+
       ui.ctx().request_repaint();
       self.render_app(ui);
 
