@@ -4,10 +4,7 @@ Some global values
   #debug-button = false
   #code-button = false
   #tables-button = false
-  #docs-button = false
-  #system-button = false
   #compile-button = false
-  #value = 42
   #time/timer += [period: 16<ms>]
 
 The code
@@ -15,6 +12,9 @@ The code
 
 The files
   #files = "untitiled.mec"
+
+Slider value container
+  #value = 42
 
 A slider with a label attached
   #slider = [
@@ -28,15 +28,13 @@ Panel contents
   switches = [
     [#code-button]
     [#tables-button]
-    [#docs-button]
-    [#system-button]
     [#debug-button]
   ]
-  labels = ["Code"; "Tables"; "Docs"; "System"; "Debug"]
+  labels = ["Code"; "Tables"; "Debug"]
   #left-contents = [[kind: "button" clicked: switches text: labels]]
   #mid-contents = [[#files]]
   #inspector-contents = [
-    "Inspector"
+    "right panel"
   ]
   #code-contents = [
     [kind: "button" clicked: [#compile-button] text: "Compile"]
@@ -60,48 +58,53 @@ and compile it.
   ~ #compile-button
   #mech/compiler := #code  
 
-When the debug button is clicked, show the debugger
+When the debug button is clicked, show debug output
   ~ #debug-button
-  #mid-contents := [[""]]
-  #code-contents := [[kind: "debug"]]
+  #code-area.contains := [[kind: "debug"]]
 
 When the code button is clicked, show the code editor
   ~ #code-button
-  #code-contents := [[kind: "code" text: [#code]]]
-  #mid-contents := [[#files]]
+  #code-area.contains := [[#code-contents]]
+  #mid-panel.contains := [[#mid-contents]]
 
 When the code button is clicked, show the code editor
   ~ #tables-button
-  #mid-contents := [[#tables-panel-contents]]
+  #mid-panel.contains := [[#tables-panel-contents]]
 
 ## Drawing
 
 The panels
-  #left-panel = [[
+  #left-panel = [
     kind: "panel-left" 
     contains: [#left-contents] 
     parameters: [fill: 0x2E2A3C, min-width: 5] 
-  ]]
-  #mid-panel = [[
+  ]
+  #mid-panel = [
     kind: "panel-left" 
     contains: [#mid-contents]
     parameters: [fill: 0x23222A, min-width: 150] 
-  ]]
-  #code-area = [[
+  ]
+  #code-area = [
     kind: "panel-left" 
     contains: [#code-contents] 
     parameters: [fill: 0x131218, min-width: 600] 
-  ]]
-  #app-area = [[
+  ]
+  #app-area = [
     kind: "panel-center" 
     contains: [#app-contents] 
     parameters: [fill: 0x0B0A0E] 
-  ]]
-  #inspector-panel = [[
+  ]
+  #inspector-panel = [
     kind: "panel-right" 
     contains: [#inspector-contents] 
     parameters: [fill: 0x23222A, min-width: 150] 
-  ]]
+  ]
 
 Add a gui application
-  #app = [#left-panel; #mid-panel; #code-area; #app-area; #inspector-panel]
+  #app = [
+    [#left-panel]
+    [#mid-panel]
+    [#code-area]
+    [#app-area]
+    [#inspector-panel]
+  ]
