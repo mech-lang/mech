@@ -24,8 +24,14 @@ syntax_highlighting = ["egui_demo_lib/syntax_highlighting"]
 
 
 [dependencies]
+lazy_static = "1.4.0"
 eframe = { version = "0.17.0"}
 mech = {path = "../"}
+image = { version = "0.24.0", default-features = false, features = [
+  "ico",
+  "jpeg",
+  "png",
+] }
 
 # To use the old glium backend instead:
 # eframe = { version = "0.17.0", path = "../eframe", default-features = false, features = ["default_fonts", "egui_glium"] }
