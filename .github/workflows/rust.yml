@@ -15,10 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@master
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Setup
       run: rustup default nightly-2022-03-27
     - name: Build
