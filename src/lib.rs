@@ -153,6 +153,7 @@ lazy_static! {
   static ref PORT: u64 = hash_str("port");
   static ref PROTOCOL: u64 = hash_str("protocol");
   static ref SEARCH: u64 = hash_str("search");
+  static ref SCALE: u64 = hash_str("scale");
 }
 
 #[wasm_bindgen]
