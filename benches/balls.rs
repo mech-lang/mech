@@ -28,7 +28,6 @@ use std::ops::*;
 #[bench]
 fn bouncing_ballss(b:&mut Bencher){
  
-  let start_ns0 = time::precise_time_ns();
   let n = 1e6 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
