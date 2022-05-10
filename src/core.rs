@@ -119,6 +119,7 @@ impl Core {
     // Set
     functions.insert(*SET_ANY, Box::new(SetAny{}));
     functions.insert(*SET_ALL, Box::new(SetAll{}));
+    functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
      
     Core {
       blocks: HashMap::new(),

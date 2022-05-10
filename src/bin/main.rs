@@ -31,9 +31,11 @@ use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
 
+use time::Instant;
+
 fn main() -> std::result::Result<(),MechError> {
  
-  let start_ns0 = time::precise_time_ns();
+  let now = Instant::now();
   let n = 1e6 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
@@ -237,6 +239,7 @@ fn main() -> std::result::Result<(),MechError> {
   let gravity: f32 = 1.0;
 
   //println!("{:?}", core);
+  /*
   let mut total_time = VecDeque::new();  
   for i in 0..50000 {
     let txn = vec![Change::Set((hash_str("time/timer"), 
@@ -276,11 +279,11 @@ fn main() -> std::result::Result<(),MechError> {
     //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (cycle_duration / 1_000_000_000.0));
   }
-  let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
-  println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
-  let end_ns0 = time::precise_time_ns();
-  let time = (end_ns0 - start_ns0) as f32;
-  println!("{:0.4?} s", time / 1e9);
+  */
+  //let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+  //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+ // let time = (end_ns0 - start_ns0) as f32;
+  //println!("{:0.4?} s", time / 1e9);
   //println!("{:?}", core);
 
   Ok(())
