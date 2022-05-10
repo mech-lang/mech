@@ -28,6 +28,7 @@ lazy_static! {
   static ref SLIDER: u64 = hash_str("slider");
   static ref MIN: u64 = hash_str("min");
   static ref MIN__WIDTH: u64 = hash_str("min-width");
+  static ref MIN__HEIGHT: u64 = hash_str("min-height");
   static ref MAX: u64 = hash_str("max");
   static ref VALUE: u64 = hash_str("value");
   static ref CANVAS: u64 = hash_str("canvas");
@@ -94,6 +95,8 @@ lazy_static! {
   static ref TEXT: u64 = hash_str("text");
   static ref URL: u64 = hash_str("url");
   static ref CODE: u64 = hash_str("code");
+  static ref PANEL__TOP: u64 = hash_str("panel-top");
+  static ref PANEL__BOTTOM: u64 = hash_str("panel-bottom");
   static ref PANEL__LEFT: u64 = hash_str("panel-left");
   static ref PANEL__CENTER: u64 = hash_str("panel-center");
   static ref PANEL__RIGHT: u64 = hash_str("panel-right");
@@ -248,6 +251,8 @@ code += "]";
               if raw_kind == *LINK { self.render_link(table,row,ui)?; }
               else if raw_kind == *SLIDER { self.render_slider(table,row,ui)?; }
               else if raw_kind == *CODE { self.render_code(table,row,ui)?; }
+              else if raw_kind == *PANEL__TOP { self.render_panel_top(table,row,ui)?; }
+              else if raw_kind == *PANEL__BOTTOM { self.render_panel_bottom(table,row,ui)?; }
               else if raw_kind == *PANEL__RIGHT { self.render_panel_right(table,row,ui)?; }
               else if raw_kind == *PANEL__LEFT { self.render_panel_left(table,row,ui)?; }
               else if raw_kind == *PANEL__CENTER { self.render_panel_center(table,row,ui)?; }
@@ -305,6 +310,84 @@ code += "]";
         }
       }
       x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_bottom(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+      (contained,parameters_table) => {
+        let mut frame = Frame::default();
+        let mut min_height = 100.0;
+        if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+          match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+            Ok(parameters_table) => {
+              let parameters_table_brrow = parameters_table.borrow();
+              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                let color: u32 = value.into();
+                let r = (color >> 16) as u8;
+                let g = (color >> 8) as u8;
+                let b = color as u8;
+                frame.fill = Color32::from_rgb(r,g,b);
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
+                min_height = value.into();
+              }
+            }
+            _ => (),
+          }
+        }
+        frame.margin = egui::style::Margin::same(10.0);
+        egui::TopBottomPanel::bottom(humanize(&table.id))
+          .resizable(false)
+          .min_height(min_height)
+          .frame(frame)
+        .show_inside(container, |ui| {
+          if let Ok(contained) = contained {
+            self.render_value(contained, ui);
+          }
+        });
+      }
+    }
+    Ok(())
+  }
+
+  pub fn render_panel_top(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
+    match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*CONTAINS)),
+            table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+      (contained,parameters_table) => {
+        let mut frame = Frame::default();
+        let mut min_height = 100.0;
+        if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
+          match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
+            Ok(parameters_table) => {
+              let parameters_table_brrow = parameters_table.borrow();
+              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                let color: u32 = value.into();
+                let r = (color >> 16) as u8;
+                let g = (color >> 8) as u8;
+                let b = color as u8;
+                frame.fill = Color32::from_rgb(r,g,b);
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
+                min_height = value.into();
+              }
+            }
+            _ => (),
+          }
+        }
+        frame.margin = egui::style::Margin::same(10.0);
+        egui::TopBottomPanel::top(humanize(&table.id))
+          .resizable(false)
+          .min_height(min_height)
+          .frame(frame)
+        .show_inside(container, |ui| {
+          if let Ok(contained) = contained {
+            self.render_value(contained, ui);
+          }
+        });
+      }
     }
     Ok(())
   }
@@ -553,7 +636,7 @@ code += "]";
 
     //let to_screen = emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=500.0, 0.0..=500.0), rect);
     let mut shapes = vec![];
-    let color = Color32::from_rgb(0xFF,0,0);
+    let color = Color32::from_rgb(0x4A,0x44,0x56);
 
     match (x,y,r) {
       (Column::F32(x), Column::F32(y), Column::F32(r)) => {
