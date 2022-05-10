@@ -479,6 +479,12 @@ block
 
 // ## Set
 
+test_mech!(set_cartesian_product,"
+x = 1:4
+y = 1:4
+prod = set/cartesian(a: x, b: y)
+#test = stats/sum(table: prod)", Value::F32(F32::new(80.0)));
+
 test_mech!(set_column_simple,"
 block
   #test = [|x|

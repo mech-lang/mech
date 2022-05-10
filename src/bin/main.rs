@@ -8,11 +8,28 @@ use std::rc::Rc;
 
 fn main() -> Result<(),MechError> {
 
-let input = r#"# Title
+let input = r#"
+# Panels
 
-Para graph
+button
+  #button = false
 
-  #test = 123"#;
+foo is
+  #x = ["Hello" "World"]
+  #y = ["Goodbye" "World"]
+
+Form button switches
+  ~ #button
+  #z.contains := [[#y]]
+
+What is x
+  #z = [
+    kind: "panel-left"
+    contains: [#x]
+  ]
+
+Set x
+  #z.contains := [[#x]]"#;
 
   let input = String::from(input);
 
@@ -29,20 +46,46 @@ println!("{:#?}", parse_tree);
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
   
   core.load_blocks(blocks);
+  //println!("{:#?}", core.blocks);
   println!("{:?}", core);
+
+
+  let mut code = r#"
+Next
+  #mech/tables = [|name<string>|
+                  "other-a"
+                  "other-b"
+                  "other-c"]
+block
+  #q = 123
+"#;
+  
+  let mut compiler = Compiler::new();
+  let blocks = compiler.compile_str(&code).unwrap();
+  core.load_blocks(blocks);
+  
   core.schedule_blocks()?;
-  println!("Done");
-  /*
+  //println!("Done");
+  
   let ticks = 30;
   // println!("{:#?}", core.get_table("balls").unwrap().borrow());
 
   let changes = vec![
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(1)))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Index(2), Value::U64(U64::new(2)))])),
+    Change::Set((hash_str("button"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::Bool(true))]))
   ];
 
-  core.process_transaction(&changes)?;*/
+  //core.process_transaction(&changes)?;
 
+  let changes = vec![
+    Change::Set((hash_str("y"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::Bool(true))]))
+  ];
+
+  let changes = vec![
+    Change::Set((hash_str("x"), vec![(TableIndex::Index(1), TableIndex::Index(1), Value::Bool(true))]))
+  ];
+
+
+  //core.process_transaction(&changes)?;
 
 
 
@@ -60,13 +103,13 @@ println!("{:#?}", parse_tree);
   println!("Processing Txn...");
   core.process_transaction(&txn);
   println!("Done Txn.");*/
-  println!("{:#?}", core.blocks);
+  //println!("{:#?}", core.blocks);
 
   //println!("Core:");
   println!("{:#?}", core);
 
   
-  /*if let Ok(table) = core.get_table("b") {
+  /*if let Ok(table) = core.get_table("container") {
     println!("Answer:");
     println!("{:#?}", table.borrow());
   }*/
