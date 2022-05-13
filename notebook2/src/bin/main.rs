@@ -14,6 +14,8 @@ use std::thread::JoinHandle;
 extern crate image;
 use std::path::Path;
 use std::collections::{HashMap, HashSet};
+use std::env;
+use std::fs;
 
 #[macro_use]
 extern crate lazy_static;
@@ -132,45 +134,49 @@ struct MechApp {
 
 //static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
 
-impl MechApp {
-  pub fn new() -> Self {
-    //let code = LONG_STRING;
-    let code = include_str!("notebook.mec");
-    let mut mech_core = mech_core::Core::new();
-    let mut compiler = Compiler::new(); 
-    match compiler.compile_str(code) {
-      Ok(blocks) => {
-        mech_core.load_blocks(blocks);
-      }
-      Err(x) => {
-        
-      }
+fn load_mech() -> mech_core::Core {
+  let code = fs::read_to_string(r#"C:\Users\cmont\mech\mech\notebook2\src\bin\notebook.mec"#).unwrap();
+  let mut mech_core = mech_core::Core::new();
+  let mut compiler = Compiler::new(); 
+  match compiler.compile_str(&code) {
+    Ok(blocks) => {
+      mech_core.load_blocks(blocks);
     }
-    
-    let mut code = r#"
+    Err(x) => {
+      
+    }
+  }
+  
+  let mut code = r#"
 #time/timer = [|period<s> ticks<u64>|]
 #mech/compiler = [|code<string>| "hi"]
 #io/pointer = [|x<f32> y<f32>| 0 0]"#.to_string();
 
 code += r#"
 #mech/tables = [|name<string>|
-                 "time/timer"
-                 "io/pointer"
-                 "mech/tables"
-                 "mech/compiler""#;
+               "time/timer"
+               "io/pointer"
+               "mech/tables"
+               "mech/compiler""#;
 for name in mech_core.table_names() {
-  code += &format!("\n{:?}",name);     
+code += &format!("\n{:?}",name);     
 }
 code += "]";
 
+  let mut compiler = Compiler::new();
+  let blocks = compiler.compile_str(&code).unwrap();
+  mech_core.load_blocks(blocks);
+  mech_core.schedule_blocks();
+  mech_core
+}
 
 
+impl MechApp {
+  pub fn new() -> Self {
+    //let code = LONG_STRING;
+    //let code = include_str!("notebook.mec");
 
-    let mut compiler = Compiler::new();
-    let blocks = compiler.compile_str(&code).unwrap();
-    mech_core.load_blocks(blocks);
-    mech_core.schedule_blocks();
-
+    let mech_core = load_mech();
     let mut shapes = vec![epaint::Shape::Noop; 100000];
 
     Self {
@@ -338,7 +344,7 @@ code += "]";
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(10.0);
+        frame.margin = egui::style::Margin::same(0.0);
         egui::TopBottomPanel::bottom(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
@@ -377,7 +383,7 @@ code += "]";
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(10.0);
+        frame.margin = egui::style::Margin::same(0.0);
         egui::TopBottomPanel::top(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
@@ -605,13 +611,11 @@ code += "]";
               let table_brrw = table.borrow();
               let raw_kind = kind.hash();
               // Render an element
-              for row in 1..=table_brrw.rows as usize {
-                if raw_kind == *CIRCLE { 
-                  let shapes = self.render_circle(&table_brrw,row,ui)?;
-                  ui.painter().extend(shapes);
-                } else {
-                  return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
-                }
+              if raw_kind == *CIRCLE { 
+                let shapes = self.render_circle(&table_brrw,ui)?;
+                ui.painter().extend(shapes);
+              } else {
+                return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
               }
             }
             x => {
@@ -626,7 +630,7 @@ code += "]";
     Ok(())
   }
 
-  pub fn render_circle(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<Vec<epaint::Shape>,MechError> {
+  pub fn render_circle(&mut self, table: &Table, container: &mut egui::Ui) -> Result<Vec<epaint::Shape>,MechError> {
     let x = table.get_column_unchecked(0);
     let y = table.get_column_unchecked(1);
     let r = table.get_column_unchecked(2);
@@ -709,7 +713,7 @@ impl epi::App for MechApp {
       }
 
 
-      ui.ctx().request_repaint();
+      //ui.ctx().request_repaint();
       self.render_app(ui);
 
       // Update IO
@@ -724,6 +728,10 @@ impl epi::App for MechApp {
           ])));
         }
         _ => (),
+      }
+      if ui.input().keys_down.contains(&egui::Key::Escape) {
+        let core = load_mech();
+        self.core = core;
       }
       self.core.process_transaction(&self.changes);
       self.changes.clear();
