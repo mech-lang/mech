@@ -5,8 +5,8 @@ Some global values
 
 The dot grid
   x = (1:300) * 15 + 60
-  y = (1:100) * 15 + #top-panel-height
-  indices = [set/cartesian(a: x, b: y)]
+  y = (1:60) * 15 + #top-panel-height
+  indices = set/cartesian(a: x, b: y)
   #grid = [
     kind: "canvas"
     contains: [
@@ -14,15 +14,29 @@ The dot grid
       parameters: [
         center-x: indices{:,1}, 
         center-y: indices{:,2}, 
-        radius: 0.5
-        fill: 0xAA0000
-      ]
-    ]
-  ]
+        radius: 0.6
+        fill: 0x3E3848]]]
+
+Follow Cursor
+  #cursor = [
+    kind: "canvas"
+    contains: [
+      shape: "circle"
+      parameters: [
+        center-x: #io/pointer.x,
+        center-y: #io/pointer.y, 
+        radius: 25,
+        fill: 0x3E3848]]]
+
 
 ## Panels
 
 Panel contents
+  opened-files = [
+    "bouncing-balls.mec" 
+    "other1.mec" 
+    "other2.mec"
+  ]
   panels = [
     "Code"
     "Tables"
@@ -31,7 +45,11 @@ Panel contents
     "Timeline"
     "Settings"
   ]
-  #top-contents = [#io/pointer.x #io/pointer.y #time/timer.ticks]
+  #top-contents = [
+    kind: "panel-left"
+    contains: opened-files
+    parameters: [fill: 0x2E2A3C, min-width: 250]
+  ]
   #bottom-contents = ["blank"]
   #app-contents = [[""]]
   #left-contents = [panels]
@@ -75,5 +93,6 @@ Add a gui application
     [#app-area]    
     [#top-panel]
     [#left-panel]
+    [#cursor]
     [#grid]
   ]
