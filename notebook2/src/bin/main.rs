@@ -484,14 +484,12 @@ impl MechApp {
         if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
-              let parameters_table_brrow = parameters_table.borrow();
-              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                let color: u32 = value.into();
-                let r = (color >> 16) as u8;
-                let g = (color >> 8) as u8;
-                let b = color as u8;
-                frame.fill = Color32::from_rgb(r,g,b);
-              }
+              let parameters_table_brrw = parameters_table.borrow();
+              let fill = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
+                Ok(Value::U128(fill_value)) => get_color(fill_value),
+                _ => Color32::from_rgb(0xFF,0x00,0x00),
+              };
+              frame.fill = fill;
             }
             _ => (),
           }
@@ -630,37 +628,57 @@ impl MechApp {
     Ok(())
   }
 
+
+
   pub fn render_circle(&mut self, table: &Table, container: &mut egui::Ui) -> Result<Vec<epaint::Shape>,MechError> {
-    let x = table.get_column_unchecked(0);
-    let y = table.get_column_unchecked(1);
-    let r = table.get_column_unchecked(2);
-
-    let desired_size = container.available_width() * vec2(1.0, 1.00);
-    let (_id, rect) = container.allocate_space(desired_size);
-
-    //let to_screen = emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=500.0, 0.0..=500.0), rect);
     let mut shapes = vec![];
-    let color = Color32::from_rgb(0x4A,0x44,0x56);
+    match (table.get_column(&TableIndex::Alias(*CENTER__X)),
+           table.get_column(&TableIndex::Alias(*CENTER__Y))) {
+      (Ok(Column::F32(x)), Ok(Column::F32(y))) => {
 
-    match (x,y,r) {
-      (Column::F32(x), Column::F32(y), Column::F32(r)) => {
         let x_brrw = x.borrow();
         let y_brrw = y.borrow();
-        let r_brrw = r.borrow();
+   
+        let radius = if let Ok(Column::F32(radius)) = table.get_column(&TableIndex::Alias(*RADIUS)) { radius }
+        else { ColumnV::new(vec![F32::new(1.0); table.rows]) };
+
+        let line_width = if let Ok(Column::F32(line_width)) = table.get_column(&TableIndex::Alias(*LINE__WIDTH)) { line_width }
+        else { ColumnV::new(vec![F32::new(0.0); table.rows]) };
+
+        let fill = if let Ok(Column::U128(fill)) = table.get_column(&TableIndex::Alias(*FILL)) { fill }
+        else { ColumnV::new(vec![U128::new(0); table.rows]) };
+
+        let stroke = if let Ok(Column::U128(color)) = table.get_column(&TableIndex::Alias(*STROKE)) { color }
+        else { ColumnV::new(vec![U128::new(0); table.rows]) };
+
+        let radius_brrw = radius.borrow();
+        let line_width_brrw = line_width.borrow();
+        let stroke_brrw = stroke.borrow();
+        let fill_brrw = fill.borrow();
+
         for i in 0..table.rows {
+          let line_width: f32 = line_width_brrw[i].into();
           shapes.push(epaint::Shape::Circle(epaint::CircleShape{
             center: Pos2{x: x_brrw[i].into(), y: y_brrw[i].into()},
-            radius: r_brrw[i].into(),
-            fill: color,
-            stroke: epaint::Stroke::new(1.0,color),
+            radius: radius_brrw[i].into(),
+            fill: get_color(fill_brrw[i]),
+            stroke: epaint::Stroke::new(line_width, get_color(stroke_brrw[i])),
           }));
         }
       }
-      x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      x => {return Err(MechError{id: 6497, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(shapes)
   }
 
+}
+
+pub fn get_color(color_value: U128) -> Color32 {
+  let color: u32 = color_value.into();
+  let r = (color >> 16) as u8;
+  let g = (color >> 8) as u8;
+  let b = color as u8;
+  Color32::from_rgb(r,g,b)
 }
 
 impl epi::App for MechApp {
