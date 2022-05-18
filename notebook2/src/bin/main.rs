@@ -105,6 +105,8 @@ lazy_static! {
   static ref DEBUG: u64 = hash_str("debug");
   static ref CLICKED: u64 = hash_str("clicked");
   static ref TABLE__WINDOW: u64 = hash_str("table-window");
+  static ref LABEL: u64 = hash_str("label");
+  static ref COLOR: u64 = hash_str("color");
 }
 
 fn load_icon(path: &Path) -> epi::IconData {
@@ -266,6 +268,7 @@ impl MechApp {
               else if raw_kind == *TABLE__WINDOW { self.render_table__window(table,row,ui)?; }
               else if raw_kind == *CANVAS { self.render_canvas(table,row,ui)?; }
               else if raw_kind == *DEBUG { self.render_debug(table,row,ui)?; }
+              else if raw_kind == *LABEL { self.render_label(table,ui)?; }
               //else if raw_kind == *IMAGE { render_iamge(table,ui)?; }
               else {
                 return Err(MechError{id: 6489, kind: MechErrorKind::GenericError(format!("{:?}", raw_kind))});
@@ -518,6 +521,28 @@ impl MechApp {
     }
     Ok(())
   }
+
+  pub fn render_label(&mut self, table: &Table, container: &mut egui::Ui) -> Result<(),MechError> {
+    for row in 1..=table.rows {
+      match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
+             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
+        (Ok(Value::String(text)), Ok(Value::Reference(parameters_table_id))) => {
+          let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap())?;
+          let parameters_table_brrw = parameters_table.borrow();
+
+          let color = if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*COLOR)) { color }
+          else { U128::new(0) };
+
+          let label = egui::RichText::new(text.to_string())
+            .color(get_color(color));
+
+          container.label(label);
+        }
+        x => {return Err(MechError{id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      }
+    }
+    Ok(())
+  }
   
   pub fn render_table__window(&mut self, table: &Table, row: usize, container: &mut egui::Ui) -> Result<(),MechError> {
     match (table.get(&TableIndex::Index(row), &TableIndex::Alias(*TEXT)),
@@ -635,10 +660,7 @@ impl MechApp {
     match (table.get_column(&TableIndex::Alias(*CENTER__X)),
            table.get_column(&TableIndex::Alias(*CENTER__Y))) {
       (Ok(Column::F32(x)), Ok(Column::F32(y))) => {
-
-        let x_brrw = x.borrow();
-        let y_brrw = y.borrow();
-   
+  
         let radius = if let Ok(Column::F32(radius)) = table.get_column(&TableIndex::Alias(*RADIUS)) { radius }
         else { ColumnV::new(vec![F32::new(1.0); table.rows]) };
 
@@ -655,6 +677,9 @@ impl MechApp {
         let line_width_brrw = line_width.borrow();
         let stroke_brrw = stroke.borrow();
         let fill_brrw = fill.borrow();
+
+        let x_brrw = x.borrow();
+        let y_brrw = y.borrow();
 
         for i in 0..table.rows {
           let line_width: f32 = line_width_brrw[i].into();
