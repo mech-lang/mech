@@ -4,8 +4,8 @@ Some global values
   #time/timer += [period: 16<ms>]
 
 The dot grid
-  x = (1:300) * 15 + 60
-  y = (1:60) * 15 + #top-panel-height
+  x = (1:300) * 15 + 70
+  y = (1:100) * 15 + #top-panel-height
   indices = set/cartesian(a: x, b: y)
   #grid = [
     kind: "canvas"
@@ -14,7 +14,7 @@ The dot grid
       parameters: [
         center-x: indices{:,1}, 
         center-y: indices{:,2}, 
-        radius: 0.6
+        radius: 1
         fill: 0x3E3848]]]
 
 Follow Cursor
@@ -37,6 +37,7 @@ Panel contents
     "other1.mec" 
     "other2.mec"
   ]
+  opened-files-labels = [kind: "label", text: opened-files, parameters: [color: 0xF4D8D8]]
   panels = [
     "Code"
     "Tables"
@@ -50,8 +51,10 @@ Panel contents
     contains: opened-files
     parameters: [fill: 0x2E2A3C, min-width: 250]
   ]
-  #bottom-contents = ["blank"]
-  #app-contents = [[""]]
+  #bottom-contents = [kind: "label" text: "Hello" parameters: [
+    color: 0xF4D8D8
+    size: 14]]
+  #app-contents = ["Hello!"]
   #left-contents = [panels]
 
 ## Interactions
@@ -68,31 +71,29 @@ and compile it.
 The panels
   #top-panel = [
     kind: "panel-top" 
-    contains: [#top-contents] 
-    parameters: [fill: 0x0B0A0E, min-height: #top-panel-height] 
+    contains: "TOP"
+    parameters: [min-height: 25] 
   ]
   #bottom-panel = [
     kind: "panel-bottom" 
-    contains: [#bottom-contents] 
-    parameters: [fill: 0xA14345, min-height: #bottom-panel-height] 
+    contains: "BOTTOM"
+    parameters: [fill: 0xA14345, min-height: 25] 
   ]
   #left-panel = [
     kind: "panel-left" 
     contains: [#left-contents] 
-    parameters: [fill: 0x0B0A0E] 
+    parameters: [width: 60] 
   ]
   #app-area = [
     kind: "panel-center" 
     contains: [#app-contents] 
-    parameters: [fill: 0x0B0A0E] 
   ]
 
 Add a gui application
   #app = [
-    [#bottom-panel]
-    [#app-area]    
-    [#top-panel]
-    [#left-panel]
-    [#cursor]
     [#grid]
+    [#top-panel]
+    [#bottom-panel]
+    [#left-panel]
+    [#app-area]
   ]
