@@ -1,0 +1,127 @@
+# Mech Notebook
+
+Some global values
+  #debug-button = false
+  #code-button = false
+  #tables-button = false
+  #compile-button = false
+  #time/timer += [period: 16<ms>]
+
+The code
+  #code = ""
+
+The files
+  #files = "untitiled.mec"
+
+Slider value container
+  #value = 42
+
+A slider with a label attached
+  #slider = [
+    [#value * 10]
+    [kind: "slider" min: 0, max: 100, value: [#value]]
+  ]
+
+A circle with a label attached
+  x = 1:20
+  y = 1:20
+  indices = set/cartesian(a: x, b: y)
+  #grid = [
+    kind: "canvas"
+    contains: [
+      shape: "circle"
+      parameters: [x: indices{:,1} * 15, y: indices{:,2} * 15, r: 0.5]
+    ]
+  ]
+
+
+## Panels
+
+Panel contents
+  switches = [
+    [#code-button]
+    [#tables-button]
+    [#debug-button]
+  ]
+  labels = ["Code"; "Tables"; "Debug"]
+  #left-contents = [[kind: "button" clicked: switches text: labels]]
+  #bottom-contents = ["blank"]
+  #mid-contents = [[#files]]
+  #inspector-contents = [
+    "right panel"
+  ]
+  #code-contents = [
+    [kind: "button" clicked: [#compile-button] text: "Compile"]
+    [kind: "code" text: [#code]]
+  ]
+  #app-contents = [[""]]
+
+This creates a table of booleans switches which will be used to open and close an assoicated window
+  x = [false #mech/tables]
+  #table-toggles >- x
+
+Tables panels
+  #tables-panel-contents = [
+    [kind: "table-window" clicked: #table-toggles text: #mech/tables]
+  ]
+
+## Interactions
+
+When the compile button is clicked, take the contents of the code area
+and compile it.
+  ~ #compile-button
+  #mech/compiler := #code  
+
+When the debug button is clicked, show debug output
+  ~ #debug-button
+  #code-area.contains := [[kind: "debug"]]
+
+When the code button is clicked, show the code editor
+  ~ #code-button
+  #code-area.contains := [[#code-contents]]
+  #mid-panel.contains := [[#mid-contents]]
+
+When the code button is clicked, show the code editor
+  ~ #tables-button
+  #mid-panel.contains := [[#tables-panel-contents]]
+
+## Drawing
+
+The panels
+  #bottom-panel = [
+    kind: "panel-bottom" 
+    contains: [#bottom-contents] 
+    parameters: [fill: 0xCD5353, min-height: 10] 
+  ]
+  #left-panel = [
+    kind: "panel-left" 
+    contains: [#left-contents] 
+    parameters: [fill: 0x2E2A3C, min-width: 5] 
+  ]
+  #mid-panel = [
+    kind: "panel-left" 
+    contains: [#mid-contents]
+    parameters: [fill: 0x131218] 
+  ]
+  #code-area = [
+    kind: "panel-left" 
+    contains: [#code-contents] 
+    parameters: [fill: 0x131218, min-width: 600] 
+  ]
+  #app-area = [
+    kind: "panel-center" 
+    contains: [#app-contents] 
+    parameters: [fill: 0x0B0A0E] 
+  ]
+  #inspector-panel = [
+    kind: "panel-right" 
+    contains: [#inspector-contents] 
+    parameters: [fill: 0x23222A, min-width: 150] 
+  ]
+
+Add a gui application
+  #app = [
+    [#app-area]
+    [#bottom-panel]
+    [#grid]
+  ]
