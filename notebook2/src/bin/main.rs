@@ -29,6 +29,8 @@ lazy_static! {
   static ref BUTTON: u64 = hash_str("button");
   static ref SLIDER: u64 = hash_str("slider");
   static ref MIN: u64 = hash_str("min");
+  static ref MAX__HEIGHT: u64 = hash_str("max-width");
+  static ref MAX__WIDTH: u64 = hash_str("max-width");
   static ref MIN__WIDTH: u64 = hash_str("min-width");
   static ref MIN__HEIGHT: u64 = hash_str("min-height");
   static ref MAX: u64 = hash_str("max");
@@ -329,19 +331,19 @@ impl MechApp {
       (contained,parameters_table) => {
         let mut frame = Frame::default();
         let mut min_height = 100.0;
+        let mut max_height = 100.0;
         if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
-              let parameters_table_brrow = parameters_table.borrow();
-              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                let color: u32 = value.into();
-                let r = (color >> 16) as u8;
-                let g = (color >> 8) as u8;
-                let b = color as u8;
-                frame.fill = Color32::from_rgb(r,g,b);
+              let parameters_table_brrw = parameters_table.borrow();
+              if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*FILL)) { 
+                frame.fill = get_color(color);
               }
-              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
                 min_height = value.into();
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__HEIGHT)) {
+                max_height = value.into();
               }
             }
             _ => (),
@@ -351,6 +353,7 @@ impl MechApp {
         egui::TopBottomPanel::bottom(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
+          .max_height(max_height)
           .frame(frame)
         .show_inside(container, |ui| {
           if let Ok(contained) = contained {
@@ -368,19 +371,19 @@ impl MechApp {
       (contained,parameters_table) => {
         let mut frame = Frame::default();
         let mut min_height = 100.0;
+        let mut max_height = 100.0;
         if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
-              let parameters_table_brrow = parameters_table.borrow();
-              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                let color: u32 = value.into();
-                let r = (color >> 16) as u8;
-                let g = (color >> 8) as u8;
-                let b = color as u8;
-                frame.fill = Color32::from_rgb(r,g,b);
+              let parameters_table_brrw = parameters_table.borrow();
+              if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*FILL)) { 
+                frame.fill = get_color(color);
               }
-              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__HEIGHT)) {
                 min_height = value.into();
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__HEIGHT)) {
+                max_height = value.into();
               }
             }
             _ => (),
@@ -390,6 +393,7 @@ impl MechApp {
         egui::TopBottomPanel::top(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
+          .max_height(max_height)
           .frame(frame)
         .show_inside(container, |ui| {
           if let Ok(contained) = contained {
@@ -406,19 +410,23 @@ impl MechApp {
             table.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
       (contained,parameters_table) => {
         let mut frame = Frame::default();
-        let mut min_width = 100.0;
+        let mut min_width = 10.0;
+        let mut max_width = 100.0;
         if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
-              let parameters_table_brrow = parameters_table.borrow();
-              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                let color: u32 = value.into();
-                let r = (color >> 16) as u8;
-                let g = (color >> 8) as u8;
-                let b = color as u8;
-                frame.fill = Color32::from_rgb(r,g,b);
+              let parameters_table_brrw = parameters_table.borrow();
+              if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*FILL)) { 
+                frame.fill = get_color(color);
               }
-              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+                min_width = value.into();
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__WIDTH)) {
+                max_width = value.into();
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
+                max_width = value.into();
                 min_width = value.into();
               }
             }
@@ -429,6 +437,7 @@ impl MechApp {
         egui::SidePanel::left(humanize(&table.id))
           .resizable(false)
           .min_width(min_width)
+          .max_width(max_width)
           .frame(frame)
         .show_inside(container, |ui| {
           if let Ok(contained) = contained {
@@ -446,19 +455,19 @@ impl MechApp {
       (contained,parameters_table) => {
         let mut frame = Frame::default();
         let mut min_width = 100.0;
+        let mut max_width = 100.0;
         if let Ok(Value::Reference(parameters_table_id)) = parameters_table {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
-              let parameters_table_brrow = parameters_table.borrow();
-              if let Ok(Value::U128(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                let color: u32 = value.into();
-                let r = (color >> 16) as u8;
-                let g = (color >> 8) as u8;
-                let b = color as u8;
-                frame.fill = Color32::from_rgb(r,g,b);
+              let parameters_table_brrw = parameters_table.borrow();
+              if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*FILL)) { 
+                frame.fill = get_color(color);
               }
-              if let Ok(Value::F32(value)) = parameters_table_brrow.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MIN__WIDTH)) {
                 min_width = value.into();
+              }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__WIDTH)) {
+                max_width = value.into();
               }
             }
             _ => (),
@@ -468,6 +477,7 @@ impl MechApp {
         egui::SidePanel::right(humanize(&table.id))
           .resizable(false)
           .min_width(min_width)
+          .max_width(max_width)
           .frame(frame)
         .show_inside(container, |ui| {
           if let Ok(contained) = contained {
@@ -488,11 +498,9 @@ impl MechApp {
           match self.core.get_table_by_id(*parameters_table_id.unwrap()) {
             Ok(parameters_table) => {
               let parameters_table_brrw = parameters_table.borrow();
-              let fill = match parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*FILL)) {
-                Ok(Value::U128(fill_value)) => get_color(fill_value),
-                _ => Color32::from_rgb(0xFF,0x00,0x00),
-              };
-              frame.fill = fill;
+              if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*FILL)) { 
+                frame.fill = get_color(color);
+              }
             }
             _ => (),
           }
@@ -533,8 +541,12 @@ impl MechApp {
           let color = if let Ok(Value::U128(color)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*COLOR)) { color }
           else { U128::new(0) };
 
+          let size = if let Ok(Value::F32(size)) = parameters_table_brrw.get(&TableIndex::Index(1),&TableIndex::Alias(*SIZE)) { size }
+          else { F32::new(12.0) };
+
           let label = egui::RichText::new(text.to_string())
-            .color(get_color(color));
+            .color(get_color(color))
+            .size(size.into());
 
           container.label(label);
         }
@@ -734,7 +746,7 @@ impl epi::App for MechApp {
     // Draw frame
     let mut frame = Frame::default();
     frame.margin = egui::style::Margin::same(0.0);
-    frame.fill = Color32::from_rgb(0x23,0x22,0x2A);
+    frame.fill = Color32::from_rgb(0x13,0x12,0x18);
     egui::CentralPanel::default()
       .frame(frame)
     .show(ctx, |ui| {
@@ -782,7 +794,7 @@ impl epi::App for MechApp {
   }
 
   fn clear_color(&self) -> egui::Rgba {
-    egui::Rgba::from_rgb(35.0,34.0,42.0)
+    egui::Rgba::from_rgb(255.0,255.0,255.0)
   }
 
   fn warm_up_enabled(&self) -> bool {
