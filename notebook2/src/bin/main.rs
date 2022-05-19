@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![recursion_limit="256"]
 
-use eframe::{epi, egui};
+use eframe::{egui};
 use eframe::egui::{containers::*, *};
 extern crate mech;
 
@@ -109,9 +109,10 @@ lazy_static! {
   static ref TABLE__WINDOW: u64 = hash_str("table-window");
   static ref LABEL: u64 = hash_str("label");
   static ref COLOR: u64 = hash_str("color");
+  static ref MARGIN: u64 = hash_str("margin");
 }
 
-fn load_icon(path: &Path) -> epi::IconData {
+fn load_icon(path: &Path) -> eframe::IconData {
   let (icon_rgba, icon_width, icon_height) = {
       let image = image::open(path)
           .expect("Failed to open icon path")
@@ -120,7 +121,7 @@ fn load_icon(path: &Path) -> epi::IconData {
       let rgba = image.into_raw();
       (rgba, width, height)
   };
-  epi::IconData{rgba: icon_rgba, width: icon_width, height: icon_height}
+  eframe::IconData{rgba: icon_rgba, width: icon_width, height: icon_height}
 }
 
 struct MechApp {
@@ -176,7 +177,7 @@ code += "]";
 
 
 impl MechApp {
-  pub fn new() -> Self {
+  pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
     //let code = LONG_STRING;
     //let code = include_str!("notebook.mec");
 
@@ -345,11 +346,15 @@ impl MechApp {
               if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__HEIGHT)) {
                 max_height = value.into();
               }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
+                max_height = value.into();
+                min_height = value.into();
+              }
             }
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(0.0);
+        frame.inner_margin = egui::style::Margin::same(0.0);
         egui::TopBottomPanel::bottom(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
@@ -385,11 +390,14 @@ impl MechApp {
               if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__HEIGHT)) {
                 max_height = value.into();
               }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*HEIGHT)) {
+                max_height = value.into();
+                min_height = value.into();
+              }
             }
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(0.0);
         egui::TopBottomPanel::top(humanize(&table.id))
           .resizable(false)
           .min_height(min_height)
@@ -429,11 +437,13 @@ impl MechApp {
                 max_width = value.into();
                 min_width = value.into();
               }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MARGIN)) {
+                frame.inner_margin = egui::style::Margin::same(value.into());
+              }
             }
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(10.0);
         egui::SidePanel::left(humanize(&table.id))
           .resizable(false)
           .min_width(min_width)
@@ -469,11 +479,14 @@ impl MechApp {
               if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*MAX__WIDTH)) {
                 max_width = value.into();
               }
+              if let Ok(Value::F32(value)) = parameters_table_brrw.get(&TableIndex::Index(1), &TableIndex::Alias(*WIDTH)) {
+                max_width = value.into();
+                min_width = value.into();
+              }
             }
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(10.0);
         egui::SidePanel::right(humanize(&table.id))
           .resizable(false)
           .min_width(min_width)
@@ -505,7 +518,6 @@ impl MechApp {
             _ => (),
           }
         }
-        frame.margin = egui::style::Margin::same(10.0);
         egui::CentralPanel::default()
           .frame(frame)
         .show_inside(container, |ui| {
@@ -718,13 +730,9 @@ pub fn get_color(color_value: U128) -> Color32 {
   Color32::from_rgb(r,g,b)
 }
 
-impl epi::App for MechApp {
+impl eframe::App for MechApp {
 
-  fn name(&self) -> &str {
-    " Mech Notebook"
-  }
-
-  fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+  fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
     let Self { ticks, core, .. } = self;
 
     let windows = self.windows.clone();
@@ -745,7 +753,6 @@ impl epi::App for MechApp {
 
     // Draw frame
     let mut frame = Frame::default();
-    frame.margin = egui::style::Margin::same(0.0);
     frame.fill = Color32::from_rgb(0x13,0x12,0x18);
     egui::CentralPanel::default()
       .frame(frame)
@@ -793,10 +800,6 @@ impl epi::App for MechApp {
     });
   }
 
-  fn clear_color(&self) -> egui::Rgba {
-    egui::Rgba::from_rgb(255.0,255.0,255.0)
-  }
-
   fn warm_up_enabled(&self) -> bool {
     true
   }
@@ -806,13 +809,12 @@ impl epi::App for MechApp {
 
 fn main() {
     //let input = std::env::args().nth(1).unwrap();
-    let app = MechApp::new();
     let mut native_options = eframe::NativeOptions::default();
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
     let icon = load_icon(Path::new(path));
     native_options.icon_data = Some(icon);
     native_options.min_window_size = Some(Vec2{x: 1480.0, y: 800.0});
-    eframe::run_native(Box::new(app), native_options);
+    eframe::run_native("Mech Notebook", native_options, Box::new(|cc| Box::new(MechApp::new(cc))));
 }
 
 

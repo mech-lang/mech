@@ -48,13 +48,14 @@ Panel contents
   ]
   #top-contents = [
     kind: "panel-left"
-    contains: opened-files
-    parameters: [fill: 0x2E2A3C, min-width: 250]
+    contains: [kind: "label", text: "bouncing-balls.mec", parameters: [color: 0xF4D8D8 size: 14]]
+    parameters: [fill: 0x2E2A3C, min-width: 250 margin: 0]
   ]
   #bottom-contents = [kind: "label" text: "Hello" parameters: [
     color: 0xF4D8D8
     size: 14]]
-  #app-contents = ["Hello!"]
+  #app-contents = ["Bouncing Balls Simulation"
+                   "=========================="]
   #left-contents = [panels]
 
 ## Interactions
@@ -71,13 +72,13 @@ and compile it.
 The panels
   #top-panel = [
     kind: "panel-top" 
-    contains: "TOP"
-    parameters: [min-height: 25] 
+    contains: [#top-contents]
+    parameters: [height: 15] 
   ]
   #bottom-panel = [
     kind: "panel-bottom" 
-    contains: "BOTTOM"
-    parameters: [fill: 0xA14345, min-height: 25] 
+    contains: [#bottom-contents]
+    parameters: [fill: 0xA14345, height: 25] 
   ]
   #left-panel = [
     kind: "panel-left" 
