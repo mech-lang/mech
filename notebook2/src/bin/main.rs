@@ -140,7 +140,7 @@ struct MechApp {
 //static LONG_STRING: &'static str = include_str!(concat!(env!("OUT_DIR"), "/hello.rs"));
 
 fn load_mech() -> mech_core::Core {
-  let code = fs::read_to_string(r#"C:\Users\cmont\mech\mech\notebook2\src\bin\notebook.mec"#).unwrap();
+  let code = fs::read_to_string(r#"src\bin\notebook.mec"#).unwrap();
   let mut mech_core = mech_core::Core::new();
   let mut compiler = Compiler::new(); 
   match compiler.compile_str(&code) {
