@@ -316,6 +316,9 @@ async fn main() -> Result<(), MechError> {
           //mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
           //std::process::exit(0);
         },
+        Ok(ClientMessage::Error(err)) => {
+          println!("An Error Has Occurred: {:?}", err);
+        }
         (Err(x)) => {
           println!("{} {}", "[Error]".bright_red(), x);
           std::process::exit(1);
