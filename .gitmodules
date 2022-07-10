@@ -10,15 +10,20 @@
 [submodule "core"]
 	path = core
 	url = https://gitlab.com/mech-lang/core.git
+	branch = v0.1-beta
 [submodule "syntax"]
 	path = syntax
 	url = https://gitlab.com/mech-lang/syntax.git
+	branch = v0.1-beta
 [submodule "program"]
 	path = program
 	url = https://gitlab.com/mech-lang/program.git
+	branch = v0.1-beta
 [submodule "utilities"]
 	path = utilities
 	url = https://gitlab.com/mech-lang/utilities
+	branch = v0.1-beta
 [submodule "wasm"]
 	path = wasm
 	url = https://gitlab.com/mech-lang/wasm.git
+	branch = v0.1-beta
