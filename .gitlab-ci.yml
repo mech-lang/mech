@@ -1,8 +1,6 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-image: "rust:latest"
-
 test:cargo:
   script:
   - rustup default nightly-2022-03-27
