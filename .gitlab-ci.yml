@@ -3,5 +3,6 @@ variables:
 
 test:cargo:
   script:
+  - rustup show
   - cargo build --bin mech --release
   - ./target/release/mech test tests
