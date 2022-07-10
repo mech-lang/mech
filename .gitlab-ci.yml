@@ -4,5 +4,6 @@ variables:
 test:cargo:
   script:
   - rustup show
+  - rustup default nightly-2022-04-20
   - cargo build --bin mech --release
   - ./target/release/mech test tests
