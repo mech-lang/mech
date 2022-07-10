@@ -3,9 +3,5 @@ variables:
 
 test:cargo:
   script:
-  - rustup default nightly-2022-03-27
-  - rustup show
-  - rustc --version && cargo --version
-  - rustup component add rust-src
   - cargo build --bin mech --release
   - ./target/release/mech test tests
