@@ -1,13 +1,9 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-image: "rust:latest"
-
 test:cargo:
   script:
-  - rustup default nightly-2022-03-27
   - rustup show
-  - rustc --version && cargo --version
-  - rustup component add rust-src
+  - rustup default nightly-2022-04-20
   - cargo build --bin mech --release
   - ./target/release/mech test tests

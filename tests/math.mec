@@ -1,9 +1,15 @@
 # Math Unit Tests
 
 Test math with scalars
-  #test += [|name             expected actual|
-             "Addition"       2        1 + 1 
-             "Subtraction"    2        4 - 2
-             "Division"       2        4 / 2
-             "Multiplication" 6        2 * 3 
-             "Exponentiation" 9        3 ^ 2]
+  #test += ["Addition"       2        1 + 1 
+            "Subtraction"    2        4 - 2
+            "Division"       2        4 / 2
+            "Multiplication" 6        2 * 3 
+            "Exponentiation" 9        3 ^ 2]
+
+Test math with u32
+  #test += ["Addition u32"       3<u32>             2<u32> + 1<u32> 
+            "Subtraction u32"    2<u32>             4<u32> - 2<u32>
+            "Division u32"       2<u32>             4<u32> / 2<u32>
+            "Multiplication u32" 6<u32>             2<u32> * 3<u32> 
+            "Exponentiation u32" 9<u32>             3<u32> ^ 2<u32>]
