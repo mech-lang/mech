@@ -258,6 +258,7 @@ macro_rules! compare_compiler {
               ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::U32(lhs),ColumnIndex::All), (_,Column::U32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::U32(lhs),ColumnIndex::Index(lix)), (_,Column::U32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::All), (_,Column::F32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               x => {return Err(MechError{id: 7100, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
