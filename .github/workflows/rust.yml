@@ -12,14 +12,14 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Setup
-      run: rustup default nightly-2022-03-27
+      run: rustup default nightly-2022-04-20
     - name: Build
       run: cargo build --bin mech --release
     - name: Run tests
