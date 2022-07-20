@@ -1,15 +1,23 @@
 # Math Unit Tests
 
-Test math with scalars
+Test scalar math with f32
   #test += ["Addition Scalar:Scalar f32"       2        1 + 1 
             "Subtraction Scalar:Scalar f32"    2        4 - 2
             "Division Scalar:Scalar f32"       2        4 / 2
             "Multiplication Scalar:Scalar f32" 6        2 * 3 
             "Exponentiation Scalar:Scalar f32" 9        3 ^ 2]
 
-Test math with u32
+Test scalar math with u32
   #test += ["Addition Scalar:Scalar u32"       3<u32>             2<u32> + 1<u32> 
             "Subtraction Scalar:Scalar u32"    2<u32>             4<u32> - 2<u32>
             "Division Scalar:Scalar u32"       2<u32>             4<u32> / 2<u32>
             "Multiplication Scalar:Scalar u32" 6<u32>             2<u32> * 3<u32> 
             "Exponentiation Scalar:Scalar u32" 9<u32>             3<u32> ^ 2<u32>]
+
+## Columns
+
+Test column math with f64
+  x = [1<f64>; 2<f64>; 3<f64>]
+  y = [4<f64>; 5<f64>; 6<f64>]
+  sum-result = stats/sum(column: x + y)
+  #test += ["Addition Column:Column f64" 21<f64> sum-result]
