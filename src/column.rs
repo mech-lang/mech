@@ -219,6 +219,51 @@ mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
 
+impl Zero for U8 {
+  fn zero() -> Self {
+    U8::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U16 {
+  fn zero() -> Self {
+    U16::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U32 {
+  fn zero() -> Self {
+    U32::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U64 {
+  fn zero() -> Self {
+    U64::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U128 {
+  fn zero() -> Self {
+    U128::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
 impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
@@ -250,6 +295,12 @@ mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
 mech_type_conversion!(F32,U128,u128);
 mech_type_conversion!(F32,F64,f64);
+mech_type_conversion!(F64,U8,u8);
+mech_type_conversion!(F64,U16,u16);
+mech_type_conversion!(F64,U32,u32);
+mech_type_conversion!(F64,U64,u64);
+mech_type_conversion!(F64,U128,u128);
+mech_type_conversion!(F64,F32,f32);
 mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U16,U32,u32);
 mech_type_conversion!(U16,U64,u64);

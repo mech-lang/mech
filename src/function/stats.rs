@@ -154,6 +154,21 @@ impl MechFunctionCompiler for StatsSum {
           (Column::F64(col),ColumnIndex::All,Column::F64(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::F64(col),ColumnIndex::Bool(bix),Column::F64(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
           (Column::F64(col),ColumnIndex::Index(ix),Column::F64(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::U8(col),ColumnIndex::All,Column::U8(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::U8(col),ColumnIndex::Bool(bix),Column::U8(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::U8(col),ColumnIndex::Index(ix),Column::U8(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::U16(col),ColumnIndex::All,Column::U16(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::U16(col),ColumnIndex::Bool(bix),Column::U16(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::U16(col),ColumnIndex::Index(ix),Column::U16(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::U32(col),ColumnIndex::All,Column::U32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::U32(col),ColumnIndex::Bool(bix),Column::U32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::U32(col),ColumnIndex::Index(ix),Column::U32(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::U64(col),ColumnIndex::All,Column::U64(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::U64(col),ColumnIndex::Bool(bix),Column::U64(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::U64(col),ColumnIndex::Index(ix),Column::U64(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::U128(col),ColumnIndex::All,Column::U128(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::U128(col),ColumnIndex::Bool(bix),Column::U128(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::U128(col),ColumnIndex::Index(ix),Column::U128(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
           (Column::Reference((ref table, (ColumnIndex::All, ColumnIndex::All))),ColumnIndex::All,Column::F32(out)) => {
             let table_brrw = table.borrow();
             out_brrw.resize(1,table_brrw.cols);
