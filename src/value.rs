@@ -26,7 +26,7 @@ pub enum Value {
   I128(i128),
   f32(f32),
   F32(F32),
-  F64(f64),
+  F64(F64),
   Bool(bool),
   Time(F32),
   Length(F32),
@@ -109,7 +109,7 @@ impl fmt::Debug for Value {
       Value::Angle(v) => write!(f,"{:?}rad",v)?,
       Value::f32(v) => write!(f,"{:?}f32",v)?,
       Value::F32(v) => write!(f,"{:?}f32",v)?,
-      Value::F64(v) => write!(f,"{}f64",v)?, 
+      Value::F64(v) => write!(f,"{:?}f64",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {

@@ -290,6 +290,12 @@ impl Table {
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
         },
+        (Column::F64(_), ValueKind::F64) => (),
+        (Column::Empty, ValueKind::F64) => {
+          let column = ColumnV::<F64>::new(vec![F64::new(0.0);self.rows]);
+          self.data[col] = Column::F64(column);
+          self.col_kinds[col] = ValueKind::F64;
+        },
         (Column::f32(_), ValueKind::f32) => (),
         (Column::Empty, ValueKind::f32) => {
           let column = ColumnV::<f32>::new(vec![0.0;self.rows]);

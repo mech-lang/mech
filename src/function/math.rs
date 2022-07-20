@@ -28,6 +28,7 @@ impl MechNumArithmetic<I32> for I32 {}
 impl MechNumArithmetic<I64> for I64 {}
 impl MechNumArithmetic<I128> for I128 {}
 impl MechNumArithmetic<F32> for F32 {}
+impl MechNumArithmetic<F64> for F64 {}
 impl MechNumArithmetic<f32> for f32 {}
 impl MechNumArithmetic<f64> for f64 {}
 

@@ -25,6 +25,7 @@ use std::convert::TryInto;
 lazy_static! {
   pub static ref cF32L: u64 = hash_str("f32-literal");
   pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cF64: u64 = hash_str("f64");
   pub static ref cU8: u64 = hash_str("u8");
   pub static ref cU16: u64 = hash_str("u16");
   pub static ref cU32: u64 = hash_str("u32");
@@ -693,6 +694,10 @@ impl Block {
         else if *kind == *cF32 {
           t.set_kind(ValueKind::F32)?;
           t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+        } 
+        else if *kind == *cF64 {
+          t.set_kind(ValueKind::F64)?;
+          t.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
         } 
         else if *kind == *cF32L {
           t.set_kind(ValueKind::F32)?;
