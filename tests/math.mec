@@ -25,6 +25,24 @@ Test scalar math with column u16
 
 ## Column : Column
 
+Test column math with u16
+  x = [1<u16>; 2<u16>; 3<u16>]
+  y = [4<u16>; 5<u16>; 6<u16>]
+  sum-result = stats/sum(column: x + y)
+  #test += ["Addition Column:Column u16" 21<u16> sum-result]
+
+Test column math with u32
+  x = [1<u32>; 2<u32>; 3<u32>]
+  y = [4<u32>; 5<u32>; 6<u32>]
+  sum-result = stats/sum(column: x + y)
+  #test += ["Addition Column:Column u32" 21<u32> sum-result]
+
+Test column math with u32
+  x = [1<u64>; 2<u64>; 3<u64>]
+  y = [4<u64>; 5<u64>; 6<u64>]
+  sum-result = stats/sum(column: x + y)
+  #test += ["Addition Column:Column u64" 21<u64> sum-result]
+
 Test column math with f64
   x = [1<f64>; 2<f64>; 3<f64>]
   y = [4<f64>; 5<f64>; 6<f64>]
