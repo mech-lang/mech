@@ -3,25 +3,25 @@
 ## Scalar : Scalar
 
 Test scalar math with f32
-  #test += ["Addition Scalar:Scalar f32"       2        1 + 1 
-            "Subtraction Scalar:Scalar f32"    2        4 - 2
-            "Division Scalar:Scalar f32"       2        4 / 2
-            "Multiplication Scalar:Scalar f32" 6        2 * 3 
-            "Exponentiation Scalar:Scalar f32" 9        3 ^ 2]
+  #test += ["Add Scalar:Scalar f32"       2        1 + 1 
+            "Sub Scalar:Scalar f32"    2        4 - 2
+            "Div Scalar:Scalar f32"       2        4 / 2
+            "Mul Scalar:Scalar f32" 6        2 * 3 
+            "Exp Scalar:Scalar f32" 9        3 ^ 2]
 
 Test scalar math with u32
-  #test += ["Addition Scalar:Scalar u32"       3<u32>             2<u32> + 1<u32> 
-            "Subtraction Scalar:Scalar u32"    2<u32>             4<u32> - 2<u32>
-            "Division Scalar:Scalar u32"       2<u32>             4<u32> / 2<u32>
-            "Multiplication Scalar:Scalar u32" 6<u32>             2<u32> * 3<u32> 
-            "Exponentiation Scalar:Scalar u32" 9<u32>             3<u32> ^ 2<u32>]
+  #test += ["Add Scalar:Scalar u32"       3<u32>             2<u32> + 1<u32> 
+            "Sub Scalar:Scalar u32"    2<u32>             4<u32> - 2<u32>
+            "Div Scalar:Scalar u32"       2<u32>             4<u32> / 2<u32>
+            "Mul Scalar:Scalar u32" 6<u32>             2<u32> * 3<u32> 
+            "Exp Scalar:Scalar u32" 9<u32>             3<u32> ^ 2<u32>]
 
 ## Scalar : Column
 
 Test scalar math with column u16
   x = 2<u16> + [1<u16>; 2<u16>; 3<u16>; 4<u16>]
   sum-result = stats/sum(column: x)
-  #test += ["Addition Scalar:Column u16" 18<u16> sum-result]
+  #test += ["Add Scalar:Column u16" 18<u16> sum-result]
 
 ## Column : Column
 
@@ -29,22 +29,26 @@ Test column math with u16
   x = [1<u16>; 2<u16>; 3<u16>]
   y = [4<u16>; 5<u16>; 6<u16>]
   sum-result = stats/sum(column: x + y)
-  #test += ["Addition Column:Column u16" 21<u16> sum-result]
+  #test += ["Add Column:Column u16" 21<u16> sum-result]
 
 Test column math with u32
   x = [1<u32>; 2<u32>; 3<u32>]
   y = [4<u32>; 5<u32>; 6<u32>]
   sum-result = stats/sum(column: x + y)
-  #test += ["Addition Column:Column u32" 21<u32> sum-result]
+  #test += ["Add Column:Column u32" 21<u32> sum-result]
 
 Test column math with u32
   x = [1<u64>; 2<u64>; 3<u64>]
   y = [4<u64>; 5<u64>; 6<u64>]
   sum-result = stats/sum(column: x + y)
-  #test += ["Addition Column:Column u64" 21<u64> sum-result]
+  mul-result = stats/sum(column: x * y)
+  #test += ["Add Column:Column u64" 21<u64> sum-result
+            "Mul Column:Column u64" 32<u64> mul-result]
 
 Test column math with f64
   x = [1<f64>; 2<f64>; 3<f64>]
   y = [4<f64>; 5<f64>; 6<f64>]
   sum-result = stats/sum(column: x + y)
-  #test += ["Addition Column:Column f64" 21<f64> sum-result]
+  mul-result = stats/sum(column: x * y)
+  #test += ["Add Column:Column f64" 21<f64> sum-result
+            "Mul Column:Column f64" 32<f64> mul-result]
