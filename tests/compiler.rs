@@ -1110,6 +1110,13 @@ Title
 ======
 #test = 123"#, Value::F32(F32::new(123.0)));
 
+test_mech!(markdown_program_subtitle_underline, r#"
+Title
+======
+SubTitle
+---------
+#test = 123"#, Value::F32(F32::new(123.0)));
+
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 
@@ -1195,7 +1202,7 @@ block
 block
   #y = 2
 
-### Subsubtitle
+## Subsubtitle
 
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));

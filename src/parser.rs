@@ -1364,12 +1364,29 @@ fn title(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, title))
 }
 
-fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = many1(hashtag)(input)?;
+fn ht_subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, _) = hashtag(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Subtitle { children: vec![text] }))
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn ul_subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, text) = text(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  let (input, _) = many1(dash)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input,title) = alt((ht_subtitle,ul_subtitle))(input)?;
+  Ok((input, title))
 }
 
 fn section_title(input: ParseString) -> IResult<ParseString, Node> {
