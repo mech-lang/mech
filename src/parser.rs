@@ -50,6 +50,7 @@ pub enum Node {
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
+  Swizzle{ children: Vec<Node> },
   SubscriptIndex{ children: Vec<Node> },
   SubscriptList{ children: Vec<Node> },
   Subscript{ children: Vec<Node> },
@@ -234,6 +235,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
     Node::TableIdentifier{children} => {print!("TableIdentifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
+    Node::Swizzle{children} => {print!("Swizzle\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::SubscriptList{children} => {print!("SubscriptList\n"); Some(children)},
     Node::Subscript{children} => {print!("Subscript\n"); Some(children)},
@@ -784,6 +786,12 @@ fn dot_index(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
+fn swizzle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = period(input)?;
+  let (input, columns) = separated_list1(tag(","),identifier)(input)?;
+  Ok((input, Node::Swizzle{children: columns}))
+}
+
 fn reshape_column(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_brace(input)?;
   let (input, _) = colon(input)?;
@@ -792,7 +800,7 @@ fn reshape_column(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn index(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, index) = alt((dot_index, reshape_column, subscript_index))(input)?;
+  let (input, index) = alt((swizzle, dot_index, reshape_column, subscript_index))(input)?;
   Ok((input, Node::Index{children: vec![index]}))
 }
 
