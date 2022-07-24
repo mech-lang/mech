@@ -1105,6 +1105,11 @@ block
 test_mech!(markdown_program_title, r#"# Title
   #test = 123"#, Value::F32(F32::new(123.0)));
 
+test_mech!(markdown_program_title_underline, r#"
+Title
+======
+#test = 123"#, Value::F32(F32::new(123.0)));
+
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 

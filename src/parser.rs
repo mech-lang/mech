@@ -1340,12 +1340,28 @@ fn block(input: ParseString) -> IResult<ParseString, Node> {
 
 // ## Markdown
 
-fn title(input: ParseString) -> IResult<ParseString, Node> {
+fn ht_title(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = hashtag(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn ul_title(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, text) = text(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  let (input, _) = many1(equal)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn title(input: ParseString) -> IResult<ParseString, Node> {
+  let (input,title) = alt((ht_title,ul_title))(input)?;
+  Ok((input, title))
 }
 
 fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
