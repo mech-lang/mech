@@ -788,8 +788,12 @@ fn dot_index(input: ParseString) -> IResult<ParseString, Node> {
 
 fn swizzle(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = period(input)?;
-  let (input, columns) = separated_list1(tag(","),identifier)(input)?;
-  Ok((input, Node::Swizzle{children: columns}))
+  let (input, first) = identifier(input)?;
+  let (input, _) = comma(input)?;
+  let (input, mut rest) = separated_list1(tag(","),identifier)(input)?;
+  let mut cols = vec![first];
+  cols.append(&mut rest);
+  Ok((input, Node::Swizzle{children: cols}))
 }
 
 fn reshape_column(input: ParseString) -> IResult<ParseString, Node> {
