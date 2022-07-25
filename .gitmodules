@@ -21,7 +21,7 @@
 	branch = v0.1-beta
 [submodule "utilities"]
 	path = utilities
-	url = https://gitlab.com/mech-lang/utilities
+	url = https://gitlab.com/mech-lang/utilities.git
 	branch = v0.1-beta
 [submodule "wasm"]
 	path = wasm
