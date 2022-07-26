@@ -1,12 +1,15 @@
 [submodule "assets"]
 	path = assets
 	url = https://gitlab.com/mech-lang/assets.git
+	branch = v0.1-beta
 [submodule "examples"]
 	path = examples
 	url = https://gitlab.com/mech-lang/examples.git
+	branch = v0.1-beta
 [submodule "docs"]
 	path = docs
 	url = https://gitlab.com/mech-lang/docs.git
+	branch = v0.1-beta
 [submodule "core"]
 	path = core
 	url = https://gitlab.com/mech-lang/core.git
@@ -21,7 +24,7 @@
 	branch = v0.1-beta
 [submodule "utilities"]
 	path = utilities
-	url = https://gitlab.com/mech-lang/utilities
+	url = https://gitlab.com/mech-lang/utilities.git
 	branch = v0.1-beta
 [submodule "wasm"]
 	path = wasm
