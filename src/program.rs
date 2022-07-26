@@ -87,7 +87,7 @@ pub struct Program {
   pub mech: Core,
   pub cores: HashMap<u64,Core>,
   pub remote_cores: HashMap<u64,MechSocket>,
-  pub input_map: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
+  pub input_map: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
   pub libraries: HashMap<String, Library>,
   pub machines: HashMap<u64, Box<dyn Machine>>,
   pub mech_functions: HashMap<u64, Box<dyn MechFunctionCompiler>>,
@@ -98,8 +98,8 @@ pub struct Program {
   pub errors: HashSet<MechErrorKind>,
   programs: usize,
   loaded_machines: HashSet<u64>,
-  pub listeners: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
-  pub trigger_to_listener: HashMap<(TableId,TableIndex,TableIndex),((TableId, TableIndex, TableIndex),HashSet<u64>)>
+  pub listeners: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
+  pub trigger_to_listener: HashMap<(TableId,RegisterIndex,RegisterIndex),((TableId, RegisterIndex, RegisterIndex),HashSet<u64>)>
 }
 
 impl Program {
@@ -126,7 +126,7 @@ impl Program {
     }
   }
 
-  pub fn trigger_machine(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+  pub fn trigger_machine(&mut self, register: &(TableId,RegisterIndex,RegisterIndex)) -> Result<(),MechError> {
     let (table_id,_,_) = register;
     match self.machines.get_mut(table_id.unwrap()) {
       Some(mut machine) => {
