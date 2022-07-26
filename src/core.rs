@@ -165,7 +165,7 @@ impl Core {
           }
         }
         Change::NewTable{table_id, rows, columns} => {
-          let table = Table::new(*table_id,*rows,*columns);
+          let table = Table::new(*table_id,rows.clone(),*columns);
           self.database.borrow_mut().insert_table(table)?;
         }
         Change::ColumnAlias{table_id, column_ix, column_alias} => {

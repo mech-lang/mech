@@ -213,7 +213,7 @@ impl Block {
     // This part handles multi-dimensional indexing e.g. {1,2}{3,4}{5,6}
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -356,7 +356,7 @@ impl Block {
     let (arg_name,table_id,indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -437,7 +437,7 @@ impl Block {
     let (_, table_id, indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -482,7 +482,21 @@ impl Block {
         let rows = ix_table.borrow().len();
         (rows,t.cols)
       },
-      //(TableIndex::All,TableIndex::I)
+      (TableIndex::All,TableIndex::IxTable(ix_table_id)) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        let rows = ix_table_brrw.len();
+        let cols = match ix_table_brrw.kind() {
+          ValueKind::Bool => {
+            ix_table_brrw.logical_len()
+          }
+          ValueKind::String => {
+            ix_table_brrw.len()
+          }
+          x => {return Err(MechError{id: 2128, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+        };
+        (t.rows, cols)
+      }
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
@@ -653,8 +667,8 @@ impl Block {
         }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
-          arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
-          out: (*dest_id,*dest_row,*dest_col),
+          arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],
+          out: (*dest_id,dest_row.clone(),dest_col.clone()),
         })?;
       }
       Transformation::NumberLiteral{kind, bytes} => {
@@ -880,7 +894,7 @@ impl fmt::Debug for Block {
   }
 }
 
-#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: TableId,
   pub row: TableIndex,

@@ -46,9 +46,9 @@ impl Schedule {
 
       // Map trigger registers to blocks
       for (trigger_table_id,row,col) in &block_brrw.triggers {
-        let ref mut dependent_blocks = self.trigger_to_blocks.entry((*trigger_table_id,*row,*col)).or_insert(vec![]);
+        let ref mut dependent_blocks = self.trigger_to_blocks.entry((*trigger_table_id,row.clone(),col.clone())).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
-        let ref mut dependent_blocks = self.schedules.entry((*trigger_table_id,*row,*col)).or_insert(vec![]);
+        let ref mut dependent_blocks = self.schedules.entry((*trigger_table_id,row.clone(),col.clone())).or_insert(vec![]);
         dependent_blocks.push(graph.clone());
 
         for ((output_table_id,row,col),ref mut producing_blocks) in self.output_to_blocks.iter_mut() {
@@ -62,16 +62,16 @@ impl Schedule {
 
       // Map input registers to blocks
       for (input_table_id,row,col) in &block_brrw.input {
-        let ref mut consuming_blocks = self.input_to_blocks.entry((*input_table_id,*row,*col)).or_insert(vec![]);
+        let ref mut consuming_blocks = self.input_to_blocks.entry((*input_table_id,row.clone(),col.clone())).or_insert(vec![]);
         consuming_blocks.push(graph.clone());
       }
 
       // Map output registers to blocks
       for (output_table_id,row,col) in &block_brrw.output {
-        let ref mut producing_blocks = self.output_to_blocks.entry((*output_table_id,*row,*col)).or_insert(vec![]);
+        let ref mut producing_blocks = self.output_to_blocks.entry((*output_table_id,row.clone(),col.clone())).or_insert(vec![]);
         producing_blocks.push(graph.clone());
         // Map block outputs to triggers
-        if let Some(consuming_blocks) = self.trigger_to_blocks.get(&(*output_table_id,*row,*col)) {
+        if let Some(consuming_blocks) = self.trigger_to_blocks.get(&(*output_table_id,row.clone(),col.clone())) {
           for block in consuming_blocks {
             graph.add_child(&block);
           }
@@ -91,7 +91,7 @@ impl Schedule {
         let mut output = node_brrw.aggregate_output();
         aggregate_output = aggregate_output.union(&mut output).cloned().collect();
       }
-      self.trigger_to_output.insert(*register,aggregate_output);
+      self.trigger_to_output.insert(register.clone(),aggregate_output);
     }
     Ok(())
   }

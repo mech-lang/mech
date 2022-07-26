@@ -1121,10 +1121,10 @@ impl MechFunctionCompiler for TableAppend {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     let arg_shape = block.get_arg_dim(&arguments[0])?;
     let (_,_,indices) = &arguments[0];
-    let (arow_ix,_) = indices[0];
+    let (arow_ix,_) = &indices[0];
 
     let (_,src_table_id,src_indices) = &arguments[0];
-    let (src_rows,src_cols) = src_indices[0];
+    let (src_rows,src_cols) = &src_indices[0];
     let (dest_table_id, _, _) = out;
 
     let src_table = block.get_table(&src_table_id)?;
@@ -1324,13 +1324,13 @@ impl MechFunctionCompiler for TableSet {
     let (_,src_id,src_indices) = &arguments[0];
     let (dest_id,dest_row,dest_col) = out;
     let arg_shapes = block.get_arg_dims(&arguments)?;
-    let dest_shape = block.get_arg_dim(&(0,*dest_id,vec![(*dest_row,*dest_col)]))?;
+    let dest_shape = block.get_arg_dim(&(0,*dest_id,vec![(dest_row.clone(),dest_col.clone())]))?;
     let src_table = block.get_table(src_id)?;
     let dest_table = block.get_table(dest_id)?;
     let mut arguments = arguments.clone();
     // The destination is pushed into the arguments here in order to use the
     // get_argument_column() machinery later.
-    arguments.push((0,*dest_id,vec![(*dest_row,*dest_col)]));
+    arguments.push((0,*dest_id,vec![(dest_row.clone(),dest_col.clone())]));
     match (&arg_shapes[0], &dest_shape) {
       (TableShape::Scalar, TableShape::Row(_)) |
       (TableShape::Row(_), TableShape::Row(_)) => {
@@ -1581,7 +1581,7 @@ impl MechFunctionCompiler for TableDefine {
     // Iterate through to the last index
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match block.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = block.get_arg_column(&argument)?;
@@ -1596,7 +1596,7 @@ impl MechFunctionCompiler for TableDefine {
     let src_table = block.get_table(&table_id)?;
     let out_table = block.get_table(out)?;
     let (row, column) = indices.last().unwrap();
-    let argument = (0,table_id,vec![(*row,*column)]);
+    let argument = (0,table_id,vec![(row.clone(),column.clone())]);
     match (row,column) {
       // Select an entire table
       (TableIndex::All, TableIndex::All) => {
@@ -1611,7 +1611,7 @@ impl MechFunctionCompiler for TableDefine {
       (TableIndex::All, TableIndex::Index(_)) |
       // Select a column by alias
       (TableIndex::All, TableIndex::Alias(_)) => {
-        let (_, arg_col,_) = block.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
+        let (_, arg_col,_) = block.get_arg_column(&(0,table_id,vec![(row.clone(),column.clone())]))?;
         let out_col = block.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
         match (&arg_col, &out_col) {
           (Column::U8(arg), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
@@ -1672,7 +1672,7 @@ impl MechFunctionCompiler for TableDefine {
         out_brrw.resize(1,src_brrw.cols);
         out_brrw.set_kind(src_brrw.kind());
         for col in 0..src_brrw.cols {
-          let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(*row,TableIndex::Index(col+1))]))?;
+          let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(row.clone(),TableIndex::Index(col+1))]))?;
           let mut out_col = out_brrw.get_column_unchecked(col); 
           match (&arg_col, &arg_ix, &out_col) {
             (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
@@ -1683,7 +1683,7 @@ impl MechFunctionCompiler for TableDefine {
         }
       }
       (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
-        let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(*row,*column)]))?;
+        let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(row.clone(),column.clone())]))?;
         let out_col = block.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
         match (&arg_col, &arg_ix, &out_col) {
           (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),

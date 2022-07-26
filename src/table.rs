@@ -52,7 +52,7 @@ pub enum TableShape {
 
 // ### TableIndex
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TableIndex {
   Index(usize),
   Alias(u64),
@@ -402,9 +402,7 @@ impl Table {
       TableIndex::All => {
         Ok(self.data.iter().cloned().collect())
       },
-      x => {
-        Err(MechError{id: 7014, kind: MechErrorKind::None})
-      }
+      x => {Err(MechError{id: 7014, kind: MechErrorKind::GenericError(format!("{:?}",x))})}
     }
   }
 
@@ -420,9 +418,7 @@ impl Table {
       TableIndex::Alias(alias) => {
         match self.col_map.get_index(alias) {
           Ok(ix) => ix,
-          Err(x) => {
-            return Err(MechError{id: 7015, kind: MechErrorKind::None})
-          }
+          Err(x) => {return Err(MechError{id: 7015, kind: MechErrorKind::None})}
         }
       }
       _ => 0,
