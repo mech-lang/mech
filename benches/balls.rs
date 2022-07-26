@@ -150,10 +150,10 @@ fn bouncing_ballss(b:&mut Bencher){
   // Update the block positions on each tick of the timer  
   let mut block1 = Block::new();
   block1.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block1")), rows: 1, columns: 1});
-  block1.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
-  block1.input.insert((TableId::Global(hash_str("gravity")),TableIndex::All,TableIndex::All));
-  block1.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
-  block1.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block1.triggers.insert((TableId::Global(hash_str("time/timer")),RegisterIndex::All,RegisterIndex::All));
+  block1.input.insert((TableId::Global(hash_str("gravity")),RegisterIndex::All,RegisterIndex::All));
+  block1.input.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
+  block1.output.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
   match (&x,&vx,&y,&vy,&g) {
     (Column::f32(x),Column::f32(vx),Column::f32(y),Column::f32(vy),Column::f32(g)) => {
       // #ball.x := #ball.x + #ball.vx
@@ -169,9 +169,9 @@ fn bouncing_ballss(b:&mut Bencher){
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
   block2.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block2")), rows: 1, columns: 1});
-  block2.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
-  block2.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
-  block2.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block2.triggers.insert((TableId::Global(hash_str("time/timer")),RegisterIndex::All,RegisterIndex::All));
+  block2.input.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
+  block2.output.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
   match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy,&c500,&c0) {
     (Column::f32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::f32(c1),Column::f32(vy2),Column::f32(vy),Column::f32(m500),Column::f32(m0)) => {
       // iy = #ball.y > #boundary.height
@@ -191,9 +191,9 @@ fn bouncing_ballss(b:&mut Bencher){
   // Keep the balls within the boundary width
   let mut block3 = Block::new();
   block3.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block3")), rows: 1, columns: 1});
-  block3.triggers.insert((TableId::Global(hash_str("time/timer")),TableIndex::All,TableIndex::All));
-  block3.input.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
-  block3.output.insert((TableId::Global(hash_str("ball")),TableIndex::All,TableIndex::All));
+  block3.triggers.insert((TableId::Global(hash_str("time/timer")),RegisterIndex::All,RegisterIndex::All));
+  block3.input.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
+  block3.output.insert((TableId::Global(hash_str("ball")),RegisterIndex::All,RegisterIndex::All));
   match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2,&c500,&c0) {
     (Column::f32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::f32(vx),Column::f32(c1),Column::f32(vx2),Column::f32(m500),Column::f32(m0)) => {
       // ix = #ball.x > #boundary.width
