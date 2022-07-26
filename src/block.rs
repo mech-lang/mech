@@ -107,12 +107,12 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
-  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub required_functions: HashSet<u64>,
   pub strings: StringDictionary,
-  pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub triggers: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
 }
 
 impl Block {
@@ -537,32 +537,32 @@ impl Block {
     match tfm {
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
-          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
         }
       }
       Transformation::Function{name, ref arguments, out} => {
         self.required_functions.insert(*name);
         for (_,table_id,indices) in arguments {
           if let TableId::Global(_) = table_id {
-            self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-            self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+            self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           }
         }
         if let (TableId::Global(table_id),_,_) = out {
-          self.output.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+          self.output.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
         }
       }
       Transformation::Whenever{table_id, indices} => {
         self.triggers.clear();
-        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
       }
       _ => (),
     }
@@ -587,8 +587,8 @@ impl Block {
             {
               self.global_database.borrow_mut().insert_table(table);
             }
-            self.output.insert((*table_id,TableIndex::All,TableIndex::All));
-            self.defined_tables.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+            self.defined_tables.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           }
         } 
       },
@@ -635,9 +635,9 @@ impl Block {
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
         }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if table.cols == 0 || *column_ix > (table.cols - 1)  {
@@ -648,8 +648,8 @@ impl Block {
       },
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
-          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_DEFINE,
@@ -658,10 +658,10 @@ impl Block {
         })?;
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
-        self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
         match dest_row {
           TableIndex::IxTable(TableId::Global(ix_table_id)) => {
-            self.input.insert((TableId::Global(*ix_table_id),TableIndex::All,TableIndex::All));
+            self.input.insert((TableId::Global(*ix_table_id),RegisterIndex::All,RegisterIndex::All));
           }
           _ => (),
         }
@@ -784,7 +784,7 @@ impl Block {
       }
       Transformation::Whenever{table_id, indices} => {
         self.triggers.clear();
-        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
       }
       Transformation::Function{name, ref arguments, out} => {        
         // A list of all the functions that are
@@ -894,9 +894,42 @@ impl fmt::Debug for Block {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+// ### RegisterIndex
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RegisterIndex {
+  Index(usize),
+  Alias(u64),
+  All,
+}
+
+impl RegisterIndex {
+  pub fn unwrap(&self) -> usize {
+    match self {
+      RegisterIndex::Index(ix) => *ix,
+      RegisterIndex::Alias(alias) => {
+        alias.clone() as usize
+      },
+      RegisterIndex::All => 0,
+    }
+  }
+
+}
+
+impl fmt::Debug for RegisterIndex {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &RegisterIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
+      &RegisterIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
+      &RegisterIndex::All => write!(f, "IxAll"),
+    }
+  }
+}
+
+#[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: TableId,
-  pub row: TableIndex,
-  pub column: TableIndex,
+  pub row: RegisterIndex,
+  pub column: RegisterIndex,
 }
