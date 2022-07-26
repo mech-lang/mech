@@ -266,8 +266,8 @@ impl Block {
       }
       // x{z,1}
       // x.y{z}
-      (TableIndex::Table(ix_table_id),TableIndex::Index(_)) |
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::Index(_)) |
+      (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         if ix_table_brrw.cols > 1 {
@@ -286,7 +286,7 @@ impl Block {
         Ok((*arg_name,arg_col.clone(),ix))
       }
       // x{z}
-      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         match table.borrow().kind() {
@@ -394,7 +394,7 @@ impl Block {
       (TableIndex::Alias(alias),_) => {
         return Err(MechError{id: 2114,  kind: MechErrorKind::GenericError("Can't index on row alias yet".to_string())});
       },
-      (TableIndex::Table(ix_table_id),_) => {
+      (TableIndex::IxTable(ix_table_id),_) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         let ix = match ix_table_brrw.get_column_unchecked(0) {
@@ -471,17 +471,18 @@ impl Block {
       (TableIndex::Index(_),TableIndex::Index(_)) |
       (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
       (TableIndex::Index(_),TableIndex::All) => (1,t.cols),
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
-      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_)) |
+      (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let rows = ix_table.borrow().len();
         (rows,1)
       },
-      (TableIndex::Table(ix_table_id),TableIndex::All) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::All) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let rows = ix_table.borrow().len();
         (rows,t.cols)
       },
+      //(TableIndex::All,TableIndex::I)
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
@@ -645,7 +646,7 @@ impl Block {
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
         match dest_row {
-          TableIndex::Table(TableId::Global(ix_table_id)) => {
+          TableIndex::IxTable(TableId::Global(ix_table_id)) => {
             self.input.insert((TableId::Global(*ix_table_id),TableIndex::All,TableIndex::All));
           }
           _ => (),

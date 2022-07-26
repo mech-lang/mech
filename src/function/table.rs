@@ -1632,7 +1632,7 @@ impl MechFunctionCompiler for TableDefine {
           x => {return Err(MechError{id: 4927, kind: MechErrorKind::GenericError(format!("{:?}", x))});},        }
       }
       // Select a number of specific elements by numerical index or lorgical index
-      (TableIndex::Table(ix_table_id), TableIndex::None) => {
+      (TableIndex::IxTable(ix_table_id), TableIndex::None) => {
         let src_brrw = src_table.borrow();
         match src_brrw.shape() {
           TableShape::Row(_) => {
@@ -1666,7 +1666,7 @@ impl MechFunctionCompiler for TableDefine {
           }
         }
       }
-      (TableIndex::Table(ix_table_id), TableIndex::All) => {
+      (TableIndex::IxTable(ix_table_id), TableIndex::All) => {
         let src_brrw = src_table.borrow();
         let mut out_brrw = out_table.borrow_mut();
         out_brrw.resize(1,src_brrw.cols);
