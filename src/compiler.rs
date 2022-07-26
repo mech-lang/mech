@@ -160,7 +160,7 @@ impl Compiler {
       // dest{ix} := src
       Node::SetData{children} => {
         let mut src = self.compile_node(&children[1])?;
-        let mut dest = self.compile_node(&children[0])?;
+        let mut dest = self.compile_node(&children[0])?.clone();
 
         let (src_table_id, src_indices) = match &mut src[0] {
           Transformation::NewTable{table_id,..} => {
@@ -181,13 +181,21 @@ impl Compiler {
           },
           _ => None,
         }.unwrap();     
-        match &mut dest[0] {
+        let mut first = dest[0].clone();
+        match first {
           Transformation::Select{table_id, indices} => {
             let dest_id = table_id.clone();
-            let (dest_row, dest_col) = indices[0];
+            let (dest_row, dest_col) = &indices[0];
             dest.remove(0);
-            let (src_row,src_col) = src_indices[0];
-            tfms.push(Transformation::Set{src_id: src_table_id, src_row, src_col, dest_id, dest_row, dest_col});
+            let (src_row,src_col) = &src_indices[0];
+            tfms.push(Transformation::Set{
+              src_id: src_table_id, 
+              src_row: src_row.clone(), 
+              src_col: src_col.clone(),
+              dest_id, 
+              dest_row: dest_row.clone(), 
+              dest_col: dest_col.clone()
+            });
             /*tfms.push(Transformation::Function{
               name: *TABLE_SET,
               arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
@@ -670,7 +678,7 @@ impl Compiler {
             }
             Transformation::Select{table_id, indices} => {
               if indices.len() == 1 {
-                match (table_id, indices[0]) {
+                match (table_id, indices[0].clone()) {
                   (TableId::Global(table_id2), (TableIndex::All, TableIndex::All)) => {
                     all = true;
                     all_arg.push(result[0].clone());
@@ -744,12 +752,12 @@ impl Compiler {
         result_tfms.append(&mut result); 
 
         let (_,o,oi) = &args[0];
-        let (or,oc) = oi[0];
+        let (or,oc) = &oi[0];
         tfms.append(&mut result_tfms);
         tfms.push(Transformation::Function{
           name: *TABLE_APPEND,
           arguments: vec![args[1].clone()],
-          out: (*o,or,oc),
+          out: (*o,or.clone(),oc.clone()),
         });
       },
       Node::SplitData{children} => {
@@ -927,7 +935,7 @@ impl Compiler {
             },
           }
           if indices.len() == 2 {
-            all_indices.push((indices[0],indices[1]));
+            all_indices.push((indices[0].clone(),indices[1].clone()));
             indices.clear();
           }
         }

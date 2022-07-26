@@ -49,6 +49,7 @@ pub enum Node {
   Function{ name: Vec<char>, children: Vec<Node> },
   Define { name: Vec<char>, id: u64},
   DotIndex { children: Vec<Node>},
+  Swizzle { children: Vec<Node>},
   SubscriptIndex { children: Vec<Node> },
   Range,
   VariableDefine {children: Vec<Node> },
@@ -148,6 +149,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Until{children} => {write!(f,"Until\n").ok(); Some(children)},
     Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id).ok(); Some(children)},
     Node::DotIndex{children} => {write!(f,"DotIndex\n").ok(); Some(children)},
+    Node::Swizzle{children} => {write!(f,"Swizzle\n").ok(); Some(children)},
     Node::SubscriptIndex{children} => {write!(f,"SubscriptIndex\n").ok(); Some(children)},
     Node::Range => {write!(f,"Range\n").ok(); None},
     Node::Expression{children} => {write!(f,"Expression\n").ok(); Some(children)},
@@ -305,6 +307,9 @@ impl Ast {
                 reversed.reverse();
               }
               select_data_children.push(Node::DotIndex{children: reversed});
+            },
+            Node::Swizzle{..} => {
+              select_data_children.push(node.clone());
             },
             Node::SubscriptIndex{..} => {
               select_data_children.push(node.clone());
@@ -576,6 +581,7 @@ impl Ast {
       parser::Node::Index{children} => compiled.append(&mut self.compile_nodes(children)),
       parser::Node::ReshapeColumn => compiled.push(Node::ReshapeColumn),
       parser::Node::DotIndex{children} => compiled.push(Node::DotIndex{children: self.compile_nodes(children)}),
+      parser::Node::Swizzle{children} => compiled.push(Node::Swizzle{children: self.compile_nodes(children)}),
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
