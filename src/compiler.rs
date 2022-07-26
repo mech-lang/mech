@@ -799,6 +799,10 @@ impl Compiler {
               indices.push(TableIndex::ReshapeColumn);
               indices.push(TableIndex::All);
             }
+            Node::Swizzle{children} => {
+              indices.push(TableIndex::All);
+              indices.push(TableIndex::All);
+            }
             Node::DotIndex{children} => {
               for child in children {
                 match child {
@@ -817,23 +821,23 @@ impl Compiler {
                         Node::WheneverIndex{..} => {
                           let id = hash_str("~");
                           if indices.len() == 2 && indices[0] == TableIndex::All {
-                            indices[0] = TableIndex::Table(TableId::Local(id));
+                            indices[0] = TableIndex::IxTable(TableId::Local(id));
                           } else {
-                            indices.push(TableIndex::Table(TableId::Local(id)));
+                            indices.push(TableIndex::IxTable(TableId::Local(id)));
                           }
                         }
                         Node::SelectData{name, id, children} => {
                           if indices.len() == 2 && indices[0] == TableIndex::All {
-                            indices[0] = TableIndex::Table(*id);
+                            indices[0] = TableIndex::IxTable(*id);
                           } else {
-                            indices.push(TableIndex::Table(*id));
+                            indices.push(TableIndex::IxTable(*id));
                           }
                         }
                         Node::Expression{..} => {
                           let mut result = self.compile_node(child)?;
                           match &result[1] {
                             Transformation::NewTable{table_id, ..} => {
-                              indices.push(TableIndex::Table(*table_id));
+                              indices.push(TableIndex::IxTable(*table_id));
                             }
                             Transformation::NumberLiteral{kind, bytes} => {
                               let mut value = NumberLiteral::new(*kind, bytes.clone());
@@ -846,9 +850,9 @@ impl Compiler {
                             Transformation::Function{name, arguments, out} => {
                               let (output_table_id, output_row, output_col) = out;
                               if indices.len() == 2 && indices[0] == TableIndex::All {
-                                indices[0] = TableIndex::Table(*output_table_id);
+                                indices[0] = TableIndex::IxTable(*output_table_id);
                               } else {
-                                indices.push(TableIndex::Table(*output_table_id));
+                                indices.push(TableIndex::IxTable(*output_table_id));
                               }
                             }
                             _ => (),
@@ -872,23 +876,23 @@ impl Compiler {
                   Node::WheneverIndex{..} => {
                     let id = hash_str("~");
                     if indices.len() == 2 && indices[0] == TableIndex::All {
-                      indices[0] = TableIndex::Table(TableId::Local(id));
+                      indices[0] = TableIndex::IxTable(TableId::Local(id));
                     } else {
-                      indices.push(TableIndex::Table(TableId::Local(id)));
+                      indices.push(TableIndex::IxTable(TableId::Local(id)));
                     }
                   }
                   Node::SelectData{name, id, children} => {
                     if indices.len() == 2 && indices[0] == TableIndex::All {
-                      indices[0] = TableIndex::Table(*id);
+                      indices[0] = TableIndex::IxTable(*id);
                     } else {
-                      indices.push(TableIndex::Table(*id));
+                      indices.push(TableIndex::IxTable(*id));
                     }
                   }
                   Node::Expression{..} => {
                     let mut result = self.compile_node(child)?;
                     match &result[1] {
                       Transformation::NewTable{table_id, ..} => {
-                        indices.push(TableIndex::Table(*table_id));
+                        indices.push(TableIndex::IxTable(*table_id));
                       }
                       Transformation::NumberLiteral{kind, bytes} => {
                         let mut value = NumberLiteral::new(*kind, bytes.clone());
@@ -901,9 +905,9 @@ impl Compiler {
                       Transformation::Function{name, arguments, out} => {
                         let (output_table_id, output_row, output_col) = out;
                         if indices.len() == 2 && indices[0] == TableIndex::All {
-                          indices[0] = TableIndex::Table(*output_table_id);
+                          indices[0] = TableIndex::IxTable(*output_table_id);
                         } else {
-                          indices.push(TableIndex::Table(*output_table_id));
+                          indices.push(TableIndex::IxTable(*output_table_id));
                         }
                       }
                       _ => (),
