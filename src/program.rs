@@ -231,9 +231,9 @@ impl Program {
       let registry_table_brrw = registry_table.borrow();
       for row in 0..registry_table_brrw.rows {
         let row_index = TableIndex::Index(row+1);
-        let name = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*NAME))?.as_string().unwrap().to_string();
-        let version = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*VERSION))?.as_string().unwrap().to_string();
-        let url = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*URL))?.as_string().unwrap().to_string();
+        let name = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*NAME))?.as_string().unwrap().to_string();
+        let version = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*VERSION))?.as_string().unwrap().to_string();
+        let url = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*URL))?.as_string().unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }

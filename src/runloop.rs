@@ -286,7 +286,7 @@ impl ProgramRunner {
                   // blocks that it potentially updated. We already have that list. If this register
                   // has been triggered for the first time, then we need to get the list of
                   // output blocks
-                  match program.trigger_to_listener.entry(*trigger_register) {
+                  match program.trigger_to_listener.entry(trigger_register.clone()) {
                     // Already triggered in the past
                     Entry::Occupied(mut o) => {
                       // Here is the output that the triggered register will cause to update
@@ -295,7 +295,7 @@ impl ProgramRunner {
                           // Is any of this being listened for?
                           for (register,remote_cores) in &program.listeners {
                             if output.contains(&register) {
-                              o.insert((*register,remote_cores.clone()));
+                              o.insert((register.clone(),remote_cores.clone()));
                               break;
                             }
                           }
@@ -356,7 +356,7 @@ impl ProgramRunner {
                           // Is any of this being listened for?
                           for (register,remote_cores) in &program.listeners {
                             if output.contains(&register) {
-                              v.insert((*register,remote_cores.clone()));
+                              v.insert((register.clone(),remote_cores.clone()));
                               break;
                             }
                           }
@@ -377,8 +377,8 @@ impl ProgramRunner {
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
-            let (table_id,row,col) = register;
-            match program.mech.output.contains(&register) {
+            let (table_id,row,col) = &register;
+            match program.mech.output.contains(&register.clone()) {
               // We produce a table for which they're listening
               true => {
                 client_outgoing.send(ClientMessage::String(format!("Sending {:?} to {}", table_id, humanize(&core_id))));
@@ -473,7 +473,7 @@ impl ProgramRunner {
                     Some(_) => {
                       for register in &program.mech.needed_registers() {
                         //println!("I'm listening for {:?}", register);
-                        let message = bincode::serialize(&SocketMessage::Listening(*register)).unwrap();
+                        let message = bincode::serialize(&SocketMessage::Listening(register.clone())).unwrap();
                         let compressed_message = compress_to_vec(&message,6);                    
                         let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                       }
@@ -490,7 +490,7 @@ impl ProgramRunner {
             let (mut ws_incoming, mut ws_outgoing) = ws_stream.split().unwrap();
             // Tell the remote websocket what this core is listening for
             for needed_register in &program.mech.needed_registers() {
-              let message = bincode::serialize(&SocketMessage::Listening(*needed_register)).unwrap();
+              let message = bincode::serialize(&SocketMessage::Listening(needed_register.clone())).unwrap();
               let compressed_message = compress_to_vec(&message,6);
               ws_outgoing.send_message(&OwnedMessage::Binary(compressed_message)).unwrap();
             }
