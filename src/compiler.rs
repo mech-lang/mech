@@ -808,8 +808,17 @@ impl Compiler {
               indices.push(TableIndex::All);
             }
             Node::Swizzle{children} => {
+              let mut aliases = vec![];
+              for child in children {
+                match child {
+                  Node::Identifier{name,id} => {
+                    aliases.push(*id);
+                  }
+                  _ => (),
+                }
+              }
               indices.push(TableIndex::All);
-              indices.push(TableIndex::All);
+              indices.push(TableIndex::Aliases(aliases));
             }
             Node::DotIndex{children} => {
               for child in children {

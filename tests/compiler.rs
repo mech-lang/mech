@@ -191,6 +191,11 @@ block
 block
   #test = #y{1} + #y{2}", Value::U64(U64::new(5)));
 
+test_mech!(table_swizzle, "
+x = [a: 1, b: 2, c: 3, d: 4]
+y = x.a,c
+#test = stats/sum(row: y)", Value::F32(F32::new(4.0)));
+
 // ## Select
 
 test_mech!(select_table,"  
