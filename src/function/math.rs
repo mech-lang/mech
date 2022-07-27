@@ -10,6 +10,7 @@ use std::thread;
 
 lazy_static! {
   pub static ref MATH_ADD: u64 = hash_str("math/add");
+  pub static ref MATH_ADD__UPDATE: u64 = hash_str("math/add-update");
   pub static ref MATH_DIVIDE: u64 = hash_str("math/divide");
   pub static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
   pub static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");

@@ -13,6 +13,7 @@ use crate::*;
 use crate::function::{
   MechFunction,
   table::*,
+  math::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -674,6 +675,20 @@ impl Block {
           out: (*dest_id,dest_row.clone(),dest_col.clone()),
         })?;
       }
+      Transformation::AddUpdate{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
+        match dest_row {
+          TableIndex::IxTable(TableId::Global(ix_table_id)) => {
+            self.input.insert((TableId::Global(*ix_table_id),RegisterIndex::All,RegisterIndex::All));
+          }
+          _ => (),
+        }
+        self.compile_tfm(Transformation::Function{
+          name: *MATH_ADD__UPDATE,
+          arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],
+          out: (*dest_id,dest_row.clone(),dest_col.clone()),
+        })?;
+      }
       Transformation::NumberLiteral{kind, bytes} => {
         let mut num = NumberLiteral::new(*kind, bytes.to_vec());
         let mut bytes = bytes.clone();
@@ -810,7 +825,7 @@ impl Block {
           None => {return Err(MechError{id: 2124, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
         }
       }
-      _ => (),
+      x => {return Err(MechError{id: 2125, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
     }
     self.transformations.push(tfm.clone());
     Ok(())
@@ -823,7 +838,7 @@ impl Block {
       }
       Ok(())
     } else {
-      Err(MechError{id: 2125, kind: MechErrorKind::GenericError("Block not ready".to_string())})
+      Err(MechError{id: 2126, kind: MechErrorKind::GenericError("Block not ready".to_string())})
     }
   }
 
