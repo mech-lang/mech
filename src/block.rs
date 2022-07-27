@@ -825,7 +825,7 @@ impl Block {
           None => {return Err(MechError{id: 2124, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
         }
       }
-      x => {return Err(MechError{id: 2125, kind: MechErrorKind::GenericError(format!("{:?}",x))});}
+      _ => (),
     }
     self.transformations.push(tfm.clone());
     Ok(())
