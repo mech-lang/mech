@@ -208,6 +208,57 @@ impl Compiler {
         tfms.append(&mut dest);
         tfms.append(&mut src);
       }
+      // dest :+= src
+      // dest{ix} :+= src
+      Node::AddUpdateData{children} => {
+        let mut src = self.compile_node(&children[1])?;
+        let mut dest = self.compile_node(&children[0])?.clone();
+
+        let (src_table_id, src_indices) = match &mut src[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
+          Transformation::Select{table_id,ref indices} => {
+            let table_id = table_id.clone();
+            let indices = indices.clone();
+            src.remove(0);
+            Some((table_id,indices))
+          },
+          Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+            let table_id = id.clone();
+            src.remove(0);
+            src.remove(0);
+            src.remove(0);
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
+          _ => None,
+        }.unwrap();     
+        let mut first = dest[0].clone();
+        match first {
+          Transformation::Select{table_id, indices} => {
+            let dest_id = table_id.clone();
+            let (dest_row, dest_col) = &indices[0];
+            dest.remove(0);
+            let (src_row,src_col) = &src_indices[0];
+            tfms.push(Transformation::AddUpdate{
+              src_id: src_table_id, 
+              src_row: src_row.clone(), 
+              src_col: src_col.clone(),
+              dest_id, 
+              dest_row: dest_row.clone(), 
+              dest_col: dest_col.clone()
+            });
+            /*tfms.push(Transformation::Function{
+              name: *TABLE_SET,
+              arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
+              out: (dest_id,dest_row,dest_col),
+            });*/
+          }
+          _ => (),
+        }
+        tfms.append(&mut dest);
+        tfms.append(&mut src);
+      }
       Node::TableDefine{children} => {
         let mut output = self.compile_node(&children[0])?;
         // Get the output table id

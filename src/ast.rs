@@ -42,6 +42,7 @@ pub enum Node {
   Until{ children: Vec<Node> },
   SelectData{name: Vec<char>, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
+  AddUpdateData{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
   TableColumn{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -140,6 +141,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Block{children, ..} => {write!(f,"Block\n").ok(); Some(children)},
     Node::Statement{children} => {write!(f,"Statement\n").ok(); Some(children)},
     Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
+    Node::AddUpdateData{children} => {write!(f,"AddUpdateData\n").ok(); Some(children)},
     Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
     Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
     Node::KindAnnotation{children} => {write!(f,"KindAnnotation\n").ok(); Some(children)},
@@ -360,6 +362,17 @@ impl Ast {
           }
         }
         compiled.push(Node::SetData{children});
+      },
+      parser::Node::AddUpdateData{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::AddUpdateData{children});
       },
       parser::Node::SplitData{children} => {
         let result = self.compile_nodes(children);
