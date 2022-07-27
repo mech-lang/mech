@@ -52,10 +52,11 @@ pub enum TableShape {
 
 // ### TableIndex
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TableIndex {
   Index(usize),
   Alias(u64),
+  Aliases(Vec<u64>),
   IxTable(TableId),
   ReshapeColumn,
   All,
@@ -70,6 +71,7 @@ impl TableIndex {
         alias.clone() as usize
       },
       TableIndex::IxTable(table_id) => *table_id.unwrap() as usize,
+      TableIndex::Aliases(_) |
       TableIndex::ReshapeColumn |
       TableIndex::None |
       TableIndex::All => 0,
@@ -84,6 +86,7 @@ impl fmt::Debug for TableIndex {
     match self {
       &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
       &TableIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
+      &TableIndex::Aliases(ref aliases) => write!(f, "IxAliases({:?})", aliases.iter().map(|alias| humanize(alias)).collect::<Vec<String>>()),
       &TableIndex::IxTable(ref table_id) => write!(f, "IxTable({:?})", table_id),
       &TableIndex::ReshapeColumn => write!(f, "IxReshapeColumn"),
       &TableIndex::All => write!(f, "IxAll"),
@@ -194,6 +197,7 @@ impl Table {
           Err(MechError{id: 7005, kind: MechErrorKind::None})
         }
       }
+      TableIndex::Aliases(_) |
       TableIndex::ReshapeColumn |
       TableIndex::IxTable(_) |
       TableIndex::None => Err(MechError{id: 7006, kind: MechErrorKind::None}), 
@@ -401,6 +405,20 @@ impl Table {
     match col {
       TableIndex::All => {
         Ok(self.data.iter().cloned().collect())
+      },
+      TableIndex::Aliases(aliases) => {
+        let mut ixes = vec![];
+        for alias in aliases {
+          match self.col_map.alias_to_ix.get(alias) {
+            Some(ix) => ixes.push(ix),
+            None => {return Err(MechError{id: 7014, kind: MechErrorKind::None});}
+          }
+        }
+        let mut cols = vec![];
+        for ix in ixes {
+          cols.push(self.data[*ix].clone());
+        }
+        Ok(cols)
       },
       x => {Err(MechError{id: 7014, kind: MechErrorKind::GenericError(format!("{:?}",x))})}
     }

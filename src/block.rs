@@ -497,6 +497,9 @@ impl Block {
         };
         (t.rows, cols)
       }
+      (TableIndex::All,TableIndex::Aliases(aliases)) => {
+        (t.rows,aliases.len())
+      }
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
