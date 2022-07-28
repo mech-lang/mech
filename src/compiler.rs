@@ -196,11 +196,6 @@ impl Compiler {
               dest_row: dest_row.clone(), 
               dest_col: dest_col.clone()
             });
-            /*tfms.push(Transformation::Function{
-              name: *TABLE_SET,
-              arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
-              out: (dest_id,dest_row,dest_col),
-            });*/
           }
           _ => (),
         }
@@ -248,11 +243,6 @@ impl Compiler {
               dest_row: dest_row.clone(), 
               dest_col: dest_col.clone()
             });
-            /*tfms.push(Transformation::Function{
-              name: *TABLE_SET,
-              arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
-              out: (dest_id,dest_row,dest_col),
-            });*/
           }
           _ => (),
         }
