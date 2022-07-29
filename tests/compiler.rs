@@ -358,6 +358,12 @@ test_mech!(math_parenthetical_expression_constants,"
 block
   #test = (1 + 2) * 3", Value::F32(F32::new(9.0)));
 
+test_mech!(math_add_update_scalar,"
+block
+  #test = 7
+block
+  #test :+= 5", Value::F32(F32::new(12.0)));
+
 // Quantities
 
 
