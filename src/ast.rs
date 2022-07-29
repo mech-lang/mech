@@ -274,11 +274,17 @@ impl Ast {
         let mut title = None;
         for node in result {
           match node {
-            Node::Title{text} => title = Some(text),
+            Node::Title{text} => {
+              if !children.is_empty() {
+                compiled.push(Node::Section{title: title.clone(), children: children.clone()});
+                children.clear();
+              }
+              title = Some(text);
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Section{title, children});
+        compiled.push(Node::Section{title: title.clone(), children: children.clone()});
       },
       parser::Node::Block{children} => compiled.push(Node::Block{children: self.compile_nodes(children)}),
       parser::Node::Data{children} => {
