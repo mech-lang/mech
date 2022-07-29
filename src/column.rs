@@ -401,6 +401,12 @@ macro_rules! mech_type {
         $wrapper(lhs / rhs)
       }
     }
+    impl AddAssign for $wrapper {
+      fn add_assign(&mut self, other: Self) {
+        let ($wrapper(lhs),$wrapper(rhs)) = (&self,other);
+        *self = $wrapper(*lhs + rhs);
+      }
+    }
     impl fmt::Debug for $wrapper {
       #[inline]
       fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -14,6 +14,7 @@ use crate::function::{
   MechFunction,
   table::*,
   math::*,
+  math_update::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;

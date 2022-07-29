@@ -9,14 +9,10 @@ use rayon::prelude::*;
 use std::thread;
 
 lazy_static! {
-  pub static ref MATH_ADD: u64 = hash_str("math/add");
-  pub static ref MATH_DIVIDE: u64 = hash_str("math/divide");
-  pub static ref MATH_MULTIPLY: u64 = hash_str("math/multiply");
-  pub static ref MATH_SUBTRACT: u64 = hash_str("math/subtract");
-  pub static ref MATH_EXPONENT: u64 = hash_str("math/exponent");
-  pub static ref MATH_NEGATE: u64 = hash_str("math/negate");
+  pub static ref MATH_ADD__UPDATE: u64 = hash_str("math/add-update");
 }
 
+/*
 impl MechNumArithmetic<U8> for U8 {}
 impl MechNumArithmetic<U16> for U16 {}
 impl MechNumArithmetic<U32> for U32 {}
@@ -430,87 +426,69 @@ where T: Copy + Debug + Clone + Sync + Send,
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
+*/
 
+// Set Scalar : Scalar
+#[derive(Debug)]
+pub struct MathAddSIxSIx<T,U> {
+  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: usize
+}
+impl<T,U> MechFunction for MathAddSIxSIx<T,U>
+where T: Clone + Debug + Into<U> + std::ops::AddAssign,
+      U: Clone + Debug + Into<T> + std::ops::AddAssign
+{
+  fn solve(&self) {
+    println!("{:?}", self.out);
+    println!("{:?}", self.arg);
+    (self.out.borrow_mut())[self.oix] += T::into((self.arg.borrow())[self.ix].clone());
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
 
+//#[macro_export]
+//macro_rules! math_update_compiler {
+//  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
 
-#[macro_export]
-macro_rules! math_compiler {
-  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
+//    pub struct $func_name {}
 
-    pub struct $func_name {}
+//    impl MechFunctionCompiler for $func_name {
+    pub struct MathAddUpdate {}
 
-    impl MechFunctionCompiler for $func_name {
+    impl MechFunctionCompiler for MathAddUpdate {
       fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+        let (_,src_id,src_indices) = &arguments[0];
+        let (dest_id,dest_row,dest_col) = out;
         let arg_shapes = block.get_arg_dims(&arguments)?;
+        let out_arg = (0,*dest_id,vec![(dest_row.clone(),dest_col.clone())]);
+        let dest_shape = block.get_arg_dim(&out_arg)?;
+        let src_table = block.get_table(src_id)?;
+        let dest_table = block.get_table(dest_id)?;
+        let mut arguments = arguments.clone();
+        // The destination is pushed into the arguments here in order to use the
+        // get_argument_column() machinery later.
+        arguments.push(out_arg);
         // Now decide on the correct tfm based on the shape
-        match (&arg_shapes[0],&arg_shapes[1]) {
-          (TableShape::Scalar, TableShape::Scalar) => {
-            let mut argument_scalars = block.get_arg_columns(arguments)?;
-            resize_one(block,out);
-            match (&argument_scalars[0], &argument_scalars[1]) {
-              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
-                if let Column::U8(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::U8)?;
-                if let Column::U8(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::U16)?;
-                if let Column::U16(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::U32(lhs),ColumnIndex::Index(lix)), (_,Column::U32(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::U32)?;
-                if let Column::U32(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::U64)?;
-                if let Column::U64(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
-                if let Column::F32(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::Speed(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
-                let mut out_column = block.get_out_column(out, 1, ValueKind::Length)?;
-                if let Column::Length(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
-              }
-              ((_,Column::Length(lhs),ColumnIndex::Index(lix)), (_,Column::Length(rhs),ColumnIndex::Index(rix))) => {
-                let mut out_column = block.get_out_column(out, 1, ValueKind::Length)?;
-                if let Column::Length(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
-              }
-              ((_,Column::Time(lhs),ColumnIndex::Index(lix)), (_,Column::Time(rhs),ColumnIndex::Index(rix))) => {
-                let mut out_column = block.get_out_column(out, 1, ValueKind::Time)?;
-                if let Column::Time(out) = out_column { block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) }
-              }
-              ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::F32)?;
-                if let Column::F32(out) = out_column {
-                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              ((_,Column::String(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
-                let mut out_column = block.get_out_column(out, 1, ValueKind::String)?;
-                if let Column::String(out) = out_column {
-                  //block.plan.push(ConcatVV{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
-                }
-              },
-              x => {return Err(MechError{id: 6004, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        match (&arg_shapes[0],&dest_shape) {
+          (TableShape::Scalar,TableShape::Scalar) => {
+            let arg_cols = block.get_arg_columns(&arguments)?;
+            match (&arg_cols[0],&arg_cols[1]) {
+              ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(MathAddSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(MathAddSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              /*((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::U128(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Bool(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Bool(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+              ((_,Column::Ref(src),ColumnIndex::Index(in_ix)),(_,Column::Ref(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::String(src),ColumnIndex::Index(in_ix)),(_,Column::String(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}*/
+              x => {return Err(MechError{id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
+          /*
           (TableShape::Scalar, TableShape::Column(rows)) => {
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
@@ -732,10 +710,11 @@ macro_rules! math_compiler {
           }
           (TableShape::Pending(table_id),_) => { return Err(MechError{id: 6013, kind: MechErrorKind::PendingTable(*table_id)}); }
           (_,TableShape::Pending(table_id)) => {return Err(MechError{id: 6014, kind: MechErrorKind::PendingTable(*table_id)}); },
-          x => {return Err(MechError{id: 6015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          */
+          x => {return Err(MechError{id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }
     }
-  )
-}
+//  )
+//}

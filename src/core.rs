@@ -13,6 +13,7 @@ use crate::*;
 use crate::function::{
   MechFunction,
   math::*,
+  math_update::*,
   compare::*,
   stats::*,
   table::*,
@@ -85,6 +86,7 @@ impl Core {
 
     // Math
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));    
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
