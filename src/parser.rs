@@ -1378,7 +1378,7 @@ fn expression(input: ParseString) -> IResult<ParseString, Node> {
 
 fn transformation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, statement) = statement(input)?;
-  let (input, _) = tuple((many0(space),opt(newline)))(input)?;
+  let (input, _) = tuple((many0(space),many0(newline)))(input)?;
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
@@ -1406,7 +1406,7 @@ fn ul_title(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = newline(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::Title { children: vec![text] }))
 }
 
@@ -1431,7 +1431,7 @@ fn ul_subtitle(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = newline(input)?;
   let (input, _) = many1(dash)(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::Title { children: vec![text] }))
 }
 
@@ -1470,11 +1470,11 @@ fn paragraph_text(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn paragraph(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, (paragraph_elements,_)) = many_till(
-    alt((inline_mech_code, inline_code, paragraph_text)),
-    newline
+  let (input, paragraph_elements) = many1(
+    alt((inline_mech_code, inline_code, paragraph_text))
   )(input)?;
   let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::Paragraph { children: paragraph_elements }))
 }
 
@@ -1489,7 +1489,7 @@ fn list_item(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = dash(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, list_item) = paragraph(input)?;
-  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
@@ -1534,18 +1534,13 @@ fn mech_code_block(input: ParseString) -> IResult<ParseString, Node> {
 // ## Start Here
 
 fn section(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, section_title) = opt(subtitle)(input)?;
   let (input, mut section_elements) = many1(
     tuple((
-      alt((block, code_block, mech_code_block, paragraph, statement, unordered_list)),
+      alt((subtitle, block, code_block, mech_code_block, statement, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
   let mut section = vec![];
-  match section_title {
-    Some(subtitle) => section.push(subtitle),
-    _ => (),
-  };
   section.append(&mut section_elements.iter().map(|(x,_)|x).cloned().collect());
   Ok((input, Node::Section{ children: section }))
 }
